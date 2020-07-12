@@ -3,7 +3,7 @@
   <configuration default="false" factoryName="Application" name="runData" singleton="false" type="Application">
     <option name="MAIN_CLASS_NAME" value="net.minecraftforge.userdev.LaunchTesting"/>
     <option name="VM_PARAMETERS" value="-Dforge.logging.console.level=debug -Dforge.logging.markers=SCAN,REGISTRIES,REGISTRYDUMP"/>
-    <option name="PROGRAM_PARAMETERS" value="--mod goo --all --output D:\Goop\src\generated\resources"/>
+    <option name="PROGRAM_PARAMETERS" value="--mod goop --all --output D:\Goop\src\generated\resources"/>
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$\run"/>
     <module name="Goop.main"/>
     <envs>

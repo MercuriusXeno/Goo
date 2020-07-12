@@ -1,6 +1,0 @@
-{
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "mercurialtools:item/moderating_geode_disabled"
-  }
-}

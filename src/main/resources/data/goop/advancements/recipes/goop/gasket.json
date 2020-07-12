@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goop:gasket"
+    ]
+  },
+  "criteria": {
+    "honey": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "minecraft:honeycomb"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goop:gasket"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "honey",
+      "has_the_recipe"
+    ]
+  ]
+}

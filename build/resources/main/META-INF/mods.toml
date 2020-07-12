@@ -24,12 +24,12 @@ displayURL="http://example.com/" #optional
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="examplemod.png" #optional
 # A text field displayed in the mod UI
-credits="Thanks for this example mod goes to Java" #optional
+credits="Pahimar and Drullkus for ideas and things. Maybe Drullkus for help with other things?" #optional
 # A text field displayed in the mod UI
 authors="MercuriusXeno" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Goop! is a mod about things being made of goop.
+Goop! is a mod about things being made of goop. You make goop out of things, and you make things out of goop.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.examplemod]] #optional
