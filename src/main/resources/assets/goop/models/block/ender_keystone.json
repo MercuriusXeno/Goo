@@ -1,0 +1,22 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "side": "mercurialtools:block/ender_keystone_side",
+    "front": "mercurialtools:block/ender_keystone_front",
+    "back": "block/end_stone",
+    "particle": "mercurialtools:block/ender_keystone_side"
+  },
+  "elements": [
+    {   "from": [ 0, 0, 0 ],
+      "to": [ 16, 16, 16 ],
+      "faces": {
+        "down":  { "uv": [ 16, 16, 0, 0 ], "texture": "#side", "cullface": "down" },
+        "up":    { "uv": [ 16, 0, 0, 16 ], "texture": "#side", "cullface": "up" },
+        "north": { "uv": [ 0, 0, 16, 16 ], "texture": "#front", "cullface": "north" },
+        "south": { "uv": [ 0, 0, 16, 16 ], "texture": "#back", "cullface": "south" },
+        "west":  { "uv": [ 16, 16, 0, 0 ], "texture": "#side", "cullface": "west", "rotation": 90 },
+        "east":  { "uv": [ 0, 0, 16, 16 ], "texture": "#side", "cullface": "east", "rotation": 90 }
+      }
+    }
+  ]
+}

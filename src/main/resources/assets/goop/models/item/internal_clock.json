@@ -1,0 +1,41 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "mercurialtools:item/internal_clock_00"
+    },
+    "overrides": [
+        { "predicate": { "time": 0.0000000 }, "model": "mercurialtools:item/internal_clock" },
+        { "predicate": { "time": 0.3 }, "model": "mercurialtools:item/internal_clock_01" },
+        { "predicate": { "time": 0.6 }, "model": "mercurialtools:item/internal_clock_02" },
+        { "predicate": { "time": 0.9 }, "model": "mercurialtools:item/internal_clock_03" },
+        { "predicate": { "time": 0.12 }, "model": "mercurialtools:item/internal_clock_04" },
+        { "predicate": { "time": 0.15 }, "model": "mercurialtools:item/internal_clock_05" },
+        { "predicate": { "time": 0.18 }, "model": "mercurialtools:item/internal_clock_06" },
+        { "predicate": { "time": 0.21 }, "model": "mercurialtools:item/internal_clock_07" },
+        { "predicate": { "time": 0.24 }, "model": "mercurialtools:item/internal_clock_08" },
+        { "predicate": { "time": 0.27 }, "model": "mercurialtools:item/internal_clock_09" },
+        { "predicate": { "time": 0.30 }, "model": "mercurialtools:item/internal_clock_10" },
+        { "predicate": { "time": 0.33 }, "model": "mercurialtools:item/internal_clock_11" },
+        { "predicate": { "time": 0.36 }, "model": "mercurialtools:item/internal_clock_12" },
+        { "predicate": { "time": 0.39 }, "model": "mercurialtools:item/internal_clock_13" },
+        { "predicate": { "time": 0.42 }, "model": "mercurialtools:item/internal_clock_14" },
+        { "predicate": { "time": 0.45 }, "model": "mercurialtools:item/internal_clock_15" },
+        { "predicate": { "time": 0.48 }, "model": "mercurialtools:item/internal_clock_16" },
+        { "predicate": { "time": 0.51 }, "model": "mercurialtools:item/internal_clock_17" },
+        { "predicate": { "time": 0.54 }, "model": "mercurialtools:item/internal_clock_18" },
+        { "predicate": { "time": 0.57 }, "model": "mercurialtools:item/internal_clock_19" },
+        { "predicate": { "time": 0.60 }, "model": "mercurialtools:item/internal_clock_20" },
+        { "predicate": { "time": 0.64 }, "model": "mercurialtools:item/internal_clock_21" },
+        { "predicate": { "time": 0.67 }, "model": "mercurialtools:item/internal_clock_22" },
+        { "predicate": { "time": 0.70 }, "model": "mercurialtools:item/internal_clock_23" },
+        { "predicate": { "time": 0.74 }, "model": "mercurialtools:item/internal_clock_24" },
+        { "predicate": { "time": 0.78 }, "model": "mercurialtools:item/internal_clock_25" },
+        { "predicate": { "time": 0.81 }, "model": "mercurialtools:item/internal_clock_26" },
+        { "predicate": { "time": 0.84 }, "model": "mercurialtools:item/internal_clock_27" },
+        { "predicate": { "time": 0.87 }, "model": "mercurialtools:item/internal_clock_28" },
+        { "predicate": { "time": 0.90 }, "model": "mercurialtools:item/internal_clock_29" },
+        { "predicate": { "time": 0.94 }, "model": "mercurialtools:item/internal_clock_30" },
+        { "predicate": { "time": 0.97 }, "model": "mercurialtools:item/internal_clock_31" },
+        { "predicate": { "time": 1.0 }, "model": "mercurialtools:item/internal_clock_32" }
+    ]
+}
