@@ -2,255 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="51eabe72-ad92-4a1e-80ef-929d548c27c5" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileContent/fileContent.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/classAnalysis.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/classAnalysis.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/javaCompile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod$Blocks.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod$RegistryEvents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockGoopBulb.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockGoopifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockSolidifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/containers/ContainerGoopifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/items/ItemGasket.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopBulb.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileSolidifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/createSrgToMcp/output.srg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/downloadMCMeta/version.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/downloadMcpConfig/output.zip" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/extractSrg/output.srg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/META-INF/INDEX.LIST" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/META-INF/MANIFEST.MF" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/META-INF/versions/9/module-info.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL32.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/OpenAL32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/SAPIWrapper_x64.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/SAPIWrapper_x86.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw32.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/glfw32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc32.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/jemalloc32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl32.dll.git" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_opengl.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_opengl.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_opengl32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_opengl32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_stb.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_stb.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_stb32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_stb32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_tinyfd.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_tinyfd.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_tinyfd32.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/natives/lwjgl_tinyfd32.dll.sha1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/resources/main/META-INF/mods.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/resources/main/pack.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/config/forge-client.toml" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/forge-client.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/2020-07-05-1.log.gz" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/2020-07-05-2.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/2020-07-05-2.log.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/debug-1.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-1.log.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/debug-2.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-2.log.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/latest.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/latest.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/GoopMod.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/GoopMod.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Goopifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Goopifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Solidifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Solidifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/BlockStates.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/BlockStates.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/DataGenerators.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/DataGenerators.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Items.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Items.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Recipes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Recipes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/setup/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/setup/Config.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/setup/ModSetup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/setup/ModSetup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/mods.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goop_bulb.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goopifier.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/solidifier.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/lang/en_us.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/condensing_hopper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/condensing_hopper_side.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/ender_keystone.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/ender_keystone_dampened_i.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/ender_keystone_dampened_ii.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/ender_keystone_dampened_iii.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/ender_vacuum.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/enticing_prism.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/expanding_hopper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/expanding_hopper_side.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/frugal_anvil.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/growth_pulser.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/interloper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/interloper_on.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/mercurial_grindstone.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/block/spawner_template.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/condensing_hopper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_00.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_01.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_02.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_03.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_04.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_05.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_06.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_07.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_08.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_09.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_10.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_11.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_12.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_13.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_14.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_15.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_16.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_17.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_18.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_19.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_20.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_21.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_22.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_23.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_24.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_25.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_26.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_27.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_28.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_29.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_30.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/crystal_compass_31.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/cubing_talisman.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/cubing_talisman_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/enchanting_star.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ender_keystone.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ender_keystone_dampened_i.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ender_keystone_dampened_ii.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ender_keystone_dampened_iii.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ender_vacuum.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/enticing_prism.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/ethereal_mallet.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/expanding_hopper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/frugal_anvil.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/growth_pulser.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/interloper.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_01.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_02.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_03.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_04.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_05.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_06.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_07.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_08.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_09.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_10.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_11.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_12.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_13.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_14.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_15.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_16.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_17.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_18.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_19.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_20.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_21.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_22.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_23.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_24.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_25.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_26.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_27.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_28.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_29.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_30.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_31.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/internal_clock_32.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/mending_ember.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/mending_ember_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/mercurial_blend.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/mercurial_grindstone.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/mercurial_manual.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/moderating_geode.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/moderating_geode_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/potion_belt.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/potion_belt_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/quiver.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/quiver_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/soul_tome.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/soul_tome_disabled.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/models/item/spawner_template.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/aquatic_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/aquatic_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/aquatic_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/aquatic_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/bulb_end.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/bulb_side.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/earthen_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/earthen_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/earthen_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/earthen_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/esoteric_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/esoteric_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/esoteric_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/esoteric_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/faunal_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/faunal_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/faunal_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/faunal_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/floral_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/floral_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/floral_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/floral_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/fungal_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/fungal_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/fungal_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/fungal_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/goopifier_back.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/goopifier_front_off.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/goopifier_front_on.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/goopifier_side.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/goopifier_top.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/regal_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/regal_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/regal_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/regal_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_back_off.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_back_on.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_front_off.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_front_on.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_side_off.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_side_on.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_top_off.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/solidifier_top_on.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/volatile_flow.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/volatile_flow.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/volatile_still.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/block/volatile_still.png.mcmeta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/item/gasket.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/pack.mcmeta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/item/gasket.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/goop/textures/item/gasket.png" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -351,7 +105,7 @@
       <recent name="D:\Goop\src\main\java\com\xeno\goop\blocks" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.runData">
+  <component name="RunManager" selected="Application.runClient">
     <configuration name="Goo [genIntellijRuns]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -459,41 +213,25 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="756" y="410" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.packages/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331643817" />
-    <state width="1877" height="364" key="GridCell.Tab.0.bottom" timestamp="1594594625423">
+    <state width="1877" height="295" key="GridCell.Tab.0.bottom" timestamp="1594331579576">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625423" />
+    <state width="1877" height="295" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331579576" />
     <state width="1877" height="295" key="GridCell.Tab.0.bottom/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="364" key="GridCell.Tab.0.center" timestamp="1594594625423">
+    <state width="1877" height="295" key="GridCell.Tab.0.center" timestamp="1594331579576">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625423" />
+    <state width="1877" height="295" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331579576" />
     <state width="1877" height="295" key="GridCell.Tab.0.center/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="364" key="GridCell.Tab.0.left" timestamp="1594594625423">
+    <state width="1877" height="295" key="GridCell.Tab.0.left" timestamp="1594331579576">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625423" />
+    <state width="1877" height="295" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331579576" />
     <state width="1877" height="295" key="GridCell.Tab.0.left/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="364" key="GridCell.Tab.0.right" timestamp="1594594625423">
+    <state width="1877" height="295" key="GridCell.Tab.0.right" timestamp="1594331579576">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625423" />
+    <state width="1877" height="295" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331579576" />
     <state width="1877" height="295" key="GridCell.Tab.0.right/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="364" key="GridCell.Tab.1.bottom" timestamp="1594594625318">
-      <screen x="0" y="0" width="1920" height="1080" />
-    </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625318" />
-    <state width="1877" height="364" key="GridCell.Tab.1.center" timestamp="1594594625318">
-      <screen x="0" y="0" width="1920" height="1080" />
-    </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625318" />
-    <state width="1877" height="364" key="GridCell.Tab.1.left" timestamp="1594594625317">
-      <screen x="0" y="0" width="1920" height="1080" />
-    </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625317" />
-    <state width="1877" height="364" key="GridCell.Tab.1.right" timestamp="1594594625318">
-      <screen x="0" y="0" width="1920" height="1080" />
-    </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594594625318" />
   </component>
 </project>

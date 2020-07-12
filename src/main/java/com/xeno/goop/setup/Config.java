@@ -1,11 +1,10 @@
 package com.xeno.goop.setup;
 
-import com.xeno.goop.GoopMod;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
 import java.util.Dictionary;
 
-@Mod.EventBusSubscriber(modid = GoopMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber
 public class Config {
     public static ForgeConfigSpec SERVER_CONFIG;
     public static final String CATEGORY_MAPPINGS = "mappings";

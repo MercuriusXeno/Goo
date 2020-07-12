@@ -30,9 +30,7 @@ public class Recipes extends RecipeProvider {
                 .addIngredient(Items.SLIME_BLOCK)
                 .addIngredient(ItemTags.WOOL)
                 .setGroup(GoopMod.MOD_ID)
-                // interacting with honey for the first time should typically involve getting comb for the first time
-                // or the bottle; picking comb here sort of arbitrarily.
-                .addCriterion("honey", InventoryChangeTrigger.Instance.forItems(Items.HONEYCOMB))
+                .addCriterion("honey_block", InventoryChangeTrigger.Instance.forItems(Blocks.HONEY_BLOCK))
                 .build(consumer);
     }
 
@@ -64,7 +62,7 @@ public class Recipes extends RecipeProvider {
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registration.SOLIDIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(Registration.GOOPIFIER.get())
                 .patternLine("ror")
                 .patternLine("pxp")
                 .patternLine("o#o")

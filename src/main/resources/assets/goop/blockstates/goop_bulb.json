@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "facing=down": { "model": "mercurialtools:block/condensing_hopper" },
+    "facing=north": { "model": "mercurialtools:block/condensing_hopper_side" },
+    "facing=south": { "model": "mercurialtools:block/condensing_hopper_side", "y": 180 },
+    "facing=west": { "model": "mercurialtools:block/condensing_hopper_side", "y": 270 },
+    "facing=east": { "model": "mercurialtools:block/condensing_hopper_side", "y": 90 }
+  }
+}

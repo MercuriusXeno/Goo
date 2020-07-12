@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=up": { "model": "mercurialtools:block/ender_keystone", "x": 270},
+    "facing=down": { "model": "mercurialtools:block/ender_keystone", "x": 90 },
+    "facing=north": { "model": "mercurialtools:block/ender_keystone" },
+    "facing=south": { "model": "mercurialtools:block/ender_keystone", "y": 180 },
+    "facing=west": { "model": "mercurialtools:block/ender_keystone", "y": 270 },
+    "facing=east": { "model": "mercurialtools:block/ender_keystone", "y": 90 }
+  }
+}
