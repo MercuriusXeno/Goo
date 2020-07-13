@@ -7,7 +7,7 @@
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$\run"/>
     <module name="Goop.main"/>
     <envs>
-      <env name="MOD_CLASSES" value="examplemod%%$PROJECT_DIR$\build\resources\main;examplemod%%$PROJECT_DIR$\build\classes\java\main"/>
+      <env name="MOD_CLASSES" value="goop%%$PROJECT_DIR$\build\resources\main;goop%%$PROJECT_DIR$\build\classes\java\main"/>
       <env name="MCP_MAPPINGS" value="snapshot_20200514-1.15.1"/>
       <env name="MCP_VERSION" value="20200515.085601"/>
       <env name="FORGE_VERSION" value="31.2.27"/>

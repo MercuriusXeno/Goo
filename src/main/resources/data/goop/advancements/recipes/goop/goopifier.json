@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goop:goopifier"
+    ]
+  },
+  "criteria": {
+    "gasket": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goop:gasket"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goop:goopifier"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "gasket",
+      "has_the_recipe"
+    ]
+  ]
+}

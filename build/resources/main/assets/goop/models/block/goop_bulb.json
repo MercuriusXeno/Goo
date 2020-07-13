@@ -1,0 +1,11 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "goop:block/bulb_end",
+    "up": "goop:block/bulb_end",
+    "north": "goop:block/bulb_side",
+    "south": "goop:block/bulb_side",
+    "east": "goop:block/bulb_side",
+    "west": "goop:block/bulb_side"
+  }
+}

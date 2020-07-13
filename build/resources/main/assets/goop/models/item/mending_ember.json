@@ -1,0 +1,12 @@
+{
+  "parent": "item/handheld",
+  "textures": {
+    "layer0": "mercurialtools:item/mending_ember"
+  },
+  "overrides": [
+    {
+      "predicate": { "mercurialtools:is_disabled": 1.0 },
+      "model": "mercurialtools:item/mending_ember_disabled"
+    }
+  ]
+}
