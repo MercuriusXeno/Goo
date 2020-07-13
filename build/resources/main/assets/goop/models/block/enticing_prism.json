@@ -1,6 +1,0 @@
-{
-  "parent": "block/cube_all",
-  "textures": {
-    "all": "mercurialtools:block/enticing_prism"
-  }
-}

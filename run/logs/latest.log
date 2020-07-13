@@ -1,5 +1,0 @@
-[12Jul2020 19:52:04.981] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--mod, goop, --all, --output, D:\Goop\src\generated\resources, --existing, D:\Goop\src\main\resources, --gameDir, ., --launchTarget, fmluserdevdata, --fml.mcpVersion, 20200515.085601, --fml.mcVersion, 1.15.2, --fml.forgeGroup, net.minecraftforge, --fml.forgeVersion, 31.2.27]
-[12Jul2020 19:52:04.984] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher 5.1.0+69+master.79f13f7 starting: java version 1.8.0_231 by Oracle Corporation
-[12Jul2020 19:52:05.371] [main/INFO] [net.minecraftforge.fml.loading.FixSSL/CORE]: Added Lets Encrypt root certificates as additional trust
-[12Jul2020 19:52:07.028] [main/INFO] [cpw.mods.modlauncher.LaunchServiceHandler/MODLAUNCHER]: Launching target 'fmluserdevdata' with arguments [--gameDir, ., --mod, goop, --all, --output, D:\Goop\src\generated\resources, --existing, D:\Goop\src\main\resources]
-[12Jul2020 19:52:07.816] [main/INFO] [net.minecraftforge.fml.ModLoader/]: Initializing Data Gatherer for mods [goop]

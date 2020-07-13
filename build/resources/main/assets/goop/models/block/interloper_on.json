@@ -1,7 +1,0 @@
-{
-  "parent": "mercurialtools:block/interloper",
-  "textures": {
-    "back": "mercurialtools:block/interloper_back_on",
-    "front": "mercurialtools:block/interloper_front_on"
-  }
-}
