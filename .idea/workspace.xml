@@ -2,45 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="51eabe72-ad92-4a1e-80ef-929d548c27c5" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileContent/fileContent.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/classAnalysis.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/classAnalysis.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/javaCompile/javaCompile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/taskHistory/taskHistory.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/runClient.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/runClient.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/runData.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/runData.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/runServer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/runServer.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod$Blocks.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod$RegistryEvents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/GoopMod.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockGoopBulb.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockGoopifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/blocks/BlockSolidifier.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/items/ItemGasket.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopBulb.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopBulb.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopifier.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileGoopifier.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileSolidifier.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/xeno/goop/tiles/TileSolidifier.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/createSrgToMcp/output.srg" beforeDir="false" afterPath="$PROJECT_DIR$/build/createSrgToMcp/output.srg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/extractSrg/output.srg" beforeDir="false" afterPath="$PROJECT_DIR$/build/extractSrg/output.srg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/resources/main/META-INF/mods.toml" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/META-INF/mods.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/config/forge-client.toml" beforeDir="false" afterPath="$PROJECT_DIR$/run/config/forge-client.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/debug-1.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-1.log.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run/logs/debug-2.log.gz" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug-2.log.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/debug.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/debug.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run/logs/latest.log" beforeDir="false" afterPath="$PROJECT_DIR$/run/logs/latest.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Goopifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Goopifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Solidifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/blocks/Solidifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/BlockStates.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/BlockStates.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Items.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Items.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Recipes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/xeno/goop/datagen/Recipes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goop_bulb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goop_bulb.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goopifier.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/goopifier.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/solidifier.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/goop/blockstates/solidifier.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/.cache/cache" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/.cache/cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goop_bulb.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goop_bulb.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goopifier.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goopifier.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goopifier_powered.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/goopifier_powered.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/solidifier.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/solidifier.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/solidifier_powered.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/generated/resources/assets/goop/models/block/solidifier_powered.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -249,42 +218,42 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="756" y="410" key="#com.intellij.refactoring.move.moveClassesOrPackages.MoveClassesOrPackagesDialog.packages/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594331643817" />
-    <state width="1877" height="295" key="GridCell.Tab.0.bottom" timestamp="1594601524107">
+    <state width="1877" height="364" key="GridCell.Tab.0.bottom" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601524107" />
+    <state width="1877" height="364" key="GridCell.Tab.0.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
     <state width="1877" height="295" key="GridCell.Tab.0.bottom/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="295" key="GridCell.Tab.0.center" timestamp="1594601524107">
+    <state width="1877" height="364" key="GridCell.Tab.0.center" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601524107" />
+    <state width="1877" height="364" key="GridCell.Tab.0.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
     <state width="1877" height="295" key="GridCell.Tab.0.center/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="295" key="GridCell.Tab.0.left" timestamp="1594601524107">
+    <state width="1877" height="364" key="GridCell.Tab.0.left" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601524107" />
+    <state width="1877" height="364" key="GridCell.Tab.0.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
     <state width="1877" height="295" key="GridCell.Tab.0.left/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="295" key="GridCell.Tab.0.right" timestamp="1594601524107">
+    <state width="1877" height="364" key="GridCell.Tab.0.right" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="295" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601524107" />
+    <state width="1877" height="364" key="GridCell.Tab.0.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
     <state width="1877" height="295" key="GridCell.Tab.0.right/1920.0.1920.1080/-1920.0.1920.1050/0.0.1920.1080@0.0.1920.1080" timestamp="1593135446796" />
-    <state width="1877" height="364" key="GridCell.Tab.1.bottom" timestamp="1594596876527">
+    <state width="1877" height="364" key="GridCell.Tab.1.bottom" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594596876527" />
-    <state width="1877" height="364" key="GridCell.Tab.1.center" timestamp="1594596876527">
+    <state width="1877" height="364" key="GridCell.Tab.1.bottom/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
+    <state width="1877" height="364" key="GridCell.Tab.1.center" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594596876527" />
-    <state width="1877" height="364" key="GridCell.Tab.1.left" timestamp="1594596876527">
+    <state width="1877" height="364" key="GridCell.Tab.1.center/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
+    <state width="1877" height="364" key="GridCell.Tab.1.left" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594596876527" />
-    <state width="1877" height="364" key="GridCell.Tab.1.right" timestamp="1594596876527">
+    <state width="1877" height="364" key="GridCell.Tab.1.left/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
+    <state width="1877" height="364" key="GridCell.Tab.1.right" timestamp="1594601985703">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1877" height="364" key="GridCell.Tab.1.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594596876527" />
+    <state width="1877" height="364" key="GridCell.Tab.1.right/0.0.1920.1080/1920.0.1920.1050/-1920.0.1920.1080@0.0.1920.1080" timestamp="1594601985703" />
     <state x="656" y="277" width="607" height="526" key="find.popup" timestamp="1594596871052">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
