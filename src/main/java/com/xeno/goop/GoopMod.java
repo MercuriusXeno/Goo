@@ -23,6 +23,8 @@ public class GoopMod
 {
     public static final String MOD_ID = "goop";
 
+    public static final boolean DEBUG = true;
+
     // Directly reference a log4j logger.
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -59,6 +61,7 @@ public class GoopMod
         // some example code to receive and process InterModComms from other mods
         // LOGGER.info("Got IMC {}", event.getIMCStream().map(m->m.getMessageSupplier().get()).collect(Collectors.toList()));
     }
+
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(FMLServerStartingEvent event) {

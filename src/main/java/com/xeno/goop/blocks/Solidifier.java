@@ -17,10 +17,18 @@ public class Solidifier extends Block {
                 .hardnessAndResistance(4.0f));
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public int getLightValue(BlockState state) {
+        return state.get(BlockStateProperties.POWERED) ? 15 : 0;
+    }
+
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
-        return getDefaultState().with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
+        return getDefaultState()
+                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
     }
 
     @Override

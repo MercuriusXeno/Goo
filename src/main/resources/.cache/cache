@@ -1,11 +1,11 @@
 3c25690b23d797362d959f22a7e1a560d7678b8f assets/goop/blockstates/goop_bulb.json
 5f3dd25b4de916e33861ac828f224c5a2a735b8f assets/goop/blockstates/goopifier.json
 b9bc51ce0d5dc58cc05851f66d98afce5fadf42c assets/goop/blockstates/solidifier.json
-199ca7b913ef0c5b31e77b692ce087e0b76871f1 assets/goop/models/block/goop_bulb.json
-495e6fa74347db622eadf9f5cda378289476b2ba assets/goop/models/block/goopifier.json
-2526244cb4bcbb711582197d786880ed62c52b5c assets/goop/models/block/goopifier_powered.json
-47ad9a9605770a34c1b8ddc95ea688fde938c937 assets/goop/models/block/solidifier.json
-588d52a03c900bd033226f91cd1c823a7e301b88 assets/goop/models/block/solidifier_powered.json
+3d067adbade4994fb5e82120b67b75417c1e26e9 assets/goop/models/block/goop_bulb.json
+9cd33d5a81d4a865c80bff7b1d67ed0d866b03d6 assets/goop/models/block/goopifier.json
+6ffc9f31ec0d0f5df95dc7d8b06cd8947669a5e0 assets/goop/models/block/goopifier_powered.json
+83eb6f0cfb981d9578a50f9d433876d0fecdcdee assets/goop/models/block/solidifier.json
+60dd6963cc3a26a198368eaba50b1a2c0ff4248c assets/goop/models/block/solidifier_powered.json
 68d1d2f2bb0d0ac82749ab869cfe70df4a08073b assets/goop/models/item/gasket.json
 7e3839dae2640242759c40dca27d68a8361dfddb assets/goop/models/item/goop_bulb.json
 551d50ed12429195d9e5f3534d28e51133e78096 assets/goop/models/item/goopifier.json

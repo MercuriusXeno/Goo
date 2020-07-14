@@ -4,6 +4,7 @@ import com.xeno.goop.GoopMod;
 import com.xeno.goop.setup.Registration;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
 
@@ -23,8 +24,21 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation end = new ResourceLocation(GoopMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GoopMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()
-                .cube("goop_bulb", end, end, side, side, side, side)
-                .texture("particle", side);
+                .withExistingParent("goop_bulb", "block/block")
+                .texture("particle", side)
+                .element()
+                .from(0, 0, 0)
+                .to(16, 16, 16)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
+                .end()
+                .element()
+                .from(15.9f, 15.9f, 15.9f)
+                .to(0.1f, 0.1f, 0.1f)
+                .shade(false)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
+                .end();
+        model.texture("end", end);
+        model.texture("side", side);
         simpleBlock(Registration.GOOP_BULB.get(), model);
         simpleBlockItem(Registration.GOOP_BULB.get(), model);
     }
@@ -37,7 +51,7 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation front_off = new ResourceLocation(GoopMod.MOD_ID, "block/goopifier_front_off");
         ResourceLocation front_on = new ResourceLocation(GoopMod.MOD_ID, "block/goopifier_front_on");
         BlockModelBuilder model = models()
-                .cube("goopifier", bottom, top,front_off,  back, side, side)
+                .cube("goopifier", bottom, top, front_off, back, side, side)
                 .texture("particle", front_off);
         BlockModelBuilder modelActive = models()
                 .cube("goopifier_powered", bottom, top, front_on, back, side, side)

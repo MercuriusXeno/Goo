@@ -3,9 +3,10 @@
   "textures": {
     "down": "block/piston_bottom",
     "up": "goop:block/goopifier_top",
-    "north": "goop:block/goopifier_back",
-    "south": "goop:block/goopifier_front_on",
+    "north": "goop:block/goopifier_front_on",
+    "south": "goop:block/goopifier_back",
     "east": "goop:block/goopifier_side",
-    "west": "goop:block/goopifier_side"
+    "west": "goop:block/goopifier_side",
+    "particle": "goop:block/goopifier_front_on"
   }
 }

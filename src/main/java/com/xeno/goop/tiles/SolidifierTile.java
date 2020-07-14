@@ -4,9 +4,9 @@ import com.xeno.goop.setup.Registration;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 
-public class TileGoopifier extends TileEntity implements ITickableTileEntity {
-    public TileGoopifier() {
-        super(Registration.GOOPIFIER_TILE.get());
+public class SolidifierTile extends TileEntity implements ITickableTileEntity {
+    public SolidifierTile() {
+        super(Registration.SOLIDIFIER_TILE.get());
     }
 
     @Override

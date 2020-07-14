@@ -1,11 +1,75 @@
 {
-  "parent": "block/cube",
+  "parent": "block/block",
   "textures": {
-    "down": "goop:block/bulb_end",
-    "up": "goop:block/bulb_end",
-    "north": "goop:block/bulb_side",
-    "south": "goop:block/bulb_side",
-    "east": "goop:block/bulb_side",
-    "west": "goop:block/bulb_side"
-  }
+    "particle": "goop:block/bulb_side",
+    "end": "goop:block/bulb_end",
+    "side": "goop:block/bulb_side"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#end"
+        },
+        "up": {
+          "texture": "#end"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        15.9,
+        15.9,
+        15.9
+      ],
+      "to": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "shade": false,
+      "faces": {
+        "down": {
+          "texture": "#end"
+        },
+        "up": {
+          "texture": "#end"
+        },
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        }
+      }
+    }
+  ]
 }
