@@ -2,7 +2,6 @@ package com.xeno.goop.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goop.GoopMod;
 import com.xeno.goop.setup.Config;
 import com.xeno.goop.setup.Registration;
 import com.xeno.goop.tiles.GoopBulbTile;
@@ -29,7 +28,9 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     public GoopBulbTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
     }
-
+    public GoopBulbTileRenderer() {
+        super(TileEntityRendererDispatcher.instance);
+    }
 
     /**
      * Renders a fluid block with offset from the matrices and from x1/y1/z1 to x2/y2/z2 using block model coordinates, so from 0-16
@@ -197,13 +198,9 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
         }
     }
 
-    private static final float BULB_MARGIN = 0.0625f;
     @Override
     public void render(GoopBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
-        if (GoopMod.DEBUG) {
-            System.out.println("Goop renderer is rendering.");
-        }
         float totalGoop = tile.getTotalGoop();
 
         // this is the total fill percentage of the container

@@ -10,6 +10,7 @@ import com.xeno.goop.setup.Registration;
 import com.xeno.goop.setup.Tags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -71,14 +72,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         return goop.stream().mapToInt(FluidStack::getAmount).sum();
     }
 
-    @Override
-    public void read(CompoundNBT compound) {
-        CompoundNBT fluidsFromCompound = compound.getCompound(Tags.GOOP);
-        int indexes = goop.size();
-        fluidsFromCompound.putInt("count", indexes);
-
-        super.read(compound);
-    }
+    public boolean isEmpty() { return goop.size() == 0; }
 
     @Override
     public void markDirty() {
@@ -100,9 +94,43 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         }
     }
 
+    private CompoundNBT serializeGoop()  {
+        CompoundNBT tag = new CompoundNBT();
+        tag.putInt("count", goop.size());
+        int index = 0;
+        for(FluidStack s : goop) {
+            CompoundNBT goopTag = new CompoundNBT();
+            s.writeToNBT(goopTag);
+            tag.put("goop" + index, goopTag);
+            index++;
+        }
+        return tag;
+    }
+
+    private void deserializeGoop(CompoundNBT tag) {
+        List<FluidStack> tagGoopList = new ArrayList<>();
+        int size = tag.getInt("count");
+        for(int i = 0; i < size; i++) {
+            CompoundNBT goopTag = tag.getCompound("goop" + i);
+            FluidStack stack = FluidStack.loadFluidStackFromNBT(goopTag);
+            tagGoopList.add(stack);
+        }
+
+        goop = tagGoopList;
+    }
+
+
     @Override
-    public CompoundNBT write(CompoundNBT compound) {
-        return super.write(compound);
+    public CompoundNBT write(CompoundNBT tag) {
+        tag.put("goop", serializeGoop());
+        return super.write(tag);
+    }
+
+    @Override
+    public void read(CompoundNBT compound) {
+        CompoundNBT goopTag = compound.getCompound("goop");
+        deserializeGoop(goopTag);
+        super.read(compound);
     }
 
     @Nonnull
@@ -139,5 +167,21 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
 
     private IFluidHandler createHandler() {
         return new BulbFluidHandler(this);
+    }
+
+    public ItemStack getBulbStack() {
+        ItemStack stack = new ItemStack(Registration.GOOP_BULB.get());
+
+        CompoundNBT bulbTag = new CompoundNBT();
+        write(bulbTag);
+        bulbTag.remove("x");
+        bulbTag.remove("y");
+        bulbTag.remove("z");
+
+        CompoundNBT stackTag = new CompoundNBT();
+        stackTag.put("BlockEntityTag", bulbTag);
+        stack.setTag(stackTag);
+
+        return stack;
     }
 }

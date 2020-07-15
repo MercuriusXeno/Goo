@@ -4,6 +4,7 @@ import com.xeno.goop.GoopMod;
 import com.xeno.goop.blocks.GoopBulb;
 import com.xeno.goop.blocks.Goopifier;
 import com.xeno.goop.blocks.Solidifier;
+import com.xeno.goop.client.render.GoopBulbItemRenderer;
 import com.xeno.goop.fluids.*;
 import com.xeno.goop.items.Gasket;
 import com.xeno.goop.tiles.GoopBulbTile;
@@ -43,7 +44,7 @@ public class Registration {
 
     // Goop Bulbs registration
     public static final RegistryObject<GoopBulb> GOOP_BULB = BLOCKS.register("goop_bulb", GoopBulb::new);
-    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(ModSetup.ITEM_GROUP)));
+    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(ModSetup.ITEM_GROUP).maxStackSize(1).setISTER(() -> GoopBulbItemRenderer::new)));
     public static final RegistryObject<TileEntityType<GoopBulbTile>> GOOP_BULB_TILE = TILES.register("goop_bulb", () -> TileEntityType.Builder.create(GoopBulbTile::new, GOOP_BULB.get()).build(null));
 
     // Goopifier registration

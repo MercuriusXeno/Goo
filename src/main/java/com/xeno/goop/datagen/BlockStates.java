@@ -24,7 +24,7 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation end = new ResourceLocation(GoopMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GoopMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()
-                .withExistingParent("goop_bulb", "block/block")
+                .withExistingParent("goop_bulb", "builtin/entity")
                 .texture("particle", side)
                 .element()
                 .from(0, 0, 0)

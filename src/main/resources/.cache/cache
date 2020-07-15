@@ -14,6 +14,7 @@ a6020c3a8c9b8eb508ec1d22d19629f9fb11fe2d data/goop/advancements/recipes/goop/gas
 3c33b9bf76a143f1f3c124071c24f0368ef19ef4 data/goop/advancements/recipes/goop/goop_bulb.json
 7b8b0ecc0b3ca030b7fa55ae304139d8e01c1bfd data/goop/advancements/recipes/goop/goopifier.json
 4e7c800054a574d671d985b021d6b9bc71135f1e data/goop/advancements/recipes/goop/solidifier.json
+f91ca6acc5eca41146e802297966bb1ec3d07070 data/goop/loot_tables/blocks/goop_bulb.json
 b5796821d8e6b39ff2fcc956c101d5bf3d9b4ccb data/goop/recipes/gasket.json
 d8ffcfe2da8b09f300bb70596f76f9197d5ad2bf data/goop/recipes/goop_bulb.json
 d26fc01dcfe0943be971f244ef3bbd1c7ee8bf4e data/goop/recipes/goopifier.json
