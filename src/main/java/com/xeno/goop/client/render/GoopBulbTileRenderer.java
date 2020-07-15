@@ -17,11 +17,14 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
-    private static final float FLUID_OFFSET = 0.0625f;
-    private static final float FROM_SCALED = FLUID_OFFSET * 16;
-    private static final float TO_SCALED = 16 - FROM_SCALED;
-    private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED, FROM_SCALED, FROM_SCALED);
-    private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED, TO_SCALED, TO_SCALED);
+    private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+    private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
+    private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
+    private static final float TO_SCALED_VERTICAL = 16 - FROM_SCALED_VERTICAL;
+    private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
+    private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
+    private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
+    private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
 
     public GoopBulbTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -202,23 +205,22 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
             System.out.println("Goop renderer is rendering.");
         }
         float totalGoop = tile.getTotalGoop();
-        // // this is logarithmic, flat scaling is a bit simpler
-        // // truncated for no particular reason
-        // float scaledGoopHeight = (float)Math.ceil(100d * Math.log(totalGoop) / Math.log(Config.getGoopLogScale())) / 1600f;
-        float scaledGoopHeight = (float)Math.ceil(100d * totalGoop / Config.getGoopBulbCapacity()) / 100f;
+
+        // this is the total fill percentage of the container
+        float scaledGoopHeight = totalGoop / (float)Config.getGoopBulbCapacity();
         float  yOffset = 0;
 
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
 
-        // gas renders upside down
         float minY = from.getY();
         float maxY = to.getY();
 
         for(FluidStack goop : tile.goop) {
+            // this is the total fill of the goop in the tank of this particular goop, as a percentage
             float goopPercentage = goop.getAmount() / totalGoop;
             float heightScale = goopPercentage * scaledGoopHeight;
-            float height = (maxY - yOffset) * heightScale;
+            float height = (maxY - minY) * heightScale;
             float fromY, toY;
             fromY = minY + yOffset;
             toY = fromY + height;

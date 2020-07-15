@@ -1,6 +1,7 @@
 package com.xeno.goop.tiles;
 
 import com.xeno.goop.GoopMod;
+import com.xeno.goop.fluids.BulbFluidHandler;
 import com.xeno.goop.fluids.GoopBase;
 import com.xeno.goop.network.FluidUpdatePacket;
 import com.xeno.goop.network.Networking;
@@ -25,7 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class GoopBulbTile extends TileEntity implements ITickableTileEntity, IFluidHandler, FluidUpdatePacket.IFluidPacketReceiver {
+public class GoopBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver {
     private IFluidHandler fluidHandler = createHandler();
 
     private LazyOptional<IFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
@@ -42,13 +43,13 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, IFl
         }
 
         if (GoopMod.DEBUG) {
-            fill(new FluidStack(Registration.VOLATILE_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fill(new FluidStack(Registration.AQUATIC_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fill(new FluidStack(Registration.EARTHEN_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registration.VOLATILE_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registration.AQUATIC_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registration.EARTHEN_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 
-    private boolean hasFluid(Fluid fluid) {
+    public boolean hasFluid(Fluid fluid) {
         return !getSpecificGoopType(fluid).equals(FluidStack.EMPTY);
     }
 
@@ -70,10 +71,6 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, IFl
         return goop.stream().mapToInt(FluidStack::getAmount).sum();
     }
 
-    public int getFluidAmount() {
-        return getTotalGoop();
-    }
-
     @Override
     public void read(CompoundNBT compound) {
         CompoundNBT fluidsFromCompound = compound.getCompound(Tags.GOOP);
@@ -88,7 +85,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, IFl
         super.markDirty();
     }
 
-    protected void onContentsChanged() {
+    public void onContentsChanged() {
         markDirty();
         if (world == null) {
             return;
@@ -141,98 +138,6 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, IFl
     }
 
     private IFluidHandler createHandler() {
-        return new IFluidHandler() {
-
-            @Override
-            public int getTanks() {
-                return 1;
-            }
-
-            @Nonnull
-            @Override
-            public FluidStack getFluidInTank(int tank) {
-                return tank == 0 ? getLeastQuantityGoop() : FluidStack.EMPTY;
-            }
-
-            @Override
-            public int getTankCapacity(int tank) {
-                return tank == 0 ? Config.GOOP_BULB_TOTAL_CAPACITY.get() : 0;
-            }
-
-            @Override
-            public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-                return tank == 0 && stack.getFluid() instanceof GoopBase;
-            }
-
-            @Override
-            public int fill(FluidStack resource, FluidAction action) {
-                int spaceRemaining = Config.getGoopBulbCapacity() - getTotalGoop();
-                int transferAmount = Math.min(Config.getTransferRate(), spaceRemaining);
-                transferAmount = Math.min(transferAmount, resource.getAmount());
-                if (action == FluidAction.EXECUTE && transferAmount > 0) {
-                    if (hasFluid(resource.getFluid())) {
-                        FluidStack existingGoop = getSpecificGoopType((resource.getFluid()));
-                        existingGoop.setAmount(existingGoop.getAmount() + transferAmount);
-                    } else {
-                        goop.add(new FluidStack(resource.getFluid(), transferAmount));
-                    }
-                    onContentsChanged();
-                }
-
-                return transferAmount;
-            }
-
-            @Nonnull
-            @Override
-            public FluidStack drain(int maxDrain, FluidAction action) {
-                // TODO
-                return FluidStack.EMPTY;
-            }
-
-            @Nonnull
-            @Override
-            public FluidStack drain(FluidStack resource, FluidAction action) {
-                // TODO
-                return FluidStack.EMPTY;
-            }
-        };
-    }
-
-    @Override
-    public int getTanks() {
-        return fluidHandler.getTanks();
-    }
-
-    @Nonnull
-    @Override
-    public FluidStack getFluidInTank(int tank) {
-        return fluidHandler.getFluidInTank(tank);
-    }
-
-    @Override
-    public int getTankCapacity(int tank) {
-        return fluidHandler.getTankCapacity(tank);
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-        return fluidHandler.isFluidValid(tank, stack);
-    }
-
-    @Override
-    public int fill(FluidStack resource, FluidAction action) {
-        return fluidHandler.fill(resource, action);
-    }
-
-    @Nonnull
-    @Override
-    public FluidStack drain(FluidStack resource, FluidAction action) {
-        return fluidHandler.drain(resource, action);
-    }
-
-    @Nonnull
-    @Override
-    public FluidStack drain(int maxDrain, FluidAction action) {
-        return fluidHandler.drain(maxDrain, action);
+        return new BulbFluidHandler(this);
     }
 }
