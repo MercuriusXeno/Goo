@@ -17,7 +17,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
-    private static final float FLUID_OFFSET = 0.0005f;
+    private static final float FLUID_OFFSET = 0.0625f;
     private static final float FROM_SCALED = FLUID_OFFSET * 16;
     private static final float TO_SCALED = 16 - FROM_SCALED;
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED, FROM_SCALED, FROM_SCALED);
@@ -66,12 +66,10 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
         matrices.pop();
     }
 
-
     public static void putTexturedQuad(IVertexBuilder renderer, Matrix4f matrix, TextureAtlasSprite sprite, float w, float h, float d, Direction face,
                                        int color, int brightness, boolean flowing) {
         putTexturedQuad(renderer, matrix, sprite, w, h, d, face, color, brightness, flowing, false);
     }
-
 
     public static void putTexturedQuad(IVertexBuilder renderer, Matrix4f matrix, TextureAtlasSprite sprite, float w, float h, float d, Direction face,
                                        int color, int brightness, boolean flowing, boolean flipHorizontally) {
@@ -204,10 +202,11 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
             System.out.println("Goop renderer is rendering.");
         }
         float totalGoop = tile.getTotalGoop();
-        // truncated for no particular reason
-        float scaledGoopHeight = (float)Math.ceil(100d * Math.log(totalGoop) / Math.log(Config.getGoopLogScale())) / 1600f;
+        // // this is logarithmic, flat scaling is a bit simpler
+        // // truncated for no particular reason
+        // float scaledGoopHeight = (float)Math.ceil(100d * Math.log(totalGoop) / Math.log(Config.getGoopLogScale())) / 1600f;
+        float scaledGoopHeight = (float)Math.ceil(100d * totalGoop / Config.getGoopBulbCapacity()) / 100f;
         float  yOffset = 0;
-
 
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
@@ -216,12 +215,13 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
         float minY = from.getY();
         float maxY = to.getY();
 
-        for(FluidStack goop : tile.Goop) {
+        for(FluidStack goop : tile.goop) {
             float goopPercentage = goop.getAmount() / totalGoop;
-            float height = goopPercentage * scaledGoopHeight;
+            float heightScale = goopPercentage * scaledGoopHeight;
+            float height = (maxY - yOffset) * heightScale;
             float fromY, toY;
-            fromY = minY;
-            toY = minY + (maxY - yOffset) * height;
+            fromY = minY + yOffset;
+            toY = fromY + height;
             renderScaledFluidCuboid(goop, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += height;
         }
