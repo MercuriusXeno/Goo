@@ -1,7 +1,6 @@
 package com.xeno.goop.setup;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.client.render.GoopBulbItemRenderer;
 import com.xeno.goop.client.render.GoopBulbTileRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;

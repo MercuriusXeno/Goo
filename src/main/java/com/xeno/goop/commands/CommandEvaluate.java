@@ -5,22 +5,25 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.xeno.goop.setup.MappingHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
-import net.minecraft.util.text.TranslationTextComponent;
 
-public class CommandSolidifier implements Command<CommandSource> {
-
-    private static final CommandSolidifier CMD = new CommandSolidifier();
-
+public class CommandEvaluate implements Command<CommandSource> {
+    private static final CommandEvaluate CMD = new CommandEvaluate();
     public static ArgumentBuilder<CommandSource, ?> register(CommandDispatcher<CommandSource> dispatcher) {
-        return Commands.literal("solidifier")
+        return Commands.literal("eval")
                 .requires(cs -> cs.hasPermissionLevel(0))
                 .executes(CMD);
     }
+
     @Override
     public int run(CommandContext<CommandSource> context) throws CommandSyntaxException {
-        context.getSource().sendFeedback(new TranslationTextComponent("message.goop.command.solidifier"), false);
+        if (Minecraft.getInstance().world == null) {
+            return 0;
+        }
+        MappingHandler.reloadMappings(Minecraft.getInstance().world);
         return 0;
     }
 }

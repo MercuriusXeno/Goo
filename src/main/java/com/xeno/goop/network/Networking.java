@@ -1,8 +1,10 @@
 package com.xeno.goop.network;
 
 import com.xeno.goop.GoopMod;
-import net.minecraft.entity.player.PlayerEntity;
+import com.xeno.goop.setup.MappingHandler;
+import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
@@ -11,6 +13,7 @@ import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 
 public class Networking {
     private static SimpleChannel INSTANCE;
@@ -45,5 +48,26 @@ public class Networking {
 
     public static void sendToServer(Object packet) {
         INSTANCE.sendToServer(packet);
+    }
+
+    public static void syncGoopValuesForEveryone() {
+        GoopValueSyncPacket packet = new GoopValueSyncPacket(serializeGoopMappings());
+        for (ServerPlayerEntity player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            sendRemotePacket(packet, player);
+        }
+    }
+
+    private static GoopValueSyncPacketData[] serializeGoopMappings() {
+        GoopValueSyncPacketData[] data = MappingHandler.createPacketData();
+        PacketBuffer packetBuffer = new PacketBuffer(Unpooled.buffer());
+        GoopValueSyncPacket.write(new GoopValueSyncPacket(data), packetBuffer);
+        packetBuffer.release();
+        return data;
+    }
+
+    public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {
+        if (player.server.isDedicatedServer() || !player.getGameProfile().getName().equals(player.server.getServerOwner())) {
+            INSTANCE.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+        }
     }
 }

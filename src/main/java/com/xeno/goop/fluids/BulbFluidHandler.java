@@ -2,6 +2,7 @@ package com.xeno.goop.fluids;
 
 import com.xeno.goop.setup.Config;
 import com.xeno.goop.tiles.GoopBulbTile;
+import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -11,7 +12,6 @@ public class BulbFluidHandler implements IFluidHandler {
     private final GoopBulbTile parent;
     public BulbFluidHandler(GoopBulbTile t) {
         parent = t;
-
     }
 
     @Override
@@ -56,14 +56,29 @@ public class BulbFluidHandler implements IFluidHandler {
     @Nonnull
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        // TODO
-        return FluidStack.EMPTY;
+        FluidStack s = parent.getLeastQuantityGoop();
+        FluidStack result = new FluidStack(s.getFluid(), Math.min(s.getAmount(), maxDrain));
+        if (action == FluidAction.EXECUTE) {
+            s.setAmount(s.getAmount() - result.getAmount());
+            if (s.getAmount() == 0) {
+                parent.goop.remove(s);
+            }
+        }
+
+        return result;
     }
 
     @Nonnull
     @Override
-    public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
-        // TODO
-        return FluidStack.EMPTY;
+    public FluidStack drain(FluidStack s, FluidAction action) {
+        FluidStack result = new FluidStack(s.getFluid(), s.getAmount());
+        if (action == FluidAction.EXECUTE) {
+            s.setAmount(s.getAmount() - result.getAmount());
+            if (s.getAmount() == 0) {
+                parent.goop.remove(parent.getSpecificGoopType(s.getFluid()));
+            }
+        }
+
+        return result;
     }
 }

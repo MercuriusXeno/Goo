@@ -2,18 +2,16 @@ package com.xeno.goop.setup;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingMode;
+import com.xeno.goop.GoopMod;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.nio.file.Path;
-import java.util.Dictionary;
-import java.util.List;
-import java.util.Map;
 
 @Mod.EventBusSubscriber
 public class Config {
+    public static final Path CONFIG_DIRECTORY;
 
     // This is the maximum work any machine (bulb or otherwise) can do in a single tick, irrespective of the number of bulbs connected.
     public static int DEFAULT_GOOP_TRANSFER_RATE = 15;
@@ -31,26 +29,15 @@ public class Config {
         return GOOP_BULB_TOTAL_CAPACITY.get();
     }
 
-    // format here is String (name of object), List of Map<String, Integer> is Goop Registry Paths and Integer amounts in mB.
-    public static ForgeConfigSpec.ConfigValue<Map<String, List<Map<String, Integer>>>> GOOP_ITEM_VALUES;
-
     public static ForgeConfigSpec COMMON_CONFIG;
 
     public static final String CATEGORY_MACHINES = "machines";
 
-    public static final String CATEGORY_MAPPINGS = "baselineMappings";
-
-    public static final String DERIVED_MAPPINGS = "derivedMappings";
-
-    public static final String DENIED_MAPPINGS = "deniedMappings";
-
     private static ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
 
     static {
+        CONFIG_DIRECTORY = FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(GoopMod.MOD_ID), GoopMod.MOD_ID);
         setupGeneralMachineConfig();
-        setupValueMappingConfig();
-        setupDerivedMappingConfig();
-        setupDeniedMappingConfig();
 
         COMMON_CONFIG = COMMON_BUILDER.build();
     }
@@ -64,25 +51,8 @@ public class Config {
         COMMON_BUILDER.pop();
     }
 
-    // establish baseline values for items which aren't the product of a recipe output, or are but have explicit specifications by design.
-    private static void setupValueMappingConfig() {
-        COMMON_BUILDER.comment("Baseline value mappings").push(CATEGORY_MAPPINGS);
-        COMMON_BUILDER.pop();
-    }
-
-    // establish derivative values based on recipe outputs.
-    private static void setupDerivedMappingConfig() {
-        COMMON_BUILDER.comment("Derived value mappings").push(DERIVED_MAPPINGS);
-        COMMON_BUILDER.pop();
-    }
-
-    private static void setupDeniedMappingConfig() {
-        COMMON_BUILDER.comment("Denied value mappings").push(DENIED_MAPPINGS);
-        COMMON_BUILDER.pop();
-    }
-
-    public static void loadConfig(ForgeConfigSpec spec, Path path) {
-
+    public static void loadConfig(ForgeConfigSpec spec, Path path)
+    {
         final CommentedFileConfig configData = CommentedFileConfig.builder(path)
                 .sync()
                 .autosave()
@@ -91,18 +61,5 @@ public class Config {
 
         configData.load();
         spec.setConfig(configData);
-    }
-
-    @SubscribeEvent
-    public static void onLoad(final ModConfig.Loading configEvent) {
-        // not sure what kind of listening conditions need to go here.
-        // the goal is to validate all items have values, and ones that don't are supposed to not have them
-        // also validating that recipe outputs are consistent with inputs, or have explicit overrides/transformations in the baseline.
-        ValueValidation.validateMappings();
-    }
-
-    @SubscribeEvent
-    public static void onReload(final ModConfig.Reloading configEvent) {
-        // NOOP
     }
 }

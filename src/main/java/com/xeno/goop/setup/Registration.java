@@ -4,7 +4,6 @@ import com.xeno.goop.GoopMod;
 import com.xeno.goop.blocks.GoopBulb;
 import com.xeno.goop.blocks.Goopifier;
 import com.xeno.goop.blocks.Solidifier;
-import com.xeno.goop.client.render.GoopBulbItemRenderer;
 import com.xeno.goop.fluids.*;
 import com.xeno.goop.items.Gasket;
 import com.xeno.goop.tiles.GoopBulbTile;
@@ -18,7 +17,6 @@ import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.FluidAttributes;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -44,7 +42,7 @@ public class Registration {
 
     // Goop Bulbs registration
     public static final RegistryObject<GoopBulb> GOOP_BULB = BLOCKS.register("goop_bulb", GoopBulb::new);
-    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(ModSetup.ITEM_GROUP).maxStackSize(1).setISTER(() -> GoopBulbItemRenderer::new)));
+    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(ModSetup.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GoopBulbTile>> GOOP_BULB_TILE = TILES.register("goop_bulb", () -> TileEntityType.Builder.create(GoopBulbTile::new, GOOP_BULB.get()).build(null));
 
     // Goopifier registration
@@ -66,5 +64,4 @@ public class Registration {
     public static final RegistryObject<Fluid> FAUNAL_GOOP = FLUIDS.register("faunal_goop", () -> new FaunalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/faunal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/faunal_flow"))));
     public static final RegistryObject<Fluid> FUNGAL_GOOP = FLUIDS.register("fungal_goop", () -> new FungalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/fungal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/fungal_flow"))));
     public static final RegistryObject<Fluid> REGAL_GOOP = FLUIDS.register("regal_goop", () -> new RegalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/regal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/regal_flow"))));
-
 }

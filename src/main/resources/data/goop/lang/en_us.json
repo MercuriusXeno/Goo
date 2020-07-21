@@ -1,0 +1,14 @@
+{
+  "block.goop.goop_bulb": "Goop Bulb",
+  "block.goop.goopifier": "Goopifier",
+  "block.goop.solidifier": "Solidifier",
+  "item.goop.gasket": "Gasket",
+  "fluid.goop.volatile_goop": "Volatile Goop",
+  "fluid.goop.aquatic_goop": "Aquatic Goop",
+  "fluid.goop.earthen_goop": "Earthen Goop",
+  "fluid.goop.esoteric_goop": "Esoteric Goop",
+  "fluid.goop.floral_goop": "Floral Goop",
+  "fluid.goop.faunal_goop": "Faunal Goop",
+  "fluid.goop.fungal_goop": "Fungal Goop",
+  "fluid.goop.regal_goop": "Regal Goop"
+}
