@@ -1,7 +1,7 @@
 package com.xeno.goop.datagen;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.Registration;
+import com.xeno.goop.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.ExistingFileHelper;
@@ -14,7 +14,7 @@ public class Items extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        singleTexture(Registration.GASKET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+        singleTexture(Registry.GASKET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GoopMod.MOD_ID, "item/gasket"));
     }
 }

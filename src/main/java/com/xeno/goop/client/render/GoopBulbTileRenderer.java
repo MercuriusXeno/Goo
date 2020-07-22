@@ -3,7 +3,7 @@ package com.xeno.goop.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goop.setup.Config;
-import com.xeno.goop.setup.Registration;
+import com.xeno.goop.setup.Registry;
 import com.xeno.goop.tiles.GoopBulbTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
@@ -227,6 +227,6 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registration.GOOP_BULB_TILE.get(), GoopBulbTileRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOOP_BULB_TILE.get(), GoopBulbTileRenderer::new);
     }
 }

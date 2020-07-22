@@ -13,12 +13,12 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 
 @Mod.EventBusSubscriber(modid = GoopMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class ModSetup {
+public class CommonSetup {
     public static final ItemGroup ITEM_GROUP = new ItemGroup("goop")
     {
         @Override
         public ItemStack createIcon() {
-            return new ItemStack(Registration.SOLIDIFIER.get());
+            return new ItemStack(Registry.SOLIDIFIER.get());
         }
     };
 
@@ -38,7 +38,14 @@ public class ModSetup {
         if (!(loadEvent.getWorld() instanceof World)) {
             return;
         }
+
         World world = (World)loadEvent.getWorld();
+
+        // only fire this on the server, integrated or dedicated, not the client.
+        if (world.isRemote()) {
+            return;
+        }
+
         MappingHandler.reloadMappings(world);
     }
 }

@@ -1,6 +1,6 @@
 package com.xeno.goop.items;
 
-import com.xeno.goop.setup.ModSetup;
+import com.xeno.goop.setup.CommonSetup;
 import net.minecraft.item.Item;
 
 public class Gasket extends Item {
@@ -8,7 +8,7 @@ public class Gasket extends Item {
         super(
                 new Item.Properties()
                         .maxStackSize(64)
-                .group(ModSetup.ITEM_GROUP)
+                .group(CommonSetup.ITEM_GROUP)
         );
     }
 }

@@ -1,16 +1,11 @@
 package com.xeno.goop.tiles;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.blocks.GoopBulb;
 import com.xeno.goop.fluids.BulbFluidHandler;
-import com.xeno.goop.fluids.GoopBase;
 import com.xeno.goop.network.FluidUpdatePacket;
 import com.xeno.goop.network.Networking;
 import com.xeno.goop.setup.Config;
-import com.xeno.goop.setup.Registration;
-import com.xeno.goop.setup.Tags;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
+import com.xeno.goop.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
@@ -20,9 +15,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.model.data.IModelData;
-import net.minecraftforge.client.model.data.ModelDataMap;
-import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -41,7 +33,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
     public List<FluidStack> goop = new ArrayList<>();
 
     public GoopBulbTile() {
-        super(Registration.GOOP_BULB_TILE.get());
+        super(Registry.GOOP_BULB_TILE.get());
     }
 
     @Override
@@ -51,9 +43,9 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         }
 
         if (GoopMod.DEBUG) {
-            fluidHandler.fill(new FluidStack(Registration.VOLATILE_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fluidHandler.fill(new FluidStack(Registration.AQUATIC_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fluidHandler.fill(new FluidStack(Registration.EARTHEN_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registry.VOLATILE_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registry.AQUATIC_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
+            fluidHandler.fill(new FluidStack(Registry.EARTHEN_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
         }
 
         doVerticalDrain();
@@ -301,7 +293,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
     }
 
     public ItemStack getBulbStack() {
-        ItemStack stack = new ItemStack(Registration.GOOP_BULB.get());
+        ItemStack stack = new ItemStack(Registry.GOOP_BULB.get());
 
         CompoundNBT bulbTag = new CompoundNBT();
         write(bulbTag);

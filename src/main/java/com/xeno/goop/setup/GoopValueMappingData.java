@@ -1,10 +1,12 @@
 package com.xeno.goop.setup;
 
+import com.google.common.collect.Comparators;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class GoopValueMappingData {
@@ -72,5 +74,18 @@ public class GoopValueMappingData {
         mappingEntry.addProperty("fluidResourceLocation", data.getFluidResourceLocation().toString());
         mappingEntry.addProperty("amount", data.getAmount());
         return mappingEntry;
+    }
+
+    public boolean tryAddingDefaultMapping(String m) {
+        // todo
+        return false;
+    }
+
+    public void addEmptyMapping(String m) {
+        mappings.add(new GoopValueMapping(m, new ArrayList<>()));
+    }
+
+    public void sortMappings() {
+        mappings.sort(GoopValueMapping.registryNameSansNamespaceComparator);
     }
 }

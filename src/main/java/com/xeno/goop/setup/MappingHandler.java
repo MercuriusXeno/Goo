@@ -1,13 +1,8 @@
 package com.xeno.goop.setup;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonStreamParser;
+import com.google.gson.*;
 import com.xeno.goop.network.GoopValueSyncPacketData;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
@@ -22,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class MappingHandler {
@@ -30,10 +26,11 @@ public class MappingHandler {
     private static GoopValueMappingData goopValueMappings;
 
     public static void reloadMappings(@Nonnull World world) {
-        tryLoadFromFile(world.getWorldInfo().getWorldName());
+        tryLoadFromFile(world);
     }
 
-    private static void tryLoadFromFile(String worldName) {
+    private static void tryLoadFromFile(World world) {
+        String worldName = world.getWorldInfo().getWorldName();
         Path worldPath = Minecraft.getInstance().getSaveLoader().getSavesDir().resolve(worldName);
         Path goopPath = worldPath.resolve("goop");
         File goopDir = new File(goopPath.toUri());
@@ -79,34 +76,76 @@ public class MappingHandler {
 
         GoopValueMappingData data = GoopValueMappingData.deserializeFromJson(parentArray);
 
-        edifyMappingData(data);
+        seedAllRecipeOutputItemNames(world);
+
+        edifyBaseItemMappingData(data);
+
+        edifyRecipeOutputMappingData(data);
+
+        data.sortMappings();
+
+        // todo scan recipes for exploit loops or disparate quantity yields
 
         MappingHandler.goopValueMappings = data;
 
         try (FileWriter writer = new FileWriter(mappingsFile.getAbsolutePath())) {
-            writer.write(GoopValueMappingData.serializeMappingData(MappingHandler.goopValueMappings).toString());
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            JsonParser jp = new JsonParser();
+            JsonElement je = jp.parse(GoopValueMappingData.serializeMappingData(MappingHandler.goopValueMappings).toString());
+            String prettyJson = gson.toJson(je);
+            writer.write(prettyJson);
             writer.flush();
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
     }
 
-    private static void edifyMappingData(GoopValueMappingData data) {
+    private static void edifyBaseItemMappingData(GoopValueMappingData data) {
         List<String> missingMappings = scanRegistriesForUnmappedResourceLocations(data);
 
-        // TODO fill in any missing mappings using procedural capture and default values where able, or create denial entries as needed, et al.
+        missingMappings.forEach((m) -> {
+            if (allRecipeItems.stream().anyMatch(r -> r.equals(m))) {
+                return;
+            }
+            if (!data.tryAddingDefaultMapping(m)) {
+                data.addEmptyMapping(m);
+            }
+        });
+    }
+
+    private static void edifyRecipeOutputMappingData(GoopValueMappingData data) {
+        List<String> missingMappings = scanRegistriesForUnmappedResourceLocations(data);
+
+        missingMappings.forEach((m) -> {
+            if (allRecipeItems.stream().noneMatch(r -> r.equals(m))) {
+                return;
+            }
+            if (!data.tryAddingDefaultMapping(m)) {
+                data.addEmptyMapping(m);
+            }
+        });
     }
 
     public static List<String> scanRegistriesForUnmappedResourceLocations(GoopValueMappingData data) {
-        List<String> result = new ArrayList<>();
-        result.addAll(allRegistryItems.stream().filter(r -> !data.getMappings().contains(r)).collect(Collectors.toList()));
-        return result;
+        return allRegistryItems.stream().filter(r -> data.getMappings().stream().noneMatch(m -> m.getItemResourceLocation().equals(r))).collect(Collectors.toList());
     }
 
     private static final List<String> allRegistryItems = getAllItemRegistryNames();
     private static List<String> getAllItemRegistryNames() {
-        return ForgeRegistries.ITEMS.getValues().stream().map(x -> x.getRegistryName().toString()).collect(Collectors.toList());
+        return ForgeRegistries.ITEMS.getValues().stream().map(x -> Objects.requireNonNull(x.getRegistryName()).toString()).collect(Collectors.toList());
     }
+
+    private static List<String> allRecipeItems;
+    private static void seedAllRecipeOutputItemNames(@Nonnull World world) {
+        if (allRecipeItems == null) {
+            allRecipeItems = new ArrayList<>();
+        } else {
+            return;
+        }
+        RecipeManager recMan = world.getRecipeManager();
+        recMan.getRecipes().forEach(r -> allRecipeItems.add(Objects.requireNonNull(r.getRecipeOutput().getItem().getRegistryName()).toString()));
+    }
+
 
     private static void scanRecipesForMappings(@Nonnull World world) {
         RecipeManager recMan = world.getRecipeManager();

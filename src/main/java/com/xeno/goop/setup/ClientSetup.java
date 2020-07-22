@@ -17,6 +17,6 @@ public class ClientSetup {
     }
 
     private static void setGoopBulbTransparencyRenderLayer() {
-        RenderTypeLookup.setRenderLayer(Registration.GOOP_BULB.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(Registry.GOOP_BULB.get(), RenderType.getCutout());
     }
 }

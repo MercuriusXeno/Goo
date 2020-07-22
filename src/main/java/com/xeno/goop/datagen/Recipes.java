@@ -1,7 +1,7 @@
 package com.xeno.goop.datagen;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.Registration;
+import com.xeno.goop.setup.Registry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.block.Blocks;
 import net.minecraft.data.*;
@@ -25,7 +25,7 @@ public class Recipes extends RecipeProvider {
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(Registration.GASKET.get())
+        ShapelessRecipeBuilder.shapelessRecipe(Registry.GASKET.get())
                 .addIngredient(Items.HONEY_BLOCK)
                 .addIngredient(Items.SLIME_BLOCK)
                 .addIngredient(ItemTags.WOOL)
@@ -35,44 +35,44 @@ public class Recipes extends RecipeProvider {
     }
 
     private void registerGoopBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registration.GOOP_BULB.get())
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOOP_BULB.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
-                .key('o', Registration.GASKET.get())
+                .key('o', Registry.GASKET.get())
                 .key('e', Items.ENDER_PEARL)
                 .key('#', Tags.Items.GLASS)
                 .setGroup(GoopMod.MOD_ID)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registration.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
 
     private void registerGoopifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registration.GOOPIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOOPIFIER.get())
                 .patternLine("non")
                 .patternLine("pcp")
                 .patternLine("opo")
                 .key('n', Items.NETHER_BRICKS)
-                .key('o', Registration.GASKET.get())
+                .key('o', Registry.GASKET.get())
                 .key('p', Items.PISTON)
                 .key('c', Items.MAGMA_BLOCK)
                 .setGroup(GoopMod.MOD_ID)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registration.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registration.SOLIDIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(Registry.SOLIDIFIER.get())
                 .patternLine("ror")
                 .patternLine("pxp")
                 .patternLine("o#o")
                 .key('r', Items.REDSTONE_LAMP)
-                .key('o', Registration.GASKET.get())
+                .key('o', Registry.GASKET.get())
                 .key('p', Items.STICKY_PISTON)
                 .key('x', Items.DISPENSER)
                 .key('#', Items.ITEM_FRAME)
                 .setGroup(GoopMod.MOD_ID)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registration.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
 }

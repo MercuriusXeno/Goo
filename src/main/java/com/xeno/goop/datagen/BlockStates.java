@@ -1,7 +1,7 @@
 package com.xeno.goop.datagen;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.Registration;
+import com.xeno.goop.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -39,8 +39,8 @@ public class BlockStates extends BlockStateProvider {
                 .end();
         model.texture("end", end);
         model.texture("side", side);
-        simpleBlock(Registration.GOOP_BULB.get(), model);
-        simpleBlockItem(Registration.GOOP_BULB.get(), model);
+        simpleBlock(Registry.GOOP_BULB.get(), model);
+        simpleBlockItem(Registry.GOOP_BULB.get(), model);
     }
 
     private void registerGoopifier() {
@@ -56,8 +56,8 @@ public class BlockStates extends BlockStateProvider {
         BlockModelBuilder modelActive = models()
                 .cube("goopifier_powered", bottom, top, front_on, back, side, side)
                 .texture("particle", front_on);
-        horizontalBlock(Registration.GOOPIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
-        simpleBlockItem(Registration.GOOPIFIER.get(), model);
+        horizontalBlock(Registry.GOOPIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
+        simpleBlockItem(Registry.GOOPIFIER.get(), model);
     }
 
     private void registerSolidifier() {
@@ -76,7 +76,7 @@ public class BlockStates extends BlockStateProvider {
         BlockModelBuilder modelActive = models()
                 .cube("solidifier_powered", bottom, top_on, front_on, back_on, side_on, side_on)
                 .texture("particle", front_on);
-        horizontalBlock(Registration.SOLIDIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
-        simpleBlockItem(Registration.SOLIDIFIER.get(), model);
+        horizontalBlock(Registry.SOLIDIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
+        simpleBlockItem(Registry.SOLIDIFIER.get(), model);
     }
 }
