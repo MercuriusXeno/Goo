@@ -1,12 +1,9 @@
 package com.xeno.goop.setup;
 
-import com.google.common.collect.Comparators;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class GoopValueMappingData {

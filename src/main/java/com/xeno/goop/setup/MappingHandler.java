@@ -9,11 +9,10 @@ import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.RecipeManager;
 import net.minecraft.world.World;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.logging.log4j.core.jackson.Log4jJsonObjectMapper;
+
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,17 +62,19 @@ public class MappingHandler {
         }
 
         JsonArray parentArray = new JsonArray();
-        try (FileReader reader = new FileReader(mappingsFile.getAbsolutePath())) {
-            JsonStreamParser parser = new JsonStreamParser(reader);
-            // without this an unexpected EOF can throw an error, but this should theoretically dodge it.
-            // there should only be a single element in the buffer, the parent level array.
-            if (parser.hasNext()) {
-                parentArray = parser.next().getAsJsonArray();
+        if (mappingsFile.length() > 0) {
+            try (FileReader reader = new FileReader(mappingsFile.getAbsolutePath())) {
+                JsonStreamParser parser = new JsonStreamParser(reader);
+                if (parser.hasNext()) {
+                    parentArray = parser.next().getAsJsonArray();
+                }
+            } catch (EOFException eof) {
+                System.out.println("EOF on mappings file - not a real error, you just didn't have Goop mappings. This is fine!");
+                eof.printStackTrace();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
             }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
         }
-
         GoopValueMappingData data = GoopValueMappingData.deserializeFromJson(parentArray);
 
         seedAllRecipeOutputItemNames(world);
@@ -97,6 +98,17 @@ public class MappingHandler {
             writer.flush();
         } catch (IOException ioe) {
             ioe.printStackTrace();
+        }
+    }
+
+
+    private static final Gson gsonTester = new Gson();
+    public static boolean isJSONValid(String jsonInString) {
+        try {
+            gsonTester.fromJson(jsonInString, Object.class);
+            return true;
+        } catch(com.google.gson.JsonSyntaxException ex) {
+            return false;
         }
     }
 
