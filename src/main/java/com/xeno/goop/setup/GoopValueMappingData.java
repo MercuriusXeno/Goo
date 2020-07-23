@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GoopValueMappingData {
     private List<GoopValueMapping> mappings;
@@ -74,8 +75,15 @@ public class GoopValueMappingData {
     }
 
     public boolean tryAddingDefaultMapping(String m) {
-        // todo
-        return false;
+        List<GoopValueMapping> matchingDefaults = DefaultMappings.values.stream().filter(v -> v.getItemResourceLocation().equals(m)).collect(Collectors.toList());
+        if (matchingDefaults.size() == 0) {
+            return false;
+        }
+        if (matchingDefaults.size() > 1) {
+            System.out.println("Default mapping error: more than one default was found for " + m +". Please report this to Goop! Using first found.");
+        }
+        mappings.add(matchingDefaults.get(0));
+        return true;
     }
 
     public void addEmptyMapping(String m) {
@@ -84,5 +92,9 @@ public class GoopValueMappingData {
 
     public void sortMappings() {
         mappings.sort(GoopValueMapping.registryNameSansNamespaceComparator);
+    }
+
+    public void clear() {
+        mappings.clear();
     }
 }

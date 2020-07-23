@@ -6,6 +6,9 @@ import com.xeno.goop.network.Networking;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.server.ServerMultiWorld;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -27,25 +30,11 @@ public class CommonSetup {
         Networking.registerMessages();
     }
 
+    // the server starting event unlocks the mapping loader for a one-time use
     @SubscribeEvent
     public static void serverLoad(FMLServerStartingEvent event)
     {
         GoopCommands.register(event.getCommandDispatcher());
-    }
-
-    @SubscribeEvent
-    public static void onWorldLoad(WorldEvent.Load loadEvent) {
-        if (!(loadEvent.getWorld() instanceof World)) {
-            return;
-        }
-
-        World world = (World)loadEvent.getWorld();
-
-        // only fire this on the server, integrated or dedicated, not the client.
-        if (world.isRemote()) {
-            return;
-        }
-
-        MappingHandler.reloadMappings(world);
+        MappingHandler.reloadMappings(event.getServer().getWorld(DimensionType.OVERWORLD));
     }
 }

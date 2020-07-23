@@ -1,9 +1,11 @@
 package com.xeno.goop.setup;
 
 import com.google.gson.*;
+import com.xeno.goop.GoopMod;
 import com.xeno.goop.network.GoopValueSyncPacketData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.RecipeManager;
@@ -21,9 +23,7 @@ import java.util.stream.Collectors;
 
 public class MappingHandler {
     private static final String MAPPING_SAVE_DATA_FILENAME = "goopMappings.json";
-
     private static GoopValueMappingData goopValueMappings;
-
     public static void reloadMappings(@Nonnull World world) {
         tryLoadFromFile(world);
     }
@@ -101,25 +101,25 @@ public class MappingHandler {
         }
     }
 
-
-    private static final Gson gsonTester = new Gson();
-    public static boolean isJSONValid(String jsonInString) {
-        try {
-            gsonTester.fromJson(jsonInString, Object.class);
-            return true;
-        } catch(com.google.gson.JsonSyntaxException ex) {
-            return false;
-        }
-    }
-
     private static void edifyBaseItemMappingData(GoopValueMappingData data) {
         List<String> missingMappings = scanRegistriesForUnmappedResourceLocations(data);
-
+        if (missingMappings.size() == 0) {
+            return;
+        }
+        if (GoopMod.DEBUG) {
+            System.out.println("Missing baseline mappings! (this is not an error):");
+        }
         missingMappings.forEach((m) -> {
             if (allRecipeItems.stream().anyMatch(r -> r.equals(m))) {
                 return;
             }
             if (!data.tryAddingDefaultMapping(m)) {
+                if (GoopMod.DEBUG) {
+                    int namespaceIndex = m.indexOf(":");
+                    String namespaceInvariantRegistryName = m.substring(namespaceIndex);
+                    String allCapsRegistryName = namespaceInvariantRegistryName.toUpperCase();
+                    System.out.println("addMapping(Items." + allCapsRegistryName + ", goopValue(,))");
+                }
                 data.addEmptyMapping(m);
             }
         });
@@ -139,7 +139,7 @@ public class MappingHandler {
     }
 
     public static List<String> scanRegistriesForUnmappedResourceLocations(GoopValueMappingData data) {
-        return allRegistryItems.stream().filter(r -> data.getMappings().stream().noneMatch(m -> m.getItemResourceLocation().equals(r))).collect(Collectors.toList());
+        return allRegistryItems.stream().filter(r -> data.getMappings().stream().noneMatch(m -> m.getItemResourceLocation().equals(r) && m.getGoopValues().size() > 0)).collect(Collectors.toList());
     }
 
     private static final List<String> allRegistryItems = getAllItemRegistryNames();
