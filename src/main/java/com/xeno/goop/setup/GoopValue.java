@@ -18,4 +18,12 @@ public class GoopValue {
     public int getAmount() {
         return amount;
     }
+
+    public void setAmount(int i) {
+        this.amount = i;
+    }
+
+    public GoopValue copy() {
+        return new GoopValue(this.getFluidResourceLocation(), this.getAmount());
+    }
 }
