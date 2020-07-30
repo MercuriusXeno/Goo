@@ -1,9 +1,9 @@
 package com.xeno.goop.setup;
 
 import com.google.gson.*;
-import com.xeno.goop.GoopMod;
+import com.google.gson.reflect.TypeToken;
+import com.xeno.goop.library.*;
 import com.xeno.goop.network.GoopValueSyncPacketData;
-import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.crafting.IRecipe;
@@ -11,56 +11,104 @@ import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.RecipeManager;
 import net.minecraft.world.World;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.apache.logging.log4j.core.jackson.Log4jJsonObjectMapper;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.lang.reflect.Type;
+import java.util.*;
+
+import static com.xeno.goop.library.Compare.*;
+import static com.xeno.goop.library.Helper.*;
+import static com.xeno.goop.library.GoopMapping.*;
+import static com.xeno.goop.library.SolvedState.SOLVED;
+import static com.xeno.goop.library.SolvedState.UNSOLVED;
+
 
 public class MappingHandler {
     private static final String MAPPING_SAVE_DATA_FILENAME = "goopMappings.json";
-    private static GoopValueMappingData goopValueMappings;
-    public static void reloadMappings(@Nonnull World world) {
+    private Map<String, GoopMapping> values = new TreeMap<>(stringLexicographicalComparator);
+    private Gson gsonInstance = new GsonBuilder().setPrettyPrinting().create();
+    private Type jsonSerializerType = new TypeToken<TreeMap<String, GoopMapping>>(){}.getType();
+
+    public void reloadMappings(@Nonnull World world) {
         tryLoadFromFile(world);
     }
 
-    private static void tryLoadFromFile(World world) {
-        String worldName = world.getWorldInfo().getWorldName();
-        Path worldPath = Minecraft.getInstance().getSaveLoader().getSavesDir().resolve(worldName);
-        Path goopPath = worldPath.resolve("goop");
-        File goopDir = new File(goopPath.toUri());
-        boolean madeDir = goopDir.isDirectory();
+    /**
+     * @param world The world we're using to scrape for recipes, primarily, but also the save file we're using.
+     * @return true if the load didn't fail for any reason.
+     */
+    private boolean tryLoadFromFile(World world) {
+        File mappingsFile = FileHelper.getOrCreateMappingDirectoryWithFileName(world, MAPPING_SAVE_DATA_FILENAME);
 
-        try {
-            if (!madeDir) {
-                if (!goopDir.mkdir()) {
-                    throw new IOException("Mapping directory in save file not found and could not be created!");
-                }
-            }
-        } catch (IOException ed) {
-            ed.printStackTrace();
-            return;
+        if (mappingsFile == null) {
+            return false;
         }
 
-        File mappingsFile = goopPath.resolve(MAPPING_SAVE_DATA_FILENAME).toFile();
-        try {
-            if (!mappingsFile.isFile()) {
-                if (!mappingsFile.createNewFile()) {
-                    throw new IOException("Mappings file not found and could not be created!");
-                }
+        values = readFromJsonMappingsFile(mappingsFile);
+
+        SolvedState solvedState = solvedStateOf(values);
+
+        initializeBaselineValues();
+
+        boolean hasImprovement = true;
+        // begin the iterative mapping solution
+        while (solvedState == UNSOLVED || hasImprovement) {
+            hasImprovement = false;
+            // seed mappings where the recipe has an input that has an explicit denial as one of the inputs
+            // and no suitable replacements with undeniable mappings. These outputs must implicitly be denied as well.
+            ProgressState denialProgress = seedRecipeDeniedMappings(world);
+
+            // then seed based on recipe inputs and their respective outputs
+            ProgressState recipeDerivationProgress = seedRecipeDerivedMappings(world);
+
+            // seed item values that are predicated on container items, which are usually the result of some recipe
+            // so we try to fire this after recipes, but we're not promised to see an improvement here.
+            ProgressState containerItemProgress = seedContainerItemValues();
+
+            // seed the forced equivalencies, for circumstances where recipe equivalence doesn't exist.
+            ForcedEquivalencies forcedEquivalencies = new ForcedEquivalencies();
+            ProgressState forcedEquivalencyProgress = forcedEquivalencies.pushTo(values);
+
+            if (Helper.anyProgress(denialProgress, recipeDerivationProgress, containerItemProgress, forcedEquivalencyProgress)) {
+                hasImprovement = true;
             }
-            if (!mappingsFile.canRead() || !mappingsFile.canWrite()) {
-                throw new IOException("Improper access to the mapping file contents!");
-            }
-        } catch (IOException ef){
-            ef.printStackTrace();
-            return;
         }
 
+        // todo scan recipes for exploit loops or disparate quantity yields
+
+        tryWritingMappingFile(mappingsFile);
+
+        return true;
+    }
+
+    private void tryWritingMappingFile(File mappingsFile) {
+        try (FileWriter writer = new FileWriter(mappingsFile.getAbsolutePath())) {
+            String jsonString = gsonInstance.toJson(values, jsonSerializerType);
+            writer.write(jsonString);
+            writer.flush();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    private void initializeBaselineValues() {
+        // seed universal unknowns. Everything should at least have an unknown value, but don't replace existing.
+        ForgeRegistries.ITEMS.getValues().forEach(i -> values.put(name(i), values.getOrDefault(name(i), UNKNOWN)));
+
+        // seed defaults first, this won't get everything, but it hits a lot of base items
+        new DefaultMappings().pushTo(values);
+
+        // seed denial mappings, this prevents false positives in the set that we don't desire mappings for.
+        new DeniedMappings().pushTo(values);
+
+    }
+
+    private SolvedState solvedStateOf(Map<String, GoopMapping> values) {
+        return values.entrySet().stream().noneMatch(v -> v.getValue().isUnknown()) ? SOLVED : UNSOLVED;
+    }
+
+    private Map<String, GoopMapping> readFromJsonMappingsFile(File mappingsFile) {
         JsonArray parentArray = new JsonArray();
         if (mappingsFile.length() > 0) {
             try (FileReader reader = new FileReader(mappingsFile.getAbsolutePath())) {
@@ -75,123 +123,216 @@ public class MappingHandler {
                 ioe.printStackTrace();
             }
         }
-        GoopValueMappingData data = GoopValueMappingData.deserializeFromJson(parentArray);
 
-        seedAllRecipeOutputItemNames(world);
+        return gsonInstance.fromJson(parentArray, jsonSerializerType);
+    }
 
-        edifyBaseItemMappingData(data);
+    public ProgressState seedContainerItemValues() {
+        boolean hasProgress = false;
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.MILK_BUCKET), values.get(name(Items.BUCKET)).add(faunal(15)));
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.WATER_BUCKET), values.get(name(Items.BUCKET)).add(aquatic(15)));
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.LAVA_BUCKET), values.get(name(Items.BUCKET)).add(burning(30000)));
+        // honey bottle + (sugar * 3) + glass bottle
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.HONEY_BOTTLE), values.get(name(Items.GLASS_BOTTLE)).add(values.get(name(Items.SUGAR)).multiply(3)));
 
-        edifyRecipeOutputMappingData(data);
+        return hasProgress ? ProgressState.IMPROVED : ProgressState.STAGNANT;
+    }
 
-        data.sortMappings();
-
-        // todo scan recipes for exploit loops or disparate quantity yields
-
-        MappingHandler.goopValueMappings = data;
-
-        try (FileWriter writer = new FileWriter(mappingsFile.getAbsolutePath())) {
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            JsonParser jp = new JsonParser();
-            JsonElement je = jp.parse(GoopValueMappingData.serializeMappingData(MappingHandler.goopValueMappings).toString());
-            String prettyJson = gson.toJson(je);
-            writer.write(prettyJson);
-            writer.flush();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
+    public boolean tryAddingContainerItemValue(String name, GoopMapping mapping) {
+        if (!values.containsKey(name) || values.get(name).isUnknown() || mapping.isStrongerThan(values.get(name))) {
+            values.put(name, mapping);
+            return true;
         }
+        return false;
     }
 
-    private static void edifyBaseItemMappingData(GoopValueMappingData data) {
-        List<String> missingMappings = scanRegistriesForUnmappedResourceLocations(data);
-        if (missingMappings.size() == 0) {
-            return;
-        }
-        if (GoopMod.DEBUG) {
-            System.out.println("Missing baseline mappings! (this is not an error):");
-        }
-        missingMappings.forEach((m) -> {
-            if (allRecipeItems.stream().anyMatch(r -> r.equals(m))) {
-                return;
-            }
-            if (!data.tryAddingDefaultMapping(m)) {
-                if (GoopMod.DEBUG) {
-                    int namespaceIndex = m.indexOf(":");
-                    String namespaceInvariantRegistryName = m.substring(namespaceIndex);
-                    String allCapsRegistryName = namespaceInvariantRegistryName.toUpperCase();
-                    System.out.println("addMapping(Items." + allCapsRegistryName + ", goopValue(,))");
-                }
-                data.addEmptyMapping(m);
-            }
-        });
-    }
-
-    private static void edifyRecipeOutputMappingData(GoopValueMappingData data) {
-        List<String> missingMappings = scanRegistriesForUnmappedResourceLocations(data);
-
-        missingMappings.forEach((m) -> {
-            if (allRecipeItems.stream().noneMatch(r -> r.equals(m))) {
-                return;
-            }
-            if (!data.tryAddingDefaultMapping(m)) {
-                data.addEmptyMapping(m);
-            }
-        });
-    }
-
-    public static List<String> scanRegistriesForUnmappedResourceLocations(GoopValueMappingData data) {
-        return allRegistryItems.stream().filter(r -> data.getMappings().stream().noneMatch(m -> m.getItemResourceLocation().equals(r) && m.getGoopValues().size() > 0)).collect(Collectors.toList());
-    }
-
-    private static final List<String> allRegistryItems = getAllItemRegistryNames();
-    private static List<String> getAllItemRegistryNames() {
-        return ForgeRegistries.ITEMS.getValues().stream().map(x -> Objects.requireNonNull(x.getRegistryName()).toString()).collect(Collectors.toList());
-    }
-
-    private static List<String> allRecipeItems;
-    private static void seedAllRecipeOutputItemNames(@Nonnull World world) {
-        if (allRecipeItems == null) {
-            allRecipeItems = new ArrayList<>();
-        } else {
-            return;
-        }
+    private ProgressState seedRecipeDeniedMappings(World world) {
+        boolean hasProgress = false;
         RecipeManager recMan = world.getRecipeManager();
-        recMan.getRecipes().forEach(r -> allRecipeItems.add(Objects.requireNonNull(r.getRecipeOutput().getItem().getRegistryName()).toString()));
-    }
-
-
-    private static void scanRecipesForMappings(@Nonnull World world) {
-        RecipeManager recMan = world.getRecipeManager();
-        int recipeIndex = 0;
         for(IRecipe<?> r : recMan.getRecipes()) {
-            recipeIndex++;
             ItemStack output = r.getRecipeOutput();
-            System.out.print("Recipe index " + recipeIndex + " outputs " + output.getItem().getRegistryName().getPath());
+            String name = name(output);
+            // are we already denied?
+            if (values.get(name).isDenied()) {
+                continue;
+            }
             List<Ingredient> inputs = r.getIngredients();
-            System.out.print("| Valid inputs: ");
-            int inputIndex = 0;
-            for(Ingredient g : inputs) {
+            for (Ingredient g : inputs) {
                 if (g.hasNoMatchingItems()) {
                     continue;
                 }
-                inputIndex++;
-                System.out.print(inputIndex + ") ");
-                for(ItemStack s : g.getMatchingStacks()) {
-                    if (s.isEmpty()) {
-                        continue;
-                    }
-                    System.out.print(s.getItem().getRegistryName().getPath() + " ");
+                if (onlyDeniedMappingsExist(g)) {
+                    hasProgress = true;
+                    values.put(name, DENIED);
                 }
             }
-            System.out.println("");
         }
+        return hasProgress ? ProgressState.IMPROVED : ProgressState.STAGNANT;
     }
 
-    public static GoopValueSyncPacketData[] createPacketData() {
-        // TODO
+    private boolean onlyDeniedMappingsExist(Ingredient g) {
+        for(ItemStack s : g.getMatchingStacks()) {
+            if (s.isEmpty()) {
+                // empty list is acceptable here - there is no input to map.
+                // anything empty is a valid [matching] ingredient for must inherently also be empty or valueless.
+                return false;
+            }
+            String name = name(s);
+
+            if (values.containsKey(name)) {
+                GoopMapping currentInputMapping = values.get(name);
+                if (!currentInputMapping.isDenied()) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        // having reached this point we were only able to find denied mappings, so the result should be an implicit denial based on this one ingredient.
+        return true;
+    }
+
+    private ProgressState seedRecipeDerivedMappings(World world) {
+        // try to marry the recipe mappings to our current values and report whether we're stagnant
+        return Helper.trackedPush(reduceRecipesToFlatMap(world.getRecipeManager()), values);
+    }
+
+    private Map<String, GoopMapping> reduceRecipesToFlatMap(RecipeManager recMan) {
+        // instantiate a new map representing all the processed recipes and their respective GoopValueMappings
+        Map<IRecipe<?>, GoopMapping> rawRecipeMappings = new HashMap<>();
+        recMan.getRecipes().forEach(r -> {
+            // the input mapping will come back either valid or unknown.
+            GoopMapping inputMapping = processRecipe(r, rawRecipeMappings);
+            rawRecipeMappings.put(r, inputMapping);
+        });
+
+        // flatten this to a map where only the best values for each item are permitted
+        Map<String, GoopMapping> recipeMappings = new TreeMap<>(stringLexicographicalComparator);
+        for(Map.Entry<IRecipe<?>, GoopMapping> e : rawRecipeMappings.entrySet()) {
+            GoopMapping mapping = e.getValue();
+            if (mapping.isUnknown()) {
+                continue;
+            }
+            IRecipe<?> recipe = e.getKey();
+            String name = name(recipe);
+            GoopMapping result = !recipeMappings.containsKey(name) || mapping.isStrongerThan(recipeMappings.get(name)) ? mapping : recipeMappings.get(name);
+            recipeMappings.put(name,  result);
+        }
+
+        // return the reduced map
+        return recipeMappings;
+    }
+
+    private GoopMapping processRecipe(IRecipe<?> r, Map<IRecipe<?>, GoopMapping> recipeMappings)
+    {
+        ItemStack output = r.getRecipeOutput();
+        List<Ingredient> inputs = r.getIngredients();
+        GoopMapping product = EMPTY;
+        for (Ingredient g : inputs)
+        {
+            // ingredient is air or otherwise unmapped.
+            if (g.hasNoMatchingItems())
+            {
+                continue;
+            }
+
+            // get the lowest weight of this slot's inputs: any potential ingredient might not be worth as much as cognates. We want the lowest.
+            GoopMapping inputWorth = getLowestDensityMapping(recipeMappings, g);
+
+            product = product.add(inputWorth);
+        }
+
+        product = product.divide(output.getCount());
+
+        // divide the recipe net weight by its yield count, as so far we've only summed up the input values.
+        // if this results in a bad division the mapping gets unknown'd
+        return product;
+    }
+
+
+    private GoopMapping getLowestDensityMapping(Map<IRecipe<?>, GoopMapping> recipeMappings, Ingredient g) {
+        GoopMapping lowestResult = UNKNOWN;
+        for(ItemStack s : g.getMatchingStacks()) {
+            GoopMapping result = findLowestItemStackValueInExistingOrTheoreticalMappings(recipeMappings, s);
+            // something about this result isn't usable, we have to skip this input as a potential candidate.
+            // if we're being pessimistic, this mapping is invalidated.
+            if (result.isUnknown()) {
+                continue;
+            }
+            if (lowestResult == UNKNOWN || result.isStrongerThan(lowestResult)) {
+                lowestResult = result;
+            }
+        }
+
+        return lowestResult;
+    }
+
+    /**
+     * Returns the mapping from either existing mapping sources or our current library of recipe mappings, whichever we deem to be stronger.
+     * Basis of comparison is almost exclusively weight (goop quantity of the composition of all items in the recipe, whatever inputs are the cheapest).
+     * @param recipeMappings Mappings found by scraping world recipe management for inputs and outputs and their child values.
+     * @param stack The itemstack output we're analyzing to find the lowest value for.
+     * @return The goop mapping determined to be the strongest (lowest weight) out of all the mappings available to produce it.
+     */
+    private GoopMapping findLowestItemStackValueInExistingOrTheoreticalMappings(Map<IRecipe<?>, GoopMapping> recipeMappings, ItemStack stack) {
+        // if the stack is empty, return the zero mapping, meaning it is worth nothing. No result can be worth less than this.
+        if (stack.isEmpty()) {
+            return GoopMapping.EMPTY;
+        }
+
+        GoopMapping decidedMapping = pickStrongerMapping(values.get(name(stack)), getLowestOutputMapping(stack, recipeMappings));
+
+        if (decidedMapping.weight() == 0) {
+            return GoopMapping.UNKNOWN;
+        }
+
+        // the item is a container item which means crafting with it is "less" the container item in terms of input value.
+        if (stack.hasContainerItem()) {
+            GoopMapping containerMapping = findLowestItemStackValueInExistingOrTheoreticalMappings(recipeMappings, stack.getContainerItem());
+            // if we can't determine the value of the container item, the whole stack must causally be null.
+            if (containerMapping.isUnknown()) {
+                return GoopMapping.UNKNOWN;
+            }
+
+            decidedMapping = decidedMapping.subtract(containerMapping);
+        }
+
+        return decidedMapping;
+    }
+
+    private GoopMapping pickStrongerMapping(GoopMapping existingMapping, GoopMapping theoreticalMapping) {
+        if (existingMapping.isUnusable()) {
+            return theoreticalMapping;
+        } else {
+            if (theoreticalMapping.isUnknown()) {
+                return existingMapping;
+            }
+        }
+        return existingMapping.isStrongerThan(theoreticalMapping) ? existingMapping : theoreticalMapping;
+    }
+
+    private GoopMapping getLowestOutputMapping(String output, Map<IRecipe<?>, GoopMapping> recipeMappings) {
+        Map.Entry<IRecipe<?>, GoopMapping> lowestResult = recipeMappings.entrySet().stream()
+                .filter(m -> Objects.requireNonNull(m.getKey().getRecipeOutput().getItem().getRegistryName()).toString().equals(output))
+                .min(recipeGoopMappingWeightComparator)
+                .orElse(null);
+
+        if (lowestResult == null) {
+            return UNKNOWN;
+        }
+
+        return lowestResult.getValue();
+    }
+
+    private GoopMapping getLowestOutputMapping(ItemStack output, Map<IRecipe<?>, GoopMapping> recipeMappings) {
+        return getLowestOutputMapping(name(output), recipeMappings);
+    }
+
+    public GoopValueSyncPacketData[] createPacketData() {
         return new GoopValueSyncPacketData[0];
     }
 
-    public static void fromPacket(GoopValueSyncPacketData[] data) {
-
+    public void fromPacket(GoopValueSyncPacketData[] data) {
+        // TODO
     }
 }

@@ -2,6 +2,7 @@ package com.xeno.goop.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goop.GoopMod;
 import com.xeno.goop.setup.Config;
 import com.xeno.goop.setup.Registry;
 import com.xeno.goop.tiles.GoopBulbTile;
@@ -204,7 +205,7 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
         float totalGoop = tile.getTotalGoop();
 
         // this is the total fill percentage of the container
-        float scaledGoopHeight = totalGoop / (float)Config.getGoopBulbCapacity();
+        float scaledGoopHeight = totalGoop / (float) GoopMod.config.bulbGoopCapacity();
         float  yOffset = 0;
 
         // determine where to draw the fluid based on the model

@@ -1,40 +1,51 @@
 package com.xeno.goop.setup;
 
+import com.xeno.goop.library.*;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
+import static com.xeno.goop.library.Helper.*;
 
 public class DefaultMappings {
-    public static String volatileGoop = Objects.requireNonNull(Registry.VOLATILE_GOOP.get().getRegistryName()).toString();
-    public static String earthenGoop = Objects.requireNonNull(Registry.EARTHEN_GOOP.get().getRegistryName()).toString();
-    public static String aquaticGoop = Objects.requireNonNull(Registry.AQUATIC_GOOP.get().getRegistryName()).toString();
-    public static String esotericGoop = Objects.requireNonNull(Registry.ESOTERIC_GOOP.get().getRegistryName()).toString();
-    public static String floralGoop = Objects.requireNonNull(Registry.FLORAL_GOOP.get().getRegistryName()).toString();
-    public static String faunalGoop = Objects.requireNonNull(Registry.FAUNAL_GOOP.get().getRegistryName()).toString();
-    public static String fungalGoop = Objects.requireNonNull(Registry.FUNGAL_GOOP.get().getRegistryName()).toString();
-    public static String regalGoop = Objects.requireNonNull(Registry.REGAL_GOOP.get().getRegistryName()).toString();
+    private Map<String, GoopMapping> values = new HashMap<>();
 
-    public static List<GoopValueMapping> values = new ArrayList<>();
-
-    static {
-        addBaseMappings();
+    public DefaultMappings() {
+        this.init();
     }
 
-    private static void addBaseMappings() {
+    public ProgressState pushTo(Map<String, GoopMapping> target) { return Helper.trackedPush(values, target); }
+
+    private void addMapping(MappingGroup g, GoopValue... args) {
+        for(Item item : g.items) {
+            addMapping(item.getRegistryName().toString(), args);
+        }
+    }
+
+    private void addMapping(Item item, GoopValue... args) {
+        addMapping(item.getRegistryName().toString(), args);
+    }
+
+    private void addMapping(String resourceLocation, GoopValue... args) {
+        values.put(resourceLocation, new GoopMapping(Arrays.asList(args)));
+    }
+
+    private void init() {
         addMapping(MappingGroups.leaves, floral(15));
-        addMapping(MappingGroups.logs, floral(480));
-        addMapping(MappingGroups.strippedLogs, floral(480));
+        addMapping(MappingGroups.logs, floral(960));
+        addMapping(MappingGroups.strippedLogs, floral(960));
         addMapping(MappingGroups.saplings, floral(45));
         addMapping(MappingGroups.singleDyeFlowers, floral(120));
+        addMapping(MappingGroups.doubleDyeFlowers, floral(240));
+        addMapping(MappingGroups.dyes, floral(120));
         addMapping(MappingGroups.coral, faunal(15), aquatic(15));
         addMapping(MappingGroups.coralBlocks, faunal(60), aquatic(60));
         addMapping(MappingGroups.coralFans, faunal(15), aquatic(15));
         addMapping(MappingGroups.oneBlockFoliage, floral(15));
         addMapping(MappingGroups.twoBlockFoliage, floral(30));
+        addMapping(MappingGroups.earthenBlocks, earthen(240));
+
         addMapping(Items.APPLE, floral(180));
         addMapping(Items.BAMBOO, floral(60));
         addMapping(Items.BEE_NEST, floral(1125));
@@ -47,117 +58,73 @@ public class DefaultMappings {
         addMapping(Items.BROWN_MUSHROOM_BLOCK, fungal(30));
         addMapping(Items.CACTUS, floral(120));
         addMapping(Items.CARROT, floral(135));
-        addMapping(Items.CHICKEN, );
-        addMapping(Items.CHORUS_FLOWER, );
-        addMapping(Items.CHORUS_FRUIT, );
-        addMapping(Items.CLAY_BALL, );
-        addMapping(Items.COBWEB, );
-        addMapping(Items.COD, );
-        addMapping(Items.EGG, );
-        addMapping(Items.END_STONE, );
-        addMapping(Items.ENDER_PEARL, );
-        addMapping(Items.FEATHER, );
-        addMapping(Items.GHAST_TEAR, );
-        addMapping(Items.GLOBE_BANNER_PATTERN, );
-        addMapping(Items.GLOWSTONE_DUST, );
-        addMapping(Items.GRASS_BLOCK, );
-        addMapping(Items.GUNPOWDER, );
-        addMapping(Items.HONEYCOMB, );
-        addMapping(Items.ICE, );
-        addMapping(Items.INK_SAC, faunal(120))
-        addMapping(Items.KELP, );
-        addMapping(Items.LAVA_BUCKET, );
-        addMapping(Items.LILY_PAD, );
-        addMapping(Items.MELON_SLICE, );
-        addMapping(Items.MILK_BUCKET, );
-        addMapping(Items.MUSHROOM_STEM, );
-        addMapping(Items.MUTTON, );
-        addMapping(Items.MYCELIUM, );
-        addMapping(Items.NETHER_WART, );
-        addMapping(Items.NETHERRACK, );
-        addMapping(Items.OBSIDIAN, );
-        addMapping(Items.PHANTOM_MEMBRANE, );
-        addMapping(Items.POISONOUS_POTATO, );
-        addMapping(Items.POPPY, );
-        addMapping(Items.PORKCHOP, );
-        addMapping(Items.POTATO, );
-        addMapping(Items.PRISMARINE_CRYSTALS, );
-        addMapping(Items.PRISMARINE_SHARD, );
-        addMapping(Items.PUFFERFISH, );
-        addMapping(Items.PUMPKIN, );
-        addMapping(Items.RABBIT, );
-        addMapping(Items.RABBIT_FOOT, );
-        addMapping(Items.RABBIT_HIDE, );
-        addMapping(Items.RED_MUSHROOM, );
-        addMapping(Items.RED_MUSHROOM_BLOCK, );
-        addMapping(Items.ROTTEN_FLESH, );
-        addMapping(Items.SALMON, );
-        addMapping(Items.SCUTE, );
-        addMapping(Items.SEA_PICKLE, );
-        addMapping(Items.SEAGRASS, );
-        addMapping(Items.SHULKER_SHELL, );
-        addMapping(Items.SNOWBALL, );
-        addMapping(Items.SOUL_SAND, );
-        addMapping(Items.SPIDER_EYE, );
-        addMapping(Items.STRING, );
-        addMapping(Items.SUGAR_CANE, );
-        addMapping(Items.SWEET_BERRIES, );
-        addMapping(Items.TROPICAL_FISH, );
-        addMapping(Items.TURTLE_EGG, );
-        addMapping(Items.VINE, );
-        addMapping(Items.WATER_BUCKET, );
-        addMapping(Items.WET_SPONGE, );
-        addMapping(Items.WHEAT_SEEDS, );
+        addMapping(Items.CARVED_PUMPKIN, floral(15), esoteric(15));
+        addMapping(Items.CHICKEN, faunal(270));
+        addMapping(Items.CHORUS_FLOWER, floral(90), esoteric(135));
+        addMapping(Items.CHORUS_FRUIT, floral(150), esoteric(30));
+        addMapping(Items.CLAY_BALL, earthen(60));
+        addMapping(Items.COAL, burning(240));
+        addMapping(Items.COBWEB, faunal(135));
+        addMapping(Items.COD, faunal(180), aquatic(45));
+        addMapping(Items.DIAMOND, earthen(7200), regal(9600), burning(7200), esoteric(7200));
+        addMapping(Items.EGG, faunal(150));
+        addMapping(Items.EMERALD, earthen(7200), regal(9600));
+        addMapping(Items.END_STONE, earthen(180), esoteric(60));
+        addMapping(Items.ENDER_PEARL, faunal(30), esoteric(90));
+        addMapping(Items.FEATHER, faunal(120));
+        addMapping(Items.GHAST_TEAR, faunal(270), esoteric(180), regal(180));
+        addMapping(Items.GLASS, earthen(120), regal(120)); // glass is special
+        addMapping(Items.GLOWSTONE_DUST, esoteric(45));
+        addMapping(Items.GOLD_INGOT, regal(1080), esoteric(540));
+        addMapping(Items.GRASS_BLOCK, earthen(180), floral(60));
+        addMapping(Items.GUNPOWDER, burning(90), faunal(30), esoteric(30));
+        addMapping(Items.HONEYCOMB, floral(135));
+        addMapping(Items.ICE, aquatic(120), regal(15));
+        addMapping(Items.INK_SAC, faunal(120));
+        addMapping(Items.IRON_INGOT, earthen(360), regal(720));
+        addMapping(Items.KELP, floral(45), aquatic(45));
+        addMapping(Items.LAPIS_LAZULI, regal(60), esoteric(60));
+        addMapping(Items.LILY_PAD, floral(15), aquatic(15));
+        addMapping(Items.MELON_SLICE, floral(90));
+        addMapping(Items.MUSHROOM_STEM, fungal(30));
+        addMapping(Items.MUTTON, faunal(270));
+        addMapping(Items.MYCELIUM, earthen(120), fungal(120));
+        addMapping(Items.NETHER_WART, esoteric(30), fungal(30));
+        addMapping(Items.NETHERRACK, earthen(120), burning(120));
+        addMapping(Items.OBSIDIAN, earthen(720), regal(180));
+        addMapping(Items.PHANTOM_MEMBRANE, faunal(270), esoteric(360));
+        addMapping(Items.POISONOUS_POTATO, floral(90), esoteric(30));
+        addMapping(Items.PORKCHOP, faunal(360));
+        addMapping(Items.POTATO, floral(45));
+        addMapping(Items.PRISMARINE_CRYSTALS, faunal(45), regal(90), aquatic(45));
+        addMapping(Items.PRISMARINE_SHARD, faunal(90), regal(135), aquatic(90));
+        addMapping(Items.PUFFERFISH, faunal(45), aquatic(135), esoteric(90));
+        addMapping(Items.PUMPKIN, floral(120));
+        addMapping(Items.QUARTZ, regal(120));
+        addMapping(Items.RABBIT, faunal(225));
+        addMapping(Items.RABBIT_FOOT, faunal(90), esoteric(180));
+        addMapping(Items.RABBIT_HIDE, faunal(45));
+        addMapping(Items.RED_MUSHROOM, fungal(135));
+        addMapping(Items.RED_MUSHROOM_BLOCK, fungal(30));
+        addMapping(Items.REDSTONE, esoteric(90));
+        addMapping(Items.ROTTEN_FLESH, faunal(180));
+        addMapping(Items.SALMON, faunal(135), aquatic(135));
+        addMapping(Items.SCUTE, faunal(90), aquatic(135), esoteric(45));
+        addMapping(Items.SEA_PICKLE, faunal(75), aquatic(45));
+        addMapping(Items.SEAGRASS, floral(15), aquatic(15));
+        addMapping(Items.SHULKER_SHELL, faunal(270), esoteric(225));
+        addMapping(Items.SLIME_BALL, faunal(135));
+        addMapping(Items.SNOWBALL, aquatic(15));
+        addMapping(Items.SOUL_SAND, earthen(90), esoteric(30));
+        addMapping(Items.SPIDER_EYE, faunal(90), esoteric(45));
+        addMapping(Items.STRING, faunal(45));
+        addMapping(Items.SUGAR_CANE, floral(90));
+        addMapping(Items.SWEET_BERRIES, floral(90));
+        addMapping(Items.TROPICAL_FISH, faunal(45), aquatic(225));
+        addMapping(Items.TURTLE_EGG, faunal(135), aquatic(2250));
+        addMapping(Items.VINE, floral(30));
+        addMapping(Items.WET_SPONGE, aquatic(15));
+        addMapping(Items.WHEAT, floral(60));
+        addMapping(Items.WHEAT_SEEDS, (floral(30)));
     }
-
-    private static GoopValue earthen(int i) {
-        return goopValue(earthenGoop, i);
-    }
-
-    private static GoopValue burning(int i) {
-        return goopValue(volatileGoop, i);
-    }
-
-    private static GoopValue aquatic(int i) {
-        return goopValue(aquaticGoop, i);
-    }
-
-    private static GoopValue esoteric(int i) {
-        return goopValue(esotericGoop, i);
-    }
-
-    private static GoopValue floral(int i) {
-        return goopValue(floralGoop, i);
-    }
-
-    private static GoopValue faunal(int i) {
-        return goopValue(faunalGoop, i);
-    }
-
-    private static GoopValue fungal(int i) {
-        return goopValue(fungalGoop, i);
-    }
-
-    private static GoopValue regal(int i) {
-        return goopValue(regalGoop, i);
-    }
-
-    private static GoopValue goopValue(String s, int i) {
-        return new GoopValue(s, i);
-    }
-
-    private static void addMapping(MappingGroup g, GoopValue... args) {
-        for(Item item : g.items) {
-            addMapping(item.getRegistryName().toString(), args);
-        }
-    }
-
-    private static void addMapping(Item item, GoopValue... args) {
-        addMapping(item.getRegistryName().toString(), args);
-    }
-
-    private static void addMapping(String resourceLocation, GoopValue... args) {
-        values.add(new GoopValueMapping(resourceLocation, new ArrayList<>(Arrays.asList(args))));
-    }
-
 }

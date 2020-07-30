@@ -58,7 +58,7 @@ public class Networking {
     }
 
     private static GoopValueSyncPacketData[] serializeGoopMappings() {
-        GoopValueSyncPacketData[] data = MappingHandler.createPacketData();
+        GoopValueSyncPacketData[] data = GoopMod.mappingHandler.createPacketData();
         PacketBuffer packetBuffer = new PacketBuffer(Unpooled.buffer());
         GoopValueSyncPacket.write(new GoopValueSyncPacket(data), packetBuffer);
         packetBuffer.release();

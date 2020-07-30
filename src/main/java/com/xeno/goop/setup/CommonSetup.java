@@ -35,6 +35,6 @@ public class CommonSetup {
     public static void serverLoad(FMLServerStartingEvent event)
     {
         GoopCommands.register(event.getCommandDispatcher());
-        MappingHandler.reloadMappings(event.getServer().getWorld(DimensionType.OVERWORLD));
+        GoopMod.mappingHandler.reloadMappings(event.getServer().getWorld(DimensionType.OVERWORLD));
     }
 }

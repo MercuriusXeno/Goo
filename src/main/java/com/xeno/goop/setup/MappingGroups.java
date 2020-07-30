@@ -1,5 +1,6 @@
 package com.xeno.goop.setup;
 
+import com.xeno.goop.library.MappingGroup;
 import net.minecraft.item.Items;
 
 public class MappingGroups {
@@ -62,6 +63,7 @@ public class MappingGroups {
             Items.ORANGE_TULIP,
             Items.OXEYE_DAISY,
             Items.PINK_TULIP,
+            Items.POPPY,
             Items.RED_TULIP,
             Items.WHITE_TULIP
             );
@@ -82,62 +84,6 @@ public class MappingGroups {
             Items.RED_SAND,
             Items.SAND
         );
-
-    public static MappingGroup concrete = new MappingGroup (
-            Items.BLACK_CONCRETE,
-            Items.BLUE_CONCRETE,
-            Items.BROWN_CONCRETE,
-            Items.CYAN_CONCRETE,
-            Items.GRAY_CONCRETE,
-            Items.GREEN_CONCRETE,
-            Items.LIGHT_BLUE_CONCRETE,
-            Items.LIGHT_GRAY_CONCRETE,
-            Items.LIME_CONCRETE,
-            Items.MAGENTA_CONCRETE,
-            Items.ORANGE_CONCRETE,
-            Items.PINK_CONCRETE,
-            Items.PURPLE_CONCRETE,
-            Items.RED_CONCRETE,
-            Items.WHITE_CONCRETE,
-            Items.YELLOW_CONCRETE
-    );
-
-    public static MappingGroup concretePowder = new MappingGroup (
-            Items.BLACK_CONCRETE_POWDER,
-            Items.BLUE_CONCRETE_POWDER,
-            Items.BROWN_CONCRETE_POWDER,
-            Items.CYAN_CONCRETE_POWDER,
-            Items.GRAY_CONCRETE_POWDER,
-            Items.GREEN_CONCRETE_POWDER,
-            Items.LIGHT_BLUE_CONCRETE_POWDER,
-            Items.LIGHT_GRAY_CONCRETE_POWDER,
-            Items.LIME_CONCRETE_POWDER,
-            Items.MAGENTA_CONCRETE_POWDER,
-            Items.ORANGE_CONCRETE_POWDER,
-            Items.PINK_CONCRETE_POWDER,
-            Items.PURPLE_CONCRETE_POWDER,
-            Items.RED_CONCRETE_POWDER,
-            Items.WHITE_CONCRETE_POWDER,
-            Items.YELLOW_CONCRETE_POWDER
-    );
-
-    public static MappingGroup dyedShulkerBox = new MappingGroup (Items.BLACK_SHULKER_BOX,
-            Items.BLUE_SHULKER_BOX,
-            Items.BROWN_SHULKER_BOX,
-            Items.CYAN_SHULKER_BOX,
-            Items.GRAY_SHULKER_BOX,
-            Items.GREEN_SHULKER_BOX,
-            Items.LIGHT_BLUE_SHULKER_BOX,
-            Items.LIGHT_GRAY_SHULKER_BOX,
-            Items.LIME_SHULKER_BOX,
-            Items.MAGENTA_SHULKER_BOX,
-            Items.ORANGE_SHULKER_BOX,
-            Items.PINK_SHULKER_BOX,
-            Items.PURPLE_SHULKER_BOX,
-            Items.RED_SHULKER_BOX,
-            Items.WHITE_SHULKER_BOX,
-            Items.YELLOW_SHULKER_BOX
-    );
 
     public static MappingGroup coral = new MappingGroup (
             Items.BRAIN_CORAL,
@@ -176,6 +122,66 @@ public class MappingGroups {
             Items.FIRE_CORAL_FAN,
             Items.HORN_CORAL_FAN,
             Items.TUBE_CORAL_FAN
+    );
+
+    public static MappingGroup oreBlocks = new MappingGroup (
+            Items.COAL_ORE,
+            Items.DIAMOND_ORE,
+            Items.EMERALD_ORE,
+            Items.GOLD_ORE,
+            Items.IRON_ORE,
+            Items.LAPIS_ORE,
+            Items.NETHER_QUARTZ_ORE,
+            Items.REDSTONE_ORE
+    );
+
+    public static MappingGroup musicDiscs = new MappingGroup (
+            Items.MUSIC_DISC_11,
+            Items.MUSIC_DISC_13,
+            Items.MUSIC_DISC_BLOCKS,
+            Items.MUSIC_DISC_CAT,
+            Items.MUSIC_DISC_CHIRP,
+            Items.MUSIC_DISC_FAR,
+            Items.MUSIC_DISC_MALL,
+            Items.MUSIC_DISC_MELLOHI,
+            Items.MUSIC_DISC_STAL,
+            Items.MUSIC_DISC_STRAD,
+            Items.MUSIC_DISC_WAIT,
+            Items.MUSIC_DISC_WARD
+    );
+
+    public static MappingGroup infestedBlocks = new MappingGroup (
+            Items.INFESTED_CHISELED_STONE_BRICKS,
+            Items.INFESTED_COBBLESTONE,
+            Items.INFESTED_CRACKED_STONE_BRICKS,
+            Items.INFESTED_MOSSY_STONE_BRICKS,
+            Items.INFESTED_STONE,
+            Items.INFESTED_STONE_BRICKS
+    );
+
+    public static MappingGroup skulls = new MappingGroup (
+            Items.CREEPER_HEAD,
+            Items.DRAGON_HEAD,
+            Items.PLAYER_HEAD,
+            Items.SKELETON_SKULL,
+            Items.WITHER_SKELETON_SKULL,
+            Items.ZOMBIE_HEAD
+    );
+
+    public static MappingGroup potions = new MappingGroup (
+            Items.LINGERING_POTION,
+            Items.POTION,
+            Items.SPLASH_POTION
+    );
+
+    public static MappingGroup structureBlocks = new MappingGroup (
+            Items.BARRIER,
+            Items.CHAIN_COMMAND_BLOCK,
+            Items.COMMAND_BLOCK,
+            Items.COMMAND_BLOCK_MINECART,
+            Items.REPEATING_COMMAND_BLOCK,
+            Items.STRUCTURE_BLOCK,
+            Items.STRUCTURE_VOID
     );
 
     public static MappingGroup spawnEggs = new MappingGroup (
@@ -238,5 +244,23 @@ public class MappingGroups {
             Items.ZOMBIE_PIGMAN_SPAWN_EGG,
             Items.ZOMBIE_SPAWN_EGG,
             Items.ZOMBIE_VILLAGER_SPAWN_EGG
+    );
+    public static MappingGroup dyes = new MappingGroup (
+        Items.BLACK_DYE,
+        Items.BLUE_DYE,
+        Items.BROWN_DYE,
+        Items.CYAN_DYE,
+        Items.GRAY_DYE,
+        Items.GREEN_DYE,
+        Items.LIGHT_BLUE_DYE,
+        Items.LIGHT_GRAY_DYE,
+        Items.LIME_DYE,
+        Items.MAGENTA_DYE,
+        Items.ORANGE_DYE,
+        Items.PINK_DYE,
+        Items.PURPLE_DYE,
+        Items.RED_DYE,
+        Items.WHITE_DYE,
+        Items.YELLOW_DYE
     );
 }

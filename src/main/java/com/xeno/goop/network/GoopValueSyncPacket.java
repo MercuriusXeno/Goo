@@ -1,6 +1,7 @@
 package com.xeno.goop.network;
 
-import com.xeno.goop.setup.GoopValue;
+import com.xeno.goop.GoopMod;
+import com.xeno.goop.library.GoopValue;
 import com.xeno.goop.setup.MappingHandler;
 import net.minecraft.item.Item;
 import net.minecraft.network.PacketBuffer;
@@ -45,7 +46,7 @@ public class GoopValueSyncPacket {
 
         public static void handle(final GoopValueSyncPacket packet, Supplier<NetworkEvent.Context> context) {
             context.get().enqueueWork(() -> {
-                MappingHandler.fromPacket(packet.data);
+                GoopMod.mappingHandler.fromPacket(packet.data);
             });
             context.get().setPacketHandled(true);
         }

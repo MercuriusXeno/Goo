@@ -1,6 +1,4 @@
-package com.xeno.goop.setup;
-
-import net.minecraft.fluid.Fluid;
+package com.xeno.goop.library;
 
 public class GoopValue {
     private String fluidResourceLocation;

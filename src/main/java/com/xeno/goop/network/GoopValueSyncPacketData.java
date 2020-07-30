@@ -1,6 +1,6 @@
 package com.xeno.goop.network;
 
-import com.xeno.goop.setup.GoopValue;
+import com.xeno.goop.library.GoopValue;
 import net.minecraft.item.Item;
 
 public class GoopValueSyncPacketData {

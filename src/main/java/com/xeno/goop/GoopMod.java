@@ -6,8 +6,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod("goop")
@@ -15,13 +13,15 @@ public class GoopMod
 {
     public static final String MOD_ID = "goop";
 
-    public static final boolean DEBUG = true;
+    public static Config config;
 
-    // Directly reference a log4j logger.
-    public static final Logger LOGGER = LogManager.getLogger();
+    public static MappingHandler mappingHandler;
 
     public GoopMod() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.COMMON_CONFIG);
+        config = new Config();
+        mappingHandler = new MappingHandler();
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, config.common);
 
         Registry.init();
 
@@ -31,6 +31,6 @@ public class GoopMod
 
         // configuration things
 
-        Config.loadConfig(Config.COMMON_CONFIG, FMLPaths.CONFIGDIR.get().resolve("goop-common.toml"));
+        config.loadConfig(config.common, FMLPaths.CONFIGDIR.get().resolve("goop-common.toml"));
     }
 }

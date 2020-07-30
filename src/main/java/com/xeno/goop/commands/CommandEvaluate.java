@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.xeno.goop.GoopMod;
 import com.xeno.goop.setup.MappingHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandSource;
@@ -23,7 +24,7 @@ public class CommandEvaluate implements Command<CommandSource> {
         if (Minecraft.getInstance().world == null) {
             return 0;
         }
-        MappingHandler.reloadMappings(Minecraft.getInstance().world);
+        GoopMod.mappingHandler.reloadMappings(Minecraft.getInstance().world);
         return 0;
     }
 }

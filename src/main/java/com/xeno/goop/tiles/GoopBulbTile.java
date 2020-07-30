@@ -15,6 +15,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -42,12 +43,6 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
             return;
         }
 
-        if (GoopMod.DEBUG) {
-            fluidHandler.fill(new FluidStack(Registry.VOLATILE_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fluidHandler.fill(new FluidStack(Registry.AQUATIC_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-            fluidHandler.fill(new FluidStack(Registry.EARTHEN_GOOP.get(), Config.getTransferRate() / 3), IFluidHandler.FluidAction.EXECUTE);
-        }
-
         doVerticalDrain();
         doLateralShare();
     }
@@ -68,7 +63,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         }
 
         // the maximum amount you can drain in a tick is here.
-        int simulatedDrainLeft =  Config.getTransferRate();
+        int simulatedDrainLeft = GoopMod.config.goopTransferRate();
 
         // iterate over the stacks and ensure
         for(FluidStack s : goop) {
@@ -96,7 +91,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
             }
 
             // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  Config.getTransferRate();
+            int simulatedDrainLeft =  GoopMod.config.goopTransferRate();
 
             // iterate over the stacks and ensure
             for(FluidStack s : goop) {

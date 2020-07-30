@@ -1,8 +1,8 @@
 package com.xeno.goop.fluids;
 
+import com.xeno.goop.GoopMod;
 import com.xeno.goop.setup.Config;
 import com.xeno.goop.tiles.GoopBulbTile;
-import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -27,7 +27,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? Config.GOOP_BULB_TOTAL_CAPACITY.get() : 0;
+        return tank == 0 ? GoopMod.config.bulbGoopCapacity() : 0;
     }
 
     @Override
@@ -37,8 +37,8 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
-        int spaceRemaining = Config.getGoopBulbCapacity() - parent.getTotalGoop();
-        int transferAmount = Math.min(Config.getTransferRate(), spaceRemaining);
+        int spaceRemaining = GoopMod.config.bulbGoopCapacity() - parent.getTotalGoop();
+        int transferAmount = Math.min(GoopMod.config.goopTransferRate(), spaceRemaining);
         transferAmount = Math.min(transferAmount, resource.getAmount());
         if (action == FluidAction.EXECUTE && transferAmount > 0) {
             if (parent.hasFluid(resource.getFluid())) {

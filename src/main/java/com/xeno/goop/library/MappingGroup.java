@@ -1,4 +1,4 @@
-package com.xeno.goop.setup;
+package com.xeno.goop.library;
 
 import net.minecraft.item.Item;
 
