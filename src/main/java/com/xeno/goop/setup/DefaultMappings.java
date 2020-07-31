@@ -28,7 +28,8 @@ public class DefaultMappings {
     }
 
     private void addMapping(String resourceLocation, GoopValue... args) {
-        values.put(resourceLocation, new GoopMapping(Arrays.asList(args)));
+        // mappings in defaults are "fixed", meaning they can't be overwritten by improvements during a tracked push
+        values.put(resourceLocation, new GoopMapping(Arrays.asList(args), true));
     }
 
     private void init() {
@@ -50,10 +51,10 @@ public class DefaultMappings {
         addMapping(Items.BAMBOO, floral(60));
         addMapping(Items.BEE_NEST, floral(1125));
         addMapping(Items.BEEF, faunal(360));
-        addMapping(Items.BEETROOT, floral(45));
-        addMapping(Items.BEETROOT_SEEDS, floral(45));
+        addMapping(Items.BEETROOT, floral(120));
+        addMapping(Items.BEETROOT_SEEDS, floral(60));
         addMapping(Items.BLAZE_ROD, burning(360));
-        addMapping(Items.BONE, faunal(360) );
+        addMapping(Items.BONE, faunal(480) );
         addMapping(Items.BROWN_MUSHROOM, fungal(135));
         addMapping(Items.BROWN_MUSHROOM_BLOCK, fungal(30));
         addMapping(Items.CACTUS, floral(120));
@@ -61,7 +62,7 @@ public class DefaultMappings {
         addMapping(Items.CARVED_PUMPKIN, floral(15), esoteric(15));
         addMapping(Items.CHICKEN, faunal(270));
         addMapping(Items.CHORUS_FLOWER, floral(90), esoteric(135));
-        addMapping(Items.CHORUS_FRUIT, floral(150), esoteric(30));
+        addMapping(Items.CHORUS_FRUIT, floral(120), esoteric(60));
         addMapping(Items.CLAY_BALL, earthen(60));
         addMapping(Items.COAL, burning(240));
         addMapping(Items.COBWEB, faunal(135));
@@ -83,7 +84,7 @@ public class DefaultMappings {
         addMapping(Items.INK_SAC, faunal(120));
         addMapping(Items.IRON_INGOT, earthen(360), regal(720));
         addMapping(Items.KELP, floral(45), aquatic(45));
-        addMapping(Items.LAPIS_LAZULI, regal(60), esoteric(60));
+        addMapping(Items.LAPIS_LAZULI, regal(120), esoteric(120));
         addMapping(Items.LILY_PAD, floral(15), aquatic(15));
         addMapping(Items.MELON_SLICE, floral(90));
         addMapping(Items.MUSHROOM_STEM, fungal(30));
@@ -96,8 +97,8 @@ public class DefaultMappings {
         addMapping(Items.POISONOUS_POTATO, floral(90), esoteric(30));
         addMapping(Items.PORKCHOP, faunal(360));
         addMapping(Items.POTATO, floral(45));
-        addMapping(Items.PRISMARINE_CRYSTALS, faunal(45), regal(90), aquatic(45));
-        addMapping(Items.PRISMARINE_SHARD, faunal(90), regal(135), aquatic(90));
+        addMapping(Items.PRISMARINE_CRYSTALS, faunal(60), regal(120), aquatic(60));
+        addMapping(Items.PRISMARINE_SHARD, faunal(60), regal(120), aquatic(120));
         addMapping(Items.PUFFERFISH, faunal(45), aquatic(135), esoteric(90));
         addMapping(Items.PUMPKIN, floral(120));
         addMapping(Items.QUARTZ, regal(120));
@@ -113,11 +114,11 @@ public class DefaultMappings {
         addMapping(Items.SEA_PICKLE, faunal(75), aquatic(45));
         addMapping(Items.SEAGRASS, floral(15), aquatic(15));
         addMapping(Items.SHULKER_SHELL, faunal(270), esoteric(225));
-        addMapping(Items.SLIME_BALL, faunal(135));
+        addMapping(Items.SLIME_BALL, faunal(120));
         addMapping(Items.SNOWBALL, aquatic(15));
         addMapping(Items.SOUL_SAND, earthen(90), esoteric(30));
         addMapping(Items.SPIDER_EYE, faunal(90), esoteric(45));
-        addMapping(Items.STRING, faunal(45));
+        addMapping(Items.STRING, faunal(60));
         addMapping(Items.SUGAR_CANE, floral(90));
         addMapping(Items.SWEET_BERRIES, floral(90));
         addMapping(Items.TROPICAL_FISH, faunal(45), aquatic(225));

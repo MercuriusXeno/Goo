@@ -109,12 +109,12 @@ public class MappingHandler {
     }
 
     private Map<String, GoopMapping> readFromJsonMappingsFile(File mappingsFile) {
-        JsonArray parentArray = new JsonArray();
+        JsonElement element = new JsonObject();
         if (mappingsFile.length() > 0) {
             try (FileReader reader = new FileReader(mappingsFile.getAbsolutePath())) {
                 JsonStreamParser parser = new JsonStreamParser(reader);
                 if (parser.hasNext()) {
-                    parentArray = parser.next().getAsJsonArray();
+                    element = parser.next().getAsJsonObject();
                 }
             } catch (EOFException eof) {
                 System.out.println("EOF on mappings file - not a real error, you just didn't have Goop mappings. This is fine!");
@@ -124,7 +124,7 @@ public class MappingHandler {
             }
         }
 
-        return gsonInstance.fromJson(parentArray, jsonSerializerType);
+        return gsonInstance.fromJson(element, jsonSerializerType);
     }
 
     public ProgressState seedContainerItemValues() {
@@ -154,6 +154,11 @@ public class MappingHandler {
             String name = name(output);
             // are we already denied?
             if (values.get(name).isDenied()) {
+                continue;
+            }
+            // if the output already has a mapping it means we're explicitly giving it one, by this point
+            // so don't deny it, even if the inputs are all denied; this is true of ore blocks and will cause stupidity
+            if (!values.get(name).isEmpty()) {
                 continue;
             }
             List<Ingredient> inputs = r.getIngredients();
@@ -244,6 +249,9 @@ public class MappingHandler {
 
         product = product.divide(output.getCount());
 
+        if (product.isEmpty()) {
+            return UNKNOWN;
+        }
         // divide the recipe net weight by its yield count, as so far we've only summed up the input values.
         // if this results in a bad division the mapping gets unknown'd
         return product;
@@ -313,7 +321,8 @@ public class MappingHandler {
 
     private GoopMapping getLowestOutputMapping(String output, Map<IRecipe<?>, GoopMapping> recipeMappings) {
         Map.Entry<IRecipe<?>, GoopMapping> lowestResult = recipeMappings.entrySet().stream()
-                .filter(m -> Objects.requireNonNull(m.getKey().getRecipeOutput().getItem().getRegistryName()).toString().equals(output))
+                .filter(m -> Objects.requireNonNull(m.getKey().getRecipeOutput().getItem().getRegistryName()).toString().equals(output) &&
+                        !m.getValue().isUnknown() && !m.getValue().isDenied() && !m.getValue().isEmpty())
                 .min(recipeGoopMappingWeightComparator)
                 .orElse(null);
 

@@ -84,6 +84,9 @@ public class Helper {
     }
 
     public static boolean shouldPush(GoopMapping source, GoopMapping target) {
+        if (target.isFixed()) {
+            return false;
+        }
         return target.isUnknown() || source.isStrongerThan(target) || (!target.isDenied() && source.isDenied());
     }
 

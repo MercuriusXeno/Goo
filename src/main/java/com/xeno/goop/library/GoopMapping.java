@@ -13,28 +13,48 @@ public class GoopMapping {
     private List<GoopValue> values;
     private boolean isDenied;
     private boolean isUnknown;
+    private boolean isFixed;
+
+    public GoopMapping(List<GoopValue> goopValues, boolean isFixed) {
+        this.values = goopValues;
+        this.isDenied = false;
+        this.isUnknown = false;
+        this.isFixed = isFixed;
+        pruneEmptyValues();
+    }
 
     public GoopMapping(List<GoopValue> goopValues) {
         this.values = goopValues;
         this.isDenied = false;
         this.isUnknown = false;
+        pruneEmptyValues();
     }
 
     public GoopMapping(GoopValue... adding) {
         this.values = Arrays.asList(adding);
         this.isDenied = false;
         this.isUnknown = false;
+        pruneEmptyValues();
     }
 
     public GoopMapping(boolean isDenied, boolean isUnknown) {
         this.values = new ArrayList<>();
         this.isDenied = isDenied;
         this.isUnknown = isUnknown;
+        pruneEmptyValues();
+    }
+
+    private void pruneEmptyValues() {
+        values.removeIf(v -> v.getAmount() == 0);
     }
 
     public boolean isDenied() { return this.isDenied; }
 
     public boolean isUnknown() { return this.isUnknown; }
+
+    public boolean isEmpty() { return this.values.size() == 0; }
+
+    public boolean isFixed() {return this.isFixed; }
 
     public List<GoopValue> values() { return this.values; }
 
@@ -45,7 +65,8 @@ public class GoopMapping {
      * @return true if this instance of a mapping weighs less than the competitor.
      */
     public boolean isStrongerThan(GoopMapping competitor) {
-        return weight() < competitor.weight();
+        return !this.isDenied() && !this.isEmpty() && !this.isUnknown() &&
+                (weight() < competitor.weight() || competitor.isDenied() && competitor.isEmpty() && competitor.isUnknown());
     }
 
     public boolean isUnusable() {
@@ -121,6 +142,7 @@ public class GoopMapping {
         for (GoopValue v : this.values()) {
             // uneven division results in an unknown quantity, reject it. There's no floats in goop.
             if (v.getAmount() % i != 0) {
+                System.out.println("Bad division! You have a bad mapping value.");
                 return UNKNOWN;
             }
             product.put(v.getFluidResourceLocation(), v.getAmount() / i);

@@ -32,6 +32,7 @@ public class DeniedMappings {
         denyMapping(MappingGroups.skulls);
         denyMapping(MappingGroups.potions);
         denyMapping(MappingGroups.structureBlocks);
+        denyMapping(MappingGroups.dyedShulkerBoxes);
 
         denyMapping(Items.BEDROCK);
         denyMapping(Items.BELL);
@@ -69,6 +70,7 @@ public class DeniedMappings {
         denyMapping(Items.PUFFERFISH_BUCKET);
         denyMapping(Items.SADDLE);
         denyMapping(Items.SALMON_BUCKET);
+        denyMapping(Items.SHULKER_BOX);
         denyMapping(Items.SPAWNER);
         denyMapping(Items.SUSPICIOUS_STEW);
         denyMapping(Items.TIPPED_ARROW);

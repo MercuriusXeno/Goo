@@ -43,5 +43,7 @@ public class ForcedEquivalencies {
         values.put(Items.RED_CONCRETE, Items.RED_CONCRETE_POWDER);
         values.put(Items.WHITE_CONCRETE, Items.WHITE_CONCRETE_POWDER);
         values.put(Items.YELLOW_CONCRETE, Items.YELLOW_CONCRETE_POWDER);
+
+        values.put(Items.CHARCOAL, Items.COAL);
     }
 }
