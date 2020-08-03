@@ -10,6 +10,7 @@ import java.util.TreeMap;
 
 import static com.xeno.goop.library.Compare.itemLexicographicalComparator;
 import static com.xeno.goop.library.Compare.stringLexicographicalComparator;
+import static com.xeno.goop.library.Helper.floral;
 
 public class ForcedEquivalencies {
     public Map<Item, Item> values = new TreeMap<>(itemLexicographicalComparator);
@@ -43,6 +44,7 @@ public class ForcedEquivalencies {
         values.put(Items.RED_CONCRETE, Items.RED_CONCRETE_POWDER);
         values.put(Items.WHITE_CONCRETE, Items.WHITE_CONCRETE_POWDER);
         values.put(Items.YELLOW_CONCRETE, Items.YELLOW_CONCRETE_POWDER);
+        values.put(Items.BEE_NEST, Items.BEEHIVE);
 
         values.put(Items.CHARCOAL, Items.COAL);
     }

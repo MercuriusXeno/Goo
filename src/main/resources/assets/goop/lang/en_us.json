@@ -1,6 +1,6 @@
 {
   "_comment": "Blocks",
-  "block.goop.goop_bulb": "Goop Bulb",
+  "block.goop.goop_bulb": "Goo Bulb",
   "block.goop.goopifier": "Goopifier",
   "block.goop.solidifier": "Solidifier",
 
@@ -8,15 +8,18 @@
   "item.goop.gasket": "Gasket",
 
   "_comment": "Fluids",
-  "fluid.goop.volatile_goop": "Volatile Goop",
-  "fluid.goop.aquatic_goop": "Aquatic Goop",
-  "fluid.goop.earthen_goop": "Earthen Goop",
-  "fluid.goop.esoteric_goop": "Esoteric Goop",
-  "fluid.goop.floral_goop": "Floral Goop",
-  "fluid.goop.faunal_goop": "Faunal Goop",
-  "fluid.goop.fungal_goop": "Fungal Goop",
-  "fluid.goop.regal_goop": "Regal Goop",
+  "fluid.goop.aquatic_goop": "Aquatic",
+  "fluid.goop.earthen_goop": "Earthen",
+  "fluid.goop.molten_goop": "Molten",
+  "fluid.goop.esoteric_goop": "Esoteric",
+  "fluid.goop.floral_goop": "Floral",
+  "fluid.goop.faunal_goop": "Faunal",
+  "fluid.goop.fungal_goop": "Fungal",
+  "fluid.goop.regal_goop": "Regal",
+  "fluid.goop.metal_goop": "Metal",
+  "fluid.goop.vital_goop": "Vital",
+  "fluid.goop.chromatic_goop": "Chromatic",
 
   "_comment": "Creative Tabs",
-  "itemGroup.goop": "Goop"
+  "itemGroup.goop": "Goo"
 }

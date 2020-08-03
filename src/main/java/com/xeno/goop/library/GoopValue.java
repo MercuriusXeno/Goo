@@ -2,26 +2,18 @@ package com.xeno.goop.library;
 
 public class GoopValue {
     private String fluidResourceLocation;
-    private int amount;
+    private double amount;
 
-    public GoopValue(String goop, int amount) {
+    public GoopValue(String goop, double amount) {
         this.fluidResourceLocation = goop;
-        this.amount = amount;
+        this.amount = amount; //Helper.truncateValue(amount);
     }
 
     public String getFluidResourceLocation() {
         return fluidResourceLocation;
     }
 
-    public int getAmount() {
+    public double getAmount() {
         return amount;
-    }
-
-    public void setAmount(int i) {
-        this.amount = i;
-    }
-
-    public GoopValue copy() {
-        return new GoopValue(this.getFluidResourceLocation(), this.getAmount());
     }
 }

@@ -3,7 +3,6 @@ package com.xeno.goop.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.Config;
 import com.xeno.goop.setup.Registry;
 import com.xeno.goop.tiles.GoopBulbTile;
 import net.minecraft.client.Minecraft;
@@ -18,9 +17,10 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+    private static final float FLUID_VERTICAL_MAX = 0.0005f;
     private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
     private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - FROM_SCALED_VERTICAL;
+    private static final float TO_SCALED_VERTICAL = 16 - (FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
     private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
@@ -29,9 +29,7 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     public GoopBulbTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
     }
-    public GoopBulbTileRenderer() {
-        super(TileEntityRendererDispatcher.instance);
-    }
+    // public GoopBulbTileRenderer() { super(TileEntityRendererDispatcher.instance); }
 
     /**
      * Renders a fluid block with offset from the matrices and from x1/y1/z1 to x2/y2/z2 using block model coordinates, so from 0-16
@@ -213,8 +211,8 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
 
         float minY = from.getY();
         float maxY = to.getY();
-
-        for(FluidStack goop : tile.goop) {
+        float highestToY = minY;
+        for(FluidStack goop : tile.goop()) {
             // this is the total fill of the goop in the tank of this particular goop, as a percentage
             float goopPercentage = goop.getAmount() / totalGoop;
             float heightScale = goopPercentage * scaledGoopHeight;
@@ -222,10 +220,26 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
             float fromY, toY;
             fromY = minY + yOffset;
             toY = fromY + height;
+            highestToY = toY;
             renderScaledFluidCuboid(goop, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += height;
         }
+
+        Vector3f verticalFillFrom = verticalFillFromVector(tile.verticalFillIntensity()), verticalFillTo = verticalFillToVector(tile.verticalFillIntensity());
+        if (tile.isVerticallyFilled()) {
+            renderScaledFluidCuboid(tile.verticalFillFluid(), matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
+        }
     }
+
+    // vertical fill graphics scale width to the intensity of the fill which decays after a short time
+    private static final float FROM_VERTICAL_FILL_PORT_WIDTH_BASE = 0.125f;
+    private static final float verticalFillHorizontalOffset(float intensity) {
+        return (1f / 2f) - (FROM_VERTICAL_FILL_PORT_WIDTH_BASE * intensity / 2f);
+    };
+    private static final float verticalFillHorizontalFrom(float intensity) {return 16 * verticalFillHorizontalOffset(intensity); }
+    private static final float verticalFillHorizontalTo(float intensity) { return  16 - verticalFillHorizontalFrom(intensity); }
+    private static final Vector3f verticalFillFromVector(float intensity) { return new Vector3f(verticalFillHorizontalFrom(intensity), FROM_SCALED_VERTICAL, verticalFillHorizontalFrom(intensity)); }
+    private static final Vector3f verticalFillToVector(float intensity) { return new Vector3f(verticalFillHorizontalTo(intensity), TO_SCALED_VERTICAL, verticalFillHorizontalTo(intensity)); }
 
     public static void register() {
         ClientRegistry.bindTileEntityRenderer(Registry.GOOP_BULB_TILE.get(), GoopBulbTileRenderer::new);

@@ -47,14 +47,12 @@ public class MappingHandler {
 
         values = readFromJsonMappingsFile(mappingsFile);
 
-        SolvedState solvedState = solvedStateOf(values);
-
         initializeBaselineValues();
 
-        boolean hasImprovement = true;
+        SolvedState solvedState = solvedStateOf(values);
+
         // begin the iterative mapping solution
-        while (solvedState == UNSOLVED || hasImprovement) {
-            hasImprovement = false;
+        while (solvedState == UNSOLVED) {
             // seed mappings where the recipe has an input that has an explicit denial as one of the inputs
             // and no suitable replacements with undeniable mappings. These outputs must implicitly be denied as well.
             ProgressState denialProgress = seedRecipeDeniedMappings(world);
@@ -70,16 +68,28 @@ public class MappingHandler {
             ForcedEquivalencies forcedEquivalencies = new ForcedEquivalencies();
             ProgressState forcedEquivalencyProgress = forcedEquivalencies.pushTo(values);
 
-            if (Helper.anyProgress(denialProgress, recipeDerivationProgress, containerItemProgress, forcedEquivalencyProgress)) {
-                hasImprovement = true;
-            }
+            solvedState = Helper.anyProgress(denialProgress, recipeDerivationProgress, containerItemProgress, forcedEquivalencyProgress) ? UNSOLVED : SOLVED;
         }
 
-        // todo scan recipes for exploit loops or disparate quantity yields
+        // todo log all unknowns?
+
+        // any remaining unknowns are impossible to map, for whatever reason. Change them from unknown to denials.
+        denyAllUnknown();
+
+        // todo scan recipes for exploit loops or disparate quantity yields?
 
         tryWritingMappingFile(mappingsFile);
 
         return true;
+    }
+
+    private void denyAllUnknown()
+    {
+        for(Map.Entry<String, GoopMapping> e : values.entrySet()) {
+            if (e.getValue().isUnknown()) {
+                values.put(e.getKey(), DENIED);
+            }
+        }
     }
 
     private void tryWritingMappingFile(File mappingsFile) {
@@ -129,11 +139,14 @@ public class MappingHandler {
 
     public ProgressState seedContainerItemValues() {
         boolean hasProgress = false;
-        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.MILK_BUCKET), values.get(name(Items.BUCKET)).add(faunal(15)));
-        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.WATER_BUCKET), values.get(name(Items.BUCKET)).add(aquatic(15)));
-        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.LAVA_BUCKET), values.get(name(Items.BUCKET)).add(burning(30000)));
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.MILK_BUCKET), values.get(name(Items.BUCKET)).add(faunal(1)));
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.WATER_BUCKET), values.get(name(Items.BUCKET)).add(aquatic(1)));
+        hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.LAVA_BUCKET), values.get(name(Items.BUCKET)).add(Helper.molten(Items.LAVA_BUCKET)));
+
         // honey bottle + (sugar * 3) + glass bottle
         hasProgress = hasProgress || tryAddingContainerItemValue(name(Items.HONEY_BOTTLE), values.get(name(Items.GLASS_BOTTLE)).add(values.get(name(Items.SUGAR)).multiply(3)));
+
+        // stews tend to be special too.
 
         return hasProgress ? ProgressState.IMPROVED : ProgressState.STAGNANT;
     }
@@ -231,6 +244,9 @@ public class MappingHandler {
     private GoopMapping processRecipe(IRecipe<?> r, Map<IRecipe<?>, GoopMapping> recipeMappings)
     {
         ItemStack output = r.getRecipeOutput();
+        if (output.isEmpty()) {
+            return UNKNOWN;
+        }
         List<Ingredient> inputs = r.getIngredients();
         GoopMapping product = EMPTY;
         for (Ingredient g : inputs)
@@ -248,7 +264,6 @@ public class MappingHandler {
         }
 
         product = product.divide(output.getCount());
-
         if (product.isEmpty()) {
             return UNKNOWN;
         }
@@ -290,7 +305,7 @@ public class MappingHandler {
 
         GoopMapping decidedMapping = pickStrongerMapping(values.get(name(stack)), getLowestOutputMapping(stack, recipeMappings));
 
-        if (decidedMapping.weight() == 0) {
+        if (decidedMapping.weight() == 0d) {
             return GoopMapping.UNKNOWN;
         }
 
@@ -343,5 +358,14 @@ public class MappingHandler {
 
     public void fromPacket(GoopValueSyncPacketData[] data) {
         // TODO
+    }
+
+    public GoopMapping get(String registryName)
+    {
+        if (values.containsKey(registryName)) {
+            return values.get(registryName);
+        }
+
+        return UNKNOWN;
     }
 }

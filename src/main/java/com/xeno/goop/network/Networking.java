@@ -34,6 +34,12 @@ public class Networking {
                 .decoder(FluidUpdatePacket::new)
                 .consumer(FluidUpdatePacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(BulbVerticalFillPacket.class, nextID())
+                .encoder(BulbVerticalFillPacket::toBytes)
+                .decoder(BulbVerticalFillPacket::new)
+                .consumer(BulbVerticalFillPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {

@@ -16,7 +16,7 @@ modId="goop" #mandatory
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
 version="${file.jarVersion}" #mandatory
  # A display name for the mod
-displayName="Goop!" #mandatory
+displayName="Goo" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification <here>
 updateJSONURL="http://myurl.me/" #optional
 # A URL for the "homepage" for this mod, displayed in the mod UI
@@ -24,12 +24,12 @@ displayURL="http://example.com/" #optional
 # A file name (in the root of the mod JAR) containing a logo for display
 logoFile="examplemod.png" #optional
 # A text field displayed in the mod UI
-credits="Pahimar and Drullkus for ideas and things. Maybe Drullkus for help with other things?" #optional
+credits="Various Forgecrafters helped me not be an idiot. Ideas circa 2011 via Pahimar, mDiyo and myself." #optional
 # A text field displayed in the mod UI
 authors="MercuriusXeno" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Goop! is a mod about things being made of goop. You make goop out of things, and you make things out of goop.
+Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.examplemod]] #optional

@@ -5,8 +5,8 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class VolatileGoop extends GoopBase {
-    public VolatileGoop(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
+public class ChromaticGoop extends GoopBase {
+    public ChromaticGoop(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);
     }
 }

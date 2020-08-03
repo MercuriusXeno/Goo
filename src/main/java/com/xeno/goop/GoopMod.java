@@ -18,19 +18,17 @@ public class GoopMod
     public static MappingHandler mappingHandler;
 
     public GoopMod() {
-        config = new Config();
         mappingHandler = new MappingHandler();
 
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, config.common);
+        // configuration things
+        config = new Config();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, config.server);
+        config.loadConfig(config.server, FMLPaths.CONFIGDIR.get().resolve("goop-server.toml"));
 
         Registry.init();
 
         // Register the setup method for mod-loading
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
-
-        // configuration things
-
-        config.loadConfig(config.common, FMLPaths.CONFIGDIR.get().resolve("goop-common.toml"));
     }
 }

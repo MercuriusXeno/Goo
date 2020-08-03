@@ -1,5 +1,12 @@
 package com.xeno.goop.library;
 
+import com.xeno.goop.setup.Registry;
+import javafx.collections.FXCollections;
+import javafx.collections.transformation.SortedList;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +28,7 @@ public class GoopMapping {
         this.isUnknown = false;
         this.isFixed = isFixed;
         pruneEmptyValues();
+        sortValues();
     }
 
     public GoopMapping(List<GoopValue> goopValues) {
@@ -28,6 +36,7 @@ public class GoopMapping {
         this.isDenied = false;
         this.isUnknown = false;
         pruneEmptyValues();
+        sortValues();
     }
 
     public GoopMapping(GoopValue... adding) {
@@ -35,6 +44,7 @@ public class GoopMapping {
         this.isDenied = false;
         this.isUnknown = false;
         pruneEmptyValues();
+        sortValues();
     }
 
     public GoopMapping(boolean isDenied, boolean isUnknown) {
@@ -48,6 +58,11 @@ public class GoopMapping {
         values.removeIf(v -> v.getAmount() == 0);
     }
 
+    private void sortValues()
+    {
+        values.sort(Compare.valueWeightComparator.reversed());
+    }
+
     public boolean isDenied() { return this.isDenied; }
 
     public boolean isUnknown() { return this.isUnknown; }
@@ -58,7 +73,7 @@ public class GoopMapping {
 
     public List<GoopValue> values() { return this.values; }
 
-    public int weight() { return values.stream().map(GoopValue::getAmount).reduce(0, Integer::sum); }
+    public double weight() { return values.stream().map(GoopValue::getAmount).reduce(0d, Double::sum); }
 
     /**
      * @param competitor The mapping being compared to "this" instance.
@@ -66,7 +81,9 @@ public class GoopMapping {
      */
     public boolean isStrongerThan(GoopMapping competitor) {
         return !this.isDenied() && !this.isEmpty() && !this.isUnknown() &&
-                (weight() < competitor.weight() || competitor.isDenied() && competitor.isEmpty() && competitor.isUnknown());
+                // truncation caused weird values.
+                //(Helper.truncateValue(weight()) < Helper.truncateValue(competitor.weight()) || competitor.isDenied() && competitor.isEmpty() && competitor.isUnknown());
+        (weight() < competitor.weight() || competitor.isDenied() && competitor.isEmpty() && competitor.isUnknown());
     }
 
     public boolean isUnusable() {
@@ -80,7 +97,7 @@ public class GoopMapping {
         if (this.isDenied() || combining.isDenied()) {
             return DENIED;
         }
-        Map<String, Integer> product = new HashMap<>();
+        Map<String, Double> product = new HashMap<>();
         for(GoopValue v : this.values()) {
             if (product.containsKey(v.getFluidResourceLocation())) {
                 product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + v.getAmount());
@@ -99,7 +116,7 @@ public class GoopMapping {
         }
 
         // values can't be negative, that makes less than zero sense (lol)
-        for (Integer v : product.values()) {
+        for (Double v : product.values()) {
             if (v < 0) {
                 return UNKNOWN;
             }
@@ -119,10 +136,6 @@ public class GoopMapping {
         return combine(new GoopMapping(adding), false);
     }
 
-    public GoopMapping subtract(GoopValue subtracting) {
-        return combine(new GoopMapping(subtracting), true);
-    }
-
     public GoopMapping multiply(int i) {
         if (this.isUnknown()) {
             return UNKNOWN;
@@ -130,29 +143,56 @@ public class GoopMapping {
         if (this.isDenied()) {
             return DENIED;
         }
-        Map<String, Integer> product = new HashMap<>();
+        Map<String, Double> product = new HashMap<>();
         for(GoopValue v : this.values()) {
-            product.put(v.getFluidResourceLocation(), v.getAmount() * i);
+            product.put(v.getFluidResourceLocation(), Helper.round(v.getAmount() * i, 5));
         }
         return createFromPrimitiveGoopMap(product);
     }
 
     public GoopMapping divide(int i) {
-        Map<String, Integer> product = new HashMap<>();
+        // c'mon don't do that.
+        if (i == 0) {
+            return UNKNOWN;
+        }
+        Map<String, Double> product = new HashMap<>();
         for (GoopValue v : this.values()) {
-            // uneven division results in an unknown quantity, reject it. There's no floats in goop.
-            if (v.getAmount() % i != 0) {
-                System.out.println("Bad division! You have a bad mapping value.");
-                return UNKNOWN;
-            }
-            product.put(v.getFluidResourceLocation(), v.getAmount() / i);
+            product.put(v.getFluidResourceLocation(), Helper.round(v.getAmount() / i, 5));
         }
         return createFromPrimitiveGoopMap(product);
     }
 
     // utility method for quickly
-    private static GoopMapping createFromPrimitiveGoopMap(Map<String, Integer> product) {
+    private static GoopMapping createFromPrimitiveGoopMap(Map<String, Double> product) {
         List<GoopValue> values = product.entrySet().stream().map(kv -> new GoopValue(kv.getKey(), kv.getValue())).collect(Collectors.toList());
         return new GoopMapping(values);
+    }
+
+    public void translateToTooltip(List<ITextComponent> toolTip)
+    {
+        int index = 0;
+        int displayIndex = 0;
+        ITextComponent fluidAmount = null;
+        // struggling with values sorting stupidly. Trying to do fix sort by doing this:
+        List<GoopValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.goopNameComparator));
+        for(GoopValue v : sortedValues) {
+            index++;
+            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getAmount()) + " mB";
+            String fluidTranslationKey = Registry.getFluidTranslationKey(v.getFluidResourceLocation());
+            if (fluidTranslationKey == null) {
+                continue;
+            }
+            displayIndex++;
+            if (displayIndex % 2 == 1) {
+                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+            } else {
+                if (fluidAmount != null) {
+                    fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                }
+            }
+            if (displayIndex % 2 == 0 || index == sortedValues.size()) {
+                toolTip.add(fluidAmount);
+            }
+        }
     }
 }

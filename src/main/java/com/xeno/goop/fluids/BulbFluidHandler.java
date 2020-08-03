@@ -1,8 +1,8 @@
 package com.xeno.goop.fluids;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.Config;
 import com.xeno.goop.tiles.GoopBulbTile;
+import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -12,6 +12,10 @@ public class BulbFluidHandler implements IFluidHandler {
     private final GoopBulbTile parent;
     public BulbFluidHandler(GoopBulbTile t) {
         parent = t;
+    }
+
+    public void sendVerticalFillSignalForVisuals(Fluid f) {
+        parent.toggleVerticalFillVisuals(f);
     }
 
     @Override
@@ -37,7 +41,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
-        int spaceRemaining = GoopMod.config.bulbGoopCapacity() - parent.getTotalGoop();
+        int spaceRemaining = parent.getSpaceRemaining();
         int transferAmount = Math.min(GoopMod.config.goopTransferRate(), spaceRemaining);
         transferAmount = Math.min(transferAmount, resource.getAmount());
         if (action == FluidAction.EXECUTE && transferAmount > 0) {
@@ -45,7 +49,7 @@ public class BulbFluidHandler implements IFluidHandler {
                 FluidStack existingGoop = parent.getSpecificGoopType((resource.getFluid()));
                 existingGoop.setAmount(existingGoop.getAmount() + transferAmount);
             } else {
-                parent.goop.add(new FluidStack(resource.getFluid(), transferAmount));
+                parent.addGoop(new FluidStack(resource.getFluid(), transferAmount));
             }
             parent.onContentsChanged();
         }
@@ -60,9 +64,7 @@ public class BulbFluidHandler implements IFluidHandler {
         FluidStack result = new FluidStack(s.getFluid(), Math.min(s.getAmount(), maxDrain));
         if (action == FluidAction.EXECUTE) {
             s.setAmount(s.getAmount() - result.getAmount());
-            if (s.getAmount() == 0) {
-                parent.goop.remove(s);
-            }
+            parent.onContentsChanged();
         }
 
         return result;
@@ -71,12 +73,11 @@ public class BulbFluidHandler implements IFluidHandler {
     @Nonnull
     @Override
     public FluidStack drain(FluidStack s, FluidAction action) {
-        FluidStack result = new FluidStack(s.getFluid(), s.getAmount());
+        FluidStack parentStack = parent.getSpecificGoopType(s.getFluid());
+        FluidStack result = new FluidStack(s.getFluid(), Math.min(s.getAmount(), parentStack.getAmount()));
         if (action == FluidAction.EXECUTE) {
-            s.setAmount(s.getAmount() - result.getAmount());
-            if (s.getAmount() == 0) {
-                parent.goop.remove(parent.getSpecificGoopType(s.getFluid()));
-            }
+            parentStack.setAmount(parentStack.getAmount() - result.getAmount());
+            parent.onContentsChanged();
         }
 
         return result;

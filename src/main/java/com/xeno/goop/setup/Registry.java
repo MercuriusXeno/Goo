@@ -56,7 +56,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, SOLIDIFIER.get()).build(null));
 
     // Goop!
-    public static final RegistryObject<Fluid> VOLATILE_GOOP = FLUIDS.register("volatile_goop", () -> new VolatileGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/volatile_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/volatile_flow"))));
+    public static final RegistryObject<Fluid> MOLTEN_GOOP = FLUIDS.register("molten_goop", () -> new MoltenGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/molten_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/molten_flow"))));
     public static final RegistryObject<Fluid> AQUATIC_GOOP = FLUIDS.register("aquatic_goop", () -> new AquaticGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/aquatic_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/aquatic_flow"))));
     public static final RegistryObject<Fluid> EARTHEN_GOOP = FLUIDS.register("earthen_goop", () -> new EarthenGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/earthen_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/earthen_flow"))));
     public static final RegistryObject<Fluid> ESOTERIC_GOOP = FLUIDS.register("esoteric_goop", () -> new EsotericGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/esoteric_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/esoteric_flow"))));
@@ -64,4 +64,25 @@ public class Registry {
     public static final RegistryObject<Fluid> FAUNAL_GOOP = FLUIDS.register("faunal_goop", () -> new FaunalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/faunal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/faunal_flow"))));
     public static final RegistryObject<Fluid> FUNGAL_GOOP = FLUIDS.register("fungal_goop", () -> new FungalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/fungal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/fungal_flow"))));
     public static final RegistryObject<Fluid> REGAL_GOOP = FLUIDS.register("regal_goop", () -> new RegalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/regal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/regal_flow"))));
+    public static final RegistryObject<Fluid> VITAL_GOOP = FLUIDS.register("vital_goop", () -> new VitalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/vital_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/vital_flow"))));
+    public static final RegistryObject<Fluid> METAL_GOOP = FLUIDS.register("metal_goop", () -> new MetalGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/metal_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/metal_flow"))));
+    public static final RegistryObject<Fluid> CHROMATIC_GOOP = FLUIDS.register("chromatic_goop", () -> new ChromaticGoop(null, FluidAttributes.builder(new ResourceLocation(GoopMod.MOD_ID, "block/fluid/chromatic_still"), new ResourceLocation(GoopMod.MOD_ID, "block/fluid/chromatic_flow"))));
+
+    public static String getFluidTranslationKey(String key)
+    {
+        Fluid f = getFluid(key);
+        if (f == null) {
+            return null;
+        }
+        return f.getAttributes().getTranslationKey();
+    }
+
+    public static Fluid getFluid(String key)
+    {
+        RegistryObject<Fluid> fluid = FLUIDS.getEntries().stream().filter(f -> f.getId().toString().equals(key)).findFirst().orElse(null);
+        if (fluid == null) {
+            return null;
+        }
+        return fluid.get();
+    }
 }

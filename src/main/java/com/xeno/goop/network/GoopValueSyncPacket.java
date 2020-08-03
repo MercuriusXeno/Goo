@@ -2,7 +2,6 @@ package com.xeno.goop.network;
 
 import com.xeno.goop.GoopMod;
 import com.xeno.goop.library.GoopValue;
-import com.xeno.goop.setup.MappingHandler;
 import net.minecraft.item.Item;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -22,7 +21,7 @@ public class GoopValueSyncPacket {
             buffer.writeVarInt(data.getValues().length);
             for(GoopValue value : data.getValues()) {
                 buffer.writeString(value.getFluidResourceLocation());
-                buffer.writeVarInt(value.getAmount());
+                buffer.writeDouble(value.getAmount());
             }
         }
     }
@@ -35,7 +34,7 @@ public class GoopValueSyncPacket {
             int goopCount = buffer.readVarInt();
             GoopValue[] goopValues = new GoopValue[goopCount];
             for(int goopIndex = 0; goopIndex < goopCount; goopIndex++) {
-                goopValues[goopIndex] = new GoopValue(buffer.readRegistryId(), buffer.readVarInt());
+                goopValues[goopIndex] = new GoopValue(buffer.readRegistryId(), buffer.readDouble());
             }
             data[syncIndex] = new GoopValueSyncPacketData(evaluatedItem, goopValues);
         }
