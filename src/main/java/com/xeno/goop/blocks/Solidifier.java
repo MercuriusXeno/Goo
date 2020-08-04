@@ -18,6 +18,7 @@ import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -91,6 +92,11 @@ public class Solidifier extends Block {
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
+        // ignore all hits other than north facing hit.
+        if (hit.getFace() != Direction.NORTH) {
+            return ActionResultType.PASS;
+        }
+
         if (worldIn == null) {
             return ActionResultType.PASS;
         }
@@ -102,6 +108,7 @@ public class Solidifier extends Block {
 
         if (player.getHeldItem(handIn).isEmpty() || player.isSneaking()) {
             ((SolidifierTile)tile).changeTargetItem(Items.AIR);
+            return ActionResultType.SUCCESS;
         }
 
         ((SolidifierTile)tile).changeTargetItem(player.getHeldItem(handIn).getItem());

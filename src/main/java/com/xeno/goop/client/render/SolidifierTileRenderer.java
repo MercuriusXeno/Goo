@@ -3,31 +3,18 @@ package com.xeno.goop.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.xeno.goop.setup.Registry;
 import com.xeno.goop.tiles.SolidifierTile;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.model.ModelManager;
-import net.minecraft.client.renderer.model.ModelResourceLocation;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.item.BlockItem;
-import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
-import net.minecraft.world.storage.MapData;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
 {

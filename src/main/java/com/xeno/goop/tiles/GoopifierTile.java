@@ -1,12 +1,9 @@
 package com.xeno.goop.tiles;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.library.Compare;
 import com.xeno.goop.library.GoopMapping;
 import com.xeno.goop.library.GoopValue;
 import com.xeno.goop.setup.Registry;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -15,9 +12,7 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
@@ -34,7 +29,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class GoopifierTile extends TileEntity implements ITickableTileEntity, ISidedInventory
 {
@@ -123,7 +117,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
     private boolean tryDistributingFluid()
     {
         boolean isAnyWorkDone = false;
-        int maxPerTickPerGasket = GoopMod.config.goopTransferRate();
+        int maxPerTickPerGasket = GoopMod.config.goopProcessingRate();
         for(Direction d : getValidGasketDirections()) {
             GoopBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {

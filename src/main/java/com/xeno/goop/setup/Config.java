@@ -20,6 +20,9 @@ public class Config {    ;
     private ForgeConfigSpec.IntValue GOOP_MAX_TRANSFER_RATE;
     public int goopTransferRate() { return GOOP_MAX_TRANSFER_RATE.get(); }
 
+    private ForgeConfigSpec.IntValue GOOP_MAX_PROCESSING_RATE;
+    public int goopProcessingRate() { return GOOP_MAX_PROCESSING_RATE.get(); }
+
     private ForgeConfigSpec.IntValue GOOP_BULB_TOTAL_CAPACITY;
     public int bulbGoopCapacity() {
         return GOOP_BULB_TOTAL_CAPACITY.get();
@@ -54,9 +57,13 @@ public class Config {    ;
     private void setupGeneralMachineConfig() {
         serverBuilder.comment().push("machines");
 
-        int defaultGoopTransferRate = 1;
-        GOOP_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate of bulbs and machines per tick")
+        int defaultGoopTransferRate = 8;
+        GOOP_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs")
                 .defineInRange("maxTransferRate", defaultGoopTransferRate, 0, Integer.MAX_VALUE);
+
+        int defaultGoopProcessingRate = 1;
+        GOOP_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of goopifiers and solidifiers")
+                .defineInRange("maxProcessingRate", defaultGoopProcessingRate, 0, Integer.MAX_VALUE);
 
         int defaultBulbCapacity = 10000;
         GOOP_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goop in a single bulb")
