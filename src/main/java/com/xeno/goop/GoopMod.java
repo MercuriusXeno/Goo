@@ -1,6 +1,11 @@
 package com.xeno.goop;
 
+import com.xeno.goop.events.ForgeCommonEvents;
+import com.xeno.goop.events.ModClientEvents;
+import com.xeno.goop.mappings.MappingHandler;
 import com.xeno.goop.setup.*;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -20,15 +25,31 @@ public class GoopMod
     public GoopMod() {
         mappingHandler = new MappingHandler();
 
-        // configuration things
-        config = new Config();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, config.server);
-        config.loadConfig(config.server, FMLPaths.CONFIGDIR.get().resolve("goop-server.toml"));
+        initializeConfiguration();
 
         Registry.init();
 
-        // Register the setup method for mod-loading
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
+        initializeEventListeners();
     }
+
+    private void initializeConfiguration()
+    {
+        config = new Config();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, config.server);
+        config.loadConfig(config.server, FMLPaths.CONFIGDIR.get().resolve("goop-server.toml"));
+    }
+
+    private void initializeEventListeners()
+    {
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ForgeCommonEvents::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ModClientEvents::init);
+    }
+
+    public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)
+    {
+        @Override
+        public ItemStack createIcon() {
+            return new ItemStack(Registry.SOLIDIFIER.get());
+        }
+    };
 }

@@ -1,7 +1,6 @@
 package com.xeno.goop.tiles;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.library.Compare;
 import com.xeno.goop.library.GoopMapping;
 import com.xeno.goop.library.GoopValue;
 import com.xeno.goop.network.ChangeSolidifierTargetPacket;
@@ -19,7 +18,6 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
@@ -104,7 +102,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private void handleSolidifying()
     {
-        GoopMapping mapping = getTargetMapping();
+        GoopMapping mapping = getItemMapping(target);
         if (mapping.isUnusable()) {
             return;
         }
@@ -255,21 +253,12 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         return mapping.values().stream().anyMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.getAmount());
     }
 
-    private GoopMapping getTargetMapping()
+    private GoopMapping getItemMapping(Item item)
     {
-        if (!GoopMod.mappingHandler.has(target)) {
-            clearTarget();
+        if (!GoopMod.mappingHandler.has(item)) {
             return GoopMapping.DENIED;
         }
-        return GoopMod.mappingHandler.get(target);
-    }
-
-    private void clearTarget()
-    {
-        target = Items.AIR;
-        targetStack = ItemStack.EMPTY;
-        changeTargetTimer = 0;
-        sendTargetUpdate();
+        return GoopMod.mappingHandler.get(item);
     }
 
     public Direction getHorizontalFacing()
@@ -299,7 +288,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean isValidTarget(Item item)
     {
-        return !getTargetMapping().isUnusable();
+        return !getItemMapping(item).isUnusable();
     }
 
     private void enterTargetSwapMode(Item item)

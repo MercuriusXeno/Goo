@@ -1,12 +1,10 @@
-package com.xeno.goop.setup;
+package com.xeno.goop.mappings;
 
 import com.xeno.goop.library.*;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 
 import java.util.*;
-
-import static com.xeno.goop.library.GoopMapping.DENIED;
 
 public class DeniedMappings {
     private Map<String, GoopMapping> values = new TreeMap<>(Compare.stringLexicographicalComparator);

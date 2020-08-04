@@ -36,6 +36,7 @@ public class Solidifier extends Block {
                 .hardnessAndResistance(4.0f));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public int getLightValue(BlockState state) {
         return state.get(BlockStateProperties.POWERED) ? 15 : 0;
@@ -92,12 +93,20 @@ public class Solidifier extends Block {
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
+        if (handIn == Hand.OFF_HAND) {
+            return ActionResultType.PASS;
+        }
+
         // ignore all hits other than north facing hit.
-        if (hit.getFace() != Direction.NORTH) {
+        if (hit.getFace() != state.get(BlockStateProperties.HORIZONTAL_FACING)) {
             return ActionResultType.PASS;
         }
 
         if (worldIn == null) {
+            return ActionResultType.PASS;
+        }
+
+        if (worldIn.isRemote()) {
             return ActionResultType.PASS;
         }
 

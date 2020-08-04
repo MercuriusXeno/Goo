@@ -1,4 +1,4 @@
-package com.xeno.goop.setup;
+package com.xeno.goop.mappings;
 
 import com.xeno.goop.library.MappingGroup;
 import net.minecraft.item.Items;

@@ -1,4 +1,4 @@
-package com.xeno.goop.setup;
+package com.xeno.goop.events;
 
 import com.xeno.goop.GoopMod;
 import com.xeno.goop.library.GoopMapping;
@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = GoopMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class TooltipHook
+public class ForgeClientEvents
 {
     @SubscribeEvent
     public static void tooltipEvent(ItemTooltipEvent e) {

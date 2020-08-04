@@ -42,17 +42,17 @@ public class Registry {
 
     // Goop Bulbs registration
     public static final RegistryObject<GoopBulb> GOOP_BULB = BLOCKS.register("goop_bulb", GoopBulb::new);
-    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(CommonSetup.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(GoopMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GoopBulbTile>> GOOP_BULB_TILE = TILES.register("goop_bulb", () -> TileEntityType.Builder.create(GoopBulbTile::new, GOOP_BULB.get()).build(null));
 
     // Goopifier registration
     public static final RegistryObject<Goopifier> GOOPIFIER = BLOCKS.register("goopifier", Goopifier::new);
-    public static final RegistryObject<Item> GOOPIFIER_ITEM = ITEMS.register("goopifier", () -> new BlockItem(GOOPIFIER.get(), new Item.Properties().group(CommonSetup.ITEM_GROUP)));
+    public static final RegistryObject<Item> GOOPIFIER_ITEM = ITEMS.register("goopifier", () -> new BlockItem(GOOPIFIER.get(), new Item.Properties().group(GoopMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GoopifierTile>> GOOPIFIER_TILE = TILES.register("goopifier", () -> TileEntityType.Builder.create(GoopifierTile::new, GOOPIFIER.get()).build(null));
 
     // Solidifier registration
     public static final RegistryObject<Solidifier> SOLIDIFIER = BLOCKS.register("solidifier", Solidifier::new);
-    public static final RegistryObject<Item> SOLIDIFIER_ITEM = ITEMS.register("solidifier", () -> new BlockItem(SOLIDIFIER.get(), new Item.Properties().group(CommonSetup.ITEM_GROUP)));
+    public static final RegistryObject<Item> SOLIDIFIER_ITEM = ITEMS.register("solidifier", () -> new BlockItem(SOLIDIFIER.get(), new Item.Properties().group(GoopMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, SOLIDIFIER.get()).build(null));
 
     // Goop!

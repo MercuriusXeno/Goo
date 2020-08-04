@@ -58,28 +58,30 @@ public class Config {    ;
         serverBuilder.comment().push("machines");
 
         int defaultGoopTransferRate = 8;
-        GOOP_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs")
+        GOOP_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + defaultGoopTransferRate)
                 .defineInRange("maxTransferRate", defaultGoopTransferRate, 0, Integer.MAX_VALUE);
 
         int defaultGoopProcessingRate = 1;
-        GOOP_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of goopifiers and solidifiers")
+        GOOP_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of goopifiers and solidifiers, default: " + defaultGoopProcessingRate)
                 .defineInRange("maxProcessingRate", defaultGoopProcessingRate, 0, Integer.MAX_VALUE);
 
         int defaultBulbCapacity = 10000;
-        GOOP_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goop in a single bulb")
+        GOOP_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goop in a single bulb, default: " + defaultBulbCapacity)
                 .defineInRange("maxBulbCapacity", defaultBulbCapacity, 0, Integer.MAX_VALUE);
+
+        serverBuilder.pop();
 
         serverBuilder.comment().push("mappings");
         double defaultMoltenRatio = 3d;
-        SMELTING_ITEM_MOLTEN_RATIO = serverBuilder.comment("Ratio of molten goop per item of burn time (eg coal, 8 items, 8x molten)")
+        SMELTING_ITEM_MOLTEN_RATIO = serverBuilder.comment("Ratio of molten goop per item of burn time (eg coal, 8 items, 8x molten), default: " + defaultMoltenRatio)
                 .defineInRange("moltenSmeltingRatio", defaultMoltenRatio, 0d, Double.MAX_VALUE);
 
         double defaultVitalHungerRatio = 1d;
-        FOOD_HUNGER_VITAL_RATIO = serverBuilder.comment("Ratio of food hunger restoration to vital goop")
+        FOOD_HUNGER_VITAL_RATIO = serverBuilder.comment("Ratio of food hunger restoration to vital goop, default: " + defaultVitalHungerRatio)
                 .defineInRange("foodHungerRatio", defaultVitalHungerRatio, 0d, Double.MAX_VALUE);
 
         double defaultVitalSaturationRatio = 10d;
-        FOOD_SATURATION_VITAL_RATIO = serverBuilder.comment("Ratio of food saturation restoration to vital goop")
+        FOOD_SATURATION_VITAL_RATIO = serverBuilder.comment("Ratio of food saturation restoration to vital goop, default: " + defaultVitalSaturationRatio)
                 .defineInRange("foodSaturationRatio", defaultVitalSaturationRatio, 0d, Double.MAX_VALUE);
 
 

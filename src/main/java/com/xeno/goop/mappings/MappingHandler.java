@@ -1,4 +1,4 @@
-package com.xeno.goop.setup;
+package com.xeno.goop.mappings;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;

@@ -171,6 +171,10 @@ public class GoopMapping {
 
     public void translateToTooltip(List<ITextComponent> toolTip)
     {
+        if (this.isUnusable()) {
+            return;
+        }
+
         toolTip.add(new TranslationTextComponent(GOOP_MAPPING_PREFACE_TRANSLATION_KEY));
         int index = 0;
         int displayIndex = 0;

@@ -1,7 +1,6 @@
 package com.xeno.goop.network;
 
 import com.xeno.goop.GoopMod;
-import com.xeno.goop.setup.MappingHandler;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
