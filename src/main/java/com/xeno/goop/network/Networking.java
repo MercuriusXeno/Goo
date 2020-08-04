@@ -40,6 +40,12 @@ public class Networking {
                 .decoder(BulbVerticalFillPacket::new)
                 .consumer(BulbVerticalFillPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(ChangeSolidifierTargetPacket.class, nextID())
+                .encoder(ChangeSolidifierTargetPacket::toBytes)
+                .decoder(ChangeSolidifierTargetPacket::new)
+                .consumer(ChangeSolidifierTargetPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {

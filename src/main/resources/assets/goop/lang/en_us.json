@@ -20,6 +20,11 @@
   "fluid.goop.vital_goop": "Vital",
   "fluid.goop.chromatic_goop": "Chromatic",
 
+  "_comment": "Misc",
+  "tooltip.goop.composition_preface": "/nGoo Composition: ",
+  "tooltip.goop.solidifying_target_preface": "/nSolidifying: ",
+  "tooltip.goop.goo_in_buffer": "/nGoo in Buffer: ",
+
   "_comment": "Creative Tabs",
   "itemGroup.goop": "Goo"
 }

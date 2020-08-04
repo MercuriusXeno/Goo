@@ -46,6 +46,15 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
         if (tile.getWorld() == null) {
             return;
         }
+
+        // one function of the solidifier is a safety mechanism to prevent accidentally changing the item.
+        // when you attempt to change it, you get a flashing indication that you're trying to alter the target
+        // which you must then confirm. this is achieved by checking the tile change timer is nonzero, abstracted into shouldFlash()
+        // shouldFlash() is also only true when the world timer is inside an interval where flashing should occur.
+        if (tile.shouldFlashTargetItem()) {
+            return;
+        }
+
         // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
         int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(tile.getHorizontalFacing()));
 
@@ -62,13 +71,8 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
             Direction direction = tile.getHorizontalFacing();
             matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(direction.getHorizontalIndex() * 90)));
             // scale
-            boolean isBlock = item.getItem() instanceof BlockItem;
-            boolean isX = tile.getHorizontalFacing().getAxis() == Direction.Axis.X;
-            boolean isZ = tile.getHorizontalFacing().getAxis() == Direction.Axis.Z;
-            float xScale = 0.2F * (isBlock ? 2F : 1F) * (isBlock && isX ? .05F : 1F);
-            float yScale = 0.2F * (isBlock ? 2F : 1F);
-            float zScale = 0.2F * (isBlock ? 2F : 1F) * (isBlock && isZ ? .05F : 1F);
-            matrices.scale(xScale, yScale, zScale);
+            boolean isBlock = item.getItem() instanceof BlockItem ;
+            matrices.scale((isBlock ? 0.4F : 0.2F), (isBlock ? 0.4F : 0.2F), (isBlock ? .02F : 0.2F));
             RenderHelper.disableStandardItemLighting();
 
             Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, overlay, matrices, buffer);

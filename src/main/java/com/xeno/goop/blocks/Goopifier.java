@@ -96,6 +96,12 @@ public class Goopifier extends Block {
         builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED);
     }
 
+    @Override
+    public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
+    {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        GoopifierTile.addInformation(stack, tooltip);
+    }
 
     @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
@@ -104,6 +110,10 @@ public class Goopifier extends Block {
             GoopifierTile goopifier = (GoopifierTile)te;
             if (!world.isRemote) {
                 goopifier.spewItems();
+                ItemStack stack = goopifier.getGoopifierStack();
+                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
+                itemEntity.setDefaultPickupDelay();
+                world.addEntity(itemEntity);
             }
         }
 

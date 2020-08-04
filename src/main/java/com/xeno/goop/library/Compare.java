@@ -23,4 +23,7 @@ public class Compare {
 
     public static Comparator<FluidStack> fluidNameComparator = Comparator.comparing(FluidStack::getTranslationKey);
 
+    public static Comparator<Map.Entry<String, Double>> fluidAmountMapComparator = Map.Entry.comparingByValue();
+
+    public static Comparator<Map.Entry<String, Double>> fluidNameMapComparator = Map.Entry.comparingByKey();
 }

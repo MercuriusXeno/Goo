@@ -1,9 +1,12 @@
 package com.xeno.goop.tiles;
 
 import com.xeno.goop.GoopMod;
+import com.xeno.goop.library.Compare;
 import com.xeno.goop.library.GoopMapping;
 import com.xeno.goop.library.GoopValue;
 import com.xeno.goop.setup.Registry;
+import javafx.collections.FXCollections;
+import javafx.collections.transformation.SortedList;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -20,6 +23,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -27,6 +32,7 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -359,6 +365,24 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         }
     }
 
+    private static Map<String, Double> deserializeGoopForDisplay(CompoundNBT tag)
+    {
+        Map<String, Double> unsorted = new HashMap<>();
+        int size = tag.getInt("count");
+        for(int i = 0; i < size; i++) {
+            CompoundNBT goopTag = tag.getCompound("goop" + i);
+            String key = goopTag.getString("key");
+            double value = goopTag.getDouble("value");
+            unsorted.put(key, value);
+        }
+
+        Map<String, Double> sorted = new LinkedHashMap<>();
+        unsorted.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> sorted.put(x.getKey(), x.getValue()));
+
+        return sorted;
+    }
+
     private void deserializeItems(CompoundNBT tag)
     {
         CompoundNBT itemTag = tag.getCompound("items");
@@ -369,8 +393,8 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
     @Override
     public CompoundNBT write(CompoundNBT tag)
     {
-        tag.put("goop", serializeGoop());
         tag.put("items", serializeItems());
+        tag.put("goop", serializeGoop());
         tag.putBoolean("is_doing_stuff", isDoingStuff);
         return super.write(tag);
     }
@@ -379,8 +403,8 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
     public void read(CompoundNBT tag)
     {
         super.read(tag);
-        deserializeGoop(tag);
         deserializeItems(tag);
+        deserializeGoop(tag);
         isDoingStuff = tag.getBoolean("is_doing_stuff");
     }
 
@@ -390,6 +414,79 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
             ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), s);
             itemEntity.setDefaultPickupDelay();
             world.addEntity(itemEntity);
+        }
+    }
+
+    public ItemStack getGoopifierStack()
+    {
+        ItemStack stack = new ItemStack(Registry.GOOPIFIER.get());
+
+        CompoundNBT goopifierTag = new CompoundNBT();
+        write(goopifierTag);
+        goopifierTag.remove("x");
+        goopifierTag.remove("y");
+        goopifierTag.remove("z");
+        // the goopifier doesn't retain items when broken, it spews them out.
+        // it does, however, remember its buffer.
+        goopifierTag.remove("items");
+
+        CompoundNBT stackTag = new CompoundNBT();
+        stackTag.put("BlockEntityTag", goopifierTag);
+        stack.setTag(stackTag);
+
+        return stack;
+    }
+
+    // goopifier itemstack retains its buffer, if it had anything in the buffer that wasn't pumped out yet.
+    public static void addInformation(ItemStack stack, List<ITextComponent> tooltip)
+    {
+        CompoundNBT stackTag = stack.getTag();
+        if (stackTag == null) {
+            return;
+        }
+
+        if (!stackTag.contains("BlockEntityTag")) {
+            return;
+        }
+
+        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
+
+        if (!bulbTag.contains("goop")) {
+            return;
+        }
+
+        CompoundNBT goopTag = bulbTag.getCompound("goop");
+        Map<String, Double> sortedValues = deserializeGoopForDisplay(goopTag);
+        int index = 0;
+        int displayIndex = 0;
+        ITextComponent fluidAmount = null;
+
+        if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
+            tooltip.add(new TranslationTextComponent("tooltip.goop.goo_in_buffer"));
+        }
+
+        for(Map.Entry<String, Double> v : sortedValues.entrySet()) {
+            index++;
+            if (v.getValue() == 0D) {
+                continue;
+            }
+            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getValue()) + " mB";
+            String key = v.getKey();
+            String fluidTranslationKey = Registry.getFluidTranslationKey(key);
+            if (fluidTranslationKey == null) {
+                continue;
+            }
+            displayIndex++;
+            if (displayIndex % 2 == 1) {
+                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+            } else {
+                if (fluidAmount != null) {
+                    fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                }
+            }
+            if (displayIndex % 2 == 0 || index == sortedValues.size()) {
+                tooltip.add(fluidAmount);
+            }
         }
     }
 }

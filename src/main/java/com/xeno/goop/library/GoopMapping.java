@@ -16,6 +16,7 @@ public class GoopMapping {
     public static final GoopMapping EMPTY = new GoopMapping(false, false);
     public static final GoopMapping DENIED = new GoopMapping(true, false);
     public static final GoopMapping UNKNOWN = new GoopMapping(false, true);
+    private static final String GOOP_MAPPING_PREFACE_TRANSLATION_KEY = "tooltip.goop.composition_preface";
 
     private List<GoopValue> values;
     private boolean isDenied;
@@ -170,6 +171,7 @@ public class GoopMapping {
 
     public void translateToTooltip(List<ITextComponent> toolTip)
     {
+        toolTip.add(new TranslationTextComponent(GOOP_MAPPING_PREFACE_TRANSLATION_KEY));
         int index = 0;
         int displayIndex = 0;
         ITextComponent fluidAmount = null;
