@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.xeno.goop.library.*;
 import com.xeno.goop.network.GoopValueSyncPacketData;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.crafting.IRecipe;
@@ -360,6 +361,10 @@ public class MappingHandler {
         // TODO
     }
 
+    public GoopMapping get(Item item) {
+        return get(Objects.requireNonNull(item.getRegistryName()).toString());
+    }
+
     public GoopMapping get(String registryName)
     {
         if (values.containsKey(registryName)) {
@@ -367,5 +372,14 @@ public class MappingHandler {
         }
 
         return UNKNOWN;
+    }
+
+    public boolean has(Item item)
+    {
+        return has(Objects.requireNonNull(item.getRegistryName()).toString());
+    }
+
+    public boolean has(String string) {
+        return values.containsKey(string);
     }
 }

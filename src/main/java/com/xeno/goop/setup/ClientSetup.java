@@ -2,6 +2,7 @@ package com.xeno.goop.setup;
 
 import com.xeno.goop.GoopMod;
 import com.xeno.goop.client.render.GoopBulbTileRenderer;
+import com.xeno.goop.client.render.SolidifierTileRenderer;
 import com.xeno.goop.library.GoopMapping;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
@@ -24,6 +25,7 @@ public class ClientSetup {
     {
         setGoopBulbTransparencyRenderLayer();
         GoopBulbTileRenderer.register();
+        SolidifierTileRenderer.register();
     }
 
     private static void setGoopBulbTransparencyRenderLayer() {

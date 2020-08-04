@@ -11,6 +11,7 @@ public class GoopCommands {
         LiteralCommandNode<CommandSource> cmdGoop = dispatcher.register(
                 Commands.literal(GoopMod.MOD_ID)
                         .then(CommandEvaluate.register(dispatcher))
+
         );
 
         dispatcher.register(Commands.literal("goop").redirect(cmdGoop));

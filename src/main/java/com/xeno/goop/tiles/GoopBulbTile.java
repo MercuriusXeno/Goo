@@ -9,10 +9,14 @@ import com.xeno.goop.network.Networking;
 import com.xeno.goop.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.datasync.DataParameter;
+import net.minecraft.network.datasync.DataSerializers;
+import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
@@ -32,7 +36,6 @@ import java.util.*;
 
 public class GoopBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
     private BulbFluidHandler fluidHandler = createHandler();
-
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
     private List<FluidStack> goop = new ArrayList<>();
     private float verticalFillIntensity = 0f;
