@@ -3,9 +3,11 @@ package com.xeno.goop.network;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.DimensionType;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
@@ -15,13 +17,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class FluidUpdatePacket {
-    private final DimensionType type;
+    private final RegistryKey<World> worldRegistryKey;
     private final BlockPos pos;
     private final int indexes;
     private final List<FluidStack> fluids;
 
     public FluidUpdatePacket(PacketBuffer buf) {
-        type = DimensionType.getById(buf.readInt());
+        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         indexes = buf.readInt();
         fluids = new ArrayList<>();
@@ -30,8 +32,8 @@ public class FluidUpdatePacket {
         }
     }
 
-    public FluidUpdatePacket(DimensionType type, BlockPos pos, List<FluidStack> fluidStacks) {
-        this.type = type;
+    public FluidUpdatePacket(RegistryKey<World> registryKey, BlockPos pos, List<FluidStack> fluidStacks) {
+        this.worldRegistryKey = registryKey;
         this.pos = pos;
         this.indexes = fluidStacks.size();
         this.fluids = new ArrayList<>();
@@ -39,7 +41,7 @@ public class FluidUpdatePacket {
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeInt(type.getId());
+        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
         buf.writeBlockPos(pos);
         buf.writeInt(indexes);
         for(int i = 0; i < indexes; i++) {
@@ -53,7 +55,7 @@ public class FluidUpdatePacket {
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.dimension.getType() != type) {
+                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);

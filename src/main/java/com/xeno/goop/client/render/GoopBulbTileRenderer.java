@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 

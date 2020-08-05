@@ -3,6 +3,7 @@ package com.xeno.goop.library;
 import com.xeno.goop.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 
@@ -178,7 +179,7 @@ public class GoopMapping {
         toolTip.add(new TranslationTextComponent(GOOP_MAPPING_PREFACE_TRANSLATION_KEY));
         int index = 0;
         int displayIndex = 0;
-        ITextComponent fluidAmount = null;
+        IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
         List<GoopValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.goopNameComparator));
         for(GoopValue v : sortedValues) {
@@ -190,10 +191,10 @@ public class GoopMapping {
             }
             displayIndex++;
             if (displayIndex % 2 == 1) {
-                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
             } else {
                 if (fluidAmount != null) {
-                    fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                    fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
                 }
             }
             if (displayIndex % 2 == 0 || index == sortedValues.size()) {

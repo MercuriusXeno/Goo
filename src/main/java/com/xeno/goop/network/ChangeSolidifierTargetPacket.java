@@ -4,33 +4,33 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 public class ChangeSolidifierTargetPacket
 {
-    private final DimensionType type;
+    private final RegistryKey<World> worldRegistryKey;
     private final BlockPos pos;
     private final ItemStack target;
     private final ItemStack newTarget;
     private final int changeTargetTimer;
 
     public ChangeSolidifierTargetPacket(PacketBuffer buf) {
-        type = DimensionType.getById(buf.readInt());
+        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         target = buf.readItemStack();
         newTarget = buf.readItemStack();
         changeTargetTimer = buf.readInt();
     }
 
-    public ChangeSolidifierTargetPacket(DimensionType type, BlockPos pos, ItemStack target, ItemStack newTarget, int changeTargetTimer) {
-        this.type = type;
+    public ChangeSolidifierTargetPacket(RegistryKey<World> registryKey, BlockPos pos, ItemStack target, ItemStack newTarget, int changeTargetTimer) {
+        this.worldRegistryKey = registryKey;
         this.pos = pos;
         this.target = target;
         this.newTarget = newTarget;
@@ -38,7 +38,7 @@ public class ChangeSolidifierTargetPacket
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeInt(type.getId());
+        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
         buf.writeBlockPos(pos);
         buf.writeItemStack(target);
         buf.writeItemStack(newTarget);
@@ -51,7 +51,7 @@ public class ChangeSolidifierTargetPacket
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.dimension.getType() != type) {
+                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);

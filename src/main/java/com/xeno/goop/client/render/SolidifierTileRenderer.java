@@ -11,7 +11,8 @@ import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
             // translate to center
             matrices.translate(0.5D, 0.15D, 0.5D);
             // translate
-            Vec3d vecOrient = this.getRenderOffset(tile, partialTicks);
+            Vector3d vecOrient = this.getRenderOffset(tile, partialTicks);
             matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
             // rotate
             Direction direction = tile.getHorizontalFacing();
@@ -67,17 +68,17 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
         matrices.pop();
     }
 
-    private static final Map<Direction, Vec3d> renderVec = new HashMap<>();
+    private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vec3d(0D, 0D, -0.5D));
-        renderVec.put(Direction.SOUTH, new Vec3d(0D, 0D, 0.5D));
-        renderVec.put(Direction.EAST, new Vec3d(0.5D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vec3d(-0.5D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.5D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.5D));
+        renderVec.put(Direction.EAST, new Vector3d(0.5D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.5D, 0D, 0D));
     }
-    private Vec3d getRenderOffset(SolidifierTile entityIn, float partialTicks)
+    private Vector3d getRenderOffset(SolidifierTile entityIn, float partialTicks)
     {
         if (!renderVec.containsKey(entityIn.getHorizontalFacing())) {
-            return Vec3d.ZERO;
+            return Vector3d.ZERO;
         }
         return renderVec.get(entityIn.getHorizontalFacing());
     }

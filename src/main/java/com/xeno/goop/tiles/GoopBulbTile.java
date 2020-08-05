@@ -9,6 +9,7 @@ import com.xeno.goop.network.Networking;
 import com.xeno.goop.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
@@ -21,6 +22,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.capabilities.Capability;
@@ -81,7 +83,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         if (world == null) {
             return;
         }
-        Networking.sendToClientsAround(new BulbVerticalFillPacket(world.dimension.getType(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(world.getServer()).getWorld(world.dimension.getType()), pos);
+        Networking.sendToClientsAround(new BulbVerticalFillPacket(world.func_234923_W_(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
     }
 
     public float verticalFillIntensity()
@@ -303,7 +305,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
             if (world.getServer() == null) {
                 return;
             }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.dimension.getType(), pos, goop), world.getServer().getWorld(world.dimension.getType()), pos);
+            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goop), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
         }
     }
 
@@ -348,11 +350,11 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         return super.write(tag);
     }
 
-    @Override
-    public void read(CompoundNBT compound) {
-        CompoundNBT goopTag = compound.getCompound("goop");
+    public void read(BlockState state, CompoundNBT tag)
+    {
+        CompoundNBT goopTag = tag.getCompound("goop");
         deserializeGoop(goopTag);
-        super.read(compound);
+        super.read(state, tag);
         onContentsChanged();
     }
 
@@ -424,7 +426,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         List<FluidStack> fluidsDeserialized = deserializeGoopForDisplay(goopTag);
         int index = 0;
         int displayIndex = 0;
-        ITextComponent fluidAmount = null;
+        IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
         List<FluidStack> sortedValues = new SortedList<>(FXCollections.observableArrayList(fluidsDeserialized), Compare.fluidAmountComparator.thenComparing(Compare.fluidNameComparator));
         for(FluidStack v : sortedValues) {
@@ -439,10 +441,10 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
             }
             displayIndex++;
             if (displayIndex % 2 == 1) {
-                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
             } else {
                 if (fluidAmount != null) {
-                    fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                    fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
                 }
             }
             if (displayIndex % 2 == 0 || index == sortedValues.size()) {

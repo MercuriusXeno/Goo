@@ -18,6 +18,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.util.Constants;
@@ -398,9 +399,9 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
     }
 
     @Override
-    public void read(CompoundNBT tag)
+    public void read(BlockState state, CompoundNBT tag)
     {
-        super.read(tag);
+        super.read(state, tag);
         deserializeItems(tag);
         deserializeGoop(tag);
         isDoingStuff = tag.getBoolean("is_doing_stuff");
@@ -457,7 +458,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         Map<String, Double> sortedValues = deserializeGoopForDisplay(goopTag);
         int index = 0;
         int displayIndex = 0;
-        ITextComponent fluidAmount = null;
+        IFormattableTextComponent fluidAmount = null;
 
         if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
             tooltip.add(new TranslationTextComponent("tooltip.goop.goo_in_buffer"));
@@ -476,10 +477,10 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
             }
             displayIndex++;
             if (displayIndex % 2 == 1) {
-                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
             } else {
                 if (fluidAmount != null) {
-                    fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                    fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
                 }
             }
             if (displayIndex % 2 == 0 || index == sortedValues.size()) {

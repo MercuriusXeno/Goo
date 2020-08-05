@@ -7,6 +7,8 @@ import com.xeno.goop.library.Helper;
 import com.xeno.goop.network.ChangeSolidifierTargetPacket;
 import com.xeno.goop.network.Networking;
 import com.xeno.goop.setup.Registry;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.world.DimensionRenderInfo;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.ItemStackHelper;
@@ -19,8 +21,10 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3i;
+import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.util.LazyOptional;
@@ -124,24 +128,24 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return;
         }
         ItemStack stack = targetStack.copy();
-        Vec3d nozzleLocation = getNozzleLocation();
+        Vector3d nozzleLocation = getNozzleLocation();
         ItemEntity itemEntity = new ItemEntity(world, nozzleLocation.getX(), nozzleLocation.getY(), nozzleLocation.getZ(), stack);
-        Vec3d spitVector = getSpitVector();
+        Vector3d spitVector = getSpitVector();
         itemEntity.setVelocity(spitVector.getX(), spitVector.getY(), spitVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
     }
 
-    private Vec3d getNozzleLocation()
+    private Vector3d getNozzleLocation()
     {
-        Vec3d origin = new Vec3d(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F);
-        Vec3i directionalOffset = getHorizontalFacing().getDirectionVec();
+        Vector3d origin = new Vector3d(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F);
+        Vector3i directionalOffset = getHorizontalFacing().getDirectionVec();
         return origin.add(directionalOffset.getX() * 0.5F, 0F, directionalOffset.getZ() * 0.5F);
     }
 
-    private Vec3d getSpitVector()
+    private Vector3d getSpitVector()
     {
-        return new Vec3d(
+        return new Vector3d(
                 getHorizontalFacing().getDirectionVec().getX() * 0.05F,
                 0F,
                 getHorizontalFacing().getDirectionVec().getZ() * 0.05F);
@@ -306,7 +310,8 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world == null || world.isRemote()) {
             return;
         }
-        Networking.sendToClientsAround(new ChangeSolidifierTargetPacket(world.dimension.getType(), pos, targetStack, newTargetStack, changeTargetTimer), world.getServer().getWorld(world.dimension.getType()), pos);
+
+        Networking.sendToClientsAround(new ChangeSolidifierTargetPacket(world.func_234923_W_(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
     }
 
     private void changeTarget(Item item)
@@ -339,9 +344,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     }
 
     @Override
-    public void read(CompoundNBT tag)
+    public void read(BlockState state, CompoundNBT tag)
     {
-        super.read(tag);
+        super.read(state, tag);
         deserializeGoop(tag);
         deserializeItems(tag);
     }
@@ -436,7 +441,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             Map<String, Double> sortedValues = deserializeGoopForDisplay(goopTag);
             int index = 0;
             int displayIndex = 0;
-            ITextComponent fluidAmount = null;
+            IFormattableTextComponent fluidAmount = null;
 
             if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
                 tooltip.add(new TranslationTextComponent("tooltip.goop.goo_in_buffer"));
@@ -455,10 +460,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
                 }
                 displayIndex++;
                 if (displayIndex % 2 == 1) {
-                    fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue);
+                    fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
                 } else {
                     if (fluidAmount != null) {
-                        fluidAmount = fluidAmount.appendText(", ").appendSibling(new TranslationTextComponent(fluidTranslationKey).appendText(decimalValue));
+                        fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
                     }
                 }
                 if (displayIndex % 2 == 0 || index == sortedValues.size()) {
@@ -474,7 +479,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             ItemStack tagTargetStack = targetStacks.get(0);
 
             if (!tagTargetStack.isEmpty()) {
-                tooltip.add(new TranslationTextComponent("tooltip.goop.solidifying_target_preface").appendSibling(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
+                tooltip.add(new TranslationTextComponent("tooltip.goop.solidifying_target_preface").append(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
             }
         }
     }

@@ -36,9 +36,9 @@ public class Solidifier extends Block {
                 .hardnessAndResistance(4.0f));
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public int getLightValue(BlockState state) {
+    public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
+    {
         return state.get(BlockStateProperties.POWERED) ? 15 : 0;
     }
 
