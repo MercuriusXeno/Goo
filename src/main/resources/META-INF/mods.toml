@@ -32,7 +32,7 @@ description='''
 Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.examplemod]] #optional
+[[dependencies.goop]] #optional
     # the modid of the dependency
     modId="forge" #mandatory
     # Does this dependency have to exist - if not, ordering below must be specified
@@ -44,7 +44,7 @@ Goo is a mod about things being made of goo. You make it out of things, and you 
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
 # Here's another dependency
-[[dependencies.examplemod]]
+[[dependencies.goop]]
     modId="minecraft"
     mandatory=true
     versionRange="[1.15.2]"
