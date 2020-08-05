@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.storage.FolderName;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.nio.file.Path;
 public class FileHelper {
 
     public static File getOrCreateMappingDirectoryWithFileName(ServerWorld world, String mappingSaveDataFilename) {
-        Path worldPath = world.getSaveHandler().getWorldDirectory().toPath();
+        Path worldPath = world.getServer().func_240776_a_(FolderName.field_237247_c_).toFile().toPath();
         Path goopPath = worldPath.resolve("goop");
         File goopDir = new File(goopPath.toUri());
         boolean madeDir = goopDir.isDirectory();

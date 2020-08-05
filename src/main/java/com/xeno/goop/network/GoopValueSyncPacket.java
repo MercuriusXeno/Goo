@@ -4,11 +4,7 @@ import com.xeno.goop.GoopMod;
 import com.xeno.goop.library.Compare;
 import com.xeno.goop.library.GoopMapping;
 import com.xeno.goop.library.GoopValue;
-import net.minecraft.client.Minecraft;
-import net.minecraft.item.Item;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.dimension.DimensionType;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 

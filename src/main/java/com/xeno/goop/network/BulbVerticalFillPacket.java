@@ -1,43 +1,43 @@
 package com.xeno.goop.network;
 
-import com.xeno.goop.tiles.GoopBulbTile;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 public class BulbVerticalFillPacket
 {
-    private final DimensionType type;
+    private final RegistryKey<World> worldRegistryKey;
     private final BlockPos pos;
     private final FluidStack fluid;
     private final float intensity;
 
     public BulbVerticalFillPacket(PacketBuffer buf) {
-        type = DimensionType.getById(buf.readInt());
+        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         fluid = buf.readFluidStack();
         intensity = buf.readFloat();
     }
 
-    public BulbVerticalFillPacket(DimensionType type, BlockPos pos, Fluid fluid, float intensity) {
-        this.type = type;
+    public BulbVerticalFillPacket(RegistryKey<World> registryKey, BlockPos pos, Fluid fluid, float intensity) {
+        this.worldRegistryKey = registryKey;
         this.pos = pos;
         this.fluid = new FluidStack(fluid, 1);
         this.intensity = intensity;
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeInt(type.getId());
+        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
         buf.writeBlockPos(pos);
         buf.writeFluidStack(fluid);
         buf.writeFloat(intensity);
@@ -49,7 +49,7 @@ public class BulbVerticalFillPacket
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.dimension.getType() != type) {
+                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);

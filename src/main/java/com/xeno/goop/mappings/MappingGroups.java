@@ -241,7 +241,8 @@ public class MappingGroups {
             Items.WITHER_SKELETON_SPAWN_EGG,
             Items.WOLF_SPAWN_EGG,
             Items.ZOMBIE_HORSE_SPAWN_EGG,
-            Items.ZOMBIE_PIGMAN_SPAWN_EGG,
+            Items.PIGLIN_SPAWN_EGG,
+            Items.ZOMBIFIED_PIGLIN_SPAWN_EGG,
             Items.ZOMBIE_SPAWN_EGG,
             Items.ZOMBIE_VILLAGER_SPAWN_EGG
     );
