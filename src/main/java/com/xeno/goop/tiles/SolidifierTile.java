@@ -3,6 +3,7 @@ package com.xeno.goop.tiles;
 import com.xeno.goop.GoopMod;
 import com.xeno.goop.library.GoopMapping;
 import com.xeno.goop.library.GoopValue;
+import com.xeno.goop.library.Helper;
 import com.xeno.goop.network.ChangeSolidifierTargetPacket;
 import com.xeno.goop.network.Networking;
 import com.xeno.goop.setup.Registry;
@@ -295,7 +296,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     {
         changeTargetTimer = CHANGE_TARGET_TIMER_DURATION;
         newTarget = item;
-        newTargetStack = item.getDefaultInstance();
+        newTargetStack = Helper.getSingleton(item);
 
         sendTargetUpdate();
     }
@@ -312,7 +313,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     {
         changeTargetTimer = 0;
         target = item;
-        targetStack = item.getDefaultInstance();
+        targetStack = Helper.getSingleton(item);
         newTarget = Items.AIR;
         newTargetStack = ItemStack.EMPTY;
 

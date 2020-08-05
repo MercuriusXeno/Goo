@@ -41,8 +41,9 @@ public class GoopMod
 
     private void initializeEventListeners()
     {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ForgeCommonEvents::init);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ModClientEvents::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(ServerSetup::init);
     }
 
     public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)

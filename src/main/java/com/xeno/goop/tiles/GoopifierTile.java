@@ -227,6 +227,10 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
             return false;
         }
 
+        if (itemStackIn.isDamageable() && itemStackIn.isDamaged()) {
+            return false;
+        }
+
         if (getMappingForItem(itemStackIn) == null) {
             return false;
         }

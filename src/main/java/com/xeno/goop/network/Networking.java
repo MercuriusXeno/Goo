@@ -22,7 +22,7 @@ public class Networking {
         return ID++;
     }
 
-    public static void registerMessages() {
+    public static void registerNetworkMessages() {
         INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GoopMod.MOD_ID, "goop"),
                 () -> "1.0",
                 s -> true,
@@ -45,6 +45,12 @@ public class Networking {
                 .decoder(ChangeSolidifierTargetPacket::new)
                 .consumer(ChangeSolidifierTargetPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(GoopValueSyncPacket.class, nextID())
+                .encoder(GoopValueSyncPacket::toBytes)
+                .decoder(GoopValueSyncPacket::new)
+                .consumer(GoopValueSyncPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
@@ -53,32 +59,15 @@ public class Networking {
         INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), msg);
     }
 
-    public static void sendToClient(Object packet, ServerPlayerEntity player) {
-        INSTANCE.sendTo(packet, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
-    }
-
-    public static void sendToServer(Object packet) {
-        INSTANCE.sendToServer(packet);
-    }
-
-    public static void syncGoopValuesForEveryone() {
-        GoopValueSyncPacket packet = new GoopValueSyncPacket(serializeGoopMappings());
-        for (ServerPlayerEntity player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-            sendRemotePacket(packet, player);
-        }
-    }
-
-    private static GoopValueSyncPacketData[] serializeGoopMappings() {
-        GoopValueSyncPacketData[] data = GoopMod.mappingHandler.createPacketData();
-        PacketBuffer packetBuffer = new PacketBuffer(Unpooled.buffer());
-        GoopValueSyncPacket.write(new GoopValueSyncPacket(data), packetBuffer);
-        packetBuffer.release();
-        return data;
-    }
-
     public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {
         if (player.server.isDedicatedServer() || !player.getGameProfile().getName().equals(player.server.getServerOwner())) {
             INSTANCE.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
         }
+    }
+
+    public static void syncGoopValuesForPlayer(ServerPlayerEntity player)
+    {
+        GoopValueSyncPacket packet = GoopMod.mappingHandler.createPacketData();
+        sendRemotePacket(packet, player);
     }
 }

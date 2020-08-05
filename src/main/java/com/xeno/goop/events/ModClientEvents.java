@@ -13,10 +13,4 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 @Mod.EventBusSubscriber(modid = GoopMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModClientEvents
 {
-    public static void init(final FMLClientSetupEvent event)
-    {
-        RenderTypeLookup.setRenderLayer(Registry.GOOP_BULB.get(), RenderType.getCutout());
-        GoopBulbTileRenderer.register();
-        SolidifierTileRenderer.register();
-    }
 }

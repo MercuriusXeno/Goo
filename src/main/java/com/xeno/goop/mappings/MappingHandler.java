@@ -3,7 +3,7 @@ package com.xeno.goop.mappings;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.xeno.goop.library.*;
-import com.xeno.goop.network.GoopValueSyncPacketData;
+import com.xeno.goop.network.GoopValueSyncPacket;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -11,6 +11,7 @@ import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.RecipeManager;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nonnull;
@@ -31,7 +32,7 @@ public class MappingHandler {
     private Gson gsonInstance = new GsonBuilder().setPrettyPrinting().create();
     private Type jsonSerializerType = new TypeToken<TreeMap<String, GoopMapping>>(){}.getType();
 
-    public void reloadMappings(@Nonnull World world) {
+    public void reloadMappings(@Nonnull ServerWorld world) {
         tryLoadFromFile(world);
     }
 
@@ -39,7 +40,7 @@ public class MappingHandler {
      * @param world The world we're using to scrape for recipes, primarily, but also the save file we're using.
      * @return true if the load didn't fail for any reason.
      */
-    private boolean tryLoadFromFile(World world) {
+    private boolean tryLoadFromFile(ServerWorld world) {
         File mappingsFile = FileHelper.getOrCreateMappingDirectoryWithFileName(world, MAPPING_SAVE_DATA_FILENAME);
 
         if (mappingsFile == null) {
@@ -353,12 +354,13 @@ public class MappingHandler {
         return getLowestOutputMapping(name(output), recipeMappings);
     }
 
-    public GoopValueSyncPacketData[] createPacketData() {
-        return new GoopValueSyncPacketData[0];
+    public GoopValueSyncPacket createPacketData()
+    {
+        return new GoopValueSyncPacket(this.values);
     }
 
-    public void fromPacket(GoopValueSyncPacketData[] data) {
-        // TODO
+    public void fromPacket(Map<String, GoopMapping> data) {
+        this.values = data;
     }
 
     public GoopMapping get(Item item) {

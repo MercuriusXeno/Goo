@@ -110,9 +110,13 @@ public class Helper {
         return false;
     }
 
+    public static ItemStack getSingleton(Item item) {
+        return new ItemStack(item);
+    }
+
     public static GoopValue molten(Item burnableItem)
     {
-        ItemStack stack = burnableItem.getDefaultInstance();
+        ItemStack stack = getSingleton(burnableItem);
         int burnTime = ForgeHooks.getBurnTime(stack);
         if (burnTime == 0) {
             return molten(0d); // ignored on initialization

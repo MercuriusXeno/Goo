@@ -1,7 +1,9 @@
 package com.xeno.goop.library;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,9 +11,8 @@ import java.nio.file.Path;
 
 public class FileHelper {
 
-    public static File getOrCreateMappingDirectoryWithFileName(World world, String mappingSaveDataFilename) {
-        String worldName = world.getWorldInfo().getWorldName();
-        Path worldPath = Minecraft.getInstance().getSaveLoader().getSavesDir().resolve(worldName);
+    public static File getOrCreateMappingDirectoryWithFileName(ServerWorld world, String mappingSaveDataFilename) {
+        Path worldPath = world.getSaveHandler().getWorldDirectory().toPath();
         Path goopPath = worldPath.resolve("goop");
         File goopDir = new File(goopPath.toUri());
         boolean madeDir = goopDir.isDirectory();

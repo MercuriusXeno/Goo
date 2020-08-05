@@ -9,13 +9,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 
 @Mod.EventBusSubscriber(modid = GoopMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class ForgeCommonEvents
-{
-    public static void init(final FMLCommonSetupEvent event)
-    {
-        Networking.registerMessages();
-    }
-
+public class ForgeCommonEvents {
     // the server starting event unlocks the mapping loader for a one-time use
     @SubscribeEvent
     public static void serverLoad(FMLServerStartingEvent event)
