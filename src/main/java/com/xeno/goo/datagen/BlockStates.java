@@ -15,12 +15,12 @@ public class BlockStates extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        registerGoopBulb();
-        registerGoopifier();
+        registerGooBulb();
+        registerGooifier();
         registerSolidifier();
     }
 
-    private void registerGoopBulb() {
+    private void registerGooBulb() {
         ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()
@@ -43,21 +43,21 @@ public class BlockStates extends BlockStateProvider {
         simpleBlockItem(Registry.GOOP_BULB.get(), model);
     }
 
-    private void registerGoopifier() {
-        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/goopifier_top");
+    private void registerGooifier() {
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
         ResourceLocation bottom = new ResourceLocation("minecraft", "block/piston_bottom");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/goopifier_side");
-        ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/goopifier_back");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/goopifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/goopifier_front_on");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
+        ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
+        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
+        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_on");
         BlockModelBuilder model = models()
-                .cube("goopifier", bottom, top, front_off, back, side, side)
+                .cube("gooifier", bottom, top, front_off, back, side, side)
                 .texture("particle", front_off);
         BlockModelBuilder modelActive = models()
-                .cube("goopifier_powered", bottom, top, front_on, back, side, side)
+                .cube("gooifier_powered", bottom, top, front_on, back, side, side)
                 .texture("particle", front_on);
-        horizontalBlock(Registry.GOOPIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
-        simpleBlockItem(Registry.GOOPIFIER.get(), model);
+        horizontalBlock(Registry.GOOIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
+        simpleBlockItem(Registry.GOOIFIER.get(), model);
     }
 
     private void registerSolidifier() {

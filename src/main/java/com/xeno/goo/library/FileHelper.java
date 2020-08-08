@@ -24,12 +24,21 @@ public class FileHelper {
     }
 
     private static File getOrCreateWorldSaveFile(Path worldSaveDirectory, String worldFileName) {
-        File worldSaveDirAsFile = new File(worldSaveDirectory.toUri());
-        checkOrCreateDirectory(worldSaveDirAsFile);
+        try {
+            if (worldFileName.equals("")) {
+                throw new IOException("Nice try with the empty file name or whatever.");
+            }
+            File worldSaveDirAsFile = new File(worldSaveDirectory.toUri());
+            checkOrCreateDirectory(worldSaveDirAsFile);
 
-        File woldSaveFile = checkOrCreateFile(worldSaveDirectory.resolve(worldFileName).toFile());
-        return woldSaveFile;
+            File woldSaveFile = checkOrCreateFile(worldSaveDirectory.resolve(worldFileName).toFile());
+            return woldSaveFile;
+        }  catch(IOException e) {
+                // GooMod.warn("Caught something trying to save with an Empty file name, shame on you.");
+        }
+        return null;
     }
+
 
     public static File openWorldFile(ServerWorld world, String worldFileName) {
         return getOrCreateWorldSaveFile(getWorldGooDataDirectoryPath(world), worldFileName);

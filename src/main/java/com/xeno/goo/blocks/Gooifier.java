@@ -1,6 +1,6 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.tiles.GoopifierTile;
+import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
@@ -43,11 +43,6 @@ public class Gooifier extends Block {
         return state.get(BlockStateProperties.POWERED) ? 12 : 0;
     }
 
-    /**
-     * Called periodically clientside on blocks near the player to show effects (like furnace fire particles). Note that
-     * this method is unrelated to {@link randomTick} and {@link #needsRandomTick}, and will always be called regardless
-     * of whether the block can receive random update ticks
-     */
     @OnlyIn(Dist.CLIENT)
     public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand)
     {
@@ -79,7 +74,7 @@ public class Gooifier extends Block {
     @Nullable
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return new GoopifierTile();
+        return new GooifierTile();
     }
 
     @Nullable
@@ -99,14 +94,14 @@ public class Gooifier extends Block {
     public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        GoopifierTile.addInformation(stack, tooltip);
+        GooifierTile.addInformation(stack, tooltip);
     }
 
     @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         TileEntity te = world.getTileEntity(pos);
-        if (te instanceof GoopifierTile) {
-            GoopifierTile goopifier = (GoopifierTile)te;
+        if (te instanceof GooifierTile) {
+            GooifierTile goopifier = (GooifierTile)te;
             if (!world.isRemote) {
                 goopifier.spewItems();
                 ItemStack stack = goopifier.getGoopifierStack();

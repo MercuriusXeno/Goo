@@ -1,0 +1,30 @@
+{
+  "_comment": "Blocks",
+  "block.goo.goo_bulb": "Goo Bulb",
+  "block.goo.gooifier": "Gooifier",
+  "block.goo.solidifier": "Solidifier",
+
+  "_comment": "Items",
+  "item.goo.gasket": "Gasket",
+
+  "_comment": "Fluids",
+  "fluid.goo.aquatic_goo": "Aquatic",
+  "fluid.goo.earthen_goo": "Earthen",
+  "fluid.goo.molten_goo": "Molten",
+  "fluid.goo.esoteric_goo": "Esoteric",
+  "fluid.goo.floral_goo": "Floral",
+  "fluid.goo.faunal_goo": "Faunal",
+  "fluid.goo.fungal_goo": "Fungal",
+  "fluid.goo.regal_goo": "Regal",
+  "fluid.goo.metal_goo": "Metal",
+  "fluid.goo.vital_goo": "Vital",
+  "fluid.goo.chromatic_goo": "Chromatic",
+
+  "_comment": "Misc",
+  "tooltip.goo.composition_preface": "Goo Composition: ",
+  "tooltip.goo.solidifying_target_preface": "Solidifying: ",
+  "tooltip.goo.goo_in_buffer": "Goo in Buffer: ",
+
+  "_comment": "Creative Tabs",
+  "itemGroup.goo": "Goo"
+}

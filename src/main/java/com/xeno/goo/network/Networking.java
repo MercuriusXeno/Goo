@@ -43,10 +43,10 @@ public class Networking {
                 .consumer(ChangeSolidifierTargetPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GoopValueSyncPacket.class, nextID())
-                .encoder(GoopValueSyncPacket::toBytes)
-                .decoder(GoopValueSyncPacket::new)
-                .consumer(GoopValueSyncPacket::handle)
+        INSTANCE.messageBuilder(GooValueSyncPacket.class, nextID())
+                .encoder(GooValueSyncPacket::toBytes)
+                .decoder(GooValueSyncPacket::new)
+                .consumer(GooValueSyncPacket::handle)
                 .add();
     }
 
@@ -64,7 +64,7 @@ public class Networking {
 
     public static void syncGoopValuesForPlayer(ServerPlayerEntity player)
     {
-        GoopValueSyncPacket packet = GooMod.mappingHandler.createPacketData();
+        GooValueSyncPacket packet = GooMod.mappingHandler.createPacketData();
         sendRemotePacket(packet, player);
     }
 }

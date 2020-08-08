@@ -6,8 +6,8 @@ import com.xeno.goo.blocks.Gooifier;
 import com.xeno.goo.blocks.Solidifier;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.Gasket;
-import com.xeno.goo.tiles.GoopBulbTile;
-import com.xeno.goo.tiles.GoopifierTile;
+import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.GooifierTile;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.fluid.Fluid;
@@ -43,12 +43,12 @@ public class Registry {
     // Goop Bulbs registration
     public static final RegistryObject<GooBulb> GOOP_BULB = BLOCKS.register("goop_bulb", GooBulb::new);
     public static final RegistryObject<Item> GOOP_BULB_ITEM = ITEMS.register("goop_bulb", () -> new BlockItem(GOOP_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
-    public static final RegistryObject<TileEntityType<GoopBulbTile>> GOOP_BULB_TILE = TILES.register("goop_bulb", () -> TileEntityType.Builder.create(GoopBulbTile::new, GOOP_BULB.get()).build(null));
+    public static final RegistryObject<TileEntityType<GooBulbTile>> GOOP_BULB_TILE = TILES.register("goop_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, GOOP_BULB.get()).build(null));
 
     // Goopifier registration
-    public static final RegistryObject<Gooifier> GOOPIFIER = BLOCKS.register("goopifier", Gooifier::new);
-    public static final RegistryObject<Item> GOOPIFIER_ITEM = ITEMS.register("goopifier", () -> new BlockItem(GOOPIFIER.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
-    public static final RegistryObject<TileEntityType<GoopifierTile>> GOOPIFIER_TILE = TILES.register("goopifier", () -> TileEntityType.Builder.create(GoopifierTile::new, GOOPIFIER.get()).build(null));
+    public static final RegistryObject<Gooifier> GOOIFIER = BLOCKS.register("goopifier", Gooifier::new);
+    public static final RegistryObject<Item> GOOPIFIER_ITEM = ITEMS.register("goopifier", () -> new BlockItem(GOOIFIER.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<TileEntityType<GooifierTile>> GOOPIFIER_TILE = TILES.register("goopifier", () -> TileEntityType.Builder.create(GooifierTile::new, GOOIFIER.get()).build(null));
 
     // Solidifier registration
     public static final RegistryObject<Solidifier> SOLIDIFIER = BLOCKS.register("solidifier", Solidifier::new);

@@ -174,11 +174,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             if (t == null) {
                 continue;
             }
-            if (!(t instanceof GoopBulbTile)) {
+            if (!(t instanceof GooBulbTile)) {
                 continue;
             }
             int workLeftThisGasket = GooMod.mainConfig.goopProcessingRate();
-            GoopBulbTile b = (GoopBulbTile)t;
+            GooBulbTile b = (GooBulbTile)t;
             IFluidHandler cap = tryGettingBulbCapabilities(b, d);
             for(GooValue v : mapping.values()) {
                 workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);
@@ -186,7 +186,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
     }
 
-    private IFluidHandler tryGettingBulbCapabilities(GoopBulbTile bulb, Direction dir)
+    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
     {
         LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
         IFluidHandler cap = null;

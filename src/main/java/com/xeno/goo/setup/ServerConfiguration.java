@@ -24,7 +24,7 @@ public class ServerConfiguration
     public int goopProcessingRate() { return GOOP_MAX_PROCESSING_RATE.get(); }
 
     private ForgeConfigSpec.IntValue GOOP_BULB_TOTAL_CAPACITY;
-    public int bulbGoopCapacity() {
+    public int bulbCapacity() {
         return GOOP_BULB_TOTAL_CAPACITY.get();
     }
 

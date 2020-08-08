@@ -1,7 +1,7 @@
 package com.xeno.goo.fluids;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.tiles.GoopBulbTile;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -9,8 +9,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import javax.annotation.Nonnull;
 
 public class BulbFluidHandler implements IFluidHandler {
-    private final GoopBulbTile parent;
-    public BulbFluidHandler(GoopBulbTile t) {
+    private final GooBulbTile parent;
+    public BulbFluidHandler(GooBulbTile t) {
         parent = t;
     }
 
@@ -31,7 +31,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.mainConfig.bulbGoopCapacity() : 0;
+        return tank == 0 ? GooMod.mainConfig.bulbCapacity() : 0;
     }
 
     @Override

@@ -6,7 +6,7 @@ import com.xeno.goo.GooMod;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 
-public class GoopCommands
+public class GooCommands
 {
 
     public static void register(CommandDispatcher<CommandSource> dispatcher) {

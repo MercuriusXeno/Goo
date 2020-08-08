@@ -4,7 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GoopBulbTile;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -17,7 +17,7 @@ import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
-public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
+public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     private static final float FLUID_VERTICAL_MAX = 0.0005f;
     private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
@@ -28,10 +28,9 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
     private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
 
-    public GoopBulbTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
+    public GooBulbRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
     }
-    // public GoopBulbTileRenderer() { super(TileEntityRendererDispatcher.instance); }
 
     /**
      * Renders a fluid block with offset from the matrices and from x1/y1/z1 to x2/y2/z2 using block model coordinates, so from 0-16
@@ -200,12 +199,12 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     }
 
     @Override
-    public void render(GoopBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+    public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
-        float totalGoop = tile.getTotalGoop();
+        float totalGoo = tile.getTotalGoo();
 
         // this is the total fill percentage of the container
-        float scaledGoopHeight = totalGoop / (float) GooMod.mainConfig.bulbGoopCapacity();
+        float scaledHeight = totalGoo / (float) GooMod.mainConfig.bulbCapacity();
         float  yOffset = 0;
 
         // determine where to draw the fluid based on the model
@@ -214,16 +213,16 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
         float minY = from.getY();
         float maxY = to.getY();
         float highestToY = minY;
-        for(FluidStack goop : tile.goop()) {
+        for(FluidStack goo : tile.goop()) {
             // this is the total fill of the goop in the tank of this particular goop, as a percentage
-            float goopPercentage = goop.getAmount() / totalGoop;
-            float heightScale = goopPercentage * scaledGoopHeight;
+            float percentage = goo.getAmount() / totalGoo;
+            float heightScale = percentage * scaledHeight;
             float height = (maxY - minY) * heightScale;
             float fromY, toY;
             fromY = minY + yOffset;
             toY = fromY + height;
             highestToY = toY;
-            renderScaledFluidCuboid(goop, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
+            renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += height;
         }
 
@@ -244,6 +243,6 @@ public class GoopBulbTileRenderer extends TileEntityRenderer<GoopBulbTile> {
     private static final Vector3f verticalFillToVector(float intensity) { return new Vector3f(verticalFillHorizontalTo(intensity), TO_SCALED_VERTICAL, verticalFillHorizontalTo(intensity)); }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registry.GOOP_BULB_TILE.get(), GoopBulbTileRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOOP_BULB_TILE.get(), GooBulbRenderer::new);
     }
 }

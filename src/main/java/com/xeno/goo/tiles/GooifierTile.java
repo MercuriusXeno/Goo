@@ -31,13 +31,13 @@ import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
 
-public class GoopifierTile extends TileEntity implements ITickableTileEntity, ISidedInventory
+public class GooifierTile extends TileEntity implements ITickableTileEntity, ISidedInventory
 {
     private Map<String, Double> fluidBuffer;
     private NonNullList<ItemStack> slots = NonNullList.withSize(5, ItemStack.EMPTY);
     private boolean isDoingStuff;
     private int hasNotDoneStuff = 0;
-    public GoopifierTile() {
+    public GooifierTile() {
         super(Registry.GOOPIFIER_TILE.get());
         fluidBuffer = new TreeMap<>();
         isDoingStuff = false;
@@ -120,7 +120,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         boolean isAnyWorkDone = false;
         int maxPerTickPerGasket = GooMod.mainConfig.goopProcessingRate();
         for(Direction d : getValidGasketDirections()) {
-            GoopBulbTile bulb = getBulbInDirection(d);
+            GooBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {
                 continue;
             }
@@ -162,7 +162,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         return isAnyWorkDone;
     }
 
-    private IFluidHandler tryGettingBulbCapabilities(GoopBulbTile bulb, Direction dir)
+    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
     {
         LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
         IFluidHandler cap = null;
@@ -174,7 +174,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         return cap;
     }
 
-    private GoopBulbTile getBulbInDirection(Direction dir) {
+    private GooBulbTile getBulbInDirection(Direction dir) {
         if (world == null) {
             return null;
         }
@@ -183,10 +183,10 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
         if (tile == null) {
             return null;
         }
-        if (!(tile instanceof GoopBulbTile)) {
+        if (!(tile instanceof GooBulbTile)) {
             return null;
         }
-        return (GoopBulbTile)tile;
+        return (GooBulbTile)tile;
     }
 
     private final Direction[] VALID_GASKET_DIRECTIONS = new Direction[] { Direction.EAST, Direction.WEST, Direction.UP };
@@ -420,7 +420,7 @@ public class GoopifierTile extends TileEntity implements ITickableTileEntity, IS
 
     public ItemStack getGoopifierStack()
     {
-        ItemStack stack = new ItemStack(Registry.GOOPIFIER.get());
+        ItemStack stack = new ItemStack(Registry.GOOIFIER.get());
 
         CompoundNBT goopifierTag = new CompoundNBT();
         write(goopifierTag);

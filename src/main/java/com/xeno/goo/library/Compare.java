@@ -13,7 +13,7 @@ public class Compare {
 
     public static Comparator<String> stringLexicographicalComparator = String::compareTo;
 
-    public static Comparator<Map.Entry<IRecipe<?>, GooEntry>> recipeGoopMappingWeightComparator = Comparator.comparingDouble((k) -> k.getValue().weight());
+    public static Comparator<Map.Entry<IRecipe<?>, GooEntry>> recipeGooMappingWeightComparator = Comparator.comparingDouble((k) -> k.getValue().weight());
 
     public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::getAmount);
 

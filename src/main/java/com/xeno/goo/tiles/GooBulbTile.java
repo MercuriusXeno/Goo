@@ -32,14 +32,14 @@ import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
 
-public class GoopBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
+public class GooBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
     private BulbFluidHandler fluidHandler = createHandler();
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
     private List<FluidStack> goop = new ArrayList<>();
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
 
-    public GoopBulbTile() {
+    public GooBulbTile() {
         super(Registry.GOOP_BULB_TILE.get());
     }
 
@@ -136,7 +136,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
             return;
         }
         // check the tile below us, if it's not a bulb, bail.
-        GoopBulbTile bulb = getBulbInDirection(Direction.DOWN);
+        GooBulbTile bulb = getBulbInDirection(Direction.DOWN);
         if (bulb == null) {
             return;
         }
@@ -170,7 +170,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         for(Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST })
         {
             // check the tile in this direction, if it's not another bulb, pass;
-            GoopBulbTile bulb = getBulbInDirection(d);
+            GooBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {
                 continue;
             }
@@ -206,7 +206,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         }
     }
 
-    private IFluidHandler tryGettingBulbCapabilities(GoopBulbTile bulb, Direction dir)
+    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
     {
         LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
         IFluidHandler cap = null;
@@ -218,7 +218,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         return cap;
     }
 
-    private int trySendingFluidToBulb(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, GoopBulbTile bulb, boolean isVerticalDrain) {
+    private int trySendingFluidToBulb(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, GooBulbTile bulb, boolean isVerticalDrain) {
         // simulated drain left represents how much "suction" is left in the interaction
         // s is the maximum amount in the stack. the lesser of these is how much you can drain in one tick.
         int amountLeft = Math.min(simulatedDrainLeft, s.getAmount());
@@ -251,7 +251,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         return simulatedDrainLeft;
     }
 
-    private GoopBulbTile getBulbInDirection(Direction dir) {
+    private GooBulbTile getBulbInDirection(Direction dir) {
         if (world == null) {
             return null;
         }
@@ -260,10 +260,10 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         if (tile == null) {
             return null;
         }
-        if (!(tile instanceof GoopBulbTile)) {
+        if (!(tile instanceof GooBulbTile)) {
             return null;
         }
-        return (GoopBulbTile)tile;
+        return (GooBulbTile)tile;
     }
 
     public boolean hasFluid(Fluid fluid) {
@@ -284,7 +284,7 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
         return goop.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
     }
 
-    public int getTotalGoop() {
+    public int getTotalGoo() {
         return goop.stream().mapToInt(FluidStack::getAmount).sum();
     }
 
@@ -467,6 +467,6 @@ public class GoopBulbTile extends TileEntity implements ITickableTileEntity, Flu
 
     public int getSpaceRemaining()
     {
-        return GooMod.mainConfig.bulbGoopCapacity() - getTotalGoop();
+        return GooMod.mainConfig.bulbCapacity() - getTotalGoo();
     }
 }

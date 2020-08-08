@@ -1,7 +1,7 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.commands.GoopCommands;
+import com.xeno.goo.commands.GooCommands;
 import com.xeno.goo.entries.*;
 import com.xeno.goo.entries.pushers.*;
 import com.xeno.goo.entries.pushers.impl.*;
@@ -17,7 +17,7 @@ public class ForgeCommonEvents {
     @SubscribeEvent
     public static void serverLoad(FMLServerStartingEvent event)
     {
-        GoopCommands.register(event.getServer().getCommandManager().getDispatcher());
+        GooCommands.register(event.getServer().getCommandManager().getDispatcher());
         serverStartMappings(event);
     }
 

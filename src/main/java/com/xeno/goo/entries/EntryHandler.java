@@ -2,7 +2,7 @@ package com.xeno.goo.entries;
 
 import com.xeno.goo.library.*;
 import com.xeno.goo.entries.pushers.EntryPusher;
-import com.xeno.goo.network.GoopValueSyncPacket;
+import com.xeno.goo.network.GooValueSyncPacket;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.server.ServerWorld;
@@ -134,9 +134,9 @@ public class EntryHandler
         return values.entrySet().stream().noneMatch(v -> v.getValue().isUnknown()) ? SOLVED : UNSOLVED;
     }
 
-    public GoopValueSyncPacket createPacketData()
+    public GooValueSyncPacket createPacketData()
     {
-        return new GoopValueSyncPacket(this.values);
+        return new GooValueSyncPacket(this.values);
     }
 
     public void fromPacket(Map<String, GooEntry> data) {

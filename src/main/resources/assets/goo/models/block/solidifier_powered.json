@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "block/piston_bottom",
+    "up": "goo:block/solidifier_top_on",
+    "north": "goo:block/solidifier_front_on",
+    "south": "goo:block/solidifier_back_on",
+    "east": "goo:block/solidifier_side_on",
+    "west": "goo:block/solidifier_side_on",
+    "particle": "goo:block/solidifier_front_on"
+  }
+}

@@ -13,7 +13,7 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.util.*;
 
-import static com.xeno.goo.library.Compare.recipeGoopMappingWeightComparator;
+import static com.xeno.goo.library.Compare.recipeGooMappingWeightComparator;
 import static com.xeno.goo.library.Compare.stringLexicographicalComparator;
 import static com.xeno.goo.library.GooEntry.*;
 import static com.xeno.goo.library.GooEntry.UNKNOWN;
@@ -204,7 +204,7 @@ public class RecipePusher extends EntryPusher
         Map.Entry<IRecipe<?>, GooEntry> lowestResult = recipeMappings.entrySet().stream()
                 .filter(m -> Objects.requireNonNull(m.getKey().getRecipeOutput().getItem().getRegistryName()).toString().equals(output) &&
                         !m.getValue().isUnknown() && !m.getValue().isDenied() && !m.getValue().isEmpty())
-                .min(recipeGoopMappingWeightComparator)
+                .min(recipeGooMappingWeightComparator)
                 .orElse(null);
 
         if (lowestResult == null) {
