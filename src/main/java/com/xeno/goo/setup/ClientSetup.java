@@ -11,7 +11,7 @@ public class ClientSetup
     public static void init(final FMLClientSetupEvent event)
     {
         // rendering stuff
-        RenderTypeLookup.setRenderLayer(Registry.GOOP_BULB.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(Registry.GOO_BULB.get(), RenderType.getCutout());
         GooBulbRenderer.register();
         SolidifierTileRenderer.register();
     }

@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "group": "goop",
+  "group": "goo",
   "ingredients": [
     {
       "item": "minecraft:honey_block"
@@ -13,6 +13,6 @@
     }
   ],
   "result": {
-    "item": "goop:gasket"
+    "item": "goo:gasket"
   }
 }

@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "particle": "goop:block/bulb_side",
-    "end": "goop:block/bulb_end",
-    "side": "goop:block/bulb_side"
+    "particle": "goo:block/bulb_side",
+    "end": "goo:block/bulb_end",
+    "side": "goo:block/bulb_side"
   },
   "elements": [
     {

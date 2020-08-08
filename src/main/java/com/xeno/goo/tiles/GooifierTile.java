@@ -38,7 +38,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     private boolean isDoingStuff;
     private int hasNotDoneStuff = 0;
     public GooifierTile() {
-        super(Registry.GOOPIFIER_TILE.get());
+        super(Registry.GOOIFIER_TILE.get());
         fluidBuffer = new TreeMap<>();
         isDoingStuff = false;
     }
@@ -60,13 +60,13 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             }
         }
 
-        // to make production seamless, return only if we are still pumping out goop. If we ran out of work, resume melting items.
+        // to make production seamless, return only if we are still pumping out goo. If we ran out of work, resume melting items.
         if (!hasBufferedOutput()) {
             for (ItemStack s : slots) {
                 if (s.isEmpty()) {
                     continue;
                 }
-                GooEntry mapping = getMappingForItem(s);
+                GooEntry mapping = getEntryForItem(s);
                 if (mapping == null) {
                     continue;
                 }
@@ -93,7 +93,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
     }
 
-    private GooEntry getMappingForItem(ItemStack s)
+    private GooEntry getEntryForItem(ItemStack s)
     {
         String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
         GooEntry mapping = GooMod.mappingHandler.get(key);
@@ -118,7 +118,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     private boolean tryDistributingFluid()
     {
         boolean isAnyWorkDone = false;
-        int maxPerTickPerGasket = GooMod.mainConfig.goopProcessingRate();
+        int maxPerTickPerGasket = GooMod.mainConfig.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
             GooBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {
@@ -234,7 +234,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             return false;
         }
 
-        if (getMappingForItem(itemStackIn) == null) {
+        if (getEntryForItem(itemStackIn) == null) {
             return false;
         }
 
@@ -335,15 +335,15 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         return this.write(new CompoundNBT());
     }
 
-    private CompoundNBT serializeGoop()  {
+    private CompoundNBT serializeGoo()  {
         CompoundNBT tag = new CompoundNBT();
         tag.putInt("count", fluidBuffer.size());
         int index = 0;
         for(Map.Entry<String, Double> e : fluidBuffer.entrySet()) {
-            CompoundNBT goopTag = new CompoundNBT();
-            goopTag.putString("key", e.getKey());
-            goopTag.putDouble("value", e.getValue());
-            tag.put("goop" + index, goopTag);
+            CompoundNBT gooTag = new CompoundNBT();
+            gooTag.putString("key", e.getKey());
+            gooTag.putDouble("value", e.getValue());
+            tag.put("goo" + index, gooTag);
             index++;
         }
         return tag;
@@ -356,24 +356,24 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         return itemTag;
     }
 
-    private void deserializeGoop(CompoundNBT tag) {
+    private void deserializeGoo(CompoundNBT tag) {
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            String key = goopTag.getString("key");
-            double value = goopTag.getDouble("value");
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            String key = gooTag.getString("key");
+            double value = gooTag.getDouble("value");
             fluidBuffer.put(key, value);
         }
     }
 
-    private static Map<String, Double> deserializeGoopForDisplay(CompoundNBT tag)
+    private static Map<String, Double> deserializeGooForDisplay(CompoundNBT tag)
     {
         Map<String, Double> unsorted = new HashMap<>();
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            String key = goopTag.getString("key");
-            double value = goopTag.getDouble("value");
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            String key = gooTag.getString("key");
+            double value = gooTag.getDouble("value");
             unsorted.put(key, value);
         }
 
@@ -395,7 +395,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     public CompoundNBT write(CompoundNBT tag)
     {
         tag.put("items", serializeItems());
-        tag.put("goop", serializeGoop());
+        tag.put("goo", serializeGoo());
         tag.putBoolean("is_doing_stuff", isDoingStuff);
         return super.write(tag);
     }
@@ -405,7 +405,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     {
         super.read(state, tag);
         deserializeItems(tag);
-        deserializeGoop(tag);
+        deserializeGoo(tag);
         isDoingStuff = tag.getBoolean("is_doing_stuff");
     }
 
@@ -418,27 +418,27 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
     }
 
-    public ItemStack getGoopifierStack()
+    public ItemStack getGooifierStack()
     {
         ItemStack stack = new ItemStack(Registry.GOOIFIER.get());
 
-        CompoundNBT goopifierTag = new CompoundNBT();
-        write(goopifierTag);
-        goopifierTag.remove("x");
-        goopifierTag.remove("y");
-        goopifierTag.remove("z");
-        // the goopifier doesn't retain items when broken, it spews them out.
+        CompoundNBT gooifierTag = new CompoundNBT();
+        write(gooifierTag);
+        gooifierTag.remove("x");
+        gooifierTag.remove("y");
+        gooifierTag.remove("z");
+        // the gooifier doesn't retain items when broken, it spews them out.
         // it does, however, remember its buffer.
-        goopifierTag.remove("items");
+        gooifierTag.remove("items");
 
         CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", goopifierTag);
+        stackTag.put("BlockEntityTag", gooifierTag);
         stack.setTag(stackTag);
 
         return stack;
     }
 
-    // goopifier itemstack retains its buffer, if it had anything in the buffer that wasn't pumped out yet.
+    // gooifier itemstack retains its buffer, if it had anything in the buffer that wasn't pumped out yet.
     public static void addInformation(ItemStack stack, List<ITextComponent> tooltip)
     {
         CompoundNBT stackTag = stack.getTag();
@@ -452,18 +452,18 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
 
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
 
-        if (!bulbTag.contains("goop")) {
+        if (!bulbTag.contains("goo")) {
             return;
         }
 
-        CompoundNBT goopTag = bulbTag.getCompound("goop");
-        Map<String, Double> sortedValues = deserializeGoopForDisplay(goopTag);
+        CompoundNBT gooTag = bulbTag.getCompound("goo");
+        Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
         int index = 0;
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
 
         if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
-            tooltip.add(new TranslationTextComponent("tooltip.goop.goo_in_buffer"));
+            tooltip.add(new TranslationTextComponent("tooltip.goo.goo_in_buffer"));
         }
 
         for(Map.Entry<String, Double> v : sortedValues.entrySet()) {

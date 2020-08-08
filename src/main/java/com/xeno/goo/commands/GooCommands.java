@@ -12,8 +12,8 @@ public class GooCommands
     public static void register(CommandDispatcher<CommandSource> dispatcher) {
         LiteralCommandNode<CommandSource> cmdGoo = dispatcher.register(
                 Commands.literal(GooMod.MOD_ID)
-                    .then(CommandRegenerateMappings.register(dispatcher))
-                    .then(CommandRestoreDefaultMappings.register(dispatcher))
+                    .then(CommandRegenerateEntries.register(dispatcher))
+                    .then(CommandRestoreDefaultEntries.register(dispatcher))
         );
 
         // dispatcher.register(Commands.literal("goo").redirect(cmdGoo));

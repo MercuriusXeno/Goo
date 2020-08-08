@@ -105,7 +105,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private void handleSolidifying()
     {
-        GooEntry mapping = getItemMapping(target);
+        GooEntry mapping = getItemEntry(target);
         if (mapping.isUnusable()) {
             return;
         }
@@ -115,7 +115,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
 
         if (hasBufferedEnough(mapping)) {
-            depleteBufferByMapping(mapping);
+            depleteBufferByEntry(mapping);
             produceItem();
         }
     }
@@ -151,7 +151,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
                 getHorizontalFacing().getDirectionVec().getZ() * 0.05F);
     }
 
-    private void depleteBufferByMapping(GooEntry mapping)
+    private void depleteBufferByEntry(GooEntry mapping)
     {
         for(GooValue v : mapping.values()) {
             String key = v.getFluidResourceLocation();
@@ -177,7 +177,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             if (!(t instanceof GooBulbTile)) {
                 continue;
             }
-            int workLeftThisGasket = GooMod.mainConfig.goopProcessingRate();
+            int workLeftThisGasket = GooMod.mainConfig.gooProcessingRate();
             GooBulbTile b = (GooBulbTile)t;
             IFluidHandler cap = tryGettingBulbCapabilities(b, d);
             for(GooValue v : mapping.values()) {
@@ -258,7 +258,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         return mapping.values().stream().anyMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.getAmount());
     }
 
-    private GooEntry getItemMapping(Item item)
+    private GooEntry getItemEntry(Item item)
     {
         if (!GooMod.mappingHandler.has(item)) {
             return GooEntry.DENIED;
@@ -293,7 +293,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean isValidTarget(Item item)
     {
-        return !getItemMapping(item).isUnusable();
+        return !getItemEntry(item).isUnusable();
     }
 
     private void enterTargetSwapMode(Item item)
@@ -338,7 +338,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     @Override
     public CompoundNBT write(CompoundNBT tag)
     {
-        tag.put("goop", serializeGoop());
+        tag.put("goo", serializeGoo());
         tag.put("items", serializeItems());
         return super.write(tag);
     }
@@ -347,7 +347,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     public void read(BlockState state, CompoundNBT tag)
     {
         super.read(state, tag);
-        deserializeGoop(tag);
+        deserializeGoo(tag);
         deserializeItems(tag);
     }
 
@@ -357,38 +357,38 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         return this.write(new CompoundNBT());
     }
 
-    private CompoundNBT serializeGoop()  {
+    private CompoundNBT serializeGoo()  {
         CompoundNBT tag = new CompoundNBT();
         tag.putInt("count", fluidBuffer.size());
         int index = 0;
         for(Map.Entry<String, Double> e : fluidBuffer.entrySet()) {
-            CompoundNBT goopTag = new CompoundNBT();
-            goopTag.putString("key", e.getKey());
-            goopTag.putDouble("value", e.getValue());
-            tag.put("goop" + index, goopTag);
+            CompoundNBT gooTag = new CompoundNBT();
+            gooTag.putString("key", e.getKey());
+            gooTag.putDouble("value", e.getValue());
+            tag.put("goo" + index, gooTag);
             index++;
         }
         return tag;
     }
 
-    private void deserializeGoop(CompoundNBT tag) {
+    private void deserializeGoo(CompoundNBT tag) {
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            String key = goopTag.getString("key");
-            double value = goopTag.getDouble("value");
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            String key = gooTag.getString("key");
+            double value = gooTag.getDouble("value");
             fluidBuffer.put(key, value);
         }
     }
 
-    private static Map<String, Double> deserializeGoopForDisplay(CompoundNBT tag)
+    private static Map<String, Double> deserializeGooForDisplay(CompoundNBT tag)
     {
         Map<String, Double> unsorted = new HashMap<>();
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            String key = goopTag.getString("key");
-            double value = goopTag.getDouble("value");
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            String key = gooTag.getString("key");
+            double value = gooTag.getDouble("value");
             unsorted.put(key, value);
         }
 
@@ -436,15 +436,15 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
 
 
-        if (bulbTag.contains("goop")) {
-            CompoundNBT goopTag = bulbTag.getCompound("goop");
-            Map<String, Double> sortedValues = deserializeGoopForDisplay(goopTag);
+        if (bulbTag.contains("goo")) {
+            CompoundNBT gooTag = bulbTag.getCompound("goo");
+            Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
             int index = 0;
             int displayIndex = 0;
             IFormattableTextComponent fluidAmount = null;
 
             if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
-                tooltip.add(new TranslationTextComponent("tooltip.goop.goo_in_buffer"));
+                tooltip.add(new TranslationTextComponent("tooltip.goo.goo_in_buffer"));
             }
 
             for(Map.Entry<String, Double> v : sortedValues.entrySet()) {
@@ -473,13 +473,13 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
 
         if (bulbTag.contains("items")) {
-            CompoundNBT goopTag = bulbTag.getCompound("items");
+            CompoundNBT gooTag = bulbTag.getCompound("items");
             NonNullList<ItemStack> targetStacks = NonNullList.withSize(2, ItemStack.EMPTY);
-            ItemStackHelper.loadAllItems(goopTag, targetStacks);
+            ItemStackHelper.loadAllItems(gooTag, targetStacks);
             ItemStack tagTargetStack = targetStacks.get(0);
 
             if (!tagTargetStack.isEmpty()) {
-                tooltip.add(new TranslationTextComponent("tooltip.goop.solidifying_target_preface").append(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
+                tooltip.add(new TranslationTextComponent("tooltip.goo.solidifying_target_preface").append(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
             }
         }
     }

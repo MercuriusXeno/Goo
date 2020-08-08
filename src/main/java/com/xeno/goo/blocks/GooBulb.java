@@ -52,9 +52,9 @@ public class GooBulb extends Block
     {
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof GooBulbTile) {
-            GooBulbTile goopBulb = (GooBulbTile) te;
+            GooBulbTile gooBulb = (GooBulbTile) te;
             if (!world.isRemote) {
-                ItemStack stack = goopBulb.getBulbStack();
+                ItemStack stack = gooBulb.getBulbStack();
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();
                 world.addEntity(itemEntity);

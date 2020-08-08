@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "goop",
+  "group": "goo",
   "pattern": [
     "oeo",
     "o#o",
@@ -8,7 +8,7 @@
   ],
   "key": {
     "o": {
-      "item": "goop:gasket"
+      "item": "goo:gasket"
     },
     "e": {
       "item": "minecraft:ender_pearl"
@@ -18,6 +18,6 @@
     }
   },
   "result": {
-    "item": "goop:goop_bulb"
+    "item": "goo:goo_bulb"
   }
 }

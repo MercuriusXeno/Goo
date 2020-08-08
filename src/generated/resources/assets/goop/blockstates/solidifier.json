@@ -1,33 +1,33 @@
 {
   "variants": {
     "facing=north,powered=false": {
-      "model": "goop:block/solidifier"
+      "model": "goo:block/solidifier"
     },
     "facing=south,powered=false": {
-      "model": "goop:block/solidifier",
+      "model": "goo:block/solidifier",
       "y": 180
     },
     "facing=west,powered=false": {
-      "model": "goop:block/solidifier",
+      "model": "goo:block/solidifier",
       "y": 270
     },
     "facing=east,powered=false": {
-      "model": "goop:block/solidifier",
+      "model": "goo:block/solidifier",
       "y": 90
     },
     "facing=north,powered=true": {
-      "model": "goop:block/solidifier_powered"
+      "model": "goo:block/solidifier_powered"
     },
     "facing=south,powered=true": {
-      "model": "goop:block/solidifier_powered",
+      "model": "goo:block/solidifier_powered",
       "y": 180
     },
     "facing=west,powered=true": {
-      "model": "goop:block/solidifier_powered",
+      "model": "goo:block/solidifier_powered",
       "y": 270
     },
     "facing=east,powered=true": {
-      "model": "goop:block/solidifier_powered",
+      "model": "goo:block/solidifier_powered",
       "y": 90
     }
   }

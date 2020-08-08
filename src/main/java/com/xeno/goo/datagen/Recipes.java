@@ -35,7 +35,7 @@ public class Recipes extends RecipeProvider {
     }
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOOP_BULB.get())
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")

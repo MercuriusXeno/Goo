@@ -23,7 +23,7 @@ public class EntryHandler
     private final Map<Class<? extends EntryPusher>, EntryPusher> pushers = new HashMap<>();
 
     // registers a mapping pusher with the handler which is what enables it to use it for
-    // creating goop equivalencies.
+    // creating goo equivalencies.
     public void register(EntryPusher mappingPusher)
     {
         pushers.put(mappingPusher.getClass(), mappingPusher);
@@ -36,7 +36,7 @@ public class EntryHandler
     };
 
     // try to pull from a final file, but if it's unsolved, regenerate the mappings.
-    public void reloadMappings(@Nonnull ServerWorld world, boolean isFactoryReset, boolean isRegenerating)
+    public void reloadEntries(@Nonnull ServerWorld world, boolean isFactoryReset, boolean isRegenerating)
     {
         if (isFactoryReset || isRegenerating) {
             values.clear();
@@ -54,11 +54,11 @@ public class EntryHandler
             }
         }
 
-        File finalMappingFile = FileHelper.openWorldFile(world, "goop-mappings-final.json");
+        File finalEntryFile = FileHelper.openWorldFile(world, "goo-mappings-final.json");
 
         // only read from final mappings if we're not forcing regeneration.
         if (!isFactoryReset && !isRegenerating) {
-            Map<String, GooEntry> finalValues = FileHelper.readEntryFile(finalMappingFile);
+            Map<String, GooEntry> finalValues = FileHelper.readEntryFile(finalEntryFile);
 
             EntryHelper.trackedPush(finalValues, values);
         }
@@ -66,8 +66,8 @@ public class EntryHandler
         SolvedState solvedState = solvedStateOf(values);
 
         if (solvedState == UNSOLVED) {
-            regenerateMappings(isFactoryReset, isRegenerating);
-            FileHelper.writeEntryFile(finalMappingFile, values);
+            regenerateEntries(isFactoryReset, isRegenerating);
+            FileHelper.writeEntryFile(finalEntryFile, values);
         }
     }
 
@@ -84,7 +84,7 @@ public class EntryHandler
             EntryPhase.DEFERRED
     };
 
-    private void regenerateMappings(boolean isFactoryReset, boolean isRegenerating) {
+    private void regenerateEntries(boolean isFactoryReset, boolean isRegenerating) {
         // initialize pushers to an unresolved, freshly loaded state with no implicit values.
         // note, some pushers do not resolve. resolution is a way to prevent repeat calculations/loads
         ProgressState outerState = ProgressState.IMPROVED;

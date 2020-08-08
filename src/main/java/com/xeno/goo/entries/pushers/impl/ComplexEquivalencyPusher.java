@@ -25,7 +25,7 @@ public class ComplexEquivalencyPusher extends EntryPusher
 {
     public Map<String, ComplexEntry> equivalencies = new TreeMap<>(stringLexicographicalComparator);
     public ComplexEquivalencyPusher(ServerWorld world) {
-        super(EntryPhase.DEFERRED, "goop-mappings-complex-equivalency.json", world);
+        super(EntryPhase.DEFERRED, "goo-mappings-complex-equivalency.json", world);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class ComplexEquivalencyPusher extends EntryPusher
     @Override
     public void process()
     {
-        equivalencies.forEach(this::processMapping);
+        equivalencies.forEach(this::processEntry);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ComplexEquivalencyPusher extends EntryPusher
         equivalencies.clear();
     }
 
-    private void processMapping(String target, ComplexEntry source)
+    private void processEntry(String target, ComplexEntry source)
     {
         GooEntry result = GooEntry.EMPTY;
         for(StackComplex composite : source.composites()) {

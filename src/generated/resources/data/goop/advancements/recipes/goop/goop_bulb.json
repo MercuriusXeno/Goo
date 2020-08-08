@@ -2,7 +2,7 @@
   "parent": "minecraft:recipes/root",
   "rewards": {
     "recipes": [
-      "goop:goop_bulb"
+      "goo:goo_bulb"
     ]
   },
   "criteria": {
@@ -11,7 +11,7 @@
       "conditions": {
         "items": [
           {
-            "item": "goop:gasket"
+            "item": "goo:gasket"
           }
         ]
       }
@@ -19,7 +19,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "goop:goop_bulb"
+        "recipe": "goo:goo_bulb"
       }
     }
   },

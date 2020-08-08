@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "goop",
+  "group": "goo",
   "pattern": [
     "non",
     "pcp",
@@ -11,7 +11,7 @@
       "item": "minecraft:nether_bricks"
     },
     "o": {
-      "item": "goop:gasket"
+      "item": "goo:gasket"
     },
     "p": {
       "item": "minecraft:piston"
@@ -21,6 +21,6 @@
     }
   },
   "result": {
-    "item": "goop:goopifier"
+    "item": "goo:gooifier"
   }
 }

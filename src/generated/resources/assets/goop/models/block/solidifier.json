@@ -2,11 +2,11 @@
   "parent": "block/cube",
   "textures": {
     "down": "block/piston_bottom",
-    "up": "goop:block/solidifier_top_off",
-    "north": "goop:block/solidifier_front_off",
-    "south": "goop:block/solidifier_back_off",
-    "east": "goop:block/solidifier_side_off",
-    "west": "goop:block/solidifier_side_off",
-    "particle": "goop:block/solidifier_front_off"
+    "up": "goo:block/solidifier_top_off",
+    "north": "goo:block/solidifier_front_off",
+    "south": "goo:block/solidifier_back_off",
+    "east": "goo:block/solidifier_side_off",
+    "west": "goo:block/solidifier_side_off",
+    "particle": "goo:block/solidifier_front_off"
   }
 }

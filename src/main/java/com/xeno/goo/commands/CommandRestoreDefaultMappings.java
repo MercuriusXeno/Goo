@@ -11,10 +11,10 @@ import net.minecraft.command.Commands;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
-public class CommandRestoreDefaultMappings implements Command<CommandSource>
+public class CommandRestoreDefaultEntries implements Command<CommandSource>
 {
 
-    private static final CommandRestoreDefaultMappings CMD = new CommandRestoreDefaultMappings();
+    private static final CommandRestoreDefaultEntries CMD = new CommandRestoreDefaultEntries();
 
     public static ArgumentBuilder<CommandSource, ?> register(CommandDispatcher<CommandSource> dispatcher) {
         return Commands.literal("factoryReset")
@@ -28,7 +28,7 @@ public class CommandRestoreDefaultMappings implements Command<CommandSource>
         if (world == null) {
             return 0;
         }
-        GooMod.mappingHandler.reloadMappings(world, true, false);
+        GooMod.mappingHandler.reloadEntries(world, true, false);
         return 0;
     }
 }

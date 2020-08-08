@@ -12,7 +12,7 @@ import java.util.*;
 public class DenialPusher extends EntryPusher
 {
     public DenialPusher(ServerWorld world) {
-        super(EntryPhase.DENIED, "goop-mappings-denials.json", world);
+        super(EntryPhase.DENIED, "goo-mappings-denials.json", world);
     }
 
     @Override
@@ -45,71 +45,71 @@ public class DenialPusher extends EntryPusher
     @Override
     protected void seedDefaults()
     {
-        denyMapping(EntryGroups.spawnEggs);
-        denyMapping(EntryGroups.oreBlocks);
-        denyMapping(EntryGroups.musicDiscs);
-        denyMapping(EntryGroups.infestedBlocks);
-        denyMapping(EntryGroups.skulls);
-        denyMapping(EntryGroups.potions);
-        denyMapping(EntryGroups.structureBlocks);
-        denyMapping(EntryGroups.dyedShulkerBoxes);
-        denyMapping(EntryGroups.netheriteStuff);
+        denyEntry(EntryGroups.spawnEggs);
+        denyEntry(EntryGroups.oreBlocks);
+        denyEntry(EntryGroups.musicDiscs);
+        denyEntry(EntryGroups.infestedBlocks);
+        denyEntry(EntryGroups.skulls);
+        denyEntry(EntryGroups.potions);
+        denyEntry(EntryGroups.structureBlocks);
+        denyEntry(EntryGroups.dyedShulkerBoxes);
+        denyEntry(EntryGroups.netheriteStuff);
 
-        denyMapping(Items.AIR);
-        denyMapping(Items.ANCIENT_DEBRIS);
-        denyMapping(Items.BEDROCK);
-        denyMapping(Items.BELL);
-        denyMapping(Items.CHAINMAIL_BOOTS);
-        denyMapping(Items.CHAINMAIL_CHESTPLATE);
-        denyMapping(Items.CHAINMAIL_HELMET);
-        denyMapping(Items.CHAINMAIL_LEGGINGS);
-        denyMapping(Items.CHIPPED_ANVIL);
-        denyMapping(Items.CHORUS_PLANT);
-        denyMapping(Items.COD_BUCKET);
-        denyMapping(Items.DAMAGED_ANVIL);
-        denyMapping(Items.DEBUG_STICK);
-        denyMapping(Items.DIAMOND_HORSE_ARMOR);
-        denyMapping(Items.DRAGON_BREATH);
-        denyMapping(Items.DRAGON_EGG);
-        denyMapping(Items.ELYTRA);
-        denyMapping(Items.ENCHANTED_BOOK);
-        denyMapping(Items.ENCHANTED_GOLDEN_APPLE);
-        denyMapping(Items.END_PORTAL_FRAME);
-        denyMapping(Items.EXPERIENCE_BOTTLE);
-        denyMapping(Items.FARMLAND);
-        denyMapping(Items.FILLED_MAP);
-        denyMapping(Items.FIREWORK_STAR);
-        denyMapping(Items.FIREWORK_ROCKET);
-        denyMapping(Items.GLOBE_BANNER_PATTERN);
-        denyMapping(Items.GOLDEN_HORSE_ARMOR);
-        denyMapping(Items.GRASS_PATH);
-        denyMapping(Items.HEART_OF_THE_SEA);
-        denyMapping(Items.IRON_HORSE_ARMOR);
-        denyMapping(Items.JIGSAW);
-        denyMapping(Items.KNOWLEDGE_BOOK);
-        denyMapping(Items.MAP);
-        denyMapping(Items.NAME_TAG);
-        denyMapping(Items.NAUTILUS_SHELL);
-        denyMapping(Items.NETHER_STAR);
-        denyMapping(Items.PETRIFIED_OAK_SLAB);
-        denyMapping(Items.PIGLIN_BANNER_PATTERN);
-        denyMapping(Items.PUFFERFISH_BUCKET);
-        denyMapping(Items.SADDLE);
-        denyMapping(Items.SALMON_BUCKET);
-        denyMapping(Items.SHULKER_BOX);
-        denyMapping(Items.SPAWNER);
-        denyMapping(Items.SUSPICIOUS_STEW);
-        denyMapping(Items.TIPPED_ARROW);
-        denyMapping(Items.TOTEM_OF_UNDYING);
-        denyMapping(Items.TRIDENT);
-        denyMapping(Items.TROPICAL_FISH_BUCKET);
-        denyMapping(Items.WITHER_ROSE);
-        denyMapping(Items.WRITTEN_BOOK);
+        denyEntry(Items.AIR);
+        denyEntry(Items.ANCIENT_DEBRIS);
+        denyEntry(Items.BEDROCK);
+        denyEntry(Items.BELL);
+        denyEntry(Items.CHAINMAIL_BOOTS);
+        denyEntry(Items.CHAINMAIL_CHESTPLATE);
+        denyEntry(Items.CHAINMAIL_HELMET);
+        denyEntry(Items.CHAINMAIL_LEGGINGS);
+        denyEntry(Items.CHIPPED_ANVIL);
+        denyEntry(Items.CHORUS_PLANT);
+        denyEntry(Items.COD_BUCKET);
+        denyEntry(Items.DAMAGED_ANVIL);
+        denyEntry(Items.DEBUG_STICK);
+        denyEntry(Items.DIAMOND_HORSE_ARMOR);
+        denyEntry(Items.DRAGON_BREATH);
+        denyEntry(Items.DRAGON_EGG);
+        denyEntry(Items.ELYTRA);
+        denyEntry(Items.ENCHANTED_BOOK);
+        denyEntry(Items.ENCHANTED_GOLDEN_APPLE);
+        denyEntry(Items.END_PORTAL_FRAME);
+        denyEntry(Items.EXPERIENCE_BOTTLE);
+        denyEntry(Items.FARMLAND);
+        denyEntry(Items.FILLED_MAP);
+        denyEntry(Items.FIREWORK_STAR);
+        denyEntry(Items.FIREWORK_ROCKET);
+        denyEntry(Items.GLOBE_BANNER_PATTERN);
+        denyEntry(Items.GOLDEN_HORSE_ARMOR);
+        denyEntry(Items.GRASS_PATH);
+        denyEntry(Items.HEART_OF_THE_SEA);
+        denyEntry(Items.IRON_HORSE_ARMOR);
+        denyEntry(Items.JIGSAW);
+        denyEntry(Items.KNOWLEDGE_BOOK);
+        denyEntry(Items.MAP);
+        denyEntry(Items.NAME_TAG);
+        denyEntry(Items.NAUTILUS_SHELL);
+        denyEntry(Items.NETHER_STAR);
+        denyEntry(Items.PETRIFIED_OAK_SLAB);
+        denyEntry(Items.PIGLIN_BANNER_PATTERN);
+        denyEntry(Items.PUFFERFISH_BUCKET);
+        denyEntry(Items.SADDLE);
+        denyEntry(Items.SALMON_BUCKET);
+        denyEntry(Items.SHULKER_BOX);
+        denyEntry(Items.SPAWNER);
+        denyEntry(Items.SUSPICIOUS_STEW);
+        denyEntry(Items.TIPPED_ARROW);
+        denyEntry(Items.TOTEM_OF_UNDYING);
+        denyEntry(Items.TRIDENT);
+        denyEntry(Items.TROPICAL_FISH_BUCKET);
+        denyEntry(Items.WITHER_ROSE);
+        denyEntry(Items.WRITTEN_BOOK);
     }
 
-    private void denyMapping(EntryGroup g) { g.items.forEach(this::denyMapping); }
+    private void denyEntry(EntryGroup g) { g.items.forEach(this::denyEntry); }
 
-    private void denyMapping(Item item) { denyMapping(Objects.requireNonNull(item.getRegistryName()).toString()); }
+    private void denyEntry(Item item) { denyEntry(Objects.requireNonNull(item.getRegistryName()).toString()); }
 
-    private void denyMapping(String resourceLocation) { values.put(resourceLocation, GooEntry.DENIED); }
+    private void denyEntry(String resourceLocation) { values.put(resourceLocation, GooEntry.DENIED); }
 }

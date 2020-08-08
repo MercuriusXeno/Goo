@@ -35,12 +35,12 @@ import java.util.*;
 public class GooBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
     private BulbFluidHandler fluidHandler = createHandler();
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
-    private List<FluidStack> goop = new ArrayList<>();
+    private List<FluidStack> goo = new ArrayList<>();
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
 
     public GooBulbTile() {
-        super(Registry.GOOP_BULB_TILE.get());
+        super(Registry.GOO_BULB_TILE.get());
     }
 
     @Override
@@ -60,9 +60,9 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         doLateralShare();
     }
 
-    public List<FluidStack> goop()
+    public List<FluidStack> goo()
     {
-        return this.goop;
+        return this.goo;
     }
 
     @Override
@@ -120,19 +120,19 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return !verticalFillFluid.equals(Fluids.EMPTY) && verticalFillIntensity > 0f;
     }
 
-    public void pruneEmptyGoop()
+    public void pruneEmptyGoo()
     {
-        goop.removeIf(FluidStack::isEmpty);
+        goo.removeIf(FluidStack::isEmpty);
     }
 
-    public void addGoop(FluidStack fluidStack)
+    public void addGoo(FluidStack fluidStack)
     {
-        goop.add(fluidStack);
+        goo.add(fluidStack);
     }
 
     // if placed above another bulb, the bulb above will drain everything downward.
     private void doVerticalDrain() {
-        if (this.goop.size() == 0) {
+        if (this.goo.size() == 0) {
             return;
         }
         // check the tile below us, if it's not a bulb, bail.
@@ -148,10 +148,10 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
 
         // the maximum amount you can drain in a tick is here.
-        int simulatedDrainLeft = GooMod.mainConfig.goopTransferRate();
+        int simulatedDrainLeft = GooMod.mainConfig.gooTransferRate();
 
         // iterate over the stacks and ensure
-        for(FluidStack s : goop) {
+        for(FluidStack s : goo) {
             if (simulatedDrainLeft <= 0) {
                 break;
             }
@@ -159,12 +159,12 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
 
         // avoid concurrent modifications to the indices of the array until all work is final.
-        pruneEmptyGoop();
+        pruneEmptyGoo();
     }
 
     // bulbs adjacent to one another laterally "equalize" their contents to allow some hotswapping behaviors.
     private void doLateralShare() {
-        if (this.goop.size() == 0) {
+        if (this.goo.size() == 0) {
             return;
         }
         for(Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST })
@@ -182,15 +182,15 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             }
 
             // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  GooMod.mainConfig.goopTransferRate();
+            int simulatedDrainLeft =  GooMod.mainConfig.gooTransferRate();
 
             // iterate over the stacks and ensure
-            for(FluidStack s : goop) {
+            for(FluidStack s : goo) {
                 if (simulatedDrainLeft <= 0) {
                     break;
                 }
                 // only "distribute" to the bulb adjacent if it has less than this one of whatever type (equalizing)
-                int bulbContains = bulb.getSpecificGoopType(s.getFluid()).getAmount();
+                int bulbContains = bulb.getSpecificGooType(s.getFluid()).getAmount();
                 int delta = s.getAmount() - bulbContains;
                 // don't send it anything to avoid passing back 1 mB repeatedly.
                 if (delta <= 1) {
@@ -202,7 +202,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             }
 
             // avoid concurrent modifications to the indices of the array until all work is final.
-            pruneEmptyGoop();
+            pruneEmptyGoo();
         }
     }
 
@@ -267,25 +267,25 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
     }
 
     public boolean hasFluid(Fluid fluid) {
-        return !getSpecificGoopType(fluid).equals(FluidStack.EMPTY);
+        return !getSpecificGooType(fluid).equals(FluidStack.EMPTY);
     }
 
-    public boolean fluidNamesAreEqual(FluidStack fluidStack, String goopType) {
-        return Objects.requireNonNull(fluidStack.getFluid().getRegistryName()).getPath().equals(goopType);
-    }
-
-    @Nonnull
-    public FluidStack getLeastQuantityGoop() {
-        return goop.stream().min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
+    public boolean fluidNamesAreEqual(FluidStack fluidStack, String gooType) {
+        return Objects.requireNonNull(fluidStack.getFluid().getRegistryName()).getPath().equals(gooType);
     }
 
     @Nonnull
-    public FluidStack getSpecificGoopType(Fluid fluid) {
-        return goop.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
+    public FluidStack getLeastQuantityGoo() {
+        return goo.stream().min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
+    }
+
+    @Nonnull
+    public FluidStack getSpecificGooType(Fluid fluid) {
+        return goo.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
     }
 
     public int getTotalGoo() {
-        return goop.stream().mapToInt(FluidStack::getAmount).sum();
+        return goo.stream().mapToInt(FluidStack::getAmount).sum();
     }
 
     @Override
@@ -301,7 +301,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             if (world.getServer() == null) {
                 return;
             }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goop), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
         }
     }
 
@@ -311,45 +311,45 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return this.write(new CompoundNBT());
     }
 
-    private CompoundNBT serializeGoop()  {
+    private CompoundNBT serializeGoo()  {
         CompoundNBT tag = new CompoundNBT();
-        tag.putInt("count", goop.size());
+        tag.putInt("count", goo.size());
         int index = 0;
-        for(FluidStack s : goop) {
-            CompoundNBT goopTag = new CompoundNBT();
-            s.writeToNBT(goopTag);
-            tag.put("goop" + index, goopTag);
+        for(FluidStack s : goo) {
+            CompoundNBT gooTag = new CompoundNBT();
+            s.writeToNBT(gooTag);
+            tag.put("goo" + index, gooTag);
             index++;
         }
         return tag;
     }
 
-    private void deserializeGoop(CompoundNBT tag) {
-        List<FluidStack> tagGoopList = new ArrayList<>();
+    private void deserializeGoo(CompoundNBT tag) {
+        List<FluidStack> tagGooList = new ArrayList<>();
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(goopTag);
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
             if (stack.isEmpty()) {
                 continue;
             }
-            tagGoopList.add(stack);
+            tagGooList.add(stack);
         }
 
-        goop = tagGoopList;
+        goo = tagGooList;
     }
 
 
     @Override
     public CompoundNBT write(CompoundNBT tag) {
-        tag.put("goop", serializeGoop());
+        tag.put("goo", serializeGoo());
         return super.write(tag);
     }
 
     public void read(BlockState state, CompoundNBT tag)
     {
-        CompoundNBT goopTag = tag.getCompound("goop");
-        deserializeGoop(goopTag);
+        CompoundNBT gooTag = tag.getCompound("goo");
+        deserializeGoo(gooTag);
         super.read(state, tag);
         onContentsChanged();
     }
@@ -367,14 +367,14 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
     @Override
     public void updateFluidsTo(List<FluidStack> fluids) {
         if (hasChanges(fluids)) {
-            goop = fluids;
+            goo = fluids;
         }
     }
 
     private boolean hasChanges(List<FluidStack> fluids) {
         boolean hasChanges = false;
         for(FluidStack f : fluids) {
-            if (goop.stream().noneMatch(g -> g.isFluidStackIdentical(f))) {
+            if (goo.stream().noneMatch(g -> g.isFluidStackIdentical(f))) {
                 hasChanges = true;
             }
         }
@@ -386,7 +386,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
     }
 
     public ItemStack getBulbStack() {
-        ItemStack stack = new ItemStack(Registry.GOOP_BULB.get());
+        ItemStack stack = new ItemStack(Registry.GOO_BULB.get());
 
         CompoundNBT bulbTag = new CompoundNBT();
         write(bulbTag);
@@ -414,12 +414,12 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
 
-        if (!bulbTag.contains("goop")) {
+        if (!bulbTag.contains("goo")) {
             return;
         }
 
-        CompoundNBT goopTag = bulbTag.getCompound("goop");
-        List<FluidStack> fluidsDeserialized = deserializeGoopForDisplay(goopTag);
+        CompoundNBT gooTag = bulbTag.getCompound("goo");
+        List<FluidStack> fluidsDeserialized = deserializeGooForDisplay(gooTag);
         int index = 0;
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
@@ -449,16 +449,16 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
     }
 
-    private static List<FluidStack> deserializeGoopForDisplay(CompoundNBT tag) {
-        List<FluidStack> tagGoopList = new ArrayList<>();
+    private static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
+        List<FluidStack> tagGooList = new ArrayList<>();
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT goopTag = tag.getCompound("goop" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(goopTag);
-            tagGoopList.add(stack);
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
+            tagGooList.add(stack);
         }
 
-        return tagGoopList;
+        return tagGooList;
     }
 
     public boolean hasSpace() {

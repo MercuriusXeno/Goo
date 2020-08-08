@@ -101,10 +101,10 @@ public class Gooifier extends Block {
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof GooifierTile) {
-            GooifierTile goopifier = (GooifierTile)te;
+            GooifierTile gooifier = (GooifierTile)te;
             if (!world.isRemote) {
-                goopifier.spewItems();
-                ItemStack stack = goopifier.getGoopifierStack();
+                gooifier.spewItems();
+                ItemStack stack = gooifier.getGooifierStack();
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();
                 world.addEntity(itemEntity);

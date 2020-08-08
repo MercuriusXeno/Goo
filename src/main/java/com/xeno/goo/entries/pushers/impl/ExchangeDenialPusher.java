@@ -63,11 +63,11 @@ public class ExchangeDenialPusher extends EntryPusher
     @Override
     public ProgressState pushTo(Map<String, GooEntry> target)
     {
-        seedRecipeDeniedMappings();
+        seedRecipeDeniedEntries();
         return super.pushTo(target);
     }
 
-    private void seedRecipeDeniedMappings() {
+    private void seedRecipeDeniedEntries() {
         for(IRecipe<?> r : recipeManager.getRecipes()) {
             ItemStack output = r.getRecipeOutput();
             String name = name(output);
@@ -85,14 +85,14 @@ public class ExchangeDenialPusher extends EntryPusher
                 if (g.hasNoMatchingItems()) {
                     continue;
                 }
-                if (onlyDeniedMappingsExist(g)) {
+                if (onlyDeniedEntriesExist(g)) {
                     values.put(name, DENIED);
                 }
             }
         }
     }
 
-    private boolean onlyDeniedMappingsExist(Ingredient g) {
+    private boolean onlyDeniedEntriesExist(Ingredient g) {
         for(ItemStack s : g.getMatchingStacks()) {
             if (s.isEmpty()) {
                 // empty list is acceptable here - there is no input to map.
@@ -102,8 +102,8 @@ public class ExchangeDenialPusher extends EntryPusher
             String name = name(s);
 
             if (GooMod.mappingHandler.has(name)) {
-                GooEntry currentInputMapping = GooMod.mappingHandler.get(name);
-                if (!currentInputMapping.isDenied()) {
+                GooEntry currentInputEntry = GooMod.mappingHandler.get(name);
+                if (!currentInputEntry.isDenied()) {
                     return false;
                 }
             } else {

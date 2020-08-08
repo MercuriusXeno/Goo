@@ -33,7 +33,7 @@ public class ContainerPusher extends EntryPusher
     private Map<String, GooEntry> unprocessedValues = new HashMap<>();
     public ContainerPusher(ServerWorld world)
     {
-        super(EntryPhase.DERIVED, "goop-mappings-contained-items.json", world);
+        super(EntryPhase.DERIVED, "goo-mappings-contained-items.json", world);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ContainerPusher extends EntryPusher
     @Override
     public void process()
     {
-        unprocessedValues.forEach(this::processMapping);
+        unprocessedValues.forEach(this::processEntry);
     }
 
     @Override
@@ -64,17 +64,17 @@ public class ContainerPusher extends EntryPusher
     @Override
     protected void seedDefaults()
     {
-        addMapping(Items.LAVA_BUCKET, molten(Items.LAVA_BUCKET));
-        addMapping(Items.MILK_BUCKET, faunal(1));
-        addMapping(Items.WATER_BUCKET, aquatic(1));
+        addEntry(Items.LAVA_BUCKET, molten(Items.LAVA_BUCKET));
+        addEntry(Items.MILK_BUCKET, faunal(1));
+        addEntry(Items.WATER_BUCKET, aquatic(1));
     }
 
-    private void addMapping(Item item, GooValue... values)
+    private void addEntry(Item item, GooValue... values)
     {
         unprocessedValues.put(EntryHelper.name(item), new GooEntry(Arrays.asList(values)));
     }
 
-    private void processMapping(String registryName, GooEntry unadjustedMapping)
+    private void processEntry(String registryName, GooEntry unadjustedEntry)
     {
         ResourceLocation resource = ResourceLocation.tryCreate(registryName);
         if (resource == null) {
@@ -93,7 +93,7 @@ public class ContainerPusher extends EntryPusher
         if (mapping.isUnknown()) {
             return;
         }
-        for(GooValue v : unadjustedMapping.values()) {
+        for(GooValue v : unadjustedEntry.values()) {
             // early abort if we don't know the value.
             mapping = mapping.add(v);
             if (mapping.isUnknown()) {

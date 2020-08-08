@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "goop",
+  "group": "goo",
   "pattern": [
     "ror",
     "pxp",
@@ -11,7 +11,7 @@
       "item": "minecraft:redstone_lamp"
     },
     "o": {
-      "item": "goop:gasket"
+      "item": "goo:gasket"
     },
     "p": {
       "item": "minecraft:sticky_piston"
@@ -24,6 +24,6 @@
     }
   },
   "result": {
-    "item": "goop:solidifier"
+    "item": "goo:solidifier"
   }
 }

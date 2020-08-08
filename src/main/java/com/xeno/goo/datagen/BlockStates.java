@@ -24,7 +24,7 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()
-                .withExistingParent("goop_bulb", "block/block")
+                .withExistingParent("goo_bulb", "block/block")
                 .texture("particle", side)
                 .element()
                 .from(0, 0, 0)
@@ -39,8 +39,8 @@ public class BlockStates extends BlockStateProvider {
                 .end();
         model.texture("end", end);
         model.texture("side", side);
-        simpleBlock(Registry.GOOP_BULB.get(), model);
-        simpleBlockItem(Registry.GOOP_BULB.get(), model);
+        simpleBlock(Registry.GOO_BULB.get(), model);
+        simpleBlockItem(Registry.GOO_BULB.get(), model);
     }
 
     private void registerGooifier() {

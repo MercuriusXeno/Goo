@@ -20,7 +20,7 @@ public class Networking {
     }
 
     public static void registerNetworkMessages() {
-        INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GooMod.MOD_ID, "goop"),
+        INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GooMod.MOD_ID, "goo"),
                 () -> "1.0",
                 s -> true,
                 s -> true);
@@ -62,7 +62,7 @@ public class Networking {
         }
     }
 
-    public static void syncGoopValuesForPlayer(ServerPlayerEntity player)
+    public static void syncGooValuesForPlayer(ServerPlayerEntity player)
     {
         GooValueSyncPacket packet = GooMod.mappingHandler.createPacketData();
         sendRemotePacket(packet, player);

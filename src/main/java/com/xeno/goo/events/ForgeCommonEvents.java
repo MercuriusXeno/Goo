@@ -18,10 +18,10 @@ public class ForgeCommonEvents {
     public static void serverLoad(FMLServerStartingEvent event)
     {
         GooCommands.register(event.getServer().getCommandManager().getDispatcher());
-        serverStartMappings(event);
+        serverStartEntries(event);
     }
 
-    private static void serverStartMappings(FMLServerStartingEvent event)
+    private static void serverStartEntries(FMLServerStartingEvent event)
     {
         ServerWorld world = event.getServer().getWorld(World.field_234918_g_);
         if (world == null) {
@@ -55,6 +55,6 @@ public class ForgeCommonEvents {
         // also reports the denials to a debug logger so that the user or packer can review them.
         GooMod.mappingHandler.register(new FinalDenialPusher(world));
 
-        GooMod.mappingHandler.reloadMappings(world, false, false);
+        GooMod.mappingHandler.reloadEntries(world, false, false);
     }
 }

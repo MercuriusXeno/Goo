@@ -213,8 +213,8 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         float minY = from.getY();
         float maxY = to.getY();
         float highestToY = minY;
-        for(FluidStack goo : tile.goop()) {
-            // this is the total fill of the goop in the tank of this particular goop, as a percentage
+        for(FluidStack goo : tile.goo()) {
+            // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float percentage = goo.getAmount() / totalGoo;
             float heightScale = percentage * scaledHeight;
             float height = (maxY - minY) * heightScale;
@@ -243,6 +243,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final Vector3f verticalFillToVector(float intensity) { return new Vector3f(verticalFillHorizontalTo(intensity), TO_SCALED_VERTICAL, verticalFillHorizontalTo(intensity)); }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registry.GOOP_BULB_TILE.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE.get(), GooBulbRenderer::new);
     }
 }
