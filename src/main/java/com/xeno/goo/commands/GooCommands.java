@@ -15,7 +15,5 @@ public class GooCommands
                     .then(CommandRegenerateEntries.register(dispatcher))
                     .then(CommandRestoreDefaultEntries.register(dispatcher))
         );
-
-        // dispatcher.register(Commands.literal("goo").redirect(cmdGoo));
     }
 }

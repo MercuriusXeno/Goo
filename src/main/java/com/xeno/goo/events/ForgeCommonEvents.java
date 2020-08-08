@@ -27,34 +27,34 @@ public class ForgeCommonEvents {
         if (world == null) {
             return;
         }
-        GooMod.mappingHandler = new EntryHandler();
+        GooMod.handler = new EntryHandler();
 
         // register pushers
         // initialization routine, sets all items to unknown so their are no missing mappings.
-        GooMod.mappingHandler.register(new UnknownPusher(world));
+        GooMod.handler.register(new UnknownPusher(world));
         // originating values for most things
-        GooMod.mappingHandler.register(new BasePusher(world));
+        GooMod.handler.register(new BasePusher(world));
         // items we want to deny being solidified/reproduced for any reason
-        GooMod.mappingHandler.register(new DenialPusher(world));
+        GooMod.handler.register(new DenialPusher(world));
         // items that are the combination of a container and an arbitrary value
         // which cannot stand as a baseline alone (because containers are recipe-derived)
-        GooMod.mappingHandler.register(new ContainerPusher(world));
+        GooMod.handler.register(new ContainerPusher(world));
         // items which don't have a recipe, or whose recipe equivalency we wish to override
         // by setting it as equal to another mapping, rather than an explicit value.
-        GooMod.mappingHandler.register(new SimpleExchangePusher(world));
+        GooMod.handler.register(new SimpleExchangePusher(world));
         // items which have a non-traditional route to obtaining value, usually
         // by reverse mapping an output to an input; we can specify "complex" equivalencies.
-        GooMod.mappingHandler.register(new ComplexEquivalencyPusher(world));
+        GooMod.handler.register(new ComplexEquivalencyPusher(world));
         // a semi-automatic recipe-scraping algorithm which analyzes baseline values
         // and other recipes to derive the values of recipe outputs.
-        GooMod.mappingHandler.register(new RecipePusher(world));
+        GooMod.handler.register(new RecipePusher(world));
         // a recipe-scraping algorithm which denies any output mapping which contains
         // an input for which there is only a denied mapping and no alternative.
-        GooMod.mappingHandler.register(new ExchangeDenialPusher(world));
+        GooMod.handler.register(new ExchangeDenialPusher(world));
         // pusher which sets any remaining unknown mappings to be denied instead.
         // also reports the denials to a debug logger so that the user or packer can review them.
-        GooMod.mappingHandler.register(new FinalDenialPusher(world));
+        GooMod.handler.register(new FinalDenialPusher(world));
 
-        GooMod.mappingHandler.reloadEntries(world, false, false);
+        GooMod.handler.reloadEntries(world, false, false);
     }
 }

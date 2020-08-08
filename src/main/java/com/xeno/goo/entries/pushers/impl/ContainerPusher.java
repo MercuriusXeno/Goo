@@ -89,7 +89,7 @@ public class ContainerPusher extends EntryPusher
             return;
         }
 
-        GooEntry mapping = GooMod.mappingHandler.get(container);
+        GooEntry mapping = GooMod.handler.get(container);
         if (mapping.isUnknown()) {
             return;
         }

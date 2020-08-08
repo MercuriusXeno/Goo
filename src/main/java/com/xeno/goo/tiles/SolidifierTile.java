@@ -11,6 +11,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.dispenser.Position;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -21,10 +22,12 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -32,6 +35,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.text.NumberFormat;
 import java.util.*;
+
+import static net.minecraft.item.ItemStack.EMPTY;
 
 public class SolidifierTile extends TileEntity implements ITickableTileEntity, ChangeSolidifierTargetPacket.IChangeSolidifierTargetReceiver
 {
@@ -54,14 +59,17 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     // the internal buffer gets filled when the machine is in the process of solidifying an item
     private Map<String, Double> fluidBuffer;
+    private ItemEntity lastItem;
+
     public SolidifierTile() {
         super(Registry.SOLIDIFIER_TILE.get());
         target = Items.AIR;
-        targetStack = ItemStack.EMPTY;
+        targetStack = EMPTY;
         newTarget = Items.AIR;
-        newTargetStack = ItemStack.EMPTY;
+        newTargetStack = EMPTY;
         fluidBuffer = new HashMap<>();
         changeTargetTimer = 0;
+        lastItem = null;
     }
 
     @Override
@@ -74,7 +82,14 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world.isRemote()) {
             return;
         }
-        
+
+        if (lastItem != null) {
+            if (lastItem.isAlive()) {
+                return;
+            }
+            lastItem = null;
+        }
+
         resolveTargetChangingCountdown();
 
         if (hasValidTarget()) {
@@ -93,7 +108,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     {
         if (changeTargetTimer <= 0) {
             newTarget = Items.AIR;
-            newTargetStack = ItemStack.EMPTY;
+            newTargetStack = EMPTY;
             sendTargetUpdate();
         }
     }
@@ -125,13 +140,71 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world == null) {
             return;
         }
+
         ItemStack stack = targetStack.copy();
+
+        if (!canPushStackForward(stack).isEmpty()) {
+            spitStack(world, stack);
+        }
+    }
+
+    private ItemStack canPushStackForward(ItemStack stack)
+    {
+        if (world == null) {
+            return stack;
+        }
+        BlockPos pos = this.pos.offset(this.getHorizontalFacing());
+        TileEntity tile = world.getTileEntity(pos);
+        if (tile == null) {
+            return stack;
+        }
+        if (!(tile instanceof IInventory)) {
+            return stack;
+        }
+        if (stack.isEmpty()) {
+            return stack;
+        }
+
+        IInventory inventory = ((IInventory)tile);
+        int count = inventory.getSizeInventory();
+        for (int i = 0; i < count; i++) {
+            if (stack.getCount() < 1) {
+                return EMPTY;
+            }
+            if (inventory.isItemValidForSlot(i, stack)) {
+                ItemStack original = inventory.getStackInSlot(i);
+                if (original.isEmpty()) {
+                    inventory.setInventorySlotContents(i, stack);
+                } else {
+                    if (original.isItemEqual(stack)) {
+                        int maxStack = original.getMaxStackSize();
+                        int maxIncrease = Math.min(stack.getCount(), maxStack - original.getCount());
+                        original.setCount(original.getCount() + maxIncrease);
+                        stack.setCount(stack.getCount() - maxIncrease);
+                        inventory.setInventorySlotContents(i, original);
+                    }
+                }
+            }
+        }
+        return EMPTY;
+    }
+
+    private ItemStack spitStack(World world, ItemStack stack)
+    {
+        if (world == null) {
+            return stack;
+        }
+        if (stack.isEmpty()) {
+            return stack;
+        }
         Position nozzleLocation = getNozzleLocation();
         ItemEntity itemEntity = new ItemEntity(world, nozzleLocation.getX(), nozzleLocation.getY(), nozzleLocation.getZ(), stack);
         Vector3d spitVector = getSpitVector();
         itemEntity.setMotion(spitVector.getX(), spitVector.getY(), spitVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
+        lastItem = itemEntity;
+        return EMPTY;
     }
 
     private Position getNozzleLocation()
@@ -260,10 +333,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private GooEntry getItemEntry(Item item)
     {
-        if (!GooMod.mappingHandler.has(item)) {
+        if (!GooMod.handler.has(item)) {
             return GooEntry.DENIED;
         }
-        return GooMod.mappingHandler.get(item);
+        return GooMod.handler.get(item);
     }
 
     public Direction getHorizontalFacing()
@@ -320,7 +393,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         target = item;
         targetStack = EntryHelper.getSingleton(item);
         newTarget = Items.AIR;
-        newTargetStack = ItemStack.EMPTY;
+        newTargetStack = EMPTY;
 
         sendTargetUpdate();
     }
@@ -402,7 +475,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     private CompoundNBT serializeItems()
     {
         CompoundNBT itemTag = new CompoundNBT();
-        NonNullList<ItemStack> targetStackList = NonNullList.withSize(2, ItemStack.EMPTY);
+        NonNullList<ItemStack> targetStackList = NonNullList.withSize(2, EMPTY);
         targetStackList.set(0, targetStack);
         targetStackList.set(1, newTargetStack);
         ItemStackHelper.saveAllItems(itemTag, targetStackList);
@@ -413,7 +486,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     private void deserializeItems(CompoundNBT tag)
     {
         CompoundNBT itemTag = tag.getCompound("items");
-        NonNullList<ItemStack> targetStackList = NonNullList.withSize(2, ItemStack.EMPTY);
+        NonNullList<ItemStack> targetStackList = NonNullList.withSize(2, EMPTY);
         ItemStackHelper.loadAllItems(itemTag, targetStackList);
         this.targetStack = targetStackList.get(0);
         this.target = this.targetStack.getItem();
@@ -474,7 +547,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
         if (bulbTag.contains("items")) {
             CompoundNBT gooTag = bulbTag.getCompound("items");
-            NonNullList<ItemStack> targetStacks = NonNullList.withSize(2, ItemStack.EMPTY);
+            NonNullList<ItemStack> targetStacks = NonNullList.withSize(2, EMPTY);
             ItemStackHelper.loadAllItems(gooTag, targetStacks);
             ItemStack tagTargetStack = targetStacks.get(0);
 

@@ -72,12 +72,12 @@ public class ExchangeDenialPusher extends EntryPusher
             ItemStack output = r.getRecipeOutput();
             String name = name(output);
             // are we already denied?
-            if (GooMod.mappingHandler.get(name).isDenied()) {
+            if (GooMod.handler.get(name).isDenied()) {
                 continue;
             }
             // if the output already has a mapping it means we're explicitly giving it one, by this point
             // so don't deny it, even if the inputs are all denied; this is true of ore blocks and will cause stupidity
-            if (!GooMod.mappingHandler.get(name).isEmpty()) {
+            if (!GooMod.handler.get(name).isEmpty()) {
                 continue;
             }
             List<Ingredient> inputs = r.getIngredients();
@@ -101,8 +101,8 @@ public class ExchangeDenialPusher extends EntryPusher
             }
             String name = name(s);
 
-            if (GooMod.mappingHandler.has(name)) {
-                GooEntry currentInputEntry = GooMod.mappingHandler.get(name);
+            if (GooMod.handler.has(name)) {
+                GooEntry currentInputEntry = GooMod.handler.get(name);
                 if (!currentInputEntry.isDenied()) {
                     return false;
                 }

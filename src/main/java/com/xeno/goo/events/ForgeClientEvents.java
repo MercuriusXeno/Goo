@@ -23,7 +23,7 @@ public class ForgeClientEvents
         }
         String registryName = Objects.requireNonNull(e.getItemStack().getItem().getRegistryName()).toString();
 
-        GooEntry mapping = GooMod.mappingHandler.get(registryName);
+        GooEntry mapping = GooMod.handler.get(registryName);
         if (mapping.isUnknown()) {
             return;
         }

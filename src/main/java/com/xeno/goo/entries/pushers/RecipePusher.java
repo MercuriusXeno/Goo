@@ -169,7 +169,7 @@ public class RecipePusher extends EntryPusher
             return GooEntry.EMPTY;
         }
 
-        GooEntry decidedEntry = pickStrongerEntry(GooMod.mappingHandler.get(name(stack)), getLowestOutputEntry(stack, recipeEntries));
+        GooEntry decidedEntry = pickStrongerEntry(GooMod.handler.get(name(stack)), getLowestOutputEntry(stack, recipeEntries));
 
         if (decidedEntry.weight() == 0d) {
             return GooEntry.UNKNOWN;

@@ -64,7 +64,7 @@ public class Networking {
 
     public static void syncGooValuesForPlayer(ServerPlayerEntity player)
     {
-        GooValueSyncPacket packet = GooMod.mappingHandler.createPacketData();
+        GooValueSyncPacket packet = GooMod.handler.createPacketData();
         sendRemotePacket(packet, player);
     }
 }

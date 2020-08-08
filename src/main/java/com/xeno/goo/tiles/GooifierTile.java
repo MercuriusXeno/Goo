@@ -96,7 +96,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     private GooEntry getEntryForItem(ItemStack s)
     {
         String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
-        GooEntry mapping = GooMod.mappingHandler.get(key);
+        GooEntry mapping = GooMod.handler.get(key);
         if (mapping.isUnusable()) {
             return null;
         }

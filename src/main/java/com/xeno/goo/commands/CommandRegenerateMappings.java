@@ -28,7 +28,7 @@ class CommandRegenerateEntries implements Command<CommandSource>
         if (world == null) {
             return 0;
         }
-        GooMod.mappingHandler.reloadEntries(world, false, true);
+        GooMod.handler.reloadEntries(world, false, true);
         return 0;
     }
 }

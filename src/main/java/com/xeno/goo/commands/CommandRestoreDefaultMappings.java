@@ -28,7 +28,7 @@ class CommandRestoreDefaultEntries implements Command<CommandSource>
         if (world == null) {
             return 0;
         }
-        GooMod.mappingHandler.reloadEntries(world, true, false);
+        GooMod.handler.reloadEntries(world, true, false);
         return 0;
     }
 }

@@ -65,7 +65,7 @@ public class GooValueSyncPacket
     public static void handle(final GooValueSyncPacket packet, Supplier<NetworkEvent.Context> supplier) {
         supplier.get().enqueueWork(() -> {
             if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-                GooMod.mappingHandler.fromPacket(packet.data);
+                GooMod.handler.fromPacket(packet.data);
             }
         });
 

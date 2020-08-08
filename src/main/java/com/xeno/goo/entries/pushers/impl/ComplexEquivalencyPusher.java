@@ -58,10 +58,10 @@ public class ComplexEquivalencyPusher extends EntryPusher
         GooEntry result = GooEntry.EMPTY;
         for(StackComplex composite : source.composites()) {
             if (composite.operator == CompositeOperator.ADD) {
-                result = result.add(GooMod.mappingHandler.get(composite.stack.resource).multiply(composite.stack.count));
+                result = result.add(GooMod.handler.get(composite.stack.resource).multiply(composite.stack.count));
             }
             if (composite.operator == CompositeOperator.SUBTRACT) {
-                result = result.subtract(GooMod.mappingHandler.get(composite.stack.resource).multiply(composite.stack.count));
+                result = result.subtract(GooMod.handler.get(composite.stack.resource).multiply(composite.stack.count));
             }
         }
         if (result.isUnusable()) {

@@ -58,7 +58,7 @@ public class SimpleExchangePusher extends EntryPusher
 
     private void processEntry(String target, String source)
     {
-        values.put(target, GooMod.mappingHandler.get(source));
+        values.put(target, GooMod.handler.get(source));
     }
 
 
