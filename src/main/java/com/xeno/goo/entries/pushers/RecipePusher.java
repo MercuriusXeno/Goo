@@ -13,7 +13,7 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.util.*;
 
-import static com.xeno.goo.library.Compare.recipeGoopMappingWeightComparator;
+import static com.xeno.goo.library.Compare.recipeGooEntryWeightComparator;
 import static com.xeno.goo.library.Compare.stringLexicographicalComparator;
 import static com.xeno.goo.library.GooEntry.*;
 import static com.xeno.goo.library.GooEntry.UNKNOWN;
@@ -72,43 +72,43 @@ public class RecipePusher extends EntryPusher
         ProgressState state = ProgressState.STAGNANT;
         while (state == ProgressState.IMPROVED || isFirstRun) {
             isFirstRun = false;
-            state = seedRecipeDerivedMappings();
+            state = seedRecipeDerivedEntries();
         }
         return super.pushTo(target);
     }
 
-    private ProgressState seedRecipeDerivedMappings() {
+    private ProgressState seedRecipeDerivedEntries() {
         // try to marry the recipe mappings to our current values and report whether we're stagnant
         return EntryHelper.trackedPush(reduceRecipesToFlatMap(), values);
     }
 
     private Map<String, GooEntry> reduceRecipesToFlatMap() {
-        // instantiate a new map representing all the processed recipes and their respective GoopValueMappings
-        Map<IRecipe<?>, GooEntry> rawRecipeMappings = new HashMap<>();
+        // instantiate a new map representing all the processed recipes and their respective GooValueEntries
+        Map<IRecipe<?>, GooEntry> rawRecipeEntries = new HashMap<>();
         recipeManager.getRecipes().forEach(r -> {
             // the input mapping will come back either valid or unknown.
-            GooEntry inputMapping = processRecipe(r, rawRecipeMappings);
-            rawRecipeMappings.put(r, inputMapping);
+            GooEntry inputEntry = processRecipe(r, rawRecipeEntries);
+            rawRecipeEntries.put(r, inputEntry);
         });
 
         // flatten this to a map where only the best values for each item are permitted
-        Map<String, GooEntry> recipeMappings = new TreeMap<>(stringLexicographicalComparator);
-        for(Map.Entry<IRecipe<?>, GooEntry> e : rawRecipeMappings.entrySet()) {
+        Map<String, GooEntry> recipeEntries = new TreeMap<>(stringLexicographicalComparator);
+        for(Map.Entry<IRecipe<?>, GooEntry> e : rawRecipeEntries.entrySet()) {
             GooEntry mapping = e.getValue();
             if (mapping.isUnknown()) {
                 continue;
             }
             IRecipe<?> recipe = e.getKey();
             String name = name(recipe);
-            GooEntry result = !recipeMappings.containsKey(name) || mapping.isStrongerThan(recipeMappings.get(name)) ? mapping : recipeMappings.get(name);
-            recipeMappings.put(name,  result);
+            GooEntry result = !recipeEntries.containsKey(name) || mapping.isStrongerThan(recipeEntries.get(name)) ? mapping : recipeEntries.get(name);
+            recipeEntries.put(name,  result);
         }
 
         // return the reduced map
-        return recipeMappings;
+        return recipeEntries;
     }
 
-    private GooEntry processRecipe(IRecipe<?> r, Map<IRecipe<?>, GooEntry> recipeMappings)
+    private GooEntry processRecipe(IRecipe<?> r, Map<IRecipe<?>, GooEntry> recipeEntries)
     {
         ItemStack output = r.getRecipeOutput();
         if (output.isEmpty()) {
@@ -125,7 +125,7 @@ public class RecipePusher extends EntryPusher
             }
 
             // get the lowest weight of this slot's inputs: any potential ingredient might not be worth as much as cognates. We want the lowest.
-            GooEntry inputWorth = getLowestDensityMapping(recipeMappings, g);
+            GooEntry inputWorth = getLowestDensityEntry(recipeEntries, g);
 
             product = product.add(inputWorth);
         }
@@ -139,10 +139,10 @@ public class RecipePusher extends EntryPusher
     }
 
 
-    private GooEntry getLowestDensityMapping(Map<IRecipe<?>, GooEntry> recipeMappings, Ingredient g) {
+    private GooEntry getLowestDensityEntry(Map<IRecipe<?>, GooEntry> recipeEntries, Ingredient g) {
         GooEntry lowestResult = UNKNOWN;
         for(ItemStack s : g.getMatchingStacks()) {
-            GooEntry result = findLowestItemStackValueInExistingOrTheoreticalMappings(recipeMappings, s);
+            GooEntry result = findLowestItemStackValueInExistingOrTheoreticalEntries(recipeEntries, s);
             // something about this result isn't usable, we have to skip this input as a potential candidate.
             // if we're being pessimistic, this mapping is invalidated.
             if (result.isUnknown()) {
@@ -158,53 +158,53 @@ public class RecipePusher extends EntryPusher
 
     /**
      * Returns the mapping from either existing mapping sources or our current library of recipe mappings, whichever we deem to be stronger.
-     * Basis of comparison is almost exclusively weight (goop quantity of the composition of all items in the recipe, whatever inputs are the cheapest).
-     * @param recipeMappings Mappings found by scraping world recipe management for inputs and outputs and their child values.
+     * Basis of comparison is almost exclusively weight (goo quantity of the composition of all items in the recipe, whatever inputs are the cheapest).
+     * @param recipeEntries Entries found by scraping world recipe management for inputs and outputs and their child values.
      * @param stack The itemstack output we're analyzing to find the lowest value for.
-     * @return The goop mapping determined to be the strongest (lowest weight) out of all the mappings available to produce it.
+     * @return The goo mapping determined to be the strongest (lowest weight) out of all the mappings available to produce it.
      */
-    private GooEntry findLowestItemStackValueInExistingOrTheoreticalMappings(Map<IRecipe<?>, GooEntry> recipeMappings, ItemStack stack) {
+    private GooEntry findLowestItemStackValueInExistingOrTheoreticalEntries(Map<IRecipe<?>, GooEntry> recipeEntries, ItemStack stack) {
         // if the stack is empty, return the zero mapping, meaning it is worth nothing. No result can be worth less than this.
         if (stack.isEmpty()) {
             return GooEntry.EMPTY;
         }
 
-        GooEntry decidedMapping = pickStrongerMapping(GooMod.mappingHandler.get(name(stack)), getLowestOutputMapping(stack, recipeMappings));
+        GooEntry decidedEntry = pickStrongerEntry(GooMod.handler.get(name(stack)), getLowestOutputEntry(stack, recipeEntries));
 
-        if (decidedMapping.weight() == 0d) {
+        if (decidedEntry.weight() == 0d) {
             return GooEntry.UNKNOWN;
         }
 
         // the item is a container item which means crafting with it is "less" the container item in terms of input value.
         if (stack.hasContainerItem()) {
-            GooEntry containerMapping = findLowestItemStackValueInExistingOrTheoreticalMappings(recipeMappings, stack.getContainerItem());
+            GooEntry containerEntry = findLowestItemStackValueInExistingOrTheoreticalEntries(recipeEntries, stack.getContainerItem());
             // if we can't determine the value of the container item, the whole stack must causally be null.
-            if (containerMapping.isUnknown()) {
+            if (containerEntry.isUnknown()) {
                 return GooEntry.UNKNOWN;
             }
 
-            decidedMapping = decidedMapping.subtract(containerMapping);
+            decidedEntry = decidedEntry.subtract(containerEntry);
         }
 
-        return decidedMapping;
+        return decidedEntry;
     }
 
-    private GooEntry pickStrongerMapping(GooEntry existingMapping, GooEntry theoreticalMapping) {
-        if (existingMapping.isUnusable()) {
-            return theoreticalMapping;
+    private GooEntry pickStrongerEntry(GooEntry existingEntry, GooEntry theoreticalEntry) {
+        if (existingEntry.isUnusable()) {
+            return theoreticalEntry;
         } else {
-            if (theoreticalMapping.isUnknown()) {
-                return existingMapping;
+            if (theoreticalEntry.isUnknown()) {
+                return existingEntry;
             }
         }
-        return existingMapping.isStrongerThan(theoreticalMapping) ? existingMapping : theoreticalMapping;
+        return existingEntry.isStrongerThan(theoreticalEntry) ? existingEntry : theoreticalEntry;
     }
 
-    private GooEntry getLowestOutputMapping(String output, Map<IRecipe<?>, GooEntry> recipeMappings) {
-        Map.Entry<IRecipe<?>, GooEntry> lowestResult = recipeMappings.entrySet().stream()
+    private GooEntry getLowestOutputEntry(String output, Map<IRecipe<?>, GooEntry> recipeEntries) {
+        Map.Entry<IRecipe<?>, GooEntry> lowestResult = recipeEntries.entrySet().stream()
                 .filter(m -> Objects.requireNonNull(m.getKey().getRecipeOutput().getItem().getRegistryName()).toString().equals(output) &&
                         !m.getValue().isUnknown() && !m.getValue().isDenied() && !m.getValue().isEmpty())
-                .min(recipeGoopMappingWeightComparator)
+                .min(recipeGooEntryWeightComparator)
                 .orElse(null);
 
         if (lowestResult == null) {
@@ -214,7 +214,7 @@ public class RecipePusher extends EntryPusher
         return lowestResult.getValue();
     }
 
-    private GooEntry getLowestOutputMapping(ItemStack output, Map<IRecipe<?>, GooEntry> recipeMappings) {
-        return getLowestOutputMapping(name(output), recipeMappings);
+    private GooEntry getLowestOutputEntry(ItemStack output, Map<IRecipe<?>, GooEntry> recipeEntries) {
+        return getLowestOutputEntry(name(output), recipeEntries);
     }
 }

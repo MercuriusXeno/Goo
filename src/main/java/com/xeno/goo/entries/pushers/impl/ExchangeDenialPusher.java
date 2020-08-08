@@ -63,21 +63,21 @@ public class ExchangeDenialPusher extends EntryPusher
     @Override
     public ProgressState pushTo(Map<String, GooEntry> target)
     {
-        seedRecipeDeniedMappings();
+        seedRecipeDeniedEntries();
         return super.pushTo(target);
     }
 
-    private void seedRecipeDeniedMappings() {
+    private void seedRecipeDeniedEntries() {
         for(IRecipe<?> r : recipeManager.getRecipes()) {
             ItemStack output = r.getRecipeOutput();
             String name = name(output);
             // are we already denied?
-            if (GooMod.mappingHandler.get(name).isDenied()) {
+            if (GooMod.handler.get(name).isDenied()) {
                 continue;
             }
             // if the output already has a mapping it means we're explicitly giving it one, by this point
             // so don't deny it, even if the inputs are all denied; this is true of ore blocks and will cause stupidity
-            if (!GooMod.mappingHandler.get(name).isEmpty()) {
+            if (!GooMod.handler.get(name).isEmpty()) {
                 continue;
             }
             List<Ingredient> inputs = r.getIngredients();
@@ -85,14 +85,14 @@ public class ExchangeDenialPusher extends EntryPusher
                 if (g.hasNoMatchingItems()) {
                     continue;
                 }
-                if (onlyDeniedMappingsExist(g)) {
+                if (onlyDeniedEntriesExist(g)) {
                     values.put(name, DENIED);
                 }
             }
         }
     }
 
-    private boolean onlyDeniedMappingsExist(Ingredient g) {
+    private boolean onlyDeniedEntriesExist(Ingredient g) {
         for(ItemStack s : g.getMatchingStacks()) {
             if (s.isEmpty()) {
                 // empty list is acceptable here - there is no input to map.
@@ -101,9 +101,9 @@ public class ExchangeDenialPusher extends EntryPusher
             }
             String name = name(s);
 
-            if (GooMod.mappingHandler.has(name)) {
-                GooEntry currentInputMapping = GooMod.mappingHandler.get(name);
-                if (!currentInputMapping.isDenied()) {
+            if (GooMod.handler.has(name)) {
+                GooEntry currentInputEntry = GooMod.handler.get(name);
+                if (!currentInputEntry.isDenied()) {
                     return false;
                 }
             } else {

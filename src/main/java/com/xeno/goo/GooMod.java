@@ -21,7 +21,7 @@ public class GooMod
 
     public static ServerConfiguration mainConfig;
 
-    public static EntryHandler mappingHandler;
+    public static EntryHandler handler;
 
     public GooMod() {
         initializeConfiguration();

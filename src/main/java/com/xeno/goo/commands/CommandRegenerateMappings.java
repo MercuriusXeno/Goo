@@ -11,10 +11,10 @@ import net.minecraft.command.Commands;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
-public class CommandRegenerateMappings implements Command<CommandSource>
+class CommandRegenerateEntries implements Command<CommandSource>
 {
 
-    private static final CommandRegenerateMappings CMD = new CommandRegenerateMappings();
+    private static final CommandRegenerateEntries CMD = new CommandRegenerateEntries();
 
     public static ArgumentBuilder<CommandSource, ?> register(CommandDispatcher<CommandSource> dispatcher) {
         return Commands.literal("regenerate")
@@ -28,7 +28,7 @@ public class CommandRegenerateMappings implements Command<CommandSource>
         if (world == null) {
             return 0;
         }
-        GooMod.mappingHandler.reloadMappings(world, false, true);
+        GooMod.handler.reloadEntries(world, false, true);
         return 0;
     }
 }

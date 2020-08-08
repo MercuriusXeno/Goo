@@ -1,6 +1,6 @@
 package com.xeno.goo.setup;
 
-import com.xeno.goo.client.render.GoopBulbTileRenderer;
+import com.xeno.goo.client.render.GooBulbRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
@@ -11,8 +11,8 @@ public class ClientSetup
     public static void init(final FMLClientSetupEvent event)
     {
         // rendering stuff
-        RenderTypeLookup.setRenderLayer(Registry.GOOP_BULB.get(), RenderType.getCutout());
-        GoopBulbTileRenderer.register();
+        RenderTypeLookup.setRenderLayer(Registry.GOO_BULB.get(), RenderType.getCutout());
+        GooBulbRenderer.register();
         SolidifierTileRenderer.register();
     }
 }

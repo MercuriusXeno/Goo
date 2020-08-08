@@ -5,8 +5,8 @@ public class GooValue
     private String fluidResourceLocation;
     private double amount;
 
-    public GooValue(String goop, double amount) {
-        this.fluidResourceLocation = goop;
+    public GooValue(String goo, double amount) {
+        this.fluidResourceLocation = goo;
         this.amount = amount; //Helper.truncateValue(amount);
     }
 

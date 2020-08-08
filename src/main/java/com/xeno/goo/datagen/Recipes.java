@@ -19,8 +19,8 @@ public class Recipes extends RecipeProvider {
     @Override
     protected void registerRecipes(Consumer<IFinishedRecipe> consumer) {
         registerGasketRecipe(consumer);
-        registerGoopBulbRecipe(consumer);
-        registerGoopifierRecipe(consumer);
+        registerGooBulbRecipe(consumer);
+        registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
     }
 
@@ -34,8 +34,8 @@ public class Recipes extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerGoopBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOOP_BULB.get())
+    private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
@@ -47,8 +47,8 @@ public class Recipes extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerGoopifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOOPIFIER.get())
+    private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOOIFIER.get())
                 .patternLine("non")
                 .patternLine("pcp")
                 .patternLine("opo")

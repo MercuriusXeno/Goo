@@ -36,7 +36,7 @@ public class FinalDenialPusher extends EntryPusher
     @Override
     public void process()
     {
-        for(Map.Entry<String, GooEntry> e : GooMod.mappingHandler.values().entrySet()) {
+        for(Map.Entry<String, GooEntry> e : GooMod.handler.values().entrySet()) {
             if (e.getValue().isUnknown()) {
                 GooMod.debug("Unknown mapping will be denied: " + e.getKey());
                 values.put(e.getKey(), DENIED);

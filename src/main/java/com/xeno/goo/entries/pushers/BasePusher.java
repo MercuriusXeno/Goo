@@ -24,7 +24,7 @@ public class BasePusher extends EntryPusher
 {
 
     public BasePusher(ServerWorld world) {
-        super(EntryPhase.BASELINE, "goop-mappings-baseline.json", world);
+        super(EntryPhase.BASELINE, "goo-mappings-baseline.json", world);
     }
 
     private void addEntry(EntryGroup g, GooValue... args) {

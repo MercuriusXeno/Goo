@@ -1,6 +1,6 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.tiles.GoopBulbTile;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.util.ITooltipFlag;
@@ -37,24 +37,24 @@ public class GooBulb extends Block
     public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        GoopBulbTile.addInformation(stack, tooltip);
+        GooBulbTile.addInformation(stack, tooltip);
     }
 
     @Nullable
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world)
     {
-        return new GoopBulbTile();
+        return new GooBulbTile();
     }
 
     @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player)
     {
         TileEntity te = world.getTileEntity(pos);
-        if (te instanceof GoopBulbTile) {
-            GoopBulbTile goopBulb = (GoopBulbTile) te;
+        if (te instanceof GooBulbTile) {
+            GooBulbTile gooBulb = (GooBulbTile) te;
             if (!world.isRemote) {
-                ItemStack stack = goopBulb.getBulbStack();
+                ItemStack stack = gooBulb.getBulbStack();
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();
                 world.addEntity(itemEntity);

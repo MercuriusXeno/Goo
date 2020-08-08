@@ -11,17 +11,17 @@ import java.util.Objects;
 
 public class EntryHelper
 {
-    public static final String moltenGoo = Objects.requireNonNull(Registry.MOLTEN_GOOP.get().getRegistryName()).toString();
-    public static final String earthenGoo = Objects.requireNonNull(Registry.EARTHEN_GOOP.get().getRegistryName()).toString();
-    public static final String aquaticGoo = Objects.requireNonNull(Registry.AQUATIC_GOOP.get().getRegistryName()).toString();
-    public static final String esotericGoo = Objects.requireNonNull(Registry.ESOTERIC_GOOP.get().getRegistryName()).toString();
-    public static final String floralGoo = Objects.requireNonNull(Registry.FLORAL_GOOP.get().getRegistryName()).toString();
-    public static final String faunalGoo = Objects.requireNonNull(Registry.FAUNAL_GOOP.get().getRegistryName()).toString();
-    public static final String fungalGoo = Objects.requireNonNull(Registry.FUNGAL_GOOP.get().getRegistryName()).toString();
-    public static final String regalGoo = Objects.requireNonNull(Registry.REGAL_GOOP.get().getRegistryName()).toString();
-    public static final String vitalGoo = Objects.requireNonNull(Registry.VITAL_GOOP.get().getRegistryName()).toString();
-    public static final String metalGoo = Objects.requireNonNull(Registry.METAL_GOOP.get().getRegistryName()).toString();
-    public static final String chromaticGoo = Objects.requireNonNull(Registry.CHROMATIC_GOOP.get().getRegistryName()).toString();
+    public static final String moltenGoo = Objects.requireNonNull(Registry.MOLTEN_GOO.get().getRegistryName()).toString();
+    public static final String earthenGoo = Objects.requireNonNull(Registry.EARTHEN_GOO.get().getRegistryName()).toString();
+    public static final String aquaticGoo = Objects.requireNonNull(Registry.AQUATIC_GOO.get().getRegistryName()).toString();
+    public static final String esotericGoo = Objects.requireNonNull(Registry.ESOTERIC_GOO.get().getRegistryName()).toString();
+    public static final String floralGoo = Objects.requireNonNull(Registry.FLORAL_GOO.get().getRegistryName()).toString();
+    public static final String faunalGoo = Objects.requireNonNull(Registry.FAUNAL_GOO.get().getRegistryName()).toString();
+    public static final String fungalGoo = Objects.requireNonNull(Registry.FUNGAL_GOO.get().getRegistryName()).toString();
+    public static final String regalGoo = Objects.requireNonNull(Registry.REGAL_GOO.get().getRegistryName()).toString();
+    public static final String vitalGoo = Objects.requireNonNull(Registry.VITAL_GOO.get().getRegistryName()).toString();
+    public static final String metalGoo = Objects.requireNonNull(Registry.METAL_GOO.get().getRegistryName()).toString();
+    public static final String chromaticGoo = Objects.requireNonNull(Registry.CHROMATIC_GOO.get().getRegistryName()).toString();
 //    private static final int TRUNCATE_MAGNITUDE = 10000;
     private static final double BURN_TIME_PER_SMELTED_ITEM = 200d;
 

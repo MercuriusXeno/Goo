@@ -28,7 +28,7 @@ public class SimpleExchangePusher extends EntryPusher
 {
     public Map<String, String> equivalencies = new TreeMap<>(stringLexicographicalComparator);
     public SimpleExchangePusher(ServerWorld world) {
-        super(EntryPhase.DEFERRED, "goop-mappings-simple-equivalencies.json", world);
+        super(EntryPhase.DEFERRED, "goo-mappings-simple-equivalencies.json", world);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class SimpleExchangePusher extends EntryPusher
     @Override
     public void process()
     {
-        equivalencies.forEach(this::processMapping);
+        equivalencies.forEach(this::processEntry);
     }
 
     @Override
@@ -56,9 +56,9 @@ public class SimpleExchangePusher extends EntryPusher
         equivalencies.clear();
     }
 
-    private void processMapping(String target, String source)
+    private void processEntry(String target, String source)
     {
-        values.put(target, GooMod.mappingHandler.get(source));
+        values.put(target, GooMod.handler.get(source));
     }
 
 

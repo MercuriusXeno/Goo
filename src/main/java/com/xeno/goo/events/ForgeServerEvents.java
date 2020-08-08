@@ -14,7 +14,7 @@ public class ForgeServerEvents
     @SubscribeEvent
     public static void onJoinWorldEvent(EntityJoinWorldEvent e) {
         if (e.getEntity() instanceof ServerPlayerEntity) {
-            Networking.syncGoopValuesForPlayer((ServerPlayerEntity)e.getEntity());
+            Networking.syncGooValuesForPlayer((ServerPlayerEntity)e.getEntity());
         }
     }
 }

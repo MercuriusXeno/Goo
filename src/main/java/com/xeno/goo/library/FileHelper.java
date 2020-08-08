@@ -14,22 +14,31 @@ import java.util.TreeMap;
 
 public class FileHelper {
     private static final Gson GSON_INSTANCE = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type JSON_SERIALIZER_GOOP_MAPPING_TYPE = new TypeToken<TreeMap<String, GooEntry>>(){}.getType();
+    private static final Type JSON_SERIALIZER_GOO_MAPPING_TYPE = new TypeToken<TreeMap<String, GooEntry>>(){}.getType();
     private static final Type JSON_SERIALIZER_EQUIVALENCY_TYPE = new TypeToken<TreeMap<String, String>>(){}.getType();
     private static final Type JSON_SERIALIZER_COMPOSITE_TYPE = new TypeToken<TreeMap<String, ComplexEntry>>(){}.getType();
 
     private static Path getWorldGooDataDirectoryPath(ServerWorld world) {
         Path worldPath = world.getServer().func_240776_a_(FolderName.field_237247_c_).toFile().toPath();
-        return worldPath.resolve("goop");
+        return worldPath.resolve("goo");
     }
 
     private static File getOrCreateWorldSaveFile(Path worldSaveDirectory, String worldFileName) {
-        File worldSaveDirAsFile = new File(worldSaveDirectory.toUri());
-        checkOrCreateDirectory(worldSaveDirAsFile);
+        try {
+            if (worldFileName.equals("")) {
+                throw new IOException("Nice try with the empty file name or whatever.");
+            }
+            File worldSaveDirAsFile = new File(worldSaveDirectory.toUri());
+            checkOrCreateDirectory(worldSaveDirAsFile);
 
-        File woldSaveFile = checkOrCreateFile(worldSaveDirectory.resolve(worldFileName).toFile());
-        return woldSaveFile;
+            File woldSaveFile = checkOrCreateFile(worldSaveDirectory.resolve(worldFileName).toFile());
+            return woldSaveFile;
+        }  catch(IOException e) {
+                // GooMod.warn("Caught something trying to save with an Empty file name, shame on you.");
+        }
+        return null;
     }
+
 
     public static File openWorldFile(ServerWorld world, String worldFileName) {
         return getOrCreateWorldSaveFile(getWorldGooDataDirectoryPath(world), worldFileName);
@@ -52,11 +61,11 @@ public class FileHelper {
         return mappingsFile;
     }
 
-    private static boolean checkOrCreateDirectory(File goopDir)
+    private static boolean checkOrCreateDirectory(File gooDir)
     {
         try {
-            if (!goopDir.isDirectory()) {
-                if (!goopDir.mkdir()) {
+            if (!gooDir.isDirectory()) {
+                if (!gooDir.mkdir()) {
                     throw new IOException("Entry directory in save file not found and could not be created!");
                 }
             }
@@ -82,12 +91,12 @@ public class FileHelper {
             }
         }
 
-        return GSON_INSTANCE.fromJson(element, JSON_SERIALIZER_GOOP_MAPPING_TYPE);
+        return GSON_INSTANCE.fromJson(element, JSON_SERIALIZER_GOO_MAPPING_TYPE);
     }
 
     public static void writeEntryFile(File mappingsFile, Map<String, GooEntry> values) {
         try (FileWriter writer = new FileWriter(mappingsFile.getAbsolutePath())) {
-            String jsonString = GSON_INSTANCE.toJson(values, JSON_SERIALIZER_GOOP_MAPPING_TYPE);
+            String jsonString = GSON_INSTANCE.toJson(values, JSON_SERIALIZER_GOO_MAPPING_TYPE);
             writer.write(jsonString);
             writer.flush();
         } catch (IOException ioe) {

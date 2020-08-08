@@ -13,20 +13,20 @@ import java.util.stream.Collectors;
 
 public class GooEntry
 {
-    // these goop mappings are special and have important functions. I'm defining them here as static,
-    // almost implicit, properties of the GoopMapping class as a whole.
+    // these goo mappings are special and have important functions. I'm defining them here as static,
+    // almost implicit, properties of the GooEntry class as a whole.
     public static final GooEntry EMPTY = new GooEntry(false, false);
     public static final GooEntry DENIED = new GooEntry(true, false);
     public static final GooEntry UNKNOWN = new GooEntry(false, true);
-    private static final String GOOP_MAPPING_PREFACE_TRANSLATION_KEY = "tooltip.goop.composition_preface";
+    private static final String GOO_MAPPING_PREFACE_TRANSLATION_KEY = "tooltip.goo.composition_preface";
 
     private List<GooValue> values;
     private boolean isDenied;
     private boolean isUnknown;
     private boolean isFixed;
 
-    public GooEntry(List<GooValue> goopValues, boolean isFixed) {
-        this.values = goopValues;
+    public GooEntry(List<GooValue> gooValues, boolean isFixed) {
+        this.values = gooValues;
         this.isDenied = false;
         this.isUnknown = false;
         this.isFixed = isFixed;
@@ -34,8 +34,8 @@ public class GooEntry
         sortValues();
     }
 
-    public GooEntry(List<GooValue> goopValues) {
-        this.values = goopValues;
+    public GooEntry(List<GooValue> gooValues) {
+        this.values = gooValues;
         this.isDenied = false;
         this.isUnknown = false;
         pruneEmptyValues();
@@ -109,7 +109,7 @@ public class GooEntry
             }
         }
 
-        // clone the goop values from this object.
+        // clone the goo values from this object.
         for (GooValue v : combining.values()) {
             if (product.containsKey(v.getFluidResourceLocation())) {
                 product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + (v.getAmount() * (isSubtracting ? -1 : 1)));
@@ -124,7 +124,7 @@ public class GooEntry
                 return UNKNOWN;
             }
         }
-        return createFromPrimitiveGoopMap(product);
+        return createFromPrimitiveGooMap(product);
     }
 
     public GooEntry add(GooEntry adding) {
@@ -150,7 +150,7 @@ public class GooEntry
         for(GooValue v : this.values()) {
             product.put(v.getFluidResourceLocation(), EntryHelper.round(v.getAmount() * i, 5));
         }
-        return createFromPrimitiveGoopMap(product);
+        return createFromPrimitiveGooMap(product);
     }
 
     public GooEntry divide(int i) {
@@ -162,11 +162,11 @@ public class GooEntry
         for (GooValue v : this.values()) {
             product.put(v.getFluidResourceLocation(), EntryHelper.round(v.getAmount() / i, 5));
         }
-        return createFromPrimitiveGoopMap(product);
+        return createFromPrimitiveGooMap(product);
     }
 
     // utility method for quickly
-    private static GooEntry createFromPrimitiveGoopMap(Map<String, Double> product) {
+    private static GooEntry createFromPrimitiveGooMap(Map<String, Double> product) {
         List<GooValue> values = product.entrySet().stream().map(kv -> new GooValue(kv.getKey(), kv.getValue())).collect(Collectors.toList());
         return new GooEntry(values);
     }
@@ -177,12 +177,12 @@ public class GooEntry
             return;
         }
 
-        toolTip.add(new TranslationTextComponent(GOOP_MAPPING_PREFACE_TRANSLATION_KEY));
+        toolTip.add(new TranslationTextComponent(GOO_MAPPING_PREFACE_TRANSLATION_KEY));
         int index = 0;
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<GooValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.goopNameComparator));
+        List<GooValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator));
         for(GooValue v : sortedValues) {
             index++;
             String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getAmount()) + " mB";
