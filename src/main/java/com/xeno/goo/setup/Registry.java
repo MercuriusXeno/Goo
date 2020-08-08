@@ -4,8 +4,9 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.Gooifier;
 import com.xeno.goo.blocks.Solidifier;
+import com.xeno.goo.entries.EntryHandler;
 import com.xeno.goo.fluids.*;
-import com.xeno.goo.items.Gasket;
+import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooifierTile;
 import com.xeno.goo.tiles.SolidifierTile;
@@ -39,6 +40,10 @@ public class Registry {
 
     // Gasket registration
     public static final RegistryObject<Gasket> GASKET = ITEMS.register("gasket", Gasket::new);
+    public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
+    public static final RegistryObject<Crucible> CRUCIBLE = ITEMS.register("crucible", Crucible::new);
+    public static final RegistryObject<ComboGauntlet> COMBO_GAUNTLET = ITEMS.register("combo_gauntlet", ComboGauntlet::new);
+    public static final RegistryObject<MobiusCrucible> MOBIUS_CRUCIBLE = ITEMS.register("mobius_crucible", MobiusCrucible::new);
 
     // Goo Bulbs registration
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);

@@ -14,7 +14,7 @@ public class GooValue
         return fluidResourceLocation;
     }
 
-    public double getAmount() {
+    public double amount() {
         return amount;
     }
 }

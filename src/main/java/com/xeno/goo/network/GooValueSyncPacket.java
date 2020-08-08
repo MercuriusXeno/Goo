@@ -57,7 +57,7 @@ public class GooValueSyncPacket
             buffer.writeVarInt(e.getValue().values().size());
             for(GooValue value : e.getValue().values()) {
                 buffer.writeString(value.getFluidResourceLocation());
-                buffer.writeDouble(value.getAmount());
+                buffer.writeDouble(value.amount());
             }
         }
     }

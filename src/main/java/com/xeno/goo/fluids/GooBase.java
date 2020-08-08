@@ -1,5 +1,10 @@
 package com.xeno.goo.fluids;
 
+import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.throwing.Breakpoint;
+import com.xeno.goo.fluids.throwing.ThrownEffect;
+import com.xeno.goo.library.Compare;
+import com.xeno.goo.library.GooEntry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluid;
@@ -15,9 +20,13 @@ import net.minecraft.world.IWorldReader;
 import net.minecraftforge.fluids.FluidAttributes;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 public class GooBase extends Fluid {
+    private static final Map<GooEntry, ThrownEffect> breakpoints = new TreeMap<>(Compare.entryWeightThrownEffectComparator);
+
     public GooBase(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         this.bucket = bucket;
         this.builder = builder;
@@ -94,5 +103,16 @@ public class GooBase extends Fluid {
     @Override
     public VoxelShape func_215664_b(FluidState p_215664_1_, IBlockReader p_215664_2_, BlockPos p_215664_3_) {
         return VoxelShapes.fullCube();
+    }
+
+    public void registerBreakpoint(Breakpoint breakpoint) {
+        if (GooBase.breakpoints.containsKey(breakpoint.goo)) {
+            if (GooBase.breakpoints.get(breakpoint.goo).equals(breakpoint.effect)) {
+                return;
+            } else {
+                GooMod.warn("There appears to be a conflicting thrown goo effect entry : " + breakpoint.goo.toString());
+            }
+        }
+        GooBase.breakpoints.put(breakpoint.goo, breakpoint.effect);
     }
 }

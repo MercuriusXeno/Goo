@@ -230,13 +230,13 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     {
         for(GooValue v : mapping.values()) {
             String key = v.getFluidResourceLocation();
-            fluidBuffer.put(key, fluidBuffer.get(key) - v.getAmount());
+            fluidBuffer.put(key, fluidBuffer.get(key) - v.amount());
         }
     }
 
     private boolean hasBufferedEnough(GooEntry mapping)
     {
-        return mapping.values().stream().noneMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.getAmount());
+        return mapping.values().stream().noneMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.amount());
     }
 
     private void tryDrainingSources(GooEntry mapping)
@@ -280,7 +280,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
         // have to ceiling here; fluid stacks are integers but values can be partial.
         // when we're short a partial unit, we just grab a full unit.
-        double absentFluid = getAbsentFluid(v.getFluidResourceLocation(), v.getAmount());
+        double absentFluid = getAbsentFluid(v.getFluidResourceLocation(), v.amount());
         int maxDrain = (int)Math.min(Math.ceil(absentFluid), workLeftThisGasket);
 
         FluidStack drainTarget = getDrainTarget(v, maxDrain);
@@ -310,7 +310,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (f == null) {
             return FluidStack.EMPTY;
         }
-        return new FluidStack(f, Math.min(maxDrain, (int)Math.ceil(v.getAmount())));
+        return new FluidStack(f, Math.min(maxDrain, (int)Math.ceil(v.amount())));
     }
 
     private double getAbsentFluid(String fluidResourceLocation, double fluidAmount)
@@ -330,7 +330,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean needsToDrainSources(GooEntry mapping)
     {
-        return mapping.values().stream().anyMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.getAmount());
+        return mapping.values().stream().anyMatch(v -> !fluidBuffer.containsKey(v.getFluidResourceLocation()) || fluidBuffer.get(v.getFluidResourceLocation()) < v.amount());
     }
 
     private GooEntry getItemEntry(Item item)

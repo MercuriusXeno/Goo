@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "goo",
+  "pattern": [
+    "nnn",
+    "ngn",
+    "nnn"
+  ],
+  "key": {
+    "n": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "g": {
+      "item": "goo:gauntlet"
+    }
+  },
+  "result": {
+    "item": "goo:combo_gauntlet"
+  }
+}

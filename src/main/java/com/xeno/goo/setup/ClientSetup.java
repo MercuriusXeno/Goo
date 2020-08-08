@@ -1,9 +1,13 @@
 package com.xeno.goo.setup;
 
+import com.xeno.goo.GooMod;
+import com.xeno.goo.client.models.CrucibleModel;
 import com.xeno.goo.client.render.GooBulbRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 public class ClientSetup
@@ -14,5 +18,6 @@ public class ClientSetup
         RenderTypeLookup.setRenderLayer(Registry.GOO_BULB.get(), RenderType.getCutout());
         GooBulbRenderer.register();
         SolidifierTileRenderer.register();
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crucible"), CrucibleModel.Loader.INSTANCE);
     }
 }

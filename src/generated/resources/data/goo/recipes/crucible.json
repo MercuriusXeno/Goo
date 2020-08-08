@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "goo",
+  "pattern": [
+    "ngn",
+    "nbn",
+    "ncn"
+  ],
+  "key": {
+    "n": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "g": {
+      "item": "goo:gasket"
+    },
+    "b": {
+      "item": "goo:goo_bulb"
+    },
+    "c": {
+      "item": "minecraft:cauldron"
+    }
+  },
+  "result": {
+    "item": "goo:crucible"
+  }
+}

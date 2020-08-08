@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "goo",
+  "pattern": [
+    "nn ",
+    "nln",
+    "ngn"
+  ],
+  "key": {
+    "n": {
+      "item": "minecraft:iron_ingot"
+    },
+    "l": {
+      "item": "minecraft:leather"
+    },
+    "g": {
+      "item": "goo:gasket"
+    }
+  },
+  "result": {
+    "item": "goo:gauntlet"
+  }
+}

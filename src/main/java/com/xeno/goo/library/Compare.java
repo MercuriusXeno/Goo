@@ -1,5 +1,6 @@
 package com.xeno.goo.library;
 
+import com.xeno.goo.fluids.throwing.ThrownEffect;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.fluids.FluidStack;
@@ -15,7 +16,8 @@ public class Compare {
 
     public static Comparator<Map.Entry<IRecipe<?>, GooEntry>> recipeGooEntryWeightComparator = Comparator.comparingDouble((k) -> k.getValue().weight());
 
-    public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::getAmount);
+    public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::amount);
+    public static Comparator<GooEntry> entryWeightThrownEffectComparator = Comparator.comparingDouble(GooEntry::weight);
 
     public static Comparator<GooValue> gooNameComparator = Comparator.comparing(GooValue::getFluidResourceLocation);
 
