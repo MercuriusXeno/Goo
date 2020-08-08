@@ -6,9 +6,9 @@ import com.xeno.goo.library.GooEntry;
 import com.xeno.goo.library.GooValue;
 import com.xeno.goo.network.ChangeSolidifierTargetPacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.network.SolidifierPoppedPacket;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
-import net.minecraft.dispenser.Position;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.IInventory;
@@ -191,29 +191,31 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private ItemStack spitStack(World world, ItemStack stack)
     {
+        Vector3d nozzleLocation = getNozzleLocation();
+        ItemEntity itemEntity = new ItemEntity(world, nozzleLocation.getX(), nozzleLocation.getY(), nozzleLocation.getZ(), stack);
+        Vector3d spitVector = getSpitVector();
+
         if (world == null) {
             return stack;
         }
         if (stack.isEmpty()) {
             return stack;
         }
-        Position nozzleLocation = getNozzleLocation();
-        ItemEntity itemEntity = new ItemEntity(world, nozzleLocation.getX(), nozzleLocation.getY(), nozzleLocation.getZ(), stack);
-        Vector3d spitVector = getSpitVector();
         itemEntity.setMotion(spitVector.getX(), spitVector.getY(), spitVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
+        Networking.sendToClientsAround(new SolidifierPoppedPacket(this.getWorld().func_234923_W_(), getSpitVector(), getNozzleLocation()), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos );
         lastItem = itemEntity;
         return EMPTY;
     }
 
-    private Position getNozzleLocation()
+    private Vector3d getNozzleLocation()
     {
         Direction direction = this.getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
         double d0 = pos.getX() + 0.5D + 0.7D * (double)direction.getXOffset();
         double d1 = pos.getY()+ 0.2D;
         double d2 = pos.getZ() + 0.5D + 0.7D * (double)direction.getZOffset();
-        return new Position(d0, d1, d2);
+        return new Vector3d(d0, d1, d2);
     }
 
     private Vector3d getSpitVector()

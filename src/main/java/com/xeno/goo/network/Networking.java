@@ -48,6 +48,12 @@ public class Networking {
                 .decoder(GooValueSyncPacket::new)
                 .consumer(GooValueSyncPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(SolidifierPoppedPacket.class, nextID())
+                .encoder(SolidifierPoppedPacket::toBytes)
+                .decoder(SolidifierPoppedPacket::new)
+                .consumer(SolidifierPoppedPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
