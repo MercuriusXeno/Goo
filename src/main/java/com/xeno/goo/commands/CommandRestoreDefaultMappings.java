@@ -11,7 +11,7 @@ import net.minecraft.command.Commands;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
-public class CommandRestoreDefaultEntries implements Command<CommandSource>
+class CommandRestoreDefaultEntries implements Command<CommandSource>
 {
 
     private static final CommandRestoreDefaultEntries CMD = new CommandRestoreDefaultEntries();

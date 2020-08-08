@@ -11,7 +11,7 @@ import net.minecraft.command.Commands;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
-public class CommandRegenerateEntries implements Command<CommandSource>
+class CommandRegenerateEntries implements Command<CommandSource>
 {
 
     private static final CommandRegenerateEntries CMD = new CommandRegenerateEntries();
