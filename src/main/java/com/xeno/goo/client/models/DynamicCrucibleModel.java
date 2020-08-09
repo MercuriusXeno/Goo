@@ -1,8 +1,6 @@
 package com.xeno.goo.client.models;
 
 import com.google.common.collect.*;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.vector.Quaternion;
@@ -14,16 +12,12 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
-import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.*;
 import net.minecraftforge.client.model.geometry.IModelGeometry;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.resource.IResourceType;
-import net.minecraftforge.resource.VanillaResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,9 +25,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-public final class CrucibleModel implements IModelGeometry<CrucibleModel>
+public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibleModel>
 {
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -52,12 +45,12 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
     private final boolean applyFluidLuminosity;
 
     @Deprecated
-    public CrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask)
+    public DynamicCrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask)
     {
         this(fluid, flipGas, tint, coverIsMask, true);
     }
 
-    public CrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
+    public DynamicCrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
         this.flipGas = flipGas;
@@ -66,9 +59,13 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
         this.applyFluidLuminosity = applyFluidLuminosity;
     }
 
-    public CrucibleModel withFluid(Fluid newFluid)
+    /**
+     * Returns a new ModelDynBucket representing the given fluid, but with the same
+     * other properties (flipGas, tint, coverIsMask).
+     */
+    public DynamicCrucibleModel withFluid(Fluid newFluid)
     {
-        return new CrucibleModel(newFluid, flipGas, tint, coverIsMask, applyFluidLuminosity);
+        return new DynamicCrucibleModel(newFluid, flipGas, tint, coverIsMask, applyFluidLuminosity);
     }
 
     @Override
@@ -93,8 +90,7 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
         if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
 
         // if the fluid is lighter than air, will manipulate the initial state to be rotated 180deg to turn it upside down
-        if (flipGas && fluid != Fluids.EMPTY && fluid.getAttributes().isLighterThanAir())
-        {
+        if (flipGas && fluid != Fluids.EMPTY && fluid.getAttributes().isLighterThanAir()) {
             modelTransform = new SimpleModelTransform(
                     modelTransform.getRotation().blockCornerToCenter().composeVanilla(
                             new TransformationMatrix(null, new Quaternion(0, 0, 1, 0), null, null)).blockCenterToCorner());
@@ -102,19 +98,16 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
 
         TransformationMatrix transform = modelTransform.getRotation();
 
-        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new ContainedFluidOverrideHandler(overrides, bakery, owner, this), transformMap);
+        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new DynamicCrucibleModel.ContainedFluidOverrideHandler(overrides, bakery, owner, this), transformMap);
 
-        if (baseLocation != null)
-        {
+        if (baseLocation != null) {
             // build base (insidest)
             builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemLayerModel.getQuadsForSprites(ImmutableList.of(baseLocation), transform, spriteGetter));
         }
 
-        if (fluidMaskLocation != null && fluidSprite != null)
-        {
+        if (fluidMaskLocation != null && fluidSprite != null) {
             TextureAtlasSprite templateSprite = spriteGetter.apply(fluidMaskLocation);
-            if (templateSprite != null)
-            {
+            if (templateSprite != null) {
                 // build liquid layer (inside)
                 int luminosity = applyFluidLuminosity ? fluid.getAttributes().getLuminosity() : 0;
                 int color = tint ? fluid.getAttributes().getColor() : 0xFFFFFFFF;
@@ -123,19 +116,14 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
             }
         }
 
-        if (coverIsMask)
-        {
-            if (coverSprite != null && baseLocation != null)
-            {
+        if (coverIsMask) {
+            if (coverSprite != null && baseLocation != null) {
                 TextureAtlasSprite baseSprite = spriteGetter.apply(baseLocation);
                 builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, NORTH_Z_COVER, Direction.NORTH, 0xFFFFFFFF, 2));
                 builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, SOUTH_Z_COVER, Direction.SOUTH, 0xFFFFFFFF, 2));
             }
-        }
-        else
-        {
-            if (coverSprite != null)
-            {
+        } else {
+            if (coverSprite != null) {
                 builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, NORTH_Z_COVER, coverSprite, Direction.NORTH, 0xFFFFFFFF, 2));
                 builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, SOUTH_Z_COVER, coverSprite, Direction.SOUTH, 0xFFFFFFFF, 2));
             }
@@ -159,66 +147,6 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
         return texs;
     }
 
-    public enum Loader implements IModelLoader<CrucibleModel>
-    {
-        INSTANCE;
-
-        @Override
-        public IResourceType getResourceType()
-        {
-            return VanillaResourceType.MODELS;
-        }
-
-        @Override
-        public void onResourceManagerReload(IResourceManager resourceManager)
-        {
-            // no need to clear cache since we create a new model instance
-        }
-
-        @Override
-        public void onResourceManagerReload(IResourceManager resourceManager, Predicate<IResourceType> resourcePredicate)
-        {
-            // no need to clear cache since we create a new model instance
-        }
-
-        @Override
-        public CrucibleModel read(JsonDeserializationContext deserializationContext, JsonObject modelContents)
-        {
-            if (!modelContents.has("fluid"))
-                throw new RuntimeException("Crucible model requires 'fluid' value.");
-
-            ResourceLocation fluidName = new ResourceLocation(modelContents.get("fluid").getAsString());
-
-            Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidName);
-
-            boolean flip = false;
-            if (modelContents.has("flipGas"))
-            {
-                flip = modelContents.get("flipGas").getAsBoolean();
-            }
-
-            boolean tint = true;
-            if (modelContents.has("applyTint"))
-            {
-                tint = modelContents.get("applyTint").getAsBoolean();
-            }
-
-            boolean coverIsMask = true;
-            if (modelContents.has("coverIsMask"))
-            {
-                coverIsMask = modelContents.get("coverIsMask").getAsBoolean();
-            }
-
-            boolean applyFluidLuminosity = true;
-            if (modelContents.has("applyFluidLuminosity"))
-            {
-                applyFluidLuminosity = modelContents.get("applyFluidLuminosity").getAsBoolean();
-            }
-
-            // create new model with correct liquid
-            return new CrucibleModel(fluid, flip, tint, coverIsMask, applyFluidLuminosity);
-        }
-    }
 
     private static final class ContainedFluidOverrideHandler extends ItemOverrideList
     {
@@ -226,9 +154,9 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
         private final ItemOverrideList nested;
         private final ModelBakery bakery;
         private final IModelConfiguration owner;
-        private final CrucibleModel parent;
+        private final DynamicCrucibleModel parent;
 
-        private ContainedFluidOverrideHandler(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, CrucibleModel parent)
+        private ContainedFluidOverrideHandler(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, DynamicCrucibleModel parent)
         {
             this.nested = nested;
             this.bakery = bakery;
@@ -248,7 +176,7 @@ public final class CrucibleModel implements IModelGeometry<CrucibleModel>
 
                         if (!cache.containsKey(name))
                         {
-                            CrucibleModel unbaked = this.parent.withFluid(fluid);
+                            DynamicCrucibleModel unbaked = this.parent.withFluid(fluid);
                             IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
                             cache.put(name, bakedModel);
                             return bakedModel;

@@ -31,6 +31,7 @@ public class Recipes extends RecipeProvider {
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapelessRecipeBuilder.shapelessRecipe(Registry.GASKET.get())
                 .addIngredient(Items.HONEY_BLOCK)
+                .addIngredient(Items.SLIME_BLOCK)
                 .addIngredient(ItemTags.WOOL)
                 .setGroup(GooMod.MOD_ID)
                 .addCriterion("honey_block", InventoryChangeTrigger.Instance.forItems(Blocks.HONEY_BLOCK))
@@ -52,9 +53,10 @@ public class Recipes extends RecipeProvider {
 
     private void registerComboGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.COMBO_GAUNTLET.get())
-                .patternLine("nnn")
-                .patternLine("ngn")
-                .patternLine("nnn")
+                .patternLine("sss")
+                .patternLine("sns")
+                .patternLine("sgs")
+                .key('s', Items.SCUTE)
                 .key('n', Items.NETHERITE_INGOT)
                 .key('g', Registry.GAUNTLET.get())
                 .setGroup(GooMod.MOD_ID)

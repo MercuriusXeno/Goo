@@ -1,6 +1,7 @@
-package com.xeno.goo.fluids;
+package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;

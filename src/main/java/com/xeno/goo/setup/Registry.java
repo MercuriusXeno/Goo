@@ -4,6 +4,8 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.Gooifier;
 import com.xeno.goo.blocks.Solidifier;
+import com.xeno.goo.enchantments.Armstrong;
+import com.xeno.goo.enchantments.Holding;
 import com.xeno.goo.entries.EntryHandler;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.*;
@@ -11,6 +13,7 @@ import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooifierTile;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
@@ -29,6 +32,7 @@ public class Registry {
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
     private static final DeferredRegister<TileEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, GooMod.MOD_ID);
+    private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
 
     public static void init () {
         BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -36,6 +40,7 @@ public class Registry {
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     // Gasket registration
@@ -72,6 +77,10 @@ public class Registry {
     public static final RegistryObject<Fluid> VITAL_GOO = FLUIDS.register("vital_goo", () -> new VitalGoo(null, FluidAttributes.builder(new ResourceLocation(GooMod.MOD_ID, "block/fluid/vital_still"), new ResourceLocation(GooMod.MOD_ID, "block/fluid/vital_flow"))));
     public static final RegistryObject<Fluid> METAL_GOO = FLUIDS.register("metal_goo", () -> new MetalGoo(null, FluidAttributes.builder(new ResourceLocation(GooMod.MOD_ID, "block/fluid/metal_still"), new ResourceLocation(GooMod.MOD_ID, "block/fluid/metal_flow"))));
     public static final RegistryObject<Fluid> CHROMATIC_GOO = FLUIDS.register("chromatic_goo", () -> new ChromaticGoo(null, FluidAttributes.builder(new ResourceLocation(GooMod.MOD_ID, "block/fluid/chromatic_still"), new ResourceLocation(GooMod.MOD_ID, "block/fluid/chromatic_flow"))));
+
+    // Enchantments
+    public static final RegistryObject<Holding> HOLDING_ENCHANTMENT = ENCHANTMENTS.register("holding", Holding::new);
+    public static final RegistryObject<Armstrong> ARMSTRONG_ENCHANTMENT = ENCHANTMENTS.register("armstrong", Armstrong::new);
 
     public static String getFluidTranslationKey(String key)
     {

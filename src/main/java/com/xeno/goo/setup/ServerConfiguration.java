@@ -16,27 +16,6 @@ public class ServerConfiguration
     public ForgeConfigSpec server;
     private ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
 
-    // machine config values
-    private ForgeConfigSpec.IntValue GOO_MAX_TRANSFER_RATE;
-    public int gooTransferRate() { return GOO_MAX_TRANSFER_RATE.get(); }
-
-    private ForgeConfigSpec.IntValue GOO_MAX_PROCESSING_RATE;
-    public int gooProcessingRate() { return GOO_MAX_PROCESSING_RATE.get(); }
-
-    private ForgeConfigSpec.IntValue GOO_BULB_TOTAL_CAPACITY;
-    public int bulbCapacity() {
-        return GOO_BULB_TOTAL_CAPACITY.get();
-    }
-
-    private ForgeConfigSpec.DoubleValue SMELTING_ITEM_MOLTEN_RATIO;
-    public double smeltingRatio() { return SMELTING_ITEM_MOLTEN_RATIO.get(); }
-
-    private ForgeConfigSpec.DoubleValue FOOD_HUNGER_VITAL_RATIO;
-    public double foodHungerRatio() { return FOOD_HUNGER_VITAL_RATIO.get(); }
-
-    private ForgeConfigSpec.DoubleValue FOOD_SATURATION_VITAL_RATIO;
-    public double foodSaturationRatio() { return FOOD_SATURATION_VITAL_RATIO.get(); }
-
     public ServerConfiguration() {
         this.init();
     }
@@ -47,13 +26,76 @@ public class ServerConfiguration
 
         setupGeneralMachineConfig();
 
+        setupUtilityConfig();
+
         setupGeneralMapperConfig();
 
         finalizeServerConfig();
     }
 
+    // utility config values
+    private ForgeConfigSpec.IntValue CRUCIBLE_BASE_CAPACITY;
+    public int crucibleBaseCapacity() { return CRUCIBLE_BASE_CAPACITY.get(); }
+
+    private ForgeConfigSpec.IntValue CRUCIBLE_HOLDING_MULTIPLIER;
+    public int crucibleHoldingMultiplier() { return CRUCIBLE_HOLDING_MULTIPLIER.get(); }
+
+    private ForgeConfigSpec.DoubleValue GAUNTLET_BREAKPOINT_CHARGE_DELAY;
+    public double gauntletBreakpointChargeDelay() {
+        return GAUNTLET_BREAKPOINT_CHARGE_DELAY.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue GAUNTLET_LOB_VELOCITY;
+    public double gauntletLobVelocity() {
+        return GAUNTLET_LOB_VELOCITY.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue GAUNTLET_POWER_MULTIPLIER;
+    public double gauntletPowerMultiplier() {
+        return GAUNTLET_POWER_MULTIPLIER.get();
+    }
+
+    private void setupUtilityConfig()
+    {
+        serverBuilder.comment().push("utility");
+
+        int defaultCrucibleBaseCapacity = 1000;
+        CRUCIBLE_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted crucible, default: " + defaultCrucibleBaseCapacity)
+                .defineInRange("crucibleBaseCapacity", defaultCrucibleBaseCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultCrucibleHoldingMultiplier = 10;
+        CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with holding multiplies its storage by this amount, default: " + defaultCrucibleHoldingMultiplier)
+                .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
+
+        double defaultGauntletBreakpointChargeDelay = 0.75d;
+        GAUNTLET_BREAKPOINT_CHARGE_DELAY = serverBuilder.comment("Number of seconds it takes to charge to the next gauntlet goo breakpoint, default: " + defaultGauntletBreakpointChargeDelay)
+                .defineInRange("gauntletBreakpointChargeDelay", defaultGauntletBreakpointChargeDelay, 0, Double.MAX_VALUE);
+
+        double defaultGauntletLobVelocity = 1d;
+        GAUNTLET_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted gauntlet, default: " + defaultGauntletLobVelocity)
+                .defineInRange("gauntletLobVelocity", defaultGauntletLobVelocity, 0, Double.MAX_VALUE);
+
+        double defaultGauntletPowerMultiplier = 1.4d;
+        GAUNTLET_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with power multiplies its lob velocity by this amount, default: " + defaultGauntletPowerMultiplier)
+                .defineInRange("gauntletPowerMultiplier", defaultGauntletPowerMultiplier, 0, Double.MAX_VALUE);
+
+        serverBuilder.pop();
+    }
+
     private void finalizeServerConfig() {
         server = serverBuilder.build();
+    }
+
+    // machine config values
+    private ForgeConfigSpec.IntValue GOO_MAX_TRANSFER_RATE;
+    public int gooTransferRate() { return GOO_MAX_TRANSFER_RATE.get(); }
+
+    private ForgeConfigSpec.IntValue GOO_MAX_PROCESSING_RATE;
+    public int gooProcessingRate() { return GOO_MAX_PROCESSING_RATE.get(); }
+
+    private ForgeConfigSpec.IntValue GOO_BULB_TOTAL_CAPACITY;
+    public int bulbCapacity() {
+        return GOO_BULB_TOTAL_CAPACITY.get();
     }
 
     private void setupGeneralMachineConfig() {
@@ -73,6 +115,15 @@ public class ServerConfiguration
 
         serverBuilder.pop();
     }
+
+    private ForgeConfigSpec.DoubleValue SMELTING_ITEM_MOLTEN_RATIO;
+    public double smeltingRatio() { return SMELTING_ITEM_MOLTEN_RATIO.get(); }
+
+    private ForgeConfigSpec.DoubleValue FOOD_HUNGER_VITAL_RATIO;
+    public double foodHungerRatio() { return FOOD_HUNGER_VITAL_RATIO.get(); }
+
+    private ForgeConfigSpec.DoubleValue FOOD_SATURATION_VITAL_RATIO;
+    public double foodSaturationRatio() { return FOOD_SATURATION_VITAL_RATIO.get(); }
 
     private void setupGeneralMapperConfig()
     {

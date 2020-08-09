@@ -8,12 +8,7 @@ import net.minecraft.command.Commands;
 
 public class GooCommands
 {
-
     public static void register(CommandDispatcher<CommandSource> dispatcher) {
-        LiteralCommandNode<CommandSource> cmdGoo = dispatcher.register(
-                Commands.literal(GooMod.MOD_ID)
-                    .then(CommandRegenerateEntries.register(dispatcher))
-                    .then(CommandRestoreDefaultEntries.register(dispatcher))
-        );
+        dispatcher.register(Commands.literal(GooMod.MOD_ID).then(CommandRegenerateEntries.register(dispatcher)).then(CommandRestoreDefaultEntries.register(dispatcher)));
     }
 }

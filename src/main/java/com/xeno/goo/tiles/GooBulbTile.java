@@ -1,7 +1,6 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.BulbFluidHandler;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.network.BulbVerticalFillPacket;
 import com.xeno.goo.network.FluidUpdatePacket;

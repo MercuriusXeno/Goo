@@ -98,12 +98,12 @@ public class Solidifier extends Block {
         if (worldIn != null) {
             // ignore all hits other than north facing hit.
             if (hit.getFace() != state.get(BlockStateProperties.HORIZONTAL_FACING)) {
-                return ActionResultType.PASS;
+                return ActionResultType.SUCCESS;
             }
 
             TileEntity tile = worldIn.getTileEntity(pos);
             if (!(tile instanceof SolidifierTile)) {
-                return ActionResultType.PASS;
+                return ActionResultType.SUCCESS;
             }
 
             Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
@@ -113,6 +113,9 @@ public class Solidifier extends Block {
 
             return ActionResultType.SUCCESS;
         }
-        return ActionResultType.PASS;
+        if (!player.isSneaking()) {
+            return ActionResultType.PASS;
+        }
+        return ActionResultType.SUCCESS;
     }
 }

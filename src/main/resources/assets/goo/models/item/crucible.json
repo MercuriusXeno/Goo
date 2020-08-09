@@ -1,6 +1,11 @@
 {
-  "parent": "minecraft:item/handheld",
+
+  "parent": "forge:item/default",
+  "loader": "goo:crucible",
+  "fluid": "goo:item/mask/crucible_fluid",
+  "base": "goo:item/crucible",
   "textures": {
+    "base": "goo:item/crucible",
     "layer0": "goo:item/crucible"
   }
 }
