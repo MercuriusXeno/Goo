@@ -1,6 +1,0 @@
-{
-
-  "parent": "goo:item/crucible",
-  "loader": "goo:crucible",
-  "fluid": "goo:fluid/molten_goo"
-}

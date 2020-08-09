@@ -2,6 +2,8 @@ package com.xeno.goo.client.models;
 
 import com.google.common.collect.*;
 import com.mojang.datafixers.util.Pair;
+import com.xeno.goo.items.GooHolder;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.TransformationMatrix;
@@ -167,25 +169,26 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
         @Override
         public IBakedModel func_239290_a_(IBakedModel originalModel, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity)
         {
-            IBakedModel overriden = nested.func_239290_a_(originalModel, stack, world, entity);
-            if (overriden != originalModel) return overriden;
-            return FluidUtil.getFluidContained(stack)
-                    .map(fluidStack -> {
-                        Fluid fluid = fluidStack.getFluid();
-                        String name = fluid.getRegistryName().toString();
+            IBakedModel overridden = nested.func_239290_a_(originalModel, stack, world, entity);
+            if (overridden != originalModel) return overridden;
 
-                        if (!cache.containsKey(name))
-                        {
-                            DynamicCrucibleModel unbaked = this.parent.withFluid(fluid);
-                            IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
-                            cache.put(name, bakedModel);
-                            return bakedModel;
-                        }
+            GooHolder holder = GooHolder.read(stack);
+            String selected = holder.selected();
+            Fluid fluid = Registry.getFluid(selected);
 
-                        return cache.get(name);
-                    })
-                    // not a fluid item apparently
-                    .orElse(originalModel); // empty bucket
+            if (fluid == null || fluid == Fluids.EMPTY) {
+                return originalModel;
+            }
+
+            if (!cache.containsKey(selected))
+            {
+                DynamicCrucibleModel unbaked = this.parent.withFluid(fluid);
+                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
+                cache.put(selected, bakedModel);
+                return bakedModel;
+            }
+
+            return cache.get(selected);
         }
     }
 }

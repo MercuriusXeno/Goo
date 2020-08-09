@@ -9,6 +9,7 @@ public class ComboGauntlet extends Item
     {
         super(new Properties()
                 .maxStackSize(1)
-                .group(GooMod.ITEM_GROUP));
+                .group(GooMod.ITEM_GROUP)
+                .maxDamage(2048));
     }
 }

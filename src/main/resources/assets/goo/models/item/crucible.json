@@ -4,6 +4,7 @@
   "loader": "goo:crucible",
   "fluid": "goo:item/mask/crucible_fluid",
   "base": "goo:item/crucible",
+  "cover": "goo:item/mask/crucible_cover",
   "textures": {
     "base": "goo:item/crucible",
     "layer0": "goo:item/crucible"

@@ -17,6 +17,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -275,7 +276,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
     @Nonnull
     public FluidStack getLeastQuantityGoo() {
-        return goo.stream().min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
+        return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0).min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
     }
 
     @Nonnull
@@ -467,5 +468,13 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
     public int getSpaceRemaining()
     {
         return GooMod.mainConfig.bulbCapacity() - getTotalGoo();
+    }
+
+    public FluidStack getGooCorrespondingTo(Vector3d hitVec, Vector3d eyePosition, Direction side)
+    {
+        // TODO make this way more awesome
+        // int split = (int)goo.stream().filter(g -> !g.isEmpty()).count();
+        // double dividend = split / 16d;
+        return getLeastQuantityGoo();
     }
 }

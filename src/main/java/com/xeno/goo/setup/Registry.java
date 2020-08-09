@@ -6,7 +6,6 @@ import com.xeno.goo.blocks.Gooifier;
 import com.xeno.goo.blocks.Solidifier;
 import com.xeno.goo.enchantments.Armstrong;
 import com.xeno.goo.enchantments.Holding;
-import com.xeno.goo.entries.EntryHandler;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.GooBulbTile;

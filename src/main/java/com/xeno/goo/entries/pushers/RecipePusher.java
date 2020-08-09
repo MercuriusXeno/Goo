@@ -177,6 +177,10 @@ public class RecipePusher extends EntryPusher
 
         // the item is a container item which means crafting with it is "less" the container item in terms of input value.
         if (stack.hasContainerItem()) {
+            // the item contains itself! this would be an interesting topographical exercise. we can't map this, run away.
+            if (stack.getContainerItem().isItemEqual(stack)) {
+                return GooEntry.UNKNOWN;
+            }
             GooEntry containerEntry = findLowestItemStackValueInExistingOrTheoreticalEntries(recipeEntries, stack.getContainerItem());
             // if we can't determine the value of the container item, the whole stack must causally be null.
             if (containerEntry.isUnknown()) {

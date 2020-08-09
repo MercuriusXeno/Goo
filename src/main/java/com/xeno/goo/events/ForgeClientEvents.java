@@ -3,7 +3,11 @@ package com.xeno.goo.events;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.library.GooEntry;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,5 +32,25 @@ public class ForgeClientEvents
             return;
         }
         mapping.translateToTooltip(e.getToolTip());
+    }
+
+    @SubscribeEvent
+    public static void onTextureStitch(TextureStitchEvent.Pre event){
+        if (!event.getMap().getTextureLocation().equals(PlayerContainer.LOCATION_BLOCKS_TEXTURE)) {
+            return;
+        }
+        registerMaskingSprites(event);
+    }
+
+    private static void registerMaskingSprites(TextureStitchEvent.Pre event)
+    {
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_cover"));
+
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_cover"));
+
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/combo_gauntlet_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/combo_gauntlet_cover"));
     }
 }
