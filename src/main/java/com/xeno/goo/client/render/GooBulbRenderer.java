@@ -204,7 +204,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         float totalGoo = tile.getTotalGoo();
 
         // this is the total fill percentage of the container
-        float scaledHeight = totalGoo / (float) GooMod.mainConfig.bulbCapacity();
+        float scaledHeight = totalGoo / (float) GooMod.config.bulbCapacity();
         float  yOffset = 0;
 
         // determine where to draw the fluid based on the model

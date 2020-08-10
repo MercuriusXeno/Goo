@@ -1,46 +1,79 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-public class GooHolder
+public abstract class GooHolder extends Item implements IGooHolder
 {
-    public GooHolder(int tanks) {
-        this.selected = Objects.requireNonNull(Fluids.EMPTY.getRegistryName()).toString();
-        goo = NonNullList.withSize(tanks, FluidStack.EMPTY);
-    }
-
     private NonNullList<FluidStack> goo;
     private String selected;
+    private int tanks;
+    private GooDrainBehavior behavior;
+
+    public GooHolder(int tanks, GooDrainBehavior behavior) {
+        super(new Item.Properties()
+                .maxStackSize(1)
+                .group(GooMod.ITEM_GROUP));
+        this.tanks = tanks;
+        this.behavior = behavior;
+        this.selected = Objects.requireNonNull(Fluids.EMPTY.getRegistryName()).toString();
+        goo = NonNullList.withSize(tanks, FluidStack.EMPTY);
+
+    }
+
+    protected IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
+    {
+        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
+        IFluidHandler cap = null;
+        try {
+            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return cap;
+    }
 
     public static GooHolder read(ItemStack stack)
     {
-        int tanks = 1;
-        if ((stack.getItem() instanceof IGooHolder))
-        {
-            tanks = ((IGooHolder)stack.getItem()).tanks();
+        Item item = stack.getItem();
+        if (!(item instanceof GooHolder)) {
+            return null;
         }
-        GooHolder result = new GooHolder(tanks);
+        GooHolder result = (GooHolder)item;
         result.deserializeNBT(stack.getTag());
         return result;
     }
@@ -48,8 +81,6 @@ public class GooHolder
     public NonNullList<FluidStack> goo() {
         return goo;
     }
-
-
 
     @Nonnull
     public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action)
@@ -107,7 +138,7 @@ public class GooHolder
         if (tag == null) {
             return;
         }
-
+        this.tanks = tag.getInt("tanks");
         this.selected = tag.getString("selected");
 
         CompoundNBT gooTag = tag.getCompound("goo");
@@ -126,7 +157,7 @@ public class GooHolder
     {
         CompoundNBT tag = new CompoundNBT();
         updateSelected();
-
+        tag.putInt("tanks", tanks);
         tag.putString("selected", selected);
         CompoundNBT gooTag = new CompoundNBT();
         gooTag.putInt("count", goo.size());
@@ -139,7 +170,12 @@ public class GooHolder
         return tag;
     }
 
-    private static int getHolding(ItemStack stack)
+    private static int getArmstrong(ItemStack stack)
+    {
+        return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
+    }
+
+    public static int getHolding(ItemStack stack)
     {
         return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
     }
@@ -148,7 +184,7 @@ public class GooHolder
     {
         for (int i = 0; i < goo.size(); i++) {
             if (goo.get(i).isEmpty() || goo.get(i).getFluid().isEquivalentTo(resource.getFluid())) {
-                return GooMod.mainConfig.crucibleBaseCapacity() * (int)Math.pow(GooMod.mainConfig.crucibleHoldingMultiplier(), getHolding(stack));
+                return capacity(stack);
             }
         }
         return 0;
@@ -184,6 +220,15 @@ public class GooHolder
     private int getGooQuantity(FluidStack resource)
     {
         return goo.stream().filter(g -> g.getFluid().isEquivalentTo(resource.getFluid())).mapToInt(FluidStack::getAmount).sum();
+    }
+
+    @Override
+    public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
+    {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+
+        GooHolder cap = GooHolder.read(stack);
+        cap.addInformation(tooltip);
     }
 
     public void addInformation(List<ITextComponent> tooltip)
@@ -226,7 +271,7 @@ public class GooHolder
     {
         if (goo.size() == 1) {
             if (goo.get(0).isEmpty()) {
-                selected = "";
+                selected = Objects.requireNonNull(Fluids.EMPTY.getRegistryName()).toString();
             } else {
                 selected = Objects.requireNonNull(goo.get(0).getFluid().getRegistryName()).toString();
             }
@@ -235,5 +280,95 @@ public class GooHolder
                 selected = Objects.requireNonNull(goo.stream().max(Compare.fluidAmountComparator).orElse(FluidStack.EMPTY).getFluid().getRegistryName()).toString();
             }
         }
+    }
+
+    @Override
+    public int tanks()
+    {
+        return this.tanks;
+    }
+
+    @Override
+    public int capacity(ItemStack stack)
+    {
+        return (int)Math.ceil(this.baseCapacity() * this.enchantmentFactor(stack));
+    }
+
+    @Override
+    public GooDrainBehavior behavior() {
+        return this.behavior;
+    };
+
+    @Override
+    public abstract int baseCapacity();
+
+    @Override
+    public int enchantmentFactor(ItemStack stack) {
+        return enchantmentMultiplier(getHolding(stack), holdingMultiplier());
+    }
+
+    public int enchantmentMultiplier(int holding, int mult) {
+        return (int)Math.ceil(Math.pow(mult, holding));
+    }
+
+    public ActionResultType tryGooDrainBehavior(ItemStack stack, ItemUseContext context) {
+        if (context.getWorld().isRemote()) {
+            return ActionResultType.PASS;
+        }
+
+        BlockPos posHit = context.getPos();
+        // context sensitive select goo from tank and pull it, if empty
+        // or a Mobius (Mobius pulls anytime as long as it has space)
+
+        TileEntity te = context.getWorld().getTileEntity(posHit);
+        if (te instanceof GooBulbTile) {
+            GooBulbTile bulb = (GooBulbTile)te;
+
+            GooHolder holder = GooHolder.read(stack);
+            IFluidHandler bulbCap = tryGettingBulbCapabilities(bulb, Direction.DOWN);
+
+            if (holder == null) {
+                return ActionResultType.PASS;
+            }
+            Fluid f = Registry.getFluid(holder.selected());
+            if (f != null && !f.getFluid().isEquivalentTo(Fluids.EMPTY) && !(f instanceof GooBase)) {
+                return ActionResultType.PASS;
+            }
+            GooBase selected = (GooBase)f;
+
+            // if the crucible is empty, we're definitely taking or doing nothing
+            if (!holder.goo().get(0).isEmpty()) {
+                FluidStack goo = bulb.getSpecificGooType(selected);
+                if (goo.isEmpty()) {
+                    goo = bulb.getSpecificGooType(holder.goo().get(0).getFluid());
+                }
+                int amountToPull = goo.getAmount();
+                amountToPull = Math.min(holder.getCapacity(stack, goo), amountToPull);
+                if (amountToPull == 0) {
+                    // try pushing instead
+                    FluidStack pushed = holder.drain(bulb.getSpaceRemaining(), IFluidHandler.FluidAction.EXECUTE);
+                    bulbCap.fill(pushed, IFluidHandler.FluidAction.EXECUTE);
+                } else {
+                    FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
+                    holder.fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
+                }
+            } else {
+                Vector3d hitVec = context.getHitVec();
+                Direction side = context.getFace();
+                FluidStack goo = bulb.getGooCorrespondingTo(hitVec, context.getPlayer().getEyePosition(0f), side);
+                int amountToPull = goo.getAmount();
+                amountToPull = Math.min(holder.getCapacity(stack, goo), amountToPull);
+                if (amountToPull > 0) {
+                    FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
+                    holder.fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
+                }
+            }
+
+            holder.updateSelected();
+
+            stack.setTag(holder.serializeNBT());
+            return ActionResultType.SUCCESS;
+        }
+        return ActionResultType.PASS;
     }
 }

@@ -121,13 +121,13 @@ public class EntryHelper
             return molten(0d); // ignored on initialization
         }
 
-        return molten(((double)burnTime / BURN_TIME_PER_SMELTED_ITEM) * GooMod.mainConfig.smeltingRatio());
+        return molten(((double)burnTime / BURN_TIME_PER_SMELTED_ITEM) * GooMod.config.smeltingRatio());
     }
 
     public static GooValue vital(Food foodItem)
     {
         // try rounding this a bit; food item weights are deterministic but the math causes some weird floats.
-        double foodFormula = GooMod.mainConfig.foodHungerRatio() * (double)foodItem.getHealing() + GooMod.mainConfig.foodSaturationRatio() * (double)foodItem.getSaturation();
+        double foodFormula = GooMod.config.foodHungerRatio() * (double)foodItem.getHealing() + GooMod.config.foodSaturationRatio() * (double)foodItem.getSaturation();
         double foodValue = round(foodFormula, 5);
 
         return vital (foodValue);

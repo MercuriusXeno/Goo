@@ -118,7 +118,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     private boolean tryDistributingFluid()
     {
         boolean isAnyWorkDone = false;
-        int maxPerTickPerGasket = GooMod.mainConfig.gooProcessingRate();
+        int maxPerTickPerGasket = GooMod.config.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
             GooBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {

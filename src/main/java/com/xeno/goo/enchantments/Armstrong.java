@@ -1,5 +1,6 @@
 package com.xeno.goo.enchantments;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.items.ComboGauntlet;
 import com.xeno.goo.items.Gauntlet;
 import net.minecraft.enchantment.Enchantment;
@@ -25,6 +26,6 @@ public class Armstrong extends Enchantment
     @Override
     public int getMaxEnchantability(int enchantmentLevel)
     {
-        return 5;
+        return GooMod.config.maxArmstrongEnchantment();
     }
 }

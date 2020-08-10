@@ -1,21 +1,32 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUseContext;
+import net.minecraft.util.ActionResultType;
 
-public class ComboGauntlet extends Item implements IGooHolder
+public class ComboGauntlet extends GooHolder
 {
     public ComboGauntlet()
     {
-        super(new Properties()
-                .maxStackSize(1)
-                .group(GooMod.ITEM_GROUP)
-                .maxDamage(2048));
+        super(2, GooDrainBehavior.HELD_CHARGE);
     }
 
     @Override
-    public int tanks()
+    public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context)
     {
-        return 2;
+        return tryGooDrainBehavior(stack, context);
+    }
+
+    @Override
+    public int baseCapacity()
+    {
+        return GooMod.config.comboGauntletBaseCapacity();
+    }
+
+    @Override
+    public int holdingMultiplier()
+    {
+        return GooMod.config.comboGauntletHoldingMultipler();
     }
 }

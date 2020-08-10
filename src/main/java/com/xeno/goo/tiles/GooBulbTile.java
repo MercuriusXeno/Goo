@@ -148,7 +148,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
 
         // the maximum amount you can drain in a tick is here.
-        int simulatedDrainLeft = GooMod.mainConfig.gooTransferRate();
+        int simulatedDrainLeft = GooMod.config.gooTransferRate();
 
         // iterate over the stacks and ensure
         for(FluidStack s : goo) {
@@ -182,7 +182,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             }
 
             // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  GooMod.mainConfig.gooTransferRate();
+            int simulatedDrainLeft =  GooMod.config.gooTransferRate();
 
             // iterate over the stacks and ensure
             for(FluidStack s : goo) {
@@ -467,7 +467,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
     public int getSpaceRemaining()
     {
-        return GooMod.mainConfig.bulbCapacity() - getTotalGoo();
+        return GooMod.config.bulbCapacity() - getTotalGoo();
     }
 
     public FluidStack getGooCorrespondingTo(Vector3d hitVec, Vector3d eyePosition, Direction side)

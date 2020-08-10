@@ -40,6 +40,12 @@ public class ServerConfiguration
     private ForgeConfigSpec.IntValue CRUCIBLE_HOLDING_MULTIPLIER;
     public int crucibleHoldingMultiplier() { return CRUCIBLE_HOLDING_MULTIPLIER.get(); }
 
+    private ForgeConfigSpec.IntValue MOBIUS_CRUCIBLE_BASE_CAPACITY;
+    public int mobiusCrucibleBaseCapacity() { return MOBIUS_CRUCIBLE_BASE_CAPACITY.get(); }
+
+    private ForgeConfigSpec.IntValue MOBIUS_CRUCIBLE_HOLDING_MULTIPLIER;
+    public int mobiusCrucibleHoldingMultiplier() { return MOBIUS_CRUCIBLE_HOLDING_MULTIPLIER.get(); }
+
     private ForgeConfigSpec.DoubleValue GAUNTLET_BREAKPOINT_CHARGE_DELAY;
     public double gauntletBreakpointChargeDelay() {
         return GAUNTLET_BREAKPOINT_CHARGE_DELAY.get();
@@ -55,17 +61,72 @@ public class ServerConfiguration
         return GAUNTLET_POWER_MULTIPLIER.get();
     }
 
+    private ForgeConfigSpec.IntValue GAUNTLET_BASE_CAPACITY;
+    public int gauntletBaseCapacity() {
+        return GAUNTLET_BASE_CAPACITY.get();
+    }
+
+    private ForgeConfigSpec.IntValue GAUNTLET_HOLDING_MULTIPLIER;
+    public int gauntletHoldingMultiplier() {
+        return GAUNTLET_HOLDING_MULTIPLIER.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue COMBO_GAUNTLET_BREAKPOINT_CHARGE_DELAY;
+    public double comboGauntletBreakpointChargeDelay() {
+        return GAUNTLET_BREAKPOINT_CHARGE_DELAY.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue COMBO_GAUNTLET_LOB_VELOCITY;
+    public double comboGauntletLobVelocity() {
+        return COMBO_GAUNTLET_LOB_VELOCITY.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue COMBO_GAUNTLET_POWER_MULTIPLIER;
+    public double comboGauntletPowerMultiplier() {
+        return GAUNTLET_POWER_MULTIPLIER.get();
+    }
+
+    private ForgeConfigSpec.IntValue COMBO_GAUNTLET_BASE_CAPACITY;
+    public int comboGauntletBaseCapacity() {
+        return COMBO_GAUNTLET_BASE_CAPACITY.get();
+    }
+
+    private ForgeConfigSpec.IntValue COMBO_GAUNTLET_HOLDING_MULTIPLIER;
+    public int comboGauntletHoldingMultipler() { return COMBO_GAUNTLET_HOLDING_MULTIPLIER.get(); }
+
+    private ForgeConfigSpec.IntValue MAX_HOLDING_ENCHANTMENT;
+    public int maxHoldingEnchantment() { return MAX_HOLDING_ENCHANTMENT.get(); }
+
+    private ForgeConfigSpec.IntValue MAX_ARMSTRONG_ENCHANTMENT;
+    public int maxArmstrongEnchantment() { return MAX_ARMSTRONG_ENCHANTMENT.get(); }
+
     private void setupUtilityConfig()
     {
         serverBuilder.comment().push("utility");
 
-        int defaultCrucibleBaseCapacity = 25;
+        int defaultCrucibleBaseCapacity = 200;
         CRUCIBLE_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted crucible, default: " + defaultCrucibleBaseCapacity)
                 .defineInRange("crucibleBaseCapacity", defaultCrucibleBaseCapacity, 0, Integer.MAX_VALUE);
 
-        int defaultCrucibleHoldingMultiplier = 2;
+        int defaultCrucibleHoldingMultiplier = 5;
         CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with holding multiplies its storage by this amount, default: " + defaultCrucibleHoldingMultiplier)
                 .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
+
+        int defaultMobiusCrucibleBaseCapacity = 200;
+        MOBIUS_CRUCIBLE_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted mobius crucible, per tank, default: " + defaultMobiusCrucibleBaseCapacity)
+                .defineInRange("mobiusCrucibleBaseCapacity", defaultMobiusCrucibleBaseCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultMobiusCrucibleHoldingMultiplier = 5;
+        MOBIUS_CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a mobius crucible with holding multiplies its storage by this amount, default: " + defaultMobiusCrucibleHoldingMultiplier)
+                .defineInRange("mobiusCrucibleHoldingMultiplier", defaultMobiusCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
+
+        int defaultGauntletBaseCapacity = 25;
+        GAUNTLET_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted gauntlet, default: " + defaultGauntletBaseCapacity)
+                .defineInRange("gauntletBaseCapacity", defaultGauntletBaseCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultGauntletHoldingMultiplier = 2;
+        GAUNTLET_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with holding multiplies its storage by this amount, default: " + defaultGauntletHoldingMultiplier)
+                .defineInRange("gauntletHoldingMultiplier", defaultGauntletHoldingMultiplier, 0, Integer.MAX_VALUE);
 
         double defaultGauntletBreakpointChargeDelay = 0.75d;
         GAUNTLET_BREAKPOINT_CHARGE_DELAY = serverBuilder.comment("Number of seconds it takes to charge to the next gauntlet goo breakpoint, default: " + defaultGauntletBreakpointChargeDelay)
@@ -78,6 +139,26 @@ public class ServerConfiguration
         double defaultGauntletPowerMultiplier = 1.4d;
         GAUNTLET_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with power multiplies its lob velocity by this amount, default: " + defaultGauntletPowerMultiplier)
                 .defineInRange("gauntletPowerMultiplier", defaultGauntletPowerMultiplier, 0, Double.MAX_VALUE);
+
+        int defaultComboGauntletBaseCapacity = 25;
+        COMBO_GAUNTLET_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted combo gauntlet, default: " + defaultComboGauntletBaseCapacity)
+                .defineInRange("comboGauntletBaseCapacity", defaultComboGauntletBaseCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultComboGauntletHoldingMultiplier = 2;
+        COMBO_GAUNTLET_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a combo gauntlet with holding multiplies its storage by this amount, default: " + defaultComboGauntletHoldingMultiplier)
+                .defineInRange("comboGauntletHoldingMultiplier", defaultComboGauntletHoldingMultiplier, 0, Integer.MAX_VALUE);
+
+        double defaultComboGauntletBreakpointChargeDelay = 0.5d;
+        COMBO_GAUNTLET_BREAKPOINT_CHARGE_DELAY = serverBuilder.comment("Number of seconds it takes to charge to the next combo gauntlet goo breakpoint, default: " + defaultComboGauntletBreakpointChargeDelay)
+                .defineInRange("comboGauntletBreakpointChargeDelay", defaultComboGauntletBreakpointChargeDelay, 0, Double.MAX_VALUE);
+
+        double defaultComboGauntletLobVelocity = 3d;
+        COMBO_GAUNTLET_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted combo gauntlet, default: " + defaultComboGauntletLobVelocity)
+                .defineInRange("comboGauntletLobVelocity", defaultComboGauntletLobVelocity, 0, Double.MAX_VALUE);
+
+        double defaultComboGauntletPowerMultiplier = 1.4d;
+        COMBO_GAUNTLET_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a combo gauntlet with power multiplies its lob velocity by this amount, default: " + defaultComboGauntletPowerMultiplier)
+                .defineInRange("comboGauntletPowerMultiplier", defaultComboGauntletPowerMultiplier, 0, Double.MAX_VALUE);
 
         serverBuilder.pop();
     }
@@ -155,6 +236,4 @@ public class ServerConfiguration
         configData.load();
         spec.setConfig(configData);
     }
-
-
 }

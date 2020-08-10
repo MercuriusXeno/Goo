@@ -64,7 +64,7 @@ public class BlockStates extends BlockStateProvider {
     private void registerSolidifier() {
         ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_off");
         ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_on");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/piston_bottom");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
         ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_off");
         ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_on");
         ResourceLocation back_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_back_off");

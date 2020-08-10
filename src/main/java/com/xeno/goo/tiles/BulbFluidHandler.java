@@ -2,7 +2,6 @@ package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooBase;
-import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -32,7 +31,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.mainConfig.bulbCapacity() : 0;
+        return tank == 0 ? GooMod.config.bulbCapacity() : 0;
     }
 
     @Override
@@ -43,8 +42,7 @@ public class BulbFluidHandler implements IFluidHandler {
     @Override
     public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
         int spaceRemaining = parent.getSpaceRemaining();
-        int transferAmount = Math.min(GooMod.mainConfig.gooTransferRate(), spaceRemaining);
-        transferAmount = Math.min(transferAmount, resource.getAmount());
+        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
         if (action == FluidAction.EXECUTE && transferAmount > 0) {
             if (parent.hasFluid(resource.getFluid())) {
                 FluidStack existingGoo = parent.getSpecificGooType((resource.getFluid()));

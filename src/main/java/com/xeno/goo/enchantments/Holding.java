@@ -1,9 +1,7 @@
 package com.xeno.goo.enchantments;
 
-import com.xeno.goo.items.ComboGauntlet;
-import com.xeno.goo.items.Crucible;
-import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.items.MobiusCrucible;
+import com.xeno.goo.GooMod;
+import com.xeno.goo.items.*;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.inventory.EquipmentSlotType;
@@ -14,19 +12,19 @@ public class Holding extends Enchantment
     public Holding()
     {
         super(Rarity.COMMON,
-                EnchantmentType.create("crucible", i -> i.getItem() instanceof Crucible || i.getItem() instanceof MobiusCrucible),
+                EnchantmentType.create("crucible", i -> i.getItem() instanceof IGooHolder),
                 new EquipmentSlotType[] { EquipmentSlotType.OFFHAND });
     }
 
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Crucible || stack.getItem() instanceof MobiusCrucible;
+        return stack.getItem() instanceof IGooHolder;
     }
 
     @Override
     public int getMaxEnchantability(int enchantmentLevel)
     {
-        return 5;
+        return GooMod.config.maxHoldingEnchantment();
     }
 }
