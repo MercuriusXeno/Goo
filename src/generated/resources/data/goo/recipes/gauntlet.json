@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "nn ",
-    "nln",
-    "ngn"
+    "ss ",
+    "sls",
+    "sgs"
   ],
   "key": {
-    "n": {
-      "item": "minecraft:iron_ingot"
+    "s": {
+      "item": "minecraft:netherite_scrap"
     },
     "l": {
       "item": "minecraft:leather"

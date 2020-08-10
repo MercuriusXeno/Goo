@@ -2,11 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "ccc",
-    "csc",
-    "ccc"
+    "cdc",
+    "ese",
+    "dcd"
   ],
   "key": {
+    "d": {
+      "item": "minecraft:diamond"
+    },
+    "e": {
+      "item": "minecraft:ender_eye"
+    },
     "s": {
       "item": "minecraft:shulker_shell"
     },

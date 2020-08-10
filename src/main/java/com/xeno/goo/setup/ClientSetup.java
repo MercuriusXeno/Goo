@@ -3,6 +3,7 @@ package com.xeno.goo.setup;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.models.CrucibleModelLoader;
 import com.xeno.goo.client.render.GooBulbRenderer;
+import com.xeno.goo.client.render.GooEntityRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
 import com.xeno.goo.network.Networking;
 import net.minecraft.client.renderer.RenderType;
@@ -19,6 +20,7 @@ public class ClientSetup
         // rendering stuff
         RenderTypeLookup.setRenderLayer(Registry.GOO_BULB.get(), RenderType.getCutout());
         GooBulbRenderer.register();
+        GooEntityRenderer.register();
         SolidifierTileRenderer.register();
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crucible"), CrucibleModelLoader.INSTANCE);
     }

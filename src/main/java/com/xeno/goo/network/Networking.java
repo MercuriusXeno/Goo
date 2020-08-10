@@ -1,6 +1,7 @@
 package com.xeno.goo.network;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.entities.PacketSpawn;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -53,6 +54,12 @@ public class Networking {
                 .encoder(SolidifierPoppedPacket::toBytes)
                 .decoder(SolidifierPoppedPacket::new)
                 .consumer(SolidifierPoppedPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketSpawn.class, nextID())
+                .encoder(PacketSpawn::toBytes)
+                .decoder(PacketSpawn::new)
+                .consumer(PacketSpawn::handle)
                 .add();
     }
 

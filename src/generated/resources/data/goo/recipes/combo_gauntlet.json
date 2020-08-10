@@ -2,11 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "sss",
+    "tnt",
     "sns",
     "sgs"
   ],
   "key": {
+    "t": {
+      "item": "goo:gasket"
+    },
     "s": {
       "item": "minecraft:scute"
     },

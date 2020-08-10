@@ -2,22 +2,22 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "ngn",
-    "nmn",
-    "ncn"
+    "sgs",
+    "scs",
+    "sbs"
   ],
   "key": {
-    "n": {
-      "item": "minecraft:netherite_ingot"
+    "s": {
+      "item": "minecraft:netherite_scrap"
     },
     "g": {
       "item": "goo:gasket"
     },
+    "b": {
+      "item": "minecraft:magma_cream"
+    },
     "c": {
       "item": "minecraft:cauldron"
-    },
-    "m": {
-      "item": "minecraft:magma_cream"
     }
   },
   "result": {

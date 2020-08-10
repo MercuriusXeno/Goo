@@ -1,15 +1,12 @@
 package com.xeno.goo;
 
 import com.xeno.goo.entries.EntryHandler;
-import com.xeno.goo.items.Crucible;
-import com.xeno.goo.items.MobiusCrucible;
 import com.xeno.goo.setup.*;
+import net.minecraft.entity.EntityType;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;

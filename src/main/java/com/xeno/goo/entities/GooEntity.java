@@ -19,29 +19,32 @@ import java.util.Objects;
 
 public class GooEntity extends Entity
 {
-    Vector3d decayingVector;
-    Vector3d location;
-    List<Vector3d> collisions;
-    double decayingSpeed;
-    double mB;
-    boolean isHeld;
-    Entity holder;
-    IGooBase goo;
+    public Vector3d decayingVector;
+    private Vector3d location;
+    private List<AxisAlignedBB> proportions;
+    private List<Vector3d> collisions;
+    public double decayingSpeed;
+    private double mB;
+    private boolean isHeld;
+    private Entity holder;
+    private GooBase goo;
 
-    List<AxisAlignedBB> proportions;
+    public GooBase goo() {
+        return goo;
+    }
 
     public GooEntity(World worldIn) {
-        super(Registry.GOO_ENTITY.get(), worldIn);
+        super(Registry.GOO.get(), worldIn);
     }
 
     public GooEntity(World worldIn, CompoundNBT tag) {
-        super(Registry.GOO_ENTITY.get(), worldIn);
+        super(Registry.GOO.get(), worldIn);
         read(tag);
     }
 
     public GooEntity(World worldIn, Entity sender)
     {
-        super(Registry.GOO_ENTITY.get(), worldIn);
+        super(Registry.GOO.get(), worldIn);
         decayingVector = holder.getLookVec();
         if (holder instanceof ServerPlayerEntity) {
             location = holder.getEyePosition(0f).add(decayingVector.mul(0.125d, 0.125d, 0.125d));
@@ -53,7 +56,7 @@ public class GooEntity extends Entity
 
     public GooEntity(World worldIn, Entity sender, String gooType, double enchantedSpeed, double quantity)
     {
-        super(Registry.GOO_ENTITY.get(), worldIn);
+        super(Registry.GOO.get(), worldIn);
         decayingVector = holder.getLookVec();
         if (holder instanceof ServerPlayerEntity) {
             location = holder.getEyePosition(0f).add(decayingVector.mul(0.125d, 0.125d, 0.125d));
@@ -65,7 +68,7 @@ public class GooEntity extends Entity
 
     }
 
-    public GooEntity(EntityType<Entity> entityEntityType, World world)
+    public GooEntity(EntityType<GooEntity> entityEntityType, World world)
     {
         super(entityEntityType, world);
     }
@@ -86,7 +89,7 @@ public class GooEntity extends Entity
         mB = tag.getDouble("mb");
         isHeld = tag.getBoolean("held");
         holder = world.getPlayerByUuid(getUniqueID());
-        goo = (IGooBase)Registry.getFluid(tag.getString("goo"));
+        goo = (GooBase)Registry.getFluid(tag.getString("goo"));
         CompoundNBT p = tag.getCompound("proportions");
         for(int i = 0; i < p.getInt("boxes"); i++) {
             proportions.set(i, new AxisAlignedBB(
