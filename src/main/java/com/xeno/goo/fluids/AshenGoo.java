@@ -9,9 +9,9 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class FloralGoo extends GooBase implements IGooBase
+public class AshenGoo extends GooBase implements IGooBase
 {
-    public FloralGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
+    public AshenGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);
     }
 

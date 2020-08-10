@@ -16,6 +16,7 @@ import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
@@ -28,10 +29,9 @@ import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.http.client.entity.EntityBuilder;
 
 public class Registry {
-    public static final EntryHandler GOO_ENTITY = ;
-
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GooMod.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
@@ -57,7 +57,7 @@ public class Registry {
     public static final RegistryObject<MobiusCrucible> MOBIUS_CRUCIBLE = ITEMS.register("mobius_crucible", MobiusCrucible::new);
 
     // Entity registration
-    public static final RegistryObject<GooEntity> GOO_ENTITY = ENTITIES.register("goo", GooEntity::new);
+    public static final RegistryObject<EntityType<GooEntity>> GOO_ENTITY = ENTITIES.register("goo", EntityType.Builder.create(() -> new GooEntity, EntityClassification.MISC));
 
 
     // Goo Bulbs registration

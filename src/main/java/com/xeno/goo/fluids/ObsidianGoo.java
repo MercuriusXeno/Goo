@@ -9,11 +9,9 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class FloralGoo extends GooBase implements IGooBase
+public class ObsidianGoo extends GooBase implements IGooBase
 {
-    public FloralGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
-        super(bucket, builder);
-    }
+    public ObsidianGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder); }
 
     @Override
     public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit) { }

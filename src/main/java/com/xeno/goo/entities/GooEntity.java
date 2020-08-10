@@ -4,11 +4,9 @@ import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.fluids.IGooBase;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.IPacket;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
@@ -18,8 +16,6 @@ import java.util.Objects;
 
 public abstract class GooEntity extends Entity
 {
-
-    abstract GooBase goo();
     Vector3d vector;
     Vector3d location;
     double decayingSpeed;
@@ -30,7 +26,16 @@ public abstract class GooEntity extends Entity
 
     List<AxisAlignedBB> proportions;
 
-    public GooEntity(EntityType<?> entityTypeIn, World worldIn, Entity sender, double enchantedSpeed, double quantity)
+    public GooEntity(World worldIn) {
+        super(Registry.GOO_ENTITY.get(), worldIn);
+    }
+
+    public GooEntity(World worldIn, CompoundNBT tag) {
+        super(Registry.GOO_ENTITY.get(), worldIn);
+        read(tag);
+    }
+
+    public GooEntity(World worldIn, Entity sender, double enchantedSpeed, double quantity)
     {
         super(Registry.GOO_ENTITY.get(), worldIn);
         vector = holder.getLookVec();
@@ -43,22 +48,10 @@ public abstract class GooEntity extends Entity
 
     }
 
-
     @Override
-    protected void registerData()
+    public void read(CompoundNBT tag)
     {
-
-    }
-
-    @Override
-    public IPacket<?> createSpawnPacket()
-    {
-        return new PacketGoo(worldRegistryKey, this);
-    }
-
-    @Override
-    protected void readAdditional(CompoundNBT tag)
-    {
+        super.read(tag);
         vector = new Vector3d(tag.getDouble("vx"), tag.getDouble("vy"), tag.getDouble("vz"));
         location = new Vector3d(tag.getDouble("lx"), tag.getDouble("ly"), tag.getDouble("lz"));
         decayingSpeed = tag.getDouble("speed");
@@ -75,12 +68,7 @@ public abstract class GooEntity extends Entity
     }
 
     @Override
-    protected void writeAdditional(CompoundNBT compound)
-    {
-        compound.put("goo_data", serialize());
-    }
-
-    public CompoundNBT serialize()
+    public CompoundNBT serializeNBT()
     {
         CompoundNBT e = new CompoundNBT();
         e.putDouble("vx", vector.x);
@@ -105,5 +93,6 @@ public abstract class GooEntity extends Entity
             p.putDouble("hz" + i, proportions.get(i).maxZ);
         }
         e.put("proportions", p);
+        return e;
     }
 }
