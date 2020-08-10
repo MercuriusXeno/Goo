@@ -1,6 +1,10 @@
 {
-  "parent": "minecraft:item/handheld",
+  "parent": "forge:item/default",
+  "loader": "goo:gauntlet",
   "textures": {
-    "layer0": "goo:item/gauntlet"
+    "layer0": "goo:item/gauntlet",
+    "fluid": "goo:item/mask/gauntlet_fluid",
+    "base": "goo:item/gauntlet",
+    "cover": "goo:item/mask/gauntlet_cover"
   }
 }

@@ -1,6 +1,10 @@
 {
-  "parent": "minecraft:item/handheld",
+  "parent": "forge:item/default",
+  "loader": "goo:combo_gauntlet",
   "textures": {
-    "layer0": "goo:item/combo_gauntlet"
+    "layer0": "goo:item/combo_gauntlet",
+    "fluid": "goo:item/mask/combo_gauntlet_fluid",
+    "base": "goo:item/combo_gauntlet",
+    "cover": "goo:item/mask/combo_gauntlet_cover"
   }
 }
