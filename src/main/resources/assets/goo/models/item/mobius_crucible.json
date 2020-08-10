@@ -3,11 +3,11 @@
   "loader": "goo:mobius_crucible",
   "fluid": "goo:item/mask/mobius_crucible_fluid",
   "base": "goo:item/mobius_crucible",
-  "cover": "goo:item/mask/mobius_crucible_cover",
+  "cover": "goo:item/mask/mobius_crucible_fluid_cover",
   "textures": {
     "layer0": "goo:item/mobius_crucible",
     "fluid": "goo:item/mask/mobius_crucible_fluid",
     "base": "goo:item/mobius_crucible",
-    "cover": "goo:item/mask/mobius_crucible_cover"
+    "cover": "goo:item/mask/mobius_crucible_fluid_cover"
   }
 }

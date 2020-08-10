@@ -2,10 +2,10 @@
 0f7066085aa73702926a18d2ff1116f892263759 assets/goo/blockstates/gooifier.json
 9793d7d921431bb8fb7ce2fc989eeac05c237202 assets/goo/blockstates/solidifier.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb.json
-881674a73bf23a9869ce21c973a7b255318ed905 assets/goo/models/block/gooifier.json
-40a16bee43787b5d581f6d39b4cdcf5fe5251a21 assets/goo/models/block/gooifier_powered.json
-6d5c08c625ed508dd62bc6ee72c1f824b54c55d6 assets/goo/models/block/solidifier.json
-e7319f139d2ed4fd33814c050bca34d4d519a846 assets/goo/models/block/solidifier_powered.json
+3fabb1123ab3fcc9a0ef6442e4f410d1fb83a718 assets/goo/models/block/gooifier.json
+13a079250c8356d5cbb81257f261647fa0e34501 assets/goo/models/block/gooifier_powered.json
+4f8a67ee2a4c0189562896edc3aaed79f61b39ab assets/goo/models/block/solidifier.json
+325d5e84c0763020f4352db10d6d49a9ddd7aedc assets/goo/models/block/solidifier_powered.json
 f6080b1e76ed3c8a05e44724259e884719387d30 assets/goo/models/item/gasket.json
 1f0a5ec3cfe84486c27f211d9af1bfe450e76035 assets/goo/models/item/goo_bulb.json
 829878f949b39415aadf48da5a166c6525afc7d4 assets/goo/models/item/gooifier.json

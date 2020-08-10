@@ -3,11 +3,11 @@
   "loader": "goo:combo_gauntlet",
   "fluid": "goo:item/mask/combo_gauntlet_fluid",
   "base": "goo:item/combo_gauntlet",
-  "cover": "goo:item/mask/combo_gauntlet_cover",
+  "cover": "goo:item/mask/combo_gauntlet_fluid_cover",
   "textures": {
     "layer0": "goo:item/combo_gauntlet",
     "fluid": "goo:item/mask/combo_gauntlet_fluid",
     "base": "goo:item/combo_gauntlet",
-    "cover": "goo:item/mask/combo_gauntlet_cover"
+    "cover": "goo:item/mask/combo_gauntlet_fluid_cover"
   }
 }

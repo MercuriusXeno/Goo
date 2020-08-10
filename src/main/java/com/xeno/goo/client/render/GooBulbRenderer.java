@@ -27,7 +27,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
     private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
-    private static final float LAST_BIT_HEIGHT_THRESHOLD = 0.05f;
 
     public GooBulbRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -211,7 +210,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
 
-        float lastBitRecession = scaledHeight >= LAST_BIT_HEIGHT_THRESHOLD ? 1f : scaledHeight / LAST_BIT_HEIGHT_THRESHOLD;
         float minY = from.getY();
         float maxY = to.getY();
         float highestToY = minY;
@@ -224,7 +222,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
             fromY = minY + yOffset;
             toY = fromY + height;
             highestToY = toY;
-            renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX() + lastBitRecession, fromY, from.getZ() + lastBitRecession, to.getX() - lastBitRecession, toY, to.getZ() - lastBitRecession);
+            renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += height;
         }
 
