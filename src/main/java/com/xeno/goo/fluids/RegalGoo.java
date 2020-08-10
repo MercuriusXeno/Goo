@@ -9,7 +9,7 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class RegalGoo extends GooBase implements IGooBase
+public class RegalGoo extends GooBase
 {
     public RegalGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);

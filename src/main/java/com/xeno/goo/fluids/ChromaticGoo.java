@@ -9,7 +9,7 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class ChromaticGoo extends GooBase implements IGooBase
+public class ChromaticGoo extends GooBase
 {
     public ChromaticGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);

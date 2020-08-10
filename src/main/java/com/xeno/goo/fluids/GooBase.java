@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class GooBase extends Fluid implements IGooBase {
+public abstract class GooBase extends Fluid implements IGooBase {
     public GooBase(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         this.bucket = bucket;
         this.builder = builder;

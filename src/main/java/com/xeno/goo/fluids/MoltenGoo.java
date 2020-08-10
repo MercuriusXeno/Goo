@@ -9,7 +9,7 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class MoltenGoo extends GooBase implements IGooBase
+public class MoltenGoo extends GooBase
 {
     public MoltenGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);

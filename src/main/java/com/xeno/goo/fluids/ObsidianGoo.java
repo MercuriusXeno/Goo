@@ -9,7 +9,7 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class ObsidianGoo extends GooBase implements IGooBase
+public class ObsidianGoo extends GooBase
 {
     public ObsidianGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder); }
 
