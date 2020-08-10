@@ -44,11 +44,14 @@ public class ForgeClientEvents
 
     private static void registerMaskingSprites(TextureStitchEvent.Pre event)
     {
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_cover"));
-
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_fluid"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_cover"));
+
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/mobius_crucible_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/mobius_crucible_cover"));
+
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_cover"));
 
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/combo_gauntlet_fluid"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/combo_gauntlet_cover"));

@@ -1,17 +1,15 @@
 package com.xeno.goo.setup;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.models.CrucibleModelLoader;
+import com.xeno.goo.client.models.*;
 import com.xeno.goo.client.render.GooBulbRenderer;
 import com.xeno.goo.client.render.GooEntityRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
-import com.xeno.goo.network.Networking;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 public class ClientSetup
 {
@@ -23,8 +21,8 @@ public class ClientSetup
         GooEntityRenderer.register();
         SolidifierTileRenderer.register();
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crucible"), CrucibleModelLoader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), CrucibleModelLoader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "mobius_crucible"), CrucibleModelLoader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "combo_gauntlet"), CrucibleModelLoader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "mobius_crucible"), MobiusCrucibleModelLoader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModelLoader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "combo_gauntlet"), ComboGauntletModelLoader.INSTANCE);
     }
 }

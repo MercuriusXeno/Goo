@@ -19,7 +19,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.*;
 import net.minecraftforge.client.model.geometry.IModelGeometry;
-import net.minecraftforge.fluids.FluidUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,10 +27,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibleModel>
+public final class DynamicHolderModel implements IModelGeometry<DynamicHolderModel>
 {
-    private static final Logger LOGGER = LogManager.getLogger();
-
     // minimal Z offset to prevent depth-fighting
     private static final float NORTH_Z_COVER = 7.496f / 16f;
     private static final float SOUTH_Z_COVER = 8.504f / 16f;
@@ -45,29 +42,31 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
     private final boolean tint;
     private final boolean coverIsMask;
     private final boolean applyFluidLuminosity;
+    private final String holderName;
 
     @Deprecated
-    public DynamicCrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask)
+    public DynamicHolderModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, String holderName)
     {
-        this(fluid, flipGas, tint, coverIsMask, true);
+        this(fluid, flipGas, tint, coverIsMask, true, holderName);
     }
 
-    public DynamicCrucibleModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
+    public DynamicHolderModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity, String holderName)
     {
         this.fluid = fluid;
         this.flipGas = flipGas;
         this.tint = tint;
         this.coverIsMask = coverIsMask;
         this.applyFluidLuminosity = applyFluidLuminosity;
+        this.holderName = holderName;
     }
 
     /**
      * Returns a new ModelDynBucket representing the given fluid, but with the same
      * other properties (flipGas, tint, coverIsMask).
      */
-    public DynamicCrucibleModel withFluid(Fluid newFluid)
+    public DynamicHolderModel withFluid(Fluid newFluid)
     {
-        return new DynamicCrucibleModel(newFluid, flipGas, tint, coverIsMask, applyFluidLuminosity);
+        return new DynamicHolderModel(newFluid, flipGas, tint, coverIsMask, applyFluidLuminosity, holderName);
     }
 
     @Override
@@ -100,7 +99,7 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
 
         TransformationMatrix transform = modelTransform.getRotation();
 
-        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new DynamicCrucibleModel.ContainedFluidOverrideHandler(overrides, bakery, owner, this), transformMap);
+        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new DynamicHolderModel.ContainedFluidOverrideHandler(overrides, bakery, owner, this, holderName), transformMap);
 
         if (baseLocation != null) {
             // build base (insidest)
@@ -156,14 +155,16 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
         private final ItemOverrideList nested;
         private final ModelBakery bakery;
         private final IModelConfiguration owner;
-        private final DynamicCrucibleModel parent;
+        private final DynamicHolderModel parent;
+        private final String holderName;
 
-        private ContainedFluidOverrideHandler(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, DynamicCrucibleModel parent)
+        private ContainedFluidOverrideHandler(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, DynamicHolderModel parent, String holderName)
         {
             this.nested = nested;
             this.bakery = bakery;
             this.owner = owner;
             this.parent = parent;
+            this.holderName = holderName;
         }
 
         @Override
@@ -173,6 +174,9 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
             if (overridden != originalModel) return overridden;
 
             GooHolder holder = GooHolder.read(stack);
+            if (holder == null) {
+                return originalModel;
+            }
             String selected = holder.selected();
             Fluid fluid = Registry.getFluid(selected);
 
@@ -182,8 +186,8 @@ public final class DynamicCrucibleModel implements IModelGeometry<DynamicCrucibl
 
             if (!cache.containsKey(selected))
             {
-                DynamicCrucibleModel unbaked = this.parent.withFluid(fluid);
-                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
+                DynamicHolderModel unbaked = this.parent.withFluid(fluid);
+                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:" + holderName + "_override"));
                 cache.put(selected, bakedModel);
                 return bakedModel;
             }
