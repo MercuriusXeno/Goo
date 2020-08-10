@@ -120,9 +120,9 @@ public abstract class GooHolder extends Item implements IGooHolder
             }
 
             FluidStack result = stack.copy();
-            result.setAmount(result.getAmount() - Math.min(result.getAmount(), maxDrain));
+            result.setAmount(Math.min(result.getAmount(), maxDrain));
             if (action == IFluidHandler.FluidAction.EXECUTE) {
-                stack.setAmount(result.getAmount());
+                stack.setAmount(stack.getAmount() - result.getAmount());
                 if (stack.getAmount() == 0) {
                     goo.set(i, FluidStack.EMPTY);
                 }

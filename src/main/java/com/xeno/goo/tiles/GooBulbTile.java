@@ -58,6 +58,13 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
         doVerticalDrain();
         doLateralShare();
+
+        cleanStacks();
+    }
+
+    private void cleanStacks()
+    {
+        goo.removeIf(FluidStack::isEmpty);
     }
 
     public List<FluidStack> goo()
@@ -92,12 +99,12 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return new FluidStack(verticalFillFluid, 1);
     }
 
-    private float VERTICAL_FILL_DECAY_RATE = 0.5f;
+    private float VERTICAL_FILL_DECAY_RATE = 0.2f;
     private float VERTICAL_FILL_CUTOFF_THRESHOLD = 0.05f;
     private float verticalFillDecay() {
         // throttle the intensity decay so it doesn't look so jittery. This will cause the first few frames to be slow
         // changing, but later frames will be proportionately somewhat faster.
-        return 1f - Math.min(verticalFillIntensity * VERTICAL_FILL_DECAY_RATE, 0.03f);
+        return Math.min(verticalFillIntensity * VERTICAL_FILL_DECAY_RATE, 0.125f);
     }
 
     public void decayVerticalFillVisuals() {
