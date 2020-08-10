@@ -1,12 +1,10 @@
 package com.xeno.goo.fluids;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.throwing.Breakpoint;
-import com.xeno.goo.fluids.throwing.ThrownEffect;
-import com.xeno.goo.library.Compare;
-import com.xeno.goo.library.GooEntry;
+import com.xeno.goo.entities.GooEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
@@ -17,16 +15,15 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorldReader;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.function.Supplier;
 
-public class GooBase extends Fluid {
-    private static final Map<GooEntry, ThrownEffect> breakpoints = new TreeMap<>(Compare.entryWeightThrownEffectComparator);
-
+public class GooBase extends Fluid implements IGooBase {
     public GooBase(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         this.bucket = bucket;
         this.builder = builder;
@@ -105,14 +102,9 @@ public class GooBase extends Fluid {
         return VoxelShapes.fullCube();
     }
 
-    public void registerBreakpoint(Breakpoint breakpoint) {
-        if (GooBase.breakpoints.containsKey(breakpoint.goo)) {
-            if (GooBase.breakpoints.get(breakpoint.goo).equals(breakpoint.effect)) {
-                return;
-            } else {
-                GooMod.warn("There appears to be a conflicting thrown goo effect entry : " + breakpoint.goo.toString());
-            }
-        }
-        GooBase.breakpoints.put(breakpoint.goo, breakpoint.effect);
+    @Override
+    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit)
+    {
+
     }
 }

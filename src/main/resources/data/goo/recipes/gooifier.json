@@ -3,8 +3,8 @@
   "group": "goo",
   "pattern": [
     "non",
-    "pcp",
-    "opo"
+    "scs",
+    "obo"
   ],
   "key": {
     "n": {
@@ -13,11 +13,14 @@
     "o": {
       "item": "goo:gasket"
     },
-    "p": {
-      "item": "minecraft:piston"
+    "s": {
+      "item": "minecraft:obsidian"
     },
     "c": {
       "item": "minecraft:magma_block"
+    },
+    "b": {
+      "item": "goo:goo_bulb"
     }
   },
   "result": {

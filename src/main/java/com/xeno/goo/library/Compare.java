@@ -1,6 +1,5 @@
 package com.xeno.goo.library;
 
-import com.xeno.goo.fluids.throwing.ThrownEffect;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.fluids.FluidStack;

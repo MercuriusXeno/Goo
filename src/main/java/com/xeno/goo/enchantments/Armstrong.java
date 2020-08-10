@@ -21,4 +21,10 @@ public class Armstrong extends Enchantment
     {
         return stack.getItem() instanceof Gauntlet || stack.getItem() instanceof ComboGauntlet;
     }
+
+    @Override
+    public int getMaxEnchantability(int enchantmentLevel)
+    {
+        return 5;
+    }
 }

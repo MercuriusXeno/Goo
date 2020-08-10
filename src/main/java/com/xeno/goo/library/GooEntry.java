@@ -206,6 +206,5 @@ public class GooEntry
 
     public String toString() {
         return this.values.stream().map(v -> v.getFluidResourceLocation() + " " + v.amount() + "mB").collect(Collectors.joining(", "));
-
     }
 }

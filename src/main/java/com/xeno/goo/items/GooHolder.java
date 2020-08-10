@@ -35,10 +35,10 @@ public class GooHolder
 
     public static GooHolder read(ItemStack stack)
     {
-        CompoundNBT cap = stack.getOrCreateTag();
         int tanks = 1;
-        if (stack.getItem() instanceof MobiusCrucible) {
-            tanks = 8;
+        if ((stack.getItem() instanceof IGooHolder))
+        {
+            tanks = ((IGooHolder)stack.getItem()).tanks();
         }
         GooHolder result = new GooHolder(tanks);
         result.deserializeNBT(stack.getTag());

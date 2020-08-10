@@ -21,7 +21,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class Crucible extends Item
+public class Crucible extends Item implements IGooHolder
 {
     public Crucible()
     {
@@ -65,29 +65,42 @@ public class Crucible extends Item
         TileEntity te = context.getWorld().getTileEntity(posHit);
         if (te instanceof GooBulbTile) {
             GooBulbTile bulb = (GooBulbTile)te;
-            Vector3d hitVec = context.getHitVec();
-            Direction side = context.getFace();
-            FluidStack goo = bulb.getGooCorrespondingTo(hitVec, context.getPlayer().getEyePosition(0f), side);
-            if (goo.isEmpty()) {
-                return ActionResultType.PASS;
-            }
 
-            GooHolder cap = GooHolder.read(stack);
+            GooHolder crucible = GooHolder.read(stack);
+            IFluidHandler bulbCap = tryGettingBulbCapabilities(bulb, Direction.DOWN);
 
-            int amountToPull = goo.getAmount();
-            amountToPull = Math.min(cap.getCapacity(stack, goo), amountToPull);
-            if (amountToPull == 0) {
-
+            // if the crucible is empty, we're definitely taking or doing nothing
+            if (!crucible.goo().get(0).isEmpty()) {
+                FluidStack goo = bulb.getSpecificGooType(crucible.goo().get(0).getFluid());
+                int amountToPull = goo.getAmount();
+                amountToPull = Math.min(crucible.getCapacity(stack, goo), amountToPull);
+                if (amountToPull == 0) {
+                } else {
+                    FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
+                    crucible.fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
+                }
             } else {
-                IFluidHandler bulbCap = tryGettingBulbCapabilities(bulb, Direction.DOWN);
-                FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
-                cap.fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
+                Vector3d hitVec = context.getHitVec();
+                Direction side = context.getFace();
+                FluidStack goo = bulb.getGooCorrespondingTo(hitVec, context.getPlayer().getEyePosition(0f), side);
+                int amountToPull = goo.getAmount();
+                amountToPull = Math.min(crucible.getCapacity(stack, goo), amountToPull);
+                if (amountToPull > 0) {
+                    FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
+                    crucible.fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
+                }
             }
 
-            cap.updateSelected();
+            crucible.updateSelected();
 
-            stack.setTag(cap.serializeNBT());
+            stack.setTag(crucible.serializeNBT());
         }
         return ActionResultType.SUCCESS;
+    }
+
+    @Override
+    public int tanks()
+    {
+        return 1;
     }
 }

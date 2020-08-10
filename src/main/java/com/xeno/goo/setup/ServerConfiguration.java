@@ -59,11 +59,11 @@ public class ServerConfiguration
     {
         serverBuilder.comment().push("utility");
 
-        int defaultCrucibleBaseCapacity = 1000;
+        int defaultCrucibleBaseCapacity = 25;
         CRUCIBLE_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted crucible, default: " + defaultCrucibleBaseCapacity)
                 .defineInRange("crucibleBaseCapacity", defaultCrucibleBaseCapacity, 0, Integer.MAX_VALUE);
 
-        int defaultCrucibleHoldingMultiplier = 10;
+        int defaultCrucibleHoldingMultiplier = 2;
         CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with holding multiplies its storage by this amount, default: " + defaultCrucibleHoldingMultiplier)
                 .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
 
@@ -71,7 +71,7 @@ public class ServerConfiguration
         GAUNTLET_BREAKPOINT_CHARGE_DELAY = serverBuilder.comment("Number of seconds it takes to charge to the next gauntlet goo breakpoint, default: " + defaultGauntletBreakpointChargeDelay)
                 .defineInRange("gauntletBreakpointChargeDelay", defaultGauntletBreakpointChargeDelay, 0, Double.MAX_VALUE);
 
-        double defaultGauntletLobVelocity = 1d;
+        double defaultGauntletLobVelocity = 3d;
         GAUNTLET_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted gauntlet, default: " + defaultGauntletLobVelocity)
                 .defineInRange("gauntletLobVelocity", defaultGauntletLobVelocity, 0, Double.MAX_VALUE);
 
@@ -109,7 +109,7 @@ public class ServerConfiguration
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + defaultGooProcessingRate)
                 .defineInRange("maxProcessingRate", defaultGooProcessingRate, 0, Integer.MAX_VALUE);
 
-        int defaultBulbCapacity = 10000;
+        int defaultBulbCapacity = 1000;
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + defaultBulbCapacity)
                 .defineInRange("maxBulbCapacity", defaultBulbCapacity, 0, Integer.MAX_VALUE);
 
@@ -136,7 +136,7 @@ public class ServerConfiguration
         FOOD_HUNGER_VITAL_RATIO = serverBuilder.comment("Ratio of food hunger restoration to vital goo, default: " + defaultVitalHungerRatio)
                 .defineInRange("foodHungerRatio", defaultVitalHungerRatio, 0d, Double.MAX_VALUE);
 
-        double defaultVitalSaturationRatio = 10d;
+        double defaultVitalSaturationRatio = 5d;
         FOOD_SATURATION_VITAL_RATIO = serverBuilder.comment("Ratio of food saturation restoration to vital goo, default: " + defaultVitalSaturationRatio)
                 .defineInRange("foodSaturationRatio", defaultVitalSaturationRatio, 0d, Double.MAX_VALUE);
 

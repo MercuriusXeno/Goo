@@ -21,9 +21,7 @@ public class Holding extends Enchantment
     @Override
     public boolean canApply(ItemStack stack)
     {
-
-                return stack.getItem() instanceof Gauntlet || stack.getItem() instanceof ComboGauntlet
-                        || stack.getItem() instanceof Crucible || stack.getItem() instanceof MobiusCrucible;
+        return stack.getItem() instanceof Crucible || stack.getItem() instanceof MobiusCrucible;
     }
 
     @Override
@@ -31,6 +29,4 @@ public class Holding extends Enchantment
     {
         return 5;
     }
-
-
 }

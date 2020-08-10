@@ -3,7 +3,7 @@
   "group": "goo",
   "pattern": [
     "ngn",
-    "nbn",
+    "nmn",
     "ncn"
   ],
   "key": {
@@ -13,11 +13,11 @@
     "g": {
       "item": "goo:gasket"
     },
-    "b": {
-      "item": "goo:goo_bulb"
-    },
     "c": {
       "item": "minecraft:cauldron"
+    },
+    "m": {
+      "item": "minecraft:magma_cream"
     }
   },
   "result": {
