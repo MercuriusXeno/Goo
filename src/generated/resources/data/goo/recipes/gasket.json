@@ -6,6 +6,9 @@
       "item": "minecraft:honey_block"
     },
     {
+      "item": "minecraft:slime_block"
+    },
+    {
       "tag": "minecraft:wool"
     }
   ],

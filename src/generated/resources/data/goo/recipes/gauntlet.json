@@ -2,12 +2,11 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "nne",
+    "nn ",
     "nln",
     "ngn"
   ],
   "key": {
-    "e": [],
     "n": {
       "item": "minecraft:iron_ingot"
     },

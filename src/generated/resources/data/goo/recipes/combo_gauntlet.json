@@ -2,11 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "group": "goo",
   "pattern": [
-    "nnn",
-    "ngn",
-    "nnn"
+    "sss",
+    "sns",
+    "sgs"
   ],
   "key": {
+    "s": {
+      "item": "minecraft:scute"
+    },
     "n": {
       "item": "minecraft:netherite_ingot"
     },
