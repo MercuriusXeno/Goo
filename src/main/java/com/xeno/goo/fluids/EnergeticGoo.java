@@ -9,11 +9,10 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class EsotericGoo extends GooBase
+public class EnergeticGoo extends GooBase
 {
-    public EsotericGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
-        super(bucket, builder);
-    }
+
+    public EnergeticGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder); }
 
     @Override
     public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit) { }

@@ -6,6 +6,7 @@ import com.xeno.goo.library.EntryHelper;
 import com.xeno.goo.library.ProgressState;
 import com.xeno.goo.entries.EntryPhase;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.FurnaceRecipe;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.RecipeManager;
@@ -115,7 +116,10 @@ public class RecipePusher extends EntryPusher
             return UNKNOWN;
         }
         List<Ingredient> inputs = r.getIngredients();
-        GooEntry product = EMPTY;
+        GooEntry product = EMPTY.copy();
+        if (r instanceof FurnaceRecipe) {
+            product.makeUnattainable();
+        }
         for (Ingredient g : inputs)
         {
             // ingredient is air or otherwise unmapped.
@@ -131,7 +135,8 @@ public class RecipePusher extends EntryPusher
         }
 
         // divide the recipe net weight by its yield count, as so far we've only summed up the input values.
-        product = product.divide(output.getCount());
+        // send the name so we have a hint as to what this is
+        product = product.divide(Objects.requireNonNull(output.getItem().getRegistryName()).toString(), output.getCount());
         if (product.isEmpty()) {
             return UNKNOWN;
         }

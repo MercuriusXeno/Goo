@@ -42,9 +42,6 @@ public class ForgeCommonEvents {
         // items which don't have a recipe, or whose recipe equivalency we wish to override
         // by setting it as equal to another mapping, rather than an explicit value.
         GooMod.handler.register(new SimpleExchangePusher(world));
-        // items which have a non-traditional route to obtaining value, usually
-        // by reverse mapping an output to an input; we can specify "complex" equivalencies.
-        GooMod.handler.register(new ComplexEquivalencyPusher(world));
         // a semi-automatic recipe-scraping algorithm which analyzes baseline values
         // and other recipes to derive the values of recipe outputs.
         GooMod.handler.register(new RecipePusher(world));

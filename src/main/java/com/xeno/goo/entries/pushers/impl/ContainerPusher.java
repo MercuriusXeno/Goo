@@ -64,9 +64,9 @@ public class ContainerPusher extends EntryPusher
     @Override
     protected void seedDefaults()
     {
-        addEntry(Items.LAVA_BUCKET, molten(Items.LAVA_BUCKET));
-        addEntry(Items.MILK_BUCKET, faunal(1));
-        addEntry(Items.WATER_BUCKET, aquatic(1));
+        addEntry(Items.LAVA_BUCKET, molten(1080));
+        addEntry(Items.MILK_BUCKET, faunal(120));
+        addEntry(Items.WATER_BUCKET, aquatic(960));
     }
 
     private void addEntry(Item item, GooValue... values)

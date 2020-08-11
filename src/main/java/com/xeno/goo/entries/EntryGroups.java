@@ -77,7 +77,6 @@ public class EntryGroups
     );
 
     public static EntryGroup earthenBlocks = new EntryGroup(
-        Items.BASALT,
         Items.BLACKSTONE,
         Items.COBBLESTONE,
         Items.DIRT,

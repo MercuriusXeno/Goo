@@ -69,7 +69,6 @@ public class SimpleExchangePusher extends EntryPusher
         addEquivalency(Items.BLACK_CONCRETE, Items.BLACK_CONCRETE_POWDER);
         addEquivalency(Items.BLUE_CONCRETE, Items.BLUE_CONCRETE_POWDER);
         addEquivalency(Items.BROWN_CONCRETE, Items.BROWN_CONCRETE_POWDER);
-        addEquivalency(Items.CHARCOAL, Items.COAL);
         addEquivalency(Items.CYAN_CONCRETE, Items.CYAN_CONCRETE_POWDER);
         addEquivalency(Items.GRAY_CONCRETE, Items.GRAY_CONCRETE_POWDER);
         addEquivalency(Items.GREEN_CONCRETE, Items.GREEN_CONCRETE_POWDER);

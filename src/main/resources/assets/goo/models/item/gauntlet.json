@@ -5,6 +5,6 @@
   "base": "goo:item/gauntlet",
   "textures": {
     "fluid": "goo:item/mask/gauntlet_fluid",
-    "base": "goo:item/gauntlet",
+    "base": "goo:item/gauntlet"
   }
 }

@@ -1,5 +1,6 @@
 package com.xeno.goo.library;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
@@ -15,46 +16,65 @@ public class GooEntry
 {
     // these goo mappings are special and have important functions. I'm defining them here as static,
     // almost implicit, properties of the GooEntry class as a whole.
-    public static final GooEntry EMPTY = new GooEntry(false, false);
-    public static final GooEntry DENIED = new GooEntry(true, false);
-    public static final GooEntry UNKNOWN = new GooEntry(false, true);
+    public static final GooEntry EMPTY = new GooEntry(false, false, true);
+    public static final GooEntry DENIED = new GooEntry(true, false, false);
+    public static final GooEntry UNKNOWN = new GooEntry(false, true, true);
     private static final String GOO_MAPPING_PREFACE_TRANSLATION_KEY = "tooltip.goo.composition_preface";
+    private static final String CANNOT_SOLIDIFY_TRANSLATION_KEY = "tooltip.goo.cannot_solidify";
+    private static final String CANNOT_GOO_TRANSLATION_KEY = "tooltip.goo.cannot_goo";
 
     private List<GooValue> values;
     private boolean isDenied;
     private boolean isUnknown;
     private boolean isFixed;
-
-    public GooEntry(List<GooValue> gooValues, boolean isFixed) {
-        this.values = gooValues;
-        this.isDenied = false;
-        this.isUnknown = false;
-        this.isFixed = isFixed;
-        pruneEmptyValues();
-        sortValues();
-    }
+    private boolean isAttainable;
 
     public GooEntry(List<GooValue> gooValues) {
         this.values = gooValues;
         this.isDenied = false;
         this.isUnknown = false;
+        this.isFixed = true;
+        this.isAttainable = true;
         pruneEmptyValues();
         sortValues();
     }
 
-    public GooEntry(GooValue... adding) {
+    public GooEntry(boolean isAttainable, List<GooValue> gooValues) {
+        this.values = gooValues;
+        this.isDenied = false;
+        this.isUnknown = false;
+        this.isFixed = false;
+        this.isAttainable = isAttainable;
+        pruneEmptyValues();
+        sortValues();
+    }
+
+    public GooEntry(boolean isAttainable, GooValue... adding) {
         this.values = Arrays.asList(adding);
         this.isDenied = false;
         this.isUnknown = false;
+        this.isFixed = false;
+        this.isAttainable = isAttainable;
         pruneEmptyValues();
         sortValues();
     }
 
-    public GooEntry(boolean isDenied, boolean isUnknown) {
+    public GooEntry(boolean isDenied, boolean isUnknown, boolean isAttainable) {
         this.values = new ArrayList<>();
         this.isDenied = isDenied;
         this.isUnknown = isUnknown;
+        this.isAttainable = isAttainable;
+        this.isFixed = false;
         pruneEmptyValues();
+    }
+
+    public GooEntry(GooEntry gooEntry)
+    {
+        this.values = gooEntry.values;
+        this.isDenied = gooEntry.isDenied;
+        this.isUnknown = gooEntry.isUnknown;
+        this.isAttainable = gooEntry.isAttainable;
+        this.isFixed = gooEntry.isFixed;
     }
 
     private void pruneEmptyValues() {
@@ -93,6 +113,12 @@ public class GooEntry
         return isUnknown() || isDenied();
     }
 
+    public boolean isUnattainable() {
+        return isUnusable() || !isAttainable();
+    }
+
+    private boolean isAttainable() { return isAttainable; }
+
     public GooEntry combine(GooEntry combining, boolean isSubtracting) {
         if (this.isUnknown() || combining.isUnknown()) {
             return UNKNOWN;
@@ -124,7 +150,7 @@ public class GooEntry
                 return UNKNOWN;
             }
         }
-        return createFromPrimitiveGooMap(product);
+        return createFromPrimitiveGooMap(this.isAttainable && combining.isAttainable, product);
     }
 
     public GooEntry add(GooEntry adding) {
@@ -136,7 +162,7 @@ public class GooEntry
     }
 
     public GooEntry add(GooValue adding) {
-        return combine(new GooEntry(adding), false);
+        return combine(new GooEntry(this.isAttainable, adding), false);
     }
 
     public GooEntry multiply(int i) {
@@ -150,31 +176,39 @@ public class GooEntry
         for(GooValue v : this.values()) {
             product.put(v.getFluidResourceLocation(), EntryHelper.round(v.amount() * i, 5));
         }
-        return createFromPrimitiveGooMap(product);
+        return createFromPrimitiveGooMap(this.isAttainable, product);
     }
 
-    public GooEntry divide(int i) {
+    public GooEntry divide(String hint, int i) {
         // c'mon don't do that.
         if (i == 0) {
             return UNKNOWN;
         }
         Map<String, Double> product = new HashMap<>();
         for (GooValue v : this.values()) {
+            if (v.amount() / i != EntryHelper.round(v.amount() / i, 5)) {
+                GooMod.warn("Ugly division happening... hint: " + hint);
+            }
             product.put(v.getFluidResourceLocation(), EntryHelper.round(v.amount() / i, 5));
         }
-        return createFromPrimitiveGooMap(product);
+        return createFromPrimitiveGooMap(this.isAttainable, product);
     }
 
     // utility method for quickly
-    private static GooEntry createFromPrimitiveGooMap(Map<String, Double> product) {
+    private static GooEntry createFromPrimitiveGooMap(boolean isAttainable, Map<String, Double> product) {
         List<GooValue> values = product.entrySet().stream().map(kv -> new GooValue(kv.getKey(), kv.getValue())).collect(Collectors.toList());
-        return new GooEntry(values);
+        return new GooEntry(isAttainable, values);
     }
 
     public void translateToTooltip(List<ITextComponent> toolTip)
     {
         if (this.isUnusable()) {
+            toolTip.add(new TranslationTextComponent(CANNOT_GOO_TRANSLATION_KEY));
             return;
+        }
+
+        if (this.isUnattainable()) {
+            toolTip.add(new TranslationTextComponent(CANNOT_SOLIDIFY_TRANSLATION_KEY));
         }
 
         toolTip.add(new TranslationTextComponent(GOO_MAPPING_PREFACE_TRANSLATION_KEY));
@@ -206,5 +240,15 @@ public class GooEntry
 
     public String toString() {
         return this.values.stream().map(v -> v.getFluidResourceLocation() + " " + v.amount() + "mB").collect(Collectors.joining(", "));
+    }
+
+    public void makeUnattainable()
+    {
+        this.isAttainable = false;
+    }
+
+    public GooEntry copy()
+    {
+        return new GooEntry(this);
     }
 }

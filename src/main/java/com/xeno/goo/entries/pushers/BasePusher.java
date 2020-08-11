@@ -29,17 +29,22 @@ public class BasePusher extends EntryPusher
 
     private void addEntry(EntryGroup g, GooValue... args) {
         for(Item item : g.items) {
-            addEntry(Objects.requireNonNull(item.getRegistryName()).toString(), args);
+            addEntry(true, Objects.requireNonNull(item.getRegistryName()).toString(), args);
         }
     }
 
     private void addEntry(Item item, GooValue... args) {
-        addEntry(Objects.requireNonNull(item.getRegistryName()).toString(), args);
+        addEntry(true, Objects.requireNonNull(item.getRegistryName()).toString(), args);
     }
 
-    private void addEntry(String resourceLocation, GooValue... args) {
+    private void addEntryUnattainable(Item item, GooValue... args)
+    {
+        addEntry(false, Objects.requireNonNull(item.getRegistryName()).toString(), args);
+    }
+
+    private void addEntry(boolean isAttainable, String resourceLocation, GooValue... args) {
         // mappings in defaults are "fixed", meaning they can't be overwritten by improvements during a tracked push
-        values.put(resourceLocation, new GooEntry(Arrays.asList(args), true));
+        values.put(resourceLocation, new GooEntry(Arrays.asList(args)));
     }
 
     @Override
@@ -70,112 +75,114 @@ public class BasePusher extends EntryPusher
     @Override
     protected void seedDefaults()
     {
-        addEntry(EntryGroups.leaves, floral(1));
-        addEntry(EntryGroups.logs, floral(96));
-        addEntry(EntryGroups.stems, fungal(72), chromatic(72));
-        addEntry(EntryGroups.strippedLogs, floral(96));
-        addEntry(EntryGroups.strippedStems, fungal(72), chromatic(72));
-        addEntry(EntryGroups.saplings, floral(8));
-        addEntry(EntryGroups.singleDyeFlowers, floral(12));
-        addEntry(EntryGroups.doubleDyeFlowers, floral(24));
-        addEntry(EntryGroups.dyes, chromatic(8));
-        addEntry(EntryGroups.coral, faunal(1), aquatic(1));
-        addEntry(EntryGroups.coralBlocks, faunal(4), aquatic(4));
-        addEntry(EntryGroups.coralFans, faunal(1), aquatic(1));
-        addEntry(EntryGroups.oneBlockFoliage, floral(1));
-        addEntry(EntryGroups.oneBlockNetherFoliage, fungal(1));
-        addEntry(EntryGroups.twoBlockFoliage, floral(2));
-        addEntry(EntryGroups.earthenBlocks, earthen(3));
+        addEntry(EntryGroups.leaves, floral(60), vital(60));
+        addEntry(EntryGroups.logs, floral(960), vital(60));
+        addEntry(EntryGroups.stems, fungal(960), chromatic(60), vital (60));
+        addEntry(EntryGroups.strippedLogs, floral(960));
+        addEntry(EntryGroups.strippedStems, fungal(960), chromatic(60));
+        addEntry(EntryGroups.saplings, floral(960), vital(60));
+        addEntry(EntryGroups.singleDyeFlowers, floral(60), chromatic(240), vital(60));
+        addEntry(EntryGroups.doubleDyeFlowers, floral(120), chromatic(480), vital(120));
+        addEntry(EntryGroups.dyes, chromatic(240));
+        addEntry(EntryGroups.coral, faunal(60), vital(60));
+        addEntry(EntryGroups.coralBlocks, faunal(480), vital(480));
+        addEntry(EntryGroups.coralFans, faunal(60), vital(60));
+        addEntry(EntryGroups.oneBlockFoliage, floral(120), vital(60));
+        addEntry(EntryGroups.oneBlockNetherFoliage, fungal(120), vital(60));
+        addEntry(EntryGroups.twoBlockFoliage, floral(240), vital(120));
+        addEntry(EntryGroups.earthenBlocks, earthen(1080));
 
-        addEntry(Items.APPLE, floral(1), vital(Foods.APPLE));
-        addEntry(Items.BAMBOO, floral(6));
-        addEntry(Items.BEEF, faunal(1), vital(Foods.COOKED_BEEF));
-        addEntry(Items.BEETROOT, floral(1), vital(Foods.BEETROOT), chromatic(8));
-        addEntry(Items.BEETROOT_SEEDS, floral(1));
-        addEntry(Items.BLAZE_ROD, molten(Items.BLAZE_ROD), ashen(4d));
-        addEntry(Items.BONE, faunal(3), chromatic(24));
-        addEntry(Items.BROWN_MUSHROOM, fungal(1));
-        addEntry(Items.BROWN_MUSHROOM_BLOCK, fungal(0.2d));
-        addEntry(Items.CACTUS, floral(1), chromatic(8));
-        addEntry(Items.CARROT, floral(1), vital(Foods.CARROT));
-        addEntry(Items.CARVED_PUMPKIN, floral(1), esoteric(1));
-        addEntry(Items.CHICKEN, faunal(1), vital(Foods.COOKED_CHICKEN));
-        addEntry(Items.CHORUS_FLOWER, floral(4), esoteric(4));
-        addEntry(Items.CHORUS_FRUIT, floral(6), esoteric(1));
-        addEntry(Items.CLAY_BALL, earthen(0.25d));
-        addEntry(Items.COAL, molten(Items.COAL), ashen(1));
-        addEntry(Items.COBWEB, faunal(4));
-        addEntry(Items.COD, faunal(1), aquatic(1), vital(Foods.COOKED_COD));
-        addEntry(Items.CRIMSON_NYLIUM, earthen(0.5d), molten(0.5d), fungal(0.5d));
-        addEntry(Items.CRIMSON_FUNGUS, fungal(4));
-        addEntry(Items.CRYING_OBSIDIAN, earthen(4), regal(1), esoteric(1), obsidian(2));
-        addEntry(Items.DIAMOND, earthen(16), regal(16), molten(16), esoteric(16), crystal(16), obsidian(16), ashen(16));
-        addEntry(Items.EGG, faunal(1), vital(5));
-        addEntry(Items.EMERALD, earthen(8), regal(16), crystal(16));
-        addEntry(Items.END_STONE, earthen(3d), esoteric(1d));
-        addEntry(Items.ENDER_PEARL, faunal(1), esoteric(3));
-        addEntry(Items.FEATHER, faunal(1));
-        addEntry(Items.GHAST_TEAR, faunal(4), esoteric(8), regal(2), crystal(1));
-        addEntry(Items.GILDED_BLACKSTONE, metal(20), regal(20), esoteric(10), earthen(5), obsidian(5));
-        addEntry(Items.GLASS, earthen(1), regal(1)); // glass is special
-        addEntry(Items.GLOWSTONE_DUST, esoteric(3));
-        addEntry(Items.GOLD_INGOT, metal(72), regal(72), esoteric(36));
-        addEntry(Items.GRASS_BLOCK, earthen(1.5d), floral(0.5d));
-        addEntry(Items.GUNPOWDER, molten(9), faunal(3), esoteric(3), ashen(6));
-        addEntry(Items.HONEYCOMB, floral(4), faunal(4), regal(4));
-        addEntry(Items.ICE, aquatic(1), snow(1));
-        addEntry(Items.INK_SAC, faunal(1), chromatic(8));
-        addEntry(Items.IRON_INGOT, earthen(36d), metal(72d));
-        addEntry(Items.KELP, floral(1), aquatic(1), vital(Foods.DRIED_KELP));
-        addEntry(Items.LAPIS_LAZULI, regal(2), esoteric(2), chromatic(8), crystal(1));
-        addEntry(Items.LILY_PAD, floral(1), aquatic(1));
-        addEntry(Items.MELON_SLICE, floral(1), vital(Foods.MELON_SLICE));
-        addEntry(Items.MUSHROOM_STEM, fungal(1));
-        addEntry(Items.MUTTON, faunal(1), vital(Foods.COOKED_MUTTON));
-        addEntry(Items.MYCELIUM, earthen(0.5d), fungal(1));
-        addEntry(Items.NETHER_WART, esoteric(1), fungal(1));
-        addEntry(Items.NETHERITE_SCRAP, metal(96), regal(96), esoteric(96), molten(96), obsidian(96));
-        addEntry(Items.NETHERRACK, earthen(0.5d), molten(0.5d));
-        addEntry(Items.OBSIDIAN, earthen(4), regal(1), obsidian(1));
-        addEntry(Items.PHANTOM_MEMBRANE, faunal(6), esoteric(6));
-        addEntry(Items.POISONOUS_POTATO, floral(1), esoteric(1), vital(Foods.POISONOUS_POTATO));
-        addEntry(Items.PORKCHOP, faunal(1), vital(Foods.COOKED_PORKCHOP));
-        addEntry(Items.POTATO, floral(1), vital(Foods.BAKED_POTATO));
-        addEntry(Items.PRISMARINE_CRYSTALS, faunal(1), regal(2), aquatic(1));
-        addEntry(Items.PRISMARINE_SHARD, faunal(1), regal(2), aquatic(2));
-        addEntry(Items.PUFFERFISH, faunal(1), aquatic(2), esoteric(1));
-        addEntry(Items.PUMPKIN, floral(1));
-        addEntry(Items.QUARTZ, earthen(1), regal(2), esoteric(1), crystal(1));
-        addEntry(Items.RABBIT, faunal(1), vital(Foods.COOKED_RABBIT));
-        addEntry(Items.RABBIT_FOOT, faunal(1), esoteric(3));
-        addEntry(Items.RABBIT_HIDE, faunal(0.25d));
-        addEntry(Items.RED_MUSHROOM, fungal(1));
-        addEntry(Items.RED_MUSHROOM_BLOCK, fungal(0.2d));
-        addEntry(Items.REDSTONE, esoteric(3d));
-        addEntry(Items.ROTTEN_FLESH, faunal(1), vital(Foods.ROTTEN_FLESH), esoteric(1));
-        addEntry(Items.SALMON, faunal(1), aquatic(1), vital(Foods.COOKED_SALMON));
-        addEntry(Items.SCUTE, faunal(1), aquatic(1), esoteric(6));
-        addEntry(Items.SEA_PICKLE, faunal(3), aquatic(3), chromatic(8));
-        addEntry(Items.SEAGRASS, floral(1), aquatic(1));
-        addEntry(Items.SHULKER_SHELL, faunal(3), esoteric(7));
-        addEntry(Items.SHROOMLIGHT, esoteric(12), fungal(8));
-        addEntry(Items.SLIME_BALL, faunal(4), esoteric(2));
-        addEntry(Items.SNOWBALL, aquatic(1), snow(1));
-        addEntry(Items.SOUL_SAND, earthen(1), esoteric(1));
-        addEntry(Items.SOUL_SOIL, earthen(1), esoteric(1));
-        addEntry(Items.SPIDER_EYE, faunal(1), esoteric(1), vital(Foods.SPIDER_EYE));
-        addEntry(Items.STRING, faunal(1.5d));
-        addEntry(Items.SUGAR_CANE, floral(1));
-        addEntry(Items.SWEET_BERRIES, floral(1), vital(Foods.SWEET_BERRIES));
-        addEntry(Items.TROPICAL_FISH, faunal(1), aquatic(3), regal(3));
-        addEntry(Items.TURTLE_EGG, faunal(3), aquatic(15), vital(20));
-        addEntry(Items.TWISTING_VINES, fungal(0.5d));
-        addEntry(Items.VINE, floral(1));
-        addEntry(Items.WARPED_NYLIUM, earthen(0.5d), molten(0.5d), fungal(0.5d));
-        addEntry(Items.WARPED_FUNGUS, fungal(4));
-        addEntry(Items.WEEPING_VINES, fungal(0.5d));
-        addEntry(Items.WET_SPONGE, aquatic(1), esoteric(1), faunal(2), vital(1));
-        addEntry(Items.WHEAT, floral(0.5d));
-        addEntry(Items.WHEAT_SEEDS, (floral(0.2d)));
+        addEntry(Items.APPLE, floral(60), vital(60));
+        addEntry(Items.BAMBOO, floral(60));
+        addEntry(Items.BASALT, earthen(960), obsidian(60));
+        addEntry(Items.BEEF, faunal(60), vital(60));
+        addEntry(Items.BEETROOT, floral(60), vital(60), chromatic(240));
+        addEntry(Items.BEETROOT_SEEDS, floral(60));
+        addEntry(Items.BLAZE_ROD, molten(120), energetic(60), vital(60));
+        addEntry(Items.BONE, faunal(180), chromatic(360), vital(180), decay(60));
+        addEntry(Items.BROWN_MUSHROOM, fungal(60), vital(60));
+        addEntry(Items.BROWN_MUSHROOM_BLOCK, fungal(960));
+        addEntry(Items.CACTUS, floral(960), chromatic(240), vital (60));
+        addEntry(Items.CARROT, floral(60), vital(60));
+        addEntry(Items.CARVED_PUMPKIN, floral(60), weird(60));
+        addEntryUnattainable(Items.CHARCOAL, molten(96), floral(96));
+        addEntry(Items.CHICKEN, faunal(60), vital(60));
+        addEntry(Items.CHORUS_FLOWER, floral(240), weird(240), vital(60));
+        addEntry(Items.CHORUS_FRUIT, floral(60), weird(60), vital(60));
+        addEntry(Items.CLAY_BALL, earthen(240));
+        addEntry(Items.COAL, molten(96), earthen(72));
+        addEntry(Items.COBWEB, faunal(120));
+        addEntry(Items.COD, faunal(60), vital(60));
+        addEntry(Items.CRIMSON_NYLIUM, earthen(480d), fungal(480d), chromatic(60));
+        addEntry(Items.CRIMSON_FUNGUS, fungal(120));
+        addEntry(Items.CRYING_OBSIDIAN, weird(60), obsidian(960));
+        addEntry(Items.DIAMOND, crystal(120));
+        addEntry(Items.EGG, faunal(60), vital(60));
+        addEntry(Items.EMERALD, regal(60), crystal(60));
+        addEntry(Items.END_STONE, earthen(720), weird(240), vital(60));
+        addEntry(Items.ENDER_PEARL, weird(120));
+        addEntry(Items.FEATHER, faunal(60));
+        addEntry(Items.GHAST_TEAR, weird(240), crystal(24));
+        addEntry(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), obsidian(240));
+        addEntry(Items.GLOWSTONE_DUST, weird(60), energetic(60));
+        addEntry(Items.GOLD_INGOT, metal(36), regal(72));
+        addEntry(Items.GRASS_BLOCK, earthen(960), floral(60));
+        addEntry(Items.GUNPOWDER, molten(60), energetic(120));
+        addEntry(Items.HONEYCOMB, honey(120), regal(24));
+        addEntry(Items.HONEY_BLOCK, honey(960), regal(60));
+        addEntry(Items.ICE, snow(960), aquatic(60));
+        addEntry(Items.INK_SAC, faunal(60), chromatic(240));
+        addEntry(Items.IRON_INGOT, metal(72));
+        addEntry(Items.KELP, floral(60), vital(60));
+        addEntry(Items.LAPIS_LAZULI, weird(48), chromatic(240), crystal(4));
+        addEntry(Items.LILY_PAD, floral(60), aquatic(60), vital(60));
+        addEntry(Items.MELON_SLICE, floral(60), vital(60));
+        addEntry(Items.MUSHROOM_STEM, fungal(960));
+        addEntry(Items.MUTTON, faunal(60), vital(60));
+        addEntry(Items.MYCELIUM, earthen(960d), fungal(60));
+        addEntry(Items.NETHER_WART, weird(60), fungal(60));
+        addEntry(Items.NETHERITE_SCRAP, metal(960), obsidian(60));
+        addEntry(Items.NETHERRACK, earthen(960), molten(60));
+        addEntry(Items.OBSIDIAN, obsidian(960), molten(60));
+        addEntry(Items.PHANTOM_MEMBRANE, decay(60), vital(60), weird(60));
+        addEntry(Items.POISONOUS_POTATO, floral(60), weird(60), vital(60));
+        addEntry(Items.PORKCHOP, faunal(60), vital(60));
+        addEntry(Items.POTATO, floral(60), vital(60));
+        addEntry(Items.PRISMARINE_CRYSTALS, aquatic(36), crystal(2), weird(36), energetic(72));
+        addEntry(Items.PRISMARINE_SHARD, aquatic(36), crystal(1), weird(72));
+        addEntry(Items.PUFFERFISH, faunal(60), weird(60));
+        addEntry(Items.PUMPKIN, floral(960));
+        addEntry(Items.QUARTZ, earthen(60), crystal (1));
+        addEntry(Items.RABBIT, faunal(60), vital(60));
+        addEntry(Items.RABBIT_FOOT, faunal(60), weird(180));
+        addEntry(Items.RABBIT_HIDE, faunal(60));
+        addEntry(Items.RED_MUSHROOM, fungal(60));
+        addEntry(Items.RED_MUSHROOM_BLOCK, fungal(960));
+        addEntry(Items.REDSTONE, logic(120));
+        addEntry(Items.ROTTEN_FLESH, faunal(60), decay(60));
+        addEntry(Items.SALMON, faunal(60), vital(60));
+        addEntry(Items.SCUTE, faunal(60), weird(60), vital(60));
+        addEntry(Items.SEA_PICKLE, faunal(60), aquatic(60), chromatic(240));
+        addEntry(Items.SEAGRASS, floral(60), vital(60));
+        addEntry(Items.SHULKER_SHELL, faunal(60), weird(180));
+        addEntry(Items.SHROOMLIGHT, weird(120), fungal(360));
+        addEntry(Items.SLIME_BALL, slime(240));
+        addEntry(Items.SNOWBALL, snow(120), aquatic(60));
+        addEntry(Items.SOUL_SAND, earthen(720), vital(240), decay(60));
+        addEntry(Items.SOUL_SOIL, earthen(720), vital(240), decay(60));
+        addEntry(Items.SPIDER_EYE, faunal(60), weird(60));
+        addEntry(Items.STRING, faunal(60));
+        addEntry(Items.SUGAR_CANE, floral(60));
+        addEntry(Items.SWEET_BERRIES, floral(60), vital(60));
+        addEntry(Items.TROPICAL_FISH, faunal(60), vital(60));
+        addEntry(Items.TURTLE_EGG, faunal(60), vital(180), weird(60));
+        addEntry(Items.TWISTING_VINES, fungal(60));
+        addEntry(Items.VINE, floral(60));
+        addEntry(Items.WARPED_NYLIUM, earthen(720), molten(60), fungal(240));
+        addEntry(Items.WARPED_FUNGUS, fungal(120));
+        addEntry(Items.WEEPING_VINES, fungal(60));
+        addEntry(Items.WET_SPONGE, aquatic(60), weird(60), faunal(120), vital(720));
+        addEntry(Items.WHEAT, floral(60));
+        addEntry(Items.WHEAT_SEEDS, (floral(60)));
     }
 }

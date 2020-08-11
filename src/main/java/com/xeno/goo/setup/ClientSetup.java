@@ -21,8 +21,6 @@ public class ClientSetup
         GooEntityRenderer.register();
         SolidifierTileRenderer.register();
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crucible"), CrucibleModel.Loader.INSTANCE);
-        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "mobius_crucible"), MobiusCrucibleModel.Loader.INSTANCE);
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
-        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "combo_gauntlet"), ComboGauntletModel.Loader.INSTANCE);
     }
 }

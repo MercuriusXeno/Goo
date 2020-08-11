@@ -9,9 +9,9 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 import java.util.function.Supplier;
 
-public class AshenGoo extends GooBase
+public class DecayGoo extends GooBase
 {
-    public AshenGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
+    public DecayGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         super(bucket, builder);
     }
 
