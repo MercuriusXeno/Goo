@@ -40,12 +40,13 @@ public class BlockStates extends BlockStateProvider {
         model.texture("end", end);
         model.texture("side", side);
         simpleBlock(Registry.GOO_BULB.get(), model);
+
         simpleBlockItem(Registry.GOO_BULB.get(), model);
     }
 
     private void registerGooifier() {
         ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/piston_bottom");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/obsidian");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
         ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
@@ -63,7 +64,7 @@ public class BlockStates extends BlockStateProvider {
     private void registerSolidifier() {
         ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_off");
         ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_on");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/piston_bottom");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
         ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_off");
         ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_on");
         ResourceLocation back_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_back_off");

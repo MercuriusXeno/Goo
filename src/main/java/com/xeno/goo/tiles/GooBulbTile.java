@@ -1,7 +1,6 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.BulbFluidHandler;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.network.BulbVerticalFillPacket;
 import com.xeno.goo.network.FluidUpdatePacket;
@@ -10,6 +9,7 @@ import com.xeno.goo.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
@@ -18,6 +18,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -58,6 +59,13 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
         doVerticalDrain();
         doLateralShare();
+
+        cleanStacks();
+    }
+
+    private void cleanStacks()
+    {
+        goo.removeIf(FluidStack::isEmpty);
     }
 
     public List<FluidStack> goo()
@@ -92,12 +100,12 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return new FluidStack(verticalFillFluid, 1);
     }
 
-    private float VERTICAL_FILL_DECAY_RATE = 0.5f;
+    private float VERTICAL_FILL_DECAY_RATE = 0.2f;
     private float VERTICAL_FILL_CUTOFF_THRESHOLD = 0.05f;
     private float verticalFillDecay() {
         // throttle the intensity decay so it doesn't look so jittery. This will cause the first few frames to be slow
         // changing, but later frames will be proportionately somewhat faster.
-        return 1f - Math.min(verticalFillIntensity * VERTICAL_FILL_DECAY_RATE, 0.03f);
+        return Math.min(verticalFillIntensity * VERTICAL_FILL_DECAY_RATE, 0.125f);
     }
 
     public void decayVerticalFillVisuals() {
@@ -148,7 +156,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
 
         // the maximum amount you can drain in a tick is here.
-        int simulatedDrainLeft = GooMod.mainConfig.gooTransferRate();
+        int simulatedDrainLeft = GooMod.config.gooTransferRate();
 
         // iterate over the stacks and ensure
         for(FluidStack s : goo) {
@@ -182,7 +190,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             }
 
             // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  GooMod.mainConfig.gooTransferRate();
+            int simulatedDrainLeft =  GooMod.config.gooTransferRate();
 
             // iterate over the stacks and ensure
             for(FluidStack s : goo) {
@@ -276,11 +284,14 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
     @Nonnull
     public FluidStack getLeastQuantityGoo() {
-        return goo.stream().min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
+        return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0).min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
     }
 
     @Nonnull
     public FluidStack getSpecificGooType(Fluid fluid) {
+        if (fluid == null) {
+            return FluidStack.EMPTY;
+        }
         return goo.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
     }
 
@@ -467,6 +478,18 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
     public int getSpaceRemaining()
     {
-        return GooMod.mainConfig.bulbCapacity() - getTotalGoo();
+        return GooMod.config.bulbCapacity() - getTotalGoo();
+    }
+
+    public FluidStack getGooCorrespondingTo(Vector3d hitVec, ServerPlayerEntity player, Direction side)
+    {
+        Vector3d eyeHeight = Vector3d.ZERO;
+        if (player != null) {
+            eyeHeight = player.getEyePosition(0f);
+        }
+        // TODO make this way more awesome
+        // int split = (int)goo.stream().filter(g -> !g.isEmpty()).count();
+        // double dividend = split / 16d;
+        return getLeastQuantityGoo();
     }
 }

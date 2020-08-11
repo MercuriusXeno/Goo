@@ -15,7 +15,8 @@ public class Compare {
 
     public static Comparator<Map.Entry<IRecipe<?>, GooEntry>> recipeGooEntryWeightComparator = Comparator.comparingDouble((k) -> k.getValue().weight());
 
-    public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::getAmount);
+    public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::amount);
+    public static Comparator<GooEntry> entryWeightThrownEffectComparator = Comparator.comparingDouble(GooEntry::weight);
 
     public static Comparator<GooValue> gooNameComparator = Comparator.comparing(GooValue::getFluidResourceLocation);
 

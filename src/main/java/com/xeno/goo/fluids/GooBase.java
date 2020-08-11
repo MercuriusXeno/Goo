@@ -1,7 +1,10 @@
 package com.xeno.goo.fluids;
 
+import com.xeno.goo.entities.GooEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
@@ -12,12 +15,15 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorldReader;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
-public class GooBase extends Fluid {
+public abstract class GooBase extends Fluid implements IGooBase {
     public GooBase(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
         this.bucket = bucket;
         this.builder = builder;
@@ -94,5 +100,11 @@ public class GooBase extends Fluid {
     @Override
     public VoxelShape func_215664_b(FluidState p_215664_1_, IBlockReader p_215664_2_, BlockPos p_215664_3_) {
         return VoxelShapes.fullCube();
+    }
+
+    @Override
+    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit)
+    {
+
     }
 }

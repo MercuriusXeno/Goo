@@ -1,5 +1,5 @@
 {
-  "parent": "block/block",
+  "parent": "minecraft:block/block",
   "textures": {
     "particle": "goo:block/bulb_side",
     "end": "goo:block/bulb_end",

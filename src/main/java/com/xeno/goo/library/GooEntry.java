@@ -58,7 +58,7 @@ public class GooEntry
     }
 
     private void pruneEmptyValues() {
-        values.removeIf(v -> v.getAmount() == 0);
+        values.removeIf(v -> v.amount() == 0);
     }
 
     private void sortValues()
@@ -76,7 +76,7 @@ public class GooEntry
 
     public List<GooValue> values() { return this.values; }
 
-    public double weight() { return values.stream().map(GooValue::getAmount).reduce(0d, Double::sum); }
+    public double weight() { return values.stream().map(GooValue::amount).reduce(0d, Double::sum); }
 
     /**
      * @param competitor The mapping being compared to "this" instance.
@@ -103,18 +103,18 @@ public class GooEntry
         Map<String, Double> product = new HashMap<>();
         for(GooValue v : this.values()) {
             if (product.containsKey(v.getFluidResourceLocation())) {
-                product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + v.getAmount());
+                product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + v.amount());
             } else {
-                product.put(v.getFluidResourceLocation(), v.getAmount());
+                product.put(v.getFluidResourceLocation(), v.amount());
             }
         }
 
         // clone the goo values from this object.
         for (GooValue v : combining.values()) {
             if (product.containsKey(v.getFluidResourceLocation())) {
-                product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + (v.getAmount() * (isSubtracting ? -1 : 1)));
+                product.put(v.getFluidResourceLocation(), product.get(v.getFluidResourceLocation()) + (v.amount() * (isSubtracting ? -1 : 1)));
             } else {
-                product.put(v.getFluidResourceLocation(), v.getAmount() * (isSubtracting ? -1 : 1));
+                product.put(v.getFluidResourceLocation(), v.amount() * (isSubtracting ? -1 : 1));
             }
         }
 
@@ -148,7 +148,7 @@ public class GooEntry
         }
         Map<String, Double> product = new HashMap<>();
         for(GooValue v : this.values()) {
-            product.put(v.getFluidResourceLocation(), EntryHelper.round(v.getAmount() * i, 5));
+            product.put(v.getFluidResourceLocation(), EntryHelper.round(v.amount() * i, 5));
         }
         return createFromPrimitiveGooMap(product);
     }
@@ -160,7 +160,7 @@ public class GooEntry
         }
         Map<String, Double> product = new HashMap<>();
         for (GooValue v : this.values()) {
-            product.put(v.getFluidResourceLocation(), EntryHelper.round(v.getAmount() / i, 5));
+            product.put(v.getFluidResourceLocation(), EntryHelper.round(v.amount() / i, 5));
         }
         return createFromPrimitiveGooMap(product);
     }
@@ -185,7 +185,7 @@ public class GooEntry
         List<GooValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator));
         for(GooValue v : sortedValues) {
             index++;
-            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getAmount()) + " mB";
+            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.amount()) + " mB";
             String fluidTranslationKey = Registry.getFluidTranslationKey(v.getFluidResourceLocation());
             if (fluidTranslationKey == null) {
                 continue;
@@ -202,5 +202,9 @@ public class GooEntry
                 toolTip.add(fluidAmount);
             }
         }
+    }
+
+    public String toString() {
+        return this.values.stream().map(v -> v.getFluidResourceLocation() + " " + v.amount() + "mB").collect(Collectors.joining(", "));
     }
 }

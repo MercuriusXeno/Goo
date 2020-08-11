@@ -11,19 +11,25 @@ import java.util.Objects;
 
 public class EntryHelper
 {
-    public static final String moltenGoo = Objects.requireNonNull(Registry.MOLTEN_GOO.get().getRegistryName()).toString();
-    public static final String earthenGoo = Objects.requireNonNull(Registry.EARTHEN_GOO.get().getRegistryName()).toString();
+    public static final String ashenGoo = Objects.requireNonNull(Registry.ASHEN_GOO.get().getRegistryName()).toString();
     public static final String aquaticGoo = Objects.requireNonNull(Registry.AQUATIC_GOO.get().getRegistryName()).toString();
+    public static final String chromaticGoo = Objects.requireNonNull(Registry.CHROMATIC_GOO.get().getRegistryName()).toString();
+    public static final String crystalGoo = Objects.requireNonNull(Registry.CRYSTAL_GOO.get().getRegistryName()).toString();
+    public static final String earthenGoo = Objects.requireNonNull(Registry.EARTHEN_GOO.get().getRegistryName()).toString();
     public static final String esotericGoo = Objects.requireNonNull(Registry.ESOTERIC_GOO.get().getRegistryName()).toString();
     public static final String floralGoo = Objects.requireNonNull(Registry.FLORAL_GOO.get().getRegistryName()).toString();
     public static final String faunalGoo = Objects.requireNonNull(Registry.FAUNAL_GOO.get().getRegistryName()).toString();
     public static final String fungalGoo = Objects.requireNonNull(Registry.FUNGAL_GOO.get().getRegistryName()).toString();
-    public static final String regalGoo = Objects.requireNonNull(Registry.REGAL_GOO.get().getRegistryName()).toString();
-    public static final String vitalGoo = Objects.requireNonNull(Registry.VITAL_GOO.get().getRegistryName()).toString();
     public static final String metalGoo = Objects.requireNonNull(Registry.METAL_GOO.get().getRegistryName()).toString();
-    public static final String chromaticGoo = Objects.requireNonNull(Registry.CHROMATIC_GOO.get().getRegistryName()).toString();
+    public static final String moltenGoo = Objects.requireNonNull(Registry.MOLTEN_GOO.get().getRegistryName()).toString();
+    public static final String obsidianGoo = Objects.requireNonNull(Registry.OBSIDIAN_GOO.get().getRegistryName()).toString();
+    public static final String regalGoo = Objects.requireNonNull(Registry.REGAL_GOO.get().getRegistryName()).toString();
+    public static final String snowGoo = Objects.requireNonNull(Registry.SNOW_GOO.get().getRegistryName()).toString();
+    public static final String vitalGoo = Objects.requireNonNull(Registry.VITAL_GOO.get().getRegistryName()).toString();
 //    private static final int TRUNCATE_MAGNITUDE = 10000;
     private static final double BURN_TIME_PER_SMELTED_ITEM = 200d;
+
+    public static GooValue ashen(double d) { return new GooValue(ashenGoo, d); }
 
     public static GooValue earthen(double d) { return new GooValue(earthenGoo, d); }
 
@@ -115,13 +121,13 @@ public class EntryHelper
             return molten(0d); // ignored on initialization
         }
 
-        return molten(((double)burnTime / BURN_TIME_PER_SMELTED_ITEM) * GooMod.mainConfig.smeltingRatio());
+        return molten(((double)burnTime / BURN_TIME_PER_SMELTED_ITEM) * GooMod.config.smeltingRatio());
     }
 
     public static GooValue vital(Food foodItem)
     {
         // try rounding this a bit; food item weights are deterministic but the math causes some weird floats.
-        double foodFormula = GooMod.mainConfig.foodHungerRatio() * (double)foodItem.getHealing() + GooMod.mainConfig.foodSaturationRatio() * (double)foodItem.getSaturation();
+        double foodFormula = GooMod.config.foodHungerRatio() * (double)foodItem.getHealing() + GooMod.config.foodSaturationRatio() * (double)foodItem.getSaturation();
         double foodValue = round(foodFormula, 5);
 
         return vital (foodValue);

@@ -1,7 +1,7 @@
 {
-  "parent": "block/cube",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "down": "block/piston_bottom",
+    "down": "minecraft:block/nether_bricks",
     "up": "goo:block/solidifier_top_off",
     "north": "goo:block/solidifier_front_off",
     "south": "goo:block/solidifier_back_off",

@@ -6,6 +6,10 @@
 
   "_comment": "Items",
   "item.goo.gasket": "Gasket",
+  "item.goo.gauntlet": "Gauntlet",
+  "item.goo.combo_gauntlet": "Combo Gauntlet",
+  "item.goo.crucible": "Crucible",
+  "item.goo.mobius_crucible": "Mobius Crucible",
 
   "_comment": "Fluids",
   "fluid.goo.aquatic_goo": "Aquatic",

@@ -1,9 +1,11 @@
 package com.xeno.goo;
 
 import com.xeno.goo.entries.EntryHandler;
+import com.xeno.goo.events.TextureStitchListener;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -19,7 +21,7 @@ public class GooMod
 
     public static final Logger logger = Logger.getLogger(MOD_ID);
 
-    public static ServerConfiguration mainConfig;
+    public static ServerConfiguration config;
 
     public static EntryHandler handler;
 
@@ -46,16 +48,16 @@ public class GooMod
     private void initializeConfiguration()
     {
         // separate configs because the mapper functionality is a mess
-        mainConfig = new ServerConfiguration();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, mainConfig.server);
-        mainConfig.loadConfig(mainConfig.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
+        config = new ServerConfiguration();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, config.server);
+        config.loadConfig(config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
     }
 
     private void initializeEventListeners()
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(ServerSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().register(TextureStitchListener.class);
     }
 
     public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)

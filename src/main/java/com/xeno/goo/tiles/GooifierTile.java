@@ -118,7 +118,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     private boolean tryDistributingFluid()
     {
         boolean isAnyWorkDone = false;
-        int maxPerTickPerGasket = GooMod.mainConfig.gooProcessingRate();
+        int maxPerTickPerGasket = GooMod.config.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
             GooBulbTile bulb = getBulbInDirection(d);
             if (bulb == null) {
@@ -200,9 +200,9 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         for(GooValue v : mapping.values()) {
             String key = v.getFluidResourceLocation();
             if (fluidBuffer.containsKey(key)) {
-                fluidBuffer.put(key, fluidBuffer.get(key) + v.getAmount());
+                fluidBuffer.put(key, fluidBuffer.get(key) + v.amount());
             } else {
-                fluidBuffer.put(key, v.getAmount());
+                fluidBuffer.put(key, v.amount());
             }
         }
     }

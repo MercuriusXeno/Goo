@@ -3,16 +3,17 @@
   "group": "goo",
   "ingredients": [
     {
-      "item": "minecraft:honey_block"
+      "item": "minecraft:honeycomb"
     },
     {
-      "item": "minecraft:slime_block"
+      "item": "minecraft:gold_nugget"
     },
     {
-      "tag": "minecraft:wool"
+      "item": "minecraft:magma_cream"
     }
   ],
   "result": {
-    "item": "goo:gasket"
+    "item": "goo:gasket",
+    "count": 3
   }
 }
