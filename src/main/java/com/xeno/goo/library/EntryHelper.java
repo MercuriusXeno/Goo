@@ -31,44 +31,50 @@ public class EntryHelper
 
     public static GooValue ashen(double d) { return new GooValue(ashenGoo, d); }
 
-    public static GooValue earthen(double d) { return new GooValue(earthenGoo, d); }
-
-    public static GooValue molten(double d) {
-        return new GooValue(moltenGoo, d);
-    }
-
     public static GooValue aquatic(double d) {
         return new GooValue(aquaticGoo, d);
     }
+
+    public static GooValue chromatic(double i) {
+        return new GooValue(chromaticGoo, i);
+    }
+
+    public static GooValue crystal(double i) {
+        return new GooValue(crystalGoo, i);
+    }
+
+    public static GooValue earthen(double d) { return new GooValue(earthenGoo, d); }
 
     public static GooValue esoteric(double d) {
         return new GooValue(esotericGoo, d);
     }
 
+    public static GooValue faunal(double d) { return new GooValue(faunalGoo, d); }
+
     public static GooValue floral(double d) {
         return new GooValue(floralGoo, d);
     }
 
-    public static GooValue faunal(double d) { return new GooValue(faunalGoo, d); }
-
     public static GooValue fungal(double d) {
         return new GooValue(fungalGoo, d);
-    }
-
-    public static GooValue regal(double d) {
-        return new GooValue(regalGoo, d);
-    }
-
-    public static GooValue vital(double d) {
-        return new GooValue(vitalGoo, d);
     }
 
     public static GooValue metal(double i) {
         return new GooValue(metalGoo, i);
     }
 
-    public static GooValue chromatic(double i) {
-        return new GooValue(chromaticGoo, i);
+    public static GooValue molten(double d) {
+        return new GooValue(moltenGoo, d);
+    }
+
+    public static GooValue obsidian(double d) { return new GooValue(obsidianGoo, d); }
+
+    public static GooValue regal(double d) { return new GooValue(regalGoo, d); }
+
+    public static GooValue snow(double d) { return new GooValue(snowGoo, d); }
+
+    public static GooValue vital(double d) {
+        return new GooValue(vitalGoo, d);
     }
 
     public static String name(IRecipe<?> key) { return name(key.getRecipeOutput()); }
