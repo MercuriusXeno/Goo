@@ -23,9 +23,9 @@ public class Recipes extends RecipeProvider {
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
         registerGauntletRecipe(consumer);
-        registerComboGauntletRecipe(consumer);
+        // registerComboGauntletRecipe(consumer);
         registerCrucibleRecipe(consumer);
-        registerMobiusCrucibleRecipe(consumer);
+        // registerMobiusCrucibleRecipe(consumer);
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -51,19 +51,19 @@ public class Recipes extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerComboGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.COMBO_GAUNTLET.get())
-                .patternLine("tnt")
-                .patternLine("sns")
-                .patternLine("sgs")
-                .key('t', Registry.GASKET.get())
-                .key('s', Items.SCUTE)
-                .key('n', Items.NETHERITE_INGOT)
-                .key('g', Registry.GAUNTLET.get())
-                .setGroup(GooMod.MOD_ID)
-                .addCriterion("gauntlet", InventoryChangeTrigger.Instance.forItems(Registry.GAUNTLET.get()))
-                .build(consumer);
-    }
+//    private void registerComboGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
+//        ShapedRecipeBuilder.shapedRecipe(Registry.COMBO_GAUNTLET.get())
+//                .patternLine("tnt")
+//                .patternLine("sns")
+//                .patternLine("sgs")
+//                .key('t', Registry.GASKET.get())
+//                .key('s', Items.SCUTE)
+//                .key('n', Items.NETHERITE_INGOT)
+//                .key('g', Registry.GAUNTLET.get())
+//                .setGroup(GooMod.MOD_ID)
+//                .addCriterion("gauntlet", InventoryChangeTrigger.Instance.forItems(Registry.GAUNTLET.get()))
+//                .build(consumer);
+//    }
 
     private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.CRUCIBLE.get())
@@ -79,19 +79,19 @@ public class Recipes extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerMobiusCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.MOBIUS_CRUCIBLE.get())
-                .patternLine("cdc")
-                .patternLine("ese")
-                .patternLine("dcd")
-                .key('d', Items.DIAMOND)
-                .key('e', Items.ENDER_EYE)
-                .key('s', Items.SHULKER_SHELL)
-                .key('c', Registry.CRUCIBLE.get())
-                .setGroup(GooMod.MOD_ID)
-                .addCriterion("crucible", InventoryChangeTrigger.Instance.forItems(Registry.CRUCIBLE.get()))
-                .build(consumer);
-    }
+//    private void registerMobiusCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
+//        ShapedRecipeBuilder.shapedRecipe(Registry.MOBIUS_CRUCIBLE.get())
+//                .patternLine("cdc")
+//                .patternLine("ese")
+//                .patternLine("dcd")
+//                .key('d', Items.DIAMOND)
+//                .key('e', Items.ENDER_EYE)
+//                .key('s', Items.SHULKER_SHELL)
+//                .key('c', Registry.CRUCIBLE.get())
+//                .setGroup(GooMod.MOD_ID)
+//                .addCriterion("crucible", InventoryChangeTrigger.Instance.forItems(Registry.CRUCIBLE.get()))
+//                .build(consumer);
+//    }
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB.get())

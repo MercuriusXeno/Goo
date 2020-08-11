@@ -9,6 +9,7 @@ import com.xeno.goo.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
@@ -288,6 +289,9 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
 
     @Nonnull
     public FluidStack getSpecificGooType(Fluid fluid) {
+        if (fluid == null) {
+            return FluidStack.EMPTY;
+        }
         return goo.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
     }
 
@@ -477,8 +481,12 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return GooMod.config.bulbCapacity() - getTotalGoo();
     }
 
-    public FluidStack getGooCorrespondingTo(Vector3d hitVec, Vector3d eyePosition, Direction side)
+    public FluidStack getGooCorrespondingTo(Vector3d hitVec, ServerPlayerEntity player, Direction side)
     {
+        Vector3d eyeHeight = Vector3d.ZERO;
+        if (player != null) {
+            eyeHeight = player.getEyePosition(0f);
+        }
         // TODO make this way more awesome
         // int split = (int)goo.stream().filter(g -> !g.isEmpty()).count();
         // double dividend = split / 16d;

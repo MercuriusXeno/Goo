@@ -51,12 +51,11 @@ public class Registry {
         ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
-    public static final RegistryObject<EntityType<GooEntity>> GOO = ENTITIES.register("goo_entity", () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC).immuneToFire().size(0.5f, 0.5f).build("goo_entity"));
     public static final RegistryObject<Gasket> GASKET = ITEMS.register("gasket", Gasket::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
     public static final RegistryObject<Crucible> CRUCIBLE = ITEMS.register("crucible", Crucible::new);
-    public static final RegistryObject<ComboGauntlet> COMBO_GAUNTLET = ITEMS.register("combo_gauntlet", ComboGauntlet::new);
-    public static final RegistryObject<MobiusCrucible> MOBIUS_CRUCIBLE = ITEMS.register("mobius_crucible", MobiusCrucible::new);
+//    public static final RegistryObject<ComboGauntlet> COMBO_GAUNTLET = ITEMS.register("combo_gauntlet", ComboGauntlet::new);
+//    public static final RegistryObject<MobiusCrucible> MOBIUS_CRUCIBLE = ITEMS.register("mobius_crucible", MobiusCrucible::new);
 
     // Goo Bulbs registration
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);
@@ -93,6 +92,9 @@ public class Registry {
     // Enchantments
     public static final RegistryObject<Holding> HOLDING_ENCHANTMENT = ENCHANTMENTS.register("holding", Holding::new);
     public static final RegistryObject<Armstrong> ARMSTRONG_ENCHANTMENT = ENCHANTMENTS.register("armstrong", Armstrong::new);
+
+    // entity
+    public static final RegistryObject<EntityType<GooEntity>> GOO = ENTITIES.register("goo_entity", () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC).immuneToFire().size(0.5f, 0.5f).build("goo_entity"));
 
     public static String getFluidTranslationKey(String key)
     {

@@ -1,11 +1,15 @@
 package com.xeno.goo.client.models;
 
 import com.google.common.collect.*;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.xeno.goo.items.GooHolder;
+import com.xeno.goo.items.GooHolderData;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.vector.Quaternion;
+import net.minecraft.item.Item;
+import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.client.renderer.model.*;
 import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
@@ -19,15 +23,17 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.*;
 import net.minecraftforge.client.model.geometry.IModelGeometry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.resource.IResourceType;
+import net.minecraftforge.resource.VanillaResourceType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-public final class DynamicHolderModel implements IModelGeometry<DynamicHolderModel>
+public final class CrucibleModel implements IModelGeometry<CrucibleModel>
 {
     // minimal Z offset to prevent depth-fighting
     private static final float NORTH_Z_COVER = 7.496f / 16f;
@@ -37,36 +43,31 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
 
     @Nonnull
     private final Fluid fluid;
-
-    private final boolean flipGas;
     private final boolean tint;
     private final boolean coverIsMask;
     private final boolean applyFluidLuminosity;
-    private final String holderName;
 
     @Deprecated
-    public DynamicHolderModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, String holderName)
+    public CrucibleModel(Fluid fluid, boolean tint, boolean coverIsMask)
     {
-        this(fluid, flipGas, tint, coverIsMask, true, holderName);
+        this(fluid, tint, coverIsMask, true);
     }
 
-    public DynamicHolderModel(Fluid fluid, boolean flipGas, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity, String holderName)
+    public CrucibleModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
-        this.flipGas = flipGas;
         this.tint = tint;
         this.coverIsMask = coverIsMask;
         this.applyFluidLuminosity = applyFluidLuminosity;
-        this.holderName = holderName;
     }
 
     /**
      * Returns a new ModelDynBucket representing the given fluid, but with the same
      * other properties (flipGas, tint, coverIsMask).
      */
-    public DynamicHolderModel withFluid(Fluid newFluid)
+    public CrucibleModel withFluid(Fluid newFluid)
     {
-        return new DynamicHolderModel(newFluid, flipGas, tint, coverIsMask, applyFluidLuminosity, holderName);
+        return new CrucibleModel(newFluid, false, applyFluidLuminosity);
     }
 
     @Override
@@ -75,12 +76,12 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
         RenderMaterial particleLocation = owner.isTexturePresent("particle") ? owner.resolveTexture("particle") : null;
         RenderMaterial baseLocation = owner.isTexturePresent("base") ? owner.resolveTexture("base") : null;
         RenderMaterial fluidMaskLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("fluid") : null;
-        RenderMaterial coverLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("cover") : null;
+        // RenderMaterial coverLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("cover") : null;
 
         IModelTransform transformsFromModel = owner.getCombinedTransform();
 
         TextureAtlasSprite fluidSprite = fluid != Fluids.EMPTY ? spriteGetter.apply(ForgeHooksClient.getBlockMaterial(fluid.getAttributes().getStillTexture())) : null;
-        TextureAtlasSprite coverSprite = (coverLocation != null && (!coverIsMask || baseLocation != null)) ? spriteGetter.apply(coverLocation) : null;
+        // TextureAtlasSprite coverSprite = (coverLocation != null && (!coverIsMask || baseLocation != null)) ? spriteGetter.apply(coverLocation) : null;
 
         ImmutableMap<TransformType, TransformationMatrix> transformMap =
                 PerspectiveMapWrapper.getTransforms(new ModelTransformComposition(transformsFromModel, modelTransform));
@@ -88,27 +89,23 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
         TextureAtlasSprite particleSprite = particleLocation != null ? spriteGetter.apply(particleLocation) : null;
 
         if (particleSprite == null) particleSprite = fluidSprite;
-        if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
-
-        // if the fluid is lighter than air, will manipulate the initial state to be rotated 180deg to turn it upside down
-        if (flipGas && fluid != Fluids.EMPTY && fluid.getAttributes().isLighterThanAir()) {
-            modelTransform = new SimpleModelTransform(
-                    modelTransform.getRotation().blockCornerToCenter().composeVanilla(
-                            new TransformationMatrix(null, new Quaternion(0, 0, 1, 0), null, null)).blockCenterToCorner());
-        }
+        // if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
 
         TransformationMatrix transform = modelTransform.getRotation();
 
-        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new DynamicHolderModel.ContainedFluidOverrideHandler(overrides, bakery, owner, this, holderName), transformMap);
+        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new CrucibleContainedOverrideList(overrides, bakery, owner, this), transformMap);
 
-        if (baseLocation != null) {
+        if (baseLocation != null)
+        {
             // build base (insidest)
             builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemLayerModel.getQuadsForSprites(ImmutableList.of(baseLocation), transform, spriteGetter));
         }
 
-        if (fluidMaskLocation != null && fluidSprite != null) {
+        if (fluidMaskLocation != null && fluidSprite != null)
+        {
             TextureAtlasSprite templateSprite = spriteGetter.apply(fluidMaskLocation);
-            if (templateSprite != null) {
+            if (templateSprite != null)
+            {
                 // build liquid layer (inside)
                 int luminosity = applyFluidLuminosity ? fluid.getAttributes().getLuminosity() : 0;
                 int color = tint ? fluid.getAttributes().getColor() : 0xFFFFFFFF;
@@ -117,22 +114,83 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
             }
         }
 
-        if (coverIsMask) {
-            if (coverSprite != null && baseLocation != null) {
-                TextureAtlasSprite baseSprite = spriteGetter.apply(baseLocation);
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, NORTH_Z_COVER, Direction.NORTH, 0xFFFFFFFF, 2));
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, SOUTH_Z_COVER, Direction.SOUTH, 0xFFFFFFFF, 2));
-            }
-        } else {
-            if (coverSprite != null) {
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, NORTH_Z_COVER, coverSprite, Direction.NORTH, 0xFFFFFFFF, 2));
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, SOUTH_Z_COVER, coverSprite, Direction.SOUTH, 0xFFFFFFFF, 2));
-            }
-        }
+//        if (coverIsMask)
+//        {
+//            if (coverSprite != null && baseLocation != null)
+//            {
+//                TextureAtlasSprite baseSprite = spriteGetter.apply(baseLocation);
+//                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, NORTH_Z_COVER, Direction.NORTH, 0xFFFFFFFF, 2));
+//                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, SOUTH_Z_COVER, Direction.SOUTH, 0xFFFFFFFF, 2));
+//            }
+//        }
+//        else
+//        {
+//            if (coverSprite != null)
+//            {
+//                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, NORTH_Z_COVER, coverSprite, Direction.NORTH, 0xFFFFFFFF, 2));
+//                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, SOUTH_Z_COVER, coverSprite, Direction.SOUTH, 0xFFFFFFFF, 2));
+//            }
+//        }
 
         builder.setParticle(particleSprite);
 
         return builder.build();
+    }
+
+
+    public enum Loader implements IModelLoader<CrucibleModel>
+    {
+        INSTANCE;
+
+        @Override
+        public IResourceType getResourceType()
+        {
+            return VanillaResourceType.MODELS;
+        }
+
+        @Override
+        public void onResourceManagerReload(IResourceManager resourceManager)
+        {
+            // no need to clear cache since we create a new model instance
+        }
+
+        @Override
+        public void onResourceManagerReload(IResourceManager resourceManager, Predicate<IResourceType> resourcePredicate)
+        {
+            // no need to clear cache since we create a new model instance
+        }
+
+        @Override
+        public CrucibleModel read(JsonDeserializationContext deserializationContext, JsonObject modelContents)
+        {
+            if (!modelContents.has("fluid"))
+                throw new RuntimeException("Crucible model requires 'fluid' value.");
+
+            ResourceLocation fluidName = new ResourceLocation(modelContents.get("fluid").getAsString());
+
+            Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidName);
+
+            boolean tint = true;
+            if (modelContents.has("applyTint"))
+            {
+                tint = modelContents.get("applyTint").getAsBoolean();
+            }
+
+            boolean coverIsMask = true;
+            if (modelContents.has("coverIsMask"))
+            {
+                coverIsMask = modelContents.get("coverIsMask").getAsBoolean();
+            }
+
+            boolean applyFluidLuminosity = true;
+            if (modelContents.has("applyFluidLuminosity"))
+            {
+                applyFluidLuminosity = modelContents.get("applyFluidLuminosity").getAsBoolean();
+            }
+
+            // create new model with correct liquid
+            return new CrucibleModel(fluid, tint, coverIsMask, applyFluidLuminosity);
+        }
     }
 
     @Override
@@ -148,23 +206,20 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
         return texs;
     }
 
-
-    private static final class ContainedFluidOverrideHandler extends ItemOverrideList
+    private static final class CrucibleContainedOverrideList extends ItemOverrideList
     {
         private final Map<String, IBakedModel> cache = Maps.newHashMap(); // contains all the baked models since they'll never change
         private final ItemOverrideList nested;
         private final ModelBakery bakery;
         private final IModelConfiguration owner;
-        private final DynamicHolderModel parent;
-        private final String holderName;
+        private final CrucibleModel parent;
 
-        private ContainedFluidOverrideHandler(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, DynamicHolderModel parent, String holderName)
+        private CrucibleContainedOverrideList(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, CrucibleModel parent)
         {
             this.nested = nested;
             this.bakery = bakery;
             this.owner = owner;
             this.parent = parent;
-            this.holderName = holderName;
         }
 
         @Override
@@ -173,26 +228,30 @@ public final class DynamicHolderModel implements IModelGeometry<DynamicHolderMod
             IBakedModel overridden = nested.func_239290_a_(originalModel, stack, world, entity);
             if (overridden != originalModel) return overridden;
 
-            GooHolder holder = GooHolder.read(stack);
-            if (holder == null) {
+            Item item = stack.getItem();
+            if (!(item instanceof GooHolder)) {
                 return originalModel;
             }
-            String selected = holder.selected();
-            Fluid fluid = Registry.getFluid(selected);
+            GooHolderData holder = ((GooHolder)item).data(stack);
+            holder.deserializeNBT(stack.getTag());
+
+            Fluid fluid = holder.heldGoo().getFluid();
 
             if (fluid == null || fluid == Fluids.EMPTY) {
                 return originalModel;
             }
 
-            if (!cache.containsKey(selected))
+            String key = Objects.requireNonNull(fluid.getRegistryName()).toString();
+
+            if (!cache.containsKey(key))
             {
-                DynamicHolderModel unbaked = this.parent.withFluid(fluid);
-                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:" + holderName + "_override"));
-                cache.put(selected, bakedModel);
+                CrucibleModel unbaked = this.parent.withFluid(fluid);
+                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
+                cache.put(key, bakedModel);
                 return bakedModel;
             }
 
-            return cache.get(selected);
+            return cache.get(key);
         }
     }
 }

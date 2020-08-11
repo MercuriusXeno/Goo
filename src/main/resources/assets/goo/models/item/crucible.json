@@ -3,11 +3,8 @@
   "loader": "goo:crucible",
   "fluid": "goo:item/mask/crucible_fluid",
   "base": "goo:item/crucible",
-  "cover": "goo:item/mask/crucible_fluid_cover",
   "textures": {
-    "layer0": "goo:item/crucible",
     "fluid": "goo:item/mask/crucible_fluid",
-    "base": "goo:item/crucible",
-    "cover": "goo:item/mask/crucible_fluid_cover"
+    "base": "goo:item/crucible"
   }
 }

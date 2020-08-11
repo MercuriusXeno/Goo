@@ -1,6 +1,7 @@
 package com.xeno.goo;
 
 import com.xeno.goo.entries.EntryHandler;
+import com.xeno.goo.events.TextureStitchListener;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -54,9 +55,9 @@ public class GooMod
 
     private void initializeEventListeners()
     {
-        MinecraftForge.EVENT_BUS.register(this);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().register(TextureStitchListener.class);
     }
 
     public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)

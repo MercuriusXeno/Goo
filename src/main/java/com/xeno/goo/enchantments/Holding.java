@@ -12,14 +12,14 @@ public class Holding extends Enchantment
     public Holding()
     {
         super(Rarity.COMMON,
-                EnchantmentType.create("crucible", i -> i.getItem() instanceof IGooHolder),
+                EnchantmentType.create("crucible", i -> i.getItem() instanceof GooHolder),
                 new EquipmentSlotType[] { EquipmentSlotType.OFFHAND });
     }
 
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof IGooHolder;
+        return stack.getItem() instanceof GooHolder;
     }
 
     @Override

@@ -7,26 +7,33 @@ import net.minecraft.util.ActionResultType;
 
 public class Gauntlet extends GooHolder
 {
-    public Gauntlet() {
-        super(1, GooDrainBehavior.HELD_CHARGE);
-    }
-
     @Override
     public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context)
     {
-
-        return tryGooDrainBehavior(stack, context);
+        return data(stack).tryGooDrainBehavior(stack, context);
     }
 
     @Override
-    public int baseCapacity()
+    public int capacity()
     {
         return GooMod.config.gauntletBaseCapacity();
+    }
+
+    @Override
+    public int tanks()
+    {
+        return 1;
     }
 
     @Override
     public int holdingMultiplier()
     {
         return GooMod.config.gauntletHoldingMultiplier();
+    }
+
+    @Override
+    public GooDrainBehavior behavior()
+    {
+        return GooDrainBehavior.HELD_CHARGE;
     }
 }
