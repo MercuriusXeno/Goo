@@ -1,8 +1,6 @@
-package com.xeno.goo.entries.pushers;
+package com.xeno.goo.evaluations.pushers;
 
-import com.xeno.goo.library.*;
-import com.xeno.goo.entries.EntryGroups;
-import com.xeno.goo.entries.EntryPhase;
+import com.xeno.goo.evaluations.*;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.world.server.ServerWorld;

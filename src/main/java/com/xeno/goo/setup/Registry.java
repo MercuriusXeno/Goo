@@ -96,7 +96,12 @@ public class Registry {
     public static final RegistryObject<Armstrong> ARMSTRONG_ENCHANTMENT = ENCHANTMENTS.register("armstrong", Armstrong::new);
 
     // entity
-    public static final RegistryObject<EntityType<GooEntity>> GOO = ENTITIES.register("goo_entity", () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC).immuneToFire().size(0.5f, 0.5f).build("goo_entity"));
+    public static final RegistryObject<EntityType<GooEntity>> GOO = ENTITIES.register("goo_entity",
+            () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC)
+            .setCustomClientFactory((s, w) -> new GooEntity(w))
+            .immuneToFire()
+            .size(0.5f, 0.5f)
+            .build("goo_entity"));
 
     public static String getFluidTranslationKey(String key)
     {

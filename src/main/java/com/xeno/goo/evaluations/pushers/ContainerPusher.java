@@ -1,12 +1,12 @@
-package com.xeno.goo.entries.pushers.impl;
+package com.xeno.goo.evaluations.pushers;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.EntryHelper;
-import com.xeno.goo.library.FileHelper;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
-import com.xeno.goo.entries.EntryPhase;
-import com.xeno.goo.entries.pushers.EntryPusher;
+import com.xeno.goo.evaluations.EntryHelper;
+import com.xeno.goo.evaluations.FileHelper;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.GooValue;
+import com.xeno.goo.evaluations.EntryPhase;
+import com.xeno.goo.evaluations.pushers.EntryPusher;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.xeno.goo.library.EntryHelper.*;
+import static com.xeno.goo.evaluations.EntryHelper.*;
 
 /**
  * Container items are itemstacks behind an itemstack that return when crafted.

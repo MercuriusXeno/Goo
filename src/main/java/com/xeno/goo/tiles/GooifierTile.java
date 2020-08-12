@@ -1,8 +1,8 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.GooValue;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;

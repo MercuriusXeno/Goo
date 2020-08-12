@@ -1,15 +1,15 @@
-package com.xeno.goo.entries.pushers.impl;
+package com.xeno.goo.evaluations.pushers;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.entries.EntryPhase;
-import com.xeno.goo.entries.pushers.EntryPusher;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.EntryPhase;
+import com.xeno.goo.evaluations.pushers.EntryPusher;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.Map;
 
-import static com.xeno.goo.library.GooEntry.DENIED;
-import static com.xeno.goo.library.EntryHelper.name;
+import static com.xeno.goo.evaluations.GooEntry.DENIED;
+import static com.xeno.goo.evaluations.EntryHelper.name;
 
 /**
  * Ground zero map pusher, sets all items equal to unknown so there are no missing keys.

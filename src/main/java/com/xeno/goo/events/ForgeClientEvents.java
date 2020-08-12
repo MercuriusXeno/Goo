@@ -1,12 +1,9 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.GooEntry;
+import com.xeno.goo.evaluations.GooEntry;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;

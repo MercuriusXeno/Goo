@@ -1,6 +1,7 @@
-package com.xeno.goo.library;
+package com.xeno.goo.evaluations;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;

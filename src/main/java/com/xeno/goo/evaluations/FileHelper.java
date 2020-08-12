@@ -1,4 +1,4 @@
-package com.xeno.goo.library;
+package com.xeno.goo.evaluations;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -16,7 +16,6 @@ public class FileHelper {
     private static final Gson GSON_INSTANCE = new GsonBuilder().setPrettyPrinting().create();
     private static final Type JSON_SERIALIZER_GOO_MAPPING_TYPE = new TypeToken<TreeMap<String, GooEntry>>(){}.getType();
     private static final Type JSON_SERIALIZER_EQUIVALENCY_TYPE = new TypeToken<TreeMap<String, String>>(){}.getType();
-    private static final Type JSON_SERIALIZER_COMPOSITE_TYPE = new TypeToken<TreeMap<String, ComplexEntry>>(){}.getType();
 
     private static Path getWorldGooDataDirectoryPath(ServerWorld world) {
         Path worldPath = world.getServer().func_240776_a_(FolderName.field_237247_c_).toFile().toPath();
@@ -132,33 +131,4 @@ public class FileHelper {
         }
     }
 
-    public static Map<String, ComplexEntry> readCompositeFile(File file)
-    {
-        JsonElement element = new JsonObject();
-        if (file.length() > 0) {
-            try (FileReader reader = new FileReader(file.getAbsolutePath())) {
-                JsonStreamParser parser = new JsonStreamParser(reader);
-                if (parser.hasNext()) {
-                    element = parser.next().getAsJsonObject();
-                }
-            } catch (EOFException eof) {
-                GooMod.debug("EOF on composite file - not a real error, you just didn't have Equivalency pairings. This is fine!");
-            } catch (IOException ioe) {
-                GooMod.warn("Error reading the composite file. This could be a perms issue or maybe it just didn't exist.");
-            }
-        }
-
-        return GSON_INSTANCE.fromJson(element, JSON_SERIALIZER_COMPOSITE_TYPE);
-    }
-
-    public static void writeCompositeFile(File file, Map<String, ComplexEntry> equivalencies)
-    {
-        try (FileWriter writer = new FileWriter(file.getAbsolutePath())) {
-            String jsonString = GSON_INSTANCE.toJson(equivalencies, JSON_SERIALIZER_COMPOSITE_TYPE);
-            writer.write(jsonString);
-            writer.flush();
-        } catch (IOException ioe) {
-            GooMod.error("Can't write the composite file! This is maybe real bad!");
-        }
-    }
 }

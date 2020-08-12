@@ -1,10 +1,10 @@
-package com.xeno.goo.entries.pushers;
+package com.xeno.goo.evaluations.pushers;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.EntryHelper;
-import com.xeno.goo.library.ProgressState;
-import com.xeno.goo.entries.EntryPhase;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.EntryHelper;
+import com.xeno.goo.evaluations.ProgressState;
+import com.xeno.goo.evaluations.EntryPhase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipe;
 import net.minecraft.item.crafting.IRecipe;
@@ -16,9 +16,9 @@ import java.util.*;
 
 import static com.xeno.goo.library.Compare.recipeGooEntryWeightComparator;
 import static com.xeno.goo.library.Compare.stringLexicographicalComparator;
-import static com.xeno.goo.library.GooEntry.*;
-import static com.xeno.goo.library.GooEntry.UNKNOWN;
-import static com.xeno.goo.library.EntryHelper.name;
+import static com.xeno.goo.evaluations.GooEntry.*;
+import static com.xeno.goo.evaluations.GooEntry.UNKNOWN;
+import static com.xeno.goo.evaluations.EntryHelper.name;
 
 public class RecipePusher extends EntryPusher
 {

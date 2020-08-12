@@ -103,7 +103,7 @@ public abstract class GooBase extends Fluid implements IGooBase {
     }
 
     @Override
-    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit)
+    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos)
     {
 
     }

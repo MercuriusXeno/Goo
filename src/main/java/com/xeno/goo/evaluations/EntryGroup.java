@@ -1,4 +1,4 @@
-package com.xeno.goo.library;
+package com.xeno.goo.evaluations;
 
 import net.minecraft.item.Item;
 

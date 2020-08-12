@@ -2,6 +2,7 @@ package com.xeno.goo.enchantments;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.items.GooHolder;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.inventory.EquipmentSlotType;
@@ -12,14 +13,14 @@ public class Armstrong extends Enchantment
     public Armstrong()
     {
         super(Rarity.RARE,
-                EnchantmentType.create("gauntlet", i -> i.getItem() instanceof Gauntlet),
-                new EquipmentSlotType[] { EquipmentSlotType.MAINHAND });
+                GooHolder.ENCHANTMENT_TYPE,
+                new EquipmentSlotType[] { EquipmentSlotType.MAINHAND, EquipmentSlotType.OFFHAND });
     }
 
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Gauntlet;
+        return stack.getItem() instanceof GooHolder;
     }
 
     @Override

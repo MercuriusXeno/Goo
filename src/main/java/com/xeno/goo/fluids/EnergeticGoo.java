@@ -4,6 +4,7 @@ import com.xeno.goo.entities.GooEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 
@@ -15,5 +16,5 @@ public class EnergeticGoo extends GooBase
     public EnergeticGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder); }
 
     @Override
-    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit) { }
+    public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos) { }
 }

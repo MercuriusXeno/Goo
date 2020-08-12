@@ -1,76 +1,87 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooBase;
-import com.xeno.goo.fluids.IGooBase;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.network.NetworkHooks;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.UUID;
 
-public class GooEntity extends Entity
+public class GooEntity extends Entity implements IEntityAdditionalSpawnData
 {
     public Vector3d decayingVector;
-    private Vector3d location;
     private List<AxisAlignedBB> proportions;
     private List<Vector3d> collisions;
     public double decayingSpeed;
-    private double mB;
     private boolean isHeld;
     private Entity holder;
-    private GooBase goo;
-
-    public GooBase goo() {
-        return goo;
-    }
+    public FluidStack goo;
 
     public GooEntity(World worldIn) {
         super(Registry.GOO.get(), worldIn);
     }
+//
+//    public GooEntity(World worldIn, CompoundNBT tag) {
+//        super(Registry.GOO.get(), worldIn);
+//        read(tag);
+//    }
 
-    public GooEntity(World worldIn, CompoundNBT tag) {
-        super(Registry.GOO.get(), worldIn);
-        read(tag);
-    }
-
-    public GooEntity(World worldIn, Entity sender)
+    public GooEntity(World worldIn, Entity sender, FluidStack stack, double enchantedSpeed)
     {
         super(Registry.GOO.get(), worldIn);
-        decayingVector = holder.getLookVec();
-        if (holder instanceof ServerPlayerEntity) {
-            location = holder.getEyePosition(0f).add(decayingVector.mul(0.125d, 0.125d, 0.125d));
-            isHeld = true;
+        decayingVector = sender.getLookVec().normalize();
+        holder = sender;
+        Vector3d location = sender.getEyePosition(0f).add(decayingVector.mul(0.125d, 0.125d, 0.125d));
+        decayingSpeed = 0.2d;// enchantedSpeed;
+        goo = stack;
+        if (!(stack.getFluid() instanceof GooBase)) {
+            this.setDead();
         }
-        decayingSpeed = 0d;
-        mB = 0d;
-    }
 
-    public GooEntity(World worldIn, Entity sender, String gooType, double enchantedSpeed, double quantity)
-    {
-        super(Registry.GOO.get(), worldIn);
-        decayingVector = holder.getLookVec();
-        if (holder instanceof ServerPlayerEntity) {
-            location = holder.getEyePosition(0f).add(decayingVector.mul(0.125d, 0.125d, 0.125d));
-            isHeld = true;
-        }
-        decayingSpeed = enchantedSpeed;
-        mB = quantity;
-        goo = (GooBase)Registry.getFluid(gooType);
-
+        this.setLocationAndAngles(location.x, location.y, location.z, holder.getYaw(0f), holder.getPitch(0f));
+        this.setMotion(decayingVector.mul(decayingSpeed, decayingSpeed, decayingSpeed));
+        this.proportions = new ArrayList<>();
+        this.collisions = new ArrayList<>();
     }
 
     public GooEntity(EntityType<GooEntity> entityEntityType, World world)
     {
         super(entityEntityType, world);
+    }
+
+    int DEBUG_TICKS_ALLOWED = 100;
+    int ticks = 0;
+    @Override
+    public void tick()
+    {
+        super.tick();
+        ticks++;
+
+        if (world.isRemote()) {
+            // GooMod.debug("Things are happening in the goo you threw, client side.");
+        } else {
+            // GooMod.debug("Things are happening in the goo you threw.");
+        }
+//        if (goo.getAmount() > 0) {
+//            goo.setAmount(goo.getAmount() - 1);
+//        } else {
+//            this.setDead();
+//        }
+        if (ticks > DEBUG_TICKS_ALLOWED) {
+            this.setDead();
+        }
     }
 
     @Override
@@ -84,12 +95,19 @@ public class GooEntity extends Entity
     {
         super.read(tag);
         decayingVector = new Vector3d(tag.getDouble("vx"), tag.getDouble("vy"), tag.getDouble("vz"));
-        location = new Vector3d(tag.getDouble("lx"), tag.getDouble("ly"), tag.getDouble("lz"));
+        Vector3d location = new Vector3d(tag.getDouble("lx"), tag.getDouble("ly"), tag.getDouble("lz"));
+        this.setPosition(location.x, location.y, location.z);
         decayingSpeed = tag.getDouble("speed");
-        mB = tag.getDouble("mb");
         isHeld = tag.getBoolean("held");
-        holder = world.getPlayerByUuid(getUniqueID());
-        goo = (GooBase)Registry.getFluid(tag.getString("goo"));
+        if (tag.contains("holder")) {
+            UUID playerId = tag.getUniqueId("holder");
+
+            holder = world.getPlayerByUuid(playerId);
+
+        }
+
+        goo = FluidStack.loadFluidStackFromNBT(tag);
+        proportions = new ArrayList<>();
         CompoundNBT p = tag.getCompound("proportions");
         for(int i = 0; i < p.getInt("boxes"); i++) {
             proportions.set(i, new AxisAlignedBB(
@@ -113,7 +131,8 @@ public class GooEntity extends Entity
     @Override
     public IPacket<?> createSpawnPacket()
     {
-        return null;
+        return NetworkHooks.getEntitySpawningPacket(this);
+        // return new PacketSpawn(this.world.func_234923_W_(), serializeNBT(), Registry.GOO.getId(), this.getPosition());
     }
 
     @Override
@@ -123,14 +142,13 @@ public class GooEntity extends Entity
         e.putDouble("vx", decayingVector.x);
         e.putDouble("vy", decayingVector.y);
         e.putDouble("vz", decayingVector.z);
-        e.putDouble("lx", location.x);
-        e.putDouble("ly", location.x);
-        e.putDouble("lz", location.x);
+        e.putDouble("lx", getPosX());
+        e.putDouble("ly", getPosY());
+        e.putDouble("lz", getPosZ());
         e.putDouble("speed", decayingSpeed);
-        e.putDouble("mb", mB);
         e.putBoolean("held", isHeld);
         e.putUniqueId("holder", holder.getUniqueID());
-        e.putString("goo", Objects.requireNonNull(((Fluid) goo).getRegistryName()).toString());
+        goo.writeToNBT(e);
         CompoundNBT p = new CompoundNBT();
         p.putInt("boxes", proportions.size());
         for(int i = 0; i < proportions.size(); i++) {
@@ -143,5 +161,18 @@ public class GooEntity extends Entity
         }
         e.put("proportions", p);
         return e;
+    }
+
+    @Override
+    public void writeSpawnData(PacketBuffer buffer)
+    {
+        buffer.writeCompoundTag(serializeNBT());
+    }
+
+    @Override
+    public void readSpawnData(PacketBuffer additionalData)
+    {
+        CompoundNBT tag = additionalData.readCompoundTag();
+        deserializeNBT(tag);
     }
 }

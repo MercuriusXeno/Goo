@@ -2,8 +2,8 @@ package com.xeno.goo.network;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.library.Compare;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.GooValue;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;

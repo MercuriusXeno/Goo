@@ -2,9 +2,8 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.commands.GooCommands;
-import com.xeno.goo.entries.*;
-import com.xeno.goo.entries.pushers.*;
-import com.xeno.goo.entries.pushers.impl.*;
+import com.xeno.goo.evaluations.*;
+import com.xeno.goo.evaluations.pushers.*;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

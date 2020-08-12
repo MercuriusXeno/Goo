@@ -1,10 +1,8 @@
-package com.xeno.goo.library;
+package com.xeno.goo.evaluations;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.item.*;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraftforge.common.ForgeHooks;
 
 import java.util.Map;
 import java.util.Objects;

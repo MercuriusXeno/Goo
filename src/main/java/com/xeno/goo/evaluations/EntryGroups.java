@@ -1,6 +1,5 @@
-package com.xeno.goo.entries;
+package com.xeno.goo.evaluations;
 
-import com.xeno.goo.library.EntryGroup;
 import net.minecraft.item.Items;
 
 public class EntryGroups

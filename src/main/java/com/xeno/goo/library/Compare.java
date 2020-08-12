@@ -1,5 +1,7 @@
 package com.xeno.goo.library;
 
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.GooValue;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.fluids.FluidStack;

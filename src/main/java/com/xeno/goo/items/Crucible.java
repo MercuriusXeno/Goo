@@ -1,9 +1,16 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
+import net.minecraft.item.UseAction;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 
 public class Crucible extends GooHolder
 {
@@ -14,26 +21,40 @@ public class Crucible extends GooHolder
     }
 
     @Override
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, @NotNull Hand handIn)
+    {
+        ItemStack stack = playerIn.getHeldItem(handIn);
+        if (worldIn.isRemote())
+        {
+            return ActionResult.resultPass(stack);
+        }
+
+        data(stack).tryThrowingGoo(worldIn, playerIn, stack);
+        return ActionResult.resultSuccess(stack);
+    }
+
+    @Override
+    public double armstrongMultiplier()
+    {
+        return GooMod.config.cruciblePowerMultiplier();
+    }
+
+    @Override
+    public double thrownSpeed()
+    {
+        return GooMod.config.crucibleLobVelocity();
+    }
+
+    @Override
     public int capacity()
     {
         return GooMod.config.crucibleBaseCapacity();
     }
 
-    @Override
-    public int tanks()
-    {
-        return 1;
-    }
 
     @Override
     public int holdingMultiplier()
     {
         return GooMod.config.crucibleHoldingMultiplier();
-    }
-
-    @Override
-    public GooDrainBehavior behavior()
-    {
-        return GooDrainBehavior.ALL_AT_ONCE;
     }
 }

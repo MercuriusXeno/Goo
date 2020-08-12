@@ -1,7 +1,7 @@
-package com.xeno.goo.entries;
+package com.xeno.goo.evaluations;
 
-import com.xeno.goo.library.*;
-import com.xeno.goo.entries.pushers.EntryPusher;
+import com.xeno.goo.evaluations.pushers.SolvedState;
+import com.xeno.goo.evaluations.pushers.EntryPusher;
 import com.xeno.goo.network.GooValueSyncPacket;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -12,9 +12,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.xeno.goo.library.Compare.*;
-import static com.xeno.goo.library.GooEntry.*;
-import static com.xeno.goo.library.SolvedState.SOLVED;
-import static com.xeno.goo.library.SolvedState.UNSOLVED;
+import static com.xeno.goo.evaluations.GooEntry.*;
+import static com.xeno.goo.evaluations.pushers.SolvedState.SOLVED;
+import static com.xeno.goo.evaluations.pushers.SolvedState.UNSOLVED;
 
 
 public class EntryHandler

@@ -44,13 +44,19 @@ public class ServerConfiguration
     }
 
     private ForgeConfigSpec.DoubleValue GAUNTLET_LOB_VELOCITY;
-    public double gauntletLobVelocity() {
-        return GAUNTLET_LOB_VELOCITY.get();
-    }
+    public double gauntletLobVelocity() { return GAUNTLET_LOB_VELOCITY.get(); }
 
     private ForgeConfigSpec.DoubleValue GAUNTLET_POWER_MULTIPLIER;
     public double gauntletPowerMultiplier() {
         return GAUNTLET_POWER_MULTIPLIER.get();
+    }
+
+    private ForgeConfigSpec.DoubleValue CRUCIBLE_LOB_VELOCITY;
+    public double crucibleLobVelocity() { return CRUCIBLE_LOB_VELOCITY.get(); }
+
+    private ForgeConfigSpec.DoubleValue CRUCIBLE_POWER_MULTIPLIER;
+    public double cruciblePowerMultiplier() {
+        return CRUCIBLE_POWER_MULTIPLIER.get();
     }
 
     private ForgeConfigSpec.IntValue GAUNTLET_BASE_CAPACITY;
@@ -73,7 +79,7 @@ public class ServerConfiguration
     {
         serverBuilder.comment().push("utility");
 
-        int defaultCrucibleBaseCapacity = 4000;
+        int defaultCrucibleBaseCapacity = 8000;
         CRUCIBLE_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted crucible, default: " + defaultCrucibleBaseCapacity)
                 .defineInRange("crucibleBaseCapacity", defaultCrucibleBaseCapacity, 0, Integer.MAX_VALUE);
 
@@ -81,7 +87,7 @@ public class ServerConfiguration
         CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with holding multiplies its storage by this amount, default: " + defaultCrucibleHoldingMultiplier)
                 .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
 
-        int defaultGauntletBaseCapacity = 250;
+        int defaultGauntletBaseCapacity = 60;
         GAUNTLET_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted gauntlet, default: " + defaultGauntletBaseCapacity)
                 .defineInRange("gauntletBaseCapacity", defaultGauntletBaseCapacity, 0, Integer.MAX_VALUE);
 
@@ -100,6 +106,19 @@ public class ServerConfiguration
         double defaultGauntletPowerMultiplier = 1.4d;
         GAUNTLET_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with power multiplies its lob velocity by this amount, default: " + defaultGauntletPowerMultiplier)
                 .defineInRange("gauntletPowerMultiplier", defaultGauntletPowerMultiplier, 0, Double.MAX_VALUE);
+
+        double defaultCrucibleLobVelocity = 2d;
+        CRUCIBLE_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted crucible, default: " + defaultCrucibleLobVelocity)
+                .defineInRange("crucibleLobVelocity", defaultCrucibleLobVelocity, 0, Double.MAX_VALUE);
+
+        double defaultCruciblePowerMultiplier = 1.4d;
+        CRUCIBLE_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with power multiplies its lob velocity by this amount, default: " + defaultCruciblePowerMultiplier)
+                .defineInRange("cruciblePowerMultiplier", defaultCruciblePowerMultiplier, 0, Double.MAX_VALUE);
+
+        int defaultMaxArmstrongEnchantment = 5;
+
+
+        int defaultMaxHoldingEnchantment = 5;
 
         serverBuilder.pop();
     }
@@ -123,15 +142,15 @@ public class ServerConfiguration
     private void setupGeneralMachineConfig() {
         serverBuilder.comment().push("machines");
 
-        int defaultGooTransferRate = 80;
+        int defaultGooTransferRate = 120;
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + defaultGooTransferRate)
                 .defineInRange("maxTransferRate", defaultGooTransferRate, 0, Integer.MAX_VALUE);
 
-        int defaultGooProcessingRate = 10;
+        int defaultGooProcessingRate = 60;
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + defaultGooProcessingRate)
                 .defineInRange("maxProcessingRate", defaultGooProcessingRate, 0, Integer.MAX_VALUE);
 
-        int defaultBulbCapacity = 8000;
+        int defaultBulbCapacity = 16000;
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + defaultBulbCapacity)
                 .defineInRange("maxBulbCapacity", defaultBulbCapacity, 0, Integer.MAX_VALUE);
 

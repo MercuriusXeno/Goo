@@ -1,4 +1,4 @@
-package com.xeno.goo.entries;
+package com.xeno.goo.evaluations;
 
 public enum EntryPhase
 {

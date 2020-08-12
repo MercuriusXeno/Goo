@@ -1,14 +1,14 @@
 package com.xeno.goo.items;
 
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
@@ -20,6 +20,7 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -86,16 +87,6 @@ public class GooHolderData
     public CompoundNBT serializeNBT()
     {
         return heldGoo.writeToNBT(new CompoundNBT());
-    }
-
-    private static int getArmstrong(ItemStack stack)
-    {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
-    }
-
-    public static int getHolding(ItemStack stack)
-    {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
     }
 
     protected int getCapacity(ItemStack stack, FluidStack resource)
@@ -168,7 +159,7 @@ public class GooHolderData
 
     public int capacity(ItemStack stack)
     {
-        return (int)Math.ceil(this.baseCapacity(stack) * this.enchantmentFactor(stack));
+        return (int)Math.ceil(this.baseCapacity(stack) * this.holdingMultiplier(stack));
     }
 
     public  GooDrainBehavior behavior() {
@@ -179,17 +170,30 @@ public class GooHolderData
         return ((GooHolder)stack.getItem()).capacity();
     }
 
-    public int holdingMultiplier(ItemStack stack)
+    public int holdingMultiplier(ItemStack stack) {
+        return (int)Math.ceil(Math.pow(((GooHolder)stack.getItem()).holdingMultiplier(), holding(stack)));
+    }
+
+    private double baseThrownSpeed(ItemStack stack) {
+        return ((GooHolder)stack.getItem()).thrownSpeed();
+    }
+
+    private double armstrongMultiplier(ItemStack stack)
     {
-        return ((GooHolder)stack.getItem()).holdingMultiplier();
+        return Math.pow(((GooHolder)stack.getItem()).armstrongMultiplier(), armstrong(stack));
     }
 
-    public int enchantmentFactor(ItemStack stack) {
-        return enchantmentMultiplier(getHolding(stack), holdingMultiplier(stack));
+    public int holding(ItemStack stack) {
+        return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
     }
 
-    public int enchantmentMultiplier(int holding, int mult) {
-        return (int)Math.ceil(Math.pow(mult, holding));
+    public double armstrong(ItemStack stack) {
+        return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
+    }
+
+    private double thrownSpeed(ItemStack stack)
+    {
+        return armstrongMultiplier(stack) * baseThrownSpeed(stack);
     }
 
     public ActionResultType tryGooDrainBehavior(ItemStack stack, ItemUseContext context) {
@@ -238,6 +242,19 @@ public class GooHolderData
             return ActionResultType.SUCCESS;
         }
         return ActionResultType.PASS;
+    }
+
+    public void tryThrowingGoo(World worldIn, LivingEntity livingEntityIn, ItemStack stack)
+    {
+        if (worldIn.isRemote()) {
+            return;
+        }
+
+        if (heldGoo.isEmpty()) {
+            return;
+        }
+
+        worldIn.addEntity(new GooEntity(worldIn, livingEntityIn, heldGoo, thrownSpeed(stack)));
     }
 
     public FluidStack heldGoo()

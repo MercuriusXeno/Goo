@@ -1,11 +1,10 @@
 package com.xeno.goo;
 
-import com.xeno.goo.entries.EntryHandler;
+import com.xeno.goo.evaluations.EntryHandler;
 import com.xeno.goo.events.TextureStitchListener;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;

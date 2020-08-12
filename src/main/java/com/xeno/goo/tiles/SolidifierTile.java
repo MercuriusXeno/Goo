@@ -1,9 +1,9 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.EntryHelper;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
+import com.xeno.goo.evaluations.EntryHelper;
+import com.xeno.goo.evaluations.GooEntry;
+import com.xeno.goo.evaluations.GooValue;
 import com.xeno.goo.network.ChangeSolidifierTargetPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.network.SolidifierPoppedPacket;

@@ -1,4 +1,4 @@
-package com.xeno.goo.library;
+package com.xeno.goo.evaluations.pushers;
 
 public enum SolvedState {
     UNKNOWN,
