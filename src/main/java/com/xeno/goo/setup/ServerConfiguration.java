@@ -38,11 +38,6 @@ public class ServerConfiguration
     private ForgeConfigSpec.IntValue CRUCIBLE_HOLDING_MULTIPLIER;
     public int crucibleHoldingMultiplier() { return CRUCIBLE_HOLDING_MULTIPLIER.get(); }
 
-    private ForgeConfigSpec.DoubleValue GAUNTLET_BREAKPOINT_CHARGE_DELAY;
-    public double gauntletBreakpointChargeDelay() {
-        return GAUNTLET_BREAKPOINT_CHARGE_DELAY.get();
-    }
-
     private ForgeConfigSpec.DoubleValue GAUNTLET_LOB_VELOCITY;
     public double gauntletLobVelocity() { return GAUNTLET_LOB_VELOCITY.get(); }
 
@@ -75,6 +70,15 @@ public class ServerConfiguration
     private ForgeConfigSpec.IntValue MAX_ARMSTRONG_ENCHANTMENT;
     public int maxArmstrongEnchantment() { return MAX_ARMSTRONG_ENCHANTMENT.get(); }
 
+    private ForgeConfigSpec.IntValue MAX_SWEEPING_ENCHANTMENT;
+    public int maxSweepingEnchantment() { return MAX_SWEEPING_ENCHANTMENT.get(); }
+
+    private ForgeConfigSpec.IntValue  MAX_DESTRUCTIVE_CURSE;
+    public int maxDestructiveCurse() { return MAX_DESTRUCTIVE_CURSE.get(); }
+
+    private ForgeConfigSpec.IntValue MAX_GOO_WALKER_ENCHANTMENT;
+    public int maxGooWalkerEnchantment() { return MAX_GOO_WALKER_ENCHANTMENT.get(); }
+
     private void setupUtilityConfig()
     {
         serverBuilder.comment().push("utility");
@@ -85,41 +89,51 @@ public class ServerConfiguration
 
         int defaultCrucibleHoldingMultiplier = 2;
         CRUCIBLE_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with holding multiplies its storage by this amount, default: " + defaultCrucibleHoldingMultiplier)
-                .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, Integer.MAX_VALUE);
+                .defineInRange("crucibleHoldingMultiplier", defaultCrucibleHoldingMultiplier, 0, 64000);
 
-        int defaultGauntletBaseCapacity = 60;
+        int defaultGauntletBaseCapacity = 125;
         GAUNTLET_BASE_CAPACITY = serverBuilder.comment("Max goo you can hold in a single unenchanted gauntlet, default: " + defaultGauntletBaseCapacity)
-                .defineInRange("gauntletBaseCapacity", defaultGauntletBaseCapacity, 0, Integer.MAX_VALUE);
+                .defineInRange("gauntletBaseCapacity", defaultGauntletBaseCapacity, 0, 16000);
 
         int defaultGauntletHoldingMultiplier = 2;
         GAUNTLET_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with holding multiplies its storage by this amount, default: " + defaultGauntletHoldingMultiplier)
-                .defineInRange("gauntletHoldingMultiplier", defaultGauntletHoldingMultiplier, 0, Integer.MAX_VALUE);
+                .defineInRange("gauntletHoldingMultiplier", defaultGauntletHoldingMultiplier, 0, 10);
 
-        double defaultGauntletBreakpointChargeDelay = 0.75d;
-        GAUNTLET_BREAKPOINT_CHARGE_DELAY = serverBuilder.comment("Number of seconds it takes to charge to the next gauntlet goo breakpoint, default: " + defaultGauntletBreakpointChargeDelay)
-                .defineInRange("gauntletBreakpointChargeDelay", defaultGauntletBreakpointChargeDelay, 0, Double.MAX_VALUE);
-
-        double defaultGauntletLobVelocity = 3d;
+        double defaultGauntletLobVelocity = 6d;
         GAUNTLET_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted gauntlet, default: " + defaultGauntletLobVelocity)
-                .defineInRange("gauntletLobVelocity", defaultGauntletLobVelocity, 0, Double.MAX_VALUE);
+                .defineInRange("gauntletLobVelocity", defaultGauntletLobVelocity, 0, 10f);
 
-        double defaultGauntletPowerMultiplier = 1.4d;
+        double defaultGauntletPowerMultiplier = 1.5d;
         GAUNTLET_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a gauntlet with power multiplies its lob velocity by this amount, default: " + defaultGauntletPowerMultiplier)
-                .defineInRange("gauntletPowerMultiplier", defaultGauntletPowerMultiplier, 0, Double.MAX_VALUE);
+                .defineInRange("gauntletPowerMultiplier", defaultGauntletPowerMultiplier, 0, 10f);
 
-        double defaultCrucibleLobVelocity = 2d;
+        double defaultCrucibleLobVelocity = 5d;
         CRUCIBLE_LOB_VELOCITY = serverBuilder.comment("Velocity of lobbed goo from an unenchanted crucible, default: " + defaultCrucibleLobVelocity)
-                .defineInRange("crucibleLobVelocity", defaultCrucibleLobVelocity, 0, Double.MAX_VALUE);
+                .defineInRange("crucibleLobVelocity", defaultCrucibleLobVelocity, 0, 10f);
 
         double defaultCruciblePowerMultiplier = 1.4d;
         CRUCIBLE_POWER_MULTIPLIER = serverBuilder.comment("Enchanting a crucible with power multiplies its lob velocity by this amount, default: " + defaultCruciblePowerMultiplier)
-                .defineInRange("cruciblePowerMultiplier", defaultCruciblePowerMultiplier, 0, Double.MAX_VALUE);
+                .defineInRange("cruciblePowerMultiplier", defaultCruciblePowerMultiplier, 0, 10f);
 
         int defaultMaxArmstrongEnchantment = 5;
-
+        MAX_ARMSTRONG_ENCHANTMENT = serverBuilder.comment("Number of stacks of armstrong enchantment, max, default: " + defaultMaxArmstrongEnchantment)
+                .defineInRange("maxArmstrongEnchantment", defaultMaxArmstrongEnchantment, 0, 10);
 
         int defaultMaxHoldingEnchantment = 5;
+        MAX_HOLDING_ENCHANTMENT = serverBuilder.comment("Number of stacks of holding enchantment, max, default: " + defaultMaxHoldingEnchantment)
+                .defineInRange("maxHoldingEnchantment", defaultMaxHoldingEnchantment, 0, 10);
 
+        int defaultMaxSweepingEnchantment = 5;
+        MAX_SWEEPING_ENCHANTMENT = serverBuilder.comment("Range of sweeping enchantment +1, max, default: " + defaultMaxSweepingEnchantment)
+                .defineInRange("maxSweepingEnchantment", defaultMaxSweepingEnchantment, 0, 10);
+
+        int defaultMaxDestructionCurse = 2;
+        MAX_DESTRUCTIVE_CURSE = serverBuilder.comment("Warning, damage is per block! Number of blocks deep the wave of destruction pulses, max, default:  " + defaultMaxDestructionCurse)
+                .defineInRange("maxDestructionCurse", defaultMaxSweepingEnchantment, 0, 10);
+
+        int defaultMaxGooWalkingEnchantment = 2;
+        MAX_GOO_WALKER_ENCHANTMENT = serverBuilder.comment ("Max level of goo walking structured abilities. Note that levels above two really do nothing. L1: walk on L2: dashes")
+                .defineInRange("maxGooWalkingEnchantment", defaultMaxGooWalkingEnchantment, 0, 2);
         serverBuilder.pop();
     }
 

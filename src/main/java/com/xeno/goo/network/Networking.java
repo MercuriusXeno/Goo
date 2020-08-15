@@ -1,7 +1,7 @@
 package com.xeno.goo.network;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.PacketSpawn;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -56,10 +56,22 @@ public class Networking {
                 .consumer(SolidifierPoppedPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(PacketSpawn.class, nextID())
-                .encoder(PacketSpawn::toBytes)
-                .decoder(PacketSpawn::new)
-                .consumer(PacketSpawn::handle)
+        INSTANCE.messageBuilder(MouseRightHeldPacket.class, nextID())
+                .encoder(MouseRightHeldPacket::toBytes)
+                .decoder(MouseRightHeldPacket::new)
+                .consumer(MouseRightHeldPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(SpawnGooPacket.class, nextID())
+                .encoder(SpawnGooPacket::toBytes)
+                .decoder(SpawnGooPacket::new)
+                .consumer(SpawnGooPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(DetatchGooFromPlayerPacket.class, nextID())
+                .encoder(DetatchGooFromPlayerPacket::toBytes)
+                .decoder(DetatchGooFromPlayerPacket::new)
+                .consumer(DetatchGooFromPlayerPacket::handle)
                 .add();
     }
 
@@ -72,6 +84,13 @@ public class Networking {
     public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {
         if (player.server.isDedicatedServer() || !player.getGameProfile().getName().equals(player.server.getServerOwner())) {
             INSTANCE.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+        }
+    }
+
+    public static void sendToServer(Object msg, ClientPlayerEntity player)
+    {
+        if (player.world.isRemote()) {
+            INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
         }
     }
 

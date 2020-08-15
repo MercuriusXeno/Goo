@@ -1,11 +1,9 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
-import net.minecraft.item.UseAction;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
@@ -29,7 +27,7 @@ public class Crucible extends GooHolder
             return ActionResult.resultPass(stack);
         }
 
-        data(stack).tryThrowingGoo(worldIn, playerIn, stack);
+        data(stack).trySpawningGoo(worldIn, playerIn, stack, handIn);
         return ActionResult.resultSuccess(stack);
     }
 

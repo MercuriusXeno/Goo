@@ -1,13 +1,17 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.library.Compare;
+import com.xeno.goo.network.DetatchGooFromPlayerPacket;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
@@ -15,6 +19,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -162,10 +167,6 @@ public class GooHolderData
         return (int)Math.ceil(this.baseCapacity(stack) * this.holdingMultiplier(stack));
     }
 
-    public  GooDrainBehavior behavior() {
-        return GooDrainBehavior.UNSPECIFIED;
-    }
-
     public int baseCapacity(ItemStack stack) {
         return ((GooHolder)stack.getItem()).capacity();
     }
@@ -187,11 +188,11 @@ public class GooHolderData
         return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
     }
 
-    public double armstrong(ItemStack stack) {
+    public int armstrong(ItemStack stack) {
         return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
     }
 
-    private double thrownSpeed(ItemStack stack)
+    public double thrownSpeed(ItemStack stack)
     {
         return armstrongMultiplier(stack) * baseThrownSpeed(stack);
     }
@@ -244,7 +245,7 @@ public class GooHolderData
         return ActionResultType.PASS;
     }
 
-    public void tryThrowingGoo(World worldIn, LivingEntity livingEntityIn, ItemStack stack)
+    public void trySpawningGoo(World worldIn, LivingEntity livingEntityIn, ItemStack stack, Hand handIn)
     {
         if (worldIn.isRemote()) {
             return;
@@ -254,7 +255,9 @@ public class GooHolderData
             return;
         }
 
-        worldIn.addEntity(new GooEntity(worldIn, livingEntityIn, heldGoo, thrownSpeed(stack)));
+        GooBase whichGoo = (GooBase)heldGoo.getFluid();
+
+        whichGoo.createEntity(worldIn, livingEntityIn, this.heldGoo, handIn);
     }
 
     public FluidStack heldGoo()
