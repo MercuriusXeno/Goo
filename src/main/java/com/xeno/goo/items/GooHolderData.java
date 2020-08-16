@@ -1,17 +1,14 @@
 package com.xeno.goo.items;
 
-import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.library.Compare;
-import com.xeno.goo.network.DetatchGooFromPlayerPacket;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
@@ -43,18 +40,6 @@ public class GooHolderData
     public GooHolderData()
     {
         heldGoo = FluidStack.EMPTY;
-    }
-
-    protected IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     @Nonnull
@@ -213,7 +198,7 @@ public class GooHolderData
         TileEntity te = context.getWorld().getTileEntity(posHit);
         if (te instanceof GooBulbTile) {
             GooBulbTile bulb = (GooBulbTile)te;
-            IFluidHandler bulbCap = tryGettingBulbCapabilities(bulb, Direction.DOWN);
+            IFluidHandler bulbCap = BulbFluidHandler.bulbCapability(bulb, Direction.DOWN);
 
             if (!heldGoo.isEmpty()) {
                 FluidStack bulbGoo = bulb.getSpecificGooType(heldGoo.getFluid());
@@ -245,7 +230,7 @@ public class GooHolderData
         return ActionResultType.PASS;
     }
 
-    public void trySpawningGoo(World worldIn, LivingEntity livingEntityIn, ItemStack stack, Hand handIn)
+    public void trySpawningGoo(World worldIn, LivingEntity livingEntityIn, Hand handIn)
     {
         if (worldIn.isRemote()) {
             return;
@@ -256,8 +241,10 @@ public class GooHolderData
         }
 
         GooBase whichGoo = (GooBase)heldGoo.getFluid();
-
         whichGoo.createEntity(worldIn, livingEntityIn, this.heldGoo, handIn);
+        ((GooHolder)livingEntityIn.getHeldItem(handIn).getItem())
+                .data(livingEntityIn.getHeldItem(handIn))
+                .drain(livingEntityIn.getHeldItem(handIn), heldGoo.getAmount(), IFluidHandler.FluidAction.EXECUTE);
     }
 
     public FluidStack heldGoo()

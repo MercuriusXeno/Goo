@@ -7,7 +7,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
@@ -28,6 +27,24 @@ public class CrystalEntity extends GooEntity
     public CrystalEntity(EntityType<CrystalEntity> type, World world)
     {
         super(type, world);
+    }
+
+    @Override
+    protected void interactWithWater()
+    {
+        // INERT
+    }
+
+    @Override
+    protected void interactWithSolid()
+    {
+        // INERT
+    }
+
+    @Override
+    protected void interactWithLava()
+    {
+        // INERT
     }
 
     @Override

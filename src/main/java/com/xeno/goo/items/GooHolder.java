@@ -21,6 +21,7 @@ public abstract class GooHolder extends Item
     {
         super(new Item.Properties()
                 .maxStackSize(1)
+                .isBurnable()
                 .group(GooMod.ITEM_GROUP));
     }
 

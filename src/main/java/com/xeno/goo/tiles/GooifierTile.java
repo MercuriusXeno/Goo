@@ -131,7 +131,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             int workRemaining = maxPerTickPerGasket;
             int workLastCycle = 0;
             boolean isFirstPass = true;
-            IFluidHandler cap = tryGettingBulbCapabilities(bulb, d.getOpposite());
+            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
             while(workRemaining > 0 && (workLastCycle > 0 || isFirstPass)) {
                 isFirstPass = false;
                 workLastCycle = 0;
@@ -160,18 +160,6 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
 
         return isAnyWorkDone;
-    }
-
-    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     private GooBulbTile getBulbInDirection(Direction dir) {

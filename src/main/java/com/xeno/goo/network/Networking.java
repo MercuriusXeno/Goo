@@ -61,18 +61,6 @@ public class Networking {
                 .decoder(MouseRightHeldPacket::new)
                 .consumer(MouseRightHeldPacket::handle)
                 .add();
-
-        INSTANCE.messageBuilder(SpawnGooPacket.class, nextID())
-                .encoder(SpawnGooPacket::toBytes)
-                .decoder(SpawnGooPacket::new)
-                .consumer(SpawnGooPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(DetatchGooFromPlayerPacket.class, nextID())
-                .encoder(DetatchGooFromPlayerPacket::toBytes)
-                .decoder(DetatchGooFromPlayerPacket::new)
-                .consumer(DetatchGooFromPlayerPacket::handle)
-                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {

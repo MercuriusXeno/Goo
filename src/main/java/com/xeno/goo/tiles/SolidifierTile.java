@@ -254,23 +254,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             }
             int workLeftThisGasket = GooMod.config.gooProcessingRate();
             GooBulbTile b = (GooBulbTile)t;
-            IFluidHandler cap = tryGettingBulbCapabilities(b, d);
+            IFluidHandler cap = BulbFluidHandler.bulbCapability(b, d);
             for(GooValue v : mapping.values()) {
                 workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);
             }
         }
-    }
-
-    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     private int tryDrainingFluid(int workLeftThisGasket, IFluidHandler cap, GooValue v)

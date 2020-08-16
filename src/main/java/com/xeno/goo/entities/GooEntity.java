@@ -4,7 +4,10 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.LooseMaterialTypes;
 import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.items.GooHolder;
+import com.xeno.goo.tiles.BulbFluidHandler;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -17,20 +20,28 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapeSpliterator;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public abstract class GooEntity extends Entity implements IEntityAdditionalSpawnData
 {
@@ -54,8 +65,13 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             this.setSize();
         }
         this.setInvulnerable(true);
-        this.setNoGravity(true);
+//        this.setNoGravity(true);
         this.attachGooToSender(sender);
+    }
+
+    @Nullable
+    public AxisAlignedBB getCollisionBoundingBox() {
+        return this.getBoundingBox();
     }
 
 //    @Override
@@ -100,7 +116,20 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     protected void onInsideBlock(BlockState state)
     {
         super.onInsideBlock(state);
+        if (state.getMaterial() == Material.LAVA) {
+            interactWithLava();
+        } else if (state.getMaterial() == Material.WATER) {
+            interactWithWater();
+        } else if (state.isSolid()) {
+            interactWithSolid(); // ideally I'd do more than this I think
+        }
     }
+
+    protected abstract void interactWithWater();
+
+    protected abstract void interactWithSolid();
+
+    protected abstract void interactWithLava();
 
     @Override
     public void tick()
@@ -126,6 +155,10 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     protected void handleDecay() {
+        // goo doesn't decay as long as you're holding it.
+        if (this.isHeld) {
+            return;
+        }
         if (goo.getAmount() < 1) {
             this.setDead();
         } else {
@@ -165,7 +198,30 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     private boolean shouldRelease() {
-        return this.isInGround && this.world.hasNoCollisions((new AxisAlignedBB(this.getPositionVec(), this.getPositionVec())).grow(0.06D));
+        if (this.getCollisionBoundingBox() == null) {
+            return false;
+        }
+        return this.isInGround && this.hasNoCollisions(this, this.getCollisionBoundingBox().grow(0.01D));
+    }
+
+    boolean hasNoCollisions(Entity entity, AxisAlignedBB aabb) {
+        return this.allVoxelCollisionIsEmpty(entity, aabb, (checkEntity) -> {
+            return true;
+        });
+    }
+
+    boolean allVoxelCollisionIsEmpty(@Nullable Entity e, AxisAlignedBB b, Predicate<Entity> p) {
+        return this.getVoxelShapesColliding(e, b, p).allMatch(VoxelShape::isEmpty);
+    }
+
+    Stream<VoxelShape> getVoxelShapesColliding(@Nullable Entity e, AxisAlignedBB b, Predicate<Entity> p) {
+        List<VoxelShape> listVoxes = this.getCollisionShapes(e, b).collect(Collectors.toList());
+        List<VoxelShape> listWorldVoxes = this.world.func_230318_c_(e, b, p).collect(Collectors.toList());
+        return Stream.concat(this.getCollisionShapes(e, b), this.world.func_230318_c_(e, b, p));
+    }
+
+    Stream<VoxelShape> getCollisionShapes(@Nullable Entity e, AxisAlignedBB b) {
+        return StreamSupport.stream(new VoxelShapeSpliterator(world, e, b), false);
     }
 
     private void releaseFromGround() {
@@ -199,65 +255,149 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         if (this.isInGround) {
             if (this.inBlockState != blockstate && this.shouldRelease()) {
                 this.releaseFromGround();
+            } else {
+                doCollidedMovement(motion);
             }
         } else {
-            LooseMaterialTypes materialIn = LooseMaterialTypes.AIR;
-            Vector3d position = this.getPositionVec();
-            Vector3d projection = position.add(motion);
-            RayTraceResult rayTraceResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
-            if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
-                projection = rayTraceResult.getHitVec();
-                materialIn = LooseMaterialTypes.ANY;
-            }
-
-            EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
-            if (entityResult != null) {
-                rayTraceResult = entityResult;
-            }
-
-            if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
-                motion.add(onImpact(rayTraceResult));
-
-                // I'm not sure how this means airborne. Seems inverted.
-                this.isAirBorne = true;
-            }
-
-            double d3 = motion.x;
-            double d4 = motion.y;
-            double d0 = motion.z;
-
-            double d5 = this.getPosX() + d3;
-            double d1 = this.getPosY() + d4;
-            double d2 = this.getPosZ() + d0;
-
-            if (this.isInWater()) {
-                materialIn = LooseMaterialTypes.WATER;
-                for(int j = 0; j < 4; ++j) {
-                    double f4 = 0.25F;
-                    this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
-                }
-            } else if (this.isInLava()) {
-                materialIn = LooseMaterialTypes.LAVA;
-                for(int j = 0; j < 4; ++j) {
-                    double f4 = 0.25F;
-                    this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
-                }
-            }
-
-            double drag = gooBase().stickiness(materialIn);
-            double buoyancy = gooBase().buoyancy(materialIn);
-
-            this.setMotion(motion.scale(drag));
-            this.applyBuoyancyMotionY(buoyancy);
-
-            this.doBlockCollisions();
-            Vector3d newPos = position.add(this.getMotion());
-            this.setPositionAndUpdate(newPos.x, newPos.y, newPos.z);
+            doFreeMovement(motion);
         }
     }
 
+    protected void doCollidedMovement(Vector3d motion) {
+        LooseMaterialTypes materialIn = LooseMaterialTypes.ANY;
+        Vector3d position = this.getPositionVec();
+        Vector3d projection = position.add(motion);
+        RayTraceResult rayTraceResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
+        if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
+            projection = rayTraceResult.getHitVec();
+        }
+
+        EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
+        if (entityResult != null) {
+            rayTraceResult = entityResult;
+        }
+
+        if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
+            motion.add(onImpact(rayTraceResult));
+
+            // I'm not sure how this means airborne. Seems inverted.
+            this.isAirBorne = true;
+        }
+
+        double d3 = motion.x;
+        double d4 = motion.y;
+        double d0 = motion.z;
+
+        double d5 = this.getPosX() + d3;
+        double d1 = this.getPosY() + d4;
+        double d2 = this.getPosZ() + d0;
+
+        if (this.isInWater()) {
+            materialIn = LooseMaterialTypes.WATER;
+            for(int j = 0; j < 4; ++j) {
+                double f4 = 0.25F;
+                this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+            }
+        } else if (this.isInLava()) {
+            materialIn = LooseMaterialTypes.LAVA;
+            for(int j = 0; j < 4; ++j) {
+                double f4 = 0.25F;
+                this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+            }
+        }
+
+        double drag = gooBase().stickiness(materialIn);
+        //double buoyancy = gooBase().buoyancy(materialIn);
+        this.setMotion(motion.scale(1f - drag));
+        //this.applyBuoyancyMotionY(buoyancy);
+
+        this.doBlockCollisions();
+        this.setPositionAndUpdate(projection.x, projection.y, projection.z);
+    }
+
+    protected void doFreeMovement(Vector3d motion) {
+        LooseMaterialTypes materialIn = LooseMaterialTypes.AIR;
+        Vector3d position = this.getPositionVec();
+        Vector3d projection = position.add(motion);
+        GooMod.debug("proj x " + projection.x + " y " + projection.y + " z " + projection.z);
+        RayTraceResult rayTraceResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
+        if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
+            projection = rayTraceResult.getHitVec();
+            GooMod.debug("rt proj x " + projection.x + " y " + projection.y + " z " + projection.z);
+            materialIn = LooseMaterialTypes.ANY;
+        }
+
+        EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
+        if (entityResult != null) {
+            rayTraceResult = entityResult;
+        }
+
+        if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
+            motion.add(onImpact(rayTraceResult));
+
+            // I'm not sure how this means airborne. Seems inverted.
+            this.isAirBorne = true;
+        }
+
+        double d3 = motion.x;
+        double d4 = motion.y;
+        double d0 = motion.z;
+
+        double d5 = this.getPosX() + d3;
+        double d1 = this.getPosY() + d4;
+        double d2 = this.getPosZ() + d0;
+
+        if (this.isInWater()) {
+            materialIn = LooseMaterialTypes.WATER;
+            for(int j = 0; j < 4; ++j) {
+                double f4 = 0.25F;
+                this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+            }
+        } else if (this.isInLava()) {
+            materialIn = LooseMaterialTypes.LAVA;
+            for(int j = 0; j < 4; ++j) {
+                double f4 = 0.25F;
+                this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+            }
+        }
+
+        double drag = gooBase().stickiness(materialIn);
+//        double buoyancy = gooBase().buoyancy(materialIn);
+        this.setMotion(motion.scale(1f - drag));
+//        this.applyBuoyancyMotionY(buoyancy);
+
+        this.doBlockCollisions();
+        this.setPositionAndUpdate(projection.x, projection.y, projection.z);
+    }
+
+    @Override
+    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand)
+    {
+        return super.applyPlayerInteraction(player, vec, hand);
+    }
+
+    @Override
+    public ActionResultType processInitialInteract(PlayerEntity player, Hand hand) {
+        ItemStack heldItem = player.getHeldItem(hand);
+        if (heldItem.isEmpty()) {
+            return ActionResultType.PASS;
+        }
+        if (heldItem.getItem() instanceof GooHolder) {
+            this.attachGooToSender(player);
+            return ActionResultType.SUCCESS;
+        }
+        return ActionResultType.PASS;
+    }
+
+
     protected void applyBuoyancyMotionY(double buoyancy) {
-        this.setMotion(this.getMotion().add(0d, buoyancy, 0d));
+        if (testBuoyancyEvenNecessary(buoyancy)) {
+            this.setMotion(this.getMotion().add(0d, buoyancy, 0d));
+        }
+    }
+
+    protected boolean testBuoyancyEvenNecessary(double buoyancy) {
+        return true;
     }
 
     /**
@@ -309,7 +449,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         }
         Vector3d velVec = owner.getLookVec();
         double velocity = this.enchantedSpeed;
-        velVec = (velVec).normalize().add(this.rand.nextGaussian() * (double)0.0075F, this.rand.nextGaussian() * (double)0.0075F, this.rand.nextGaussian() * (double)0.0075F).scale(velocity);
+        velVec = (velVec).normalize().scale(velocity);
         this.setMotion(velVec);
         this.owner = null;
         this.isHeld = false;
@@ -363,10 +503,39 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         readAdditional(tag);
     }
 
+    public void tryEnteringTank(BlockPos blockPos)
+    {
+        if (world.isRemote()) {
+            return;
+        }
+        TileEntity tile = world.getTileEntity(blockPos);
+        if (!(tile instanceof GooBulbTile)) {
+            return;
+        }
+
+        GooBulbTile b = (GooBulbTile) tile;
+
+        BulbFluidHandler bfh = (BulbFluidHandler) BulbFluidHandler.bulbCapability(b, Direction.UP);
+        int attemptTransfer = bfh.fill(goo, IFluidHandler.FluidAction.SIMULATE);
+        if (attemptTransfer >= goo.getAmount()) {
+            bfh.fill(goo, IFluidHandler.FluidAction.EXECUTE);
+            goo.setAmount(0);
+        } else {
+            bfh.fill(new FluidStack(goo.getFluid(), attemptTransfer), IFluidHandler.FluidAction.EXECUTE);
+            goo.setAmount(goo.getAmount() - attemptTransfer);
+        }
+    }
+
     protected void setSize() {
         this.dataManager.set(GOO_SIZE, goo.getAmount());
-        this.recenterBoundingBox();
+        this.setBoundingBox(getSizeBasedBoundingBox());
         this.recalculateSize();
+    }
+
+    protected AxisAlignedBB getSizeBasedBoundingBox() {
+        Vector3d minPosVec = this.getPositionVec().add(-this.sizeRatio() / 2d, 0d, -this.sizeRatio() / 2d);
+        Vector3d maxPosVec = this.getPositionVec().add(this.sizeRatio() / 2d, this.sizeRatio(), this.sizeRatio() / 2d);
+        return new AxisAlignedBB(minPosVec, maxPosVec);
     }
 
     public float sizeRatio() { return (float)Math.cbrt(this.getDataManager().get(GOO_SIZE) / 1000f); } // 1000 is the cubic scale we're using via cube root to obtain 1000 mB = 1 Cube, ish.
@@ -440,13 +609,16 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
         BlockState blockstate = this.world.getBlockState(rayTraceResult.getPos());
         if (this.inBlockState != blockstate) {
-            doChangeBlockState(blockstate, this.getPositionUnderneath());
+            doChangeBlockState(blockstate, rayTraceResult.getPos(), this.getPositionUnderneath());
         }
         return Vector3d.ZERO;
     }
 
-    protected void doChangeBlockState(BlockState blockstate, BlockPos positionUnderneath) {
-
+    protected void doChangeBlockState(BlockState blockstate, BlockPos blockPos, BlockPos positionUnderneath) {
+        TileEntity te = world.getTileEntity(blockPos);
+        if (te instanceof GooBulbTile) {
+            tryEnteringTank(blockPos);
+        }
     }
 
     public void attachGooToSender(Entity entity)

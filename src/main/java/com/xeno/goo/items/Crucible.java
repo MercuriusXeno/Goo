@@ -21,14 +21,13 @@ public class Crucible extends GooHolder
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, @NotNull Hand handIn)
     {
-        ItemStack stack = playerIn.getHeldItem(handIn);
         if (worldIn.isRemote())
         {
-            return ActionResult.resultPass(stack);
+            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
 
-        data(stack).trySpawningGoo(worldIn, playerIn, stack, handIn);
-        return ActionResult.resultSuccess(stack);
+        data(playerIn.getHeldItem(handIn)).trySpawningGoo(worldIn, playerIn, handIn);
+        return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
     }
 
     @Override

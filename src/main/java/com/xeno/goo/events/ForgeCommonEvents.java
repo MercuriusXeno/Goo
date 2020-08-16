@@ -2,10 +2,16 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.commands.GooCommands;
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.evaluations.*;
 import com.xeno.goo.evaluations.pushers.*;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
@@ -52,5 +58,41 @@ public class ForgeCommonEvents {
         GooMod.handler.register(new FinalDenialPusher(world));
 
         GooMod.handler.reloadEntries(world, false, false);
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteraction (PlayerInteractEvent.EntityInteractSpecific event)
+    {
+        if (event.getWorld().isRemote()) {
+            return;
+        }
+        Entity e = event.getEntity();
+        if (!(e instanceof GooEntity)) {
+            return;
+        }
+
+        if (((GooEntity)e).isHeld()) {
+            return;
+        }
+
+        ((GooEntity)e).attachGooToSender(event.getPlayer());
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteraction (PlayerInteractEvent.EntityInteract event)
+    {
+        if (event.getWorld().isRemote()) {
+            return;
+        }
+        Entity e = event.getEntity();
+        if (!(e instanceof GooEntity)) {
+            return;
+        }
+
+        if (((GooEntity)e).isHeld()) {
+            return;
+        }
+
+        ((GooEntity)e).attachGooToSender(event.getPlayer());
     }
 }

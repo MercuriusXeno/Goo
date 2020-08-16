@@ -1,10 +1,13 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.network.Networking;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 

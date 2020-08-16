@@ -46,8 +46,8 @@ public class GooEntityRenderer extends EntityRenderer<GooEntity> implements IEnt
         double y = MathHelper.lerp(partialTicks, e.lastTickPosY, e.getPosY());
         double z = MathHelper.lerp(partialTicks, e.lastTickPosZ, e.getPosZ());
         // set position for the renderer with a lerp of the position
-        Vector3d lerp = new Vector3d(x, y, z);
-        matrixStackIn.translate(lerp.x - e.lastTickPosX,lerp.y - e.lastTickPosY, lerp.z - e.lastTickPosZ);
+        Vector3d lerp = new Vector3d(x - e.lastTickPosX, y - e.lastTickPosY, z - e.lastTickPosZ);
+        matrixStackIn.translate(lerp.x, lerp.y, lerp.z);
         matrixStackIn.scale(e.sizeRatio(), e.sizeRatio(), e.sizeRatio());
 
         // GooMod.debug("Rotation Pitch " + e.rotationPitch + " Yaw " + e.rotationYaw);
@@ -58,7 +58,8 @@ public class GooEntityRenderer extends EntityRenderer<GooEntity> implements IEnt
 
         float f6 = MathHelper.lerp(partialTicks, e.prevRotationPitch, e.rotationPitch);
         float f7 = (float)e.ticksExisted + partialTicks;
-        this.applyRotations(matrixStackIn, e.rotationYaw, e.rotationPitch);
+        // this.applyRotations(matrixStackIn, e.rotationYaw, e.rotationPitch);
+        this.applyRotations(matrixStackIn, f, f1);
         matrixStackIn.scale(-1.0F, -1.0F, 1.0F);
         this.preRenderCallback(e, matrixStackIn, partialTicks);
         matrixStackIn.translate(0.0D, (double)-1.501F, 0.0D);
