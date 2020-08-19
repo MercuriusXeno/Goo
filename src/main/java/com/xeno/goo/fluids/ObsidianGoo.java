@@ -17,10 +17,7 @@ import java.util.function.Supplier;
 
 public class ObsidianGoo extends GooBase
 {
-    public ObsidianGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder,
-            createMaterialMappedCoefficient(GRAVITY_DEFAULT, BARELY, SUPER_BUOYANT, SUPER_BUOYANT, HEAVIER_THAN_NOT),
-            createMaterialMappedCoefficient(AIR_DRAG_DEFAULT, WATER_DRAG_DEFAULT, LAVA_DRAG_DEFAULT, SLIGHTLY_STICKY, VERY_STICKY),
-            createMaterialMappedCoefficient(NO_TRANSFER, VERY_LOSSY, VERY_LOSSY, SLIGHTLY_BOUNCY, VERY_LOSSY)); };
+    public ObsidianGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) { super(bucket, builder, 0.97f); };
 
     @Override
     public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos) { }

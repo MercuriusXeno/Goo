@@ -15,10 +15,10 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ForgeRenderTypes;
 
 
-public class GooEntityModel extends EntityModel<GooEntity>
+public class OldGooEntityModel extends EntityModel<GooEntity>
 {
 
-    public GooEntityModel(int offY) {
+    public OldGooEntityModel(int offY) {
         this.textureHeight = 32;
         this.textureWidth = 32;
         this.gooBodies = new ModelRenderer(this, 0, offY);

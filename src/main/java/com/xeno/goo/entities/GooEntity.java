@@ -36,6 +36,7 @@ import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
@@ -46,14 +47,16 @@ import java.util.stream.StreamSupport;
 public abstract class GooEntity extends Entity implements IEntityAdditionalSpawnData
 {
     private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooEntity.class, DataSerializers.VARINT);
+    private static final double GENERAL_FRICTION = 0.99d;
     private double enchantedSpeed;
     public FluidStack goo;
     private boolean isInGround;
     private int quiverTimer;
     private BlockState inBlockState;
-    private List<Integer> touchingEntityIds;
+    private List<Entity> touchingEntityIds = new ArrayList<>();
     private boolean isHeld;
     private Entity owner;
+    private float cubicSize;
 
 
     protected GooEntity(EntityType<? extends GooEntity> entityType, World worldIn, Entity sender, FluidStack stack) {
@@ -63,22 +66,15 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             this.setDead();
         } else {
             this.setSize();
+            this.setInvulnerable(true);
+            this.attachGooToSender(sender);
         }
-        this.setInvulnerable(true);
-//        this.setNoGravity(true);
-        this.attachGooToSender(sender);
     }
 
     @Nullable
     public AxisAlignedBB getCollisionBoundingBox() {
         return this.getBoundingBox();
     }
-
-//    @Override
-//    public void checkDespawn()
-//    {
-//        super.checkDespawn();
-//    }
 
     public GooEntity(EntityType<CrystalEntity> type, World world)
     {
@@ -92,11 +88,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         double d2 = this.getPosZ();
         super.recalculateSize();
         this.setPosition(d0, d1, d2);
-    }
-
-    @Override
-    public EntitySize getSize(Pose poseIn) {
-        return new EntitySize(sizeRatio(), sizeRatio(), false);
     }
 
     public void notifyDataManagerChange(DataParameter<?> key) {
@@ -188,7 +179,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     protected Vector3d getSenderHoldPosition() {
-        return new Vector3d(owner.getPosX(), owner.getPosYEye(), owner.getPosZ()).add(owner.getLookVec().normalize().mul(2 * this.sizeRatio(), 2 * this.sizeRatio(), 2 * this.sizeRatio()));
+        return new Vector3d(owner.getPosX(), owner.getPosYEye(), owner.getPosZ()).add(owner.getLookVec().normalize().scale(1f + (1f + (this.cubicSize / 10f))));
     }
 
     protected void handleKeepingSteady() {
@@ -205,9 +196,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     boolean hasNoCollisions(Entity entity, AxisAlignedBB aabb) {
-        return this.allVoxelCollisionIsEmpty(entity, aabb, (checkEntity) -> {
-            return true;
-        });
+        return this.allVoxelCollisionIsEmpty(entity, aabb, (checkEntity) -> true);
     }
 
     boolean allVoxelCollisionIsEmpty(@Nullable Entity e, AxisAlignedBB b, Predicate<Entity> p) {
@@ -215,8 +204,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     Stream<VoxelShape> getVoxelShapesColliding(@Nullable Entity e, AxisAlignedBB b, Predicate<Entity> p) {
-        List<VoxelShape> listVoxes = this.getCollisionShapes(e, b).collect(Collectors.toList());
-        List<VoxelShape> listWorldVoxes = this.world.func_230318_c_(e, b, p).collect(Collectors.toList());
         return Stream.concat(this.getCollisionShapes(e, b), this.world.func_230318_c_(e, b, p));
     }
 
@@ -261,10 +248,10 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         } else {
             doFreeMovement(motion);
         }
+        this.inBlockState = blockstate;
     }
 
     protected void doCollidedMovement(Vector3d motion) {
-        LooseMaterialTypes materialIn = LooseMaterialTypes.ANY;
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
         RayTraceResult rayTraceResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
@@ -280,7 +267,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
             motion.add(onImpact(rayTraceResult));
 
-            // I'm not sure how this means airborne. Seems inverted.
             this.isAirBorne = true;
         }
 
@@ -293,30 +279,24 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         double d2 = this.getPosZ() + d0;
 
         if (this.isInWater()) {
-            materialIn = LooseMaterialTypes.WATER;
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
                 this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
             }
         } else if (this.isInLava()) {
-            materialIn = LooseMaterialTypes.LAVA;
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
                 this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
             }
         }
 
-        double drag = gooBase().stickiness(materialIn);
-        //double buoyancy = gooBase().buoyancy(materialIn);
-        this.setMotion(motion.scale(1f - drag));
-        //this.applyBuoyancyMotionY(buoyancy);
+        this.setMotion(motion.scale(GENERAL_FRICTION));
 
         this.doBlockCollisions();
         this.setPositionAndUpdate(projection.x, projection.y, projection.z);
     }
 
     protected void doFreeMovement(Vector3d motion) {
-        LooseMaterialTypes materialIn = LooseMaterialTypes.AIR;
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
         GooMod.debug("proj x " + projection.x + " y " + projection.y + " z " + projection.z);
@@ -324,7 +304,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         if (rayTraceResult.getType() != RayTraceResult.Type.MISS) {
             projection = rayTraceResult.getHitVec();
             GooMod.debug("rt proj x " + projection.x + " y " + projection.y + " z " + projection.z);
-            materialIn = LooseMaterialTypes.ANY;
         }
 
         EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
@@ -348,23 +327,18 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         double d2 = this.getPosZ() + d0;
 
         if (this.isInWater()) {
-            materialIn = LooseMaterialTypes.WATER;
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
                 this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
             }
         } else if (this.isInLava()) {
-            materialIn = LooseMaterialTypes.LAVA;
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
                 this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
             }
         }
 
-        double drag = gooBase().stickiness(materialIn);
-//        double buoyancy = gooBase().buoyancy(materialIn);
-        this.setMotion(motion.scale(1f - drag));
-//        this.applyBuoyancyMotionY(buoyancy);
+        this.setMotion(motion.scale(GENERAL_FRICTION));
 
         this.doBlockCollisions();
         this.setPositionAndUpdate(projection.x, projection.y, projection.z);
@@ -387,17 +361,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             return ActionResultType.SUCCESS;
         }
         return ActionResultType.PASS;
-    }
-
-
-    protected void applyBuoyancyMotionY(double buoyancy) {
-        if (testBuoyancyEvenNecessary(buoyancy)) {
-            this.setMotion(this.getMotion().add(0d, buoyancy, 0d));
-        }
-    }
-
-    protected boolean testBuoyancyEvenNecessary(double buoyancy) {
-        return true;
     }
 
     /**
@@ -528,17 +491,9 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
 
     protected void setSize() {
         this.dataManager.set(GOO_SIZE, goo.getAmount());
-        this.setBoundingBox(getSizeBasedBoundingBox());
+        this.cubicSize = (float)Math.cbrt(goo.getAmount());
         this.recalculateSize();
     }
-
-    protected AxisAlignedBB getSizeBasedBoundingBox() {
-        Vector3d minPosVec = this.getPositionVec().add(-this.sizeRatio() / 2d, 0d, -this.sizeRatio() / 2d);
-        Vector3d maxPosVec = this.getPositionVec().add(this.sizeRatio() / 2d, this.sizeRatio(), this.sizeRatio() / 2d);
-        return new AxisAlignedBB(minPosVec, maxPosVec);
-    }
-
-    public float sizeRatio() { return (float)Math.cbrt(this.getDataManager().get(GOO_SIZE) / 1000f); } // 1000 is the cubic scale we're using via cube root to obtain 1000 mB = 1 Cube, ish.
 
     public abstract ResourceLocation texture();
 

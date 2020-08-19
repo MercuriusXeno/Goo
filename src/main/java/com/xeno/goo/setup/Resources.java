@@ -94,7 +94,7 @@ public class Resources
             public static final ResourceLocation WEIRD_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/weird_flow");
         }
 
-        public static class Entities
+        public static class OldEntities
         {
             public static final ResourceLocation AQUATIC = new ResourceLocation(GooMod.MOD_ID, "textures/entity/aquatic.png");
             public static final ResourceLocation CHROMATIC = new ResourceLocation(GooMod.MOD_ID, "textures/entity/chromatic.png");
@@ -115,6 +115,29 @@ public class Resources
             public static final ResourceLocation SNOW = new ResourceLocation(GooMod.MOD_ID, "textures/entity/snow.png");
             public static final ResourceLocation VITAL = new ResourceLocation(GooMod.MOD_ID, "textures/entity/vital.png");
             public static final ResourceLocation WEIRD = new ResourceLocation(GooMod.MOD_ID, "textures/entity/weird.png");
+        }
+
+        public static class Entities
+        {
+            public static final ResourceLocation AQUATIC = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/aquatic_still.png");
+            public static final ResourceLocation CHROMATIC = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/chromatic_still.png");
+            public static final ResourceLocation CRYSTAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/crystal_still.png");
+            public static final ResourceLocation DECAY = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/decay_still.png");
+            public static final ResourceLocation EARTHEN = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/earthen_still.png");
+            public static final ResourceLocation ENERGETIC = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/energetic_still.png");
+            public static final ResourceLocation FAUNAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/faunal_still.png");
+            public static final ResourceLocation FLORAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/floral_still.png");
+            public static final ResourceLocation FUNGAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/fungal_still.png");
+            public static final ResourceLocation HONEY = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/honey_still.png");
+            public static final ResourceLocation LOGIC = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/logic_still.png");
+            public static final ResourceLocation METAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/metal_still.png");
+            public static final ResourceLocation MOLTEN = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/molten_still.png");
+            public static final ResourceLocation OBSIDIAN = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/obsidian_still.png");
+            public static final ResourceLocation REGAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/regal_still.png");
+            public static final ResourceLocation SLIME = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/slime_still.png");
+            public static final ResourceLocation SNOW = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/snow_still.png");
+            public static final ResourceLocation VITAL = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/vital_still.png");
+            public static final ResourceLocation WEIRD = new ResourceLocation(GooMod.MOD_ID, "textures/block/fluid/weird_still.png");
         }
     }
 }

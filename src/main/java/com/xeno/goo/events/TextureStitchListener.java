@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -19,5 +20,7 @@ public class TextureStitchListener
         }
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_fluid"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
+
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/fluid/crystal_still"));
     }
 }

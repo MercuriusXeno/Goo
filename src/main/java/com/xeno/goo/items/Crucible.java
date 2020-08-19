@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
+import net.minecraft.item.UseAction;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
@@ -15,25 +16,26 @@ public class Crucible extends GooHolder
     @Override
     public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context)
     {
-        return data(stack).tryGooDrainBehavior(stack, context);
+        if (context.getWorld().isRemote()) {
+            return ActionResultType.PASS;
+        }
+        if (context.getPlayer() != null && context.getPlayer().isHandActive()) {
+            return ActionResultType.PASS;
+        }
+        ActionResultType result = data(stack).tryGooDrainBehavior(stack, context);
+        return result;
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, @NotNull Hand handIn)
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn)
     {
-        if (worldIn.isRemote())
-        {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
-        }
-
-        data(playerIn.getHeldItem(handIn)).trySpawningGoo(worldIn, playerIn, handIn);
-        return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
+        return ActionResult.resultPass(playerIn.getHeldItem(handIn));
     }
 
     @Override
     public double armstrongMultiplier()
     {
-        return GooMod.config.cruciblePowerMultiplier();
+        return 0;
     }
 
     @Override

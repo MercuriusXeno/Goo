@@ -61,7 +61,7 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
             // scale
             boolean isBlock = item.getItem() instanceof BlockItem ;
             matrices.scale((isBlock ? 0.4F : 0.2F), (isBlock ? 0.4F : 0.2F), (isBlock ? .02F : 0.2F));
-            RenderHelper.disableStandardItemLighting();
+            net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
 
             Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, overlay, matrices, buffer);
         }

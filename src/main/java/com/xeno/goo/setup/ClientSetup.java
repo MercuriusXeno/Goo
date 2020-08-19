@@ -3,7 +3,7 @@ package com.xeno.goo.setup;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.models.*;
 import com.xeno.goo.client.render.GooBulbRenderer;
-import com.xeno.goo.client.render.GooEntityRenderer;
+import com.xeno.goo.client.render.GooRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
@@ -28,6 +28,6 @@ public class ClientSetup
 
     private static void registerGooEntityRenderers()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.CRYSTAL.get(), (renderManager) -> new GooEntityRenderer(renderManager, new GooEntityModel(16)));
+        RenderingRegistry.registerEntityRenderingHandler(Registry.CRYSTAL.get(), GooRenderer::new);
     }
 }

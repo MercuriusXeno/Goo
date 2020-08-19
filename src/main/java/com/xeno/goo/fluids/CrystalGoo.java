@@ -21,10 +21,7 @@ import java.util.function.Supplier;
 public class CrystalGoo extends GooBase
 {
     public CrystalGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
-        super(bucket, builder,
-                createMaterialMappedCoefficient(VERY_HEAVY, VERY_HEAVY, MODERATELY_BUOYANT, SUPER_BUOYANT, EXTREMELY_HEAVY),
-                createMaterialMappedCoefficient(AIR_DRAG_DEFAULT, WATER_DRAG_DEFAULT, LAVA_DRAG_DEFAULT, SLIGHTLY_STICKY, VERY_STICKY),
-                createMaterialMappedCoefficient(NO_TRANSFER, VERY_LOSSY, VERY_LOSSY, SLIGHTLY_BOUNCY, VERY_LOSSY));
+        super(bucket, builder, 0.99f);
     }
 
     @Override
