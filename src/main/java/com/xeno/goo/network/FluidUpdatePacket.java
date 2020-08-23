@@ -15,19 +15,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class FluidUpdatePacket {
-    private final RegistryKey<World> worldRegistryKey;
-    private final BlockPos pos;
-    private final int indexes;
-    private final List<FluidStack> fluids;
+public class FluidUpdatePacket implements IGooModPacket {
+    private RegistryKey<World> worldRegistryKey;
+    private BlockPos pos;
+    private int indexes;
+    private List<FluidStack> fluids;
 
     public FluidUpdatePacket(PacketBuffer buf) {
-        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
-        pos = buf.readBlockPos();
-        indexes = buf.readInt();
-        fluids = new ArrayList<>();
+        read(buf);
+    }
+
+    public void read(PacketBuffer buf) {
+        this.worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
+        this.pos = buf.readBlockPos();
+        this.indexes = buf.readInt();
+        this.fluids = new ArrayList<>();
         for(int i = 0; i < indexes; i++) {
-            fluids.add(buf.readFluidStack());
+            this.fluids.add(buf.readFluidStack());
         }
     }
 

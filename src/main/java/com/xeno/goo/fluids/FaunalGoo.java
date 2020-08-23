@@ -1,34 +1,56 @@
 package com.xeno.goo.fluids;
 
 import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.FlowingFluidBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IWorld;
+import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 
 import java.util.function.Supplier;
 
-public class FaunalGoo extends GooBase
+public abstract class FaunalGoo extends GooBase
 {
-    public FaunalGoo(Supplier<? extends Item> bucket, FluidAttributes.Builder builder) {
-        super(bucket, builder, 0.2f); };
+    private static final ForgeFlowingFluid.Properties PROPERTIES = new ForgeFlowingFluid.Properties(
+            Registry.FAUNAL_GOO, Registry.FAUNAL_GOO_FLOWING,
+            FluidAttributes.builder(
+                    Resources.GooTextures.Still.FAUNAL_GOO,
+                    Resources.GooTextures.Flowing.FAUNAL_GOO)
+                    .translationKey("fluid.goo.faunal_goo"))
+            .bucket(() -> Items.AIR)
+            .block(Registry.FAUNAL_GOO_BLOCK)
+            .slopeFindDistance(3)
+            .levelDecreasePerBlock(1)
+            .explosionResistance(100f);
 
+    public FaunalGoo() {
+        super(PROPERTIES);
+    }
 
     @Override
     public void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos) { }
 
 
     @Override
-    public void createEntity(World world, LivingEntity sender, FluidStack goo, Hand isHeld)
+    public GooEntity createEntity(World world, LivingEntity sender, FluidStack goo, Hand isHeld)
     {
-        return;
+        return null;
     }
 
     @Override
@@ -38,8 +60,42 @@ public class FaunalGoo extends GooBase
     }
 
     @Override
-    public ResourceLocation getEntityTexture()
+    public Fluid getStillFluid() { return Registry.FAUNAL_GOO.get(); }
+
+    @Override
+    public Fluid getFlowingFluid() { return Registry.FAUNAL_GOO_FLOWING.get(); }
+
+    @Override
+    protected BlockState getBlockState(FluidState state)
     {
-        return null;
+        return Registry.FAUNAL_GOO_BLOCK.get().getDefaultState().with(FlowingFluidBlock.LEVEL, getLevelFromState(state));
+    }
+
+    public static class Flowing extends FaunalGoo {
+
+        public Flowing()
+        {
+            super();
+        }
+
+        @Override
+        public boolean isSource(FluidState state) { return true; }
+
+        @Override
+        public int getLevel(FluidState state) { return state.get(FlowingFluidBlock.LEVEL); }
+    }
+
+    public static class Source extends FaunalGoo {
+
+        public Source()
+        {
+            super();
+        }
+
+        @Override
+        public boolean isSource(FluidState state) { return false; }
+
+        @Override
+        public int getLevel(FluidState state) { return state.get(FlowingFluidBlock.LEVEL); }
     }
 }

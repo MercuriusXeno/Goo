@@ -2,6 +2,10 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.network.GooGrabPacket;
+import com.xeno.goo.network.GooLobPacket;
+import com.xeno.goo.network.Networking;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -10,10 +14,14 @@ import net.minecraft.item.UseAction;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.Optional;
 
 public class Gauntlet extends GooHolder
 {
@@ -23,12 +31,24 @@ public class Gauntlet extends GooHolder
         if (context.getWorld().isRemote()) {
             return ActionResultType.PASS;
         }
-        if (context.getPlayer() != null && context.getPlayer().isHandActive()) {
+        PlayerEntity player = context.getPlayer();
+        if (player == null || player.isHandActive()) {
             return ActionResultType.PASS;
         }
+        if (!stack.equals(player.getHeldItem(context.getHand()))) {
+            return ActionResultType.PASS;
+        }
+        // try removing the goo from the container
         ActionResultType result = data(stack).tryGooDrainBehavior(stack, context);
+        // if we found some, spawn it into the world and attach it to the player
         if (!data(stack).heldGoo().isEmpty()) {
-            makeAndAttachGoo(context.getPlayer().world, context.getPlayer(), context.getHand());
+            Hand hand = context.getHand();
+            player.setActiveHand(hand);
+            GooHolder gh = (GooHolder)stack.getItem();
+            GooEntity e = gh.data(stack).trySpawningGoo(player.world, player, hand);
+            if (e != null) {
+                e.attachGooToSender(player);
+            }
         }
         return result;
     }
@@ -49,58 +69,71 @@ public class Gauntlet extends GooHolder
     public void onPlayerStoppedUsing(ItemStack stack, World worldIn, LivingEntity player, int timeLeft)
     {
         super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
-        if (worldIn.isRemote()) {
+        if (!worldIn.isRemote()) {
             return;
         }
-        List<GooEntity> entities = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(1.0d), p -> p.isHeld() && p.owner() == player);
-        for(GooEntity e : entities) {
-            e.detachGooFromSender(true);
+        if (!(player instanceof ClientPlayerEntity)) {
+            return;
         }
+        // request the server to lob the goo, client side handling seems to be more consistent than alternatives.
+        Optional<GooEntity> entity = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(8d), p -> p.isHeld() && p.owner() == player).stream().findFirst();
+        entity.ifPresent(e -> Networking.sendToServer(new GooLobPacket(e), (ClientPlayerEntity)player));
     }
 
     @Override
     public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, @NotNull Hand handIn)
     {
-        if (world.isRemote()) {
-            return ActionResult.resultPass(player.getHeldItem(handIn));
+        if (hasGoo(player)) {
+            player.setActiveHand(handIn);
+            return ActionResult.resultSuccess(player.getHeldItem(handIn));
+        } else {
+            findAndAttachGoo(player);
+            if (hasGoo(player)) {
+                player.setActiveHand(handIn);
+            }
         }
-        makeAndAttachGoo(world, player, handIn);
         return ActionResult.resultSuccess(player.getHeldItem(handIn));
     }
 
-    private void makeAndAttachGoo(World world, PlayerEntity player, @NotNull Hand handIn)
+    private boolean hasGoo(PlayerEntity player)
     {
-        if (world.isRemote() || player.isHandActive()) {
+        Optional<GooEntity> entity = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(8d), p -> p.isHeld() && p.owner() == player).stream().findFirst();
+        return entity.isPresent();
+    }
+
+    private void findAndAttachGoo(PlayerEntity player)
+    {
+        if (!(player instanceof ClientPlayerEntity)) {
             return;
         }
-        if (player.getHeldItem(handIn).isEmpty() || !(player.getHeldItem(handIn).getItem() instanceof GooHolder)) {
-            return;
-        }
-        player.setActiveHand(handIn);
-        ((GooHolder)player.getHeldItem(handIn).getItem()).data(player.getHeldItem(handIn)).trySpawningGoo(player.world, player, Hand.MAIN_HAND);
+        Vector3d eyesVector = new Vector3d(player.getPosX(), player.getPosYEye(), player.getPosY());
+
+        AxisAlignedBB eyesBox = new AxisAlignedBB(eyesVector.add(-0.1d, -0.1d, -0.1d), eyesVector.add(0.1d, 0.1d, 0.1d));
+        Optional<GooEntity> entity = player.world.getEntitiesWithinAABB(GooEntity.class, eyesBox.expand(player.getLookVec().scale(5f)), p -> !p.isLaunched() && !p.isHeld()).stream().distinct().findFirst();
+        entity.ifPresent(e -> Networking.sendToServer(new GooGrabPacket(e), (ClientPlayerEntity)player));
     }
 
     @Override
-    public double armstrongMultiplier()
+    public float armstrongMultiplier()
     {
-        return GooMod.config.gauntletPowerMultiplier();
+        return 1.4f;
     }
 
     @Override
-    public double thrownSpeed()
+    public float thrownSpeed()
     {
-        return GooMod.config.gauntletLobVelocity();
+        return 2f;
     }
 
     @Override
     public int capacity()
     {
-        return GooMod.config.gauntletBaseCapacity();
+        return 125;
     }
 
     @Override
     public int holdingMultiplier()
     {
-        return GooMod.config.gauntletHoldingMultiplier();
+        return 2;
     }
 }

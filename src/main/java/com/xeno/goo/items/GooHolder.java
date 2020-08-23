@@ -46,8 +46,8 @@ public abstract class GooHolder extends Item
 
     public abstract ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn);
 
-    public abstract double armstrongMultiplier();
+    public abstract float armstrongMultiplier();
 
-    public abstract double thrownSpeed();
+    public abstract float thrownSpeed();
 
 }

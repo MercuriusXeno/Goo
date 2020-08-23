@@ -9,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.xeno.goo.items.GooHolder;
 import com.xeno.goo.items.GooHolderData;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.client.renderer.model.*;
 import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;

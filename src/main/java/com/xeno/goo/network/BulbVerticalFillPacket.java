@@ -15,14 +15,20 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class BulbVerticalFillPacket
+public class BulbVerticalFillPacket implements IGooModPacket
 {
-    private final RegistryKey<World> worldRegistryKey;
-    private final BlockPos pos;
-    private final FluidStack fluid;
-    private final float intensity;
+    private RegistryKey<World> worldRegistryKey;
+    private BlockPos pos;
+    private FluidStack fluid;
+    private float intensity;
 
     public BulbVerticalFillPacket(PacketBuffer buf) {
+        read(buf);
+    }
+
+    @Override
+    public void read(PacketBuffer buf)
+    {
         worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         fluid = buf.readFluidStack();

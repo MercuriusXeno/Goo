@@ -59,40 +59,4 @@ public class ForgeCommonEvents {
 
         GooMod.handler.reloadEntries(world, false, false);
     }
-
-    @SubscribeEvent
-    public static void onEntityInteraction (PlayerInteractEvent.EntityInteractSpecific event)
-    {
-        if (event.getWorld().isRemote()) {
-            return;
-        }
-        Entity e = event.getEntity();
-        if (!(e instanceof GooEntity)) {
-            return;
-        }
-
-        if (((GooEntity)e).isHeld()) {
-            return;
-        }
-
-        ((GooEntity)e).attachGooToSender(event.getPlayer());
-    }
-
-    @SubscribeEvent
-    public static void onEntityInteraction (PlayerInteractEvent.EntityInteract event)
-    {
-        if (event.getWorld().isRemote()) {
-            return;
-        }
-        Entity e = event.getEntity();
-        if (!(e instanceof GooEntity)) {
-            return;
-        }
-
-        if (((GooEntity)e).isHeld()) {
-            return;
-        }
-
-        ((GooEntity)e).attachGooToSender(event.getPlayer());
-    }
 }

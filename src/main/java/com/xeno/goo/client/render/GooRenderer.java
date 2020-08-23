@@ -14,7 +14,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.*;
 import net.minecraft.world.gen.SimplexNoiseGenerator;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -26,13 +25,113 @@ public class GooRenderer extends EntityRenderer<GooEntity>
 {
     public static final float CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO = 0.9510565f;
     public static final float VOLUME_TO_CUBIC_EDGE_COEFFICIENT = 2.1816949f;
-    // public static final double GOLDEN_RATIO = (1d + Math.sqrt(5d)) / 2d;
+    public static final Vector3d[] ICOSAHEDRAL_VERTICES;
+    public static final Triangle[] UNIT_TRIANGLES;
+    static {
+        ICOSAHEDRAL_VERTICES = generateIcosahedralVertices();
+        UNIT_TRIANGLES = makeTriangles(2);
+    }
 
-    public static float obtainRadiusByVolume(float volume) {
-        // shrink it by 10d because it's a minecraft cube; 1000 mB = 1 b
-        // 1000 cuberoot = 10, not 1. So divide it by 10.
-        float a = (float)Math.cbrt(volume / VOLUME_TO_CUBIC_EDGE_COEFFICIENT) / 10f;
-        return a * CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO;
+    private static Vector3d computeHalfVertex(Vector3d v1, Vector3d v2)
+    {
+        double newX = v1.x + v2.x;
+        double newY = v1.y + v2.y;
+        double newZ = v1.z + v2.z;
+        // float scale = CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO / (float)Math.sqrt(newX * newX + newY *newY + newZ * newZ);
+        float scale = 1f / (float)Math.sqrt(newX * newX + newY *newY + newZ * newZ);
+        return new Vector3d(newX, newY, newZ).scale(scale);
+    }
+
+    private static Triangle[] makeTriangles(int depth)
+    {
+        Triangle[] initialSet = new Triangle[] {
+                // top segment
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[2]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[3]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[4]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[5]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[1]),
+                // second row
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[4]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[5]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[1]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[2]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[3]),
+                // third row
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[10]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[6]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[7]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[8]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[9]),
+                // bottom segment
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[6]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[7]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[8]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[9]),
+                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[10])
+        };
+        List<Triangle> results = new ArrayList<>(Arrays.asList(initialSet));
+        for(int i = 0; i < depth; i++) {
+            results.addAll(fragmentToDepth(results));
+        }
+
+        return results.toArray(new Triangle[0]);
+    }
+
+    private static List<Triangle> fragmentToDepth(List<Triangle> initialSet)
+    {
+        List<Triangle> results = new ArrayList<>();
+        for(Triangle t : initialSet) {
+            Vector3d v1 = computeHalfVertex(t.v1, t.v2);
+            Vector3d v2 = computeHalfVertex(t.v2, t.v3);
+            Vector3d v3 = computeHalfVertex(t.v3, t.v1);
+            // central bisection
+            results.add(new Triangle(v1, v2, v3));
+            // first bisection
+            results.add(new Triangle(t.v1, v1, v3));
+            // second bisection
+            results.add(new Triangle(t.v2, v2, v1));
+            // third bisection
+            results.add(new Triangle(t.v3, v3, v2));
+        }
+        return results;
+    }
+
+    private static Vector3d[] generateIcosahedralVertices()
+    {
+        float H_ANGLE = (float)(PI / 180f * 72f);    // 72 degree = 360 / 5
+        float V_ANGLE = (float)(Math.atan(1.0f / 2f));  // elevation = 26.565 degree
+
+        Vector3d[] vertices = new Vector3d[12];    // array of 12 vertices (x,y,z)
+        float longitude, latitude;                            // coords
+        float hAngle1 = (float)(-PI / 2f - H_ANGLE / 2f);  // start from -126 deg at 1st row
+        float hAngle2 = (float)(-PI / 2f);                // start from -90 deg at 2nd row
+
+        // the first top vertex at (0, 0, r)
+        vertices[0] = new Vector3d(0, 1f, 0);
+
+        // compute 10 vertices at 1st and 2nd rows
+        for(int i = 1; i <= 5; ++i)
+        {
+            longitude  = (float)Math.sin(V_ANGLE);            // elevaton
+            latitude = (float)Math.cos(V_ANGLE);            // length on XY plane
+            float x1 = latitude * (float)Math.cos(hAngle1);
+            float y1 = longitude;
+            float z1 = latitude * (float)Math.sin(hAngle1);
+            float x2 = latitude * (float)Math.cos(hAngle2);
+            float y2 = -longitude;
+            float z2 = latitude * (float)Math.sin(hAngle2);
+            vertices[i] = new Vector3d(x1, y1, z1);
+            vertices[i + 5] = new Vector3d(x2, y2, z2);
+
+            // next horizontal angles
+            hAngle1 += H_ANGLE;
+            hAngle2 += H_ANGLE;
+        }
+
+        // the last bottom vertex at (0, 0, -r)
+        vertices[11] = new Vector3d(0, -1f, 0);
+        return vertices;
     }
 
     public GooRenderer(EntityRendererManager renderManager)
@@ -55,27 +154,30 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         IVertexBuilder buffer = bufferType.getBuffer(rType);
         TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo.getFluid().getAttributes().getStillTexture());
 
-        Vector3d interpVec = RenderHelper.lerpEntityPosition(partialTicks, entity);
-        stack.translate(interpVec.x, interpVec.y, interpVec.z);
+        // simply put.. we use the client's interpretation of the location when the entity is held. it's smoother.
+        if (entity.isHeld()) {
+            Vector3d heldVector = entity.getSenderHoldPosition().subtract(entity.getPositionVec());
+            if (heldVector.length() > 0.1f) {
+                entity.startQuivering();
+            }
+            stack.translate(heldVector.x, heldVector.y, heldVector.z);
+            this.applyRotations(stack, entity.owner().rotationYaw, entity.owner().rotationPitch);
+        } else {
+            float f = MathHelper.interpolateAngle(partialTicks, entity.prevRotationYaw, entity.rotationYaw);
+            float f1 = MathHelper.interpolateAngle(partialTicks, entity.prevRotationPitch, entity.rotationPitch);
+            this.applyRotations(stack, f, f1);
+        }
+
+        float scale = (entity.cubicSize() / VOLUME_TO_CUBIC_EDGE_COEFFICIENT) * CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO;
+
         // Texture and noise gen should be stored so they aren't remade every frame...
         SimplexNoiseGenerator sgen = new SimplexNoiseGenerator(new Random(entity.getPosition().toLong()));
-        float f = MathHelper.interpolateAngle(partialTicks, entity.prevRotationYaw, entity.rotationYaw);
-        float f1 = MathHelper.interpolateAngle(partialTicks, entity.prevRotationPitch, entity.rotationPitch);
-        this.applyRotations(stack, f, f1);
         Matrix4f matrix = stack.getLast().getMatrix();
 
-        Vector3d[] vertices = generateIcosahedralVertices(sgen, entity);
+        Triangle[] triangles = scaleAndWiggle(UNIT_TRIANGLES, sgen, entity.quiverTimer(), scale);
 
-        // ten triangles that point up and use the same UV mappings - takes texture res as arg
-        Triangle[] upTriangles = upTriangles(vertices, sprite);
-
-        // ten triangles that point down and use the same UV mappings - takes texture res as arg
-        Triangle[] downTriangles = downTriangles(vertices, sprite);
-
-        for (Triangle[] a : new Triangle[][] { upTriangles, downTriangles }) {
-            for (Triangle t : a) {
-                buildTriangle(matrix, buffer, t, light);
-            }
+        for (Triangle t : triangles) {
+            renderTriangle(matrix, buffer, t, light, sprite);
         }
         stack.pop();
     }
@@ -85,21 +187,14 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         matrixStackIn.rotate(Vector3f.ZP.rotationDegrees(MathHelper.wrapDegrees(rotationPitch)));
     }
 
-    private void buildTriangle(Matrix4f matrix, IVertexBuilder buffer, Triangle t, int light)
+    public static final float EDGE_TO_ALTITUDE_EQUILATERAL_RATIO = 0.8660254f;
+
+    private void renderTriangle(Matrix4f matrix, IVertexBuilder buffer, Triangle t, int light, TextureAtlasSprite sprite)
     {
         buffer.getVertexBuilder()
                 .pos(matrix, (float)t.v1.x, (float)t.v1.y, (float)t.v1.z)
                 .color(1f, 1f, 1f, 1f)
-                .tex(t.uv1.x, t.uv1.y)
-                .overlay(NO_OVERLAY)
-                .lightmap(light)
-                .normal((float)t.v1.normalize().x, (float)t.v1.normalize().y, (float)t.v1.normalize().z)
-                .endVertex();
-        // added twice because I do not know how to use the triangle render mode and I'm very not smart.
-        buffer.getVertexBuilder()
-                .pos(matrix, (float)t.v1.x, (float)t.v1.y, (float)t.v1.z)
-                .color(1f, 1f, 1f, 1f)
-                .tex(t.uv1.x, t.uv1.y)
+                .tex(sprite.getInterpolatedU(16f / 2f), sprite.getInterpolatedV(EDGE_TO_ALTITUDE_EQUILATERAL_RATIO * 16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal((float)t.v1.normalize().x, (float)t.v1.normalize().y, (float)t.v1.normalize().z)
@@ -107,7 +202,7 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         buffer.getVertexBuilder()
                 .pos(matrix, (float)t.v2.x, (float)t.v2.y, (float)t.v2.z)
                 .color(1f, 1f, 1f, 1f)
-                .tex(t.uv2.x, t.uv2.y)
+                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal((float)t.v2.normalize().x, (float)t.v2.normalize().y, (float)t.v2.normalize().z)
@@ -115,136 +210,36 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         buffer.getVertexBuilder()
                 .pos(matrix, (float)t.v3.x, (float)t.v3.y, (float)t.v3.z)
                 .color(1f, 1f, 1f, 1f)
-                .tex(t.uv3.x, t.uv3.y)
+                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal((float)t.v3.normalize().x, (float)t.v3.normalize().y, (float)t.v3.normalize().z)
                 .endVertex();
     }
 
-    private Triangle[] upTriangles(Vector3d[] v, TextureAtlasSprite sprite)
-    {
-        return new Triangle[] {
-                // top segment
-                new Triangle(v[0], v[1], v[2], sprite, true),
-                new Triangle(v[0], v[2], v[3], sprite, true),
-                new Triangle(v[0], v[3], v[4], sprite, true),
-                new Triangle(v[0], v[4], v[5], sprite, true),
-                new Triangle(v[0], v[5], v[1], sprite, true),
-                // third row
-                new Triangle(v[5], v[9], v[10], sprite, true),
-                new Triangle(v[1], v[10], v[6], sprite, true),
-                new Triangle(v[2], v[6], v[7], sprite, true),
-                new Triangle(v[3], v[7], v[8], sprite, true),
-                new Triangle(v[4], v[8], v[9], sprite, true)
-        };
-    }
-
-    private Triangle[] downTriangles(Vector3d[] v, TextureAtlasSprite sprite)
-    {
-        return new Triangle[] {
-                // second row
-                new Triangle(v[9], v[5], v[4], sprite, false),
-                new Triangle(v[10], v[1], v[5], sprite, false),
-                new Triangle(v[6], v[2], v[1], sprite, false),
-                new Triangle(v[7], v[3], v[2], sprite, false),
-                new Triangle(v[8], v[4], v[3], sprite, false),
-                // bottom segment
-                new Triangle(v[11], v[7], v[6], sprite, false),
-                new Triangle(v[11], v[8], v[7], sprite, false),
-                new Triangle(v[11], v[9], v[8], sprite, false),
-                new Triangle(v[11], v[10], v[9], sprite, false),
-                new Triangle(v[11], v[6], v[10], sprite, false)
-        };
-    }
-
-    public class Triangle {
-        public static final float EDGE_TO_ALTITUDE_EQUILATERAL_RATIO = 0.8660254f;
-        // public final boolean isPointingUp;
-        public final Vector3d v1;
-        public final Vector3d v2;
-        public final Vector3d v3;
-        public final Vector2f uv1; // UV mapping of the first vertex
-        public final Vector2f uv2; // UV mapping of the second vertex
-        public final Vector2f uv3; // UV mapping of the third vertex
-        public Triangle(Vector3d v1, Vector3d v2, Vector3d v3, TextureAtlasSprite sprite, boolean isPointingUp) {
-            float h = equilateralHeight(EDGE_TO_ALTITUDE_EQUILATERAL_RATIO);
-            // this.isPointingUp = isPointingUp;
-            this.v1 = v1;
-            this.v2 = v2;
-            this.v3 = v3;
-            if (isPointingUp) {
-                // triangle pointing up means the "starting" vertex is at the top, otherwise it's at the bottom.
-                // always anticlockwise
-                this.uv1 = new Vector2f(sprite.getInterpolatedU(16f / 2f), sprite.getInterpolatedV(h * 16f));
-                this.uv2 = new Vector2f(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f));
-                this.uv3 = new Vector2f(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f));
-            } else {
-                // triangle pointing down means the starting vertex is at the bottom and the two
-                // vertex are at the h line.
-                this.uv1 = new Vector2f(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(h * 16f));
-                this.uv2 = new Vector2f(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(h * 16f));
-                this.uv3 = new Vector2f(sprite.getInterpolatedU(16f / 2f), sprite.getInterpolatedV( 0));
-            }
-        }
-
-        private float equilateralHeight(float textureResolution)
-        {
-            return (textureResolution * EDGE_TO_ALTITUDE_EQUILATERAL_RATIO);
-        }
-    }
-
     public static float remap(float value, float currentLow, float currentHigh, float newLow, float newHigh) {
         return newLow + (value - currentLow) * (newHigh - newLow) / (currentHigh - currentLow);
     }
 
-    private Vector3d[] generateIcosahedralVertices(SimplexNoiseGenerator sgen, GooEntity entity)
-    {
-        float gameTime = (((float) Minecraft.getInstance().world.getGameTime())) / 25f;
-        float volume = entity.goo.getAmount();
-        float radius = obtainRadiusByVolume(volume);
-        float waveform = remap(MathHelper.sin(gameTime), -1, 1, 0.1f, 0.2f) + remap(MathHelper.cos(gameTime), -1, 1, 0.1f, 0.2f);
-        float range = (radius / 10f) * waveform;
+    private Triangle[] scaleAndWiggle(Triangle[] triangles, SimplexNoiseGenerator sgen, int quiverTimer, float scale) {
+        List<Triangle> wiggledTriangles = new ArrayList<>();
+        float cycleTimer = quiverTimer / 4f;
+        float wiggle = 0.1f * scale;
+        wiggle *= remap(MathHelper.sin(cycleTimer), -1, 1, 0, 1);
 
-        float H_ANGLE = (float)(PI / 180f * 72f);    // 72 degree = 360 / 5
-        float V_ANGLE = (float)(Math.atan(1.0f / 2f));  // elevation = 26.565 degree
-
-        Vector3d[] vertices = new Vector3d[12];    // array of 12 vertices (x,y,z)
-        float longitude, latitude;                            // coords
-        float hAngle1 = (float)(-PI / 2f - H_ANGLE / 2f);  // start from -126 deg at 1st row
-        float hAngle2 = (float)(-PI / 2f);                // start from -90 deg at 2nd row
-
-        // the first top vertex at (0, 0, r)
-        vertices[0] = new Vector3d(0, radius, 0);
-
-        // compute 10 vertices at 1st and 2nd rows
-        for(int i = 1; i <= 5; ++i)
-        {
-            longitude  = radius * (float)Math.sin(V_ANGLE);            // elevaton
-            latitude = radius * (float)Math.cos(V_ANGLE);            // length on XY plane
-            float x1 = latitude * (float)Math.cos(hAngle1);
-            float y1 = longitude;
-            float z1 = latitude * (float)Math.sin(hAngle1);
-            float x2 = latitude * (float)Math.cos(hAngle2);
-            float y2 = -longitude;
-            float z2 = latitude * (float)Math.sin(hAngle2);
-            // tranlate coordinates using sgen, range and remap
-            float xx1 = remap((float)sgen.func_227464_a_(x1, y1, z1 + gameTime), -1, 1f, -range, range);
-            float yy1 = remap((float)sgen.func_227464_a_(x1 + gameTime, y1, z1 + gameTime), -1, 1f, -range, range);
-            float zz1 = remap((float)sgen.func_227464_a_(x1 + gameTime, y1, z1), -1, 1f, -range, range);
-            float xx2 = remap((float)sgen.func_227464_a_(x2, y2, z2 + gameTime), -1, 1f, -range, range);
-            float yy2 = remap((float)sgen.func_227464_a_(x2 + gameTime, y2, z2 + gameTime), -1, 1f, -range, range);
-            float zz2 = remap((float)sgen.func_227464_a_(x2 + gameTime, y2, z2), -1, 1f, -range, range);
-            vertices[i] = new Vector3d(x1 + xx1, y1 + yy1, z1 + zz1);
-            vertices[i + 5] = new Vector3d(x2 + xx2, y2 + yy2, z2 + zz2);
-
-            // next horizontal angles
-            hAngle1 += H_ANGLE;
-            hAngle2 += H_ANGLE;
+        // translate coordinates using sgen, range and remap
+        for(Triangle t : triangles) {
+            Vector3d[] newVs = new Vector3d[3];
+            int i = 0;
+            for (Vector3d v : new Vector3d[] { t.v1, t.v2, t.v3 }) {
+                newVs[i] = v.scale(scale);
+                newVs[i] = newVs[i].add(remap((float) sgen.func_227464_a_(newVs[i].x, newVs[i].y, newVs[i].z + cycleTimer), -1, 1f, -wiggle, wiggle),
+                        remap((float) sgen.func_227464_a_(newVs[i].x + cycleTimer, newVs[i].y, newVs[i].z + cycleTimer), -1, 1f, -wiggle, wiggle),
+                        remap((float) sgen.func_227464_a_(newVs[i].x + cycleTimer, newVs[i].y, newVs[i].z), -1, 1f, -wiggle, wiggle));
+                i++;
+            }
+            wiggledTriangles.add(new Triangle(newVs[0], newVs[1], newVs[2]));
         }
-
-        // the last bottom vertex at (0, 0, -r)
-        vertices[11] = new Vector3d(0, -radius, 0);
-        return vertices;
+        return wiggledTriangles.toArray(new Triangle[0]);
     }
 }

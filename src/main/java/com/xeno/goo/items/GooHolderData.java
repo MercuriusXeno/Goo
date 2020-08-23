@@ -1,5 +1,6 @@
 package com.xeno.goo.items;
 
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.fluids.GooBase;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
@@ -7,25 +8,31 @@ import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.IBucketPickupHandler;
+import net.minecraft.client.renderer.FluidBlockRenderer;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.stats.Stats;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.*;
+import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
@@ -160,13 +167,13 @@ public class GooHolderData
         return (int)Math.ceil(Math.pow(((GooHolder)stack.getItem()).holdingMultiplier(), holding(stack)));
     }
 
-    private double baseThrownSpeed(ItemStack stack) {
+    private float baseThrownSpeed(ItemStack stack) {
         return ((GooHolder)stack.getItem()).thrownSpeed();
     }
 
-    private double armstrongMultiplier(ItemStack stack)
+    private float  armstrongMultiplier(ItemStack stack)
     {
-        return Math.pow(((GooHolder)stack.getItem()).armstrongMultiplier(), armstrong(stack));
+        return (float)Math.pow(((GooHolder)stack.getItem()).armstrongMultiplier(), armstrong(stack));
     }
 
     public int holding(ItemStack stack) {
@@ -177,9 +184,66 @@ public class GooHolderData
         return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
     }
 
-    public double thrownSpeed(ItemStack stack)
+    public float thrownSpeed(ItemStack stack)
     {
         return armstrongMultiplier(stack) * baseThrownSpeed(stack);
+    }
+
+    protected static BlockRayTraceResult rayTrace(World worldIn, PlayerEntity player, RayTraceContext.FluidMode fluidMode) {
+        float f = player.rotationPitch;
+        float f1 = player.rotationYaw;
+        Vector3d vector3d = player.getEyePosition(1.0F);
+        float f2 = MathHelper.cos(-f1 * ((float)Math.PI / 180F) - (float)Math.PI);
+        float f3 = MathHelper.sin(-f1 * ((float)Math.PI / 180F) - (float)Math.PI);
+        float f4 = -MathHelper.cos(-f * ((float)Math.PI / 180F));
+        float f5 = MathHelper.sin(-f * ((float)Math.PI / 180F));
+        float f6 = f3 * f4;
+        float f7 = f2 * f4;
+        double d0 = player.getAttribute(net.minecraftforge.common.ForgeMod.REACH_DISTANCE.get()).getValue();;
+        Vector3d vector3d1 = vector3d.add((double)f6 * d0, (double)f5 * d0, (double)f7 * d0);
+        return worldIn.rayTraceBlocks(new RayTraceContext(vector3d, vector3d1, RayTraceContext.BlockMode.OUTLINE, fluidMode, player));
+    }
+
+    public ActionResult<ItemStack> tryBucketishDrain(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
+        RayTraceResult raytraceresult = rayTrace(worldIn, playerIn, this.heldGoo.getFluid() == Fluids.EMPTY ? RayTraceContext.FluidMode.SOURCE_ONLY : RayTraceContext.FluidMode.NONE);
+        ActionResult<ItemStack> ret = net.minecraftforge.event.ForgeEventFactory.onBucketUse(playerIn, worldIn, itemstack, raytraceresult);
+        if (ret != null) return ret;
+        if (raytraceresult.getType() == RayTraceResult.Type.MISS) {
+            return ActionResult.resultPass(itemstack);
+        } else if (raytraceresult.getType() != RayTraceResult.Type.BLOCK) {
+            return ActionResult.resultPass(itemstack);
+        } else {
+            BlockRayTraceResult blockraytraceresult = (BlockRayTraceResult)raytraceresult;
+            BlockPos blockpos = blockraytraceresult.getPos();
+            Direction direction = blockraytraceresult.getFace();
+            BlockPos blockpos1 = blockpos.offset(direction);
+            if (worldIn.isBlockModifiable(playerIn, blockpos) && playerIn.canPlayerEdit(blockpos1, direction, itemstack)) {
+                if (this.heldGoo.getFluid() == Fluids.EMPTY && !playerIn.isHandActive()) {
+                    BlockState blockstate1 = worldIn.getBlockState(blockpos);
+                    if (blockstate1.getBlock() instanceof IBucketPickupHandler) {
+                        Fluid fluid = ((IBucketPickupHandler)blockstate1.getBlock()).pickupFluid(worldIn, blockpos, blockstate1);
+                        if (fluid != Fluids.EMPTY) {
+                            playerIn.addStat(Stats.ITEM_USED.get(this));
+
+                            SoundEvent soundevent = this.heldGoo.getFluid().getAttributes().getEmptySound();
+                            if (soundevent == null) soundevent = fluid.isIn(FluidTags.LAVA) ? SoundEvents.ITEM_BUCKET_FILL_LAVA : SoundEvents.ITEM_BUCKET_FILL;
+                            playerIn.playSound(soundevent, 1.0F, 1.0F);
+                            ItemStack itemstack1 = DrinkHelper.func_241445_a_(itemstack, playerIn, new ItemStack(fluid.getFilledBucket()));
+                            if (!worldIn.isRemote) {
+                                CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayerEntity)playerIn, new ItemStack(fluid.getFilledBucket()));
+                            }
+
+                            return ActionResult.func_233538_a_(itemstack1, worldIn.isRemote());
+                        }
+                    }
+
+                    return ActionResult.resultFail(itemstack);
+                }
+            } else {
+                return ActionResult.resultFail(itemstack);
+            }
+        }
     }
 
     public ActionResultType tryGooDrainBehavior(ItemStack stack, ItemUseContext context) {
@@ -230,21 +294,22 @@ public class GooHolderData
         return ActionResultType.PASS;
     }
 
-    public void trySpawningGoo(World worldIn, LivingEntity livingEntityIn, Hand handIn)
+    public GooEntity trySpawningGoo(World worldIn, LivingEntity livingEntityIn, Hand handIn)
     {
         if (worldIn.isRemote()) {
-            return;
+            return null;
         }
 
         if (heldGoo.isEmpty()) {
-            return;
+            return null;
         }
 
         GooBase whichGoo = (GooBase)heldGoo.getFluid();
-        whichGoo.createEntity(worldIn, livingEntityIn, this.heldGoo, handIn);
+        GooEntity e = whichGoo.createEntity(worldIn, livingEntityIn, this.heldGoo, handIn);
         ((GooHolder)livingEntityIn.getHeldItem(handIn).getItem())
                 .data(livingEntityIn.getHeldItem(handIn))
                 .drain(livingEntityIn.getHeldItem(handIn), heldGoo.getAmount(), IFluidHandler.FluidAction.EXECUTE);
+        return e;
     }
 
     public FluidStack heldGoo()

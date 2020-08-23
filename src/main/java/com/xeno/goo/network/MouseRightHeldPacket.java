@@ -13,15 +13,21 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class MouseRightHeldPacket
+public class MouseRightHeldPacket implements IGooModPacket
 {
-    private final boolean isRightMouseHeld;
+    private boolean isRightMouseHeld;
     public MouseRightHeldPacket(boolean isRightMouseHeld) {
         this.isRightMouseHeld = isRightMouseHeld;
     }
 
-    public MouseRightHeldPacket(PacketBuffer buffer) {
-        this.isRightMouseHeld = buffer.readBoolean();
+    public MouseRightHeldPacket(PacketBuffer buf) {
+        read(buf);
+    }
+
+    @Override
+    public void read(PacketBuffer buf)
+    {
+        this.isRightMouseHeld = buf.readBoolean();
     }
 
     public void toBytes(PacketBuffer buffer) {

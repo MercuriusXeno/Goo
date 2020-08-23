@@ -2,11 +2,17 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.FlowingFluidBlock;
+import net.minecraft.block.RotatedPillarBlock;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
+
+import java.util.function.Function;
 
 public class BlockStates extends BlockStateProvider {
     public BlockStates(DataGenerator gen, ExistingFileHelper exFileHelper) {
@@ -18,6 +24,64 @@ public class BlockStates extends BlockStateProvider {
         registerGooBulb();
         registerGooifier();
         registerSolidifier();
+
+        registerGooBlocks();
+    }
+
+    private void registerGooBlocks()
+    {
+        registerAquatic();
+        //registerChromatic();
+        registerCrystal();
+//        registerDecay();
+//        registerEarthen();
+//        registerEnergetic();
+//        registerFaunal();
+//        registerFloral();
+//        registerFungal();
+//        registerHoney();
+//        registerLogic();
+//        registerObsidian();
+//        registerMetal();
+//        registerMolten();
+//        registerRegal();
+//        registerSlime();
+//        registerSnow();
+//        registerVital();
+//        registerWeird();
+    }
+
+    private void registerCrystal()
+    {
+        ResourceLocation still = Resources.GooTextures.Still.CRYSTAL_GOO;
+        BlockModelBuilder model = models()
+                .getBuilder("crystal_goo_block")
+                .texture("particle", still);
+        simpleBlock(Registry.CRYSTAL_GOO_BLOCK.get(), model);
+    }
+
+    private void registerAquatic()
+    {
+        ResourceLocation still = Resources.GooTextures.Still.AQUATIC_GOO;
+        ResourceLocation flowing = Resources.GooTextures.Flowing.AQUATIC_GOO;
+
+        // ModelFile[] fluidModels = new ModelFile[16];
+        for (int i = 0; i < 16; i++) {
+            BlockModelBuilder model = models()
+                    .withExistingParent("aquatic_goo_block", "block/block")
+                    .texture("particle", still)
+                    .texture("side", flowing)
+                    .texture("end", still)
+                    .element()
+                    .from(0, 0, 0)
+                    .to(i + 1, i + 1, i + 1)
+                    .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
+                    .end();
+            // fluidModels[i] = model;
+            getVariantBuilder(Registry.AQUATIC_GOO_BLOCK.get())
+                    .partialState().with(FlowingFluidBlock.LEVEL, i)
+                    .modelForState().modelFile(model).addModel();
+        }
     }
 
     private void registerGooBulb() {

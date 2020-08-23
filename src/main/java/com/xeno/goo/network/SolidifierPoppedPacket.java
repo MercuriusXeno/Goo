@@ -13,16 +13,22 @@ import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 import java.util.function.Supplier;
 
-public class SolidifierPoppedPacket
+public class SolidifierPoppedPacket implements IGooModPacket
 {
-    private final RegistryKey<World> worldRegistryKey;
-    private final Vector3d vector;
-    private final Vector3d nozzle;
+    private RegistryKey<World> worldRegistryKey;
+    private Vector3d vector;
+    private Vector3d nozzle;
 
     public SolidifierPoppedPacket(PacketBuffer buf) {
-        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
-        vector = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        nozzle = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        read(buf);
+    }
+
+    @Override
+    public void read(PacketBuffer buf)
+    {
+        this.worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
+        this.vector = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        this.nozzle = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 
     public SolidifierPoppedPacket(RegistryKey<World> k, Vector3d v, Vector3d n) {

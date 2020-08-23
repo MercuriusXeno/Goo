@@ -14,25 +14,28 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-public class GooValueSyncPacket
+public class GooValueSyncPacket implements IGooModPacket
 {
-    private final Map<String, GooEntry> data;
-    public GooValueSyncPacket(Map<String, GooEntry> data) {
-        this.data = data;
+    private Map<String, GooEntry> data;
+
+    public GooValueSyncPacket(PacketBuffer buf) {
+        read(buf);
     }
 
-    public GooValueSyncPacket(PacketBuffer buffer) {
+    @Override
+    public void read(PacketBuffer buf)
+    {
         Map<String, GooEntry> data = new TreeMap<>(Compare.stringLexicographicalComparator);
-        int mappingCount = buffer.readVarInt();
+        int mappingCount = buf.readVarInt();
         for(int syncIndex = 0; syncIndex < mappingCount; syncIndex++) {
-            String key = buffer.readString();
-            boolean isEmpty = buffer.readBoolean();
-            boolean isUnknown = buffer.readBoolean();
-            boolean isDenied = buffer.readBoolean();
-            int count = buffer.readVarInt();
+            String key = buf.readString();
+            boolean isEmpty = buf.readBoolean();
+            boolean isUnknown = buf.readBoolean();
+            boolean isDenied = buf.readBoolean();
+            int count = buf.readVarInt();
             List<GooValue> values = new ArrayList<>();
             for(int i = 0; i < count; i++) {
-                values.add(new GooValue(buffer.readString(), buffer.readDouble()));
+                values.add(new GooValue(buf.readString(), buf.readDouble()));
             }
             if (isEmpty) {
                 data.put(key, GooEntry.EMPTY);
@@ -44,6 +47,10 @@ public class GooValueSyncPacket
                 data.put(key, new GooEntry(values));
             }
         }
+        this.data = data;
+    }
+
+    public GooValueSyncPacket(Map<String, GooEntry> data) {
         this.data = data;
     }
 
@@ -62,10 +69,10 @@ public class GooValueSyncPacket
         }
     }
 
-    public static void handle(final GooValueSyncPacket packet, Supplier<NetworkEvent.Context> supplier) {
+    public void handle(Supplier<NetworkEvent.Context> supplier) {
         supplier.get().enqueueWork(() -> {
             if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-                GooMod.handler.fromPacket(packet.data);
+                GooMod.handler.fromPacket(data);
             }
         });
 

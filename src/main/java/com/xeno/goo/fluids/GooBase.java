@@ -1,14 +1,25 @@
 package com.xeno.goo.fluids;
 
 import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.setup.Registry;
+import javafx.beans.property.adapter.JavaBeanBooleanPropertyBuilder;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.FlowingFluidBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.FlowingFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.WaterFluid;
 import net.minecraft.item.Item;
+import net.minecraft.item.Items;
+import net.minecraft.loot.conditions.BlockStateProperty;
+import net.minecraft.state.IntegerProperty;
+import net.minecraft.state.StateContainer;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
@@ -17,33 +28,30 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public abstract class GooBase extends Fluid implements IGooBase {
-
-    private final Supplier<? extends Item> bucket;
-    private final FluidAttributes.Builder builder;
-    private final float rigidity;
-
-    public GooBase(Supplier<? extends Item> bucket, FluidAttributes.Builder builder, float rigidity) {
-        this.bucket = bucket;
-        this.builder = builder;
-        this.rigidity = rigidity;
+public abstract class GooBase extends ForgeFlowingFluid implements IGooBase {
+    protected GooBase(Properties properties)
+    {
+        super(properties);
     }
+
 
     @Nonnull
     @Override
     public Item getFilledBucket() {
-        return bucket.get();
+        return Items.AIR;
     }
 
     @Override
@@ -52,15 +60,17 @@ public abstract class GooBase extends Fluid implements IGooBase {
         return false;
     }
 
-    @Nonnull
     @Override
-    protected FluidAttributes createAttributes()
-    {
-        return builder.build(this);
-    }
+    protected boolean canSourcesMultiply() { return false; }
 
     @Override
-    protected Vector3d getFlow(IBlockReader reader, BlockPos pos, FluidState fluidState)
+    protected int getSlopeFindDistance(IWorldReader worldIn) { return 2; }
+
+    @Override
+    protected int getLevelDecreasePerBlock(IWorldReader worldIn) { return 0; }
+
+    @Override
+    public Vector3d getFlow(IBlockReader reader, BlockPos pos, FluidState fluidState)
     {
         return Vector3d.ZERO;
     }
@@ -82,26 +92,16 @@ public abstract class GooBase extends Fluid implements IGooBase {
     }
 
     @Override
-    public float getHeight(FluidState p_223407_1_)
+    public float getHeight(FluidState state)
     {
-        return 1;
+        return getLevelFromState(state) * 2F;
     }
 
     @Override
-    protected BlockState getBlockState(FluidState state)
+    protected void beforeReplacingBlock(IWorld worldIn, BlockPos pos, BlockState state)
     {
-        return Blocks.AIR.getDefaultState();
-    }
-
-    @Override
-    public boolean isSource(FluidState state)
-    {
-        return false;
-    }
-
-    @Override
-    public int getLevel(FluidState p_207192_1_) {
-        return 0;
+        TileEntity tileentity = state.hasTileEntity() ? worldIn.getTileEntity(pos) : null;
+        Block.spawnDrops(state, worldIn.getWorld(), pos, tileentity);
     }
 
     @Nonnull
@@ -113,11 +113,7 @@ public abstract class GooBase extends Fluid implements IGooBase {
     @Override
     public abstract void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos);
 
-    public abstract void createEntity(World world, LivingEntity sender, FluidStack goo, Hand isHeld);
+    public abstract GooEntity createEntity(World world, LivingEntity sender, FluidStack goo, Hand isHeld);
 
-    public int decayRate() {
-        return 1;
-    }
-
-    public abstract ResourceLocation getEntityTexture();
+    public int decayRate() { return 1; }
 }

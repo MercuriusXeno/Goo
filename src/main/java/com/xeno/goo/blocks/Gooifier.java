@@ -43,7 +43,6 @@ public class Gooifier extends Block {
         return state.get(BlockStateProperties.POWERED) ? 12 : 0;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand)
     {
         if (stateIn.get(BlockStateProperties.POWERED)) {

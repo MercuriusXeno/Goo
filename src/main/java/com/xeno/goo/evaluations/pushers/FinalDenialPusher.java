@@ -38,7 +38,7 @@ public class FinalDenialPusher extends EntryPusher
     {
         for(Map.Entry<String, GooEntry> e : GooMod.handler.values().entrySet()) {
             if (e.getValue().isUnknown()) {
-                GooMod.debug("Unknown mapping will be denied: " + e.getKey());
+                // GooMod.debug("Unknown mapping will be denied: " + e.getKey());
                 values.put(e.getKey(), DENIED);
             }
         }

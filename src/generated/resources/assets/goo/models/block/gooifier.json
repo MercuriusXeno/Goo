@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/obsidian",
+    "up": "goo:block/gooifier_top",
+    "north": "goo:block/gooifier_front_off",
+    "south": "goo:block/gooifier_back",
+    "east": "goo:block/gooifier_side",
+    "west": "goo:block/gooifier_side",
+    "particle": "goo:block/gooifier_front_off"
+  }
+}

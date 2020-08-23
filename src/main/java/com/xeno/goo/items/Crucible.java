@@ -4,12 +4,10 @@ import com.xeno.goo.GooMod;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
-import net.minecraft.item.UseAction;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
 
 public class Crucible extends GooHolder
 {
@@ -33,27 +31,27 @@ public class Crucible extends GooHolder
     }
 
     @Override
-    public double armstrongMultiplier()
+    public float armstrongMultiplier()
     {
         return 0;
     }
 
     @Override
-    public double thrownSpeed()
+    public float thrownSpeed()
     {
-        return GooMod.config.crucibleLobVelocity();
+        return 1F;
     }
 
     @Override
     public int capacity()
     {
-        return GooMod.config.crucibleBaseCapacity();
+        return 8000;
     }
 
 
     @Override
     public int holdingMultiplier()
     {
-        return GooMod.config.crucibleHoldingMultiplier();
+        return 2;
     }
 }
