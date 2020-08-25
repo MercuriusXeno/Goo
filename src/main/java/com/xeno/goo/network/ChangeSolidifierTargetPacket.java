@@ -13,15 +13,21 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class ChangeSolidifierTargetPacket
+public class ChangeSolidifierTargetPacket implements IGooModPacket
 {
-    private final RegistryKey<World> worldRegistryKey;
-    private final BlockPos pos;
-    private final ItemStack target;
-    private final ItemStack newTarget;
-    private final int changeTargetTimer;
+    private RegistryKey<World> worldRegistryKey;
+    private BlockPos pos;
+    private ItemStack target;
+    private ItemStack newTarget;
+    private int changeTargetTimer;
 
     public ChangeSolidifierTargetPacket(PacketBuffer buf) {
+        read(buf);
+    }
+
+    @Override
+    public void read(PacketBuffer buf)
+    {
         worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         target = buf.readItemStack();

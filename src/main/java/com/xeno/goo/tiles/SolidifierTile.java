@@ -1,9 +1,13 @@
 package com.xeno.goo.tiles;
 
+import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
+import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
+import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipeRegistry;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.EntryHelper;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
+import com.xeno.goo.aequivaleo.EntryHelper;
+import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.aequivaleo.GooEntry;
+import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.network.ChangeSolidifierTargetPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.network.SolidifierPoppedPacket;
@@ -28,9 +32,7 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.text.NumberFormat;
@@ -254,23 +256,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             }
             int workLeftThisGasket = GooMod.config.gooProcessingRate();
             GooBulbTile b = (GooBulbTile)t;
-            IFluidHandler cap = tryGettingBulbCapabilities(b, d);
+            IFluidHandler cap = BulbFluidHandler.bulbCapability(b, d);
             for(GooValue v : mapping.values()) {
                 workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);
             }
         }
-    }
-
-    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     private int tryDrainingFluid(int workLeftThisGasket, IFluidHandler cap, GooValue v)
@@ -335,10 +325,16 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private GooEntry getItemEntry(Item item)
     {
-        if (!GooMod.handler.has(item)) {
-            return GooEntry.DENIED;
+        if (world == null) {
+            return GooEntry.UNKNOWN;
         }
-        return GooMod.handler.get(item);
+        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(item, 1));
+        return new GooEntry(compounds);
+//
+//        if (!GooMod.handler.has(item)) {
+//            return GooEntry.DENIED;
+//        }
+//        return GooMod.handler.get(item);
     }
 
     public Direction getHorizontalFacing()

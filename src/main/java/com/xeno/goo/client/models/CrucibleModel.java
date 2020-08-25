@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.xeno.goo.items.GooHolder;
 import com.xeno.goo.items.GooHolderData;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
 import net.minecraft.resources.IResourceManager;

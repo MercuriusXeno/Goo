@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "goo",
+  "pattern": [
+    "ror",
+    "pxp",
+    "o#o"
+  ],
+  "key": {
+    "r": {
+      "item": "minecraft:redstone_lamp"
+    },
+    "o": {
+      "item": "goo:gasket"
+    },
+    "p": {
+      "item": "minecraft:sticky_piston"
+    },
+    "x": {
+      "item": "minecraft:dispenser"
+    },
+    "#": {
+      "item": "minecraft:item_frame"
+    }
+  },
+  "result": {
+    "item": "goo:solidifier"
+  }
+}

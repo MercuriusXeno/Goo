@@ -150,7 +150,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
 
         // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        IFluidHandler cap = tryGettingBulbCapabilities(bulb, Direction.UP);
+        IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, Direction.UP);
         if (cap == null) {
             return;
         }
@@ -184,7 +184,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             }
 
             // try fetching the bulb capabilities in the opposing direction and throw an exception if it fails. return if null.
-            IFluidHandler cap = tryGettingBulbCapabilities(bulb, d.getOpposite());
+            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
             if (cap == null) {
                 return;
             }
@@ -212,18 +212,6 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             // avoid concurrent modifications to the indices of the array until all work is final.
             pruneEmptyGoo();
         }
-    }
-
-    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     private int trySendingFluidToBulb(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, GooBulbTile bulb, boolean isVerticalDrain) {

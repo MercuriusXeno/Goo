@@ -1,7 +1,7 @@
 package com.xeno.goo.network;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.PacketSpawn;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -56,10 +56,22 @@ public class Networking {
                 .consumer(SolidifierPoppedPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(PacketSpawn.class, nextID())
-                .encoder(PacketSpawn::toBytes)
-                .decoder(PacketSpawn::new)
-                .consumer(PacketSpawn::handle)
+        INSTANCE.messageBuilder(GooGrabPacket.class, nextID())
+                .encoder(GooGrabPacket::toBytes)
+                .decoder(GooGrabPacket::new)
+                .consumer(GooGrabPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooLobPacket.class, nextID())
+                .encoder(GooLobPacket::toBytes)
+                .decoder(GooLobPacket::new)
+                .consumer(GooLobPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooLobConfirmationPacket.class, nextID())
+                .encoder(GooLobConfirmationPacket::toBytes)
+                .decoder(GooLobConfirmationPacket::new)
+                .consumer(GooLobConfirmationPacket::handle)
                 .add();
     }
 
@@ -75,9 +87,16 @@ public class Networking {
         }
     }
 
+    public static void sendToServer(Object msg, ClientPlayerEntity player)
+    {
+        if (player.world.isRemote()) {
+            INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
+        }
+    }
+
     public static void syncGooValuesForPlayer(ServerPlayerEntity player)
     {
-        GooValueSyncPacket packet = GooMod.handler.createPacketData();
-        sendRemotePacket(packet, player);
+        // GooValueSyncPacket packet = GooMod.handler.createPacketData();
+        // sendRemotePacket(packet, player);
     }
 }

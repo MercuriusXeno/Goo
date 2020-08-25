@@ -1,28 +1,36 @@
 package com.xeno.goo.items;
 
+import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.IBucketPickupHandler;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.stats.Stats;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.*;
+import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.util.LazyOptional;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
@@ -37,18 +45,6 @@ public class GooHolderData
     public GooHolderData()
     {
         heldGoo = FluidStack.EMPTY;
-    }
-
-    protected IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     @Nonnull
@@ -88,16 +84,6 @@ public class GooHolderData
         return heldGoo.writeToNBT(new CompoundNBT());
     }
 
-    private static int getArmstrong(ItemStack stack)
-    {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.ARMSTRONG_ENCHANTMENT.get(), stack);
-    }
-
-    public static int getHolding(ItemStack stack)
-    {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
-    }
-
     protected int getCapacity(ItemStack stack, FluidStack resource)
     {
         if (heldGoo.isEmpty()) {
@@ -109,6 +95,11 @@ public class GooHolderData
         }
 
         return 0;
+    }
+
+    private int capacity(ItemStack stack)
+    {
+        return 1000;
     }
 
     public int fill(ItemStack stack, FluidStack resource, IFluidHandler.FluidAction action)
@@ -164,80 +155,6 @@ public class GooHolderData
                 tooltip.add(fluidAmount);
             }
         }
-    }
-
-    public int capacity(ItemStack stack)
-    {
-        return (int)Math.ceil(this.baseCapacity(stack) * this.enchantmentFactor(stack));
-    }
-
-    public  GooDrainBehavior behavior() {
-        return GooDrainBehavior.UNSPECIFIED;
-    }
-
-    public int baseCapacity(ItemStack stack) {
-        return ((GooHolder)stack.getItem()).capacity();
-    }
-
-    public int holdingMultiplier(ItemStack stack)
-    {
-        return ((GooHolder)stack.getItem()).holdingMultiplier();
-    }
-
-    public int enchantmentFactor(ItemStack stack) {
-        return enchantmentMultiplier(getHolding(stack), holdingMultiplier(stack));
-    }
-
-    public int enchantmentMultiplier(int holding, int mult) {
-        return (int)Math.ceil(Math.pow(mult, holding));
-    }
-
-    public ActionResultType tryGooDrainBehavior(ItemStack stack, ItemUseContext context) {
-        if (context.getWorld().isRemote()) {
-            return ActionResultType.PASS;
-        }
-
-        if (!context.getItem().equals(stack)) {
-            return ActionResultType.PASS;
-        }
-
-        BlockPos posHit = context.getPos();
-        // context sensitive select goo from tank and pull it, if empty
-        // or a Mobius (Mobius pulls anytime as long as it has space)
-
-        TileEntity te = context.getWorld().getTileEntity(posHit);
-        if (te instanceof GooBulbTile) {
-            GooBulbTile bulb = (GooBulbTile)te;
-            IFluidHandler bulbCap = tryGettingBulbCapabilities(bulb, Direction.DOWN);
-
-            if (!heldGoo.isEmpty()) {
-                FluidStack bulbGoo = bulb.getSpecificGooType(heldGoo.getFluid());
-                int amountToPull = Math.min(getCapacity(stack, bulbGoo), bulbGoo.getAmount());
-                if (amountToPull == 0) {
-                    // try pushing instead
-                    int pushed = bulbCap.fill(heldGoo, IFluidHandler.FluidAction.EXECUTE);
-                    drain(stack, pushed, IFluidHandler.FluidAction.EXECUTE);
-
-                } else {
-                    FluidStack result = bulbCap.drain(new FluidStack(heldGoo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
-                    fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
-                }
-            } else {
-                // pull!
-                Vector3d hitVec = context.getHitVec();
-                Direction side = context.getFace();
-                FluidStack goo = bulb.getGooCorrespondingTo(hitVec, (ServerPlayerEntity)context.getPlayer(), side);
-                int amountToPull = goo.getAmount();
-                amountToPull = Math.min(getCapacity(stack, goo), amountToPull);
-                if (amountToPull > 0) {
-                    FluidStack result = bulbCap.drain(new FluidStack(goo.getFluid(), amountToPull), IFluidHandler.FluidAction.EXECUTE);
-                    fill(stack, result, IFluidHandler.FluidAction.EXECUTE);
-                }
-            }
-
-            return ActionResultType.SUCCESS;
-        }
-        return ActionResultType.PASS;
     }
 
     public FluidStack heldGoo()

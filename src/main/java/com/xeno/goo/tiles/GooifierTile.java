@@ -1,8 +1,10 @@
 package com.xeno.goo.tiles;
 
+import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.GooEntry;
-import com.xeno.goo.library.GooValue;
+import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.aequivaleo.GooEntry;
+import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
@@ -21,10 +23,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
@@ -93,10 +94,15 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
     }
 
-    private GooEntry getEntryForItem(ItemStack s)
+    private GooEntry getEntryForItem(ItemStack e)
     {
-        String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
-        GooEntry mapping = GooMod.handler.get(key);
+        // String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
+        if (world == null) {
+            return GooEntry.UNKNOWN;
+        }
+        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(e.getItem(), 1));
+        GooEntry mapping = new GooEntry(compounds);
+
         if (mapping.isUnusable()) {
             return null;
         }
@@ -131,7 +137,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             int workRemaining = maxPerTickPerGasket;
             int workLastCycle = 0;
             boolean isFirstPass = true;
-            IFluidHandler cap = tryGettingBulbCapabilities(bulb, d.getOpposite());
+            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
             while(workRemaining > 0 && (workLastCycle > 0 || isFirstPass)) {
                 isFirstPass = false;
                 workLastCycle = 0;
@@ -160,18 +166,6 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
 
         return isAnyWorkDone;
-    }
-
-    private IFluidHandler tryGettingBulbCapabilities(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        IFluidHandler cap = null;
-        try {
-            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cap;
     }
 
     private GooBulbTile getBulbInDirection(Direction dir) {

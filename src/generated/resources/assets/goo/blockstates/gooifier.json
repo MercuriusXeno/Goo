@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,powered=false": {
+      "model": "goo:block/gooifier"
+    },
+    "facing=south,powered=false": {
+      "model": "goo:block/gooifier",
+      "y": 180
+    },
+    "facing=west,powered=false": {
+      "model": "goo:block/gooifier",
+      "y": 270
+    },
+    "facing=east,powered=false": {
+      "model": "goo:block/gooifier",
+      "y": 90
+    },
+    "facing=north,powered=true": {
+      "model": "goo:block/gooifier_powered"
+    },
+    "facing=south,powered=true": {
+      "model": "goo:block/gooifier_powered",
+      "y": 180
+    },
+    "facing=west,powered=true": {
+      "model": "goo:block/gooifier_powered",
+      "y": 270
+    },
+    "facing=east,powered=true": {
+      "model": "goo:block/gooifier_powered",
+      "y": 90
+    }
+  }
+}

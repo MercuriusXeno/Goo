@@ -1,9 +1,12 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.GooBase;
+import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.util.Direction;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
@@ -36,7 +39,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-        return tank == 0 && stack.getFluid() instanceof GooBase;
+        return tank == 0 && stack.getFluid() instanceof GooFluid;
     }
 
     @Override
@@ -80,5 +83,17 @@ public class BulbFluidHandler implements IFluidHandler {
         }
 
         return result;
+    }
+
+    public static IFluidHandler bulbCapability(GooBulbTile bulb, Direction dir)
+    {
+        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
+        IFluidHandler cap = null;
+        try {
+            cap = lazyCap.orElseThrow(() -> new Exception("Fluid handler expected from a tile entity that didn't contain one!"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return cap;
     }
 }

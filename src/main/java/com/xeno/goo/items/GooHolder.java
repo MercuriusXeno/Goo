@@ -1,50 +1,27 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.GooBase;
-import com.xeno.goo.library.Compare;
-import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTile;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.IFormattableTextComponent;
+import net.minecraft.util.*;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.text.NumberFormat;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 
 public abstract class GooHolder extends Item
 {
+    public static final EnchantmentType ENCHANTMENT_TYPE = EnchantmentType.create("goo_holder", i -> i.getItem() instanceof GooHolder);
+
     public GooHolder()
     {
         super(new Item.Properties()
                 .maxStackSize(1)
+                .isBurnable()
                 .group(GooMod.ITEM_GROUP));
     }
 
@@ -63,19 +40,14 @@ public abstract class GooHolder extends Item
 
     public abstract int capacity();
 
-    public abstract int tanks();
-
     public abstract int holdingMultiplier();
-
-    public abstract GooDrainBehavior behavior();
 
     public abstract ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context);
 
-    public int holding(ItemStack stack) {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING_ENCHANTMENT.get(), stack);
-    }
+    public abstract ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn);
 
-    public int capacity(ItemStack stack) {
-        return (int)Math.ceil(Math.pow(holdingMultiplier(), holding(stack)) * capacity());
-    }
+    public abstract float armstrongMultiplier();
+
+    public abstract float thrownSpeed();
+
 }
