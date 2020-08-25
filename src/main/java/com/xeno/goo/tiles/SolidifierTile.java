@@ -1,9 +1,11 @@
 package com.xeno.goo.tiles;
 
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
+import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipeRegistry;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.EntryHelper;
+import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.network.ChangeSolidifierTargetPacket;
@@ -323,8 +325,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private GooEntry getItemEntry(Item item)
     {
-        Object obj = GooMod.api.getResultsInformationCache(world.func_234923_W_()).getAll();
-        return null;
+        if (world == null) {
+            return GooEntry.UNKNOWN;
+        }
+        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(item, 1));
+        return new GooEntry(compounds);
 //
 //        if (!GooMod.handler.has(item)) {
 //            return GooEntry.DENIED;

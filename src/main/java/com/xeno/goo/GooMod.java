@@ -21,8 +21,6 @@ public class GooMod
 
     public static ServerConfiguration config;
 
-    public static IAequivaleoAPI api;
-
     public GooMod() {
         initializeConfiguration();
 
