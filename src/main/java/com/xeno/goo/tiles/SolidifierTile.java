@@ -123,7 +123,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     private void handleSolidifying()
     {
         GooEntry mapping = getItemEntry(target);
-        if (mapping.isUnusable()) {
+        if (mapping == null || mapping.isUnusable()) {
             return;
         }
 
@@ -328,8 +328,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
-        GooEntry mapping = Equivalencies.getEntry(world, item);
-        return mapping;
+        return Equivalencies.getEntry(world, item);
     }
 
     public Direction getHorizontalFacing()

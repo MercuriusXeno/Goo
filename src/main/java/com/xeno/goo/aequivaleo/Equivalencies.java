@@ -26,7 +26,8 @@ public class Equivalencies
     public static Map<RegistryKey<World>, Set<Item>> furnaceProducts = new HashMap<>();
 
     public static List<IRecipe<?>> furnaceRecipes(World world) {
-        return world.getRecipeManager().getRecipes().stream().filter(r -> r.getType() instanceof FurnaceRecipe).collect(Collectors.toList());
+        return world.getRecipeManager().getRecipes().stream()
+                .filter(r -> r.getType().toString().equals("smelting")).collect(Collectors.toList());
     }
 
     public static void resetFurnaceProducts(World world) {
@@ -48,7 +49,7 @@ public class Equivalencies
     public static GooEntry getEntry(World entityWorld, Item item)
     {
         if (item instanceof BlockItem) {
-            return new GooEntry(entityWorld, item, cache(entityWorld).getFor(item));
+            return new GooEntry(entityWorld, item, cache(entityWorld).getFor(((BlockItem) item).getBlock()));
         }
         return new GooEntry(entityWorld, item, cache(entityWorld).getFor(new ItemStack(item, 1)));
     }
@@ -56,7 +57,7 @@ public class Equivalencies
     public static boolean isLocked(World world, Item item)
     {
         if (item instanceof BlockItem) {
-            return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.getContents() instanceof BlockItem && (p.getContents()).equals(item));
+            return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.getContents() instanceof BlockItem && (p.getContents()).equals(((BlockItem)item).getBlock()));
         }
         return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.getContents() instanceof ItemStack && ((ItemStack) p.getContents()).equals(new ItemStack(item, 1), false));
     }
@@ -64,7 +65,7 @@ public class Equivalencies
     public static boolean isSmelted(World world, Item item)
     {
         if (item instanceof BlockItem) {
-            return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem() instanceof BlockItem && (p.asItem()).equals(item));
+            return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem() instanceof BlockItem && ((BlockItem)p.asItem()).getBlock().equals(((BlockItem)item).getBlock()));
         }
         return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem().equals(item));
     }

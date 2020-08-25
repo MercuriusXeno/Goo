@@ -90,8 +90,10 @@ public class GooEntry
         this.isUnknown = compounds.size() == 0;
         this.isAttainable = Equivalencies.isLocked(world, item) || !Equivalencies.isSmelted(world, item);
         this.isFixed = Equivalencies.isLocked(world, item);
-        if (!isValid) {
+        if (isValid) {
             this.values = compounds.stream().map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
+        } else {
+            this.values = new ArrayList<>();
         }
     }
 
