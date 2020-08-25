@@ -72,7 +72,7 @@ public class GooValueSyncPacket implements IGooModPacket
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         supplier.get().enqueueWork(() -> {
             if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-                GooMod.handler.fromPacket(data);
+                // GooMod.handler.fromPacket(data);
             }
         });
 

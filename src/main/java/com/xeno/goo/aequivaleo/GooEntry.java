@@ -1,6 +1,8 @@
 package com.xeno.goo.aequivaleo;
 
+import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.xeno.goo.GooMod;
+import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
 import javafx.collections.FXCollections;
@@ -76,6 +78,19 @@ public class GooEntry
         this.isUnknown = gooEntry.isUnknown;
         this.isAttainable = gooEntry.isAttainable;
         this.isFixed = gooEntry.isFixed;
+    }
+
+    public GooEntry(Set<ICompoundInstance> compounds)
+    {
+        boolean isInvalid = compounds.stream().anyMatch(c -> !(c.getType() instanceof GooCompoundType));
+
+        this.isDenied = !isInvalid;
+        this.isUnknown = !isInvalid;
+        this.isAttainable = !isInvalid;
+        this.isFixed = false;
+        if (!isInvalid) {
+            this.values = compounds.stream().map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
+        }
     }
 
     private void pruneEmptyValues() {

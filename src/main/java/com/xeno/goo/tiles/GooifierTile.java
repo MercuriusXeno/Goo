@@ -1,6 +1,8 @@
 package com.xeno.goo.tiles;
 
+import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.xeno.goo.GooMod;
+import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.setup.Registry;
@@ -21,6 +23,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -91,10 +94,15 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
     }
 
-    private GooEntry getEntryForItem(ItemStack s)
+    private GooEntry getEntryForItem(ItemStack e)
     {
-        String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
-        GooEntry mapping = GooMod.handler.get(key);
+        // String key = Objects.requireNonNull(s.getItem().getRegistryName()).toString();
+        if (world == null) {
+            return GooEntry.UNKNOWN;
+        }
+        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(e.getItem(), 1));
+        GooEntry mapping = new GooEntry(compounds);
+
         if (mapping.isUnusable()) {
             return null;
         }
