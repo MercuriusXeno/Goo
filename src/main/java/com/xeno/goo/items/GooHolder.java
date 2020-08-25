@@ -10,7 +10,6 @@ import net.minecraft.item.ItemUseContext;
 import net.minecraft.util.*;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class GooHolder extends Item
@@ -26,7 +25,7 @@ public abstract class GooHolder extends Item
     }
 
     @Override
-    public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
+    public void addInformation(ItemStack stack, World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         data(stack).addInformation(tooltip);

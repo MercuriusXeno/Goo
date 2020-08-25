@@ -27,7 +27,7 @@ displayName="Goo" #mandatory
 # logoFile="" #optional
 # A text field displayed in the mod UI
 # A text field displayed in the mod UI
-authors="Xeno" #optional
+authors="Xeno, OrionOnline" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
@@ -47,5 +47,12 @@ description='''Goo is a mod about things being made of goo. You make it out of t
     modId="minecraft"
     mandatory=true
     versionRange="[1.16.1]"
+    ordering="NONE"
+    side="BOTH"
+# Here's another dependency
+[[dependencies.goo]]
+    modId="aequivaleo"
+    mandatory=true
+    versionRange="[0.0.28-ALPHA]"
     ordering="NONE"
     side="BOTH"

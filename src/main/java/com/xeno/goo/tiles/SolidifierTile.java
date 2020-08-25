@@ -328,13 +328,8 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
-        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(item, 1));
-        return new GooEntry(compounds);
-//
-//        if (!GooMod.handler.has(item)) {
-//            return GooEntry.DENIED;
-//        }
-//        return GooMod.handler.get(item);
+        GooEntry mapping = Equivalencies.getEntry(world, item);
+        return mapping;
     }
 
     public Direction getHorizontalFacing()

@@ -9,8 +9,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import javax.annotation.Nonnull;
-
 public class BulbFluidHandler implements IFluidHandler {
     private final GooBulbTile parent;
     public BulbFluidHandler(GooBulbTile t) {
@@ -26,7 +24,6 @@ public class BulbFluidHandler implements IFluidHandler {
         return 1;
     }
 
-    @Nonnull
     @Override
     public FluidStack getFluidInTank(int tank) {
         return tank == 0 ? parent.getLeastQuantityGoo() : FluidStack.EMPTY;
@@ -38,7 +35,7 @@ public class BulbFluidHandler implements IFluidHandler {
     }
 
     @Override
-    public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+    public boolean isFluidValid(int tank, FluidStack stack) {
         return tank == 0 && stack.getFluid() instanceof GooFluid;
     }
 
@@ -59,7 +56,6 @@ public class BulbFluidHandler implements IFluidHandler {
         return transferAmount;
     }
 
-    @Nonnull
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
         FluidStack s = parent.getLeastQuantityGoo();
@@ -72,7 +68,6 @@ public class BulbFluidHandler implements IFluidHandler {
         return result;
     }
 
-    @Nonnull
     @Override
     public FluidStack drain(FluidStack s, FluidAction action) {
         FluidStack parentStack = parent.getSpecificGooType(s.getFluid());

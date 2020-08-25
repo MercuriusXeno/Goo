@@ -22,8 +22,6 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class Solidifier extends Block {
@@ -40,7 +38,7 @@ public class Solidifier extends Block {
     }
 
     @Override
-    public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
+    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         SolidifierTile.addInformation(stack, tooltip);
@@ -51,13 +49,11 @@ public class Solidifier extends Block {
         return true;
     }
 
-    @Nullable
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
         return new SolidifierTile();
     }
 
-    @Nullable
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()

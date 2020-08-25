@@ -28,7 +28,6 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
 
@@ -100,8 +99,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
-        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(e.getItem(), 1));
-        GooEntry mapping = new GooEntry(compounds);
+        GooEntry mapping = Equivalencies.getEntry(world, e.getItem());
 
         if (mapping.isUnusable()) {
             return null;
@@ -217,7 +215,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
     }
 
     @Override
-    public boolean canInsertItem(int index, ItemStack itemStackIn, @Nullable Direction direction)
+    public boolean canInsertItem(int index, ItemStack itemStackIn, Direction direction)
     {
         Direction facing = getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
         if (direction != facing.getOpposite()) {

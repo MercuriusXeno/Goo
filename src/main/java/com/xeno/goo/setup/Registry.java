@@ -24,8 +24,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class Registry {
-
-
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GooMod.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
@@ -41,6 +39,7 @@ public class Registry {
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }

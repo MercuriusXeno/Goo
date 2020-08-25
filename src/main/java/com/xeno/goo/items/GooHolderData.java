@@ -1,39 +1,15 @@
 package com.xeno.goo.items;
 
-import com.xeno.goo.entities.GooEntity;
-import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
-import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.BulbFluidHandler;
-import com.xeno.goo.tiles.GooBulbTile;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.SortedList;
-import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.IBucketPickupHandler;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.stats.Stats;
-import net.minecraft.tags.FluidTags;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.*;
-import net.minecraft.util.math.*;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-
-import javax.annotation.Nonnull;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +23,6 @@ public class GooHolderData
         heldGoo = FluidStack.EMPTY;
     }
 
-    @Nonnull
     public FluidStack drain(ItemStack stack, int maxDrain, IFluidHandler.FluidAction action)
     {
         if (heldGoo.isEmpty()) {

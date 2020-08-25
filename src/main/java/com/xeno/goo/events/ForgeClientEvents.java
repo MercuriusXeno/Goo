@@ -28,14 +28,11 @@ public class ForgeClientEvents
         if (!Screen.hasShiftDown()) {
             return;
         }
-        String registryName = Objects.requireNonNull(e.getItemStack().getItem().getRegistryName()).toString();
 
         if (e.getPlayer() == null) {
             return;
         }
-        World world = e.getPlayer().getEntityWorld();
-        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(e.getItemStack().getItem(), 1));
-        GooEntry mapping = new GooEntry(compounds);
+        GooEntry mapping = Equivalencies.getEntry(e.getPlayer().getEntityWorld(), e.getItemStack().getItem());
         mapping.translateToTooltip(e.getToolTip());
     }
 }
