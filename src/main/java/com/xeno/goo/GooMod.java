@@ -1,6 +1,6 @@
 package com.xeno.goo;
 
-import com.xeno.goo.evaluations.EntryHandler;
+import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -21,7 +21,7 @@ public class GooMod
 
     public static ServerConfiguration config;
 
-    public static EntryHandler handler;
+    public static IAequivaleoAPI api;
 
     public GooMod() {
         initializeConfiguration();

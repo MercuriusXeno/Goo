@@ -1,9 +1,11 @@
 package com.xeno.goo.tiles;
 
+import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
+import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipeRegistry;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.evaluations.EntryHelper;
-import com.xeno.goo.evaluations.GooEntry;
-import com.xeno.goo.evaluations.GooValue;
+import com.xeno.goo.aequivaleo.EntryHelper;
+import com.xeno.goo.aequivaleo.GooEntry;
+import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.network.ChangeSolidifierTargetPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.network.SolidifierPoppedPacket;
@@ -28,9 +30,7 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.text.NumberFormat;
@@ -323,10 +323,13 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private GooEntry getItemEntry(Item item)
     {
-        if (!GooMod.handler.has(item)) {
-            return GooEntry.DENIED;
-        }
-        return GooMod.handler.get(item);
+        Object obj = GooMod.api.getResultsInformationCache(world.func_234923_W_()).getAll();
+        return null;
+//
+//        if (!GooMod.handler.has(item)) {
+//            return GooEntry.DENIED;
+//        }
+//        return GooMod.handler.get(item);
     }
 
     public Direction getHorizontalFacing()

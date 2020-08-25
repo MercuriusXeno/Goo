@@ -1,5 +1,6 @@
 package com.xeno.goo.fluids;
 
+import com.ldtteam.aequivaleo.api.compound.ICompoundType;
 import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.setup.Registry;
 import javafx.beans.property.adapter.JavaBeanBooleanPropertyBuilder;
@@ -35,8 +36,10 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;

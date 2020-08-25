@@ -1,14 +1,12 @@
 package com.xeno.goo.library;
 
-import com.xeno.goo.evaluations.GooEntry;
-import com.xeno.goo.evaluations.GooValue;
-import net.minecraft.item.Item;
+import com.xeno.goo.aequivaleo.GooEntry;
+import com.xeno.goo.aequivaleo.GooValue;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Objects;
 
 public class Compare {
     public static Comparator<String> stringLexicographicalComparator = String::compareTo;

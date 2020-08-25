@@ -1,4 +1,4 @@
-package com.xeno.goo.evaluations;
+package com.xeno.goo.aequivaleo;
 
 public class GooValue
 {
@@ -7,7 +7,7 @@ public class GooValue
 
     public GooValue(String goo, double amount) {
         this.fluidResourceLocation = goo;
-        this.amount = amount; //Helper.truncateValue(amount);
+        this.amount = amount;
     }
 
     public String getFluidResourceLocation() {

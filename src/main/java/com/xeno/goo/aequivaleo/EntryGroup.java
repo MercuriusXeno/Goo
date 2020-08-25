@@ -1,4 +1,4 @@
-package com.xeno.goo.evaluations;
+package com.xeno.goo.aequivaleo;
 
 import net.minecraft.item.Item;
 
