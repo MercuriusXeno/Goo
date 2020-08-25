@@ -11,11 +11,6 @@ public class CommonSetup
 {
     public static void init(final FMLCommonSetupEvent event)
     {
-        registerEntityAttributes(event);
         Networking.registerNetworkMessages();
-    }
-
-    private static void registerEntityAttributes(FMLCommonSetupEvent event)
-    {
     }
 }

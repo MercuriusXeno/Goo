@@ -41,12 +41,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public abstract class GooBase extends ForgeFlowingFluid implements IGooBase {
-    protected GooBase(Properties properties)
+public class GooFluid extends Fluid
+{
+    private final FluidAttributes.Builder builder;
+    public GooFluid(ResourceLocation still, ResourceLocation flowing)
     {
-        super(properties);
+        super();
+        this.builder = FluidAttributes.builder(still, flowing);
     }
 
+    @Nonnull
+    @Override
+    protected FluidAttributes createAttributes()
+    {
+        return builder.build(this);
+    }
 
     @Nonnull
     @Override
@@ -59,15 +68,6 @@ public abstract class GooBase extends ForgeFlowingFluid implements IGooBase {
     {
         return false;
     }
-
-    @Override
-    protected boolean canSourcesMultiply() { return false; }
-
-    @Override
-    protected int getSlopeFindDistance(IWorldReader worldIn) { return 2; }
-
-    @Override
-    protected int getLevelDecreasePerBlock(IWorldReader worldIn) { return 0; }
 
     @Override
     public Vector3d getFlow(IBlockReader reader, BlockPos pos, FluidState fluidState)
@@ -92,16 +92,27 @@ public abstract class GooBase extends ForgeFlowingFluid implements IGooBase {
     }
 
     @Override
-    public float getHeight(FluidState state)
+    public float getHeight(FluidState p_223407_1_)
     {
-        return getLevelFromState(state) * 2F;
+        return 0;
     }
 
     @Override
-    protected void beforeReplacingBlock(IWorld worldIn, BlockPos pos, BlockState state)
+    protected BlockState getBlockState(FluidState state)
     {
-        TileEntity tileentity = state.hasTileEntity() ? worldIn.getTileEntity(pos) : null;
-        Block.spawnDrops(state, worldIn.getWorld(), pos, tileentity);
+        return null;
+    }
+
+    @Override
+    public boolean isSource(FluidState state)
+    {
+        return false;
+    }
+
+    @Override
+    public int getLevel(FluidState p_207192_1_)
+    {
+        return 0;
     }
 
     @Nonnull
@@ -109,11 +120,4 @@ public abstract class GooBase extends ForgeFlowingFluid implements IGooBase {
     public VoxelShape func_215664_b(FluidState p_215664_1_, IBlockReader p_215664_2_, BlockPos p_215664_3_) {
         return VoxelShapes.fullCube();
     }
-
-    @Override
-    public abstract void doEffect(ServerWorld world, ServerPlayerEntity player, GooEntity goo, Entity entityHit, BlockPos pos);
-
-    public abstract GooEntity createEntity(World world, LivingEntity sender, FluidStack goo, Hand isHeld);
-
-    public int decayRate() { return 1; }
 }

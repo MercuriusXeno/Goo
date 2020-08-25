@@ -11,22 +11,15 @@ import java.util.Map;
 import java.util.Objects;
 
 public class Compare {
-    public static Comparator<Item> itemLexicographicalComparator = Comparator.comparing(o -> Objects.requireNonNull(o.getRegistryName()).toString());
-
     public static Comparator<String> stringLexicographicalComparator = String::compareTo;
 
     public static Comparator<Map.Entry<IRecipe<?>, GooEntry>> recipeGooEntryWeightComparator = Comparator.comparingDouble((k) -> k.getValue().weight());
 
     public static Comparator<GooValue> valueWeightComparator = Comparator.comparingDouble(GooValue::amount);
-    public static Comparator<GooEntry> entryWeightThrownEffectComparator = Comparator.comparingDouble(GooEntry::weight);
 
     public static Comparator<GooValue> gooNameComparator = Comparator.comparing(GooValue::getFluidResourceLocation);
 
     public static Comparator<FluidStack> fluidAmountComparator = Comparator.comparingDouble(FluidStack::getAmount);
 
     public static Comparator<FluidStack> fluidNameComparator = Comparator.comparing(FluidStack::getTranslationKey);
-
-    public static Comparator<Map.Entry<String, Double>> fluidAmountMapComparator = Map.Entry.comparingByValue();
-
-    public static Comparator<Map.Entry<String, Double>> fluidNameMapComparator = Map.Entry.comparingByKey();
 }

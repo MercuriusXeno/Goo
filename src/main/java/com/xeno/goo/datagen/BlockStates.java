@@ -25,63 +25,6 @@ public class BlockStates extends BlockStateProvider {
         registerGooifier();
         registerSolidifier();
 
-        registerGooBlocks();
-    }
-
-    private void registerGooBlocks()
-    {
-        registerAquatic();
-        //registerChromatic();
-        registerCrystal();
-//        registerDecay();
-//        registerEarthen();
-//        registerEnergetic();
-//        registerFaunal();
-//        registerFloral();
-//        registerFungal();
-//        registerHoney();
-//        registerLogic();
-//        registerObsidian();
-//        registerMetal();
-//        registerMolten();
-//        registerRegal();
-//        registerSlime();
-//        registerSnow();
-//        registerVital();
-//        registerWeird();
-    }
-
-    private void registerCrystal()
-    {
-        ResourceLocation still = Resources.GooTextures.Still.CRYSTAL_GOO;
-        BlockModelBuilder model = models()
-                .getBuilder("crystal_goo_block")
-                .texture("particle", still);
-        simpleBlock(Registry.CRYSTAL_GOO_BLOCK.get(), model);
-    }
-
-    private void registerAquatic()
-    {
-        ResourceLocation still = Resources.GooTextures.Still.AQUATIC_GOO;
-        ResourceLocation flowing = Resources.GooTextures.Flowing.AQUATIC_GOO;
-
-        // ModelFile[] fluidModels = new ModelFile[16];
-        for (int i = 0; i < 16; i++) {
-            BlockModelBuilder model = models()
-                    .withExistingParent("aquatic_goo_block", "block/block")
-                    .texture("particle", still)
-                    .texture("side", flowing)
-                    .texture("end", still)
-                    .element()
-                    .from(0, 0, 0)
-                    .to(i + 1, i + 1, i + 1)
-                    .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
-                    .end();
-            // fluidModels[i] = model;
-            getVariantBuilder(Registry.AQUATIC_GOO_BLOCK.get())
-                    .partialState().with(FlowingFluidBlock.LEVEL, i)
-                    .modelForState().modelFile(model).addModel();
-        }
     }
 
     private void registerGooBulb() {

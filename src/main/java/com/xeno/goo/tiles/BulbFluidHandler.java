@@ -1,7 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.GooBase;
+import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Direction;
 import net.minecraftforge.common.util.LazyOptional;
@@ -39,7 +39,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-        return tank == 0 && stack.getFluid() instanceof GooBase;
+        return tank == 0 && stack.getFluid() instanceof GooFluid;
     }
 
     @Override

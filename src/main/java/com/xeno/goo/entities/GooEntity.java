@@ -1,6 +1,6 @@
 package com.xeno.goo.entities;
 
-import com.xeno.goo.fluids.GooBase;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.GooHolder;
 import com.xeno.goo.network.GooLobConfirmationPacket;
 import com.xeno.goo.network.Networking;
@@ -65,7 +65,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     protected GooEntity(EntityType<? extends GooEntity> entityType, World worldIn, Entity sender, FluidStack stack) {
         super(entityType, worldIn);
         goo = stack;
-        if (!(stack.getFluid() instanceof GooBase)) {
+        if (!(stack.getFluid() instanceof GooFluid)) {
             this.setDead();
             this.remove();
         } else {
@@ -78,12 +78,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     @Nullable
     public AxisAlignedBB getCollisionBoundingBox() {
         return this.getBoundingBox();
-    }
-
-    public GooEntity(EntityType<CrystalEntity> type, World world)
-    {
-        super(type, world);
-        this.setInvulnerable(true);
     }
 
     public void recalculateSize() {
@@ -222,7 +216,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             this.setDead();
             this.remove();
         } else {
-            goo.setAmount(goo.getAmount() - gooBase().decayRate());
+            goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
             setSize();
         }
     }
@@ -286,7 +280,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         if (state.isSolid()) {
             interactWithSolid(pos); // ideally I'd do more than this I think
         } else if (state.getMaterial() == Material.WATER) {
-            if (state.getFluidState().getFluid() instanceof GooBase) {
+            if (state.getFluidState().getFluid() instanceof GooFluid) {
                 if (state.getFluidState().getFluid().isEquivalentTo(goo.getFluid())) {
                     // same fluid, treat it like it's a solid.
                     interactWithSolid(pos);
@@ -489,7 +483,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         this.recalculateSize();
     }
 
-    public abstract GooBase gooBase();
+    public abstract GooFluid gooBase();
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
@@ -536,7 +530,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         Entity entityHit = entityTraceResult.getEntity();
         Vector3d result = this.getMotion();
         if (entityHit instanceof GooEntity) {
-            GooBase collidingGoo = ((GooEntity) entityHit).gooBase();
+            GooFluid collidingGoo = ((GooEntity) entityHit).gooBase();
             result.add(doGooCollision(entityHit, collidingGoo));
         } else if (entityHit instanceof ServerPlayerEntity) {
             result.add(doPlayerCollision(((ServerPlayerEntity) entityHit)));
@@ -551,7 +545,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
 
     protected abstract Vector3d doPlayerCollision(ServerPlayerEntity entityHit);
 
-    protected abstract Vector3d doGooCollision(Entity entityHit, GooBase collidingGoo);
+    protected abstract Vector3d doGooCollision(Entity entityHit, GooFluid collidingGoo);
 
     protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
         BlockState blockstate = this.world.getBlockState(rayTraceResult.getPos());
@@ -573,24 +567,24 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         this.isHeld = true;
         this.isLaunched = false;
         this.owner = entity;
-        this.enchantedSpeed = getArmstrongSpeed(entity);
+        this.enchantedSpeed = 3f; //getArmstrongSpeed(entity);
 
         handleKeepingSteady();
     }
 
-    protected float getArmstrongSpeed(Entity entity) {
-        if (!(entity instanceof PlayerEntity)) {
-            return 0f;
-        }
-
-        PlayerEntity player = (PlayerEntity)entity;
-        ItemStack holder = player.getHeldItemMainhand();
-        if (holder.isEmpty() || !(holder.getItem() instanceof GooHolder)) {
-            return 0f;
-        }
-
-        return ((GooHolder)holder.getItem()).data(holder).thrownSpeed(holder);
-    }
+//    protected float getArmstrongSpeed(Entity entity) {
+//        if (!(entity instanceof PlayerEntity)) {
+//            return 0f;
+//        }
+//
+//        PlayerEntity player = (PlayerEntity)entity;
+//        ItemStack holder = player.getHeldItemMainhand();
+//        if (holder.isEmpty() || !(holder.getItem() instanceof GooHolder)) {
+//            return 0f;
+//        }
+//
+//        return ((GooHolder)holder.getItem()).data(holder).thrownSpeed(holder);
+//    }
 
     public void detachGooFromSender(boolean isShooting) {
         if (isShooting) {

@@ -56,12 +56,6 @@ public class Networking {
                 .consumer(SolidifierPoppedPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(MouseRightHeldPacket.class, nextID())
-                .encoder(MouseRightHeldPacket::toBytes)
-                .decoder(MouseRightHeldPacket::new)
-                .consumer(MouseRightHeldPacket::handle)
-                .add();
-
         INSTANCE.messageBuilder(GooGrabPacket.class, nextID())
                 .encoder(GooGrabPacket::toBytes)
                 .decoder(GooGrabPacket::new)

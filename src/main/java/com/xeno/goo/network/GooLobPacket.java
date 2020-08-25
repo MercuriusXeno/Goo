@@ -48,7 +48,6 @@ public class GooLobPacket implements IGooModPacket
                 Optional<GooEntity> goo = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(8d), g -> g.getUniqueID().equals(this.goo) && g.isHeld() && g.owner() == player).stream().findFirst();
                 goo.ifPresent(g -> {
                     g.detachGooFromSender(true);
-                    // GooMod.debug("goo detached!");
                 });
             }
         });

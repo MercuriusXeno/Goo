@@ -1,17 +1,10 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.commands.GooCommands;
-import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.evaluations.*;
 import com.xeno.goo.evaluations.pushers.*;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
@@ -22,7 +15,6 @@ public class ForgeCommonEvents {
     @SubscribeEvent
     public static void serverLoad(FMLServerStartingEvent event)
     {
-        GooCommands.register(event.getServer().getCommandManager().getDispatcher());
         serverStartEntries(event);
     }
 
