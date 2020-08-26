@@ -117,6 +117,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean hasValidTarget()
     {
+        if (targetStack.isEmpty()) {
+            return false;
+        }
         return isValidTarget(target);
     }
 

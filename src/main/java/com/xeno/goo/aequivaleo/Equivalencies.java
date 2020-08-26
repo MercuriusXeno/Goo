@@ -1,21 +1,17 @@
 package com.xeno.goo.aequivaleo;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
+import com.ldtteam.aequivaleo.api.compound.implementation.SimpleCompoundInstance;
 import com.ldtteam.aequivaleo.api.results.IResultsInformationCache;
-import net.minecraft.block.Block;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.FurnaceRecipe;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,37 +32,63 @@ public class Equivalencies
 
     // locked products are products that have an explicit mapping.
     // explicitly mapped furnace products are attainable by design, whereas furnace products normally are not.
-    public static Map<RegistryKey<World>, Set<ICompoundContainer<?>>> lockedProducts = new HashMap<>();
+    public static Map<RegistryKey<World>, Set<Item>> lockedProducts = new HashMap<>();
+
+//    public static Map<RegistryKey<World>, Map<ICompoundContainer<?>, Set<ICompoundInstance>>> mappings = new HashMap<>();
+//    public static void resetMappings(World world) {
+//        Map<ICompoundContainer<?>, Set<ICompoundInstance>> resultMappings = new HashMap<>();
+//        IAequivaleoAPI.getInstance().getResultsInformationCache(world.func_234923_W_()).getAll()
+//                .entrySet().stream()
+//                .forEach(k -> {
+//                    if (isValidOutput(k)) resultMappings.put(k.getKey(), k.getValue());
+//                });
+//        mappings.put(world.func_234923_W_(), resultMappings);
+//    }
 
     public static void resetLockedProducts(World world) {
-        lockedProducts.put(world.func_234923_W_(), IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.func_234923_W_()).get().keySet());
+        Set<ICompoundContainer<?>> lockedSet = IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.func_234923_W_()).get().keySet();
+        List<Item> lockedItems = lockedSet.stream().filter(l -> l.getContents() instanceof ItemStack).map(l -> ((ItemStack) l.getContents()).getItem()).collect(Collectors.toList());
+        lockedProducts.put(world.func_234923_W_(), Sets.newHashSet(lockedItems));
     }
 
     public static IResultsInformationCache cache(World world) {
         return IAequivaleoAPI.getInstance().getResultsInformationCache(world.func_234923_W_());
     }
 
+    public static Map<ICompoundContainer<?>, ImmutableSet<ICompoundInstance>> locked(World world) {
+        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.func_234923_W_()).get();
+    }
+
     public static GooEntry getEntry(World entityWorld, Item item)
     {
-        if (item instanceof BlockItem) {
-            return new GooEntry(entityWorld, item, cache(entityWorld).getFor(((BlockItem) item).getBlock()));
+//        if (mappings.containsKey(entityWorld.func_234923_W_())) {
+//            Optional<Map.Entry<ICompoundContainer<?>, Set<ICompoundInstance>>> result = mappings.get(entityWorld.func_234923_W_()).entrySet().stream().filter(m -> m.getKey().getContents() instanceof ItemStack && ((ItemStack) m.getKey().getContents()).getItem().equals(item)).findFirst();
+//            final GooEntry[] mapping = {GooEntry.UNKNOWN};
+//            result.ifPresent(r -> {
+//                mapping[0] = new GooEntry(entityWorld, item, r.getValue());
+//            });
+//            return mapping[0];
+//        }
+//        return GooEntry.UNKNOWN;
+        Set<ICompoundInstance> results = cache(entityWorld).getFor(new ItemStack(item));
+        if (results.isEmpty()) {
+            Optional<Map.Entry<ICompoundContainer<?>, ImmutableSet<ICompoundInstance>>> maybeResults =
+                    locked(entityWorld).entrySet().stream()
+                            .filter(r -> r.getKey().getContents() instanceof ItemStack && ((ItemStack)r.getKey().getContents()).equals(new ItemStack(item), false)).findFirst();
+            if (maybeResults.isPresent()) {
+                results = maybeResults.get().getValue();
+            }
         }
-        return new GooEntry(entityWorld, item, cache(entityWorld).getFor(new ItemStack(item, 1)));
+        return new GooEntry(entityWorld, item, results);
     }
 
     public static boolean isLocked(World world, Item item)
     {
-        if (item instanceof BlockItem) {
-            return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.getContents() instanceof BlockItem && (p.getContents()).equals(((BlockItem)item).getBlock()));
-        }
-        return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.getContents() instanceof ItemStack && ((ItemStack) p.getContents()).equals(new ItemStack(item, 1), false));
+        return lockedProducts.containsKey(world.func_234923_W_()) && lockedProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.equals(item));
     }
 
     public static boolean isSmelted(World world, Item item)
     {
-        if (item instanceof BlockItem) {
-            return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem() instanceof BlockItem && ((BlockItem)p.asItem()).getBlock().equals(((BlockItem)item).getBlock()));
-        }
         return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem().equals(item));
     }
 }

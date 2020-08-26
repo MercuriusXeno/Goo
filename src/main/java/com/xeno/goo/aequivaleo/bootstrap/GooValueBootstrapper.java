@@ -6,6 +6,8 @@ import com.ldtteam.aequivaleo.api.compound.implementation.SimpleCompoundInstance
 import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInformationRegistry;
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -252,7 +254,8 @@ public class GooValueBootstrapper
     }
 
     public static void registerLocking(ILockedCompoundInformationRegistry reg, Item stack, ICompoundInstance... compounds) {
-        reg.registerLocking(new ItemStack(stack), Sets.newHashSet(makeSet(compounds)));
+        reg.registerLocking(stack, Sets.newHashSet(makeSet(compounds)));
+        // reg.registerLocking(new ItemStack(stack), Sets.newHashSet(makeSet(compounds)));
     }
 
     private static Set<ICompoundInstance> makeSet(ICompoundInstance[] compounds)
