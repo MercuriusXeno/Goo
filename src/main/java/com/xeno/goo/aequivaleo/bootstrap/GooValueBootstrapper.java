@@ -9,6 +9,7 @@ import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInf
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.ILootTableEquivalencyRecipe;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
+import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -258,32 +259,13 @@ public class GooValueBootstrapper
         IAequivaleoAPI api = event.getApi();
         IContributionInformationProviderRegistry infoRegistry = api.getContributionInformationProviderRegistry(key);
 
-        // hoping this disables tag equivalency
-        infoRegistry.registerNewOutputProvider(ItemStack.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ITagEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(Item.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ITagEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(BlockItem.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ITagEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(Block.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ITagEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(BlockState.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ITagEquivalencyRecipe)
-        ));
-        // disabling loot table equivalencies
-        infoRegistry.registerNewOutputProvider(BlockItem.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ILootTableEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(Block.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ILootTableEquivalencyRecipe)
-        ));
-        infoRegistry.registerNewOutputProvider(BlockState.class, (output, recipe, compoundType) -> Optional.of(
-                !(recipe instanceof ILootTableEquivalencyRecipe)
-        ));
+        infoRegistry.registerNewGenericProvider(
+          (recipe, compoundType) -> compoundType instanceof GooCompoundType && recipe instanceof ITagEquivalencyRecipe ? Optional.of(false) : Optional.empty()
+        );
+
+        infoRegistry.registerNewGenericProvider(
+          (recipe, compoundType) -> compoundType instanceof GooCompoundType && recipe instanceof ILootTableEquivalencyRecipe ? Optional.of(false) : Optional.empty()
+        );
     }
 
     private static ILockedCompoundInformationRegistry getRegistry(OnWorldDataReloadedEvent event)

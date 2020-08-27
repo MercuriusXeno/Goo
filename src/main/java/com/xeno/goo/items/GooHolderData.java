@@ -1,8 +1,7 @@
 package com.xeno.goo.items;
 
+import com.google.common.collect.Lists;
 import com.xeno.goo.library.Compare;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -107,7 +106,7 @@ public class GooHolderData
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<FluidStack> sortedValues = new SortedList<>(FXCollections.observableArrayList(heldGoo), Compare.fluidAmountComparator.thenComparing(Compare.fluidNameComparator));
+        List<FluidStack> sortedValues = Lists.newArrayList(heldGoo);
         for(FluidStack v : sortedValues) {
             index++;
             if (v.isEmpty()) {

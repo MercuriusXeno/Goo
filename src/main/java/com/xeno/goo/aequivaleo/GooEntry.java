@@ -5,8 +5,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
 import net.minecraft.item.Item;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
@@ -236,7 +234,7 @@ public class GooEntry
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<GooValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator));
+        List<GooValue> sortedValues = values.stream().sorted(Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator)).collect(Collectors.toList());
         for(GooValue v : sortedValues) {
             index++;
             String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.amount()) + " mB";
