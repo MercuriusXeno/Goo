@@ -99,6 +99,11 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
+        // you may not melt down items that are damageable *and damaged*. Sorry not sorry
+        if (e.isDamageable() && e.isDamaged()) {
+            return GooEntry.UNKNOWN;
+        }
+
         GooEntry mapping = Equivalencies.getEntry(world, e.getItem());
 
         if (mapping.isUnusable()) {
