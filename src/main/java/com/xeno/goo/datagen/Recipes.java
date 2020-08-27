@@ -27,7 +27,7 @@ public class Recipes extends RecipeProvider {
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapelessRecipeBuilder.shapelessRecipe(Registry.GASKET.get(), 3)
                 .addIngredient(Items.HONEYCOMB)
-                .addIngredient(Items.GOLD_NUGGET)
+                .addIngredient(Items.GOLD_INGOT)
                 .addIngredient(Items.MAGMA_CREAM)
                 .setGroup(GooMod.MOD_ID)
                 .addCriterion("honeycomb", InventoryChangeTrigger.Instance.forItems(Items.HONEYCOMB))

@@ -37,8 +37,6 @@ import net.minecraftforge.fluids.capability.wrappers.BlockWrapper;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -75,7 +73,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         }
     }
 
-    @Nullable
     public AxisAlignedBB getCollisionBoundingBox() {
         return this.getBoundingBox();
     }
@@ -340,7 +337,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     /**
      * Gets the EntityRayTraceResult representing the entity hit
      */
-    @Nullable
     protected EntityRayTraceResult rayTraceEntities(Vector3d startVec, Vector3d endVec) {
         return ProjectileHelper.rayTraceEntities(this.world, this, startVec, endVec, this.getBoundingBox().expand(this.getMotion()).grow(1.0D), this::canHitEntityAndNotAlready);
     }
@@ -632,7 +628,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         return 1;
     }
 
-    @Nonnull
     @Override
     public FluidStack getFluidInTank(int tank)
     {
@@ -646,7 +641,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     }
 
     @Override
-    public boolean isFluidValid(int tank, @Nonnull FluidStack stack)
+    public boolean isFluidValid(int tank, FluidStack stack)
     {
         return stack.isFluidEqual(this.goo);
     }
@@ -664,7 +659,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         return transferAmount;
     }
 
-    @Nonnull
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action)
     {
@@ -677,7 +671,6 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         return result;
     }
 
-    @Nonnull
     @Override
     public FluidStack drain(int maxDrain, FluidAction action)
     {

@@ -3,9 +3,6 @@ package com.xeno.goo.aequivaleo.compound;
 import com.ldtteam.aequivaleo.api.compound.ICompoundType;
 import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.util.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -20,7 +17,7 @@ public class GooCompoundType implements ICompoundType
     }
 
     @Override
-    public int compareTo(@NotNull ICompoundType o)
+    public int compareTo(ICompoundType o)
     {
         return Objects.requireNonNull(getRegistryName()).compareTo(Objects.requireNonNull(o.getRegistryName()));
     }
@@ -32,7 +29,6 @@ public class GooCompoundType implements ICompoundType
         return this;
     }
 
-    @Nullable
     @Override
     public ResourceLocation getRegistryName()
     {

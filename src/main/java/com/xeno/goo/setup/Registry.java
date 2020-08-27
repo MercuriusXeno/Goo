@@ -24,8 +24,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class Registry {
-
-
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GooMod.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
@@ -41,6 +39,7 @@ public class Registry {
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
@@ -92,15 +91,15 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> DECAY = COMPOUNDS.register("decay", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "decay"), DECAY_GOO));
     public static final RegistryObject<GooCompoundType> EARTHEN = COMPOUNDS.register("earthen", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "earthen"), EARTHEN_GOO));
     public static final RegistryObject<GooCompoundType> ENERGETIC = COMPOUNDS.register("energetic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "energetic"), ENERGETIC_GOO));
-    public static final RegistryObject<GooCompoundType> OBSIDIAN = COMPOUNDS.register("faunal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "faunal"), FAUNAL_GOO));
-    public static final RegistryObject<GooCompoundType> REGAL = COMPOUNDS.register("floral", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "floral"), FLORAL_GOO));
-    public static final RegistryObject<GooCompoundType> FAUNAL = COMPOUNDS.register("fungal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "fungal"), FUNGAL_GOO));
-    public static final RegistryObject<GooCompoundType> FLORAL = COMPOUNDS.register("honey", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "honey"), HONEY_GOO));
-    public static final RegistryObject<GooCompoundType> FUNGAL = COMPOUNDS.register("logic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "logic"), LOGIC_GOO));
-    public static final RegistryObject<GooCompoundType> HONEY = COMPOUNDS.register("metal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "metal"), METAL_GOO));
-    public static final RegistryObject<GooCompoundType> LOGIC = COMPOUNDS.register("molten", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "molten"), MOLTEN_GOO));
-    public static final RegistryObject<GooCompoundType> METAL = COMPOUNDS.register("obsidian", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "obsidian"), OBSIDIAN_GOO));
-    public static final RegistryObject<GooCompoundType> MOLTEN = COMPOUNDS.register("regal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "regal"), REGAL_GOO));
+    public static final RegistryObject<GooCompoundType> FAUNAL = COMPOUNDS.register("faunal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "faunal"), FAUNAL_GOO));
+    public static final RegistryObject<GooCompoundType> FLORAL = COMPOUNDS.register("floral", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "floral"), FLORAL_GOO));
+    public static final RegistryObject<GooCompoundType> FUNGAL = COMPOUNDS.register("fungal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "fungal"), FUNGAL_GOO));
+    public static final RegistryObject<GooCompoundType> HONEY = COMPOUNDS.register("honey", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "honey"), HONEY_GOO));
+    public static final RegistryObject<GooCompoundType> LOGIC = COMPOUNDS.register("logic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "logic"), LOGIC_GOO));
+    public static final RegistryObject<GooCompoundType> METAL = COMPOUNDS.register("metal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "metal"), METAL_GOO));
+    public static final RegistryObject<GooCompoundType> MOLTEN = COMPOUNDS.register("molten", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "molten"), MOLTEN_GOO));
+    public static final RegistryObject<GooCompoundType> OBSIDIAN = COMPOUNDS.register("obsidian", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "obsidian"), OBSIDIAN_GOO));
+    public static final RegistryObject<GooCompoundType> REGAL = COMPOUNDS.register("regal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "regal"), REGAL_GOO));
     public static final RegistryObject<GooCompoundType> SLIME = COMPOUNDS.register("slime", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "slime"), SLIME_GOO));
     public static final RegistryObject<GooCompoundType> SNOW = COMPOUNDS.register("snow", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "snow"), SNOW_GOO));
     public static final RegistryObject<GooCompoundType> VITAL = COMPOUNDS.register("vital", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "vital"), VITAL_GOO));

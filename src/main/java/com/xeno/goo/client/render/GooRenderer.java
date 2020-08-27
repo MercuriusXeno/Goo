@@ -15,7 +15,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.*;
 import net.minecraft.world.gen.SimplexNoiseGenerator;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 import static java.lang.Math.PI;
@@ -139,7 +138,6 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         super(renderManager);
     }
 
-    @Nonnull
     @Override
     public ResourceLocation getEntityTexture(GooEntity entity)
     {

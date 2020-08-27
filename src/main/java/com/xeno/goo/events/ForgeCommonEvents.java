@@ -12,7 +12,11 @@ import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 public class ForgeCommonEvents {
 
     @SubscribeEvent
-    public static void onWorldDataLoadEvent(OnWorldDataReloadedEvent event) {
+    public static void onWorldDataLoadEvent(OnWorldDataReloadedEvent event)
+    {
         GooValueBootstrapper.onReload(event);
+        Equivalencies.resetFurnaceProducts(event.getWorld().getWorld());
+        Equivalencies.resetLockedProducts(event.getWorld().getWorld());
+//        Equivalencies.resetMappings(event.getWorld().getWorld());
     }
 }

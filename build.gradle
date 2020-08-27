@@ -16,7 +16,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = project.exactMinecraftVersion + "-" + System.getenv().containsKey("Version") ? System.getenv("Version") : 'null'
+version = "${project.exactMinecraftVersion}-${project.modVersion}"
 group = modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = modBaseName
 

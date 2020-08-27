@@ -21,10 +21,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
@@ -70,13 +66,11 @@ public class Gooifier extends Block {
         return true;
     }
 
-    @Nullable
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
         return new GooifierTile();
     }
 
-    @Nullable
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
@@ -90,7 +84,7 @@ public class Gooifier extends Block {
     }
 
     @Override
-    public void addInformation(ItemStack stack, @Nullable IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
+    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         GooifierTile.addInformation(stack, tooltip);

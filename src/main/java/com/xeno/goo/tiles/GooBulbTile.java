@@ -6,8 +6,6 @@ import com.xeno.goo.network.BulbVerticalFillPacket;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -28,10 +26,9 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GooBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
     private BulbFluidHandler fluidHandler = createHandler();
@@ -270,12 +267,10 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return Objects.requireNonNull(fluidStack.getFluid().getRegistryName()).getPath().equals(gooType);
     }
 
-    @Nonnull
     public FluidStack getLeastQuantityGoo() {
         return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0).min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
     }
 
-    @Nonnull
     public FluidStack getSpecificGooType(Fluid fluid) {
         if (fluid == null) {
             return FluidStack.EMPTY;
@@ -338,7 +333,6 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         goo = tagGooList;
     }
 
-
     @Override
     public CompoundNBT write(CompoundNBT tag) {
         tag.put("goo", serializeGoo());
@@ -353,9 +347,8 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         onContentsChanged();
     }
 
-    @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
         // tanks have omnidirectional gaskets so side is irrelevant.
         if (cap.equals(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)) {
             return handler.cast();
@@ -423,7 +416,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<FluidStack> sortedValues = new SortedList<>(FXCollections.observableArrayList(fluidsDeserialized), Compare.fluidAmountComparator.thenComparing(Compare.fluidNameComparator));
+        List<FluidStack> sortedValues = fluidsDeserialized.stream().sorted(Compare.fluidAmountComparator.reversed().thenComparing(Compare.fluidNameComparator)).collect(Collectors.toList());
         for(FluidStack v : sortedValues) {
             index++;
             if (v.isEmpty()) {

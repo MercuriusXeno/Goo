@@ -5,11 +5,11 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
-import javafx.collections.FXCollections;
-import javafx.collections.transformation.SortedList;
+import net.minecraft.item.Item;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 
 import java.text.NumberFormat;
 import java.util.*;
@@ -80,16 +80,18 @@ public class GooEntry
         this.isFixed = gooEntry.isFixed;
     }
 
-    public GooEntry(Set<ICompoundInstance> compounds)
+    public GooEntry(World world, Item item, Set<ICompoundInstance> compounds)
     {
-        boolean isInvalid = compounds.stream().anyMatch(c -> !(c.getType() instanceof GooCompoundType));
+        boolean isValid = compounds.stream().anyMatch(c -> (c.getType() instanceof GooCompoundType));
 
-        this.isDenied = !isInvalid;
-        this.isUnknown = !isInvalid;
-        this.isAttainable = !isInvalid;
-        this.isFixed = false;
-        if (!isInvalid) {
+        this.isDenied = !isValid;
+        this.isUnknown = compounds.size() == 0;
+        this.isAttainable = Equivalencies.isLocked(world, item) || !Equivalencies.isSmelted(world, item);
+        this.isFixed = Equivalencies.isLocked(world, item);
+        if (isValid) {
             this.values = compounds.stream().map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
+        } else {
+            this.values = new ArrayList<>();
         }
     }
 
@@ -232,7 +234,7 @@ public class GooEntry
         int displayIndex = 0;
         IFormattableTextComponent fluidAmount = null;
         // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<GooValue> sortedValues = new SortedList<>(FXCollections.observableArrayList(values), Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator));
+        List<GooValue> sortedValues = values.stream().sorted(Compare.valueWeightComparator.reversed().thenComparing(Compare.gooNameComparator)).collect(Collectors.toList());
         for(GooValue v : sortedValues) {
             index++;
             String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.amount()) + " mB";

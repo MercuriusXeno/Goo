@@ -28,9 +28,6 @@ import net.minecraftforge.client.model.geometry.IModelGeometry;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.VanillaResourceType;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +43,6 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
     private static final float NORTH_Z_FLUID = 7.498f / 16f;
     private static final float SOUTH_Z_FLUID = 8.502f / 16f;
 
-    @Nonnull
     private final Fluid fluid;
     private final boolean tint;
     private final boolean coverIsMask;
@@ -228,7 +224,7 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         }
 
         @Override
-        public IBakedModel func_239290_a_(IBakedModel originalModel, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity)
+        public IBakedModel func_239290_a_(IBakedModel originalModel, ItemStack stack, ClientWorld world, LivingEntity entity)
         {
             IBakedModel overridden = nested.func_239290_a_(originalModel, stack, world, entity);
             if (overridden != originalModel) return overridden;

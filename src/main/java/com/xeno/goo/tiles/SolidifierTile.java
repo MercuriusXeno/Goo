@@ -117,13 +117,16 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean hasValidTarget()
     {
+        if (targetStack.isEmpty()) {
+            return false;
+        }
         return isValidTarget(target);
     }
 
     private void handleSolidifying()
     {
         GooEntry mapping = getItemEntry(target);
-        if (mapping.isUnusable()) {
+        if (mapping == null || mapping.isUnusable()) {
             return;
         }
 
@@ -328,13 +331,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
-        Set<ICompoundInstance> compounds = Equivalencies.cache(world).getFor(new ItemStack(item, 1));
-        return new GooEntry(compounds);
-//
-//        if (!GooMod.handler.has(item)) {
-//            return GooEntry.DENIED;
-//        }
-//        return GooMod.handler.get(item);
+        return Equivalencies.getEntry(world, item);
     }
 
     public Direction getHorizontalFacing()
