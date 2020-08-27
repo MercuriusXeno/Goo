@@ -1,22 +1,25 @@
 package com.xeno.goo.aequivaleo.bootstrap;
 
 import com.google.common.collect.Sets;
+import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.implementation.SimpleCompoundInstance;
+import com.ldtteam.aequivaleo.api.compound.information.contribution.IContributionInformationProviderRegistry;
 import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInformationRegistry;
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
+import com.ldtteam.aequivaleo.api.recipe.equivalency.ILootTableEquivalencyRecipe;
+import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
+import net.minecraft.block.BlockState;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.world.World;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.xeno.goo.aequivaleo.EntryHelper.*;
+import java.util.*;
 
 public class GooValueBootstrapper
 {
@@ -42,6 +45,7 @@ public class GooValueBootstrapper
 
     public static void onReload(OnWorldDataReloadedEvent event)
     {
+        setupApiCallbacks(event);
         registerLocking(getRegistry(event), Items.ACACIA_LEAVES, floral(60), vital(60));
         registerLocking(getRegistry(event), Items.BIRCH_LEAVES, floral(60), vital(60));
         registerLocking(getRegistry(event), Items.DARK_OAK_LEAVES, floral(60), vital(60));
@@ -246,6 +250,40 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.LAVA_BUCKET, metal(216), molten(1080));
         registerLocking(getRegistry(event), Items.MILK_BUCKET, metal(216), faunal(120));
         registerLocking(getRegistry(event), Items.WATER_BUCKET, metal(216), aquatic(960));
+    }
+
+    private static void setupApiCallbacks(OnWorldDataReloadedEvent event)
+    {
+        RegistryKey<World> key = event.getWorld().getWorld().func_234923_W_();
+        IAequivaleoAPI api = event.getApi();
+        IContributionInformationProviderRegistry infoRegistry = api.getContributionInformationProviderRegistry(key);
+
+        // hoping this disables tag equivalency
+        infoRegistry.registerNewOutputProvider(ItemStack.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ITagEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(Item.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ITagEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(BlockItem.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ITagEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(Block.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ITagEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(BlockState.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ITagEquivalencyRecipe)
+        ));
+        // disabling loot table equivalencies
+        infoRegistry.registerNewOutputProvider(BlockItem.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ILootTableEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(Block.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ILootTableEquivalencyRecipe)
+        ));
+        infoRegistry.registerNewOutputProvider(BlockState.class, (output, recipe, compoundType) -> Optional.of(
+                !(recipe instanceof ILootTableEquivalencyRecipe)
+        ));
     }
 
     private static ILockedCompoundInformationRegistry getRegistry(OnWorldDataReloadedEvent event)

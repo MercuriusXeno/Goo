@@ -51,34 +51,17 @@ public class Equivalencies
         lockedProducts.put(world.func_234923_W_(), Sets.newHashSet(lockedItems));
     }
 
-    public static IResultsInformationCache cache(World world) {
-        return IAequivaleoAPI.getInstance().getResultsInformationCache(world.func_234923_W_());
-    }
-
     public static Map<ICompoundContainer<?>, ImmutableSet<ICompoundInstance>> locked(World world) {
         return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.func_234923_W_()).get();
     }
 
+    public static IResultsInformationCache cache(World world) {
+        return IAequivaleoAPI.getInstance().getResultsInformationCache(world.func_234923_W_());
+    }
+
     public static GooEntry getEntry(World entityWorld, Item item)
     {
-//        if (mappings.containsKey(entityWorld.func_234923_W_())) {
-//            Optional<Map.Entry<ICompoundContainer<?>, Set<ICompoundInstance>>> result = mappings.get(entityWorld.func_234923_W_()).entrySet().stream().filter(m -> m.getKey().getContents() instanceof ItemStack && ((ItemStack) m.getKey().getContents()).getItem().equals(item)).findFirst();
-//            final GooEntry[] mapping = {GooEntry.UNKNOWN};
-//            result.ifPresent(r -> {
-//                mapping[0] = new GooEntry(entityWorld, item, r.getValue());
-//            });
-//            return mapping[0];
-//        }
-//        return GooEntry.UNKNOWN;
-        Set<ICompoundInstance> results = cache(entityWorld).getFor(new ItemStack(item));
-        if (results.isEmpty()) {
-            Optional<Map.Entry<ICompoundContainer<?>, ImmutableSet<ICompoundInstance>>> maybeResults =
-                    locked(entityWorld).entrySet().stream()
-                            .filter(r -> r.getKey().getContents() instanceof ItemStack && ((ItemStack)r.getKey().getContents()).equals(new ItemStack(item), false)).findFirst();
-            if (maybeResults.isPresent()) {
-                results = maybeResults.get().getValue();
-            }
-        }
+        Set<ICompoundInstance> results = cache(entityWorld).getFor(item);
         return new GooEntry(entityWorld, item, results);
     }
 
