@@ -7,6 +7,7 @@ import com.xeno.goo.blocks.*;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.GooPumpTile;
 import com.xeno.goo.tiles.GooifierTile;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
@@ -52,6 +53,11 @@ public class Registry {
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);
     public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new BlockItem(GOO_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, GOO_BULB.get()).build(null));
+
+    // Goo Pumps registration
+    public static final RegistryObject<GooPump> GOO_PUMP = BLOCKS.register("goo_pump", GooPump::new);
+    public static final RegistryObject<Item> GOO_PUMP_ITEM = ITEMS.register("goo_pump", () -> new BlockItem(GOO_PUMP.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, GOO_PUMP.get()).build(null));
 
     // Gooifier registration
     public static final RegistryObject<Gooifier> GOOIFIER = BLOCKS.register("gooifier", Gooifier::new);

@@ -47,6 +47,22 @@ public class Recipes extends RecipeProvider {
                 .build(consumer);
     }
 
+    private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_PUMP.get())
+                .patternLine("so ")
+                .patternLine("pg ")
+                .patternLine("bof")
+                .key('s', Items.POLISHED_BLACKSTONE_SLAB)
+                .key('o', Registry.GASKET.get())
+                .key('p', Items.PISTON)
+                .key('g', Items.GLASS)
+                .key('f', Items.ITEM_FRAME)
+                .key('b', Items.POLISHED_BASALT)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
+    }
+
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.GOOIFIER.get())
                 .patternLine("non")

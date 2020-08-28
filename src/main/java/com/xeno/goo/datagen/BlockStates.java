@@ -22,6 +22,7 @@ public class BlockStates extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
         registerGooBulb();
+        registerGooPump();
         registerGooifier();
         registerSolidifier();
 
@@ -49,6 +50,55 @@ public class BlockStates extends BlockStateProvider {
         simpleBlock(Registry.GOO_BULB.get(), model);
 
         simpleBlockItem(Registry.GOO_BULB.get(), model);
+    }
+
+    private void registerGooPump() {
+        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_top");
+        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_side");
+        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_bottom");
+        ResourceLocation baseInner = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_inner");
+        ResourceLocation baseInnerBottom = new ResourceLocation("minecraft", "block/polished_basalt_top");
+        ResourceLocation stemTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_top");
+        ResourceLocation stemSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_side");
+//        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_top");
+//        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side");
+        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        BlockModelBuilder model = models()
+                .withExistingParent("goo_pump", "block/block")
+                .texture("particle", baseBottom)
+                .element()
+                .from(0, 0, 0)
+                .to(16, 8, 16)
+                .allFaces((t, u) -> u.texture(t == Direction.DOWN ? "#base_bottom" :
+                        (t == Direction.UP ? "#base_top" : "#base_side")))
+                .end()
+                .element()
+                .from(12, 8, 12)
+                .to(4, 0, 4)
+                .allFaces((t, u) -> u.texture(t == Direction.UP ? "#base_inner_bottom" : ( t == Direction.DOWN ? "#empty" : "#base_inner")))
+                .end()
+                .element()
+                .from(5, 0.1f, 5)
+                .to(11, 16, 11)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#stem_top" : "#stem_side"))
+                .end()
+                .element()
+                .from(10.9f, 15.9f, 10.9f)
+                .to(5.1f, 0.2f, 5.1f)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#stem_top" : "#stem_side"))
+                .shade(false)
+                .end();
+        model.texture("base_top", baseTop);
+        model.texture("base_side", baseSide);
+        model.texture("base_bottom", baseBottom);
+        model.texture("base_inner", baseInner);
+        model.texture("base_inner_bottom", baseInnerBottom);
+        model.texture("stem_top", stemTop);
+        model.texture("stem_side", stemSide);
+        model.texture("empty", empty);
+        simpleBlock(Registry.GOO_PUMP.get(), model);
+
+        simpleBlockItem(Registry.GOO_PUMP.get(), model);
     }
 
     private void registerGooifier() {

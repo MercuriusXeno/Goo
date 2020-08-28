@@ -1,6 +1,7 @@
 {
   "_comment": "Blocks",
   "block.goo.goo_bulb": "Goo Bulb",
+  "block.goo.goo_pump": "Goo Pump",
   "block.goo.gooifier": "Gooifier",
   "block.goo.solidifier": "Solidifier",
 
