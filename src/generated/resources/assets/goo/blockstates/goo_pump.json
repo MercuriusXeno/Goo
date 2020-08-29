@@ -1,7 +1,30 @@
 {
   "variants": {
-    "": {
+    "facing=down": {
+      "model": "goo:block/goo_pump",
+      "x": 180
+    },
+    "facing=up": {
       "model": "goo:block/goo_pump"
+    },
+    "facing=north": {
+      "model": "goo:block/goo_pump",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "goo:block/goo_pump",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "goo:block/goo_pump",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east": {
+      "model": "goo:block/goo_pump",
+      "x": 90,
+      "y": 90
     }
   }
 }

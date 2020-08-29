@@ -7,6 +7,8 @@ import com.xeno.goo.client.render.SolidifierTileRenderer;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -25,5 +27,26 @@ public class ModClientEvents
         GooBulbRenderer.register();
         GooPumpRenderer.register();
         SolidifierTileRenderer.register();
+    }
+
+    @SubscribeEvent
+    public static void onTextureStitch(TextureStitchEvent.Pre event) {
+        if (event.getMap().getTextureLocation().equals(PlayerContainer.LOCATION_BLOCKS_TEXTURE)) {
+            addUnmappedPumpTextures(event);
+        }
+    }
+
+    private static void addUnmappedPumpTextures(TextureStitchEvent.Pre event)
+    {
+        // dead code, crucible and gauntlet not implemented yet.
+//        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/crucible_fluid"));
+//        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
+
+        // dead code, entities not ready for prime time
+//        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/fluid/crystal_still"));
+
+        // pump moving bits that don't have direct representation on the model (maybe they should?)
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_top"));
     }
 }

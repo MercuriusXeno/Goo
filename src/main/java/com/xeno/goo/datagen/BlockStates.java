@@ -74,7 +74,7 @@ public class BlockStates extends BlockStateProvider {
                 .end()
                 .element()
                 .from(12, 8, 12)
-                .to(4, 0, 4)
+                .to(4, 0.1f, 4)
                 .allFaces((t, u) -> u.texture(t == Direction.UP ? "#base_inner_bottom" : ( t == Direction.DOWN ? "#empty" : "#base_inner")))
                 .end()
                 .element()
@@ -96,7 +96,9 @@ public class BlockStates extends BlockStateProvider {
         model.texture("stem_top", stemTop);
         model.texture("stem_side", stemSide);
         model.texture("empty", empty);
-        simpleBlock(Registry.GOO_PUMP.get(), model);
+
+
+        directionalBlock(Registry.GOO_PUMP.get(), model);
 
         simpleBlockItem(Registry.GOO_PUMP.get(), model);
     }

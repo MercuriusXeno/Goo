@@ -1,11 +1,15 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooPumpTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
+import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.state.StateContainer;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.IBlockReader;
 
@@ -30,5 +34,16 @@ public class GooPump extends Block
     public TileEntity createTileEntity(BlockState state, IBlockReader world)
     {
         return new GooPumpTile();
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockItemUseContext context) {
+        return getDefaultState()
+                .with(BlockStateProperties.FACING, context.getFace());
+    }
+
+    @Override
+    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.FACING);
     }
 }

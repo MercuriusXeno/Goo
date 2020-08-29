@@ -45,6 +45,12 @@ public class ServerConfiguration
         return GOO_BULB_TOTAL_CAPACITY.get();
     }
 
+    private ForgeConfigSpec.IntValue GOO_PUMP_QUANTITY_PER_CYCLE;
+    public int pumpAmountPerCycle() { return GOO_PUMP_QUANTITY_PER_CYCLE.get(); }
+
+    private ForgeConfigSpec.IntValue GOO_PUMP_CYCLE_COOLDOWN;
+    public int pumpCycleCooldown() { return GOO_PUMP_CYCLE_COOLDOWN.get(); }
+
     private void setupGeneralMachineConfig() {
         serverBuilder.comment().push("machines");
 
@@ -59,6 +65,14 @@ public class ServerConfiguration
         int defaultBulbCapacity = 16000;
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + defaultBulbCapacity)
                 .defineInRange("maxBulbCapacity", defaultBulbCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultPumpCycleCooldown = 20;
+        GOO_PUMP_CYCLE_COOLDOWN = serverBuilder.comment("Cooldown in ticks between pump cycles, default: " + defaultPumpCycleCooldown)
+                .defineInRange("pumpCycleCooldown", defaultPumpCycleCooldown, 0, Integer.MAX_VALUE);
+
+        int defaultPumpCycleAmount = 1000;
+        GOO_PUMP_QUANTITY_PER_CYCLE = serverBuilder.comment("Max quantity of fluid pumped per cycle, default: " + defaultPumpCycleAmount)
+                .defineInRange("pumpCycleAmount", defaultPumpCycleAmount, 0, Integer.MAX_VALUE);
 
         serverBuilder.pop();
     }
