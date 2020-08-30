@@ -2,7 +2,7 @@ package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.library.Compare;
-import com.xeno.goo.network.BulbVerticalFillPacket;
+import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
@@ -30,7 +30,8 @@ import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class GooBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver {
+public class GooBulbTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
+{
     private BulbFluidHandler fluidHandler = createHandler();
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
     private List<FluidStack> goo = new ArrayList<>();
@@ -84,7 +85,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         if (world == null) {
             return;
         }
-        Networking.sendToClientsAround(new BulbVerticalFillPacket(world.func_234923_W_(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new GooFlowPacket(world.func_234923_W_(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
     }
 
     public float verticalFillIntensity()
@@ -97,12 +98,11 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return new FluidStack(verticalFillFluid, 1);
     }
 
-    private float VERTICAL_FILL_DECAY_RATE = 0.2f;
-    private float VERTICAL_FILL_CUTOFF_THRESHOLD = 0.05f;
     private float verticalFillDecay() {
         // throttle the intensity decay so it doesn't look so jittery. This will cause the first few frames to be slow
         // changing, but later frames will be proportionately somewhat faster.
-        return Math.min(verticalFillIntensity * VERTICAL_FILL_DECAY_RATE, 0.125f);
+        float decayRate = 0.2f;
+        return Math.min(verticalFillIntensity * decayRate, 0.125f);
     }
 
     public void decayVerticalFillVisuals() {
@@ -110,7 +110,8 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             return;
         }
         verticalFillIntensity -= verticalFillDecay(); // flow reduces each frame work tick until there's nothing left.
-        if (verticalFillIntensity <= VERTICAL_FILL_CUTOFF_THRESHOLD) {
+        float cutoffThreshold = 0.05f;
+        if (verticalFillIntensity <= cutoffThreshold) {
             disableVerticalFillVisuals();
         }
 

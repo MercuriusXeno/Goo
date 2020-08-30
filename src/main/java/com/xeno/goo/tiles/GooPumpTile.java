@@ -1,10 +1,11 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.network.BulbVerticalFillPacket;
-import com.xeno.goo.network.FluidUpdatePacket;
+import com.xeno.goo.network.GooFlowPacket;
+import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -12,158 +13,164 @@ import net.minecraft.util.Direction;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.util.List;
+import java.util.Objects;
 
-public class GooPumpTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, BulbVerticalFillPacket.IVerticalFillReceiver
+public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooFlowPacket.IGooFlowReceiver
 {
-    private FluidStack goo;
-    private float intensity;
-    private int cooldown;
-    private boolean isPumping;
-
-    public GooPumpTile()
-    {
-        super(Registry.GOO_PUMP_TILE.get());
-        this.goo = FluidStack.EMPTY;
-        this.cooldown = 0;
-        this.isPumping = false;
-    }
+    private static final int DEFAULT_ANIMATION_FRAMES = 20;
+    private Fluid pumpFluid;
+    private float flowIntensity;
+    private int animationFrames;
 
     @Override
     public void updateVerticalFill(Fluid f, float intensity)
     {
-        this.intensity = intensity;
+        this.pumpFluid = f;
+        this.flowIntensity = intensity;
+        if (this.animationFrames == 0) {
+            this.animationFrames = DEFAULT_ANIMATION_FRAMES;
+        }
     }
 
-    @Override
-    public void updateFluidsTo(List<FluidStack> fluids)
+    public int animationFrames() {
+        return this.animationFrames;
+    }
+
+    public float verticalFillIntensity()
     {
-        // we only have one slot, so hopefully this is all there is to this packet or we ignore the rest.
-        if (fluids.size() > 0) {
-            this.goo = fluids.get(0);
+        return this.flowIntensity;
+    }
+
+    public FluidStack verticalFillFluid()
+    {
+        return new FluidStack(pumpFluid, 1);
+    }
+
+    private float verticalFillDecay() {
+        // throttle the intensity decay so it doesn't look so jittery. This will cause the first few frames to be slow
+        // changing, but later frames will be proportionately somewhat faster.
+        if (flowIntensity > 0.9f) {
+            return 0.01f;
         }
+        float decayRate = 0.2f;
+        return Math.min(flowIntensity * decayRate, 0.125f);
+    }
+
+    public void decayVerticalFillVisuals() {
+        if (this.animationFrames > 0) {
+            this.animationFrames--;
+        }
+        if (!isVerticallyFilled()) {
+            return;
+        }
+        flowIntensity -= verticalFillDecay(); // flow reduces each frame work tick until there's nothing left.
+        float cutoffThreshold = 0.05f;
+        if (flowIntensity <= cutoffThreshold) {
+            disableVerticalFillVisuals();
+        }
+    }
+
+    public void disableVerticalFillVisuals() {
+        pumpFluid = Fluids.EMPTY;
+        flowIntensity = 0f;
+    }
+
+    public boolean isVerticallyFilled() {
+        return !pumpFluid.equals(Fluids.EMPTY) && flowIntensity > 0f;
+    }
+
+    public void toggleVerticalFillVisuals(Fluid f)
+    {
+        pumpFluid = f;
+        flowIntensity = 1f; // default fill intensity is just "on", essentially
+        if (world == null) {
+            return;
+        }
+        if (this.animationFrames == 0) {
+            animationFrames = DEFAULT_ANIMATION_FRAMES;
+        }
+        Networking.sendToClientsAround(new GooFlowPacket(world.func_234923_W_(), pos, pumpFluid, flowIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+    }
+
+    public GooPumpTile()
+    {
+        super(Registry.GOO_PUMP_TILE.get());
+        this.pumpFluid = Fluids.EMPTY;
     }
 
     @Override
     public void tick()
     {
-        if (world == null || world.isRemote()) {
+        if (world == null) {
             return;
         }
 
-        if (isPumping()) {
-            if (tryPushingFluid()) {
-                return;
-            }
-        } else {
-            if (this.isCoolingDown()) {
-                this.cooldown--;
-            }
+        if (world.isRemote) {
+            // vertical fill visuals are client-sided, for a reason. We get sent activity from server but
+            // the decay is local because that's needless packets otherwise. It's deterministic.
+            decayVerticalFillVisuals();
+            return;
         }
 
-        if (this.goo.isEmpty()) {
-            this.isPumping = false;
-        }
-
-        if (prepareToPump()) {
-            this.startCooldown();
-        }
+        tryPushingFluid();
     }
 
-    private boolean tryPushingFluid()
-    {
-        GooBulbTile target = tryGettingBulbInTargetDirection();
-
-        if (target == null) {
-            return false;
-        }
-
-        BulbFluidHandler targetHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(target, targetDirection());
-        if (targetHandler == null) {
-            return false;
-        }
-
-        int filled = targetHandler.fill(this.goo, IFluidHandler.FluidAction.SIMULATE);
-        if (filled == 0) {
-            return false;
-        }
-
-        FluidStack result = this.goo.copy();
-        result.setAmount(filled);
-        targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
-        this.goo.setAmount(this.goo.getAmount() - filled);
-        if (this.goo.getAmount() == 0) {
-            this.goo = FluidStack.EMPTY;
-        }
-
-        return true;
-    }
-
-    private boolean isPumping()
-    {
-        return this.isPumping;
-    }
-
-    private boolean prepareToPump()
+    private void tryPushingFluid()
     {
         GooBulbTile source = tryGettingBulbInSourceDirection();
         GooBulbTile target = tryGettingBulbInTargetDirection();
 
         if (source == null || target == null) {
-            return false;
+            return;
         }
 
         BulbFluidHandler sourceHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(source, sourceDirection());
         BulbFluidHandler targetHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(target, targetDirection());
         if (sourceHandler == null || targetHandler == null) {
-            return false;
+            return;
         }
 
         FluidStack simulatedDrain = sourceHandler.drain(getMaxDrain(), IFluidHandler.FluidAction.SIMULATE);
         if (simulatedDrain.isEmpty()) {
-            return false;
-        } else {
-            if (!this.goo.isEmpty() && !simulatedDrain.isFluidEqual(this.goo)) {
-                return false;
-            }
+            return;
         }
 
         int filled = targetHandler.fill(simulatedDrain, IFluidHandler.FluidAction.SIMULATE);
         if (filled == 0) {
-            return false;
+            return;
         }
 
-        if (this.goo.isEmpty()) {
-            this.goo = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-        } else {
-            this.goo.setAmount(this.goo.getAmount() + sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE).getAmount());
-        }
+        FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+        toggleVerticalFillVisuals(result.getFluid());
 
-        this.isPumping = true;
-        return true;
+        // pump for real though
+        targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
+
     }
 
     private int getMaxDrain()
     {
-        return GooMod.config.pumpAmountPerCycle() - this.goo.getAmount();
+        return GooMod.config.pumpAmountPerCycle();
     }
 
-    private Direction getFacing()
+    public Direction facing()
     {
         return this.getBlockState().get(BlockStateProperties.FACING);
     }
 
     private Direction sourceDirection() {
-        return this.getFacing().getOpposite();
+        return this.facing().getOpposite();
     }
 
     private Direction targetDirection() {
-        return this.getFacing();
+        return this.facing();
     }
 
     private GooBulbTile tryGettingBulbInDirection(Direction d)
     {
-
+        if (world == null) {
+            return null;
+        }
         TileEntity t = world.getTileEntity(pos.offset(d));
         if (t instanceof GooBulbTile) {
             return (GooBulbTile)t;
@@ -179,38 +186,5 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, Flui
     private GooBulbTile tryGettingBulbInSourceDirection()
     {
         return tryGettingBulbInDirection(sourceDirection());
-    }
-
-    private boolean isCoolingDown()
-    {
-        return this.cooldownRemaining() > 0;
-    }
-
-    private int cooldownRemaining()
-    {
-        return this.cooldown;
-    }
-
-    private void startCooldown() {
-        this.cooldown = GooMod.config.pumpCycleCooldown();
-    }
-
-    public float verticalFillIntensity()
-    {
-        return intensity;
-    }
-
-    public FluidStack goo() {
-        return this.goo;
-    }
-
-    public boolean isVerticallyFilled()
-    {
-        return this.intensity > 0;
-    }
-
-    public FluidStack verticalFillFluid()
-    {
-        return goo();
     }
 }

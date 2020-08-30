@@ -45,20 +45,17 @@ public class ServerConfiguration
         return GOO_BULB_TOTAL_CAPACITY.get();
     }
 
-    private ForgeConfigSpec.IntValue GOO_PUMP_QUANTITY_PER_CYCLE;
-    public int pumpAmountPerCycle() { return GOO_PUMP_QUANTITY_PER_CYCLE.get(); }
-
-    private ForgeConfigSpec.IntValue GOO_PUMP_CYCLE_COOLDOWN;
-    public int pumpCycleCooldown() { return GOO_PUMP_CYCLE_COOLDOWN.get(); }
+    private ForgeConfigSpec.IntValue GOO_PUMP_TRANSFER_RATE;
+    public int pumpAmountPerCycle() { return GOO_PUMP_TRANSFER_RATE.get(); }
 
     private void setupGeneralMachineConfig() {
         serverBuilder.comment().push("machines");
 
-        int defaultGooTransferRate = 120;
+        int defaultGooTransferRate = 30;
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + defaultGooTransferRate)
                 .defineInRange("maxTransferRate", defaultGooTransferRate, 0, Integer.MAX_VALUE);
 
-        int defaultGooProcessingRate = 60;
+        int defaultGooProcessingRate = 15;
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + defaultGooProcessingRate)
                 .defineInRange("maxProcessingRate", defaultGooProcessingRate, 0, Integer.MAX_VALUE);
 
@@ -66,13 +63,9 @@ public class ServerConfiguration
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + defaultBulbCapacity)
                 .defineInRange("maxBulbCapacity", defaultBulbCapacity, 0, Integer.MAX_VALUE);
 
-        int defaultPumpCycleCooldown = 20;
-        GOO_PUMP_CYCLE_COOLDOWN = serverBuilder.comment("Cooldown in ticks between pump cycles, default: " + defaultPumpCycleCooldown)
-                .defineInRange("pumpCycleCooldown", defaultPumpCycleCooldown, 0, Integer.MAX_VALUE);
-
-        int defaultPumpCycleAmount = 1000;
-        GOO_PUMP_QUANTITY_PER_CYCLE = serverBuilder.comment("Max quantity of fluid pumped per cycle, default: " + defaultPumpCycleAmount)
-                .defineInRange("pumpCycleAmount", defaultPumpCycleAmount, 0, Integer.MAX_VALUE);
+        int defaultPumpTransferRate = 30;
+        GOO_PUMP_TRANSFER_RATE = serverBuilder.comment("Max quantity of fluid pumped per tick, default: " + defaultPumpTransferRate)
+                .defineInRange("pumpTransferRate", defaultPumpTransferRate, 0, Integer.MAX_VALUE);
 
         serverBuilder.pop();
     }

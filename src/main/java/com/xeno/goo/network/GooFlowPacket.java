@@ -15,14 +15,14 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class BulbVerticalFillPacket implements IGooModPacket
+public class GooFlowPacket implements IGooModPacket
 {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos pos;
     private FluidStack fluid;
     private float intensity;
 
-    public BulbVerticalFillPacket(PacketBuffer buf) {
+    public GooFlowPacket(PacketBuffer buf) {
         read(buf);
     }
 
@@ -35,7 +35,7 @@ public class BulbVerticalFillPacket implements IGooModPacket
         intensity = buf.readFloat();
     }
 
-    public BulbVerticalFillPacket(RegistryKey<World> registryKey, BlockPos pos, Fluid fluid, float intensity) {
+    public GooFlowPacket(RegistryKey<World> registryKey, BlockPos pos, Fluid fluid, float intensity) {
         this.worldRegistryKey = registryKey;
         this.pos = pos;
         this.fluid = new FluidStack(fluid, 1);
@@ -59,8 +59,8 @@ public class BulbVerticalFillPacket implements IGooModPacket
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
-                if (te instanceof IVerticalFillReceiver) {
-                    ((IVerticalFillReceiver) te).updateVerticalFill(fluid.getFluid(), intensity);
+                if (te instanceof IGooFlowReceiver) {
+                    ((IGooFlowReceiver) te).updateVerticalFill(fluid.getFluid(), intensity);
                 }
             }
         });
@@ -68,7 +68,8 @@ public class BulbVerticalFillPacket implements IGooModPacket
         supplier.get().setPacketHandled(true);
     }
 
-    public interface IVerticalFillReceiver {
+    public interface IGooFlowReceiver
+    {
 
         /**
          * Updates the current fluid to the specified value
