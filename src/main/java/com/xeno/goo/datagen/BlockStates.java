@@ -1,18 +1,14 @@
 package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.blocks.GooPump;
+import com.xeno.goo.blocks.PumpRenderMode;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.setup.Resources;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.RotatedPillarBlock;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
-
-import java.util.function.Function;
 
 public class BlockStates extends BlockStateProvider {
     public BlockStates(DataGenerator gen, ExistingFileHelper exFileHelper) {
@@ -25,7 +21,6 @@ public class BlockStates extends BlockStateProvider {
         registerGooPump();
         registerGooifier();
         registerSolidifier();
-
     }
 
     private void registerGooBulb() {
@@ -60,11 +55,12 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation baseInnerBottom = new ResourceLocation("minecraft", "block/polished_basalt_top");
         ResourceLocation stemTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_top");
         ResourceLocation stemSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_side");
-//        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_top");
-//        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        BlockModelBuilder model = models()
-                .withExistingParent("goo_pump", "block/block")
+        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_top");
+        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side");
+        ResourceLocation actuatorInner = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_inner");
+        BlockModelBuilder base = models()
+                .getBuilder("block/goo_pump")
                 .texture("particle", baseBottom)
                 .element()
                 .from(0, 0, 0)
@@ -80,27 +76,93 @@ public class BlockStates extends BlockStateProvider {
                 .element()
                 .from(5, 0.1f, 5)
                 .to(11, 16, 11)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#stem_top" : "#stem_side"))
+                .allFaces((t, u) -> u.texture(t.getAxis().isVertical() ? "#stem_top" : "#stem_side"))
                 .end()
                 .element()
                 .from(10.9f, 15.9f, 10.9f)
                 .to(5.1f, 0.2f, 5.1f)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#stem_top" : "#stem_side"))
+                .allFaces((t, u) -> u.texture(t.getAxis().isVertical() ? "#stem_top" : "#stem_side"))
                 .shade(false)
                 .end();
-        model.texture("base_top", baseTop);
-        model.texture("base_side", baseSide);
-        model.texture("base_bottom", baseBottom);
-        model.texture("base_inner", baseInner);
-        model.texture("base_inner_bottom", baseInnerBottom);
-        model.texture("stem_top", stemTop);
-        model.texture("stem_side", stemSide);
-        model.texture("empty", empty);
+        base.texture("base_top", baseTop);
+        base.texture("base_side", baseSide);
+        base.texture("base_bottom", baseBottom);
+        base.texture("base_inner", baseInner);
+        base.texture("base_inner_bottom", baseInnerBottom);
+        base.texture("stem_top", stemTop);
+        base.texture("stem_side", stemSide);
+        base.texture("empty", empty);
 
+        // actuator model
+        BlockModelBuilder actuator = models()
+                .getBuilder("block/goo_pump_actuator")
+                .element()
+                .from(4, 6f, 4).to(12, 10f, 12)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#actuator_top" : "#actuator_side")
+                        .uvs(4f,
+                                t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
+                                12f,
+                                t == Direction.UP || t == Direction.DOWN ? 12f : 10f))
+                .end()
+                .element()
+                .from(12f, 10f, 12f).to(4f, 6f, 4f)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#empty" : "#actuator_inner")
+                        .uvs(5f,
+                                t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
+                                11f,
+                                t == Direction.UP || t == Direction.DOWN ? 12f : 10f))
+                .end();
+        actuator.texture("actuator_top", actuatorTop);
+        actuator.texture("actuator_side", actuatorSide);
+        actuator.texture("actuator_inner", actuatorInner);
+        actuator.texture("empty", empty);
 
-        directionalBlock(Registry.GOO_PUMP.get(), model);
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(Registry.GOO_PUMP.get());
+        for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
+            int rotationX = getRotationXFromDirection(d);
+            int rotationY = getRotationYFromDirection(d);
+            bld.part().modelFile(base)
+                    .rotationX(rotationX).rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.FACING, d)
+                    .condition(GooPump.RENDER, PumpRenderMode.STATIC);
 
-        simpleBlockItem(Registry.GOO_PUMP.get(), model);
+            bld.part().modelFile(actuator)
+                    .rotationX(rotationX).rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.FACING, d)
+                    .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);;
+        }
+
+        simpleBlockItem(Registry.GOO_PUMP.get(), base);
+    }
+
+    private int getRotationYFromDirection(Direction d)
+    {
+        switch (d) {
+            case EAST:
+                return 90;
+            case WEST:
+                return 270;
+        }
+        return 180;
+    }
+
+    private int getRotationXFromDirection(Direction d)
+    {
+        switch(d) {
+            case DOWN:
+                return 180;
+            case SOUTH:
+            case WEST:
+            case EAST:
+                return 90;
+            case NORTH:
+                return 270;
+            case UP:
+                return 0;
+        }
+        return 0;
     }
 
     private void registerGooifier() {

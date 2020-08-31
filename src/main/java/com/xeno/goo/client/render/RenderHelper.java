@@ -16,6 +16,7 @@ public class RenderHelper extends RenderState
 
     public static final RenderType GOO_BLOCK;
 
+    public static final RenderType GOO_OVERLAY;
     static {
         // GOO
         // todo 1.16 update to match vanilla where necessary (alternate render targets, etc.)
@@ -48,6 +49,16 @@ public class RenderHelper extends RenderState
                         .texture(RenderType.BLOCK_SHEET_MIPPED)
                         .transparency(RenderType.TRANSLUCENT_TRANSPARENCY)
                         .build(false));
+
+        GOO_OVERLAY = RenderType.makeType(
+                GooMod.MOD_ID + ":goo_overlay",
+                DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, true, false,
+                RenderType.State.getBuilder().texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                    .shadeModel(RenderType.SHADE_DISABLED)
+                    .lightmap(RenderType.LIGHTMAP_DISABLED)
+                    .texture(RenderType.BLOCK_SHEET)
+                    .transparency(RenderType.NO_TRANSPARENCY)
+                    .build(false));
     }
 
     public RenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)

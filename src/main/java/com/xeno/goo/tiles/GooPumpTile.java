@@ -1,6 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
@@ -17,7 +18,8 @@ import java.util.Objects;
 
 public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooFlowPacket.IGooFlowReceiver
 {
-    private static final int DEFAULT_ANIMATION_FRAMES = 20;
+    public static final int DEFAULT_ANIMATION_FRAMES = 20;
+    public static final float PROGRESS_PER_FRAME = (float)Math.PI / DEFAULT_ANIMATION_FRAMES;
     private Fluid pumpFluid;
     private float flowIntensity;
     private int animationFrames;
@@ -30,6 +32,14 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         if (this.animationFrames == 0) {
             this.animationFrames = DEFAULT_ANIMATION_FRAMES;
         }
+    }
+
+    private int placeInAnimationFrames()
+    {
+        if (this.animationFrames >= 10) {
+            return 20 - animationFrames;
+        }
+        return this.animationFrames;
     }
 
     public int animationFrames() {
