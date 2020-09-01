@@ -3,12 +3,12 @@ ebd51a081e2e9ca8776ebcaa815a67128b195b41 assets/goo/blockstates/goo_pump.json
 0f7066085aa73702926a18d2ff1116f892263759 assets/goo/blockstates/gooifier.json
 9793d7d921431bb8fb7ce2fc989eeac05c237202 assets/goo/blockstates/solidifier.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb.json
-2e567ea098a5427be4f7e644025f29002dfd9e37 assets/goo/models/block/goo_pump.json
-bd7b6df0024d50ebc90022999e2c4c7dc0dee834 assets/goo/models/block/goo_pump_actuator.json
+da1e359812875db6289a7967d4c058d6918eaaf4 assets/goo/models/block/goo_pump.json
+6a27b2b2746ffcfc3ea497149454d97a91eea6af assets/goo/models/block/goo_pump_actuator.json
 3fabb1123ab3fcc9a0ef6442e4f410d1fb83a718 assets/goo/models/block/gooifier.json
 13a079250c8356d5cbb81257f261647fa0e34501 assets/goo/models/block/gooifier_powered.json
-4f8a67ee2a4c0189562896edc3aaed79f61b39ab assets/goo/models/block/solidifier.json
-325d5e84c0763020f4352db10d6d49a9ddd7aedc assets/goo/models/block/solidifier_powered.json
+923b217a2ad23f45137fa4467a9d171c22b223c3 assets/goo/models/block/solidifier.json
+c9282312dbf6a403b61cd994bb7c55ae361347ed assets/goo/models/block/solidifier_powered.json
 f6080b1e76ed3c8a05e44724259e884719387d30 assets/goo/models/item/gasket.json
 1f0a5ec3cfe84486c27f211d9af1bfe450e76035 assets/goo/models/item/goo_bulb.json
 d07884e9d67d8a7c41f89f867f4b0bf97b2b217f assets/goo/models/item/goo_pump.json

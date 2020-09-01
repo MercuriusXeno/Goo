@@ -38,10 +38,10 @@ public class Networking {
                 .consumer(GooFlowPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ChangeSolidifierTargetPacket.class, nextID())
-                .encoder(ChangeSolidifierTargetPacket::toBytes)
-                .decoder(ChangeSolidifierTargetPacket::new)
-                .consumer(ChangeSolidifierTargetPacket::handle)
+        INSTANCE.messageBuilder(ChangeItemTargetPacket.class, nextID())
+                .encoder(ChangeItemTargetPacket::toBytes)
+                .decoder(ChangeItemTargetPacket::new)
+                .consumer(ChangeItemTargetPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(GooValueSyncPacket.class, nextID())

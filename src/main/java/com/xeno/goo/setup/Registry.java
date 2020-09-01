@@ -11,8 +11,6 @@ import com.xeno.goo.tiles.GooPumpTile;
 import com.xeno.goo.tiles.GooifierTile;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.EntityType;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;

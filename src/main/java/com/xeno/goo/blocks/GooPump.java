@@ -1,27 +1,32 @@
 package com.xeno.goo.blocks;
 
 import com.xeno.goo.tiles.GooPumpTile;
+import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.IBooleanFunction;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.World;
 
 public class GooPump extends Block
 {
     public static final EnumProperty<PumpRenderMode> RENDER = EnumProperty.create("render", PumpRenderMode.class);
-    private static final VoxelShape RENDER_SHAPE = VoxelShapes.combine(
-            VoxelShapes.create(0f, 0f, 0f, 1f, 0.5f, 1f),
-            VoxelShapes.create(0.3125f, 0.5f, 0.3125f, 0.6825f, 1f, 0.6825f), IBooleanFunction.AND);
 
     public GooPump()
     {
@@ -56,8 +61,31 @@ public class GooPump extends Block
         builder.add(BlockStateProperties.FACING, RENDER);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public VoxelShape getRenderShape(BlockState state, IBlockReader reader, BlockPos pos) {
-        return RENDER_SHAPE;
+    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
+    {
+        boolean isClient = false;
+        if (worldIn != null && worldIn.isRemote()) {
+            isClient = true;
+        }
+
+        if (worldIn != null) {
+            TileEntity tile = worldIn.getTileEntity(pos);
+            if (!(tile instanceof GooPumpTile)) {
+                return ActionResultType.SUCCESS;
+            }
+
+            Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
+            if(!isClient) {
+                ((GooPumpTile) tile).changeTargetItem(itemToSwap);
+            }
+
+            return ActionResultType.SUCCESS;
+        }
+        if (!player.isSneaking()) {
+            return ActionResultType.PASS;
+        }
+        return ActionResultType.SUCCESS;
     }
 }

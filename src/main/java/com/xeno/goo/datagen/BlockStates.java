@@ -60,7 +60,7 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side");
         ResourceLocation actuatorInner = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_inner");
         BlockModelBuilder base = models()
-                .getBuilder("block/goo_pump")
+                .withExistingParent("goo_pump", "block/block")
                 .texture("particle", baseBottom)
                 .element()
                 .from(0, 0, 0)
@@ -95,9 +95,9 @@ public class BlockStates extends BlockStateProvider {
 
         // actuator model
         BlockModelBuilder actuator = models()
-                .getBuilder("block/goo_pump_actuator")
+                .withExistingParent("goo_pump_actuator", "block/block")
                 .element()
-                .from(4, 6f, 4).to(12, 10f, 12)
+                .from(4.01f, 4.1f, 4.01f).to(11.99f, 8.1f, 11.99f)
                 .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#actuator_top" : "#actuator_side")
                         .uvs(4f,
                                 t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
@@ -105,7 +105,7 @@ public class BlockStates extends BlockStateProvider {
                                 t == Direction.UP || t == Direction.DOWN ? 12f : 10f))
                 .end()
                 .element()
-                .from(12f, 10f, 12f).to(4f, 6f, 4f)
+                .from(11.99f, 8.1f, 11.99f).to(4.01f, 4.1f, 4.01f)
                 .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#empty" : "#actuator_inner")
                         .uvs(5f,
                                 t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
@@ -193,11 +193,40 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_off");
         ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_on");
         BlockModelBuilder model = models()
-                .cube("solidifier", bottom, top_off, front_off, back_off, side_off, side_off)
-                .texture("particle", front_off);
+                .withExistingParent("solidifier", "block/block")
+                .element()
+                .from(0f, 0, 0f).to(16f, 16, 16f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#bottom" :
+                                (t == Direction.UP ? "#top_off" :
+                                        (t == Direction.EAST || t == Direction.WEST ? "#side_off" :
+                                                (t == Direction.SOUTH ? "#back_off" :
+                                                        "#front_off")))))
+                .end();
+        model.texture("particle", front_off);
+        model.texture("bottom", bottom);
+        model.texture("top_off", top_off);
+        model.texture("side_off", side_off);
+        model.texture("front_off", front_off);
+        model.texture("back_off", back_off);
+
         BlockModelBuilder modelActive = models()
-                .cube("solidifier_powered", bottom, top_on, front_on, back_on, side_on, side_on)
-                .texture("particle", front_on);
+                .withExistingParent("solidifier_powered", "block/block")
+                .element()
+                .from(0f, 0, 0f).to(16f, 16, 16f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#bottom" :
+                                (t == Direction.UP ? "#top_on" :
+                                        (t == Direction.EAST || t == Direction.WEST ? "#side_on" :
+                                                (t == Direction.SOUTH ? "#back_on" :
+                                                        "#front_on")))))
+                .end();
+        modelActive.texture("particle", front_on);
+        modelActive.texture("bottom", bottom);
+        modelActive.texture("top_on", top_on);
+        modelActive.texture("side_on", side_on);
+        modelActive.texture("front_on", front_on);
+        modelActive.texture("back_on", back_on);
         horizontalBlock(Registry.SOLIDIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
         simpleBlockItem(Registry.SOLIDIFIER.get(), model);
     }

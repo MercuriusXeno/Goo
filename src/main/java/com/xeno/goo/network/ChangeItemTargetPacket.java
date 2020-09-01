@@ -13,7 +13,7 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class ChangeSolidifierTargetPacket implements IGooModPacket
+public class ChangeItemTargetPacket implements IGooModPacket
 {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos pos;
@@ -21,7 +21,7 @@ public class ChangeSolidifierTargetPacket implements IGooModPacket
     private ItemStack newTarget;
     private int changeTargetTimer;
 
-    public ChangeSolidifierTargetPacket(PacketBuffer buf) {
+    public ChangeItemTargetPacket(PacketBuffer buf) {
         read(buf);
     }
 
@@ -35,7 +35,7 @@ public class ChangeSolidifierTargetPacket implements IGooModPacket
         changeTargetTimer = buf.readInt();
     }
 
-    public ChangeSolidifierTargetPacket(RegistryKey<World> registryKey, BlockPos pos, ItemStack target, ItemStack newTarget, int changeTargetTimer) {
+    public ChangeItemTargetPacket(RegistryKey<World> registryKey, BlockPos pos, ItemStack target, ItemStack newTarget, int changeTargetTimer) {
         this.worldRegistryKey = registryKey;
         this.pos = pos;
         this.target = target;
@@ -61,8 +61,8 @@ public class ChangeSolidifierTargetPacket implements IGooModPacket
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
-                if (te instanceof ChangeSolidifierTargetPacket.IChangeSolidifierTargetReceiver) {
-                    ((ChangeSolidifierTargetPacket.IChangeSolidifierTargetReceiver) te).updateSolidifierTarget(target, newTarget, changeTargetTimer);
+                if (te instanceof IChangeItemTargetReceiver) {
+                    ((IChangeItemTargetReceiver) te).updateItemTarget(target, newTarget, changeTargetTimer);
                 }
             }
         });
@@ -70,13 +70,14 @@ public class ChangeSolidifierTargetPacket implements IGooModPacket
         supplier.get().setPacketHandled(true);
     }
 
-    public interface IChangeSolidifierTargetReceiver {
+    public interface IChangeItemTargetReceiver
+    {
 
         /**
          * @param target the actual target of the solidifier, whatever it is currently or was before the change event
          * @param newTarget the target we'll change to if the change is confirmed within the time limit
          * @param changeTargetTimer the time left to confirm change, this is actually not important, just needs nonzero
          */
-        void updateSolidifierTarget(ItemStack target, ItemStack newTarget, int changeTargetTimer);
+        void updateItemTarget(ItemStack target, ItemStack newTarget, int changeTargetTimer);
     }
 }
