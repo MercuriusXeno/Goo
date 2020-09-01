@@ -168,34 +168,34 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             switch (flow) {
                 case UP:
                 case DOWN:
-                    passResult.put(Direction.NORTH, new Vector3i(0, 270, 0));
+                    passResult.put(Direction.NORTH, new Vector3i(0, 90, 0));
                     passResult.put(Direction.SOUTH, new Vector3i(0, 90, 0));
-                    passResult.put(Direction.EAST, new Vector3i(0, 0, 0));
+                    passResult.put(Direction.EAST, new Vector3i(0, 180, 0));
                     passResult.put(Direction.WEST, new Vector3i(0, 180, 0));
                     break;
                 case SOUTH:
                     passResult.put(Direction.DOWN, new Vector3i(270, 90, 90));
-                    passResult.put(Direction.UP, new Vector3i(270, 270, 90));
-                    passResult.put(Direction.EAST, new Vector3i(0, 270, 90));
+                    passResult.put(Direction.UP, new Vector3i(270, 90, 90));
+                    passResult.put(Direction.EAST, new Vector3i(0, 90, 90));
                     passResult.put(Direction.WEST, new Vector3i(0, 90, 90));
                     break;
                 case NORTH:
-                    passResult.put(Direction.DOWN, new Vector3i(90, 270, 270));
+                    passResult.put(Direction.DOWN, new Vector3i(90, 90, 270));
                     passResult.put(Direction.UP, new Vector3i(90, 90, 270));
-                    passResult.put(Direction.EAST, new Vector3i(0, 270, 270));
+                    passResult.put(Direction.EAST, new Vector3i(0, 90, 270));
                     passResult.put(Direction.WEST, new Vector3i(0, 90, 270));
                     break;
                 case WEST:
-                    passResult.put(Direction.DOWN, new Vector3i(90, 180, 90));
+                    passResult.put(Direction.DOWN, new Vector3i(90, 0, 90));
                     passResult.put(Direction.UP, new Vector3i(90, 0, 90));
                     passResult.put(Direction.NORTH, new Vector3i(0, 0, 90));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 180, 90));
+                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 90));
                     break;
                 case EAST:
                     passResult.put(Direction.DOWN, new Vector3i(270, 0, 270));
-                    passResult.put(Direction.UP, new Vector3i(270, 180, 270));
+                    passResult.put(Direction.UP, new Vector3i(270, 0, 270));
                     passResult.put(Direction.NORTH, new Vector3i(0, 0, 270));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 180, 270));
+                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 270));
                     break;
             }
             rotationVectors.put(flow, passResult);
