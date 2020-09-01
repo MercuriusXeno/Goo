@@ -90,7 +90,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             Direction flow = tile.facing();
 
             Map<Direction, Vector3f> offsets = offsetVectors.get(flow);
-            Map<Direction, Vector3i> rotations = rotationVectors.get(flow);
+            // Map<Direction, Vector3i> rotations = rotationVectors.get(flow);
             for (Direction d : offsets.keySet()) {
                 matrices.push();
 
@@ -98,10 +98,15 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.translate(vecOffset.getX(), vecOffset.getY(), vecOffset.getZ());
 
                 matrices.translate(0.5f, 0.5f, 0.5f);
-                Vector3i vecRotate = rotations.get(d);
-                matrices.rotate(Vector3f.YP.rotationDegrees(vecRotate.getY()));
-                matrices.rotate(Vector3f.XP.rotationDegrees(vecRotate.getX()));
-                matrices.rotate(Vector3f.ZP.rotationDegrees(vecRotate.getZ()));
+                // Vector3i vecRotate = rotations.get(d);
+//                matrices.rotate(Vector3f.YP.rotationDegrees(vecRotate.getY()));
+//                matrices.rotate(Vector3f.XP.rotationDegrees(vecRotate.getX()));
+//                matrices.rotate(Vector3f.ZP.rotationDegrees(vecRotate.getZ()));
+
+                // try a different rotation strat
+                // the only exception here is down flow direction is special, invert it. (Make all vertical up)
+                matrices.rotate(flow.getAxis().isVertical() ? Direction.UP.getRotation() : flow.getRotation());
+                matrices.rotate(Vector3f.YP.rotationDegrees(180f - (float)(d.getHorizontalIndex() * 90)));
 
                 // scale
                 Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.0001f);
@@ -114,46 +119,48 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
         }
     }
 
+    // note these are "imaginary" directions; the actual faces are going to include UP/DOWN
+    // depending on flow orientation, but the purpose of these rotations is to rotate "about the flow axis"
     private static final Map<Direction, Map<Direction, Vector3f>> offsetVectors = new HashMap<>();
     static {
         for(Direction flow : Direction.values()) {
             Map<Direction, Vector3f> passResult = new HashMap<>();
             switch (flow) {
                 case UP:
-                    passResult.put(Direction.NORTH, new Vector3f(-0.5001f, -0.25f, 0f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0.5001f, -0.25f, 0f));
-                    passResult.put(Direction.EAST, new Vector3f(0f, -0.25f, -0.5001f));
-                    passResult.put(Direction.WEST, new Vector3f(0f, -0.25f, 0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, -0.25f, -0.5001f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.25f, 0.5001f));
+                    passResult.put(Direction.EAST, new Vector3f(0.5001f, -0.25f, 0f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, -0.25f, 0f));
                     break;
                 case DOWN:
-                    passResult.put(Direction.NORTH, new Vector3f(-0.5001f, 0.25f, 0f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0.5001f, 0.25f, 0f));
-                    passResult.put(Direction.EAST, new Vector3f(0f, 0.25f, -0.5001f));
-                    passResult.put(Direction.WEST, new Vector3f(0f, 0.25f, 0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.25f, -0.5001f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, 0.25f, 0.5001f));
+                    passResult.put(Direction.EAST, new Vector3f(0.5001f, 0.25f, 0f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, 0.25f, 0f));
                     break;
                 case SOUTH:
-                    passResult.put(Direction.DOWN, new Vector3f(0f, -0.5001f, -0.25f));
-                    passResult.put(Direction.UP, new Vector3f(0f, 0.5001f, -0.25f));
-                    passResult.put(Direction.EAST, new Vector3f(-0.5001f, 0f, -0.25f));
-                    passResult.put(Direction.WEST, new Vector3f(0.5001f, 0f, -0.25f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.5001f, -0.25f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.5001f, -0.25f));
+                    passResult.put(Direction.EAST, new Vector3f(0.5001f, 0f, -0.25f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, 0f, -0.25f));
                     break;
                 case NORTH:
-                    passResult.put(Direction.DOWN, new Vector3f(0f, -0.5001f, 0.25f));
-                    passResult.put(Direction.UP, new Vector3f(0f, 0.5001f, 0.25f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.5001f, 0.25f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.5001f, 0.25f));
                     passResult.put(Direction.EAST, new Vector3f(-0.5001f, 0f, 0.25f));
                     passResult.put(Direction.WEST, new Vector3f(0.5001f, 0f, 0.25f));
                     break;
                 case WEST:
-                    passResult.put(Direction.DOWN, new Vector3f(0.25f, -0.5001f, 0f));
-                    passResult.put(Direction.UP, new Vector3f(0.25f, 0.5001f, 0f));
-                    passResult.put(Direction.NORTH, new Vector3f(0.25f, 0f, -0.5001f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0.25f, 0f, 0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(0.25f, 0.5001f, 0f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0.25f, -0.5001f, 0f));
+                    passResult.put(Direction.EAST, new Vector3f(0.25f, 0f, 0.5001f));
+                    passResult.put(Direction.WEST, new Vector3f(0.25f, 0f, -0.5001f));
                     break;
                 case EAST:
-                    passResult.put(Direction.DOWN, new Vector3f(-0.25f, -0.5001f, 0f));
-                    passResult.put(Direction.UP, new Vector3f(-0.25f, 0.5001f, 0f));
-                    passResult.put(Direction.NORTH, new Vector3f(-0.25f, 0f, -0.5001f));
-                    passResult.put(Direction.SOUTH, new Vector3f(-0.25f, 0f, 0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(-0.25f, 0.5001f, 0f));
+                    passResult.put(Direction.SOUTH, new Vector3f(-0.25f, -0.5001f, 0f));
+                    passResult.put(Direction.EAST, new Vector3f(-0.25f, 0f, -0.5001f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.25f, 0f, 0.5001f));
                     break;
             }
             offsetVectors.put(flow, passResult);
@@ -169,8 +176,8 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 case UP:
                 case DOWN:
                     passResult.put(Direction.NORTH, new Vector3i(0, 90, 0));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 90, 0));
-                    passResult.put(Direction.EAST, new Vector3i(0, 180, 0));
+                    passResult.put(Direction.SOUTH, new Vector3i(0, 270, 0));
+                    passResult.put(Direction.EAST, new Vector3i(0, 0, 0));
                     passResult.put(Direction.WEST, new Vector3i(0, 180, 0));
                     break;
                 case SOUTH:
