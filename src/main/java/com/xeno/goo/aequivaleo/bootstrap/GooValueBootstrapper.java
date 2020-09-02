@@ -186,7 +186,7 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.GRASS_BLOCK, earthen(960), floral(60));
         registerLocking(getRegistry(event), Items.GUNPOWDER, molten(60), energetic(120));
         registerLocking(getRegistry(event), Items.HONEYCOMB, honey(120), regal(24));
-        registerLocking(getRegistry(event), Items.HONEY_BLOCK, honey(960), regal(60));
+        registerLocking(getRegistry(event), Items.HONEY_BLOCK, honey(960), regal(60), crystal(4));
         registerLocking(getRegistry(event), Items.ICE, snow(960), aquatic(60));
         registerLocking(getRegistry(event), Items.INK_SAC, faunal(60), chromatic(240));
         registerLocking(getRegistry(event), Items.IRON_INGOT, metal(72));

@@ -43,8 +43,6 @@ public class BlockStates extends BlockStateProvider {
         model.texture("end", end);
         model.texture("side", side);
         simpleBlock(Registry.GOO_BULB.get(), model);
-
-        simpleBlockItem(Registry.GOO_BULB.get(), model);
     }
 
     private void registerGooPump() {

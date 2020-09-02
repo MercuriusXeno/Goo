@@ -442,7 +442,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         }
     }
 
-    private static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
+    public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
         List<FluidStack> tagGooList = new ArrayList<>();
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {

@@ -4,6 +4,7 @@ import com.ldtteam.aequivaleo.api.compound.ICompoundType;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.blocks.*;
+import com.xeno.goo.client.render.GooBulbItemRenderer;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.GooBulbTile;
@@ -49,7 +50,7 @@ public class Registry {
 
     // Goo Bulbs registration
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);
-    public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new BlockItem(GOO_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new BlockItem(GOO_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(() -> () -> GooBulbItemRenderer.instance)));
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, GOO_BULB.get()).build(null));
 
     // Goo Pumps registration

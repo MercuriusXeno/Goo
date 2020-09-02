@@ -8,9 +8,12 @@ import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+
+import java.util.List;
 
 public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
@@ -29,8 +32,14 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
 
     @Override
     public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+        render(tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
+                matrixStack, buffer, combinedLightIn);
+    }
+
+    public static void render(float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
+            MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
+
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
-        float totalGoo = tile.getTotalGoo();
 
         // this is the total fill percentage of the container
         float scaledHeight = totalGoo / (float) GooMod.config.bulbCapacity();
@@ -42,7 +51,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         float minY = from.getY();
         float maxY = to.getY();
         float highestToY = minY;
-        for(FluidStack goo : tile.goo()) {
+        for(FluidStack goo : gooList) {
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float percentage = goo.getAmount() / totalGoo;
             float heightScale = percentage * scaledHeight;
@@ -55,9 +64,9 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
             yOffset += height;
         }
 
-        Vector3f verticalFillFrom = verticalFillFromVector(tile.verticalFillIntensity()), verticalFillTo = verticalFillToVector(tile.verticalFillIntensity());
-        if (tile.isVerticallyFilled()) {
-            FluidCuboidHelper.renderScaledFluidCuboid(tile.verticalFillFluid(), matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
+        if (isVerticallyFilled) {
+            Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
+            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
         }
     }
 
