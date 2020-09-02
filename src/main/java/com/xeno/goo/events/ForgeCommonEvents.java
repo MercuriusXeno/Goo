@@ -16,7 +16,5 @@ public class ForgeCommonEvents {
     {
         GooValueBootstrapper.onReload(event);
         Equivalencies.resetFurnaceProducts(event.getWorld().getWorld());
-        Equivalencies.resetLockedProducts(event.getWorld().getWorld());
-//        Equivalencies.resetMappings(event.getWorld().getWorld());
     }
 }

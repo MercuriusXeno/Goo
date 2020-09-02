@@ -2,8 +2,7 @@ package com.xeno.goo.aequivaleo.bootstrap;
 
 import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
-import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
-import com.ldtteam.aequivaleo.api.compound.implementation.SimpleCompoundInstance;
+import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.contribution.IContributionInformationProviderRegistry;
 import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInformationRegistry;
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
@@ -11,11 +10,7 @@ import com.ldtteam.aequivaleo.api.recipe.equivalency.ILootTableEquivalencyRecipe
 import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.world.World;
@@ -24,25 +19,25 @@ import java.util.*;
 
 public class GooValueBootstrapper
 {
-    public static ICompoundInstance aquatic(double d) { return new SimpleCompoundInstance(Registry.AQUATIC.get(), d); }
-    public static ICompoundInstance chromatic(double d) { return new SimpleCompoundInstance(Registry.CHROMATIC.get(), d); }
-    public static ICompoundInstance crystal(double d) { return new SimpleCompoundInstance(Registry.CRYSTAL.get(), d); }
-    public static ICompoundInstance decay(double d) { return new SimpleCompoundInstance(Registry.DECAY.get(), d); }
-    public static ICompoundInstance earthen(double d) { return new SimpleCompoundInstance(Registry.EARTHEN.get(), d); }
-    public static ICompoundInstance energetic(double d) { return new SimpleCompoundInstance(Registry.ENERGETIC.get(), d); }
-    public static ICompoundInstance faunal(double d) { return new SimpleCompoundInstance(Registry.FAUNAL.get(), d); }
-    public static ICompoundInstance floral(double d) { return new SimpleCompoundInstance(Registry.FLORAL.get(), d); }
-    public static ICompoundInstance fungal(double d) { return new SimpleCompoundInstance(Registry.FUNGAL.get(), d); }
-    public static ICompoundInstance honey(double d) { return new SimpleCompoundInstance(Registry.HONEY.get(), d); }
-    public static ICompoundInstance logic(double d) { return new SimpleCompoundInstance(Registry.LOGIC.get(), d); }
-    public static ICompoundInstance metal(double d) { return new SimpleCompoundInstance(Registry.METAL.get(), d); }
-    public static ICompoundInstance molten(double d) { return new SimpleCompoundInstance(Registry.MOLTEN.get(), d); }
-    public static ICompoundInstance obsidian(double d) { return new SimpleCompoundInstance(Registry.OBSIDIAN.get(), d); }
-    public static ICompoundInstance regal(double d) { return new SimpleCompoundInstance(Registry.REGAL.get(), d); }
-    public static ICompoundInstance slime(double d) { return new SimpleCompoundInstance(Registry.SLIME.get(), d); }
-    public static ICompoundInstance snow(double d) { return new SimpleCompoundInstance(Registry.SNOW.get(), d); }
-    public static ICompoundInstance vital(double d) { return new SimpleCompoundInstance(Registry.VITAL.get(), d); }
-    public static ICompoundInstance weird(double d) { return new SimpleCompoundInstance(Registry.WEIRD.get(), d); }
+    public static CompoundInstance aquatic(double d) { return new CompoundInstance(Registry.AQUATIC.get(), d); }
+    public static CompoundInstance chromatic(double d) { return new CompoundInstance(Registry.CHROMATIC.get(), d); }
+    public static CompoundInstance crystal(double d) { return new CompoundInstance(Registry.CRYSTAL.get(), d); }
+    public static CompoundInstance decay(double d) { return new CompoundInstance(Registry.DECAY.get(), d); }
+    public static CompoundInstance earthen(double d) { return new CompoundInstance(Registry.EARTHEN.get(), d); }
+    public static CompoundInstance energetic(double d) { return new CompoundInstance(Registry.ENERGETIC.get(), d); }
+    public static CompoundInstance faunal(double d) { return new CompoundInstance(Registry.FAUNAL.get(), d); }
+    public static CompoundInstance floral(double d) { return new CompoundInstance(Registry.FLORAL.get(), d); }
+    public static CompoundInstance fungal(double d) { return new CompoundInstance(Registry.FUNGAL.get(), d); }
+    public static CompoundInstance honey(double d) { return new CompoundInstance(Registry.HONEY.get(), d); }
+    public static CompoundInstance logic(double d) { return new CompoundInstance(Registry.LOGIC.get(), d); }
+    public static CompoundInstance metal(double d) { return new CompoundInstance(Registry.METAL.get(), d); }
+    public static CompoundInstance molten(double d) { return new CompoundInstance(Registry.MOLTEN.get(), d); }
+    public static CompoundInstance obsidian(double d) { return new CompoundInstance(Registry.OBSIDIAN.get(), d); }
+    public static CompoundInstance regal(double d) { return new CompoundInstance(Registry.REGAL.get(), d); }
+    public static CompoundInstance slime(double d) { return new CompoundInstance(Registry.SLIME.get(), d); }
+    public static CompoundInstance snow(double d) { return new CompoundInstance(Registry.SNOW.get(), d); }
+    public static CompoundInstance vital(double d) { return new CompoundInstance(Registry.VITAL.get(), d); }
+    public static CompoundInstance weird(double d) { return new CompoundInstance(Registry.WEIRD.get(), d); }
 
     public static void onReload(OnWorldDataReloadedEvent event)
     {
@@ -273,14 +268,14 @@ public class GooValueBootstrapper
         return event.getApi().getLockedCompoundWrapperToTypeRegistry(event.getWorld().getWorld().func_234923_W_());
     }
 
-    public static void registerLocking(ILockedCompoundInformationRegistry reg, Item stack, ICompoundInstance... compounds) {
+    public static void registerLocking(ILockedCompoundInformationRegistry reg, Item stack, CompoundInstance... compounds) {
         reg.registerLocking(stack, Sets.newHashSet(makeSet(compounds)));
         // reg.registerLocking(new ItemStack(stack), Sets.newHashSet(makeSet(compounds)));
     }
 
-    private static Set<ICompoundInstance> makeSet(ICompoundInstance[] compounds)
+    private static Set<CompoundInstance> makeSet(CompoundInstance[] compounds)
     {
-        Set<ICompoundInstance> result = new HashSet<>();
+        Set<CompoundInstance> result = new HashSet<>();
         Collections.addAll(result, compounds);
         return result;
     }

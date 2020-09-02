@@ -1,7 +1,7 @@
 package com.xeno.goo.events;
 
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
-import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
+import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.results.IResultsInformationCache;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;

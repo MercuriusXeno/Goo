@@ -1,6 +1,6 @@
 package com.xeno.goo.aequivaleo;
 
-import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
+import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.library.Compare;
@@ -80,14 +80,14 @@ public class GooEntry
         this.isFixed = gooEntry.isFixed;
     }
 
-    public GooEntry(World world, Item item, Set<ICompoundInstance> compounds)
+    public GooEntry(World world, Item item, Set<CompoundInstance> compounds)
     {
         boolean isValid = compounds.stream().anyMatch(c -> (c.getType() instanceof GooCompoundType));
 
         this.isDenied = !isValid;
         this.isUnknown = compounds.size() == 0;
-        this.isAttainable = Equivalencies.isLocked(world, item) || !Equivalencies.isSmelted(world, item);
         this.isFixed = Equivalencies.isLocked(world, item);
+        this.isAttainable = this.isFixed || !Equivalencies.isSmelted(world, item);
         if (isValid) {
             this.values = compounds.stream().map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
         } else {
@@ -254,6 +254,14 @@ public class GooEntry
                 toolTip.add(fluidAmount);
             }
         }
+
+
+        doExperimentalThingsWithTooltip(toolTip);
+    }
+
+    private void doExperimentalThingsWithTooltip(List<ITextComponent> toolTip)
+    {
+
     }
 
     public String toString() {
