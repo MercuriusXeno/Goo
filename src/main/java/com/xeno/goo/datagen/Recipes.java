@@ -6,9 +6,13 @@ import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.block.Blocks;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
+import net.minecraft.item.crafting.ShapelessRecipe;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.Tags;
+import vazkii.patchouli.api.PatchouliAPI;
 
+import javax.sound.midi.Patch;
 import java.util.function.Consumer;
 
 public class Recipes extends RecipeProvider {
@@ -22,6 +26,18 @@ public class Recipes extends RecipeProvider {
         registerGooBulbRecipe(consumer);
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
+        registerGooPumpRecipe(consumer);
+    }
+
+    // doesn't work, needs a custom serializer to get the NBT on the stack to identify
+    // it isn't just any patchouli book, but goo's patchouli book. leaving this a manual recipe for the time being.
+    private void registerBookRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapelessRecipeBuilder.shapelessRecipe(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")).getItem())
+                .addIngredient(Registry.GASKET.get())
+                .addIngredient(Items.BOOK)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {

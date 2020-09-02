@@ -1,0 +1,25 @@
+{
+  "name": "block.goo.solidifier",
+  "icon": "goo:solidifier",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.solidifier.summary"
+    },
+    {
+      "type": "multiblock",
+      "enable_visualize": false,
+      "multiblock": {
+        "mapping": {
+          "B": "goo:goo_bulb",
+          "0": "goo:solidifier[facing=south]"
+        },
+        "pattern": [
+          [" ","B"],
+          ["B","0"]
+        ]
+      }
+    }
+  ]
+}

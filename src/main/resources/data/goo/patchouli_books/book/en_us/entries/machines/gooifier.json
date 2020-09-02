@@ -1,0 +1,27 @@
+{
+  "name": "block.goo.gooifier",
+  "icon": "goo:gooifier",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.gooifier.summary"
+    },
+    {
+      "type": "multiblock",
+      "enable_visualize": false,
+      "multiblock": {
+        "mapping": {
+          "B": "goo:goo_bulb",
+          "0": "goo:gooifier[facing=south]",
+          "H": "minecraft:hopper[facing=south]",
+          "C": "minecraft:chest[facing=west]"
+        },
+        "pattern": [
+          ["CB"],
+          ["H0"]
+        ]
+      }
+    }
+  ]
+}

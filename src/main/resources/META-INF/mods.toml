@@ -56,3 +56,10 @@ description='''Goo is a mod about things being made of goo. You make it out of t
     versionRange="[0.0.33-ALPHA]"
     ordering="NONE"
     side="BOTH"
+# Here's another dependency
+[[dependencies.goo]]
+    modId="patchouli"
+    mandatory=true
+    versionRange="[1.16-39]"
+    ordering="NONE"
+    side="BOTH"

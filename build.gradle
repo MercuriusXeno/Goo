@@ -120,6 +120,9 @@ dependencies {
     // runtimeOnly fg.deobf("com.ldtteam.com:aequivaleo:0.0.23-RELEASE")
     compileOnly fg.deobf("${project.aequivaleoVersion}:api")
     runtimeOnly fg.deobf("${project.aequivaleoVersion}:universal")
+
+    compileOnly fg.deobf("${project.patchouliVersion}:api")
+    runtimeOnly fg.deobf("${project.patchouliVersion}")
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
