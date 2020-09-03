@@ -394,6 +394,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return stack;
     }
 
+    private static final String GOO_CONTENTS_PREFACE_TRANSLATION_KEY = "tooltip.goo.contains_preface";
     public static void addInformation(ItemStack stack, List<ITextComponent> tooltip)
     {
         CompoundNBT stackTag = stack.getTag();
@@ -411,6 +412,7 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
             return;
         }
 
+        tooltip.add(new TranslationTextComponent(GOO_CONTENTS_PREFACE_TRANSLATION_KEY));
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         List<FluidStack> fluidsDeserialized = deserializeGooForDisplay(gooTag);
         int index = 0;

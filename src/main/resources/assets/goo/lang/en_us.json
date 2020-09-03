@@ -36,7 +36,8 @@
   "_comment": "Misc",
   "tooltip.goo.cannot_solidify": "Can't solidify!",
   "tooltip.goo.cannot_goo": "Simply can't goo!",
-  "tooltip.goo.composition_preface": "Goo Composition: ",
+  "tooltip.goo.composition_preface": "Composition: ",
+  "tooltip.goo.contains_preface": "Contains: ",
   "tooltip.goo.solidifying_target_preface": "Solidifying: ",
   "tooltip.goo.goo_in_buffer": "Goo in Buffer: ",
 
