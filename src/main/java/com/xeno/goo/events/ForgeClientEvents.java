@@ -21,6 +21,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -61,16 +62,38 @@ public class ForgeClientEvents
         if (player == null) {
             return;
         }
-        if (!player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")))) {
+        if (!player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
             return;
         }
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
-            prepGooCompositionRealEstate(stack, event);
+            if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
+                if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
+                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+                }
+                prepGooCompositionRealEstate(stack, event);
+            }
         } else {
-            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
+            if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
+                if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
+                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+                }
+                event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
+            } else {
+                event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
+            }
         }
+    }
+
+    private static boolean cantSolidify(ItemStack stack, World entityWorld)
+    {
+        return Equivalencies.getEntry(entityWorld, stack.getItem()).isUnattainable();
+    }
+
+    private static boolean hasEntry(ItemStack stack, World entityWorld)
+    {
+        return Equivalencies.getEntry(entityWorld, stack.getItem()).values().size() > 0;
     }
 
     private static void prepGooContentsRealEstate(ItemStack stack, ItemTooltipEvent event)
@@ -144,8 +167,19 @@ public class ForgeClientEvents
         ItemStack stack = event.getStack();
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get())) {
+        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
             tryDrawingGooContents(stack, event);
+        }
+
+        // you can only see goo values while holding "Goo and You"
+        Minecraft mc = Minecraft.getInstance();
+
+        if(mc.player == null) {
+            return;
+        }
+
+        if (!mc.player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
+            return;
         }
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception

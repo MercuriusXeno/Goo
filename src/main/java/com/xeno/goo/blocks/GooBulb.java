@@ -33,16 +33,6 @@ public class GooBulb extends Block
     }
 
     @Override
-    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
-    {
-        super.addInformation(stack, worldIn, tooltip, flagIn);
-        if (Screen.hasShiftDown()) {
-            return;
-        }
-        GooBulbTile.addInformation(stack, tooltip);
-    }
-
-    @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world)
     {
         return new GooBulbTile();

@@ -1,0 +1,53 @@
+{
+  "include": [
+    {
+      "template": "goo:goo_item",
+      "as": "1",
+      "using": {},
+      "x": 0,
+      "y": 18
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "2",
+      "using": {},
+      "x": 0,
+      "y": 36
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "3",
+      "using": {},
+      "x": 0,
+      "y": 54
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "4",
+      "using": {},
+      "x": 0,
+      "y": 72
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "5",
+      "using": {},
+      "x": 0,
+      "y": 90
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "6",
+      "using": {},
+      "x": 0,
+      "y": 108
+    },
+    {
+      "template": "goo:goo_item",
+      "as": "7",
+      "using": {},
+      "x": 0,
+      "y": 126
+    }
+  ]
+}

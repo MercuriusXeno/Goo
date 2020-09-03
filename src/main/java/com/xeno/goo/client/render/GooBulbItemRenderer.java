@@ -41,6 +41,9 @@ public class GooBulbItemRenderer extends ItemStackTileEntityRenderer
     public void func_239207_a_(ItemStack stack, ItemCameraTransforms.TransformType transforms, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay)
     {
         super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
+        IBakedModel bulbModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(Registry.GOO_BULB.get().getDefaultState());//.handlePerspective(transforms, matrixStack);
+
+        Minecraft.getInstance().getItemRenderer().renderModel(bulbModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));
 
         CompoundNBT stackTag = stack.getTag();
         if (stackTag == null || !stackTag.contains("BlockEntityTag")) {
@@ -53,12 +56,7 @@ public class GooBulbItemRenderer extends ItemStackTileEntityRenderer
         if (tileEntity == null) {
             return;
         }
-        // matrixStack.translate(1.0d, 0.25d, 0d);
-        IBakedModel bulbModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(Registry.GOO_BULB.get().getDefaultState());//.handlePerspective(transforms, matrixStack);
 
-        Minecraft.getInstance().getItemRenderer().renderModel(bulbModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));
         TileEntityRendererDispatcher.instance.renderItem(tileEntity, matrixStack, buffer, combinedLight, combinedOverlay);
-        // handlePerspective has an implicit push()!
-        // matrixStack.pop();
     }
 }
