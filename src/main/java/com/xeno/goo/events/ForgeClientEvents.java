@@ -36,10 +36,10 @@ import java.util.Objects;
 public class ForgeClientEvents
 {
     private static final String PLACE_HOLDER = "\u00a76\u00a7r\u00a7r\u00a7r\u00a7r\u00a7r";
-    private static final int ICON_WIDTH = 16;
-    private static final int ICON_HEIGHT = 24;
+    private static final int ICON_WIDTH = 18;
+    private static final int ICON_HEIGHT = 27;
     private static final int ICONS_BEFORE_TWO_LINES_LOOKS_LIKE_POO = 12;
-    private static final int TEXT_START_Y_OFFSET = 18;
+    private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
 
@@ -173,18 +173,25 @@ public class ForgeClientEvents
         int by = event.getY();
         int j = 0;
 
+        int size = gooEntry.size();
+        int stacksPerLine = getArrangementStacksPerLine(size);
+        int rows = (int)Math.ceil(size / (float)stacksPerLine);
+        int neededHeight = rows * ICON_HEIGHT;
+        int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
+        int wastedSpace = allocatedHeight - neededHeight;
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f);
+
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
             if (s.getString().trim().equals(PLACE_HOLDER))
                 break;
             by += mc.fontRenderer.FONT_HEIGHT;
         }
+        by += centeringVerticalOffset;
         gooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
-        int compoundCount = gooEntry.size();
-        int stacksPerLine = getArrangementStacksPerLine(compoundCount);
         for (FluidStack entry : gooEntry) {
             int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
-            int y = by - (j / stacksPerLine) * (ICON_HEIGHT - 1);
+            int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
             renderGooIcon(matrices, fluid(Objects.requireNonNull(entry.getFluid().getRegistryName())).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
         }
@@ -219,19 +226,25 @@ public class ForgeClientEvents
         int by = event.getY();
         int j = 0;
 
+        int size = gooEntry.values().size();
+        int stacksPerLine = getArrangementStacksPerLine(size);
+        int rows = (int)Math.ceil(size / (float)stacksPerLine);
+        int neededHeight = rows * ICON_HEIGHT;
+        int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
+        int wastedSpace = allocatedHeight - neededHeight;
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f);
+
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
             if (s.getString().trim().equals(PLACE_HOLDER))
                 break;
             by += mc.fontRenderer.FONT_HEIGHT;
         }
-
+        by += centeringVerticalOffset;
         gooEntry.values().sort((v, v2) -> (int)v2.amount() - (int)v.amount());
-        int compoundCount = gooEntry.values().size();
-        int stacksPerLine = getArrangementStacksPerLine(compoundCount);
         for (GooValue entry : gooEntry.values()) {
             int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
-            int y = by - (j / stacksPerLine) * (ICON_HEIGHT - 1);
+            int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
             renderGooIcon(matrices, fluid(entry).getIcon(), x, y, (int)Math.floor(entry.amount()));
             j++;
         }
