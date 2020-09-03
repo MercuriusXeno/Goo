@@ -34,10 +34,7 @@
   "fluid.goo.weird_goo": "Weird",
 
   "_comment": "Misc",
-  "tooltip.goo.cannot_solidify": "Can't solidify!",
-  "tooltip.goo.cannot_goo": "Simply can't goo!",
-  "tooltip.goo.composition_preface": "Composition: ",
-  "tooltip.goo.contains_preface": "Contains: ",
+  "tooltip.goo.composition.hold_key": "<Hold shift for goo composition>",
   "tooltip.goo.solidifying_target_preface": "Solidifying: ",
   "tooltip.goo.goo_in_buffer": "Goo in Buffer: ",
 

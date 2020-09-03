@@ -394,56 +394,6 @@ public class GooBulbTile extends TileEntity implements ITickableTileEntity, Flui
         return stack;
     }
 
-    private static final String GOO_CONTENTS_PREFACE_TRANSLATION_KEY = "tooltip.goo.contains_preface";
-    public static void addInformation(ItemStack stack, List<ITextComponent> tooltip)
-    {
-        CompoundNBT stackTag = stack.getTag();
-        if (stackTag == null) {
-            return;
-        }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return;
-        }
-
-        tooltip.add(new TranslationTextComponent(GOO_CONTENTS_PREFACE_TRANSLATION_KEY));
-        CompoundNBT gooTag = bulbTag.getCompound("goo");
-        List<FluidStack> fluidsDeserialized = deserializeGooForDisplay(gooTag);
-        int index = 0;
-        int displayIndex = 0;
-        IFormattableTextComponent fluidAmount = null;
-        // struggling with values sorting stupidly. Trying to do fix sort by doing this:
-        List<FluidStack> sortedValues = fluidsDeserialized.stream().sorted(Compare.fluidAmountComparator.reversed().thenComparing(Compare.fluidNameComparator)).collect(Collectors.toList());
-        for(FluidStack v : sortedValues) {
-            index++;
-            if (v.isEmpty()) {
-                continue;
-            }
-            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getAmount()) + " mB";
-            String fluidTranslationKey = v.getTranslationKey();
-            if (fluidTranslationKey == null) {
-                continue;
-            }
-            displayIndex++;
-            if (displayIndex % 2 == 1) {
-                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
-            } else {
-                if (fluidAmount != null) {
-                    fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
-                }
-            }
-            if (displayIndex % 2 == 0 || index == sortedValues.size()) {
-                tooltip.add(fluidAmount);
-            }
-        }
-    }
-
     public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
         List<FluidStack> tagGooList = new ArrayList<>();
         int size = tag.getInt("count");

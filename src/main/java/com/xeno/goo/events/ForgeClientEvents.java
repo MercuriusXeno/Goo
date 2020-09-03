@@ -14,11 +14,13 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -26,6 +28,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.opengl.GL11;
+import vazkii.patchouli.api.PatchouliAPI;
 
 import java.awt.*;
 import java.util.Comparator;
@@ -49,13 +52,24 @@ public class ForgeClientEvents
         ItemStack stack = event.getItemStack();
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get())) {
+        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
+        }
+
+        // you can only see goo values while holding "Goo and You"
+        PlayerEntity player = event.getPlayer();
+        if (player == null) {
+            return;
+        }
+        if (!player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")))) {
+            return;
         }
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
             prepGooCompositionRealEstate(stack, event);
+        } else {
+            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
         }
     }
 
@@ -179,7 +193,7 @@ public class ForgeClientEvents
         int neededHeight = rows * ICON_HEIGHT;
         int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
         int wastedSpace = allocatedHeight - neededHeight;
-        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f);
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(mc.fontRenderer.FONT_HEIGHT / 2f);
 
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
@@ -232,7 +246,7 @@ public class ForgeClientEvents
         int neededHeight = rows * ICON_HEIGHT;
         int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
         int wastedSpace = allocatedHeight - neededHeight;
-        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f);
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(mc.fontRenderer.FONT_HEIGHT / 2f);
 
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
