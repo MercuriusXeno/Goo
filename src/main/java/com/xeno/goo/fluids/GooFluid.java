@@ -1,6 +1,7 @@
 package com.xeno.goo.fluids;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
@@ -74,7 +75,7 @@ public class GooFluid extends Fluid
     @Override
     protected BlockState getBlockState(FluidState state)
     {
-        return null;
+        return Blocks.AIR.getDefaultState();
     }
 
     @Override
