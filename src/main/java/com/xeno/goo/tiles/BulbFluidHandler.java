@@ -3,16 +3,30 @@ package com.xeno.goo.tiles;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class BulbFluidHandler implements IFluidHandler {
-    private final GooBulbTile parent;
-    public BulbFluidHandler(GooBulbTile t) {
+    private final GooBulbTileAbstraction parent;
+    public BulbFluidHandler(GooBulbTileAbstraction t) {
         parent = t;
+    }
+
+    public IFluidHandler getBulbCapabilityInDirection(Direction d)
+    {
+        // check the tile below us, if it's not a bulb, bail.
+        GooBulbTileAbstraction bulb = getBulbInDirection(d);
+        if (bulb == null) {
+            return null;
+        }
+
+        // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
+        return BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
     }
 
     public void sendVerticalFillSignalForVisuals(Fluid f) {
@@ -31,7 +45,27 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.config.bulbCapacity() : 0;
+        return tank == 0 ? GooMod.config.bulbCapacity() * parent.getStorageMultiplier() : 0;
+    }
+
+    public static GooBulbTileAbstraction getBulbInDirection(TileEntity tile, Direction d)
+    {
+        if (tile.getWorld() == null) {
+            return null;
+        }
+        BlockPos posInDirection = tile.getPos().offset(d);
+        TileEntity result = tile.getWorld().getTileEntity(posInDirection);
+        if (result == null) {
+            return null;
+        }
+        if (!(result instanceof GooBulbTileAbstraction)) {
+            return null;
+        }
+        return (GooBulbTileAbstraction)result;
+    }
+
+    public GooBulbTileAbstraction getBulbInDirection(Direction dir) {
+        return getBulbInDirection(parent, dir);
     }
 
     @Override
@@ -80,7 +114,7 @@ public class BulbFluidHandler implements IFluidHandler {
         return result;
     }
 
-    public static IFluidHandler bulbCapability(GooBulbTile bulb, Direction dir)
+    public static IFluidHandler bulbCapability(GooBulbTileAbstraction bulb, Direction dir)
     {
         LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
 

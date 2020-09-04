@@ -23,10 +23,14 @@ public class Recipes extends RecipeProvider {
     @Override
     protected void registerRecipes(Consumer<IFinishedRecipe> consumer) {
         registerGasketRecipe(consumer);
-        registerGooBulbRecipe(consumer);
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
         registerGooPumpRecipe(consumer);
+        registerGooBulbRecipe(consumer);
+        registerGooBulbMk2Recipe(consumer);
+        registerGooBulbMk3Recipe(consumer);
+        registerGooBulbMk4Recipe(consumer);
+        registerGooBulbMk5Recipe(consumer);
     }
 
     // doesn't work, needs a custom serializer to get the NBT on the stack to identify
@@ -60,6 +64,58 @@ public class Recipes extends RecipeProvider {
                 .key('#', Tags.Items.GLASS)
                 .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
+    }
+
+    private void registerGooBulbMk2Recipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB_MK2.get())
+                .patternLine("geg")
+                .patternLine("gbg")
+                .patternLine("ggg")
+                .key('g', Items.GLASS_PANE)
+                .key('b', Registry.GOO_BULB.get())
+                .key('e', Items.ENDER_EYE)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("goo_bulb", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB.get()))
+                .build(consumer);
+    }
+
+    private void registerGooBulbMk3Recipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB_MK3.get())
+                .patternLine("geg")
+                .patternLine("gbg")
+                .patternLine("ggg")
+                .key('g', Items.GLASS_PANE)
+                .key('b', Registry.GOO_BULB_MK2.get())
+                .key('e', Items.END_ROD)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("goo_bulb_mk2", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK2.get()))
+                .build(consumer);
+    }
+
+    private void registerGooBulbMk4Recipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB_MK4.get())
+                .patternLine("geg")
+                .patternLine("gbg")
+                .patternLine("ggg")
+                .key('g', Items.GLASS_PANE)
+                .key('b', Registry.GOO_BULB_MK3.get())
+                .key('e', Items.ENDER_CHEST)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("goo_bulb_mk3", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK3.get()))
+                .build(consumer);
+    }
+
+    private void registerGooBulbMk5Recipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB_MK5.get())
+                .patternLine("geg")
+                .patternLine("gbg")
+                .patternLine("ggg")
+                .key('g', Items.GLASS_PANE)
+                .key('b', Registry.GOO_BULB_MK4.get())
+                .key('e', Items.SHULKER_BOX)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("goo_bulb_mk4", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK4.get()))
                 .build(consumer);
     }
 

@@ -6,7 +6,6 @@ import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.contribution.IContributionInformationProviderRegistry;
 import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInformationRegistry;
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
-import com.ldtteam.aequivaleo.api.recipe.equivalency.ILootTableEquivalencyRecipe;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.setup.Registry;
@@ -256,10 +255,6 @@ public class GooValueBootstrapper
 
         infoRegistry.registerNewGenericProvider(
           (recipe, compoundType) -> compoundType instanceof GooCompoundType && recipe instanceof ITagEquivalencyRecipe ? Optional.of(false) : Optional.empty()
-        );
-
-        infoRegistry.registerNewGenericProvider(
-          (recipe, compoundType) -> compoundType instanceof GooCompoundType && recipe instanceof ILootTableEquivalencyRecipe ? Optional.of(false) : Optional.empty()
         );
     }
 

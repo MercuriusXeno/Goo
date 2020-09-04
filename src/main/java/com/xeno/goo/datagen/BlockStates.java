@@ -1,6 +1,7 @@
 package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.blocks.PumpRenderMode;
 import com.xeno.goo.setup.Registry;
@@ -17,17 +18,21 @@ public class BlockStates extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        registerGooBulb();
+        registerGooBulbGeneric(Registry.GOO_BULB.get());
+        registerGooBulbGeneric(Registry.GOO_BULB_MK2.get());
+        registerGooBulbGeneric(Registry.GOO_BULB_MK3.get());
+        registerGooBulbGeneric(Registry.GOO_BULB_MK4.get());
+        registerGooBulbGeneric(Registry.GOO_BULB_MK5.get());
         registerGooPump();
         registerGooifier();
         registerSolidifier();
     }
 
-    private void registerGooBulb() {
+    private void registerGooBulbGeneric(GooBulbAbstraction base) {
         ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()
-                .withExistingParent("goo_bulb", "block/block")
+                .withExistingParent(base.getRegistryName().getPath(), "block/block")
                 .texture("particle", side)
                 .element()
                 .from(0, 0, 0)
@@ -42,7 +47,7 @@ public class BlockStates extends BlockStateProvider {
                 .end();
         model.texture("end", end);
         model.texture("side", side);
-        simpleBlock(Registry.GOO_BULB.get(), model);
+        simpleBlock(base, model);
     }
 
     private void registerGooPump() {

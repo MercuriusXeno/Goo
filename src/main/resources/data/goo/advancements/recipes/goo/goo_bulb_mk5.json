@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:goo_bulb_mk5"
+    ]
+  },
+  "criteria": {
+    "goo_bulb_mk4": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:goo_bulb_mk4"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:goo_bulb_mk5"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "goo_bulb_mk4",
+      "has_the_recipe"
+    ]
+  ]
+}

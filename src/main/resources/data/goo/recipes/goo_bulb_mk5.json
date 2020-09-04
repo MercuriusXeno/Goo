@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "goo",
+  "pattern": [
+    "geg",
+    "gbg",
+    "ggg"
+  ],
+  "key": {
+    "g": {
+      "item": "minecraft:glass_pane"
+    },
+    "b": {
+      "item": "goo:goo_bulb_mk4"
+    },
+    "e": {
+      "item": "minecraft:shulker_box"
+    }
+  },
+  "result": {
+    "item": "goo:goo_bulb_mk5"
+  }
+}

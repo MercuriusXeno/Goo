@@ -173,8 +173,8 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
 
     private void tryPushingFluid()
     {
-        GooBulbTile source = tryGettingBulbInSourceDirection();
-        GooBulbTile target = tryGettingBulbInTargetDirection();
+        GooBulbTileAbstraction source = tryGettingBulbInSourceDirection();
+        GooBulbTileAbstraction target = tryGettingBulbInTargetDirection();
 
         if (source == null || target == null) {
             return;
@@ -182,9 +182,6 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
 
         BulbFluidHandler sourceHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(source, sourceDirection());
         BulbFluidHandler targetHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(target, targetDirection());
-        if (sourceHandler == null || targetHandler == null) {
-            return;
-        }
 
         FluidStack simulatedDrain = FluidStack.EMPTY;
         if (this.targetStack.isEmpty()) {
@@ -233,24 +230,24 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         return this.facing();
     }
 
-    private GooBulbTile tryGettingBulbInDirection(Direction d)
+    private GooBulbTileAbstraction tryGettingBulbInDirection(Direction d)
     {
         if (world == null) {
             return null;
         }
         TileEntity t = world.getTileEntity(pos.offset(d));
-        if (t instanceof GooBulbTile) {
-            return (GooBulbTile)t;
+        if (t instanceof GooBulbTileAbstraction) {
+            return (GooBulbTileAbstraction)t;
         }
         return null;
     }
 
-    private GooBulbTile tryGettingBulbInTargetDirection()
+    private GooBulbTileAbstraction tryGettingBulbInTargetDirection()
     {
         return tryGettingBulbInDirection(targetDirection());
     }
 
-    private GooBulbTile tryGettingBulbInSourceDirection()
+    private GooBulbTileAbstraction tryGettingBulbInSourceDirection()
     {
         return tryGettingBulbInDirection(sourceDirection());
     }

@@ -2,20 +2,21 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.BulbFluidHandler;
+import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.List;
 
-public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
+public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     private static final float FLUID_VERTICAL_MAX = 0.0005f;
     private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
@@ -31,18 +32,19 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     }
 
     @Override
-    public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
-        render(tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
+    public void render(GooBulbTileAbstraction tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+        IFluidHandler cap = BulbFluidHandler.bulbCapability(tile, Direction.UP);
+        render(cap.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn);
     }
 
-    public static void render(float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
+    public static void render(int bulbCapacity, float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
 
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
 
         // this is the total fill percentage of the container
-        float scaledHeight = totalGoo / (float) GooMod.config.bulbCapacity();
+        float scaledHeight = totalGoo / (float)bulbCapacity;
         float  yOffset = 0;
 
         // determine where to draw the fluid based on the model
@@ -82,5 +84,9 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
 
     public static void register() {
         ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK2.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK3.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK4.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK5.get(), GooBulbRenderer::new);
     }
 }

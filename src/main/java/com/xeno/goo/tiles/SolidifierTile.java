@@ -239,11 +239,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             if (t == null) {
                 continue;
             }
-            if (!(t instanceof GooBulbTile)) {
+            if (!(t instanceof GooBulbTileAbstraction)) {
                 continue;
             }
             int workLeftThisGasket = GooMod.config.gooProcessingRate();
-            GooBulbTile b = (GooBulbTile)t;
+            GooBulbTileAbstraction b = (GooBulbTileAbstraction)t;
             IFluidHandler cap = BulbFluidHandler.bulbCapability(b, d);
             for(GooValue v : mapping.values()) {
                 workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);

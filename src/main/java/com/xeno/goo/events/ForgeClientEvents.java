@@ -8,7 +8,7 @@ import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -125,7 +125,7 @@ public class ForgeClientEvents
         }
 
         CompoundNBT gooTag = bulbTag.getCompound("goo");
-        List<FluidStack> gooEntry = GooBulbTile.deserializeGooForDisplay(gooTag);
+        List<FluidStack> gooEntry = GooBulbTileAbstraction.deserializeGooForDisplay(gooTag);
         if (gooEntry.size() == 0) {
             return;
         }
@@ -220,7 +220,7 @@ public class ForgeClientEvents
         }
 
         CompoundNBT gooTag = bulbTag.getCompound("goo");
-        List<FluidStack> gooEntry = GooBulbTile.deserializeGooForDisplay(gooTag);
+        List<FluidStack> gooEntry = GooBulbTileAbstraction.deserializeGooForDisplay(gooTag);
         if (gooEntry.size() == 0) {
             return;
         }

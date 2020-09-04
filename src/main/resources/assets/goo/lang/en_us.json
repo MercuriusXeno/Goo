@@ -1,5 +1,9 @@
 {
   "block.goo.goo_bulb": "Goo Bulb",
+  "block.goo.goo_bulb_mk2": "Goo Bulb x8",
+  "block.goo.goo_bulb_mk3": "Goo Bulb x64",
+  "block.goo.goo_bulb_mk4": "Goo Bulb x512",
+  "block.goo.goo_bulb_mk5": "Goo Bulb x4096",
   "block.goo.goo_pump": "Goo Pump",
   "block.goo.gooifier": "Gooifier",
   "block.goo.solidifier": "Solidifier",

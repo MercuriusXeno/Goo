@@ -6,6 +6,7 @@ import com.xeno.goo.network.GooLobConfirmationPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
@@ -553,7 +554,7 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
 
     protected void doChangeBlockState(BlockState blockstate, BlockPos blockPos, BlockPos positionUnderneath) {
         TileEntity te = world.getTileEntity(blockPos);
-        if (te instanceof GooBulbTile) {
+        if (te instanceof GooBulbTileAbstraction) {
             tryEnteringTank(blockPos);
         }
     }

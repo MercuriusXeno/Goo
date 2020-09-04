@@ -127,7 +127,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         boolean isAnyWorkDone = false;
         int maxPerTickPerGasket = GooMod.config.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
-            GooBulbTile bulb = getBulbInDirection(d);
+            GooBulbTileAbstraction bulb = BulbFluidHandler.getBulbInDirection(this, d);
             if (bulb == null) {
                 continue;
             }
@@ -167,21 +167,6 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         }
 
         return isAnyWorkDone;
-    }
-
-    private GooBulbTile getBulbInDirection(Direction dir) {
-        if (world == null) {
-            return null;
-        }
-        BlockPos posInDirection = this.pos.offset(dir);
-        TileEntity tile = world.getTileEntity(posInDirection);
-        if (tile == null) {
-            return null;
-        }
-        if (!(tile instanceof GooBulbTile)) {
-            return null;
-        }
-        return (GooBulbTile)tile;
     }
 
     private final Direction[] VALID_GASKET_DIRECTIONS = new Direction[] { Direction.EAST, Direction.WEST, Direction.UP };
