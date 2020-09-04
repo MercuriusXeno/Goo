@@ -54,7 +54,7 @@ public class GooMod
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
     }
 
-    public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)
+    public static final ItemGroup ITEM_GROUP = new GooCreativeTab(MOD_ID)
     {
         @Override
         public ItemStack createIcon() {
