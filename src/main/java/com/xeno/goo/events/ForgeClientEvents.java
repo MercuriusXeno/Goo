@@ -53,8 +53,7 @@ public class ForgeClientEvents
         ItemStack stack = event.getItemStack();
 
         // you can only see goo values while holding "Goo and You"
-        if (event.getPlayer() != null && event.getPlayer().getHeldItemOffhand()
-                .equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
+        if (event.getPlayer() != null && isHoldingPatchouliBook(event.getPlayer())) {
             // EVERYTHING shows its composition with shift held, bulbs are the exception
             if (Screen.hasShiftDown()) {
                 if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
@@ -81,6 +80,16 @@ public class ForgeClientEvents
         if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
         }
+    }
+
+    public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
+    private static boolean isHoldingPatchouliBook(PlayerEntity player)
+    {
+        if (PATCHOULI_BOOK.isEmpty()) {
+            PATCHOULI_BOOK = PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "goo_and_you"));
+        }
+        return player.getHeldItemOffhand()
+                .equals(PATCHOULI_BOOK, false);
     }
 
     private static boolean cantSolidify(ItemStack stack, World entityWorld)
@@ -176,7 +185,7 @@ public class ForgeClientEvents
             return;
         }
 
-        if (!mc.player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
+        if (!isHoldingPatchouliBook(mc.player)) {
             return;
         }
 
