@@ -97,7 +97,7 @@ repositories {
         url 'https://maven.blamejared.com'
     }
     maven {
-        name 'LDTTeam - Modding'
+        name 'LDTTeam for Aequivaleo'
         url 'https://ldtteam.jfrog.io/ldtteam/modding'
     }
 }
@@ -109,15 +109,6 @@ dependencies {
     minecraft "net.minecraftforge:forge:${project.exactMinecraftVersion}-${project.forgeVersion}"
     implementation 'org.jetbrains:annotations:15.0'
 
-    // You may put jars on which you depend on in ./libs or you may define them like so..
-    // compile "some.group:artifact:version:classifier"
-    // compile "some.group:artifact:version"
-
-    // eventually I want a patchouli book because patchouli is rad
-    // compileOnly fg.deobf("vazkii.patchouli:Patchouli:[VERSION]:api")
-    // runtimeOnly fg.deobf("vazkii.patchouli:Patchouli:[VERSION]")
-    // compileOnly fg.deobf("com.ldtteam.com:aequivaleo:0.0.23-RELEASE:api")
-    // runtimeOnly fg.deobf("com.ldtteam.com:aequivaleo:0.0.23-RELEASE")
     compileOnly fg.deobf("${project.aequivaleoVersion}:api")
     runtimeOnly fg.deobf("${project.aequivaleoVersion}:universal")
 

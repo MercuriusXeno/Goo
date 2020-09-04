@@ -1,6 +1,6 @@
 {
   "parent": "item/handheld",
   "textures": {
-    "layer0": "goo:item/book"
+    "layer0": "goo:item/goo_and_you"
   }
 }
