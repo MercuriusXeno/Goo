@@ -23,7 +23,7 @@ public class GooFluid extends Fluid
     public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon)
     {
         super();
-        this.builder = FluidAttributes.builder(still, flowing);
+        this.builder = FluidAttributes.builder(still, flowing).temperature(293);;
         this.icon = icon;
     }
 
