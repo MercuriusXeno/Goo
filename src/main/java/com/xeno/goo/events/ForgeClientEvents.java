@@ -52,37 +52,34 @@ public class ForgeClientEvents
         //This method will make space for goo icons in the tooltip
         ItemStack stack = event.getItemStack();
 
+        // you can only see goo values while holding "Goo and You"
+        if (event.getPlayer() != null && event.getPlayer().getHeldItemOffhand()
+                .equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
+            // EVERYTHING shows its composition with shift held, bulbs are the exception
+            if (Screen.hasShiftDown()) {
+                if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
+                    if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
+                        event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+                    }
+                    prepGooCompositionRealEstate(stack, event);
+                } else {
+                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
+                }
+            } else {
+                if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
+                    if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
+                        event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+                    }
+                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
+                } else {
+                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
+                }
+            }
+        }
+
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
-        }
-
-        // you can only see goo values while holding "Goo and You"
-        PlayerEntity player = event.getPlayer();
-        if (player == null) {
-            return;
-        }
-        if (!player.getHeldItemOffhand().equals(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")), false)) {
-            return;
-        }
-
-        // EVERYTHING shows its composition with shift held, bulbs are the exception
-        if (Screen.hasShiftDown()) {
-            if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
-                if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
-                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
-                }
-                prepGooCompositionRealEstate(stack, event);
-            }
-        } else {
-            if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
-                if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
-                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
-                }
-                event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
-            } else {
-                event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
-            }
         }
     }
 
