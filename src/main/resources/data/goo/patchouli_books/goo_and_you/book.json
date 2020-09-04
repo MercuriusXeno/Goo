@@ -1,7 +1,7 @@
 {
   "name": "item.patchouli.goo.book.name",
   "landing_text": "patchouli.goo.book.landing",
-  "model": "goo:book",
+  "model": "goo:goo_and_you",
   "i18n": true,
   "dont_generate_book": false,
   "creative_tab": "goo",
