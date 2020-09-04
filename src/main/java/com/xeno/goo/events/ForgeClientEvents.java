@@ -127,12 +127,13 @@ public class ForgeClientEvents
     private static void addPlaceholderSpaceForTooltipGooIcons(int size, ItemTooltipEvent event)
     {
         Minecraft mc = Minecraft.getInstance();
+        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         if (mc.world == null || mc.player == null) //populateSearchTreeManager...
             return;
 
         int stacksPerLine = getArrangementStacksPerLine(size);
         int rows = (int)Math.ceil(size / (float)stacksPerLine);
-        int lines = (int)Math.ceil((rows * ICON_HEIGHT) / (float)mc.fontRenderer.FONT_HEIGHT);
+        int lines = (int)Math.ceil((rows * ICON_HEIGHT) / (float)fontHeight + 1);
         int width = (stacksPerLine * (ICON_WIDTH - 1) + 1);
         String spaces = PLACE_HOLDER;
         while(mc.fontRenderer.getStringWidth(spaces) < width) {
@@ -188,6 +189,7 @@ public class ForgeClientEvents
     private static void tryDrawingGooContents(ItemStack stack, RenderTooltipEvent.PostText event)
     {
         Minecraft mc = Minecraft.getInstance();
+        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
 
         if( mc.world == null || mc.player == null )
@@ -222,15 +224,15 @@ public class ForgeClientEvents
         int stacksPerLine = getArrangementStacksPerLine(size);
         int rows = (int)Math.ceil(size / (float)stacksPerLine);
         int neededHeight = rows * ICON_HEIGHT;
-        int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
+        int allocatedHeight = (int)Math.ceil(neededHeight / (float)fontHeight) * fontHeight;
         int wastedSpace = allocatedHeight - neededHeight;
-        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(mc.fontRenderer.FONT_HEIGHT / 2f);
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(fontHeight / 2f);
 
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
             if (s.getString().trim().equals(PLACE_HOLDER))
                 break;
-            by += mc.fontRenderer.FONT_HEIGHT;
+            by += fontHeight;
         }
         by += centeringVerticalOffset;
         gooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
@@ -257,6 +259,7 @@ public class ForgeClientEvents
     private static void tryDrawingGooComposition(ItemStack stack, RenderTooltipEvent.PostText event)
     {
         Minecraft mc = Minecraft.getInstance();
+        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
 
         if( mc.world == null || mc.player == null )
@@ -275,15 +278,15 @@ public class ForgeClientEvents
         int stacksPerLine = getArrangementStacksPerLine(size);
         int rows = (int)Math.ceil(size / (float)stacksPerLine);
         int neededHeight = rows * ICON_HEIGHT;
-        int allocatedHeight = (int)Math.ceil(neededHeight / (float)mc.fontRenderer.FONT_HEIGHT) * mc.fontRenderer.FONT_HEIGHT;
+        int allocatedHeight = (int)Math.ceil(neededHeight / (float)fontHeight) * fontHeight;
         int wastedSpace = allocatedHeight - neededHeight;
-        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(mc.fontRenderer.FONT_HEIGHT / 2f);
+        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(fontHeight / 2f);
 
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
             if (s.getString().trim().equals(PLACE_HOLDER))
                 break;
-            by += mc.fontRenderer.FONT_HEIGHT;
+            by += fontHeight;
         }
         by += centeringVerticalOffset;
         gooEntry.values().sort((v, v2) -> (int)v2.amount() - (int)v.amount());

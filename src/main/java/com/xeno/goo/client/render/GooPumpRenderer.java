@@ -85,8 +85,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
         // ItemFrameRenderer
         ItemStack item = tile.getDisplayedItem();
         if (!item.isEmpty()) {
-            // int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos());
-            // GooMod.debug("light level " + itemLight);
+
             Direction flow = tile.facing();
 
             Map<Direction, Vector3f> offsets = offsetVectors.get(flow);
