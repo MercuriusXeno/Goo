@@ -39,7 +39,6 @@ public class Recipes extends RecipeProvider {
         ShapelessRecipeBuilder.shapelessRecipe(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")).getItem())
                 .addIngredient(Registry.GASKET.get())
                 .addIngredient(Items.BOOK)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
@@ -49,7 +48,6 @@ public class Recipes extends RecipeProvider {
                 .addIngredient(Items.HONEYCOMB)
                 .addIngredient(Items.GOLD_INGOT)
                 .addIngredient(Items.MAGMA_CREAM)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("honeycomb", InventoryChangeTrigger.Instance.forItems(Items.HONEYCOMB))
                 .build(consumer);
     }
@@ -62,7 +60,6 @@ public class Recipes extends RecipeProvider {
                 .key('o', Registry.GASKET.get())
                 .key('e', Items.ENDER_PEARL)
                 .key('#', Tags.Items.GLASS)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
@@ -75,7 +72,6 @@ public class Recipes extends RecipeProvider {
                 .key('g', Items.GLASS_PANE)
                 .key('b', Registry.GOO_BULB.get())
                 .key('e', Items.ENDER_EYE)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("goo_bulb", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB.get()))
                 .build(consumer);
     }
@@ -88,7 +84,6 @@ public class Recipes extends RecipeProvider {
                 .key('g', Items.GLASS_PANE)
                 .key('b', Registry.GOO_BULB_MK2.get())
                 .key('e', Items.END_ROD)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("goo_bulb_mk2", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK2.get()))
                 .build(consumer);
     }
@@ -101,7 +96,6 @@ public class Recipes extends RecipeProvider {
                 .key('g', Items.GLASS_PANE)
                 .key('b', Registry.GOO_BULB_MK3.get())
                 .key('e', Items.ENDER_CHEST)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("goo_bulb_mk3", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK3.get()))
                 .build(consumer);
     }
@@ -114,7 +108,6 @@ public class Recipes extends RecipeProvider {
                 .key('g', Items.GLASS_PANE)
                 .key('b', Registry.GOO_BULB_MK4.get())
                 .key('e', Items.SHULKER_BOX)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("goo_bulb_mk4", InventoryChangeTrigger.Instance.forItems(Registry.GOO_BULB_MK4.get()))
                 .build(consumer);
     }
@@ -130,7 +123,6 @@ public class Recipes extends RecipeProvider {
                 .key('g', Items.GLASS)
                 .key('f', Items.ITEM_FRAME)
                 .key('b', Items.POLISHED_BASALT)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
@@ -144,7 +136,6 @@ public class Recipes extends RecipeProvider {
                 .key('o', Registry.GASKET.get())
                 .key('p', Items.PISTON)
                 .key('c', Items.MAGMA_BLOCK)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
@@ -159,7 +150,6 @@ public class Recipes extends RecipeProvider {
                 .key('p', Items.STICKY_PISTON)
                 .key('x', Items.DISPENSER)
                 .key('#', Items.ITEM_FRAME)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }
