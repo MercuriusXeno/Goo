@@ -1,24 +1,39 @@
 package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.SolidifierTile;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.entity.ItemFrameRenderer;
+import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.model.ModelManager;
+import net.minecraft.client.renderer.model.ModelResourceLocation;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.world.LightType;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import org.lwjgl.opengl.GL12;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
 {
+    private int lastItemLight;
     public SolidifierTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn)
     {
         super(rendererDispatcherIn);
@@ -46,12 +61,16 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
         // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
         int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(tile.getHorizontalFacing()));
 
-        matrices.push();
         // ItemFrameRenderer
         ItemStack item = tile.getDisplayedItem();
         if (!item.isEmpty()) {
+            IBakedModel model = Minecraft.getInstance().getItemRenderer().getItemModelMesher().getItemModel(item.getItem());
+            if (model == null) {
+                return;
+            }
+            matrices.push();
             // translate to center
-            matrices.translate(0.5D, 0.15D, 0.5D);
+            matrices.translate(0.5D, 0.15625D, 0.5D);
             // translate
             Vector3d vecOrient = this.getRenderOffset(tile, partialTicks);
             matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
@@ -59,22 +78,24 @@ public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
             Direction direction = tile.getHorizontalFacing();
             matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(direction.getHorizontalIndex() * 90)));
             // scale
-            boolean isBlock = item.getItem() instanceof BlockItem ;
-            matrices.scale((isBlock ? 0.4F : 0.2F), (isBlock ? 0.4F : 0.2F), (isBlock ? .02F : 0.2F));
-            net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
+            Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.0001f);
+            // special scaling that doesn't scale the normals, prevents weird lighting issues.
+            MatrixStack.Entry last = matrices.getLast();
+            last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-            Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, overlay, matrices, buffer);
+            Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+            matrices.pop();
         }
-        matrices.pop();
     }
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.5D));
-        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.5D));
-        renderVec.put(Direction.EAST, new Vector3d(0.5D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vector3d(-0.5D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.5001D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.5001D));
+        renderVec.put(Direction.EAST, new Vector3d(0.5001D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.5001D, 0D, 0D));
     }
+
     private Vector3d getRenderOffset(SolidifierTile entityIn, float partialTicks)
     {
         if (!renderVec.containsKey(entityIn.getHorizontalFacing())) {

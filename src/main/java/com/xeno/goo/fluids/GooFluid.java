@@ -17,11 +17,13 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 public class GooFluid extends Fluid
 {
+    private final ResourceLocation icon;
     private final FluidAttributes.Builder builder;
-    public GooFluid(ResourceLocation still, ResourceLocation flowing)
+    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon)
     {
         super();
         this.builder = FluidAttributes.builder(still, flowing);
+        this.icon = icon;
     }
 
     @Override
@@ -90,5 +92,10 @@ public class GooFluid extends Fluid
     @Override
     public VoxelShape func_215664_b(FluidState p_215664_1_, IBlockReader p_215664_2_, BlockPos p_215664_3_) {
         return VoxelShapes.fullCube();
+    }
+
+    public ResourceLocation getIcon()
+    {
+        return this.icon;
     }
 }

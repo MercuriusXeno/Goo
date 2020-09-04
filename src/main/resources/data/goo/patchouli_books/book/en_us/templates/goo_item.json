@@ -1,0 +1,23 @@
+{
+  "components": [
+    {
+      "type": "image",
+      "image": "#image",
+      "width": 32,
+      "height": 32,
+      "u": 0,
+      "v": 0,
+      "texture_width": 32,
+      "texture_height": 32,
+      "x": 0,
+      "y": 0,
+      "scale": 0.5
+    },
+    {
+      "type": "text",
+      "text": "#text",
+      "x": 18,
+      "y": 8
+    }
+  ]
+}

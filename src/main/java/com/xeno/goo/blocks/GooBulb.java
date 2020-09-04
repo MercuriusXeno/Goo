@@ -3,6 +3,7 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -29,13 +30,6 @@ public class GooBulb extends Block
     public boolean hasTileEntity(BlockState state)
     {
         return true;
-    }
-
-    @Override
-    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
-    {
-        super.addInformation(stack, worldIn, tooltip, flagIn);
-        GooBulbTile.addInformation(stack, tooltip);
     }
 
     @Override

@@ -32,16 +32,16 @@ public class Networking {
                 .consumer(FluidUpdatePacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(BulbVerticalFillPacket.class, nextID())
-                .encoder(BulbVerticalFillPacket::toBytes)
-                .decoder(BulbVerticalFillPacket::new)
-                .consumer(BulbVerticalFillPacket::handle)
+        INSTANCE.messageBuilder(GooFlowPacket.class, nextID())
+                .encoder(GooFlowPacket::toBytes)
+                .decoder(GooFlowPacket::new)
+                .consumer(GooFlowPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(ChangeSolidifierTargetPacket.class, nextID())
-                .encoder(ChangeSolidifierTargetPacket::toBytes)
-                .decoder(ChangeSolidifierTargetPacket::new)
-                .consumer(ChangeSolidifierTargetPacket::handle)
+        INSTANCE.messageBuilder(ChangeItemTargetPacket.class, nextID())
+                .encoder(ChangeItemTargetPacket::toBytes)
+                .decoder(ChangeItemTargetPacket::new)
+                .consumer(ChangeItemTargetPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(GooValueSyncPacket.class, nextID())

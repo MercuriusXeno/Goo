@@ -14,7 +14,11 @@ public class RenderHelper extends RenderState
 {
     public static final RenderType GOO;
 
+    public static final RenderType GOO_BLOCK;
+
+    public static final RenderType GOO_OVERLAY;
     static {
+        // GOO
         // todo 1.16 update to match vanilla where necessary (alternate render targets, etc.)
         RenderState.DiffuseLightingState enableDiffuse = new RenderState.DiffuseLightingState(true);
         RenderState.OverlayState enableOverlay = new RenderState.OverlayState(true);
@@ -33,6 +37,28 @@ public class RenderHelper extends RenderState
                 .build(true);
         GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_TRIANGLES, 128, true, false, glState);
         //GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, glState);
+
+        // GOO BLOCK
+        /** Render type used for rendering fluids */
+        GOO_BLOCK = RenderType.makeType(
+                GooMod.MOD_ID + ":goo_block",
+                DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP, GL11.GL_QUADS, 256, true, false,
+                RenderType.State.getBuilder().texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                        .shadeModel(RenderType.SHADE_ENABLED)
+                        .lightmap(RenderType.LIGHTMAP_ENABLED)
+                        .texture(RenderType.BLOCK_SHEET_MIPPED)
+                        .transparency(RenderType.TRANSLUCENT_TRANSPARENCY)
+                        .build(false));
+
+        GOO_OVERLAY = RenderType.makeType(
+                GooMod.MOD_ID + ":goo_overlay",
+                DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, true, false,
+                RenderType.State.getBuilder().texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                    .shadeModel(RenderType.SHADE_DISABLED)
+                    .lightmap(RenderType.LIGHTMAP_DISABLED)
+                    .texture(RenderType.BLOCK_SHEET)
+                    .transparency(RenderType.NO_TRANSPARENCY)
+                    .build(false));
     }
 
     public RenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)

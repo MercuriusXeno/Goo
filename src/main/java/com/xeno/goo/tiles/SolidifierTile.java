@@ -1,14 +1,11 @@
 package com.xeno.goo.tiles;
 
-import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
-import com.ldtteam.aequivaleo.api.compound.ICompoundInstance;
-import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipeRegistry;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.EntryHelper;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.network.ChangeSolidifierTargetPacket;
+import com.xeno.goo.network.ChangeItemTargetPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.network.SolidifierPoppedPacket;
 import com.xeno.goo.setup.Registry;
@@ -40,7 +37,7 @@ import java.util.*;
 
 import static net.minecraft.item.ItemStack.EMPTY;
 
-public class SolidifierTile extends TileEntity implements ITickableTileEntity, ChangeSolidifierTargetPacket.IChangeSolidifierTargetReceiver
+public class SolidifierTile extends TileEntity implements ITickableTileEntity, ChangeItemTargetPacket.IChangeItemTargetReceiver
 {
     private static final int HALF_SECOND_TICKS = 10;
     private static final int ONE_SECOND_TICKS = 20;
@@ -69,9 +66,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         targetStack = EMPTY;
         newTarget = Items.AIR;
         newTargetStack = EMPTY;
-        fluidBuffer = new HashMap<>();
         changeTargetTimer = 0;
         lastItem = null;
+        fluidBuffer = new HashMap<>();
     }
 
     @Override
@@ -379,7 +376,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return;
         }
 
-        Networking.sendToClientsAround(new ChangeSolidifierTargetPacket(world.func_234923_W_(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new ChangeItemTargetPacket(world.func_234923_W_(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
     }
 
     private void changeTarget(Item item)
@@ -570,7 +567,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
     }
 
     @Override
-    public void updateSolidifierTarget(ItemStack target, ItemStack newTarget, int changeTargetTimer)
+    public void updateItemTarget(ItemStack target, ItemStack newTarget, int changeTargetTimer)
     {
         this.target = target.getItem();
         this.targetStack = target;

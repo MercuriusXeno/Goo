@@ -1,12 +1,45 @@
 {
-  "parent": "minecraft:block/cube",
+  "parent": "minecraft:block/block",
   "textures": {
-    "down": "minecraft:block/nether_bricks",
-    "up": "goo:block/solidifier_top_off",
-    "north": "goo:block/solidifier_front_off",
-    "south": "goo:block/solidifier_back_off",
-    "east": "goo:block/solidifier_side_off",
-    "west": "goo:block/solidifier_side_off",
-    "particle": "goo:block/solidifier_front_off"
-  }
+    "particle": "goo:block/solidifier_front_off",
+    "bottom": "minecraft:block/nether_bricks",
+    "top_off": "goo:block/solidifier_top_off",
+    "side_off": "goo:block/solidifier_side_off",
+    "front_off": "goo:block/solidifier_front_off",
+    "back_off": "goo:block/solidifier_back_off"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#bottom"
+        },
+        "up": {
+          "texture": "#top_off"
+        },
+        "north": {
+          "texture": "#front_off"
+        },
+        "south": {
+          "texture": "#back_off"
+        },
+        "west": {
+          "texture": "#side_off"
+        },
+        "east": {
+          "texture": "#side_off"
+        }
+      }
+    }
+  ]
 }

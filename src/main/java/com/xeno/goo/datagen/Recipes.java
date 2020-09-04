@@ -6,9 +6,13 @@ import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.block.Blocks;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
+import net.minecraft.item.crafting.ShapelessRecipe;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.Tags;
+import vazkii.patchouli.api.PatchouliAPI;
 
+import javax.sound.midi.Patch;
 import java.util.function.Consumer;
 
 public class Recipes extends RecipeProvider {
@@ -22,6 +26,18 @@ public class Recipes extends RecipeProvider {
         registerGooBulbRecipe(consumer);
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
+        registerGooPumpRecipe(consumer);
+    }
+
+    // doesn't work, needs a custom serializer to get the NBT on the stack to identify
+    // it isn't just any patchouli book, but goo's patchouli book. leaving this a manual recipe for the time being.
+    private void registerBookRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapelessRecipeBuilder.shapelessRecipe(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")).getItem())
+                .addIngredient(Registry.GASKET.get())
+                .addIngredient(Items.BOOK)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -42,6 +58,22 @@ public class Recipes extends RecipeProvider {
                 .key('o', Registry.GASKET.get())
                 .key('e', Items.ENDER_PEARL)
                 .key('#', Tags.Items.GLASS)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
+    }
+
+    private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_PUMP.get())
+                .patternLine("so ")
+                .patternLine("pg ")
+                .patternLine("bof")
+                .key('s', Items.POLISHED_BLACKSTONE_SLAB)
+                .key('o', Registry.GASKET.get())
+                .key('p', Items.PISTON)
+                .key('g', Items.GLASS)
+                .key('f', Items.ITEM_FRAME)
+                .key('b', Items.POLISHED_BASALT)
                 .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);

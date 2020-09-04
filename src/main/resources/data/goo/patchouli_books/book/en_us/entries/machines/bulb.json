@@ -1,0 +1,25 @@
+{
+  "name": "block.goo.goo_bulb",
+  "icon": "goo:goo_bulb",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.goo_bulb.summary"
+    },
+    {
+      "type": "multiblock",
+      "enable_visualize": false,
+      "multiblock": {
+        "mapping": {
+          "B": "goo:goo_bulb",
+          "0": "goo:goo_bulb"
+        },
+        "pattern": [
+          [" B"],
+          ["B0"]
+        ]
+      }
+    }
+  ]
+}

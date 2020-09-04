@@ -1,0 +1,134 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump",
+        "x": 180,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/goo_pump_actuator",
+        "x": 180,
+        "y": 180
+      }
+    }
+  ]
+}
