@@ -20,6 +20,7 @@ public class Items extends ItemModelProvider {
         registerComboGauntlet();
         registerCrucible();
         registerMobiusCrucible();
+        registerGooAndYou();
     }
 
     private void registerMobiusCrucible()
@@ -46,5 +47,11 @@ public class Items extends ItemModelProvider {
     {
         singleTexture(Registry.GASKET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/gasket"));
+    }
+
+    private void registerGooAndYou()
+    {
+        singleTexture(Registry.GOO_AND_YOU.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/goo_and_you"));
     }
 }

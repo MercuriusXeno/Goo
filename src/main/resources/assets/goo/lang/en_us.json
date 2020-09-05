@@ -46,7 +46,7 @@
 
   "itemGroup.goo": "Goo",
 
-  "item.patchouli.goo.book.name": "Goo and You!",
+  "item.goo.goo_and_you": "Goo and You",
   "patchouli.goo.book.landing": "Render things into goo, or refine goo back into things!$(br)To start, find $(item)honeycomb$().$(br)You'll learn to make $(item)gaskets$(), the gateway to goo. Literally and figuratively.",
   "patchouli.goo.types_of_goo.name": "Types of Goo",
   "patchouli.goo.types_of_goo.description": "Different kinds of goo and where they come from.$(br2)Most types of goo are pretty common, but some are very rare.$(br2)Sourcing sustainable goo isn't always easy, but these hints should help.",

@@ -22,6 +22,7 @@ public class Recipes extends RecipeProvider {
 
     @Override
     protected void registerRecipes(Consumer<IFinishedRecipe> consumer) {
+        registerBookRecipe(consumer);
         registerGasketRecipe(consumer);
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
@@ -36,7 +37,7 @@ public class Recipes extends RecipeProvider {
     // doesn't work, needs a custom serializer to get the NBT on the stack to identify
     // it isn't just any patchouli book, but goo's patchouli book. leaving this a manual recipe for the time being.
     private void registerBookRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "book")).getItem())
+        ShapelessRecipeBuilder.shapelessRecipe(Registry.GOO_AND_YOU.get())
                 .addIngredient(Registry.GASKET.get())
                 .addIngredient(Items.BOOK)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))

@@ -45,6 +45,8 @@ public class Registry {
 //    public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
 //    public static final RegistryObject<Crucible> CRUCIBLE = ITEMS.register("crucible", Crucible::new);
 
+    public static final RegistryObject<GooAndYou> GOO_AND_YOU = ITEMS.register("goo_and_you", GooAndYou::new);
+
     // Goo Bulbs registration
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);
     public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new BlockItem(GOO_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(() -> () -> GooBulbItemRenderer.instance)));
