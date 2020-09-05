@@ -9,15 +9,17 @@
     },
     {
       "type": "multiblock",
+      "text": "patchouli.goo.solidifier.power",
       "enable_visualize": false,
       "multiblock": {
         "mapping": {
           "B": "goo:goo_bulb",
-          "0": "goo:solidifier[facing=south]"
+          "0": "goo:solidifier[facing=south]",
+          "C": "minecraft:chest"
         },
         "pattern": [
-          [" ","B"],
-          ["B","0"]
+          ["B "],
+          ["0C"]
         ]
       }
     }

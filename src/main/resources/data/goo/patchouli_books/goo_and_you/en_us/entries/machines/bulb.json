@@ -9,6 +9,7 @@
     },
     {
       "type": "multiblock",
+      "text": "patchouli.goo.goo_bulb.upgrades",
       "enable_visualize": false,
       "multiblock": {
         "mapping": {
