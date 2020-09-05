@@ -60,7 +60,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         float maxY = to.getY();
         float highestToY = minY;
         for(FluidStack goo : gooList) {
-            GooMod.debug("rendering some goo " + goo.getFluid().getRegistryName() + " x" + goo.getAmount());
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float percentage = goo.getAmount() / totalGoo;
             float heightScale = percentage * scaledHeight;
