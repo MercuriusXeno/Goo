@@ -8,7 +8,7 @@ public class GooBulbTileMk2 extends GooBulbTileAbstraction
         super(Registry.GOO_BULB_TILE_MK2.get());
     }
 
-    public int getStorageMultiplier()
+    public int storageMultiplier()
     {
         return 8;
     }

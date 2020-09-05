@@ -12,7 +12,6 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -82,6 +81,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
         
         if (world.isRemote()) {
+            return;
+        }
+
+        if (getBlockState().get(BlockStateProperties.POWERED)) {
             return;
         }
 

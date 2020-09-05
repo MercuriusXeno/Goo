@@ -4,7 +4,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -53,15 +52,12 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
             return;
         }
 
-        doVerticalDrain();
-        doLateralShare();
+        boolean didStuff = doVerticalDrain() || doLateralShare();
 
-        cleanStacks();
-    }
-
-    private void cleanStacks()
-    {
-        goo.removeIf(FluidStack::isEmpty);
+        if (didStuff) {
+            pruneEmptyGoo();
+            onContentsChanged();
+        }
     }
 
     public List<FluidStack> goo()
@@ -112,7 +108,6 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         if (verticalFillIntensity <= cutoffThreshold) {
             disableVerticalFillVisuals();
         }
-
     }
 
     public void disableVerticalFillVisuals() {
@@ -135,40 +130,54 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
     }
 
     // if placed above another bulb, the bulb above will drain everything downward.
-    private void doVerticalDrain() {
+    private boolean doVerticalDrain() {
         if (this.goo.size() == 0) {
-            return;
+            return false;
         }
 
         // check the tile below us, if it's not a bulb, bail.
         GooBulbTileAbstraction bulb = fluidHandler.getBulbInDirection(Direction.DOWN);
         if (bulb == null) {
-            return;
+            return false;
         }
 
         // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
         IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, Direction.UP);
 
         // the maximum amount you can drain in a tick is here.
-        int simulatedDrainLeft = GooMod.config.gooTransferRate();
+        int simulatedDrainLeft = transferRate();
 
+        if (simulatedDrainLeft == 0) {
+            return false;
+        }
+
+        boolean didStuff = false;
         // iterate over the stacks and ensure
         for(FluidStack s : goo) {
             if (simulatedDrainLeft <= 0) {
                 break;
             }
-            simulatedDrainLeft -= trySendingFluidToBulb(simulatedDrainLeft, s, cap, true);
+            int simulatedDrain = trySendingFluidToBulb(simulatedDrainLeft, s, cap, true);
+            if (simulatedDrain != simulatedDrainLeft) {
+                didStuff = true;
+            }
+            simulatedDrainLeft = simulatedDrain;
         }
 
-        // avoid concurrent modifications to the indices of the array until all work is final.
-        pruneEmptyGoo();
+        return didStuff;
+    }
+
+    private int transferRate()
+    {
+        return GooMod.config.gooTransferRate() * storageMultiplier();
     }
 
     // bulbs adjacent to one another laterally "equalize" their contents to allow some hotswapping behaviors.
-    private void doLateralShare() {
+    private boolean doLateralShare() {
         if (this.goo.size() == 0) {
-            return;
+            return false;
         }
+        boolean didStuff = false;
         for(Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST })
         {
             // check the tile in this direction, if it's not another bulb, pass;
@@ -181,7 +190,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
             IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
 
             // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  GooMod.config.gooTransferRate();
+            int simulatedDrainLeft =  transferRate();
 
             // iterate over the stacks and ensure
             for(FluidStack s : goo) {
@@ -197,12 +206,15 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
                 }
                 int splitDelta = (int)Math.floor(delta / 2d);
                 int amountToSend = Math.min(splitDelta, simulatedDrainLeft);
-                simulatedDrainLeft = trySendingFluidToBulb(amountToSend, s, cap, false);
-            }
 
-            // avoid concurrent modifications to the indices of the array until all work is final.
-            pruneEmptyGoo();
+                int simulatedDrain = trySendingFluidToBulb(amountToSend, s, cap, false);
+                if (simulatedDrain != simulatedDrainLeft) {
+                    didStuff = true;
+                }
+                simulatedDrainLeft = simulatedDrain;
+            }
         }
+        return didStuff;
     }
 
     private int trySendingFluidToBulb(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, boolean isVerticalDrain) {
@@ -226,7 +238,6 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         if (cap instanceof BulbFluidHandler && isVerticalDrain) {
             ((BulbFluidHandler)cap).sendVerticalFillSignalForVisuals(s.getFluid());
         }
-
 
         // now call our drain, we're the sender.
         fluidHandler.drain(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
@@ -337,19 +348,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
 
     @Override
     public void updateFluidsTo(List<FluidStack> fluids) {
-        if (hasChanges(fluids)) {
-            goo = fluids;
-        }
-    }
-
-    private boolean hasChanges(List<FluidStack> fluids) {
-        boolean hasChanges = false;
-        for(FluidStack f : fluids) {
-            if (goo.stream().noneMatch(g -> g.isFluidStackIdentical(f))) {
-                hasChanges = true;
-            }
-        }
-        return hasChanges;
+        goo = fluids;
     }
 
     private BulbFluidHandler createHandler() {
@@ -405,7 +404,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         return getLeastQuantityGoo();
     }
 
-    public int getStorageMultiplier()
+    public int storageMultiplier()
     {
         return 1;
     }

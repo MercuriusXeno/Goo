@@ -2,8 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "non",
-    "pcp",
-    "opo"
+    "pfp",
+    "obo"
   ],
   "key": {
     "n": {
@@ -12,11 +12,14 @@
     "o": {
       "item": "goo:gasket"
     },
+    "b": {
+      "item": "minecraft:brewing_stand"
+    },
     "p": {
       "item": "minecraft:piston"
     },
-    "c": {
-      "item": "minecraft:magma_block"
+    "f": {
+      "item": "minecraft:blast_furnace"
     }
   },
   "result": {

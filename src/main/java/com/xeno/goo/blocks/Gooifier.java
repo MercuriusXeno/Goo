@@ -3,6 +3,7 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.RedstoneLampBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.util.ITooltipFlag;
@@ -21,6 +22,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
+
 import java.util.List;
 import java.util.Random;
 
@@ -31,27 +34,30 @@ public class Gooifier extends Block {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
                 .hardnessAndResistance(4.0f));
+        setDefaultState(this.getDefaultState()
+                .with(BlockStateProperties.POWERED, true)
+                .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+        );
     }
 
     @Override
     public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
     {
-        return state.get(BlockStateProperties.POWERED) ? 12 : 0;
+        return !state.get(BlockStateProperties.POWERED) ? 12 : 0;
     }
 
     public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand)
     {
-        if (stateIn.get(BlockStateProperties.POWERED)) {
-            double d0 = (double) pos.getX() + 0.5D;
-            double d1 = (double) pos.getY();
-            double d2 = (double) pos.getZ() + 0.5D;
+        if (!stateIn.get(BlockStateProperties.POWERED)) {
+            double d0 = pos.getX() + 0.5D;
+            double d1 = pos.getY();
+            double d2 = pos.getZ() + 0.5D;
             if (rand.nextDouble() < 0.1D) {
                 worldIn.playSound(d0, d1, d2, SoundEvents.BLOCK_FURNACE_FIRE_CRACKLE, SoundCategory.BLOCKS, 1.0F, 1.0F, false);
             }
 
             Direction direction = stateIn.get(HORIZONTAL_FACING);
             Direction.Axis direction$axis = direction.getAxis();
-            double d3 = 0.52D;
             double d4 = rand.nextDouble() * 0.6D - 0.3D;
             double d5 = direction$axis == Direction.Axis.X ? (double) direction.getXOffset() * 0.52D : d4;
             double d6 = rand.nextDouble() * 6.0D / 16.0D;
@@ -74,13 +80,32 @@ public class Gooifier extends Block {
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
                 .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED);
+    }
+
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        if (!worldIn.isRemote) {
+            boolean flag = state.get(BlockStateProperties.POWERED);
+            if (flag != worldIn.isBlockPowered(pos)) {
+                if (flag) {
+                    worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
+                } else {
+                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                }
+            }
+        }
+    }
+
+    public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
+        if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
+            worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+        }
     }
 
     @Override

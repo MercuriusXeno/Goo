@@ -2,6 +2,7 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
@@ -38,14 +39,19 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
                 matrixStack, buffer, combinedLightIn);
     }
 
+    // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
+    private static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
     public static void render(int bulbCapacity, float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
-
+        gooList.removeIf(FluidStack::isEmpty);
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
 
+        int distinctGooCount = gooList.size();
+        float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM * distinctGooCount;
+
         // this is the total fill percentage of the container
-        float scaledHeight = totalGoo / (float)bulbCapacity;
-        float  yOffset = 0;
+        float scaledHeight = Math.max(minHeight, totalGoo / (float)bulbCapacity);
+        float yOffset = 0;
 
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
@@ -54,6 +60,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         float maxY = to.getY();
         float highestToY = minY;
         for(FluidStack goo : gooList) {
+            GooMod.debug("rendering some goo " + goo.getFluid().getRegistryName() + " x" + goo.getAmount());
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float percentage = goo.getAmount() / totalGoo;
             float heightScale = percentage * scaledHeight;

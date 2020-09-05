@@ -18,9 +18,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextProperties;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
+import net.minecraft.util.text.TextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderTooltipEvent;
@@ -28,12 +27,15 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.command.TextComponentHelper;
 import org.lwjgl.opengl.GL11;
 import vazkii.patchouli.api.PatchouliAPI;
 
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -174,7 +176,7 @@ public class ForgeClientEvents
         ItemStack stack = event.getStack();
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
+        if (isGooBulb(stack) && !Screen.hasShiftDown()) {
             tryDrawingGooContents(stack, event);
         }
 
@@ -193,6 +195,15 @@ public class ForgeClientEvents
         if (Screen.hasShiftDown()) {
             tryDrawingGooComposition(stack, event);
         }
+    }
+
+    private static boolean isGooBulb(ItemStack stack)
+    {
+        return stack.getItem().equals(Registry.GOO_BULB_ITEM.get())
+                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK2.get())
+                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK3.get())
+                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK4.get())
+                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK5.get());
     }
 
     private static void tryDrawingGooContents(ItemStack stack, RenderTooltipEvent.PostText event)
@@ -313,7 +324,8 @@ public class ForgeClientEvents
         mc.getTextureManager().bindTexture(icon);
         drawTexturedModalRect(x, y, 0, 0, ICON_WIDTH, ICON_HEIGHT, 500f);
 
-        String s1 = Integer.toString(count);
+        IFormattableTextComponent t1 = getGooAmountForDisplay(count);
+        String s1 = t1.getString();
         int w1 = mc.fontRenderer.getStringWidth(s1);
         int color = 0xFFFFFF;
         RenderSystem.pushMatrix();
@@ -322,6 +334,46 @@ public class ForgeClientEvents
         RenderSystem.scalef(TEXT_SCALE, TEXT_SCALE, TEXT_SCALE);
         mc.fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
         RenderSystem.popMatrix();
+    }
+
+    private static IFormattableTextComponent getGooAmountForDisplay(int count)
+    {
+        String s = Integer.toString(count);
+        int oom = 0;
+        int length = s.length();
+        float r = 0f;
+        // over a thousand buckets (a million millis)
+        // we really want to compress the values by more than usual.
+        while(length > 3) {
+            length -= 3;
+            oom++;
+            // capture the remainder's significant digits
+            r = (count % 1000) / 1000f;
+            count /= 1000;
+        }
+        // count digits > 2? truncate an additional place (10 instead of 100)
+        int truncate = 100;
+        if (count >= 100) {
+            truncate = 10;
+        }
+        r = (int)Math.ceil(r * truncate) / (float)truncate;
+        TranslationTextComponent notationMarker = new TranslationTextComponent(getOrderOfMagnitudeNotation(oom));
+        String result = NumberFormat.getNumberInstance(Locale.ROOT).format((float)count + r);
+
+        return  new TranslationTextComponent(result).append(notationMarker);
+    }
+
+    private static String getOrderOfMagnitudeNotation(int oom)
+    {
+        switch(oom) {
+            case 1:
+                return "numbers.notation.thousand";
+            case 2:
+                return "numbers.notation.million";
+            case 3:
+                return "numbers.notation.billion";
+        }
+        return "";
     }
 
     public static void drawTexturedModalRect(int x, int y, int u, int v, int width, int height, float zLevel)

@@ -130,12 +130,13 @@ public class Recipes extends RecipeProvider {
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.GOOIFIER.get())
                 .patternLine("non")
-                .patternLine("pcp")
-                .patternLine("opo")
+                .patternLine("pfp")
+                .patternLine("obo")
                 .key('n', Items.NETHER_BRICKS)
                 .key('o', Registry.GASKET.get())
+                .key('b', Items.BREWING_STAND)
                 .key('p', Items.PISTON)
-                .key('c', Items.MAGMA_BLOCK)
+                .key('f', Items.BLAST_FURNACE)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
                 .build(consumer);
     }

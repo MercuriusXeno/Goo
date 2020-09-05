@@ -175,14 +175,14 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
         ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_on");
-        BlockModelBuilder model = models()
+        BlockModelBuilder modelInactive = models()
                 .cube("gooifier", bottom, top, front_off, back, side, side)
                 .texture("particle", front_off);
         BlockModelBuilder modelActive = models()
                 .cube("gooifier_powered", bottom, top, front_on, back, side, side)
                 .texture("particle", front_on);
-        horizontalBlock(Registry.GOOIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
-        simpleBlockItem(Registry.GOOIFIER.get(), model);
+        horizontalBlock(Registry.GOOIFIER.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(Registry.GOOIFIER.get(), modelInactive);
     }
 
     private void registerSolidifier() {
@@ -195,7 +195,7 @@ public class BlockStates extends BlockStateProvider {
         ResourceLocation back_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_back_on");
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_off");
         ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_on");
-        BlockModelBuilder model = models()
+        BlockModelBuilder modelInactive = models()
                 .withExistingParent("solidifier", "block/block")
                 .element()
                 .from(0f, 0, 0f).to(16f, 16, 16f)
@@ -206,12 +206,12 @@ public class BlockStates extends BlockStateProvider {
                                                 (t == Direction.SOUTH ? "#back_off" :
                                                         "#front_off")))))
                 .end();
-        model.texture("particle", front_off);
-        model.texture("bottom", bottom);
-        model.texture("top_off", top_off);
-        model.texture("side_off", side_off);
-        model.texture("front_off", front_off);
-        model.texture("back_off", back_off);
+        modelInactive.texture("particle", front_off);
+        modelInactive.texture("bottom", bottom);
+        modelInactive.texture("top_off", top_off);
+        modelInactive.texture("side_off", side_off);
+        modelInactive.texture("front_off", front_off);
+        modelInactive.texture("back_off", back_off);
 
         BlockModelBuilder modelActive = models()
                 .withExistingParent("solidifier_powered", "block/block")
@@ -230,7 +230,7 @@ public class BlockStates extends BlockStateProvider {
         modelActive.texture("side_on", side_on);
         modelActive.texture("front_on", front_on);
         modelActive.texture("back_on", back_on);
-        horizontalBlock(Registry.SOLIDIFIER.get(), state -> state.get(BlockStateProperties.POWERED) ? modelActive : model);
-        simpleBlockItem(Registry.SOLIDIFIER.get(), model);
+        horizontalBlock(Registry.SOLIDIFIER.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(Registry.SOLIDIFIER.get(), modelInactive);
     }
 }

@@ -8,6 +8,10 @@
   "block.goo.gooifier": "Gooifier",
   "block.goo.solidifier": "Solidifier",
 
+  "numbers.notation.thousand": "k",
+  "numbers.notation.million": "m",
+  "numbers.notation.billion": "b",
+
   "item.goo.gasket": "Gasket",
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.combo_gauntlet": "Combo Gauntlet",

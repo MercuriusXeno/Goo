@@ -45,7 +45,7 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.config.bulbCapacity() * parent.getStorageMultiplier() : 0;
+        return tank == 0 ? GooMod.config.bulbCapacity() * parent.storageMultiplier() : 0;
     }
 
     public static GooBulbTileAbstraction getBulbInDirection(TileEntity tile, Direction d)
