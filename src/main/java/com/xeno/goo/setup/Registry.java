@@ -5,6 +5,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.GooBulbItemRenderer;
+import com.xeno.goo.client.render.MixerItemRenderer;
 import com.xeno.goo.fluids.*;
 import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.*;
@@ -72,6 +73,10 @@ public class Registry {
     public static final RegistryObject<GooPump> GOO_PUMP = BLOCKS.register("goo_pump", GooPump::new);
     public static final RegistryObject<Item> GOO_PUMP_ITEM = ITEMS.register("goo_pump", () -> new BlockItem(GOO_PUMP.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, GOO_PUMP.get()).build(null));
+
+    public static final RegistryObject<Mixer> MIXER = BLOCKS.register("mixer", Mixer::new);
+    public static final RegistryObject<Item> MIXER_ITEM = ITEMS.register("mixer", () -> new BlockItem(MIXER.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(() -> () -> MixerItemRenderer.instance)));
+    public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, MIXER.get()).build(null));
 
     // Gooifier registration
     public static final RegistryObject<Gooifier> GOOIFIER = BLOCKS.register("gooifier", Gooifier::new);

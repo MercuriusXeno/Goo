@@ -3,6 +3,7 @@ package com.xeno.goo.events;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.render.GooBulbRenderer;
 import com.xeno.goo.client.render.GooPumpRenderer;
+import com.xeno.goo.client.render.MixerRenderer;
 import com.xeno.goo.client.render.SolidifierTileRenderer;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.renderer.RenderType;
@@ -33,9 +34,11 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(Registry.GOO_BULB_MK4.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.GOO_BULB_MK5.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.GOO_PUMP.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(Registry.MIXER.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.SOLIDIFIER.get(), RenderType.getSolid());
         GooBulbRenderer.register();
         GooPumpRenderer.register();
+        MixerRenderer.register();
         SolidifierTileRenderer.register();
     }
 

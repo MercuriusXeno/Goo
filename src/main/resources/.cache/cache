@@ -3,9 +3,11 @@ b98b34c6f93b59993054934f304cf57256d35971 assets/goo/blockstates/goo_bulb_mk2.jso
 2cfe065b453ede6cea6a66240a5ac82813ec02f5 assets/goo/blockstates/goo_bulb_mk3.json
 481ca2d2a50868476d46dbdb10206d14473d717b assets/goo/blockstates/goo_bulb_mk4.json
 112a6ec168b914b35a02b185d0ba7db1bb0ec720 assets/goo/blockstates/goo_bulb_mk5.json
-ebd51a081e2e9ca8776ebcaa815a67128b195b41 assets/goo/blockstates/goo_pump.json
+ff962259452c3815af9ea98408c249784a75e0c2 assets/goo/blockstates/goo_pump.json
 502d69a859c18048e071fe1c12ce989b1b9216b0 assets/goo/blockstates/gooifier.json
+cbcadb09250bbcd3e70fa7b32d2ff906ed6d5be8 assets/goo/blockstates/mixer.json
 b4957aa227e8901a62dcc5918a42560d1341f2f1 assets/goo/blockstates/solidifier.json
+76428b75c13cfe2623067a995702b082a15060c4 assets/goo/models/block/agitator.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk2.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk3.json
@@ -15,6 +17,9 @@ da1e359812875db6289a7967d4c058d6918eaaf4 assets/goo/models/block/goo_pump.json
 6a27b2b2746ffcfc3ea497149454d97a91eea6af assets/goo/models/block/goo_pump_actuator.json
 3fabb1123ab3fcc9a0ef6442e4f410d1fb83a718 assets/goo/models/block/gooifier.json
 13a079250c8356d5cbb81257f261647fa0e34501 assets/goo/models/block/gooifier_powered.json
+5dccae1c2fe21f6b6e7022b1f07e8101fd2050f0 assets/goo/models/block/left_shaft.json
+1a59f66c0530076f50f9c5d1453443fab68d3ebb assets/goo/models/block/mixer_base.json
+e86b7fc10b020c886530f4631f9c1d471452f3e8 assets/goo/models/block/right_shaft.json
 923b217a2ad23f45137fa4467a9d171c22b223c3 assets/goo/models/block/solidifier.json
 c9282312dbf6a403b61cd994bb7c55ae361347ed assets/goo/models/block/solidifier_powered.json
 f6080b1e76ed3c8a05e44724259e884719387d30 assets/goo/models/item/gasket.json

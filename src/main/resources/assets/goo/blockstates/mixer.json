@@ -1,0 +1,164 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/mixer_base",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/left_shaft",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/right_shaft",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/agitator",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/mixer_base",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/left_shaft",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/right_shaft",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/agitator",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/mixer_base",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/left_shaft",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/right_shaft",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/agitator",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "static"
+      },
+      "apply": {
+        "model": "goo:block/mixer_base",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/left_shaft",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/right_shaft",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "render": "dynamic"
+      },
+      "apply": {
+        "model": "goo:block/agitator",
+        "y": 90
+      }
+    }
+  ]
+}

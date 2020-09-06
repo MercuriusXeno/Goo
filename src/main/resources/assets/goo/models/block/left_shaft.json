@@ -1,0 +1,76 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "empty": "goo:block/empty",
+    "rod_side": "goo:block/mixer_rod_side",
+    "piston_face": "goo:block/mixer_bulb_piston",
+    "piston_end": "goo:block/mixer_bulb_piston_end",
+    "piston_side": "goo:block/mixer_bulb_piston_side"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        0,
+        2
+      ],
+      "to": [
+        9,
+        4.02,
+        4
+      ],
+      "faces": {
+        "down": {
+          "texture": "#empty"
+        },
+        "up": {
+          "texture": "#empty"
+        },
+        "north": {
+          "texture": "#rod_side"
+        },
+        "south": {
+          "texture": "#rod_side"
+        },
+        "west": {
+          "texture": "#rod_side"
+        },
+        "east": {
+          "texture": "#rod_side"
+        }
+      }
+    },
+    {
+      "from": [
+        0.02,
+        4.02,
+        0.02
+      ],
+      "to": [
+        5.98,
+        4.98,
+        15.98
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_face"
+        },
+        "up": {
+          "texture": "#piston_face"
+        },
+        "north": {
+          "texture": "#piston_side"
+        },
+        "south": {
+          "texture": "#piston_side"
+        },
+        "west": {
+          "texture": "#piston_end"
+        },
+        "east": {
+          "texture": "#piston_end"
+        }
+      }
+    }
+  ]
+}
