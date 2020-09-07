@@ -189,6 +189,10 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
             // try fetching the bulb capabilities in the opposing direction and throw an exception if it fails. return if null.
             IFluidHandler cap = FluidHandlerHelper.capability(tile, d.getOpposite());
 
+            if (cap == null) {
+                continue;
+            }
+
             // the maximum amount you can drain in a tick is here.
             int simulatedDrainLeft =  transferRate();
 

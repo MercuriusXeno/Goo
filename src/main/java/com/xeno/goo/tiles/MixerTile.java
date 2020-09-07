@@ -191,6 +191,9 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
     private IFluidHandler tryGettingFluidCapabilityFromTileBelow()
     {
         TileEntity tile = FluidHandlerHelper.tileAtDirection(this, Direction.DOWN);
+        if (tile == null) {
+            return null;
+        }
         return FluidHandlerHelper.capability(tile, Direction.UP);
     }
 
