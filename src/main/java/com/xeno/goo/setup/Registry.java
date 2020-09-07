@@ -4,6 +4,7 @@ import com.ldtteam.aequivaleo.api.compound.ICompoundType;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.blocks.*;
+import com.xeno.goo.client.render.CrucibleItemRenderer;
 import com.xeno.goo.client.render.GooBulbItemRenderer;
 import com.xeno.goo.client.render.MixerItemRenderer;
 import com.xeno.goo.fluids.*;
@@ -74,9 +75,15 @@ public class Registry {
     public static final RegistryObject<Item> GOO_PUMP_ITEM = ITEMS.register("goo_pump", () -> new BlockItem(GOO_PUMP.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, GOO_PUMP.get()).build(null));
 
+    // Mixer registration
     public static final RegistryObject<Mixer> MIXER = BLOCKS.register("mixer", Mixer::new);
     public static final RegistryObject<Item> MIXER_ITEM = ITEMS.register("mixer", () -> new BlockItem(MIXER.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(() -> () -> MixerItemRenderer.instance)));
     public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, MIXER.get()).build(null));
+
+    // Crucible registration
+    public static final RegistryObject<Crucible> CRUCIBLE = BLOCKS.register("crucible", Crucible::new);
+    public static final RegistryObject<Item> CRUCIBLE_ITEM = ITEMS.register("crucible", () -> new BlockItem(CRUCIBLE.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(() -> () -> CrucibleItemRenderer.instance)));
+    public static final RegistryObject<TileEntityType<CrucibleTile>> CRUCIBLE_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(CrucibleTile::new, CRUCIBLE.get()).build(null));
 
     // Gooifier registration
     public static final RegistryObject<Gooifier> GOOIFIER = BLOCKS.register("gooifier", Gooifier::new);

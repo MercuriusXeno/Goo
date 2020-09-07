@@ -1,10 +1,7 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.render.GooBulbRenderer;
-import com.xeno.goo.client.render.GooPumpRenderer;
-import com.xeno.goo.client.render.MixerRenderer;
-import com.xeno.goo.client.render.SolidifierTileRenderer;
+import com.xeno.goo.client.render.*;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "b b",
+    "cnc",
+    " p "
+  ],
+  "key": {
+    "b": {
+      "item": "goo:goo_bulb"
+    },
+    "c": {
+      "item": "minecraft:cauldron"
+    },
+    "n": {
+      "item": "minecraft:netherite_block"
+    },
+    "p": {
+      "item": "goo:goo_pump"
+    }
+  },
+  "result": {
+    "item": "goo:mixer"
+  }
+}

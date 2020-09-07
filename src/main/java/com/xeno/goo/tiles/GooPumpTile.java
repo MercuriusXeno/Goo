@@ -5,7 +5,6 @@ import com.xeno.goo.aequivaleo.EntryHelper;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.network.ChangeItemTargetPacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -173,16 +172,19 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
 
     private void tryPushingFluid()
     {
-        GooBulbTileAbstraction source = tryGettingBulbInSourceDirection();
-        GooBulbTileAbstraction target = tryGettingBulbInTargetDirection();
+        TileEntity source = tileAtSource();
+        TileEntity target = tileAtTarget();
 
         if (source == null || target == null) {
             return;
         }
 
-        BulbFluidHandler sourceHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(source, sourceDirection());
-        BulbFluidHandler targetHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(target, targetDirection());
+        IFluidHandler sourceHandler = FluidHandlerHelper.capability(source, sourceDirection().getOpposite());
+        IFluidHandler targetHandler = FluidHandlerHelper.capability(target, targetDirection().getOpposite());
 
+        if (sourceHandler == null || targetHandler == null) {
+            return;
+        }
         FluidStack simulatedDrain = FluidStack.EMPTY;
         if (this.targetStack.isEmpty()) {
             simulatedDrain = sourceHandler.drain(getMaxDrain(), IFluidHandler.FluidAction.SIMULATE);
@@ -230,26 +232,14 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         return this.facing();
     }
 
-    private GooBulbTileAbstraction tryGettingBulbInDirection(Direction d)
+    private TileEntity tileAtTarget()
     {
-        if (world == null) {
-            return null;
-        }
-        TileEntity t = world.getTileEntity(pos.offset(d));
-        if (t instanceof GooBulbTileAbstraction) {
-            return (GooBulbTileAbstraction)t;
-        }
-        return null;
+        return FluidHandlerHelper.tileAtDirection(this, targetDirection());
     }
 
-    private GooBulbTileAbstraction tryGettingBulbInTargetDirection()
+    private TileEntity tileAtSource()
     {
-        return tryGettingBulbInDirection(targetDirection());
-    }
-
-    private GooBulbTileAbstraction tryGettingBulbInSourceDirection()
-    {
-        return tryGettingBulbInDirection(sourceDirection());
+        return FluidHandlerHelper.tileAtDirection(this, sourceDirection());
     }
 
     public ItemStack getDisplayedItem()

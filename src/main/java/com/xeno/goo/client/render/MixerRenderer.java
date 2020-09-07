@@ -3,11 +3,8 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.BulbFluidHandler;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
-import com.xeno.goo.tiles.MixerTile;
+import com.xeno.goo.tiles.*;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.util.Direction;
@@ -16,18 +13,35 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
-import java.util.List;
-
 public class MixerRenderer extends TileEntityRenderer<MixerTile> {
-    private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 0.0005f;
-    private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
-    private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - (FLUID_VERTICAL_MAX * 16);
-    private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
-    private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
-    private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
-    private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
+    private static final float INPUT_Y_OFFSET = 4.03f;
+    // names a bit misleading;  if the block is rotated, the X is the Z and vice versa.
+    // "left" just means west if facing north.
+    private static final float LEFT_INPUT_X_START_OFFSET = 0.03f;
+    private static final float LEFT_INPUT_X_END_OFFSET = 5.97f;
+    private static final float LEFT_INPUT_Z_START_OFFSET = 2.03f;
+    private static final float LEFT_INPUT_Z_END_OFFSET = 13.97f;
+    // names a bit misleading;  if the block is rotated, the X is the Z and vice versa.
+    // "right" just means east if facing north.
+    private static final float RIGHT_INPUT_X_START_OFFSET = 10.03f;
+    private static final float RIGHT_INPUT_X_END_OFFSET = 15.97f;
+    private static final float RIGHT_INPUT_Z_START_OFFSET = 2.03f;
+    private static final float RIGHT_INPUT_Z_END_OFFSET = 13.97f;
+    // left channel dimension
+    private static final float CHANNEL_Y_OFFSET = 0.03f;
+    private static final float LEFT_CHANNEL_X_START_OFFSET = 1.03f;
+    private static final float LEFT_CHANNEL_X_END_OFFSET = 4.97f;
+    private static final float LEFT_CHANNEL_Z_START_OFFSET = 6.03f;
+    private static final float LEFT_CHANNEL_Z_END_OFFSET = 9.97f;
+
+    // right channel dimensions
+    private static final float RIGHT_CHANNEL_X_START_OFFSET = 11.03f;
+    private static final float RIGHT_CHANNEL_X_END_OFFSET = 14.97f;
+    private static final float RIGHT_CHANNEL_Z_START_OFFSET = 6.03f;
+    private static final float RIGHT_CHANNEL_Z_END_OFFSET = 9.97f;
+
+    private static final float MAX_FLUID_HEIGHT_INPUT = 11.94f;
+    private static final float MAX_FLUID_HEIGHT_CHANNEL = 3.94f;
 
     public MixerRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -35,59 +49,317 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
 
     @Override
     public void render(MixerTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
-//        IFluidHandler cap = BulbFluidHandler.bulbCapability(tile, Direction.UP);
-//        render(cap.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
-//                matrixStack, buffer, combinedLightIn);
+        // mixers have 2 tanks
+        IFluidHandler west = FluidHandlerHelper.capability(tile, tile.orientedLeft());
+        IFluidHandler east = FluidHandlerHelper.capability(tile, tile.orientedRight());
+        if (west == null || east == null) {
+            // this is real bad, abort
+            return;
+        }
+        render(tile.facing(), tile, west.getTankCapacity(0), east.getTankCapacity(0),
+                west.getFluidInTank(0), east.getFluidInTank(0),
+                matrixStack, buffer, combinedLightIn, combinedOverlayIn);
+    }
+
+    private void render(Direction facing, MixerTile tile, int westCapacity, int eastCapacity,
+            FluidStack westFluid, FluidStack eastFluid,
+            MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn)
+    {
+        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_BLOCK);
+        renderTankFluid(Direction.WEST, facing, westCapacity, westFluid, matrixStack, builder, combinedLightIn);
+        renderTankFluid(Direction.EAST, facing, eastCapacity, eastFluid, matrixStack, builder, combinedLightIn);
+        renderChannelFluid(Direction.WEST, facing, westFluid, matrixStack, builder, combinedLightIn);
+        renderChannelFluid(Direction.EAST, facing, eastFluid, matrixStack, builder, combinedLightIn);
+    }
+
+    private void renderTankFluid(Direction tankSide, Direction facing, int capacity, FluidStack goo, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn)
+    {
+        Vector3f to = fluidTankDimensionsTo(tankSide, facing, goo.getAmount(), capacity);
+        Vector3f from = fluidTankDimensionsFrom(tankSide, facing);
+        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
+    }
+
+    private void renderChannelFluid(Direction tankSide, Direction facing, FluidStack goo, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn)
+    {
+        Vector3f to = fluidChannelDimensionsTo(tankSide, facing);
+        Vector3f from = fluidChannelDimensionsFrom(tankSide, facing);
+        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
+    }
+
+    private Vector3f fluidChannelDimensionsTo(Direction tankSide, Direction facing)
+    {
+        // this is the total fill percentage of the container
+
+        float toY = CHANNEL_Y_OFFSET + MAX_FLUID_HEIGHT_CHANNEL;
+        float toX = endingChannelFromSideAndFaceX(tankSide, facing);
+        float toZ = endingChannelFromSideAndFaceZ(tankSide, facing);
+        return new Vector3f(toX, toY, toZ);
+    }
+
+    private Vector3f fluidChannelDimensionsFrom(Direction tankSide, Direction facing)
+    {
+        float fromY = CHANNEL_Y_OFFSET;
+        float fromX = startingChannelFromSideAndFaceX(tankSide, facing);
+        float fromZ = startingChannelFromSideAndFaceZ(tankSide, facing);
+
+        return new Vector3f(fromX, fromY, fromZ);
+    }
+
+    private float startingChannelFromSideAndFaceX(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_CHANNEL_X_START_OFFSET;
+                case EAST:
+                    return LEFT_CHANNEL_Z_START_OFFSET;
+                case SOUTH:
+                    return LEFT_CHANNEL_X_START_OFFSET;
+                case WEST:
+                    return RIGHT_CHANNEL_Z_START_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_CHANNEL_X_START_OFFSET;
+                case EAST:
+                    return RIGHT_CHANNEL_Z_START_OFFSET;
+                case SOUTH:
+                    return RIGHT_CHANNEL_X_START_OFFSET;
+                case WEST:
+                    return LEFT_CHANNEL_Z_START_OFFSET;
+            }
+        }
+        return 0f; // this is bad
+    }
+
+    private float endingChannelFromSideAndFaceX(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_CHANNEL_X_END_OFFSET;
+                case EAST:
+                    return LEFT_CHANNEL_Z_END_OFFSET;
+                case SOUTH:
+                    return LEFT_CHANNEL_X_END_OFFSET;
+                case WEST:
+                    return RIGHT_CHANNEL_Z_END_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_CHANNEL_X_END_OFFSET;
+                case EAST:
+                    return RIGHT_CHANNEL_Z_END_OFFSET;
+                case SOUTH:
+                    return RIGHT_CHANNEL_X_END_OFFSET;
+                case WEST:
+                    return LEFT_CHANNEL_Z_END_OFFSET;
+            }
+        }
+        return 16f; // this is bad
+    }
+
+    private float startingChannelFromSideAndFaceZ(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_CHANNEL_Z_START_OFFSET;
+                case EAST:
+                    return LEFT_CHANNEL_X_START_OFFSET;
+                case SOUTH:
+                    return LEFT_CHANNEL_Z_START_OFFSET;
+                case WEST:
+                    return RIGHT_CHANNEL_X_START_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_CHANNEL_Z_START_OFFSET;
+                case EAST:
+                    return RIGHT_CHANNEL_X_START_OFFSET;
+                case SOUTH:
+                    return RIGHT_CHANNEL_Z_START_OFFSET;
+                case WEST:
+                    return LEFT_CHANNEL_X_START_OFFSET;
+            }
+        }
+        return 0f; // this is bad
+    }
+
+    private float endingChannelFromSideAndFaceZ(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_CHANNEL_Z_END_OFFSET;
+                case EAST:
+                    return LEFT_CHANNEL_X_END_OFFSET;
+                case SOUTH:
+                    return LEFT_CHANNEL_Z_END_OFFSET;
+                case WEST:
+                    return RIGHT_CHANNEL_X_END_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_CHANNEL_Z_END_OFFSET;
+                case EAST:
+                    return RIGHT_CHANNEL_X_END_OFFSET;
+                case SOUTH:
+                    return RIGHT_CHANNEL_Z_END_OFFSET;
+                case WEST:
+                    return LEFT_CHANNEL_X_END_OFFSET;
+            }
+        }
+        return 16f; // this is bad
+    }
+
+    private Vector3f fluidTankDimensionsTo(Direction tankSide, Direction facing, int amount, int capacity)
+    {
+        // this is the total fill percentage of the container
+
+        float toY = endingInputFromSideAndFaceY(amount, capacity);
+        float toX = endingInputFromSideAndFaceX(tankSide, facing);
+        float toZ = endingInputFromSideAndFaceZ(tankSide, facing);
+        return new Vector3f(toX, toY, toZ);
+    }
+
+    private Vector3f fluidTankDimensionsFrom(Direction tankSide, Direction facing)
+    {
+        float fromY = INPUT_Y_OFFSET;
+        float fromX = startingInputFromSideAndFaceX(tankSide, facing);
+        float fromZ = startingInputFromSideAndFaceZ(tankSide, facing);
+
+        return new Vector3f(fromX, fromY, fromZ);
+    }
+
+    private float endingInputFromSideAndFaceY(int amount, int capacity)
+    {
+        return scaledHeightTank(amount, capacity) + INPUT_Y_OFFSET;
+    }
+
+    private float scaledHeightTank(int amount, int capacity)
+    {
+        return Math.max(ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, amount / (float)capacity) * MAX_FLUID_HEIGHT_INPUT;
+    }
+
+    private float startingInputFromSideAndFaceX(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_INPUT_X_START_OFFSET;
+                case EAST:
+                    return LEFT_INPUT_Z_START_OFFSET;
+                case SOUTH:
+                    return LEFT_INPUT_X_START_OFFSET;
+                case WEST:
+                    return RIGHT_INPUT_Z_START_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_INPUT_X_START_OFFSET;
+                case EAST:
+                    return RIGHT_INPUT_Z_START_OFFSET;
+                case SOUTH:
+                    return RIGHT_INPUT_X_START_OFFSET;
+                case WEST:
+                    return LEFT_INPUT_Z_START_OFFSET;
+            }
+        }
+        return 0f; // this is bad
+    }
+
+    private float endingInputFromSideAndFaceX(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_INPUT_X_END_OFFSET;
+                case EAST:
+                    return LEFT_INPUT_Z_END_OFFSET;
+                case SOUTH:
+                    return LEFT_INPUT_X_END_OFFSET;
+                case WEST:
+                    return RIGHT_INPUT_Z_END_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_INPUT_X_END_OFFSET;
+                case EAST:
+                    return RIGHT_INPUT_Z_END_OFFSET;
+                case SOUTH:
+                    return RIGHT_INPUT_X_END_OFFSET;
+                case WEST:
+                    return LEFT_INPUT_Z_END_OFFSET;
+            }
+        }
+        return 16f; // this is bad
+    }
+
+    private float startingInputFromSideAndFaceZ(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_INPUT_Z_START_OFFSET;
+                case EAST:
+                    return LEFT_INPUT_X_START_OFFSET;
+                case SOUTH:
+                    return LEFT_INPUT_Z_START_OFFSET;
+                case WEST:
+                    return RIGHT_INPUT_X_START_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_INPUT_Z_START_OFFSET;
+                case EAST:
+                    return RIGHT_INPUT_X_START_OFFSET;
+                case SOUTH:
+                    return RIGHT_INPUT_Z_START_OFFSET;
+                case WEST:
+                    return LEFT_INPUT_X_START_OFFSET;
+            }
+        }
+        return 0f; // this is bad
+    }
+
+    private float endingInputFromSideAndFaceZ(Direction tankSide, Direction facing)
+    {
+        if (tankSide == Direction.EAST) {
+            switch(facing) {
+                case NORTH:
+                    return RIGHT_INPUT_Z_END_OFFSET;
+                case EAST:
+                    return LEFT_INPUT_X_END_OFFSET;
+                case SOUTH:
+                    return LEFT_INPUT_Z_END_OFFSET;
+                case WEST:
+                    return RIGHT_INPUT_X_END_OFFSET;
+            }
+        } else if (tankSide == Direction.WEST) {
+            switch(facing) {
+                case NORTH:
+                    return LEFT_INPUT_Z_END_OFFSET;
+                case EAST:
+                    return RIGHT_INPUT_X_END_OFFSET;
+                case SOUTH:
+                    return RIGHT_INPUT_Z_END_OFFSET;
+                case WEST:
+                    return LEFT_INPUT_X_END_OFFSET;
+            }
+        }
+        return 16f; // this is bad
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
     private static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
-    public static void render(int bulbCapacity, float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
-            MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
-        gooList.removeIf(FluidStack::isEmpty);
-        IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
-
-        int distinctGooCount = gooList.size();
-        float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM * distinctGooCount;
-
-        // this is the total fill percentage of the container
-        float scaledHeight = Math.max(minHeight, totalGoo / (float)bulbCapacity);
-        float yOffset = 0;
-
-        // determine where to draw the fluid based on the model
-        Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
-
-        float minY = from.getY();
-        float maxY = to.getY();
-        float highestToY = minY;
-        for(FluidStack goo : gooList) {
-            // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float percentage = goo.getAmount() / totalGoo;
-            float heightScale = percentage * scaledHeight;
-            float height = (maxY - minY) * heightScale;
-            float fromY, toY;
-            fromY = minY + yOffset;
-            toY = fromY + height;
-            highestToY = toY;
-            FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
-            yOffset += height;
-        }
-
-        if (isVerticallyFilled) {
-            Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
-            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
-        }
-    }
-
-    // vertical fill graphics scale width to the intensity of the fill which decays after a short time
-    private static final float FROM_VERTICAL_FILL_PORT_WIDTH_BASE = 0.125f;
-    private static final float verticalFillHorizontalOffset(float intensity) {
-        return (1f / 2f) - (FROM_VERTICAL_FILL_PORT_WIDTH_BASE * intensity / 2f);
-    };
-    private static final float verticalFillHorizontalFrom(float intensity) {return 16 * verticalFillHorizontalOffset(intensity); }
-    private static final float verticalFillHorizontalTo(float intensity) { return  16 - verticalFillHorizontalFrom(intensity); }
-    private static final Vector3f verticalFillFromVector(float intensity) { return new Vector3f(verticalFillHorizontalFrom(intensity), FROM_SCALED_VERTICAL, verticalFillHorizontalFrom(intensity)); }
-    private static final Vector3f verticalFillToVector(float intensity) { return new Vector3f(verticalFillHorizontalTo(intensity), TO_SCALED_VERTICAL, verticalFillHorizontalTo(intensity)); }
 
     public static void register() {
         ClientRegistry.bindTileEntityRenderer(Registry.MIXER_TILE.get(), MixerRenderer::new);

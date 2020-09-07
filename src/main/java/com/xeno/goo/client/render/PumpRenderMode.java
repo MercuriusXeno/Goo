@@ -1,4 +1,4 @@
-package com.xeno.goo.blocks;
+package com.xeno.goo.client.render;
 
 import net.minecraft.util.IStringSerializable;
 

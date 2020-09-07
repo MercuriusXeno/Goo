@@ -148,7 +148,7 @@ public class GooRenderer extends EntityRenderer<GooEntity>
     public void render(GooEntity entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
-        RenderType rType = RenderHelper.GOO;
+        RenderType rType = GooRenderHelper.GOO;
         IVertexBuilder buffer = bufferType.getBuffer(rType);
         TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo.getFluid().getAttributes().getStillTexture());
 

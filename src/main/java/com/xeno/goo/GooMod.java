@@ -1,6 +1,7 @@
 package com.xeno.goo;
 
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
+import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;

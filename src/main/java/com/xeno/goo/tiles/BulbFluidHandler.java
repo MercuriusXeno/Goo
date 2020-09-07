@@ -6,12 +6,11 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-public class BulbFluidHandler implements IFluidHandler {
+public class BulbFluidHandler implements IFluidHandler
+{
     private final GooBulbTileAbstraction parent;
     public BulbFluidHandler(GooBulbTileAbstraction t) {
         parent = t;
@@ -26,7 +25,7 @@ public class BulbFluidHandler implements IFluidHandler {
         }
 
         // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        return BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
+        return FluidHandlerHelper.capability(bulb, d.getOpposite());
     }
 
     public void sendVerticalFillSignalForVisuals(Fluid f) {
@@ -112,12 +111,5 @@ public class BulbFluidHandler implements IFluidHandler {
         }
 
         return result;
-    }
-
-    public static IFluidHandler bulbCapability(GooBulbTileAbstraction bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-
-        return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
     }
 }

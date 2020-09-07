@@ -88,7 +88,7 @@ public class ForgeClientEvents
     private static boolean isHoldingPatchouliBook(PlayerEntity player)
     {
         if (PATCHOULI_BOOK.isEmpty()) {
-            PATCHOULI_BOOK = PatchouliAPI.instance.getBookStack(new ResourceLocation(GooMod.MOD_ID, "goo_and_you"));
+            PATCHOULI_BOOK = new ItemStack(Registry.GOO_AND_YOU.get());
         }
         return player.getHeldItemOffhand()
                 .equals(PATCHOULI_BOOK, false);

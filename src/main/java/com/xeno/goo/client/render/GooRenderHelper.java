@@ -10,13 +10,14 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
 import org.lwjgl.opengl.GL11;
 
-public class RenderHelper extends RenderState
+public class GooRenderHelper extends RenderState
 {
     public static final RenderType GOO;
 
     public static final RenderType GOO_BLOCK;
 
     public static final RenderType GOO_OVERLAY;
+
     static {
         // GOO
         // todo 1.16 update to match vanilla where necessary (alternate render targets, etc.)
@@ -42,11 +43,12 @@ public class RenderHelper extends RenderState
         /** Render type used for rendering fluids */
         GOO_BLOCK = RenderType.makeType(
                 GooMod.MOD_ID + ":goo_block",
-                DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP, GL11.GL_QUADS, 256, true, false,
+                DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP, GL11.GL_QUADS, 256, true, true,
                 RenderType.State.getBuilder().texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
                         .shadeModel(RenderType.SHADE_ENABLED)
                         .lightmap(RenderType.LIGHTMAP_ENABLED)
                         .texture(RenderType.BLOCK_SHEET_MIPPED)
+                        .cull(disableCull)
                         .transparency(RenderType.TRANSLUCENT_TRANSPARENCY)
                         .build(false));
 
@@ -61,7 +63,7 @@ public class RenderHelper extends RenderState
                     .build(false));
     }
 
-    public RenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)
+    public GooRenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)
     {
         super(nameIn, setupTaskIn, clearTaskIn);
     }

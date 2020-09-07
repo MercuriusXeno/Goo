@@ -136,13 +136,13 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         }
 
         // check the tile below us, if it's not a bulb, bail.
-        GooBulbTileAbstraction bulb = fluidHandler.getBulbInDirection(Direction.DOWN);
-        if (bulb == null) {
+        TileEntity tile = FluidHandlerHelper.tileAtDirection(this, Direction.DOWN);
+        if (tile == null) {
             return false;
         }
 
         // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, Direction.UP);
+        IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
 
         // the maximum amount you can drain in a tick is here.
         int simulatedDrainLeft = transferRate();
@@ -157,7 +157,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
             if (simulatedDrainLeft <= 0) {
                 break;
             }
-            int simulatedDrain = trySendingFluidToBulb(simulatedDrainLeft, s, cap, true);
+            int simulatedDrain = trySendingFluid(simulatedDrainLeft, s, cap, true);
             if (simulatedDrain != simulatedDrainLeft) {
                 didStuff = true;
             }
@@ -180,14 +180,14 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         boolean didStuff = false;
         for(Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST })
         {
-            // check the tile in this direction, if it's not another bulb, pass;
-            GooBulbTileAbstraction bulb = fluidHandler.getBulbInDirection(d);
-            if (bulb == null) {
+            // check the tile in this direction, if it's not another tile, pass;
+            TileEntity tile = FluidHandlerHelper.tileAtDirection(this, d);
+            if (tile == null) {
                 continue;
             }
 
             // try fetching the bulb capabilities in the opposing direction and throw an exception if it fails. return if null.
-            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
+            IFluidHandler cap = FluidHandlerHelper.capability(tile, d.getOpposite());
 
             // the maximum amount you can drain in a tick is here.
             int simulatedDrainLeft =  transferRate();
@@ -198,7 +198,10 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
                     break;
                 }
                 // only "distribute" to the bulb adjacent if it has less than this one of whatever type (equalizing)
-                int bulbContains = bulb.getSpecificGooType(s.getFluid()).getAmount();
+                // here there be dragons; simulate trying to remove an absurd amount of the fluid from the handler
+                // it will return how much it has, if any.
+                FluidStack stackInDestination = cap.drain(new FluidStack(s.getFluid(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
+                int bulbContains = stackInDestination.getAmount();
                 int delta = s.getAmount() - bulbContains;
                 // don't send it anything to avoid passing back 1 mB repeatedly.
                 if (delta <= 1) {
@@ -207,7 +210,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
                 int splitDelta = (int)Math.floor(delta / 2d);
                 int amountToSend = Math.min(splitDelta, simulatedDrainLeft);
 
-                int simulatedDrain = trySendingFluidToBulb(amountToSend, s, cap, false);
+                int simulatedDrain = trySendingFluid(amountToSend, s, cap, false);
                 if (simulatedDrain != simulatedDrainLeft) {
                     didStuff = true;
                 }
@@ -217,7 +220,7 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         return didStuff;
     }
 
-    private int trySendingFluidToBulb(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, boolean isVerticalDrain) {
+    private int trySendingFluid(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, boolean isVerticalDrain) {
         // simulated drain left represents how much "suction" is left in the interaction
         // s is the maximum amount in the stack. the lesser of these is how much you can drain in one tick.
         int amountLeft = Math.min(simulatedDrainLeft, s.getAmount());
@@ -235,6 +238,8 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
 
         // fill the receptacle.
         cap.fill(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
+
+        // this is purely visual and not vital to the fill operation
         if (cap instanceof BulbFluidHandler && isVerticalDrain) {
             ((BulbFluidHandler)cap).sendVerticalFillSignalForVisuals(s.getFluid());
         }
@@ -270,11 +275,6 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
 
     public int getTotalGoo() {
         return goo.stream().mapToInt(FluidStack::getAmount).sum();
-    }
-
-    @Override
-    public void markDirty() {
-        super.markDirty();
     }
 
     public void onContentsChanged() {

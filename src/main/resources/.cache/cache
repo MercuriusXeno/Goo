@@ -1,3 +1,4 @@
+a55dfab00c01ea399096e7d973504e8a83fb49be assets/goo/blockstates/crucible.json
 893877174b41d53f0e1761f1fa775ba349088485 assets/goo/blockstates/goo_bulb.json
 b98b34c6f93b59993054934f304cf57256d35971 assets/goo/blockstates/goo_bulb_mk2.json
 2cfe065b453ede6cea6a66240a5ac82813ec02f5 assets/goo/blockstates/goo_bulb_mk3.json
@@ -5,9 +6,9 @@ b98b34c6f93b59993054934f304cf57256d35971 assets/goo/blockstates/goo_bulb_mk2.jso
 112a6ec168b914b35a02b185d0ba7db1bb0ec720 assets/goo/blockstates/goo_bulb_mk5.json
 ff962259452c3815af9ea98408c249784a75e0c2 assets/goo/blockstates/goo_pump.json
 502d69a859c18048e071fe1c12ce989b1b9216b0 assets/goo/blockstates/gooifier.json
-cbcadb09250bbcd3e70fa7b32d2ff906ed6d5be8 assets/goo/blockstates/mixer.json
+1ce961665c2b18526c982d4e7f24c55f913cc289 assets/goo/blockstates/mixer.json
 b4957aa227e8901a62dcc5918a42560d1341f2f1 assets/goo/blockstates/solidifier.json
-76428b75c13cfe2623067a995702b082a15060c4 assets/goo/models/block/agitator.json
+1b9cade486b49da44a44003734a2ac638184bde4 assets/goo/models/block/crucible.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk2.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk3.json
@@ -17,9 +18,7 @@ da1e359812875db6289a7967d4c058d6918eaaf4 assets/goo/models/block/goo_pump.json
 6a27b2b2746ffcfc3ea497149454d97a91eea6af assets/goo/models/block/goo_pump_actuator.json
 3fabb1123ab3fcc9a0ef6442e4f410d1fb83a718 assets/goo/models/block/gooifier.json
 13a079250c8356d5cbb81257f261647fa0e34501 assets/goo/models/block/gooifier_powered.json
-5dccae1c2fe21f6b6e7022b1f07e8101fd2050f0 assets/goo/models/block/left_shaft.json
-1a59f66c0530076f50f9c5d1453443fab68d3ebb assets/goo/models/block/mixer_base.json
-e86b7fc10b020c886530f4631f9c1d471452f3e8 assets/goo/models/block/right_shaft.json
+3af69ef2d034e73dc429b2d4a673b168e70e0195 assets/goo/models/block/mixer.json
 923b217a2ad23f45137fa4467a9d171c22b223c3 assets/goo/models/block/solidifier.json
 c9282312dbf6a403b61cd994bb7c55ae361347ed assets/goo/models/block/solidifier_powered.json
 f6080b1e76ed3c8a05e44724259e884719387d30 assets/goo/models/item/gasket.json
@@ -27,6 +26,7 @@ f6080b1e76ed3c8a05e44724259e884719387d30 assets/goo/models/item/gasket.json
 d07884e9d67d8a7c41f89f867f4b0bf97b2b217f assets/goo/models/item/goo_pump.json
 829878f949b39415aadf48da5a166c6525afc7d4 assets/goo/models/item/gooifier.json
 bb1f82dea6d08a7eedcd6fa33c5b650210ce06eb assets/goo/models/item/solidifier.json
+51ccf8e99a3456fcb97249aa3c2d9bd07307d0bc data/goo/advancements/recipes/goo/crucible.json
 a10e25539c5ff7a3b972cf18561b18f07128917a data/goo/advancements/recipes/goo/gasket.json
 eb9fca8cd3782cfd6fcfadbbc67bc49639a270e5 data/goo/advancements/recipes/goo/goo_and_you.json
 0aca197842100ef94c11b01802684054f0152a5d data/goo/advancements/recipes/goo/goo_bulb.json
@@ -36,7 +36,9 @@ eb9fca8cd3782cfd6fcfadbbc67bc49639a270e5 data/goo/advancements/recipes/goo/goo_a
 31636dda4a74be4c79e0a0f46bd07896cd2be287 data/goo/advancements/recipes/goo/goo_bulb_mk5.json
 1f38a48e97f51a2b7ed1a7951b4a7ddcb7d98ef2 data/goo/advancements/recipes/goo/goo_pump.json
 e30549d53a4db6b5265edbdc53e69657f0ad45b2 data/goo/advancements/recipes/goo/gooifier.json
+5b9f9ff133d7a909aae8b113c6858c10519d5401 data/goo/advancements/recipes/goo/mixer.json
 30a0d4dfeb748138dc79e025f3ce8c93ed2e7760 data/goo/advancements/recipes/goo/solidifier.json
+2f47cb42f7044dd73fbfce7983db8dfced338f94 data/goo/recipes/crucible.json
 758e2c639a3d6b4d81d5892cfda41fb58eaae74a data/goo/recipes/gasket.json
 c5b06ae85d9cddbc11f66e2aadf67c3df9365e81 data/goo/recipes/goo_and_you.json
 39e98252179bc294494c16747be07bf80157803e data/goo/recipes/goo_bulb.json
@@ -46,4 +48,5 @@ a44bbd5f919fc3ed7fdaeca0c72d8461a449a58a data/goo/recipes/goo_bulb_mk4.json
 38129dd4fd61d8f4fc0347524f92af8bc0590e49 data/goo/recipes/goo_bulb_mk5.json
 2839ab75c632fe53199e8f6fe106458028c4eaf7 data/goo/recipes/goo_pump.json
 d8ee4db3e4e998f85e85c929cbffddaa6088dfd4 data/goo/recipes/gooifier.json
+6204f0cfc7a3d447d5df77a0fa4aff6a8fe7f7d0 data/goo/recipes/mixer.json
 25770d761555c1cd771eb1dd68519926bb8fb2e3 data/goo/recipes/solidifier.json

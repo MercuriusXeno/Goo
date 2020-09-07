@@ -2,9 +2,9 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.BulbFluidHandler;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
@@ -34,7 +34,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
 
     @Override
     public void render(GooBulbTileAbstraction tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
-        IFluidHandler cap = BulbFluidHandler.bulbCapability(tile, Direction.UP);
+        IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
         render(cap.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn);
     }

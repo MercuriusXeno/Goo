@@ -18,11 +18,9 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -110,7 +108,7 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             int workRemaining = maxPerTickPerGasket;
             int workLastCycle = 0;
             boolean isFirstPass = true;
-            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
+            IFluidHandler cap = FluidHandlerHelper.capability(bulb, d.getOpposite());
             while(workRemaining > 0 && (workLastCycle > 0 || isFirstPass)) {
                 isFirstPass = false;
                 workLastCycle = 0;

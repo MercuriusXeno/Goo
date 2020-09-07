@@ -27,6 +27,8 @@ public class Recipes extends RecipeProvider {
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
         registerGooPumpRecipe(consumer);
+        registerMixerRecipe(consumer);
+        registerCrucibleRecipe(consumer);
         registerGooBulbRecipe(consumer);
         registerGooBulbMk2Recipe(consumer);
         registerGooBulbMk3Recipe(consumer);
@@ -153,6 +155,33 @@ public class Recipes extends RecipeProvider {
                 .key('x', Items.DISPENSER)
                 .key('#', Items.ITEM_FRAME)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
+    }
+
+    private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.MIXER.get())
+                .patternLine("b b")
+                .patternLine("cnc")
+                .patternLine(" p ")
+                .key('b', Registry.GOO_BULB.get())
+                .key('c', Items.CAULDRON)
+                .key('n', Blocks.NETHERITE_BLOCK)
+                .key('p', Registry.GOO_PUMP.get())
+                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
+                .build(consumer);
+    }
+
+    private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.CRUCIBLE.get())
+                .patternLine("xix")
+                .patternLine("ici")
+                .patternLine("fbf")
+                .key('x', Items.IRON_BARS)
+                .key('i', Items.NETHERITE_INGOT)
+                .key('c', Items.CAULDRON)
+                .key('f', Items.BLAST_FURNACE)
+                .key('b', Registry.GOO_BULB.get())
+                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
     }
 }

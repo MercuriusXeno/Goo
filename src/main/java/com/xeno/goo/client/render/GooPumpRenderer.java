@@ -1,9 +1,7 @@
 package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooPump;
-import com.xeno.goo.blocks.PumpRenderMode;
 import com.xeno.goo.client.models.FluidCuboid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooPumpTile;
@@ -11,13 +9,11 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -31,8 +27,6 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
 public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
@@ -58,7 +52,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             FluidCuboid cuboid = new FluidCuboid(fillFromVector(intensity, face), fillToVector(intensity, face),
                     flowingFacesByDirection(face));
             if (tile.isVerticallyFilled()) {
-                FluidCuboidHelper.renderCuboid(matrixStack, buffer.getBuffer(RenderHelper.GOO_BLOCK), cuboid, still, flowing,
+                FluidCuboidHelper.renderCuboid(matrixStack, buffer.getBuffer(GooRenderHelper.GOO_BLOCK), cuboid, still, flowing,
                         fillFromVector(intensity, face), fillToVector(intensity, face),
                         0xffffffff, combinedLightIn, false);
             }

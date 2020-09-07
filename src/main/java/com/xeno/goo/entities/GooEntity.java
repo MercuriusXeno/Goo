@@ -1,10 +1,10 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.items.GooHolder;
 import com.xeno.goo.network.GooLobConfirmationPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.tiles.BulbFluidHandler;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.block.BlockState;
@@ -14,7 +14,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
 import net.minecraft.network.PacketBuffer;
@@ -460,15 +459,13 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             return;
         }
 
-        GooBulbTile b = (GooBulbTile) tile;
-
-        BulbFluidHandler bfh = (BulbFluidHandler) BulbFluidHandler.bulbCapability(b, Direction.UP);
-        int attemptTransfer = bfh.fill(goo, IFluidHandler.FluidAction.SIMULATE);
+        IFluidHandler fh = FluidHandlerHelper.capability(tile, Direction.UP);
+        int attemptTransfer = fh.fill(goo, IFluidHandler.FluidAction.SIMULATE);
         if (attemptTransfer >= goo.getAmount()) {
-            bfh.fill(goo, IFluidHandler.FluidAction.EXECUTE);
+            fh.fill(goo, IFluidHandler.FluidAction.EXECUTE);
             goo.setAmount(0);
         } else {
-            bfh.fill(new FluidStack(goo.getFluid(), attemptTransfer), IFluidHandler.FluidAction.EXECUTE);
+            fh.fill(new FluidStack(goo.getFluid(), attemptTransfer), IFluidHandler.FluidAction.EXECUTE);
             goo.setAmount(goo.getAmount() - attemptTransfer);
         }
     }

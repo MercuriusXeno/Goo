@@ -197,7 +197,7 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.MUTTON, faunal(60), vital(60));
         registerLocking(getRegistry(event), Items.MYCELIUM, earthen(960d), fungal(60));
         registerLocking(getRegistry(event), Items.NETHER_WART, weird(60), fungal(60));
-        registerLocking(getRegistry(event), Items.NETHERITE_SCRAP, metal(960), obsidian(60));
+        registerLocking(getRegistry(event), Items.NETHERITE_SCRAP, metal(960), obsidian(120));
         registerLocking(getRegistry(event), Items.NETHERRACK, earthen(960), molten(60));
         registerLocking(getRegistry(event), Items.OBSIDIAN, obsidian(960), molten(60));
         registerLocking(getRegistry(event), Items.PHANTOM_MEMBRANE, decay(60), vital(60), weird(60));
