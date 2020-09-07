@@ -257,6 +257,12 @@ public class ForgeClientEvents
         by += centeringVerticalOffset;
         gooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
         for (FluidStack entry : gooEntry) {
+            if (entry == null || entry.getFluid().getRegistryName() == null) {
+                continue;
+            }
+            if (entry.isEmpty()) {
+                continue;
+            }
             int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
             int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
             renderGooIcon(matrices, fluid(Objects.requireNonNull(entry.getFluid().getRegistryName())).getIcon(), x, y, (int)Math.floor(entry.getAmount()));

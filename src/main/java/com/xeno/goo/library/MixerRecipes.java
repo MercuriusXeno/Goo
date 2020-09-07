@@ -44,7 +44,10 @@ public class MixerRecipes
 
     public static MixerRecipe getRecipe(FluidStack input1, FluidStack input2)
     {
-        Optional<MixerRecipe> match =  recipes().stream().filter((r) -> r.inputs().containsKey(input1.getFluid()) && r.inputs().containsKey(input2.getFluid())).findFirst();
+        if (input1 == null || input2 == null || input1.isEmpty() || input2.isEmpty()) {
+            return null;
+        }
+        Optional<MixerRecipe> match =  recipes().stream().filter((r) -> r != null && r.inputs() != null && r.inputs().containsKey(input1.getFluid()) && r.inputs().containsKey(input2.getFluid())).findFirst();
         return match.orElse(null);
     }
 }
