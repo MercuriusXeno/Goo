@@ -41,7 +41,7 @@ public class MixerFluidHandler implements IFluidHandler
 
     @Override
     public int getTankCapacity(int tank) {
-        if (tank > 0 || this.side.getAxis() != Direction.Axis.Z) {
+        if (tank > 0) {
             return 0;
         }
         return GooMod.config.mixerInputCapacity();

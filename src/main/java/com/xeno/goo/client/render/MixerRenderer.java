@@ -65,6 +65,10 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
             FluidStack westFluid, FluidStack eastFluid,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn)
     {
+        if (westCapacity == 0 || eastCapacity == 0) {
+            // divide by zeros are bad :|
+            return;
+        }
         IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_BLOCK);
         renderTankFluid(Direction.WEST, facing, westCapacity, westFluid, matrixStack, builder, combinedLightIn);
         renderTankFluid(Direction.EAST, facing, eastCapacity, eastFluid, matrixStack, builder, combinedLightIn);
