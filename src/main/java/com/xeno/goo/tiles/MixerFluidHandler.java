@@ -17,18 +17,6 @@ public class MixerFluidHandler implements IFluidHandler
         this.side = side;
     }
 
-    public IFluidHandler getMixerCapabilityInDirection(Direction d)
-    {
-        // check the tile below us, if it's not a bulb, bail.
-        MixerTile mixer = getMixerInDirection(d);
-        if (mixer == null) {
-            return null;
-        }
-
-        // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        return FluidHandlerHelper.capability(mixer, d.getOpposite());
-    }
-
     @Override
     public int getTanks() {
         return 1;
@@ -61,10 +49,6 @@ public class MixerFluidHandler implements IFluidHandler
             return null;
         }
         return (MixerTile)result;
-    }
-
-    public MixerTile getMixerInDirection(Direction dir) {
-        return getMixerInDirection(parent, dir);
     }
 
     @Override

@@ -122,13 +122,14 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
         if (world == null || world.isRemote) {
             return;
         }
+        if (goo.get(0) == null) {
+            goo.add(0, FluidStack.EMPTY);
+        }
+        if (goo.get(1) == null) {
+            goo.add(1, FluidStack.EMPTY);
+        }
 
         tryPushingRecipeResult();
-    }
-
-    private boolean hasValidGooInputs()
-    {
-        return getRecipeFromInputs() != null;
     }
 
     private MixerRecipe getRecipeFromInputs()
