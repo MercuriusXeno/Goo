@@ -32,6 +32,7 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(Registry.GOO_BULB_MK5.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.GOO_PUMP.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.MIXER.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(Registry.CRUCIBLE.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(Registry.SOLIDIFIER.get(), RenderType.getSolid());
         GooBulbRenderer.register();
         GooPumpRenderer.register();
