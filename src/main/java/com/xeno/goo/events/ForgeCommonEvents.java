@@ -18,8 +18,5 @@ public class ForgeCommonEvents {
     {
         GooValueBootstrapper.onReload(event);
         Equivalencies.resetFurnaceProducts(event.getWorld().getWorld());
-
-        MixerRecipes.init();
-        CrucibleRecipes.init();
     }
 }

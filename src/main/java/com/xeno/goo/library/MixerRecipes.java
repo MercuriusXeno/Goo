@@ -51,6 +51,9 @@ public class MixerRecipes
 
     public static MixerRecipe getRecipe(FluidStack input1, FluidStack input2)
     {
+        if (recipes().size() == 0) {
+            init();
+        }
         if (input1 == null || input2 == null || input1.isEmpty() || input2.isEmpty()) {
             return null;
         }
@@ -60,6 +63,9 @@ public class MixerRecipes
 
     public static boolean isAnyRecipe(FluidStack stack)
     {
+        if (recipes().size() == 0) {
+            init();
+        }
         for(MixerRecipe r : recipes()) {
             for (FluidStack f : r.inputs()) {
                 if (f.isFluidEqual(stack)) {

@@ -41,6 +41,9 @@ public class CrucibleRecipes
 
     public static CrucibleRecipe getRecipe(FluidStack input)
     {
+        if (recipes().size() == 0) {
+            init();
+        }
         if (input == null || input.isEmpty()) {
             return null;
         }
@@ -50,6 +53,9 @@ public class CrucibleRecipes
 
     public static boolean isAnyRecipe(FluidStack stack)
     {
+        if (recipes().size() == 0) {
+            init();
+        }
         if (stack == null || stack.isEmpty()) {
             return false;
         }
