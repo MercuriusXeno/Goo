@@ -44,7 +44,17 @@ public class CrucibleRecipes
         if (input == null || input.isEmpty()) {
             return null;
         }
-        Optional<CrucibleRecipe> match =  recipes().stream().filter((r) -> r.input().isFluidEqual(input)).findFirst();
+        Optional<CrucibleRecipe> match =  recipes().stream().filter((r) -> r != null && r.input() != null && !r.input().isEmpty() && r.input().isFluidEqual(input)).findFirst();
         return match.orElse(null);
+    }
+
+    public static boolean isAnyRecipe(FluidStack stack)
+    {
+        for(CrucibleRecipe r : recipes()) {
+            if (r.input().isFluidEqual(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

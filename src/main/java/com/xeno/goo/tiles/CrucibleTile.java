@@ -2,6 +2,7 @@ package com.xeno.goo.tiles;
 
 import com.xeno.goo.library.CrucibleRecipe;
 import com.xeno.goo.library.CrucibleRecipes;
+import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
@@ -187,6 +188,26 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         if (!goo().isEmpty() && !goo().getFluid().equals(stack.getFluid())) {
             return 0;
         }
+
+        // one last check; we don't allow "inert" fluids or inherently invalid fluids.
+        if (!shouldAllowFluid(stack)) {
+            return 0;
+        }
         return fluidHandler.getTankCapacity(0) - goo().getAmount();
+    }
+
+    private boolean shouldAllowFluid(FluidStack stack)
+    {
+
+        // if we already contain this fluid we've passed this test already.
+        if (goo().isFluidEqual(stack)) {
+            return true;
+        }
+
+        if (!goo().isEmpty()) {
+            return false;
+        }
+
+        return CrucibleRecipes.isAnyRecipe(stack);
     }
 }
