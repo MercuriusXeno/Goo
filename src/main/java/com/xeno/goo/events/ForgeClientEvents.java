@@ -1,5 +1,6 @@
 package com.xeno.goo.events;
 
+import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.xeno.goo.GooMod;
@@ -9,17 +10,18 @@ import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
+import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.*;
-import net.minecraft.util.text.TextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderTooltipEvent;
@@ -27,16 +29,10 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.command.TextComponentHelper;
 import org.lwjgl.opengl.GL11;
-import vazkii.patchouli.api.PatchouliAPI;
 
-import java.awt.*;
 import java.text.NumberFormat;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeClientEvents
@@ -79,7 +75,7 @@ public class ForgeClientEvents
         }
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (stack.getItem().equals(Registry.GOO_BULB_ITEM.get()) && !Screen.hasShiftDown()) {
+        if (hasGooContents(stack) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
         }
     }
@@ -111,32 +107,16 @@ public class ForgeClientEvents
         if( mc.world == null || mc.player == null )
             return;
 
-        CompoundNBT stackTag = stack.getTag();
-        if (stackTag == null) {
-            return;
-        }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return;
-        }
-
-        CompoundNBT gooTag = bulbTag.getCompound("goo");
-        List<FluidStack> gooEntry = GooBulbTileAbstraction.deserializeGooForDisplay(gooTag);
-        if (gooEntry.size() == 0) {
-            return;
-        }
+        List<FluidStack> gooEntry = getThisOrLastGooEntry(stack);
 
         addPlaceholderSpaceForTooltipGooIcons(gooEntry.size(), event);
     }
 
     private static void addPlaceholderSpaceForTooltipGooIcons(int size, ItemTooltipEvent event)
     {
+        if (size == 0) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         if (mc.world == null || mc.player == null) //populateSearchTreeManager...
@@ -176,7 +156,7 @@ public class ForgeClientEvents
         ItemStack stack = event.getStack();
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (isGooBulb(stack) && !Screen.hasShiftDown()) {
+        if (hasGooContents(stack) && !Screen.hasShiftDown()) {
             tryDrawingGooContents(stack, event);
         }
 
@@ -197,15 +177,33 @@ public class ForgeClientEvents
         }
     }
 
-    private static boolean isGooBulb(ItemStack stack)
-    {
-        return stack.getItem().equals(Registry.GOO_BULB_ITEM.get())
-                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK2.get())
-                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK3.get())
-                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK4.get())
-                || stack.getItem().equals(Registry.GOO_BULB_ITEM_MK5.get());
+    private static Set<Item> GOO_CONTAINERS = new HashSet<>();
+    private static void initializeGooContainers() {
+        GOO_CONTAINERS.addAll(
+                Sets.newHashSet(
+                        Registry.GOO_BULB_ITEM.get(),
+                        Registry.GOO_BULB_ITEM_MK2.get(),
+                        Registry.GOO_BULB_ITEM_MK3.get(),
+                        Registry.GOO_BULB_ITEM_MK4.get(),
+                        Registry.GOO_BULB_ITEM_MK5.get(),
+                        Registry.MIXER_ITEM.get(),
+                        Registry.CRUCIBLE_ITEM.get()
+                        )
+        );
     }
 
+
+    private static boolean hasGooContents(ItemStack stack)
+    {
+        if (GOO_CONTAINERS.size() == 0) {
+            initializeGooContainers();
+        }
+        return GOO_CONTAINERS.contains(stack.getItem());
+    }
+
+    // some client side caching to speed things up a little.
+    private static ItemStack lastStack = ItemStack.EMPTY;
+    private static List<FluidStack> lastGooEntry = new ArrayList<>();
     private static void tryDrawingGooContents(ItemStack stack, RenderTooltipEvent.PostText event)
     {
         Minecraft mc = Minecraft.getInstance();
@@ -215,26 +213,7 @@ public class ForgeClientEvents
         if( mc.world == null || mc.player == null )
             return;
 
-        CompoundNBT stackTag = stack.getTag();
-        if (stackTag == null) {
-            return;
-        }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return;
-        }
-
-        CompoundNBT gooTag = bulbTag.getCompound("goo");
-        List<FluidStack> gooEntry = GooBulbTileAbstraction.deserializeGooForDisplay(gooTag);
-        if (gooEntry.size() == 0) {
-            return;
-        }
+        List<FluidStack> gooEntry = getThisOrLastGooEntry(stack);
 
         int bx = event.getX();
         int by = event.getY();
@@ -242,6 +221,9 @@ public class ForgeClientEvents
 
         int size = gooEntry.size();
         int stacksPerLine = getArrangementStacksPerLine(size);
+        if (stacksPerLine == 0) {
+            return;
+        }
         int rows = (int)Math.ceil(size / (float)stacksPerLine);
         int neededHeight = rows * ICON_HEIGHT;
         int allocatedHeight = (int)Math.ceil(neededHeight / (float)fontHeight) * fontHeight;
@@ -255,18 +237,43 @@ public class ForgeClientEvents
             by += fontHeight;
         }
         by += centeringVerticalOffset;
-        gooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
         for (FluidStack entry : gooEntry) {
-            if (entry == null || entry.getFluid().getRegistryName() == null) {
-                continue;
-            }
-            if (entry.isEmpty()) {
+            if (!(entry.getFluid() instanceof GooFluid)) {
                 continue;
             }
             int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
             int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
-            renderGooIcon(matrices, fluid(Objects.requireNonNull(entry.getFluid().getRegistryName())).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
+            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
+        }
+    }
+
+    private static List<FluidStack> getThisOrLastGooEntry(ItemStack stack)
+    {
+        if (stack.equals(lastStack, false)) {
+             return lastGooEntry;
+        } else {
+            lastStack = stack;
+            lastGooEntry = new ArrayList<>();
+            CompoundNBT stackTag = stack.getTag();
+            if (stackTag == null) {
+                return lastGooEntry;
+            }
+
+            if (!stackTag.contains("BlockEntityTag")) {
+                return lastGooEntry;
+            }
+
+            CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
+
+            if (!bulbTag.contains("goo")) {
+                return lastGooEntry;
+            }
+
+            CompoundNBT gooTag = bulbTag.getCompound("goo");
+            lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
+            lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
+            return lastGooEntry;
         }
     }
 
@@ -402,13 +409,12 @@ public class ForgeClientEvents
         return fluid(entry.getFluidResourceLocation());
     }
 
-    private static GooFluid fluid(ResourceLocation registryName)
-    {
-        return fluid(registryName.toString());
-    }
-
+    private static Map<String, GooFluid> fluidCache = new HashMap<>();
     private static GooFluid fluid(String gooFluidName)
     {
-        return (GooFluid)Registry.getFluid(gooFluidName);
+        if (!fluidCache.containsKey(gooFluidName)) {
+            fluidCache.put(gooFluidName,(GooFluid)Registry.getFluid(gooFluidName));
+        }
+        return fluidCache.get(gooFluidName);
     }
 }

@@ -21,22 +21,20 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
 
-public class CrucibleTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
+public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
     private CrucibleFluidHandler fluidHandler = createHandler();
     private LazyOptional<CrucibleFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
 
-    FluidStack goo;
-
     public CrucibleTile()
     {
         super(Registry.CRUCIBLE_TILE.get());
-        goo = FluidStack.EMPTY;
+        goo = Collections.singletonList(FluidStack.EMPTY);
     }
 
     public FluidStack goo()
     {
-        return goo;
+        return goo.get(0);
     }
 
     public boolean hasFluid(Fluid fluid)
@@ -47,7 +45,7 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
     @Override
     public void updateFluidsTo(List<FluidStack> fluids)
     {
-        this.goo = fluids.get(0);
+        this.setGoo(fluids.get(0));
     }
 
     @Override
@@ -62,7 +60,7 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
 
     private CrucibleRecipe getRecipeFromInputs()
     {
-        return CrucibleRecipes.getRecipe(goo);
+        return CrucibleRecipes.getRecipe(goo());
     }
 
     private void tryPushingRecipeResult() {
@@ -98,7 +96,7 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
 
     private boolean isRecipeSatisfied(CrucibleRecipe recipe)
     {
-        return recipe.input().isFluidEqual(goo) && recipe.input().getAmount() <= goo.getAmount();
+        return recipe.input().isFluidEqual(goo()) && recipe.input().getAmount() <= goo().getAmount();
     }
 
     private IFluidHandler tryGettingFluidCapabilityFromTileBelow()
@@ -109,7 +107,8 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
 
     public void setGoo(FluidStack fluidStack)
     {
-        goo = fluidStack;
+        goo.clear();
+        goo.add(0, fluidStack);
     }
 
     public void onContentsChanged() {
@@ -120,7 +119,7 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
             if (world.getServer() == null) {
                 return;
             }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, asList(goo)), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
         }
     }
 
@@ -133,18 +132,6 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
     public CompoundNBT getUpdateTag()
     {
         return this.write(new CompoundNBT());
-    }
-
-    private CompoundNBT serializeGoo()  {
-        CompoundNBT tag = new CompoundNBT();
-        CompoundNBT gooTag = new CompoundNBT();
-        tag.put("goo", gooTag);
-        return tag;
-    }
-
-    private void deserializeGoo(CompoundNBT tag) {
-        CompoundNBT gooTag = tag.getCompound("goo");
-        goo = FluidStack.loadFluidStackFromNBT(gooTag);
     }
 
     @Override
@@ -189,23 +176,11 @@ public class CrucibleTile extends TileEntity implements ITickableTileEntity, Flu
         return stack;
     }
 
-    public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
-        List<FluidStack> tagGooList = new ArrayList<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-            tagGooList.add(stack);
-        }
-
-        return tagGooList;
-    }
-
     public int getSpaceRemaining(FluidStack stack)
     {
-        if (!goo.isEmpty() && !goo.getFluid().equals(stack.getFluid())) {
+        if (!goo().isEmpty() && !goo().getFluid().equals(stack.getFluid())) {
             return 0;
         }
-        return fluidHandler.getTankCapacity(0) - goo.getAmount();
+        return fluidHandler.getTankCapacity(0) - goo().getAmount();
     }
 }

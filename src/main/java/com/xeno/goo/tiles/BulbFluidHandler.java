@@ -28,6 +28,10 @@ public class BulbFluidHandler implements IFluidHandler
         return FluidHandlerHelper.capability(bulb, d.getOpposite());
     }
 
+    public void sendVerticalFillSignalForVisuals(Fluid f, float i) {
+        parent.toggleVerticalFillVisuals(f, i);
+    }
+
     public void sendVerticalFillSignalForVisuals(Fluid f) {
         parent.toggleVerticalFillVisuals(f);
     }

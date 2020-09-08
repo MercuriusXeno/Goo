@@ -35,22 +35,6 @@ public class MixerFluidHandler implements IFluidHandler
         return GooMod.config.mixerInputCapacity();
     }
 
-    public static MixerTile getMixerInDirection(TileEntity tile, Direction d)
-    {
-        if (tile.getWorld() == null) {
-            return null;
-        }
-        BlockPos posInDirection = tile.getPos().offset(d);
-        TileEntity result = tile.getWorld().getTileEntity(posInDirection);
-        if (result == null) {
-            return null;
-        }
-        if (!(result instanceof MixerTile)) {
-            return null;
-        }
-        return (MixerTile)result;
-    }
-
     @Override
     public boolean isFluidValid(int tank, FluidStack stack) {
         return tank == 0 && stack.getFluid() instanceof GooFluid;

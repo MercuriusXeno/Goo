@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class MixerTile extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
+public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
     private MixerFluidHandler eastHandler = createHandler(Direction.EAST);
     private MixerFluidHandler westHandler = createHandler(Direction.WEST);
@@ -161,6 +161,10 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
         deductInputQuantities(recipe.inputs());
 
         cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+
+        if (cap instanceof BulbFluidHandler) {
+            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), 0.1f);
+        }
     }
 
     private boolean deductInputQuantities(List<FluidStack> inputs)
@@ -222,37 +226,6 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
     public CompoundNBT getUpdateTag()
     {
         return this.write(new CompoundNBT());
-    }
-
-    private CompoundNBT serializeGoo()  {
-        CompoundNBT tag = new CompoundNBT();
-        tag.putInt("count", goo.size());
-        int index = 0;
-        for(FluidStack s : goo) {
-            CompoundNBT gooTag = new CompoundNBT();
-            s.writeToNBT(gooTag);
-            tag.put("goo" + index, gooTag);
-            index++;
-        }
-        return tag;
-    }
-
-    private void deserializeGoo(CompoundNBT tag) {
-        List<FluidStack> tagGooList = new ArrayList<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-            if (stack.isEmpty()) {
-                continue;
-            }
-            tagGooList.add(stack);
-        }
-
-        goo = tagGooList;
-        while(goo.size() < 2) {
-            goo.add(FluidStack.EMPTY);
-        }
     }
 
     @Override
@@ -329,6 +302,37 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
         if (!goo.get(sideTank).isEmpty() && !goo.get(sideTank).getFluid().equals(stack.getFluid())) {
             return 0;
         }
+
+        // one last check; we don't allow "inert" fluid combinations or inherently invalid fluids.
+        if (!shouldAllowFluid(stack, side)) {
+            return 0;
+        }
         return handler.getTankCapacity(0) - goo.get(sideTank).getAmount();
+    }
+
+    private boolean shouldAllowFluid(FluidStack stack, Direction side)
+    {
+        // reject the fluid if both tanks are empty and this stack doesn't have a recipe
+        int sideTank = sideTank(side);
+
+        if (sideTank == -1) {
+            return false;
+        }
+
+        // if we already contain this fluid we've passed this test already.
+        if (goo.get(sideTank).isFluidEqual(stack)) {
+            return true;
+        }
+
+        if (goo.get(0).isEmpty() && goo.get(1).isEmpty()) {
+            return MixerRecipes.isAnyRecipe(stack);
+        } else {
+            if (goo.get(sideTank).isEmpty()) {
+                int otherTank = sideTank == 0 ? 1 : 0;
+                return MixerRecipes.getRecipe(goo.get(otherTank), stack) != null;
+            }
+        }
+
+        return MixerRecipes.getRecipe(goo.get(0), goo.get(1)) != null;
     }
 }

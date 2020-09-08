@@ -27,11 +27,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-public class GooBulbTileAbstraction extends TileEntity implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
+public class GooBulbTileAbstraction extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
     private BulbFluidHandler fluidHandler = createHandler();
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
-    private List<FluidStack> goo = new ArrayList<>();
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
 
@@ -72,14 +71,19 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         this.verticalFillFluid = f;
     }
 
-    public void toggleVerticalFillVisuals(Fluid f)
+    public void toggleVerticalFillVisuals(Fluid f, float intensity)
     {
         verticalFillFluid = f;
-        verticalFillIntensity = 1f; // default fill intensity is just "on", essentially
+        verticalFillIntensity = intensity; // default fill intensity is just "on", essentially
         if (world == null) {
             return;
         }
         Networking.sendToClientsAround(new GooFlowPacket(world.func_234923_W_(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+    }
+
+    public void toggleVerticalFillVisuals(Fluid f)
+    {
+        toggleVerticalFillVisuals(f, 1f);
     }
 
     public float verticalFillIntensity()
@@ -303,34 +307,6 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         return this.write(new CompoundNBT());
     }
 
-    private CompoundNBT serializeGoo()  {
-        CompoundNBT tag = new CompoundNBT();
-        tag.putInt("count", goo.size());
-        int index = 0;
-        for(FluidStack s : goo) {
-            CompoundNBT gooTag = new CompoundNBT();
-            s.writeToNBT(gooTag);
-            tag.put("goo" + index, gooTag);
-            index++;
-        }
-        return tag;
-    }
-
-    private void deserializeGoo(CompoundNBT tag) {
-        List<FluidStack> tagGooList = new ArrayList<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-            if (stack.isEmpty()) {
-                continue;
-            }
-            tagGooList.add(stack);
-        }
-
-        goo = tagGooList;
-    }
-
     @Override
     public CompoundNBT write(CompoundNBT tag) {
         tag.put("goo", serializeGoo());
@@ -377,18 +353,6 @@ public class GooBulbTileAbstraction extends TileEntity implements ITickableTileE
         stack.setTag(stackTag);
 
         return stack;
-    }
-
-    public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
-        List<FluidStack> tagGooList = new ArrayList<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-            tagGooList.add(stack);
-        }
-
-        return tagGooList;
     }
 
     public boolean hasSpace() {
