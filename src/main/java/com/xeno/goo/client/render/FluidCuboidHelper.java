@@ -56,7 +56,7 @@ public class FluidCuboidHelper
         matrices.pop();
     }
     private static final int COLOR_PHASE_DURATION_IN_SECONDS = 2;
-    private static final int COLOR_PHASES = 8;
+    private static final int COLOR_PHASES = 9;
     private static final int CYCLE_TIMER = 20 * COLOR_PHASE_DURATION_IN_SECONDS;
     private static final int FULL_CYCLE_TIME = CYCLE_TIMER * COLOR_PHASES;
     private static int colorizeChromaticGoo()
@@ -117,24 +117,28 @@ public class FluidCuboidHelper
         if (ticks < 3 * CYCLE_TIMER) {
             return 0xffffff00;
         }
-        // green
+        // yellow-green
         if (ticks < 4 * CYCLE_TIMER) {
+            return 0xff77ff22;
+        }
+        // green
+        if (ticks < 5 * CYCLE_TIMER) {
             return 0xff00ff00;
         }
         // blue/green!
-        if (ticks < 5 * CYCLE_TIMER) {
+        if (ticks < 6 * CYCLE_TIMER) {
             return 0xff00ffff;
         }
         // blue
-        if (ticks < 6 * CYCLE_TIMER) {
+        if (ticks < 7 * CYCLE_TIMER) {
             return 0xff0000ff;
         }
         // purple
-        if (ticks < 7 * CYCLE_TIMER) {
+        if (ticks < 8 * CYCLE_TIMER) {
             return 0xff9000cc;
         }
         // magenta
-        if (ticks < 8 * CYCLE_TIMER) {
+        if (ticks < 9 * CYCLE_TIMER) {
             return 0xffff00ff;
         }
 
