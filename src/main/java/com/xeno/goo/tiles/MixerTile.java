@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
@@ -163,7 +164,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
 
         if (cap instanceof BulbFluidHandler) {
-            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), 0.1f);
+            float fillVisual = recipe.output().getAmount() / (float) GooMod.config.gooTransferRate();
+            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
         }
     }
 

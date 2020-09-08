@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.library.CrucibleRecipe;
 import com.xeno.goo.library.CrucibleRecipes;
 import com.xeno.goo.library.MixerRecipes;
@@ -91,6 +92,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         deductInputQuantity(recipe.input());
 
         cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+
+        if (cap instanceof BulbFluidHandler) {
+            float fillVisual = recipe.output().getAmount() / (float)GooMod.config.gooTransferRate();
+            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
+        }
     }
 
     private void deductInputQuantity(FluidStack input)

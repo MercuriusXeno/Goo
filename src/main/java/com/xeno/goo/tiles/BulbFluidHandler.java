@@ -31,7 +31,7 @@ public class BulbFluidHandler implements IFluidHandler
 
     @Override
     public FluidStack getFluidInTank(int tank) {
-        return parent.goo().size() < tank ? FluidStack.EMPTY : parent.goo().get(tank);
+        return parent.goo().size() <= tank ? FluidStack.EMPTY : parent.goo().get(tank);
     }
 
     @Override

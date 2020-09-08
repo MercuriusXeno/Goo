@@ -14,7 +14,7 @@
       "multiblock": {
         "mapping": {
           "B": "goo:goo_bulb",
-          "0": "goo:crucible[facing=north]",
+          "0": "goo:crucible",
           "W": "goo:goo_pump[facing=west]",
           "E": "goo:mixer[facing=east]"
         },
