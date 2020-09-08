@@ -1,9 +1,9 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "b b",
-    "cnc",
-    " p "
+    "n n",
+    "bcb",
+    "npn"
   ],
   "key": {
     "b": {
@@ -13,7 +13,7 @@
       "item": "minecraft:cauldron"
     },
     "n": {
-      "item": "minecraft:netherite_block"
+      "item": "minecraft:netherite_ingot"
     },
     "p": {
       "item": "goo:goo_pump"
