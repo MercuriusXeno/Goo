@@ -186,32 +186,40 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             return;
         }
         FluidStack simulatedDrain = FluidStack.EMPTY;
-        if (this.targetStack.isEmpty()) {
-            simulatedDrain = sourceHandler.drain(getMaxDrain(), IFluidHandler.FluidAction.SIMULATE);
-        } else {
-            for (GooValue e : Equivalencies.getEntry(this.world, this.target).values()) {
-                FluidStack desired = new FluidStack(Objects.requireNonNull(Registry.getFluid(e.getFluidResourceLocation())), getMaxDrain());
-                simulatedDrain = sourceHandler.drain(desired, IFluidHandler.FluidAction.SIMULATE);
-                if (!simulatedDrain.isEmpty()) {
-                    break;
+        // iterate over all tanks and try a simulated drain until something sticks.
+        for (int i = 0; i < sourceHandler.getTanks(); i++) {
+            FluidStack s = sourceHandler.getFluidInTank(i);
+            if (s.isEmpty()) {
+                continue;
+            }
+
+            // skip if we're empty
+            simulatedDrain = sourceHandler.drain(s, IFluidHandler.FluidAction.SIMULATE);
+            if (simulatedDrain.isEmpty()) {
+                continue;
+            }
+
+            // if we're targeting an item, skip this fluid if it's not in the target entry
+            if (!this.targetStack.isEmpty()) {
+                GooEntry entry = Equivalencies.getEntry(this.world, this.target);
+                if (entry.values().stream().noneMatch(v -> v.getFluidResourceLocation().equals(Objects.requireNonNull(s.getFluid().getRegistryName()).toString()))) {
+                    continue;
                 }
             }
+
+            int filled = targetHandler.fill(simulatedDrain, IFluidHandler.FluidAction.SIMULATE);
+            if (filled == 0) {
+                continue;
+            }
+
+            FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+            toggleVerticalFillVisuals(result.getFluid());
+
+            // pump for real though
+            targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
+            // don't continue if we hit this break, we managed to push some fluid.
+            break;
         }
-        if (simulatedDrain.isEmpty()) {
-            return;
-        }
-
-        int filled = targetHandler.fill(simulatedDrain, IFluidHandler.FluidAction.SIMULATE);
-        if (filled == 0) {
-            return;
-        }
-
-        FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-        toggleVerticalFillVisuals(result.getFluid());
-
-        // pump for real though
-        targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
-
     }
 
     private int getMaxDrain()

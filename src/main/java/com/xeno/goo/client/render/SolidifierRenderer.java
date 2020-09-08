@@ -1,46 +1,35 @@
 package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.SolidifierTile;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.model.ModelManager;
-import net.minecraft.client.renderer.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
-import net.minecraft.world.LightType;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-import org.lwjgl.opengl.GL12;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class SolidifierTileRenderer extends TileEntityRenderer<SolidifierTile>
+public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 {
     private int lastItemLight;
-    public SolidifierTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn)
+    public SolidifierRenderer(TileEntityRendererDispatcher rendererDispatcherIn)
     {
         super(rendererDispatcherIn);
     }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registry.SOLIDIFIER_TILE.get(), SolidifierTileRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.SOLIDIFIER_TILE.get(), SolidifierRenderer::new);
     }
 
     @Override

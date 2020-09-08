@@ -34,6 +34,9 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
     public FluidStack goo()
     {
+        if (goo.size() == 0) {
+            goo.add(FluidStack.EMPTY);
+        }
         return goo.get(0);
     }
 
@@ -107,8 +110,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
     public void setGoo(FluidStack fluidStack)
     {
-        goo.clear();
-        goo.add(0, fluidStack);
+        if (goo.size() == 0) {
+            goo.add(fluidStack);
+        } else {
+            goo.set(0, fluidStack);
+        }
     }
 
     public void onContentsChanged() {

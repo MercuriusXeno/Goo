@@ -36,6 +36,9 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
     @Override
     public void render(CrucibleTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
+        if (cap == null) {
+            return;
+        }
         render(cap.getTankCapacity(0), tile.goo().getAmount(), tile.goo(),
                 matrixStack, buffer, combinedLightIn);
     }

@@ -7,6 +7,8 @@
   "block.goo.goo_pump": "Goo Pump",
   "block.goo.gooifier": "Gooifier",
   "block.goo.solidifier": "Solidifier",
+  "block.goo.mixer": "Mixer",
+  "block.goo.crucible": "Crucible",
 
   "numbers.notation.thousand": "k",
   "numbers.notation.million": "m",

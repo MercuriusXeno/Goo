@@ -16,18 +16,6 @@ public class BulbFluidHandler implements IFluidHandler
         parent = t;
     }
 
-    public IFluidHandler getBulbCapabilityInDirection(Direction d)
-    {
-        // check the tile below us, if it's not a bulb, bail.
-        GooBulbTileAbstraction bulb = getBulbInDirection(d);
-        if (bulb == null) {
-            return null;
-        }
-
-        // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        return FluidHandlerHelper.capability(bulb, d.getOpposite());
-    }
-
     public void sendVerticalFillSignalForVisuals(Fluid f, float i) {
         parent.toggleVerticalFillVisuals(f, i);
     }
@@ -38,17 +26,17 @@ public class BulbFluidHandler implements IFluidHandler
 
     @Override
     public int getTanks() {
-        return 1;
+        return Math.max(1, parent.goo().size());
     }
 
     @Override
     public FluidStack getFluidInTank(int tank) {
-        return tank == 0 ? parent.getLeastQuantityGoo() : FluidStack.EMPTY;
+        return parent.goo().size() < tank ? FluidStack.EMPTY : parent.goo().get(tank);
     }
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.config.bulbCapacity() * parent.storageMultiplier() : 0;
+        return GooMod.config.bulbCapacity() * parent.storageMultiplier();
     }
 
     public static GooBulbTileAbstraction getBulbInDirection(TileEntity tile, Direction d)
@@ -65,10 +53,6 @@ public class BulbFluidHandler implements IFluidHandler
             return null;
         }
         return (GooBulbTileAbstraction)result;
-    }
-
-    public GooBulbTileAbstraction getBulbInDirection(Direction dir) {
-        return getBulbInDirection(parent, dir);
     }
 
     @Override
