@@ -1,0 +1,33 @@
+{
+  "name": "block.goo.mixer",
+  "icon": "goo:mixer",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.mixer.summary"
+    },
+    {
+      "type": "multiblock",
+      "text": "patchouli.goo.mixer.restrictions",
+      "enable_visualize": false,
+      "multiblock": {
+        "mapping": {
+          "B": "goo:goo_bulb",
+          "0": "goo:mixer[facing=north]",
+          "W": "goo:goo_pump[facing=west]",
+          "E": "goo:mixer[facing=east]"
+        },
+        "pattern": [
+          ["B   B"],
+          ["BW0EB"],
+          ["  B  "]
+        ]
+      }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:mixer"
+    }
+  ]
+}

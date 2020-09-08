@@ -22,6 +22,10 @@
           ["0C"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:solidifier"
     }
   ]
 }

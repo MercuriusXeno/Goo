@@ -22,6 +22,10 @@
           ["B B"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:goo_pump"
     }
   ]
 }

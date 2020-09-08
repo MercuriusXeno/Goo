@@ -8,6 +8,11 @@
       "text": "patchouli.goo.types_of_goo.description"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:gasket",
+      "recipe2": "goo:goo_and_you"
+    },
+    {
       "type": "goo:goo_items",
       "1.image": "goo:textures/icons/aquatic_short.png",
       "1.text": "goo.description.aquatic",

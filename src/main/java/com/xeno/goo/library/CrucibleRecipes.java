@@ -50,6 +50,9 @@ public class CrucibleRecipes
 
     public static boolean isAnyRecipe(FluidStack stack)
     {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
         for(CrucibleRecipe r : recipes()) {
             if (r.input().isFluidEqual(stack)) {
                 return true;

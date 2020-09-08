@@ -21,6 +21,10 @@
           ["B0"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:goo_bulb"
     }
   ]
 }

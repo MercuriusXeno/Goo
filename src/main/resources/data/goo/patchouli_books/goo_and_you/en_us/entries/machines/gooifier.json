@@ -23,6 +23,10 @@
           ["H0"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:gooifier"
     }
   ]
 }

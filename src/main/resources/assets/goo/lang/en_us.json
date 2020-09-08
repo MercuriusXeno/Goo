@@ -65,6 +65,10 @@
   "patchouli.goo.goo_bulb.summary": "Bulbs hold goo. They connect to gooifiers and solidifiers, but have some functions on their own.$(br)When placed adjacent, bulbs will drain completely to the bulb below them, or share their goo equally with bulbs to their sides.$(br)When you break a goo bulb, it retains its contents.",
   "patchouli.goo.goo_bulb.upgrades": "$(br)Upgrade bulbs to hold $(thing)8x more per tier, up to 4 times$().",
   "patchouli.goo.goo_pump.summary": "Pumps take goo from a bulb and send it to another. They connect to bulbs by their base (the chunky end) and send goo to their narrow end.$(br)You can target an $(thing)item$() on the pump which acts as a filter, by $(thing)right-clicking with the item in hand$(). It will allow only the types of goo that item is made of to pass through it.",
+  "patchouli.goo.mixer.summary": "Mixers take goo into the left and right and dispense a result their combination below.$(br2)Not every goo reacts to every other goo.",
+  "patchouli.goo.mixer.restrictions": "Mixers can only take inputs if they would $(thing)result in some combination.$()",
+  "patchouli.goo.crucible.summary": "Crucibles take goo from any side and \"burn\" it.$(br2)The deteriorated goo is ejected downward.$(br2)Crucibles will $(thing)deactivate when powered by redstone.$()",
+  "patchouli.goo.crucible.restrictions": "Crucibles can only take goo that can $(thing)deteriorate.$()",
 
   "goo.description.aquatic": "Water",
   "goo.description.chromatic": "Color",
