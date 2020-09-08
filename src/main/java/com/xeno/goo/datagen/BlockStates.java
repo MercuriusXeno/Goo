@@ -47,6 +47,13 @@ public class BlockStates extends BlockStateProvider {
                         u.texture(t == Direction.UP ? "#crucible_top" :
                                 (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side")))
                 .end()
+                .element()
+                .from(15.99f, 15.99f, 15.99f)
+                .to(0.01f, 0.01f, 0.01f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#crucible_top" :
+                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side")))
+                .end()
                 .texture("crucible_top", crucible_top)
                 .texture("crucible_bottom", crucible_bottom)
                 .texture("crucible_side", crucible_side);
@@ -60,6 +67,13 @@ public class BlockStates extends BlockStateProvider {
                 .allFaces((t, u) ->
                         u.texture(t == Direction.UP ? "#crucible_top" :
                                 (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side_lit")))
+                .end()
+                .element()
+                .from(15.99f, 15.99f, 15.99f)
+                .to(0.01f, 0.01f, 0.01f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#crucible_top" :
+                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side_lit")))
                 .end()
                 .texture("crucible_top", crucible_top)
                 .texture("crucible_bottom", crucible_bottom)

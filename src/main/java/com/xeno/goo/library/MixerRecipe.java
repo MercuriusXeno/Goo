@@ -1,34 +1,25 @@
 package com.xeno.goo.library;
 
-import net.minecraft.fluid.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MixerRecipe
 {
-    private Map<Fluid, Integer> inputs = new HashMap<>();
+    private List<FluidStack> inputs = new ArrayList<>();
     private FluidStack output;
 
     public MixerRecipe(FluidStack output, FluidStack...  inputs)
     {
         this.output = output;
-        int inputCount = 0;
-        for(FluidStack input : inputs) {
-            if (inputCount == 1) {
-                break;
-            }
-            this.inputs.put(input.getFluid(), input.getAmount());
-            inputCount++;
-        }
+        this.inputs.addAll(Arrays.asList(inputs));
     }
 
     public FluidStack output() {
         return this.output;
     }
 
-    public Map<Fluid, Integer> inputs() {
+    public List<FluidStack> inputs() {
         return this.inputs;
     }
 }

@@ -33,7 +33,9 @@ public class Crucible extends Block {
     public Crucible() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
-                .hardnessAndResistance(4.0f));
+                .hardnessAndResistance(4.0f)
+                .notSolid()
+        );
         setDefaultState(this.getDefaultState()
                 .with(BlockStateProperties.POWERED, true)
         );

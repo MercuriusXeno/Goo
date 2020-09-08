@@ -163,10 +163,9 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
         cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
     }
 
-    private boolean deductInputQuantities(Map<Fluid, Integer> inputs)
+    private boolean deductInputQuantities(List<FluidStack> inputs)
     {
-        for(Map.Entry<Fluid, Integer> e : inputs.entrySet()) {
-            FluidStack input = new FluidStack(e.getKey(), e.getValue());
+        for(FluidStack input : inputs) {
             // try deducting from either tank. it doesn't really matter which we check first
             // simulate will tell us that it contains it or doesn't.
             if (eastHandler.drain(input, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
@@ -181,8 +180,8 @@ public class MixerTile extends TileEntity implements ITickableTileEntity, FluidU
 
     private boolean isRecipeSatisfied(MixerRecipe recipe)
     {
-        for(Map.Entry<Fluid, Integer> e : recipe.inputs().entrySet()) {
-            if (goo.stream().noneMatch(g -> g.getFluid() == e.getKey() && g.getAmount() >= e.getValue())) {
+        for(FluidStack e : recipe.inputs()) {
+            if (goo.stream().noneMatch(g -> g.isFluidEqual(e) && g.getAmount() >= e.getAmount())) {
                 return false;
             }
         }
