@@ -49,7 +49,7 @@ public class GooPump extends Block
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.FACING, context.getFace())
+                .with(BlockStateProperties.FACING, context.getFace().getOpposite())
                 .with(RENDER, PumpRenderMode.STATIC);
     }
 
