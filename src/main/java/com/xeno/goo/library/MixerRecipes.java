@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 
 public class MixerRecipes
 {
+    private static boolean isInitialized = false;
     private static final List<MixerRecipe> recipes = new ArrayList<>();
 
     private static FluidStack fluid(Supplier<GooFluid> fluidSupplier) {
@@ -30,6 +31,7 @@ public class MixerRecipes
     }
 
     public static void init() {
+        isInitialized = true;
         recipes.clear();
         addRecipe(new MixerRecipe(fluid(Registry.CRYSTAL_GOO, 1), fluid(Registry.OBSIDIAN_GOO, 8), fluid(Registry.WEIRD_GOO)));
         addRecipe(new MixerRecipe(fluid(Registry.EARTHEN_GOO, 1), fluid(Registry.AQUATIC_GOO, 1), fluid(Registry.DECAY_GOO)));
@@ -51,7 +53,7 @@ public class MixerRecipes
 
     public static MixerRecipe getRecipe(FluidStack input1, FluidStack input2)
     {
-        if (recipes().size() == 0) {
+        if (!isInitialized) {
             init();
         }
         if (input1 == null || input2 == null || input1.isEmpty() || input2.isEmpty()) {

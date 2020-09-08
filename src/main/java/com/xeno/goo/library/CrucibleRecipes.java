@@ -11,6 +11,8 @@ import java.util.function.Supplier;
 
 public class CrucibleRecipes
 {
+    private static boolean isInitialized = false;
+
     private static final List<CrucibleRecipe> recipes = new ArrayList<>();
 
     private static FluidStack fluid(Supplier<GooFluid> fluidSupplier) {
@@ -29,6 +31,7 @@ public class CrucibleRecipes
     }
 
     public static void init() {
+        isInitialized = true;
         recipes.clear();
         recipes.add(new CrucibleRecipe(fluid(Registry.AQUATIC_GOO, 1), fluid(Registry.SNOW_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FAUNAL_GOO)));
@@ -41,7 +44,7 @@ public class CrucibleRecipes
 
     public static CrucibleRecipe getRecipe(FluidStack input)
     {
-        if (recipes().size() == 0) {
+        if (!isInitialized) {
             init();
         }
         if (input == null || input.isEmpty()) {

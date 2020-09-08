@@ -135,7 +135,7 @@ public class Recipes extends RecipeProvider {
                 .patternLine("non")
                 .patternLine("pfp")
                 .patternLine("obo")
-                .key('n', Items.NETHER_BRICKS)
+                .key('n', Items.CRYING_OBSIDIAN)
                 .key('o', Registry.GASKET.get())
                 .key('b', Items.BREWING_STAND)
                 .key('p', Items.PISTON)
@@ -160,12 +160,12 @@ public class Recipes extends RecipeProvider {
 
     private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.MIXER.get())
-                .patternLine("b b")
-                .patternLine("cnc")
-                .patternLine(" p ")
+                .patternLine("n n")
+                .patternLine("bcb")
+                .patternLine("npn")
                 .key('b', Registry.GOO_BULB.get())
                 .key('c', Items.CAULDRON)
-                .key('n', Blocks.NETHERITE_BLOCK)
+                .key('n', Items.NETHERITE_INGOT)
                 .key('p', Registry.GOO_PUMP.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
