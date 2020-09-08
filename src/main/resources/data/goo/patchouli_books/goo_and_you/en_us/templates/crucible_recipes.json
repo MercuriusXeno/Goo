@@ -1,0 +1,18 @@
+{
+  "include": [
+    {
+      "template": "goo:crucible_recipe",
+      "as": "1",
+      "using": {},
+      "x": 0,
+      "y": 18
+    },
+    {
+      "template": "goo:crucible_recipe",
+      "as": "2",
+      "using": {},
+      "x": 0,
+      "y": 36
+    }
+  ]
+}

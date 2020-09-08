@@ -15,12 +15,12 @@
         "mapping": {
           "B": "goo:goo_bulb",
           "0": "goo:crucible",
-          "W": "goo:goo_pump[facing=west]",
-          "E": "goo:mixer[facing=east]"
+          "N": "goo:goo_pump[facing=north]",
+          "S": "goo:goo_pump[facing=south]"
         },
         "pattern": [
           ["B   B"],
-          ["BW0EB"],
+          ["BN0SB"],
           ["  B  "]
         ]
       }

@@ -3,6 +3,7 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.client.models.FluidCuboid;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -34,6 +35,9 @@ public class FluidCuboidHelper
      */
     public static void renderFluidCuboid(FluidStack fluid, MatrixStack matrices, IVertexBuilder renderer, int combinedLight, float x1, float y1, float z1, float x2, float y2, float z2, int color)
     {
+        if ((fluid.getFluid().equals(Registry.CHROMATIC_GOO.get()))) {
+            color = colorizeChromaticGoo();
+        }
         TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getStillTexture(fluid));
         TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getFlowingTexture(fluid));
 
@@ -50,6 +54,91 @@ public class FluidCuboidHelper
         putTexturedQuad(renderer, matrix, still, x2 - x1, y2 - y1, z2 - z1, Direction.UP, color, combinedLight, false);
 
         matrices.pop();
+    }
+    private static final int COLOR_PHASE_DURATION_IN_SECONDS = 2;
+    private static final int COLOR_PHASES = 8;
+    private static final int CYCLE_TIMER = 20 * COLOR_PHASE_DURATION_IN_SECONDS;
+    private static final int FULL_CYCLE_TIME = CYCLE_TIMER * COLOR_PHASES;
+    private static int colorizeChromaticGoo()
+    {
+        if (Minecraft.getInstance().world == null) {
+            return 0xffffffff;
+        }
+        // cycle timer
+
+        int ticks = (int)(Minecraft.getInstance().world.getDayTime() % FULL_CYCLE_TIME);
+        return getChromaFromTime(ticks);
+    }
+
+    private static int getChromaFromTime(int ticks)
+    {
+        float progress = (ticks % CYCLE_TIMER) / (float)CYCLE_TIMER;
+        int nextBracketTicks = ticks + CYCLE_TIMER > FULL_CYCLE_TIME ?
+                ticks - (FULL_CYCLE_TIME - CYCLE_TIMER) : ticks + CYCLE_TIMER;
+        int chroma1 = getChromaFromBracket(ticks);
+        int chroma2 = getChromaFromBracket(nextBracketTicks);
+        return interpolateChroma(progress, chroma1, chroma2);
+    }
+
+    private static int interpolateChroma(float progress, int chroma1, int chroma2)
+    {
+        int a1 = chroma1 >> 24 & 0xff;
+        int r1 = chroma1 >> 16 & 0xff;
+        int g1 = chroma1 >> 8 & 0xff;
+        int b1 = chroma1 & 0xff;
+        int a2 = chroma2 >> 24 & 0xff;
+        int r2 = chroma2 >> 16 & 0xff;
+        int g2 = chroma2 >> 8 & 0xff;
+        int b2 = chroma2 & 0xff;
+
+        return (interpolate(progress, a1, a2) << 24)
+                | (interpolate(progress, r1, r2) << 16)
+                | (interpolate(progress, g1, g2) << 8)
+                | (interpolate(progress, b1, b2));
+    }
+
+    private static int interpolate(float progress, int c1, int c2)
+    {
+        return (int)Math.floor((float)(c2 - c1) * progress + (float)c1);
+    }
+
+    private static int getChromaFromBracket(int ticks)
+    {
+        // 5 seconds (100 ticks) to shift from
+        // red
+        if (ticks < (CYCLE_TIMER)) {
+            return 0xffff0000;
+        }
+        // orange
+        if (ticks < 2 * CYCLE_TIMER) {
+            return 0xffff7700;
+        }
+        // yellow
+        if (ticks < 3 * CYCLE_TIMER) {
+            return 0xffffff00;
+        }
+        // green
+        if (ticks < 4 * CYCLE_TIMER) {
+            return 0xff00ff00;
+        }
+        // blue/green!
+        if (ticks < 5 * CYCLE_TIMER) {
+            return 0xff00ffff;
+        }
+        // blue
+        if (ticks < 6 * CYCLE_TIMER) {
+            return 0xff0000ff;
+        }
+        // purple
+        if (ticks < 7 * CYCLE_TIMER) {
+            return 0xff9000cc;
+        }
+        // magenta
+        if (ticks < 8 * CYCLE_TIMER) {
+            return 0xffff00ff;
+        }
+
+        return 0xffffffff;
     }
 
     /**

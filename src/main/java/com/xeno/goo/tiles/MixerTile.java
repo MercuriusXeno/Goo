@@ -164,7 +164,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
 
         if (cap instanceof BulbFluidHandler) {
-            float fillVisual = recipe.output().getAmount() / (float) GooMod.config.gooTransferRate();
+            float fillVisual =  Math.max(0.3f, recipe.output().getAmount() / (float)GooMod.config.gooTransferRate());
             ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
         }
     }
