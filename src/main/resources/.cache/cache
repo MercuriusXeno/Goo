@@ -1,4 +1,4 @@
-a55dfab00c01ea399096e7d973504e8a83fb49be assets/goo/blockstates/crucible.json
+bda6143daf15d017847038b184c19bed0a578224 assets/goo/blockstates/crucible.json
 893877174b41d53f0e1761f1fa775ba349088485 assets/goo/blockstates/goo_bulb.json
 b98b34c6f93b59993054934f304cf57256d35971 assets/goo/blockstates/goo_bulb_mk2.json
 2cfe065b453ede6cea6a66240a5ac82813ec02f5 assets/goo/blockstates/goo_bulb_mk3.json
@@ -8,7 +8,8 @@ ebd51a081e2e9ca8776ebcaa815a67128b195b41 assets/goo/blockstates/goo_pump.json
 502d69a859c18048e071fe1c12ce989b1b9216b0 assets/goo/blockstates/gooifier.json
 1ce961665c2b18526c982d4e7f24c55f913cc289 assets/goo/blockstates/mixer.json
 b4957aa227e8901a62dcc5918a42560d1341f2f1 assets/goo/blockstates/solidifier.json
-0754d88e10746ee979f61f2ee688902ca1be4cdb assets/goo/models/block/crucible.json
+3154212210235b089628b2e11f21328f2ea0278c assets/goo/models/block/crucible.json
+40fbfc5a14e01db8c864ad32b74d0cffe53ffed4 assets/goo/models/block/crucible_lit.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk2.json
 0dec95aebaff3b55109ba7d169dff3c9fc13021a assets/goo/models/block/goo_bulb_mk3.json

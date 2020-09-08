@@ -115,7 +115,7 @@ public class Crucible extends Block {
     @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         TileEntity te = world.getTileEntity(pos);
-        if (te instanceof GooifierTile) {
+        if (te instanceof CrucibleTile) {
             CrucibleTile crucible = (CrucibleTile)te;
             if (!world.isRemote) {
                 ItemStack stack = crucible.getCrucibleStack(this);

@@ -4,7 +4,7 @@
     "particle": "goo:block/crucible_side",
     "crucible_top": "goo:block/crucible_top",
     "crucible_bottom": "goo:block/crucible_bottom",
-    "crucible_side": "goo:block/crucible_side"
+    "crucible_side_lit": "goo:block/crucible_side_lit"
   },
   "elements": [
     {
@@ -26,16 +26,16 @@
           "texture": "#crucible_top"
         },
         "north": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "south": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "west": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "east": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         }
       }
     },
@@ -58,16 +58,16 @@
           "texture": "#crucible_bottom"
         },
         "north": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "south": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "west": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         },
         "east": {
-          "texture": "#crucible_side"
+          "texture": "#crucible_side_lit"
         }
       }
     }

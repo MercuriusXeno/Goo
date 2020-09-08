@@ -169,7 +169,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             if (simulatedDrain != simulatedDrainLeft) {
                 didStuff = true;
             }
-            simulatedDrainLeft = simulatedDrain;
+            simulatedDrainLeft -= simulatedDrain;
         }
 
         return didStuff;
@@ -226,7 +226,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
                 if (simulatedDrain != simulatedDrainLeft) {
                     didStuff = true;
                 }
-                simulatedDrainLeft = simulatedDrain;
+                simulatedDrainLeft -= simulatedDrain;
             }
         }
         return didStuff;

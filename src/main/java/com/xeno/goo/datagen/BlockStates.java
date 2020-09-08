@@ -59,7 +59,7 @@ public class BlockStates extends BlockStateProvider {
                 .texture("crucible_side", crucible_side);
 
         BlockModelBuilder modelActive = models()
-                .withExistingParent("crucible", "block/block")
+                .withExistingParent("crucible_lit", "block/block")
                 .texture("particle", crucible_side)
                 .element()
                 .from(0, 0, 0)
@@ -80,10 +80,11 @@ public class BlockStates extends BlockStateProvider {
                 .texture("crucible_side_lit", crucible_side_lit);
 
         getVariantBuilder(Registry.CRUCIBLE.get())
-            .partialState().with(BlockStateProperties.POWERED, false)
-            .modelForState().modelFile(modelActive).addModel()
-                .partialState().with(BlockStateProperties.POWERED, true)
-                .modelForState().modelFile(modelInactive).addModel();
+            .forAllStates(
+                    (s) -> ConfiguredModel.builder()
+                            .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
+                            .build()
+            );
     }
 
     private void registerMixer()

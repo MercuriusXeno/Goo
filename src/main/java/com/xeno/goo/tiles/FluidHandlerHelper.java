@@ -15,6 +15,9 @@ public abstract class FluidHandlerHelper
 {
     public static IFluidHandler capability(TileEntity tile, Direction dir)
     {
+        if (tile == null) {
+            return null;
+        }
         LazyOptional<IFluidHandler> lazyCap = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
         if (lazyCap.isPresent()) {
             return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
