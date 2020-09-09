@@ -2,7 +2,7 @@
   "components": [
     {
       "type": "image",
-      "image": "#image",
+      "image": "#img1",
       "width": 32,
       "height": 32,
       "u": 0,
@@ -21,13 +21,13 @@
     },
     {
       "type": "text",
-      "text": "+",
+      "text": "#plus",
       "x": 24,
       "y": 8
     },
     {
       "type": "image",
-      "image": "#image",
+      "image": "#img2",
       "width": 32,
       "height": 32,
       "u": 0,
@@ -41,32 +41,32 @@
     {
       "type": "text",
       "text": "#in2",
-      "x": 36,
+      "x": 48,
       "y": 8
     },
     {
       "type": "text",
-      "text": "->",
-      "x": 42,
+      "text": "#arr",
+      "x": 56,
       "y": 8
     },
     {
       "type": "image",
-      "image": "#image",
+      "image": "#img3",
       "width": 32,
       "height": 32,
       "u": 0,
       "v": 0,
       "texture_width": 32,
       "texture_height": 32,
-      "x": 48,
+      "x": 64,
       "y": 0,
       "scale": 0.5
     },
     {
       "type": "text",
       "text": "#out",
-      "x": 54,
+      "x": 82,
       "y": 8
     }
   ]

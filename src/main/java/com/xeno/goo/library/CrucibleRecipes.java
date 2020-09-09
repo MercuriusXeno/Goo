@@ -38,7 +38,7 @@ public class CrucibleRecipes
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FUNGAL_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FLORAL_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.LOGIC_GOO, 1), fluid(Registry.METAL_GOO)));
-        recipes.add(new CrucibleRecipe(fluid(Registry.MOLTEN_GOO, 1), fluid(Registry.EARTHEN_GOO)));
+        recipes.add(new CrucibleRecipe(fluid(Registry.MOLTEN_GOO, 1), fluid(Registry.EARTHEN_GOO, 8)));
         recipes.add(new CrucibleRecipe(fluid(Registry.VITAL_GOO, 1), fluid(Registry.HONEY_GOO)));
     }
 

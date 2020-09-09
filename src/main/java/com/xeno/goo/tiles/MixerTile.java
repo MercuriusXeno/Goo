@@ -32,7 +32,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     private MixerFluidHandler westHandler = createHandler(Direction.WEST);
     private LazyOptional<MixerFluidHandler> eastLazy = LazyOptional.of(() -> eastHandler);
     private LazyOptional<MixerFluidHandler> westLazy = LazyOptional.of(() -> westHandler);
-    List<FluidStack> goo = new ArrayList<>();
 
     public MixerTile()
     {
@@ -44,6 +43,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     public FluidStack goo(Direction side)
     {
+        while(goo.size() < 2) {
+            goo.add(FluidStack.EMPTY);
+        }
         int sideTank = sideTank(side);
         if (sideTank == -1) {
             return FluidStack.EMPTY;
@@ -123,11 +125,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (world == null || world.isRemote) {
             return;
         }
-        if (goo.get(0) == null) {
-            goo.add(0, FluidStack.EMPTY);
-        }
-        if (goo.get(1) == null) {
-            goo.add(1, FluidStack.EMPTY);
+        while(goo.size() < 2) {
+            goo.add(FluidStack.EMPTY);
         }
 
         tryPushingRecipeResult();

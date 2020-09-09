@@ -185,12 +185,17 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         if (sourceHandler == null || targetHandler == null) {
             return;
         }
+        int maxDrain = getMaxDrain();
         FluidStack simulatedDrain = FluidStack.EMPTY;
         // iterate over all tanks and try a simulated drain until something sticks.
         for (int i = 0; i < sourceHandler.getTanks(); i++) {
-            FluidStack s = sourceHandler.getFluidInTank(i);
+            FluidStack s = sourceHandler.getFluidInTank(i).copy();
             if (s.isEmpty()) {
                 continue;
+            }
+
+            if (s.getAmount() > maxDrain) {
+                s.setAmount(maxDrain);
             }
 
             // skip if we're empty

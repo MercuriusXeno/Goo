@@ -146,10 +146,11 @@ public class Recipes extends RecipeProvider {
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(Registry.SOLIDIFIER.get())
-                .patternLine("ror")
-                .patternLine("pxp")
+                .patternLine("ro ")
+                .patternLine("nxp")
                 .patternLine("o#o")
                 .key('r', Items.REDSTONE_LAMP)
+                .key('n', Items.NETHER_BRICKS)
                 .key('o', Registry.GASKET.get())
                 .key('p', Items.STICKY_PISTON)
                 .key('x', Items.DISPENSER)
