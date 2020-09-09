@@ -31,20 +31,20 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     public CrucibleTile()
     {
         super(Registry.CRUCIBLE_TILE.get());
-        goo = Collections.singletonList(FluidStack.EMPTY);
+        goo.addAll(Collections.singletonList(FluidStack.EMPTY));
     }
 
-    public FluidStack goo()
-    {
-        if (goo.size() == 0) {
-            goo.add(FluidStack.EMPTY);
+    public FluidStack onlyGoo() {
+        if (goo().size() == 0) {
+            goo.addAll(Collections.singletonList(FluidStack.EMPTY));
         }
+
         return goo.get(0);
     }
 
     public boolean hasFluid(Fluid fluid)
     {
-        return goo() != FluidStack.EMPTY && goo().getFluid().equals(fluid);
+        return onlyGoo() != FluidStack.EMPTY && onlyGoo().getFluid().equals(fluid);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
     private CrucibleRecipe getRecipeFromInputs()
     {
-        return CrucibleRecipes.getRecipe(goo());
+        return CrucibleRecipes.getRecipe(onlyGoo());
     }
 
     private void tryPushingRecipeResult() {
@@ -106,7 +106,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
     private boolean isRecipeSatisfied(CrucibleRecipe recipe)
     {
-        return recipe.input().isFluidEqual(goo()) && recipe.input().getAmount() <= goo().getAmount();
+        return recipe.input().isFluidEqual(onlyGoo()) && recipe.input().getAmount() <= onlyGoo().getAmount();
     }
 
     private IFluidHandler tryGettingFluidCapabilityFromTileBelow()
@@ -191,7 +191,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
     public int getSpaceRemaining(FluidStack stack)
     {
-        if (!goo().isEmpty() && !goo().getFluid().equals(stack.getFluid())) {
+        if (!onlyGoo().isEmpty() && !onlyGoo().getFluid().equals(stack.getFluid())) {
             return 0;
         }
 
@@ -199,18 +199,18 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         if (!shouldAllowFluid(stack)) {
             return 0;
         }
-        return fluidHandler.getTankCapacity(0) - goo().getAmount();
+        return fluidHandler.getTankCapacity(0) - onlyGoo().getAmount();
     }
 
     private boolean shouldAllowFluid(FluidStack stack)
     {
 
         // if we already contain this fluid we've passed this test already.
-        if (goo().isFluidEqual(stack)) {
+        if (onlyGoo().isFluidEqual(stack)) {
             return true;
         }
 
-        if (!goo().isEmpty()) {
+        if (!onlyGoo().isEmpty()) {
             return false;
         }
 

@@ -19,7 +19,7 @@ public class CrucibleFluidHandler implements IFluidHandler
 
     @Override
     public FluidStack getFluidInTank(int tank) {
-        return tank == 0 ? parent.goo() : FluidStack.EMPTY;
+        return tank == 0 ? parent.onlyGoo() : FluidStack.EMPTY;
     }
 
     @Override
@@ -29,7 +29,7 @@ public class CrucibleFluidHandler implements IFluidHandler
 
     @Override
     public boolean isFluidValid(int tank, FluidStack stack) {
-        return tank == 0 && stack.getFluid() instanceof GooFluid && parent.goo().isFluidEqual(stack);
+        return tank == 0 && stack.getFluid() instanceof GooFluid && parent.onlyGoo().isFluidEqual(stack);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class CrucibleFluidHandler implements IFluidHandler
         int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
         if (action == FluidAction.EXECUTE && transferAmount > 0) {
             if (parent.hasFluid(resource.getFluid())) {
-                parent.goo().setAmount(parent.goo().getAmount() + transferAmount);
+                parent.onlyGoo().setAmount(parent.onlyGoo().getAmount() + transferAmount);
             } else {
                 parent.setGoo(new FluidStack(resource.getFluid(), transferAmount));
             }
@@ -50,9 +50,9 @@ public class CrucibleFluidHandler implements IFluidHandler
 
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        FluidStack result = new FluidStack(parent.goo().getFluid(), Math.min(parent.goo().getAmount(), maxDrain));
+        FluidStack result = new FluidStack(parent.onlyGoo().getFluid(), Math.min(parent.onlyGoo().getAmount(), maxDrain));
         if (action == FluidAction.EXECUTE) {
-            parent.goo().setAmount(parent.goo().getAmount() - result.getAmount());
+            parent.onlyGoo().setAmount(parent.onlyGoo().getAmount() - result.getAmount());
             parent.onContentsChanged();
         }
 
@@ -64,9 +64,9 @@ public class CrucibleFluidHandler implements IFluidHandler
         if (!parent.hasFluid(s.getFluid())) {
             return FluidStack.EMPTY;
         }
-        FluidStack result = new FluidStack(s.getFluid(), Math.min(s.getAmount(), parent.goo().getAmount()));
+        FluidStack result = new FluidStack(s.getFluid(), Math.min(s.getAmount(), parent.onlyGoo().getAmount()));
         if (action == FluidAction.EXECUTE) {
-            parent.goo().setAmount(parent.goo().getAmount() - result.getAmount());
+            parent.onlyGoo().setAmount(parent.onlyGoo().getAmount() - result.getAmount());
             parent.onContentsChanged();
         }
 

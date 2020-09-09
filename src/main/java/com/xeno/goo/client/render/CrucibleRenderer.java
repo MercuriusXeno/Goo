@@ -39,7 +39,7 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         if (cap == null) {
             return;
         }
-        render(cap.getTankCapacity(0), tile.goo().getAmount(), tile.goo(),
+        render(cap.getTankCapacity(0), tile.onlyGoo().getAmount(), tile.onlyGoo(),
                 matrixStack, buffer, combinedLightIn);
     }
 

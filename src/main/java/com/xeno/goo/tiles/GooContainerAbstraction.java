@@ -12,6 +12,10 @@ public abstract class GooContainerAbstraction extends TileEntity
 {
     protected List<FluidStack> goo = new ArrayList<>();
 
+    public List<FluidStack> goo() {
+        return this.goo;
+    }
+
     public GooContainerAbstraction(TileEntityType<?> tileEntityTypeIn)
     {
         super(tileEntityTypeIn);
