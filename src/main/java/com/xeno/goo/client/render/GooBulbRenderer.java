@@ -76,7 +76,8 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             highestToY = toY;
             if (isTargeted(goo, pos)) {
                 int transparency = getTransparencyFromWorldTime();
-                int overlayColorizer = 0x00ffffff | transparency << 24;
+                int overlayColor = getColorFromWorldTime();
+                int overlayColorizer = overlayColor | transparency << 24;
                 ResourceLocation hoverFlowing = Resources.Flowing.OVERLAY;
                 ResourceLocation hoverStill = Resources.Still.OVERLAY;
                 TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverStill);
@@ -102,6 +103,17 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         }
 
         return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TIMER_OVER_SINE_WAVE)));
+
+    }
+
+    private static int getColorFromWorldTime()
+    {
+        if (Minecraft.getInstance().world == null) {
+            return 0;
+        }
+
+        int c = (int)Math.floor(127 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % (TRANSPARENCY_TIMER / 2f)) * (TIMER_OVER_SINE_WAVE * 2)))) + 127;
+        return c << 16 | c << 8 | c;
     }
 
     private static boolean isTargeted(FluidStack goo, BlockPos pos)
