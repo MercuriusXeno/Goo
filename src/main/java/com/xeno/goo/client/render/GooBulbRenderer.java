@@ -93,7 +93,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         }
     }
 
-    private static int TRANSPARENCY_TIMER = 15;
+    private static int TRANSPARENCY_TIMER = 25;
     private static float TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
     private static int getTransparencyFromWorldTime()
     {
@@ -101,7 +101,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             return 0;
         }
 
-        return (int)Math.floor(127 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TIMER_OVER_SINE_WAVE)));
+        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TIMER_OVER_SINE_WAVE)));
     }
 
     private static boolean isTargeted(FluidStack goo, BlockPos pos)
