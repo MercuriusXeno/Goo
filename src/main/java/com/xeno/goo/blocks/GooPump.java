@@ -62,6 +62,9 @@ public class GooPump extends Block
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
+        if (state.get(BlockStateProperties.FACING).getAxis() == hit.getFace().getAxis()) {
+            return ActionResultType.PASS;
+        }
         boolean isClient = false;
         if (worldIn != null && worldIn.isRemote()) {
             isClient = true;

@@ -2,19 +2,16 @@ package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class MixerFluidHandler implements IFluidHandler
 {
     private final MixerTile parent;
-    private final Direction side;
-    public MixerFluidHandler(MixerTile t, Direction side) {
+    private final int side;
+    public MixerFluidHandler(MixerTile t, int sideTank) {
         this.parent = t;
-        this.side = side;
+        this.side = sideTank;
     }
 
     @Override

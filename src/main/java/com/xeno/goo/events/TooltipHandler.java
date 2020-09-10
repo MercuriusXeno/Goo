@@ -431,6 +431,10 @@ public class TooltipHandler
 
     public static void onGameOverlay(RenderGameOverlayEvent.Post event)
     {
+        if (!Screen.hasShiftDown()) {
+            return;
+        }
+
         if (Minecraft.getInstance().getRenderViewEntity() == null) {
             return;
         }
@@ -441,6 +445,7 @@ public class TooltipHandler
         if (!RayTracing.INSTANCE.hasTarget()) {
             return;
         }
+
         BlockRayTraceResult target = RayTracing.INSTANCE.target();
         ClientWorld world = (ClientWorld)e.getEntityWorld();
 
@@ -450,11 +455,11 @@ public class TooltipHandler
             if (!(t instanceof GooContainerAbstraction)) {
                 return;
             }
-            renderGooContents(event, (GooContainerAbstraction)t);
+            renderGooContents(event, target, (GooContainerAbstraction)t);
         }
     }
 
-    private static void renderGooContents(RenderGameOverlayEvent.Post event, GooContainerAbstraction e)
+    private static void renderGooContents(RenderGameOverlayEvent.Post event, BlockRayTraceResult target, GooContainerAbstraction e)
     {
         Minecraft mc = Minecraft.getInstance();
         MatrixStack matrices = event.getMatrixStack();
@@ -462,28 +467,15 @@ public class TooltipHandler
         if( mc.world == null || mc.player == null )
             return;
 
-
-        List<FluidStack> gooEntry = e.goo();
-
-        int size = gooEntry.size();
-        int stacksPerLine = getArrangementStacksPerLine(size);
-        if (stacksPerLine == 0) {
-            return;
-        }
+        FluidStack entry = e.getGooFromTargetRayTraceResult(target);
 
         int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
-        int by = (int)((event.getWindow().getScaledHeight() + Math.ceil(size / (float)stacksPerLine)) * 0.45f);
-        int j = 0;
+        int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
 
-        for (FluidStack entry : gooEntry) {
-            if (!(entry.getFluid() instanceof GooFluid)) {
-                continue;
-            }
-            int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
-            int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
-            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
-            j++;
+        if (!(entry.getFluid() instanceof GooFluid)) {
+            return;
         }
+        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
     private static boolean hasGooContents(BlockState state)

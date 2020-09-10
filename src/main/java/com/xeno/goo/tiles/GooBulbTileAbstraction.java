@@ -1,6 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -15,6 +16,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
@@ -364,16 +366,47 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return fluidHandler.getTankCapacity(0) - getTotalGoo();
     }
 
-    public FluidStack getGooCorrespondingTo(Vector3d hitVec, ServerPlayerEntity player, Direction side)
+    @Override
+    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
     {
-        Vector3d eyeHeight = Vector3d.ZERO;
-        if (player != null) {
-            eyeHeight = player.getEyePosition(0f);
+        return getGooCorrespondingTo(target.getHitVec(), target.getFace());
+    }
+
+    // moved this from renderer to here so that both can utilize the same
+    // offset logic (and also renderer is client code, not the same in reverse)
+    public static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+    public static final float FLUID_VERTICAL_MAX = 0.0005f;
+    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
+    public FluidStack getGooCorrespondingTo(Vector3d hitVec, Direction side)
+    {
+        if (goo.size() == 0) {
+            return FluidStack.EMPTY;
         }
-        // TODO make this way more awesome
-        // int split = (int)goo.stream().filter(g -> !g.isEmpty()).count();
-        // double dividend = split / 16d;
-        return getLeastQuantityGoo();
+        if (side == Direction.UP) {
+            return goo.get(goo.size() - 1); // return last;
+        } else if (side == Direction.DOWN) {
+            return goo.get(0);
+        } else {
+            float minY = getPos().getY() + FLUID_VERTICAL_OFFSET;
+            if (hitVec.getY() < minY) {
+                return goo.get(0);
+            }
+            float maxY = getPos().getY() + 1f - FLUID_VERTICAL_MAX;
+            float heightScale = maxY - minY;
+            float yOffset = 0f;
+            for(FluidStack stack : goo) {
+                // this is the total fill of the goo in the tank of this particular goo, as a percentage
+                float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, stack.getAmount() / (float)fluidHandler.getTankCapacity(0));
+                float fromY, toY;
+                fromY = minY + yOffset;
+                toY = fromY + (gooHeight * heightScale);
+                if (hitVec.getY() <= toY && hitVec.getY() >= fromY) {
+                    return stack;
+                }
+                yOffset += (gooHeight * heightScale);
+            }
+            return goo.get(goo.size() - 1);
+        }
     }
 
     public int storageMultiplier()

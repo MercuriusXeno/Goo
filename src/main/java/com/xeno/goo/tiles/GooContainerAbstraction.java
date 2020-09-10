@@ -3,6 +3,7 @@ package com.xeno.goo.tiles;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.ArrayList;
@@ -60,4 +61,6 @@ public abstract class GooContainerAbstraction extends TileEntity
 
         goo = tagGooList;
     }
+
+    public abstract FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target);
 }

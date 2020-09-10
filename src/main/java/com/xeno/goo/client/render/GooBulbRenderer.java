@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
@@ -18,11 +19,9 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.List;
 
 public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> {
-    private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 0.0005f;
     private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
-    private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - (FLUID_VERTICAL_MAX * 16);
+    private static final float FROM_SCALED_VERTICAL = GooBulbTile.FLUID_VERTICAL_OFFSET * 16;
+    private static final float TO_SCALED_VERTICAL = 16 - (GooBulbTile.FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
     private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
@@ -40,36 +39,31 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
-    private static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
+
     public static void render(int bulbCapacity, float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
         gooList.removeIf(FluidStack::isEmpty);
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
 
-        int distinctGooCount = gooList.size();
-        float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM * distinctGooCount;
-
-        // this is the total fill percentage of the container
-        float scaledHeight = Math.max(minHeight, totalGoo / (float)bulbCapacity);
         float yOffset = 0;
 
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
 
+
         float minY = from.getY();
         float maxY = to.getY();
+        float heightScale = maxY - minY;
         float highestToY = minY;
         for(FluidStack goo : gooList) {
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float percentage = goo.getAmount() / totalGoo;
-            float heightScale = percentage * scaledHeight;
-            float height = (maxY - minY) * heightScale;
+            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
             float fromY, toY;
             fromY = minY + yOffset;
-            toY = fromY + height;
+            toY = fromY + (gooHeight * heightScale);
             highestToY = toY;
             FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
-            yOffset += height;
+            yOffset += (gooHeight * heightScale);
         }
 
         if (isVerticallyFilled) {

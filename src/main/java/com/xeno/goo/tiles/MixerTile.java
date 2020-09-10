@@ -15,6 +15,7 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -23,15 +24,14 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
-    private MixerFluidHandler eastHandler = createHandler(Direction.EAST);
-    private MixerFluidHandler westHandler = createHandler(Direction.WEST);
-    private LazyOptional<MixerFluidHandler> eastLazy = LazyOptional.of(() -> eastHandler);
-    private LazyOptional<MixerFluidHandler> westLazy = LazyOptional.of(() -> westHandler);
+    private MixerFluidHandler leftHandler = createHandler(1);
+    private MixerFluidHandler rightHandler = createHandler(0);
+    private LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
+    private LazyOptional<MixerFluidHandler> rightLazy = LazyOptional.of(() -> rightHandler);
 
     public MixerTile()
     {
@@ -41,19 +41,15 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         }
     }
 
-    public FluidStack goo(Direction side)
+    public FluidStack goo(int side)
     {
         while(goo.size() < 2) {
             goo.add(FluidStack.EMPTY);
         }
-        int sideTank = sideTank(side);
-        if (sideTank == -1) {
-            return FluidStack.EMPTY;
-        }
-        return goo.get(sideTank);
+        return goo.get(side);
     }
 
-    public FluidStack goo(Direction side, Fluid fluid)
+    public FluidStack goo(int side, Fluid fluid)
     {
         FluidStack maybeGoo = goo(side);
         if (maybeGoo.getFluid().equals(fluid)) {
@@ -63,9 +59,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return FluidStack.EMPTY;
     }
 
-    public boolean hasFluid(Direction side, Fluid fluid)
+    public boolean hasFluid(int sideTank, Fluid fluid)
     {
-        return goo(side, fluid) != FluidStack.EMPTY;
+        return goo.get(sideTank).getFluid().isEquivalentTo(fluid);
     }
 
     private int sideTank(Direction side)
@@ -173,11 +169,11 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         for(FluidStack input : inputs) {
             // try deducting from either tank. it doesn't really matter which we check first
             // simulate will tell us that it contains it or doesn't.
-            if (eastHandler.drain(input, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
+            if (leftHandler.drain(input, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
                 // east handler doesn't have it.
-                westHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
+                rightHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
             } else {
-                eastHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
+                leftHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
             }
         }
         return true;
@@ -202,13 +198,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return FluidHandlerHelper.capability(tile, Direction.UP);
     }
 
-    public void addGoo(Direction side, FluidStack fluidStack)
+    public void addGoo(int side, FluidStack fluidStack)
     {
-        int sideTank = sideTank(side);
-        if (sideTank == -1) {
-            return;
-        }
-        goo.set(sideTank, fluidStack);
+        goo.set(side, fluidStack);
     }
 
     public void onContentsChanged() {
@@ -247,17 +239,17 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
         if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             if (side == orientedLeft()) {
-                return westLazy.cast();
+                return leftLazy.cast();
             }
             if (side == orientedRight()) {
-                return eastLazy.cast();
+                return rightLazy.cast();
             }
         }
         return super.getCapability(cap, side);
     }
 
-    private MixerFluidHandler createHandler(Direction d) {
-        return new MixerFluidHandler(this, d);
+    private MixerFluidHandler createHandler(int side) {
+        return new MixerFluidHandler(this, side);
     }
 
     public ItemStack mixerStack(Block block) {
@@ -288,38 +280,27 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return tagGooList;
     }
 
-    public int getSpaceRemaining(Direction side, FluidStack stack)
+    public int getSpaceRemaining(int sideTank, FluidStack stack)
     {
-        int sideTank = sideTank(side);
-        if (sideTank == -1) {
-            return 0;
-        }
-        IFluidHandler handler = orientedLeft() == side ? westHandler :
-                (orientedRight() == side ? eastHandler : null);
-        if (handler == null) {
-            return 0;
-        }
         // there may be space but this is the wrong kind of goo and you can't mix inside input tanks.
-        if (!goo.get(sideTank).isEmpty() && !goo.get(sideTank).getFluid().equals(stack.getFluid())) {
+        if (!goo(sideTank).isEmpty() && !goo(sideTank).getFluid().equals(stack.getFluid())) {
             return 0;
         }
 
         // one last check; we don't allow "inert" fluid combinations or inherently invalid fluids.
-        if (!shouldAllowFluid(stack, side)) {
+        if (!shouldAllowFluid(stack, sideTank)) {
             return 0;
         }
-        return handler.getTankCapacity(0) - goo.get(sideTank).getAmount();
+
+        if (sideTank == 0) {
+            return rightHandler.getTankCapacity(0) - goo(sideTank).getAmount();
+        } else {
+            return leftHandler.getTankCapacity(0) - goo(sideTank).getAmount();
+        }
     }
 
-    private boolean shouldAllowFluid(FluidStack stack, Direction side)
+    private boolean shouldAllowFluid(FluidStack stack, int sideTank)
     {
-        // reject the fluid if both tanks are empty and this stack doesn't have a recipe
-        int sideTank = sideTank(side);
-
-        if (sideTank == -1) {
-            return false;
-        }
-
         // if we already contain this fluid we've passed this test already.
         if (goo.get(sideTank).isFluidEqual(stack)) {
             return true;
@@ -335,5 +316,27 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         }
 
         return MixerRecipes.getRecipe(goo.get(0), goo.get(1)) != null;
+    }
+
+    @Override
+    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
+    {
+        if (target.getFace() == orientedLeft()) {
+            return goo.get(1);
+        } else if (target.getFace() == orientedRight()) {
+            return goo.get(0);
+        } else {
+            if (this.facing().getAxis() == Direction.Axis.Z) {
+                // sides are X- and X+
+                // if facing -, normal, else inverted
+                boolean isLeft = (facing() == Direction.SOUTH) == (target.getHitVec().getX() % 1 <= 0.5f);
+                return isLeft ? goo.get(1) : goo.get(0);
+            } else {
+                // sides are Z- and Z+
+                // if facing -, normal, else inverted
+                boolean isLeft = (facing() == Direction.WEST) == (target.getHitVec().getZ() % 1 <= 0.5f);
+                return isLeft ? goo.get(1) : goo.get(0);
+            }
+        }
     }
 }

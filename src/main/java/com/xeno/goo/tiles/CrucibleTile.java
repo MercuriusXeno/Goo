@@ -15,6 +15,8 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -215,5 +217,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         }
 
         return CrucibleRecipes.isAnyRecipe(stack);
+    }
+
+    @Override
+    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
+    {
+        return onlyGoo();
     }
 }
