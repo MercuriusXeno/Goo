@@ -3,6 +3,7 @@ package com.xeno.goo.events;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.render.*;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -39,7 +40,14 @@ public class ModClientEvents
     public static void onTextureStitch(TextureStitchEvent.Pre event) {
         if (event.getMap().getTextureLocation().equals(PlayerContainer.LOCATION_BLOCKS_TEXTURE)) {
             addUnmappedPumpTextures(event);
+            addUnmappedOverlayTextures(event);
         }
+    }
+
+    private static void addUnmappedOverlayTextures(TextureStitchEvent.Pre event)
+    {
+        event.addSprite(Resources.Still.OVERLAY);
+        event.addSprite(Resources.Flowing.OVERLAY);
     }
 
     private static void addUnmappedPumpTextures(TextureStitchEvent.Pre event)

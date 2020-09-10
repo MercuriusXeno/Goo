@@ -41,6 +41,11 @@ public class FluidCuboidHelper
         TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getStillTexture(fluid));
         TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getFlowingTexture(fluid));
 
+        renderFluidCuboid(still, flowing, color, matrices, renderer, combinedLight, x1, y1, z1, x2, y2, z2);
+    }
+
+    public static void renderFluidCuboid(TextureAtlasSprite still, TextureAtlasSprite flowing, int color, MatrixStack matrices, IVertexBuilder renderer, int combinedLight, float x1, float y1, float z1, float x2, float y2, float z2)
+    {
         matrices.push();
         matrices.translate(x1, y1, z1);
         Matrix4f matrix = matrices.getLast().getMatrix();
@@ -52,9 +57,9 @@ public class FluidCuboidHelper
         putTexturedQuad(renderer, matrix, flowing, x2 - x1, y2 - y1, z2 - z1, Direction.SOUTH, color, combinedLight, true);
         putTexturedQuad(renderer, matrix, flowing, x2 - x1, y2 - y1, z2 - z1, Direction.WEST, color, combinedLight, true);
         putTexturedQuad(renderer, matrix, still, x2 - x1, y2 - y1, z2 - z1, Direction.UP, color, combinedLight, false);
-
         matrices.pop();
     }
+
     private static final int COLOR_PHASE_DURATION_IN_SECONDS = 2;
     private static final int COLOR_PHASES = 9;
     private static final int CYCLE_TIMER = 20 * COLOR_PHASE_DURATION_IN_SECONDS;
