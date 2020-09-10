@@ -9,7 +9,6 @@ import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.*;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
@@ -95,14 +94,17 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     }
 
     private static int TRANSPARENCY_TIMER = 25;
-    private static float TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
+    private static float TRANSPARENCY_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
+
+    private static int COLORIZER_TIMER = 25;
+    private static float COLORIZER_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)COLORIZER_TIMER;
     private static int getTransparencyFromWorldTime()
     {
         if (Minecraft.getInstance().world == null) {
             return 0;
         }
 
-        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TIMER_OVER_SINE_WAVE)));
+        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TRANSPARENCY_TIMER_OVER_SINE_WAVE))) + 80;
 
     }
 
@@ -112,7 +114,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             return 0;
         }
 
-        int c = (int)Math.floor(127 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % (TRANSPARENCY_TIMER / 2f)) * (TIMER_OVER_SINE_WAVE * 2)))) + 127;
+        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getDayTime() % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
         return c << 16 | c << 8 | c;
     }
 
