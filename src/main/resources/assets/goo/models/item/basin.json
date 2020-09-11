@@ -1,3 +1,11 @@
 {
-  "parent": "goo:item/template_basin"
+  "parent": "forge:item/default",
+  "loader": "goo:basin",
+  "fluid": "goo:item/mask/basin_fluid",
+  "base": "goo:item/basin",
+  "textures": {
+    "layer0": "goo:item/basin",
+    "fluid": "goo:item/mask/basin_fluid",
+    "base": "goo:item/basin"
+  }
 }

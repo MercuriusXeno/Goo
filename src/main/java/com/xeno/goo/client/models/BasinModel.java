@@ -4,12 +4,8 @@ import com.google.common.collect.*;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
-import com.xeno.goo.items.BasinAbstraction;
-import com.xeno.goo.items.BasinAbstractionCapability;
-import com.xeno.goo.tiles.FluidHandlerHelper;
+import com.xeno.goo.GooMod;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.Item;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.client.renderer.model.*;
@@ -24,12 +20,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.*;
 import net.minecraftforge.client.model.geometry.IModelGeometry;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.VanillaResourceType;
@@ -96,7 +87,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
 
         TransformationMatrix transform = modelTransform.getRotation();
 
-        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new CrucibleContainedOverrideList(overrides, bakery, owner, this), transformMap);
+        ItemMultiLayerBakedModel.Builder builder = ItemMultiLayerBakedModel.builder(owner, particleSprite, new BasinContainedOverrideList(overrides, bakery, owner, this), transformMap);
 
         if (baseLocation != null)
         {
@@ -116,7 +107,6 @@ public final class BasinModel implements IModelGeometry<BasinModel>
                 builder.addQuads(ItemLayerModel.getLayerRenderType(luminosity > 0), ItemTextureQuadConverter.convertTexture(transform, templateSprite, fluidSprite, SOUTH_Z_FLUID, Direction.SOUTH, color, 1, luminosity));
             }
         }
-
         builder.setParticle(particleSprite);
 
         return builder.build();
@@ -191,7 +181,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
         }
     }
 
-    private static final class CrucibleContainedOverrideList extends ItemOverrideList
+    private static final class BasinContainedOverrideList extends ItemOverrideList
     {
         private final Map<String, IBakedModel> cache = Maps.newHashMap(); // contains all the baked models since they'll never change
         private final ItemOverrideList nested;
@@ -199,7 +189,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
         private final IModelConfiguration owner;
         private final BasinModel parent;
 
-        private CrucibleContainedOverrideList(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, BasinModel parent)
+        private BasinContainedOverrideList(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, BasinModel parent)
         {
             this.nested = nested;
             this.bakery = bakery;
@@ -220,7 +210,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
                         if (!cache.containsKey(name))
                         {
                             BasinModel unbaked = this.parent.withFluid(fluid);
-                            IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("forge:basin_override"));
+                            IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation(GooMod.MOD_ID, "basin_override"));
                             cache.put(name, bakedModel);
                             return bakedModel;
                         }

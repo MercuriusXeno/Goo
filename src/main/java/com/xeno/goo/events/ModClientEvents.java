@@ -79,6 +79,7 @@ public class ModClientEvents
 
     private static void addBasinMaskingTexture(TextureStitchEvent.Pre event)
     {
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/basin"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/basin_fluid"));
     }
 }
