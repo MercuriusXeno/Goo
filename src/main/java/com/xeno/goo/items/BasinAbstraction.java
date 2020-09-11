@@ -1,6 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.entity.player.PlayerEntity;
@@ -65,9 +66,9 @@ public class BasinAbstraction extends ItemFluidContainer
         }
 
         // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
-        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(context.getHitVec(), context.getFace());
+        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.BASIN);
 
-        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace());
+        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.BASIN);
         // if cap is empty try a drain.
         if (cap.getFluidInTank(0).isEmpty()) {
             return tryFillingEmptyBasin(cap, tileCap, hitFluid);

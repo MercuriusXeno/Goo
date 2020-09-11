@@ -6,6 +6,7 @@ import com.xeno.goo.library.CrucibleRecipes;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -220,13 +221,13 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     }
 
     @Override
-    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face)
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource)
     {
         return onlyGoo();
     }
 
     @Override
-    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
         return fluidHandler;
     }

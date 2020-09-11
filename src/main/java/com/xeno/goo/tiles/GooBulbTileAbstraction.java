@@ -5,6 +5,7 @@ import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -35,6 +36,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
+    private int verticalFillDelay = 0;
 
     public GooBulbTileAbstraction(TileEntityType t) {
         super(t);
@@ -69,6 +71,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     @Override
     public void updateVerticalFill(Fluid f, float intensity)
     {
+        if (intensity > 0) {
+            this.verticalFillDelay = 3;
+        }
         this.verticalFillIntensity = intensity;
         this.verticalFillFluid = f;
     }
@@ -107,6 +112,10 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
     public void decayVerticalFillVisuals() {
         if (!isVerticallyFilled()) {
+            return;
+        }
+        if (verticalFillDelay > 0) {
+            verticalFillDelay--;
             return;
         }
         verticalFillIntensity -= verticalFillDecay(); // flow reduces each frame work tick until there's nothing left.
@@ -372,8 +381,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     public static final float FLUID_VERTICAL_MAX = 0.0005f;
     public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
     @Override
-    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side)
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side, RayTraceTargetSource targetSource)
     {
+        pruneEmptyGoo();
         if (goo.size() == 0) {
             return FluidStack.EMPTY;
         }
@@ -405,7 +415,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     @Override
-    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
         return fluidHandler;
     }

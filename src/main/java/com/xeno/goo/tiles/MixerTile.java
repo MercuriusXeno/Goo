@@ -5,10 +5,10 @@ import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.StairsBlock;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -16,7 +16,6 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
@@ -24,16 +23,16 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
-    private MixerFluidHandler leftHandler = createHandler(1);
     private MixerFluidHandler rightHandler = createHandler(0);
-    private LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
     private LazyOptional<MixerFluidHandler> rightLazy = LazyOptional.of(() -> rightHandler);
+
+    private MixerFluidHandler leftHandler = createHandler(1);
+    private LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
 
     public MixerTile()
     {
@@ -66,18 +65,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return goo.get(sideTank).getFluid().isEquivalentTo(fluid);
     }
 
-    private int sideTank(Direction side)
-    {
-        // get rotated side and then determine east/west (or upward, which doesn't change) orientation.
-        if (side == orientedRight()) {
-            return 0;
-        } else if (side == orientedLeft()) {
-            return 1;
-        }
-
-        return -1;
-    }
-
     public Direction orientedRight() {
         switch(this.facing()) {
             case NORTH:
@@ -108,6 +95,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     public Direction facing()
     {
+        if (this.world == null) {
+            return Direction.NORTH;
+        }
         return this.getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
 
@@ -309,33 +299,34 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     }
 
     @Override
-    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face)
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource)
     {
-        if (isLeftSideMostly(hitVector, face)) {
-            return goo.get(1);
+        if (isRightSideMostly(hitVector, face)) {
+            return goo.get(0);
         }
 
-        return goo.get(0);
+        return goo.get(1);
     }
 
-    private boolean isLeftSideMostly(Vector3d hitVec, Direction face)
+    // THESE ARE RIGHT DO NOT TOUCH THEM I WILL KILL YOU
+    private boolean isRightSideMostly(Vector3d hitVec, Direction face)
     {
-        boolean isLeft;
-        if (face == orientedLeft()) {
-            isLeft = true;
+        boolean isRight;
+        if (face == orientedRight()) {
+            isRight = true;
         } else {
             if (this.facing().getAxis() == Direction.Axis.Z) {
-                isLeft = (facing() == Direction.SOUTH) == (hitVec.getX() % 1 <= 0.5f);
+                isRight = (facing() == Direction.NORTH) == (hitVec.getX() >= this.getPos().getX() + 0.5f);
             } else {
-                isLeft = (facing() == Direction.WEST) == (hitVec.getZ() % 1 <= 0.5f);
+                isRight = (facing() == Direction.EAST) == (hitVec.getZ() >= this.getPos().getZ() + 0.5f);
             }
         }
-        return isLeft;
+        return isRight;
     }
 
     @Override
-    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
-        return isLeftSideMostly(hitVec, face) ? leftHandler : rightHandler;
+        return isRightSideMostly(hitVec, face) ? rightHandler : leftHandler;
     }
 }

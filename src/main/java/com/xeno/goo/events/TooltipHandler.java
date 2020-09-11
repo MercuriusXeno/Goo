@@ -10,6 +10,7 @@ import com.xeno.goo.blocks.Crucible;
 import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.Mixer;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -96,7 +97,7 @@ public class TooltipHandler
 
         handleDisplayingGooValuesOfThings(stack, event);
 
-        // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
+        // special handler for goo bulbs and basins, which show their contents at rest, but not with shift held.
         if (hasGooContents(stack) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
         }
@@ -226,7 +227,7 @@ public class TooltipHandler
             initializeGooContainers();
         }
         if (GOO_ITEM_CONTAINERS.size() == 0) {
-            initializeGooContainers();
+            initializeGooItemContainers();
         }
         return GOO_CONTAINERS.contains(stack.getItem()) || GOO_ITEM_CONTAINERS.contains(stack.getItem());
     }
@@ -512,7 +513,7 @@ public class TooltipHandler
         if( mc.world == null || mc.player == null )
             return;
 
-        FluidStack entry = e.getGooFromTargetRayTraceResult(target);
+        FluidStack entry = e.getGooFromTargetRayTraceResult(target, RayTraceTargetSource.JUST_LOOKING);
 
         int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
         int by = (int)(event.getWindow().getScaledHeight() * 0.45f);

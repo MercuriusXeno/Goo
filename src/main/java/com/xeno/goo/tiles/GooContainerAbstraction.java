@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
@@ -65,11 +66,11 @@ public abstract class GooContainerAbstraction extends TileEntity
         goo = tagGooList;
     }
 
-    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target) {
-        return getGooFromTargetRayTraceResult(target.getHitVec(), target.getFace());
+    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target, RayTraceTargetSource targetSource) {
+        return getGooFromTargetRayTraceResult(target.getHitVec(), target.getFace(), targetSource);
     }
 
-    public abstract FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face);
+    public abstract FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource);
 
-    public abstract IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face);
+    public abstract IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource);
 }

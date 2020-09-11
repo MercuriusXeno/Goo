@@ -3,6 +3,7 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.blocks.GooBulbAbstraction;
+import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
@@ -73,16 +74,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             fromY = minY + yOffset;
             toY = fromY + (gooHeight * heightScale);
             highestToY = toY;
-            if (isTargeted(goo, pos)) {
-                int transparency = getTransparencyFromWorldTime();
-                int overlayColor = getColorFromWorldTime();
-                int overlayColorizer = overlayColor | transparency << 24;
-                ResourceLocation hoverFlowing = Resources.Flowing.OVERLAY;
-                ResourceLocation hoverStill = Resources.Still.OVERLAY;
-                TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverStill);
-                TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverFlowing);
-                FluidCuboidHelper.renderFluidCuboid(still, flowing, overlayColorizer, matrixStack, builder, combinedLightIn, (from.getX() / 16f) - 0.0001f, (fromY / 16f) - 0.0001f, (from.getZ() / 16f) - 0.0001f, (to.getX() / 16f) + 0.0001f, (toY / 16f) + 0.0001f, (to.getZ() / 16f) + 0.0001f);
-            }
+            HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
             FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += (gooHeight * heightScale);
         }
@@ -91,65 +83,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
             FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
         }
-    }
-
-    private static int TRANSPARENCY_TIMER = 25;
-    private static float TRANSPARENCY_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
-
-    private static int COLORIZER_TIMER = 25;
-    private static float COLORIZER_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)COLORIZER_TIMER;
-    private static int getTransparencyFromWorldTime()
-    {
-        if (Minecraft.getInstance().world == null) {
-            return 0;
-        }
-
-        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TRANSPARENCY_TIMER_OVER_SINE_WAVE))) + 80;
-
-    }
-
-    private static int getColorFromWorldTime()
-    {
-        if (Minecraft.getInstance().world == null) {
-            return 0;
-        }
-
-        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getDayTime() + 12 % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
-        return c << 16 | c << 8 | c;
-    }
-
-    private static boolean isTargeted(FluidStack goo, BlockPos pos)
-    {
-        if (Minecraft.getInstance().getRenderViewEntity() == null) {
-            return false;
-        }
-
-        Entity e = Minecraft.getInstance().getRenderViewEntity();
-
-        RayTracing.INSTANCE.fire();
-        if (!RayTracing.INSTANCE.hasTarget()) {
-            return false;
-        }
-
-        BlockRayTraceResult target = RayTracing.INSTANCE.target();
-        if (!target.getPos().equals(pos)) {
-            return false;
-        }
-        ClientWorld world = (ClientWorld)e.getEntityWorld();
-
-        BlockState state = world.getBlockState(target.getPos());
-        if (!(state.getBlock() instanceof GooBulbAbstraction)) {
-            return false;
-        }
-        TileEntity t = world.getTileEntity(target.getPos());
-        if (!(t instanceof GooContainerAbstraction)) {
-            return false;
-        }
-        FluidStack targetGoo = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(target);
-        if (targetGoo.isFluidEqual(goo)) {
-            return true;
-        }
-        return false;
     }
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
