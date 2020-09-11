@@ -24,6 +24,9 @@ public class Recipes extends RecipeProvider {
     protected void registerRecipes(Consumer<IFinishedRecipe> consumer) {
         registerBookRecipe(consumer);
         registerGasketRecipe(consumer);
+        registerGauntletRecipe(consumer);
+        registerBasinRecipe(consumer);
+
         registerGooifierRecipe(consumer);
         registerSolidifierRecipe(consumer);
         registerGooPumpRecipe(consumer);
@@ -34,6 +37,34 @@ public class Recipes extends RecipeProvider {
         registerGooBulbMk3Recipe(consumer);
         registerGooBulbMk4Recipe(consumer);
         registerGooBulbMk5Recipe(consumer);
+    }
+
+
+    private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.GAUNTLET.get())
+                .patternLine("ss ")
+                .patternLine("sls")
+                .patternLine("sgs")
+                .key('s', Items.NETHERITE_SCRAP)
+                .key('l', Items.LEATHER)
+                .key('g', Registry.GASKET.get())
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
+    }
+
+    private void registerBasinRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(Registry.BASIN.get())
+                .patternLine("sgs")
+                .patternLine("scs")
+                .patternLine("sbs")
+                .key('s', Items.NETHERITE_SCRAP)
+                .key('g', Registry.GASKET.get())
+                .key('b', Items.MAGMA_CREAM)
+                .key('c', Items.BUCKET)
+                .setGroup(GooMod.MOD_ID)
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .build(consumer);
     }
 
     // doesn't work, needs a custom serializer to get the NBT on the stack to identify

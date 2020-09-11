@@ -1,41 +1,43 @@
 package com.xeno.goo.client.models;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
-import com.xeno.goo.items.GooHolder;
-import com.xeno.goo.items.GooHolderData;
+import com.xeno.goo.items.BasinAbstraction;
+import com.xeno.goo.items.BasinAbstractionCapability;
+import com.xeno.goo.tiles.FluidHandlerHelper;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.Item;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.resources.IResourceManager;
+import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.client.renderer.model.*;
 import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.*;
 import net.minecraftforge.client.model.geometry.IModelGeometry;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.resource.IResourceType;
 import net.minecraftforge.resource.VanillaResourceType;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public final class GauntletModel implements IModelGeometry<GauntletModel>
+public final class BasinModel implements IModelGeometry<BasinModel>
 {
     // minimal Z offset to prevent depth-fighting
     private static final float NORTH_Z_COVER = 7.496f / 16f;
@@ -49,12 +51,12 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
     private final boolean applyFluidLuminosity;
 
     @Deprecated
-    public GauntletModel(Fluid fluid, boolean tint, boolean coverIsMask)
+    public BasinModel(Fluid fluid, boolean tint, boolean coverIsMask)
     {
         this(fluid, tint, coverIsMask, true);
     }
 
-    public GauntletModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
+    public BasinModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
         this.tint = tint;
@@ -66,9 +68,9 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
      * Returns a new ModelDynBucket representing the given fluid, but with the same
      * other properties (flipGas, tint, coverIsMask).
      */
-    public GauntletModel withFluid(Fluid newFluid)
+    public BasinModel withFluid(Fluid newFluid)
     {
-        return new GauntletModel(newFluid, false, applyFluidLuminosity);
+        return new BasinModel(newFluid, false, applyFluidLuminosity);
     }
 
     @Override
@@ -77,12 +79,12 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         RenderMaterial particleLocation = owner.isTexturePresent("particle") ? owner.resolveTexture("particle") : null;
         RenderMaterial baseLocation = owner.isTexturePresent("base") ? owner.resolveTexture("base") : null;
         RenderMaterial fluidMaskLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("fluid") : null;
-        RenderMaterial coverLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("cover") : null;
+        // RenderMaterial coverLocation = owner.isTexturePresent("fluid") ? owner.resolveTexture("cover") : null;
 
         IModelTransform transformsFromModel = owner.getCombinedTransform();
 
         TextureAtlasSprite fluidSprite = fluid != Fluids.EMPTY ? spriteGetter.apply(ForgeHooksClient.getBlockMaterial(fluid.getAttributes().getStillTexture())) : null;
-        TextureAtlasSprite coverSprite = (coverLocation != null && (!coverIsMask || baseLocation != null)) ? spriteGetter.apply(coverLocation) : null;
+        // TextureAtlasSprite coverSprite = (coverLocation != null && (!coverIsMask || baseLocation != null)) ? spriteGetter.apply(coverLocation) : null;
 
         ImmutableMap<TransformType, TransformationMatrix> transformMap =
                 PerspectiveMapWrapper.getTransforms(new ModelTransformComposition(transformsFromModel, modelTransform));
@@ -90,7 +92,7 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         TextureAtlasSprite particleSprite = particleLocation != null ? spriteGetter.apply(particleLocation) : null;
 
         if (particleSprite == null) particleSprite = fluidSprite;
-        if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
+        // if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
 
         TransformationMatrix transform = modelTransform.getRotation();
 
@@ -115,31 +117,26 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
             }
         }
 
-        if (coverIsMask)
-        {
-            if (coverSprite != null && baseLocation != null)
-            {
-                TextureAtlasSprite baseSprite = spriteGetter.apply(baseLocation);
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, NORTH_Z_COVER, Direction.NORTH, 0xFFFFFFFF, 2));
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.convertTexture(transform, coverSprite, baseSprite, SOUTH_Z_COVER, Direction.SOUTH, 0xFFFFFFFF, 2));
-            }
-        }
-        else
-        {
-            if (coverSprite != null)
-            {
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, NORTH_Z_COVER, coverSprite, Direction.NORTH, 0xFFFFFFFF, 2));
-                builder.addQuads(ItemLayerModel.getLayerRenderType(false), ItemTextureQuadConverter.genQuad(transform, 0, 0, 16, 16, SOUTH_Z_COVER, coverSprite, Direction.SOUTH, 0xFFFFFFFF, 2));
-            }
-        }
-
         builder.setParticle(particleSprite);
 
         return builder.build();
     }
 
+    @Override
+    public Collection<RenderMaterial> getTextures(IModelConfiguration owner, Function<ResourceLocation, IUnbakedModel> modelGetter, Set<Pair<String, String>> missingTextureErrors)
+    {
+        Set<RenderMaterial> texs = Sets.newHashSet();
 
-    public enum Loader implements IModelLoader<GauntletModel>
+        if (owner.isTexturePresent("particle")) texs.add(owner.resolveTexture("particle"));
+        if (owner.isTexturePresent("base")) texs.add(owner.resolveTexture("base"));
+        if (owner.isTexturePresent("fluid")) texs.add(owner.resolveTexture("fluid"));
+        if (owner.isTexturePresent("cover")) texs.add(owner.resolveTexture("cover"));
+
+        return texs;
+    }
+
+
+    public enum Loader implements IModelLoader<BasinModel>
     {
         INSTANCE;
 
@@ -162,10 +159,10 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         }
 
         @Override
-        public GauntletModel read(JsonDeserializationContext deserializationContext, JsonObject modelContents)
+        public BasinModel read(JsonDeserializationContext deserializationContext, JsonObject modelContents)
         {
             if (!modelContents.has("fluid"))
-                throw new RuntimeException("Crucible model requires 'fluid' value.");
+                throw new RuntimeException("Basin model requires 'fluid' value.");
 
             ResourceLocation fluidName = new ResourceLocation(modelContents.get("fluid").getAsString());
 
@@ -190,21 +187,8 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
             }
 
             // create new model with correct liquid
-            return new GauntletModel(fluid, tint, coverIsMask, applyFluidLuminosity);
+            return new BasinModel(fluid, tint, coverIsMask, applyFluidLuminosity);
         }
-    }
-
-    @Override
-    public Collection<RenderMaterial> getTextures(IModelConfiguration owner, Function<ResourceLocation, IUnbakedModel> modelGetter, Set<Pair<String, String>> missingTextureErrors)
-    {
-        Set<RenderMaterial> texs = Sets.newHashSet();
-
-        if (owner.isTexturePresent("particle")) texs.add(owner.resolveTexture("particle"));
-        if (owner.isTexturePresent("base")) texs.add(owner.resolveTexture("base"));
-        if (owner.isTexturePresent("fluid")) texs.add(owner.resolveTexture("fluid"));
-        if (owner.isTexturePresent("cover")) texs.add(owner.resolveTexture("cover"));
-
-        return texs;
     }
 
     private static final class CrucibleContainedOverrideList extends ItemOverrideList
@@ -213,9 +197,9 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         private final ItemOverrideList nested;
         private final ModelBakery bakery;
         private final IModelConfiguration owner;
-        private final GauntletModel parent;
+        private final BasinModel parent;
 
-        private CrucibleContainedOverrideList(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, GauntletModel parent)
+        private CrucibleContainedOverrideList(ItemOverrideList nested, ModelBakery bakery, IModelConfiguration owner, BasinModel parent)
         {
             this.nested = nested;
             this.bakery = bakery;
@@ -228,31 +212,23 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         {
             IBakedModel overridden = nested.func_239290_a_(originalModel, stack, world, entity);
             if (overridden != originalModel) return overridden;
+            return FluidUtil.getFluidContained(stack)
+                    .map(fluidStack -> {
+                        Fluid fluid = fluidStack.getFluid();
+                        String name = fluid.getRegistryName().toString();
 
-            Item item = stack.getItem();
-            if (!(item instanceof GooHolder)) {
-                return originalModel;
-            }
-            GooHolderData holder = ((GooHolder)item).data(stack);
-            holder.deserializeNBT(stack.getTag());
+                        if (!cache.containsKey(name))
+                        {
+                            BasinModel unbaked = this.parent.withFluid(fluid);
+                            IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("forge:basin_override"));
+                            cache.put(name, bakedModel);
+                            return bakedModel;
+                        }
 
-            Fluid fluid = holder.heldGoo().getFluid();
-
-            if (fluid == null || fluid == Fluids.EMPTY) {
-                return originalModel;
-            }
-
-            String key = Objects.requireNonNull(fluid.getRegistryName()).toString();
-
-            if (!cache.containsKey(key))
-            {
-                GauntletModel unbaked = this.parent.withFluid(fluid);
-                IBakedModel bakedModel = unbaked.bake(owner, bakery, ModelLoader.defaultTextureGetter(), ModelRotation.X0_Y0, this, new ResourceLocation("goo:crucible_override"));
-                cache.put(key, bakedModel);
-                return bakedModel;
-            }
-
-            return cache.get(key);
+                        return cache.get(name);
+                    })
+                    // not a fluid item apparently
+                    .orElse(originalModel); // empty bucket
         }
     }
 }

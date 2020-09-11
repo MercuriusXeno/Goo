@@ -2,11 +2,9 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.client.renderer.model.BuiltInModel;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
-import net.minecraftforge.common.model.Models;
 
 public class Items extends ItemModelProvider {
     public Items(DataGenerator generator, ExistingFileHelper existingFileHelper) {
@@ -17,30 +15,41 @@ public class Items extends ItemModelProvider {
     protected void registerModels() {
         registerGasket();
         registerGauntlet();
-        registerComboGauntlet();
-        registerCrucible();
-        registerMobiusCrucible();
+        registerBasin();
         registerGooAndYou();
+        registerCrucible();
+        registerMixer();
+        registerBulbs();
     }
 
-    private void registerMobiusCrucible()
+    private void registerBulbs()
     {
-        // NO OP
+        withExistingParent(Registry.GOO_BULB_ITEM.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(Registry.GOO_BULB_ITEM_MK2.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(Registry.GOO_BULB_ITEM_MK3.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(Registry.GOO_BULB_ITEM_MK4.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(Registry.GOO_BULB_ITEM_MK5.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
+
+    private void registerMixer()
+    {
+        withExistingParent(Registry.MIXER_ITEM.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerCrucible()
     {
-        // NO OP
+        withExistingParent(Registry.CRUCIBLE_ITEM.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
-    private void registerComboGauntlet()
+    private void registerBasin()
     {
-        // NO OP
+        withExistingParent(Registry.BASIN.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_basin"));
     }
 
     private void registerGauntlet()
     {
-        // NO OP
+        singleTexture(Registry.GAUNTLET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/gauntlet"));
     }
 
     private void registerGasket()

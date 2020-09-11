@@ -12,6 +12,7 @@ import com.xeno.goo.blocks.Mixer;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
@@ -40,6 +41,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.lwjgl.opengl.GL11;
 
 import java.text.NumberFormat;
@@ -61,8 +63,7 @@ public class TooltipHandler
         if (PATCHOULI_BOOK.isEmpty()) {
             PATCHOULI_BOOK = new ItemStack(Registry.GOO_AND_YOU.get());
         }
-        return player.getHeldItemOffhand()
-                .equals(PATCHOULI_BOOK, false);
+        return player.getHeldItemOffhand().equals(PATCHOULI_BOOK, false);
     }
 
     private static boolean cantSolidify(ItemStack stack, World entityWorld)
@@ -93,33 +94,40 @@ public class TooltipHandler
         //This method will make space for goo icons in the tooltip
         ItemStack stack = event.getItemStack();
 
-        // you can only see goo values while holding "Goo and You"
-        if (event.getPlayer() != null && isHoldingPatchouliBook(event.getPlayer())) {
-            // EVERYTHING shows its composition with shift held, bulbs are the exception
-            if (Screen.hasShiftDown()) {
-                if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
-                    if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
-                        event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
-                    }
-                    prepGooCompositionRealEstate(stack, event);
-                } else {
-                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
-                }
-            } else {
-                if (hasEntry(stack, event.getPlayer().getEntityWorld())) {
-                    if (cantSolidify(stack, event.getPlayer().getEntityWorld())) {
-                        event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
-                    }
-                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
-                } else {
-                    event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
-                }
-            }
-        }
+        handleDisplayingGooValuesOfThings(stack, event);
 
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (hasGooContents(stack) && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(stack, event);
+        }
+    }
+
+    private static void handleDisplayingGooValuesOfThings(ItemStack stack, ItemTooltipEvent event)
+    {
+        if (event.getPlayer() == null) {
+            return;
+        }
+
+        // you can only see goo values while holding "Goo and You"
+        if (!isHoldingPatchouliBook(event.getPlayer())) {
+            return;
+        }
+
+        // these always show up
+        boolean hasEntry = hasEntry(stack, event.getPlayer().getEntityWorld());
+        boolean cantSolidify = hasEntry && cantSolidify(stack, event.getPlayer().getEntityWorld());
+        if (cantSolidify) {
+            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+        }
+        if (!hasEntry) {
+            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
+        }
+
+        // EVERYTHING shows its composition with shift held, bulbs are the exception
+        if (Screen.hasShiftDown()) {
+            prepGooCompositionRealEstate(stack, event);
+        } else {
+            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
         }
     }
 
@@ -189,6 +197,7 @@ public class TooltipHandler
     }
 
     private static Set<Item> GOO_CONTAINERS = new HashSet<>();
+    private static Set<Item> GOO_ITEM_CONTAINERS = new HashSet<>();
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
@@ -202,6 +211,13 @@ public class TooltipHandler
                 )
         );
     }
+    private static void initializeGooItemContainers() {
+        GOO_ITEM_CONTAINERS.addAll(
+                Sets.newHashSet(
+                        Registry.BASIN.get()
+                )
+        );
+    }
 
 
     private static boolean hasGooContents(ItemStack stack)
@@ -209,7 +225,10 @@ public class TooltipHandler
         if (GOO_CONTAINERS.size() == 0) {
             initializeGooContainers();
         }
-        return GOO_CONTAINERS.contains(stack.getItem());
+        if (GOO_ITEM_CONTAINERS.size() == 0) {
+            initializeGooContainers();
+        }
+        return GOO_CONTAINERS.contains(stack.getItem()) || GOO_ITEM_CONTAINERS.contains(stack.getItem());
     }
 
     // some client side caching to speed things up a little.
@@ -266,26 +285,52 @@ public class TooltipHandler
         } else {
             lastStack = stack;
             lastGooEntry = new ArrayList<>();
-            CompoundNBT stackTag = stack.getTag();
-            if (stackTag == null) {
-                return lastGooEntry;
+            if (!tryFetchingGooContentsAsItem(stack)) {
+                tryFetchingGooContentsAsGooContainerAbstraction(stack);
             }
-
-            if (!stackTag.contains("BlockEntityTag")) {
-                return lastGooEntry;
-            }
-
-            CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-            if (!bulbTag.contains("goo")) {
-                return lastGooEntry;
-            }
-
-            CompoundNBT gooTag = bulbTag.getCompound("goo");
-            lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
-            lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
             return lastGooEntry;
         }
+    }
+
+    private static boolean tryFetchingGooContentsAsItem(ItemStack stack)
+    {
+        if (!GOO_ITEM_CONTAINERS.contains(stack.getItem())) {
+            return false;
+        }
+
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
+        if (cap == null) {
+            return false;
+        }
+
+        if (cap.getFluidInTank(0).isEmpty()) {
+            return false;
+        }
+
+        lastGooEntry.add(cap.getFluidInTank(0));
+        return true;
+    }
+
+    private static void tryFetchingGooContentsAsGooContainerAbstraction(ItemStack stack)
+    {
+        CompoundNBT stackTag = stack.getTag();
+        if (stackTag == null) {
+            return;
+        }
+
+        if (!stackTag.contains("BlockEntityTag")) {
+            return;
+        }
+
+        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
+
+        if (!bulbTag.contains("goo")) {
+            return;
+        }
+
+        CompoundNBT gooTag = bulbTag.getCompound("goo");
+        lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
+        lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
     }
 
     private static int getArrangementStacksPerLine(int compoundCount)

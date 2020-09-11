@@ -114,7 +114,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             return 0;
         }
 
-        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getDayTime() % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
+        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getDayTime() + 12 % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
         return c << 16 | c << 8 | c;
     }
 

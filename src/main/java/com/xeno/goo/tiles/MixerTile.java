@@ -8,6 +8,7 @@ import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.StairsBlock;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -16,6 +17,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -268,18 +270,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return stack;
     }
 
-    public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
-        List<FluidStack> tagGooList = new ArrayList<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-            tagGooList.add(stack);
-        }
-
-        return tagGooList;
-    }
-
     public int getSpaceRemaining(int sideTank, FluidStack stack)
     {
         // there may be space but this is the wrong kind of goo and you can't mix inside input tanks.
@@ -319,24 +309,33 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     }
 
     @Override
-    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face)
     {
-        if (target.getFace() == orientedLeft()) {
+        if (isLeftSideMostly(hitVector, face)) {
             return goo.get(1);
-        } else if (target.getFace() == orientedRight()) {
-            return goo.get(0);
+        }
+
+        return goo.get(0);
+    }
+
+    private boolean isLeftSideMostly(Vector3d hitVec, Direction face)
+    {
+        boolean isLeft;
+        if (face == orientedLeft()) {
+            isLeft = true;
         } else {
             if (this.facing().getAxis() == Direction.Axis.Z) {
-                // sides are X- and X+
-                // if facing -, normal, else inverted
-                boolean isLeft = (facing() == Direction.SOUTH) == (target.getHitVec().getX() % 1 <= 0.5f);
-                return isLeft ? goo.get(1) : goo.get(0);
+                isLeft = (facing() == Direction.SOUTH) == (hitVec.getX() % 1 <= 0.5f);
             } else {
-                // sides are Z- and Z+
-                // if facing -, normal, else inverted
-                boolean isLeft = (facing() == Direction.WEST) == (target.getHitVec().getZ() % 1 <= 0.5f);
-                return isLeft ? goo.get(1) : goo.get(0);
+                isLeft = (facing() == Direction.WEST) == (hitVec.getZ() % 1 <= 0.5f);
             }
         }
+        return isLeft;
+    }
+
+    @Override
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    {
+        return isLeftSideMostly(hitVec, face) ? leftHandler : rightHandler;
     }
 }

@@ -58,8 +58,14 @@ public class ServerConfiguration
     private ForgeConfigSpec.IntValue GOO_PUMP_TRANSFER_RATE;
     public int pumpAmountPerCycle() { return GOO_PUMP_TRANSFER_RATE.get(); }
 
+    private ForgeConfigSpec.IntValue BASIN_CAPACITY;
+    public int basinCapacity() { return BASIN_CAPACITY.get(); }
+
+    private ForgeConfigSpec.IntValue BOTTOMLESS_BASIN_CAPACITY;
+    public int bottomlessBasinCapacity() { return BOTTOMLESS_BASIN_CAPACITY.get(); }
+
     private void setupGeneralMachineConfig() {
-        serverBuilder.comment().push("machines");
+        serverBuilder.comment().push("general");
 
         int defaultGooTransferRate = 30;
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + defaultGooTransferRate)
@@ -84,6 +90,14 @@ public class ServerConfiguration
         int defaultPumpTransferRate = 30;
         GOO_PUMP_TRANSFER_RATE = serverBuilder.comment("Max quantity of fluid pumped per tick, default: " + defaultPumpTransferRate)
                 .defineInRange("pumpTransferRate", defaultPumpTransferRate, 0, Integer.MAX_VALUE);
+
+        int defaultBasinCapacity = 8000;
+        BASIN_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a basin, default: " + defaultBasinCapacity)
+                .defineInRange("basinCapacity", defaultBasinCapacity, 0, Integer.MAX_VALUE);
+
+        int defaultBottomlessBasinCapacity = 64000000;
+        BOTTOMLESS_BASIN_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a bottomless basin, default: " + defaultBottomlessBasinCapacity)
+                .defineInRange("bottomlessBasinCapacity", defaultBottomlessBasinCapacity, 0, Integer.MAX_VALUE);
 
         serverBuilder.pop();
     }

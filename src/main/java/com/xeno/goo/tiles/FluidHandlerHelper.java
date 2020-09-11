@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
@@ -8,6 +9,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import javax.annotation.Nonnull;
 
@@ -19,6 +21,19 @@ public abstract class FluidHandlerHelper
             return null;
         }
         LazyOptional<IFluidHandler> lazyCap = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
+        if (lazyCap.isPresent()) {
+            return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
+        }
+
+        return null;
+    }
+
+    public static IFluidHandlerItem capability(ItemStack stack)
+    {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+        LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         if (lazyCap.isPresent()) {
             return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
         }

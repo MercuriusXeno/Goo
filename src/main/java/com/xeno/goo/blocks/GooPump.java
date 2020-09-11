@@ -18,12 +18,20 @@ import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
 public class GooPump extends Block
 {
     public static final EnumProperty<PumpRenderMode> RENDER = EnumProperty.create("render", PumpRenderMode.class);
+
+    @Override
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
+    {
+        return super.getShape(state, worldIn, pos, context);
+    }
 
     public GooPump()
     {

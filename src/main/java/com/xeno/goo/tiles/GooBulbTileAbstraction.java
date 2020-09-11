@@ -366,18 +366,13 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return fluidHandler.getTankCapacity(0) - getTotalGoo();
     }
 
-    @Override
-    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
-    {
-        return getGooCorrespondingTo(target.getHitVec(), target.getFace());
-    }
-
     // moved this from renderer to here so that both can utilize the same
     // offset logic (and also renderer is client code, not the same in reverse)
     public static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     public static final float FLUID_VERTICAL_MAX = 0.0005f;
     public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
-    public FluidStack getGooCorrespondingTo(Vector3d hitVec, Direction side)
+    @Override
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side)
     {
         if (goo.size() == 0) {
             return FluidStack.EMPTY;
@@ -407,6 +402,12 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
             return goo.get(goo.size() - 1);
         }
+    }
+
+    @Override
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    {
+        return fluidHandler;
     }
 
     public int storageMultiplier()

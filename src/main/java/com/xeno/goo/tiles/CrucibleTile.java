@@ -220,8 +220,14 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     }
 
     @Override
-    public FluidStack getGooFromTargetRayTraceResult(BlockRayTraceResult target)
+    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face)
     {
         return onlyGoo();
+    }
+
+    @Override
+    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face)
+    {
+        return fluidHandler;
     }
 }
