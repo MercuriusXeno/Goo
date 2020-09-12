@@ -25,10 +25,6 @@ public class Items extends ItemModelProvider {
     private void registerBulbs()
     {
         withExistingParent(Registry.GOO_BULB_ITEM.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-        withExistingParent(Registry.GOO_BULB_ITEM_MK2.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-        withExistingParent(Registry.GOO_BULB_ITEM_MK3.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-        withExistingParent(Registry.GOO_BULB_ITEM_MK4.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-        withExistingParent(Registry.GOO_BULB_ITEM_MK5.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerMixer()

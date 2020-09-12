@@ -97,9 +97,5 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
 
     public static void register() {
         ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE.get(), GooBulbRenderer::new);
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK2.get(), GooBulbRenderer::new);
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK3.get(), GooBulbRenderer::new);
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK4.get(), GooBulbRenderer::new);
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE_MK5.get(), GooBulbRenderer::new);
     }
 }

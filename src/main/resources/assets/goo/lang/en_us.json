@@ -1,9 +1,5 @@
 {
   "block.goo.goo_bulb": "Goo Bulb",
-  "block.goo.goo_bulb_mk2": "Goo Bulb x8",
-  "block.goo.goo_bulb_mk3": "Goo Bulb x64",
-  "block.goo.goo_bulb_mk4": "Goo Bulb x512",
-  "block.goo.goo_bulb_mk5": "Goo Bulb x4096",
   "block.goo.goo_pump": "Goo Pump",
   "block.goo.gooifier": "Gooifier",
   "block.goo.solidifier": "Solidifier",
@@ -14,9 +10,15 @@
   "numbers.notation.million": "m",
   "numbers.notation.billion": "b",
 
+  "goo.common.holds": "Holds: ",
+  "goo.common.mb": "mB",
+
   "item.goo.gasket": "Gasket",
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Basin",
+
+  "enchantment.goo.holding": "Holding",
+  "enchantment.goo.geomancy": "Geomancy",
 
   "fluid.goo.aquatic_goo": "Aquatic",
   "fluid.goo.chromatic_goo": "Chromatic",
@@ -65,7 +67,7 @@
   "patchouli.goo.solidifier.summary": "Converts goo to items. Goo supplied from $(item)bulbs$() is consumed to make whatever the solidifier is $(o)targeting$().$(br)You $(thing)change the target by right-clicking the front with the item you want in-hand$().$(br)Items are dispensed forward, into a container if possible, but into the world if not.",
   "patchouli.goo.solidifier.power": "$(br)Always on by default. $(thing)Give it a redstone signal$() to turn it off.",
   "patchouli.goo.goo_bulb.summary": "Bulbs hold goo. They connect to gooifiers and solidifiers, but have some functions on their own.$(br)When placed adjacent, bulbs will drain completely to the bulb below them, or share their goo equally with bulbs to their sides.$(br)When you break a goo bulb, it retains its contents.",
-  "patchouli.goo.goo_bulb.upgrades": "$(br)Upgrade bulbs to hold $(thing)8x more per tier, up to 4 times$().",
+  "patchouli.goo.goo_bulb.upgrades": "$(br)Enchant bulbs with Holding to hold $(thing)more goo per tier, up to 4 times$().",
   "patchouli.goo.goo_pump.summary": "Pumps take goo from a bulb and send it to another. They connect to bulbs by their base (the chunky end) and send goo to their narrow end.$(br)You can target an $(thing)item$() on the pump which acts as a filter, by $(thing)right-clicking with the item in hand$(). It will allow only the types of goo that item is made of to pass through it.",
   "patchouli.goo.mixer.summary": "Mixers take goo into the left and right and dispense a result their combination below.$(br2)Not every goo reacts to every other goo.",
   "patchouli.goo.mixer.restrictions": "Mixers can only take inputs if they would $(thing)result in some combination.$()",

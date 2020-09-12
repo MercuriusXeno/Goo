@@ -56,26 +56,10 @@ public class Registry {
 
     public static final RegistryObject<GooAndYou> GOO_AND_YOU = ITEMS.register("goo_and_you", GooAndYou::new);
 
-    // Goo Bulbs registration
+    // Goo Bulb registration
     public static final RegistryObject<GooBulb> GOO_BULB = BLOCKS.register("goo_bulb", GooBulb::new);
     public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new GooBulbItem(GOO_BULB.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, GOO_BULB.get()).build(null));
-
-    public static final RegistryObject<GooBulbMk2> GOO_BULB_MK2 = BLOCKS.register("goo_bulb_mk2", GooBulbMk2::new);
-    public static final RegistryObject<Item> GOO_BULB_ITEM_MK2 = ITEMS.register("goo_bulb_mk2", () -> new BlockItem(GOO_BULB_MK2.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
-    public static final RegistryObject<TileEntityType<GooBulbTileMk2>> GOO_BULB_TILE_MK2 = TILES.register("goo_bulb_mk2", () -> TileEntityType.Builder.create(GooBulbTileMk2::new, GOO_BULB_MK2.get()).build(null));
-
-    public static final RegistryObject<GooBulbMk3> GOO_BULB_MK3 = BLOCKS.register("goo_bulb_mk3", GooBulbMk3::new);
-    public static final RegistryObject<Item> GOO_BULB_ITEM_MK3 = ITEMS.register("goo_bulb_mk3", () -> new BlockItem(GOO_BULB_MK3.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
-    public static final RegistryObject<TileEntityType<GooBulbTileMk3>> GOO_BULB_TILE_MK3 = TILES.register("goo_bulb_mk3", () -> TileEntityType.Builder.create(GooBulbTileMk3::new, GOO_BULB_MK3.get()).build(null));
-
-    public static final RegistryObject<GooBulbMk4> GOO_BULB_MK4 = BLOCKS.register("goo_bulb_mk4", GooBulbMk4::new);
-    public static final RegistryObject<Item> GOO_BULB_ITEM_MK4 = ITEMS.register("goo_bulb_mk4", () -> new BlockItem(GOO_BULB_MK4.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
-    public static final RegistryObject<TileEntityType<GooBulbTileMk4>> GOO_BULB_TILE_MK4 = TILES.register("goo_bulb_mk4", () -> TileEntityType.Builder.create(GooBulbTileMk4::new, GOO_BULB_MK4.get()).build(null));
-
-    public static final RegistryObject<GooBulbMk5> GOO_BULB_MK5 = BLOCKS.register("goo_bulb_mk5", GooBulbMk5::new);
-    public static final RegistryObject<Item> GOO_BULB_ITEM_MK5 = ITEMS.register("goo_bulb_mk5", () -> new BlockItem(GOO_BULB_MK5.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
-    public static final RegistryObject<TileEntityType<GooBulbTileMk5>> GOO_BULB_TILE_MK5 = TILES.register("goo_bulb_mk5", () -> TileEntityType.Builder.create(GooBulbTileMk5::new, GOO_BULB_MK5.get()).build(null));
 
     // Goo Pumps registration
     public static final RegistryObject<GooPump> GOO_PUMP = BLOCKS.register("goo_pump", GooPump::new);

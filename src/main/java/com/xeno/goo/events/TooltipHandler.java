@@ -203,10 +203,6 @@ public class TooltipHandler
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
                         Registry.GOO_BULB_ITEM.get(),
-                        Registry.GOO_BULB_ITEM_MK2.get(),
-                        Registry.GOO_BULB_ITEM_MK3.get(),
-                        Registry.GOO_BULB_ITEM_MK4.get(),
-                        Registry.GOO_BULB_ITEM_MK5.get(),
                         Registry.MIXER_ITEM.get(),
                         Registry.CRUCIBLE_ITEM.get()
                 )
@@ -220,7 +216,6 @@ public class TooltipHandler
                 )
         );
     }
-
 
     private static boolean hasGooContents(ItemStack stack)
     {
@@ -407,7 +402,7 @@ public class TooltipHandler
         matrices.pop();
     }
 
-    private static IFormattableTextComponent getGooAmountForDisplay(int count)
+    public static IFormattableTextComponent getGooAmountForDisplay(int count)
     {
         String s = Integer.toString(count);
         int oom = 0;

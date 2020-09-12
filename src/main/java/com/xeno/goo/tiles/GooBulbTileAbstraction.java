@@ -1,13 +1,17 @@
 package com.xeno.goo.tiles;
 
+import com.google.common.collect.Maps;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
@@ -25,10 +29,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class GooBulbTileAbstraction extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
@@ -37,9 +38,18 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
+    private int enchantHolding = 0;
 
     public GooBulbTileAbstraction(TileEntityType t) {
         super(t);
+    }
+
+    public void enchantHolding(int holding) {
+        this.enchantHolding = holding;
+    }
+
+    public int holding() {
+        return this.enchantHolding;
     }
 
     @Override
@@ -321,6 +331,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     @Override
     public CompoundNBT write(CompoundNBT tag) {
         tag.put("goo", serializeGoo());
+        tag.putInt("holding", enchantHolding);
         return super.write(tag);
     }
 
@@ -328,6 +339,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     {
         CompoundNBT gooTag = tag.getCompound("goo");
         deserializeGoo(gooTag);
+        if (tag.contains("holding")) {
+            enchantHolding(tag.getInt("holding"));
+        }
         super.read(state, tag);
         onContentsChanged();
     }
@@ -350,6 +364,14 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return new BulbFluidHandler(this);
     }
 
+    private Map<Enchantment, Integer> stackEnchantmentFactory() {
+        Map<Enchantment, Integer> result = new HashMap<>();
+        if (enchantHolding > 0) {
+            result.put(Registry.HOLDING.get(), enchantHolding);
+        }
+        return result;
+    }
+
     public ItemStack getBulbStack(Block block) {
         ItemStack stack = new ItemStack(block);
 
@@ -363,6 +385,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         stackTag.put("BlockEntityTag", bulbTag);
         stack.setTag(stackTag);
 
+        EnchantmentHelper.setEnchantments(stackEnchantmentFactory(), stack);
         return stack;
     }
 
@@ -422,6 +445,16 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
     public int storageMultiplier()
     {
-        return 1;
+        return storageMultiplier(enchantHolding);
+    }
+
+    public static int storageMultiplier(int enchantHolding)
+    {
+        return (int)Math.pow(GooMod.config.bulbHoldingMultiplier(), enchantHolding);
+    }
+
+    public static int storageForDisplay(int enchantHolding)
+    {
+        return storageMultiplier(enchantHolding) * GooMod.config.bulbCapacity();
     }
 }

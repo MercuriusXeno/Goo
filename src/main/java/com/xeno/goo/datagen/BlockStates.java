@@ -20,10 +20,6 @@ public class BlockStates extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
         registerGooBulbGeneric(Registry.GOO_BULB.get());
-        registerGooBulbGeneric(Registry.GOO_BULB_MK2.get());
-        registerGooBulbGeneric(Registry.GOO_BULB_MK3.get());
-        registerGooBulbGeneric(Registry.GOO_BULB_MK4.get());
-        registerGooBulbGeneric(Registry.GOO_BULB_MK5.get());
         registerGooPump();
         registerGooifier();
         registerSolidifier();

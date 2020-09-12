@@ -22,7 +22,7 @@ public class Basin extends BasinAbstraction
     @Override
     public int getItemEnchantability()
     {
-        return 20;
+        return 30;
     }
 
     @Override

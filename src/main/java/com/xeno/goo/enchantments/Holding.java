@@ -84,6 +84,6 @@ public class Holding extends Enchantment
     @Override
     public int getMinLevel()
     {
-        return 1;
+        return 0;
     }
 }
