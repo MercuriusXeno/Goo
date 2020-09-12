@@ -53,7 +53,7 @@ description='''Goo is a mod about things being made of goo. You make it out of t
 [[dependencies.goo]]
     modId="aequivaleo"
     mandatory=true
-    versionRange="[0.0.46-ALPHA]"
+    versionRange="[0.0.62-ALPHA]"
     ordering="NONE"
     side="BOTH"
 # Here's another dependency

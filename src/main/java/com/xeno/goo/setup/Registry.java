@@ -1,12 +1,18 @@
 package com.xeno.goo.setup;
 
-import com.ldtteam.aequivaleo.api.compound.ICompoundType;
+import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
+import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
+import com.ldtteam.aequivaleo.api.util.Constants;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
+import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ISTERProvider;
-import com.xeno.goo.fluids.*;
-import com.xeno.goo.items.*;
+import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Gasket;
+import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.items.GooAndYou;
 import com.xeno.goo.tiles.*;
 import net.minecraft.block.Block;
 import net.minecraft.fluid.Fluid;
@@ -23,10 +29,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 public class Registry {
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GooMod.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
-    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
-    private static final DeferredRegister<ICompoundType> COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
+    private static final DeferredRegister<Item>              ITEMS     = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
+    private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
+    private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
     // private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
-    private static final DeferredRegister<TileEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
+    private static final DeferredRegister<TileEntityType<?>>  TILES     = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, GooMod.MOD_ID);
     // private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
 
@@ -37,13 +44,14 @@ public class Registry {
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
         COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        COMPOUND_GROUPS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
-    public static final RegistryObject<Gasket> GASKET = ITEMS.register("gasket", Gasket::new);
+    public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
-    public static final RegistryObject<Basin> BASIN = ITEMS.register("basin", Basin::new);
+    public static final RegistryObject<Basin>    BASIN    = ITEMS.register("basin", Basin::new);
 
     public static final RegistryObject<GooAndYou> GOO_AND_YOU = ITEMS.register("goo_and_you", GooAndYou::new);
 
@@ -114,26 +122,29 @@ public class Registry {
     public static final RegistryObject<GooFluid> VITAL_GOO = FLUIDS.register("vital_goo", () -> new GooFluid(Resources.Still.VITAL_GOO, Resources.Flowing.VITAL_GOO, Resources.Icon.VITAL_GOO));
     public static final RegistryObject<GooFluid> WEIRD_GOO = FLUIDS.register("weird_goo", () -> new GooFluid(Resources.Still.WEIRD_GOO, Resources.Flowing.WEIRD_GOO, Resources.Icon.WEIRD_GOO));
 
+    // compound groups
+    public static final RegistryObject<GooCompoundTypeGroup> GOO_GROUP = COMPOUND_GROUPS.register("goo", GooCompoundTypeGroup::new);
+
     // compounds
-    public static final RegistryObject<GooCompoundType> AQUATIC = COMPOUNDS.register("aquatic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "aquatic"), AQUATIC_GOO));
-    public static final RegistryObject<GooCompoundType> CHROMATIC = COMPOUNDS.register("chromatic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "chromatic"), CHROMATIC_GOO));
-    public static final RegistryObject<GooCompoundType> CRYSTAL = COMPOUNDS.register("crystal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "crystal"), CRYSTAL_GOO));
-    public static final RegistryObject<GooCompoundType> DECAY = COMPOUNDS.register("decay", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "decay"), DECAY_GOO));
-    public static final RegistryObject<GooCompoundType> EARTHEN = COMPOUNDS.register("earthen", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "earthen"), EARTHEN_GOO));
-    public static final RegistryObject<GooCompoundType> ENERGETIC = COMPOUNDS.register("energetic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "energetic"), ENERGETIC_GOO));
-    public static final RegistryObject<GooCompoundType> FAUNAL = COMPOUNDS.register("faunal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "faunal"), FAUNAL_GOO));
-    public static final RegistryObject<GooCompoundType> FLORAL = COMPOUNDS.register("floral", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "floral"), FLORAL_GOO));
-    public static final RegistryObject<GooCompoundType> FUNGAL = COMPOUNDS.register("fungal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "fungal"), FUNGAL_GOO));
-    public static final RegistryObject<GooCompoundType> HONEY = COMPOUNDS.register("honey", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "honey"), HONEY_GOO));
-    public static final RegistryObject<GooCompoundType> LOGIC = COMPOUNDS.register("logic", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "logic"), LOGIC_GOO));
-    public static final RegistryObject<GooCompoundType> METAL = COMPOUNDS.register("metal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "metal"), METAL_GOO));
-    public static final RegistryObject<GooCompoundType> MOLTEN = COMPOUNDS.register("molten", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "molten"), MOLTEN_GOO));
-    public static final RegistryObject<GooCompoundType> OBSIDIAN = COMPOUNDS.register("obsidian", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "obsidian"), OBSIDIAN_GOO));
-    public static final RegistryObject<GooCompoundType> REGAL = COMPOUNDS.register("regal", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "regal"), REGAL_GOO));
-    public static final RegistryObject<GooCompoundType> SLIME = COMPOUNDS.register("slime", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "slime"), SLIME_GOO));
-    public static final RegistryObject<GooCompoundType> SNOW = COMPOUNDS.register("snow", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "snow"), SNOW_GOO));
-    public static final RegistryObject<GooCompoundType> VITAL = COMPOUNDS.register("vital", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "vital"), VITAL_GOO));
-    public static final RegistryObject<GooCompoundType> WEIRD = COMPOUNDS.register("weird", () -> new GooCompoundType(new ResourceLocation(GooMod.MOD_ID, "weird"), WEIRD_GOO));
+    public static final RegistryObject<GooCompoundType> AQUATIC = COMPOUNDS.register("aquatic", () -> new GooCompoundType(AQUATIC_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> CHROMATIC = COMPOUNDS.register("chromatic", () -> new GooCompoundType(CHROMATIC_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> CRYSTAL = COMPOUNDS.register("crystal", () -> new GooCompoundType(CRYSTAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> DECAY = COMPOUNDS.register("decay", () -> new GooCompoundType(DECAY_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> EARTHEN = COMPOUNDS.register("earthen", () -> new GooCompoundType(EARTHEN_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> ENERGETIC = COMPOUNDS.register("energetic", () -> new GooCompoundType(ENERGETIC_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> FAUNAL = COMPOUNDS.register("faunal", () -> new GooCompoundType(FAUNAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> FLORAL = COMPOUNDS.register("floral", () -> new GooCompoundType(FLORAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> FUNGAL = COMPOUNDS.register("fungal", () -> new GooCompoundType(FUNGAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> HONEY = COMPOUNDS.register("honey", () -> new GooCompoundType(HONEY_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> LOGIC = COMPOUNDS.register("logic", () -> new GooCompoundType(LOGIC_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> METAL = COMPOUNDS.register("metal", () -> new GooCompoundType(METAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> MOLTEN = COMPOUNDS.register("molten", () -> new GooCompoundType(MOLTEN_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> OBSIDIAN = COMPOUNDS.register("obsidian", () -> new GooCompoundType(OBSIDIAN_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> REGAL = COMPOUNDS.register("regal", () -> new GooCompoundType(REGAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> SLIME = COMPOUNDS.register("slime", () -> new GooCompoundType(SLIME_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> SNOW = COMPOUNDS.register("snow", () -> new GooCompoundType(SNOW_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> VITAL = COMPOUNDS.register("vital", () -> new GooCompoundType(VITAL_GOO, GOO_GROUP));
+    public static final RegistryObject<GooCompoundType> WEIRD = COMPOUNDS.register("weird", () -> new GooCompoundType(WEIRD_GOO, GOO_GROUP));
 
     public static String getFluidTranslationKey(String key)
     {

@@ -1,19 +1,25 @@
 package com.xeno.goo.aequivaleo.compound;
 
-import com.ldtteam.aequivaleo.api.compound.ICompoundType;
+import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
+import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistryEntry;
+
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class GooCompoundType implements ICompoundType
+public class GooCompoundType extends ForgeRegistryEntry<ICompoundType> implements ICompoundType
 {
-    public ResourceLocation registryName;
     public Supplier<GooFluid> fluidSupplier;
+    public Supplier<GooCompoundTypeGroup> groupSupplier;
 
-    public GooCompoundType(ResourceLocation registryName, Supplier<GooFluid> fluidSupplier) {
-        this.registryName = registryName;
+    public GooCompoundType(
+      final Supplier<GooFluid> fluidSupplier,
+      final Supplier<GooCompoundTypeGroup> groupSupplier)
+    {
         this.fluidSupplier = fluidSupplier;
+        this.groupSupplier = groupSupplier;
     }
 
     @Override
@@ -23,21 +29,8 @@ public class GooCompoundType implements ICompoundType
     }
 
     @Override
-    public ICompoundType setRegistryName(ResourceLocation name)
+    public ICompoundTypeGroup getGroup()
     {
-        this.registryName = name;
-        return this;
-    }
-
-    @Override
-    public ResourceLocation getRegistryName()
-    {
-        return this.registryName;
-    }
-
-    @Override
-    public Class<ICompoundType> getRegistryType()
-    {
-        return ICompoundType.class;
+        return groupSupplier.get();
     }
 }

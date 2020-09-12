@@ -3,7 +3,6 @@ package com.xeno.goo.aequivaleo.bootstrap;
 import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
-import com.ldtteam.aequivaleo.api.compound.information.contribution.IContributionInformationProviderRegistry;
 import com.ldtteam.aequivaleo.api.compound.information.locked.ILockedCompoundInformationRegistry;
 import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
@@ -40,7 +39,6 @@ public class GooValueBootstrapper
 
     public static void onReload(OnWorldDataReloadedEvent event)
     {
-        setupApiCallbacks(event);
         registerLocking(getRegistry(event), Items.ACACIA_LEAVES, floral(60), vital(60));
         registerLocking(getRegistry(event), Items.BIRCH_LEAVES, floral(60), vital(60));
         registerLocking(getRegistry(event), Items.DARK_OAK_LEAVES, floral(60), vital(60));
@@ -245,17 +243,6 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.LAVA_BUCKET, metal(216), molten(1080));
         registerLocking(getRegistry(event), Items.MILK_BUCKET, metal(216), faunal(120));
         registerLocking(getRegistry(event), Items.WATER_BUCKET, metal(216), aquatic(960));
-    }
-
-    private static void setupApiCallbacks(OnWorldDataReloadedEvent event)
-    {
-        RegistryKey<World> key = event.getWorld().getWorld().func_234923_W_();
-        IAequivaleoAPI api = event.getApi();
-        IContributionInformationProviderRegistry infoRegistry = api.getContributionInformationProviderRegistry(key);
-
-        infoRegistry.registerNewGenericProvider(
-          (recipe, compoundType) -> compoundType instanceof GooCompoundType && recipe instanceof ITagEquivalencyRecipe ? Optional.of(false) : Optional.empty()
-        );
     }
 
     private static ILockedCompoundInformationRegistry getRegistry(OnWorldDataReloadedEvent event)
