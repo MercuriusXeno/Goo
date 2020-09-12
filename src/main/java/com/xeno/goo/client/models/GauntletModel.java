@@ -37,14 +37,10 @@ import java.util.function.Predicate;
 public final class GauntletModel implements IModelGeometry<GauntletModel>
 {
     // minimal Z offset to prevent depth-fighting
-    private static final float NORTH_Z_COVER = 7.496f / 16f;
-    private static final float SOUTH_Z_COVER = 8.504f / 16f;
     private static final float NORTH_Z_FLUID = 7.498f / 16f;
     private static final float SOUTH_Z_FLUID = 8.502f / 16f;
 
     private final Fluid fluid;
-    private final boolean tint;
-    private final boolean coverIsMask;
     private final boolean applyFluidLuminosity;
 
     @Deprecated
@@ -56,8 +52,6 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
     public GauntletModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
-        this.tint = tint;
-        this.coverIsMask = coverIsMask;
         this.applyFluidLuminosity = applyFluidLuminosity;
     }
 
@@ -108,7 +102,7 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
             {
                 // build liquid layer (inside)
                 int luminosity = applyFluidLuminosity ? fluid.getAttributes().getLuminosity() : 0;
-                int color = tint ? fluid.getAttributes().getColor() : 0xFFFFFFFF;
+                int color = fluid.getAttributes().getColor();
                 builder.addQuads(ItemLayerModel.getLayerRenderType(luminosity > 0), ItemTextureQuadConverter.convertTexture(transform, templateSprite, fluidSprite, NORTH_Z_FLUID, Direction.NORTH, color, 1, luminosity));
                 builder.addQuads(ItemLayerModel.getLayerRenderType(luminosity > 0), ItemTextureQuadConverter.convertTexture(transform, templateSprite, fluidSprite, SOUTH_Z_FLUID, Direction.SOUTH, color, 1, luminosity));
             }
