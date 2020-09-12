@@ -29,6 +29,13 @@ public class Basin extends BasinAbstraction
         return EnchantmentHelper.getEnchantments(stack).size() == 0;
     }
 
+    // enchantment effect makes it really hard to see goo colors, so turn that off.
+    @Override
+    public boolean hasEffect(ItemStack stack)
+    {
+        return false;
+    }
+
     @Override
     public int getItemEnchantability()
     {

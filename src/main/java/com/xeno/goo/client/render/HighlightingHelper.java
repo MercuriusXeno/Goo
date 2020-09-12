@@ -62,6 +62,9 @@ public class HighlightingHelper
         }
 
         BlockRayTraceResult target = RayTracing.INSTANCE.target();
+        if (target == null) {
+            return false;
+        }
         if (!target.getPos().equals(pos)) {
             return false;
         }

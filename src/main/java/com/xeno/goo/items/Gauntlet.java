@@ -5,14 +5,19 @@ import com.xeno.goo.enchantments.Geomancy;
 import com.xeno.goo.enchantments.Holding;
 import com.xeno.goo.events.TooltipHandler;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.SwordItem;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -28,6 +33,13 @@ public class Gauntlet extends GauntletAbstraction
     public boolean isEnchantable(ItemStack stack)
     {
         return EnchantmentHelper.getEnchantments(stack).size() == 0;
+    }
+
+    // enchantment effect makes it really hard to see goo colors, so turn that off.
+    @Override
+    public boolean hasEffect(ItemStack stack)
+    {
+        return false;
     }
 
     @Override
@@ -62,5 +74,25 @@ public class Gauntlet extends GauntletAbstraction
                 .append(TooltipHandler.getGooAmountForDisplay(holdsAmount))
                 .append(new TranslationTextComponent("goo.common.mb"))
         );
+    }
+
+    @Override
+    public boolean hitEntity(ItemStack stack, LivingEntity target, LivingEntity attacker)
+    {
+        if (hasGoo(stack)) {
+            GooChopEffects.resolve(stack, attacker, target);
+            return false;
+        }
+        return super.hitEntity(stack, target, attacker);
+    }
+
+    private boolean hasGoo(ItemStack stack)
+    {
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
+        if (cap == null) {
+            return false;
+        }
+
+        return !cap.getFluidInTank(0).isEmpty();
     }
 }

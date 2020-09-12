@@ -489,6 +489,10 @@ public class TooltipHandler
         }
 
         BlockRayTraceResult target = RayTracing.INSTANCE.target();
+
+        if (target == null) {
+            return;
+        }
         ClientWorld world = (ClientWorld)e.getEntityWorld();
 
         BlockState state = world.getBlockState(target.getPos());
