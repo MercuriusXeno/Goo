@@ -1,8 +1,11 @@
 package com.xeno.goo.items;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 
 public class BasinAbstractionCapability extends FluidHandlerItemStack
@@ -45,7 +48,24 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return this.capacity;
+        return this.capacity * holdingMultiplier(Basin.holding(this.container));
+    }
+
+    public static int storageForDisplay(ItemStack stack)
+    {
+        IFluidHandlerItem handler = FluidHandlerHelper.capability(stack);
+        if (handler == null) {
+            return 0;
+        }
+
+        if (handler instanceof BasinAbstractionCapability) {
+            return handler.getTankCapacity(0);
+        }
+        return 0;
+    }
+
+    public static int holdingMultiplier(int holding) {
+        return (int)Math.pow(GooMod.config.basinHoldingMultiplier(), holding);
     }
 
     @Override

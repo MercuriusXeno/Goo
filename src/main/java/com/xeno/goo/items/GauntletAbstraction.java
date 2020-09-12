@@ -35,7 +35,7 @@ public class GauntletAbstraction extends ItemFluidContainer
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, CompoundNBT nbt)
     {
-        return new BasinAbstractionCapability(stack, this.capacity);
+        return new GauntletAbstractionCapability(stack, this.capacity);
     }
 
     @Override
@@ -61,9 +61,9 @@ public class GauntletAbstraction extends ItemFluidContainer
         }
 
         // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
-        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.BASIN);
+        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.GAUNTLET);
 
-        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.BASIN);
+        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.GAUNTLET);
         // if cap is empty try a drain.
         if (cap.getFluidInTank(0).isEmpty()) {
             return tryCoatingBareGauntlet(cap, tileCap, hitFluid);

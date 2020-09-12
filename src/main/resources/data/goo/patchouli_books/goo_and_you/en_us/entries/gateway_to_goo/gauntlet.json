@@ -1,0 +1,16 @@
+{
+  "name": "item.goo.gauntlet",
+  "icon": "goo:item/gauntlet",
+  "category": "goo:gateway_to_goo",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.types_of_goo.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:gasket",
+      "recipe2": "goo:goo_and_you"
+    }
+  ]
+}

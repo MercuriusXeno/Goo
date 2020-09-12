@@ -44,8 +44,7 @@ public class Items extends ItemModelProvider {
 
     private void registerGauntlet()
     {
-        singleTexture(Registry.GAUNTLET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
-                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/gauntlet"));
+        withExistingParent(Registry.GAUNTLET.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_gauntlet"));
     }
 
     private void registerGasket()

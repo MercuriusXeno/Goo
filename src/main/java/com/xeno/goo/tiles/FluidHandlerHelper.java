@@ -33,6 +33,10 @@ public abstract class FluidHandlerHelper
         if (stack == null || stack.isEmpty()) {
             return null;
         }
+        // before caps load, this is null :|
+        if (CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY == null) {
+            return null;
+        }
         LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         if (lazyCap.isPresent()) {
             return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));

@@ -1,10 +1,7 @@
 package com.xeno.goo.enchantments;
 
-import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentType;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 
@@ -12,19 +9,19 @@ public class Geomancy extends Enchantment
 {
     public Geomancy()
     {
-        super(Rarity.VERY_RARE, EnchantmentTypes.VALID_FOR_GEOMANCY, new EquipmentSlotType[] {EquipmentSlotType.MAINHAND});
+        super(Rarity.UNCOMMON, EnchantmentTypes.VALID_FOR_GEOMANCY, new EquipmentSlotType[] {EquipmentSlotType.MAINHAND});
     }
 
     @Override
     public int getMinEnchantability(int enchantmentLevel)
     {
-        return 15;
+        return 25;
     }
 
     @Override
     public int getMaxEnchantability(int enchantmentLevel)
     {
-        return getMinEnchantability(enchantmentLevel) + 15;
+        return getMinEnchantability(enchantmentLevel) + 35;
     }
 
     @Override
@@ -61,7 +58,7 @@ public class Geomancy extends Enchantment
     @Override
     protected boolean canApplyTogether(Enchantment ench)
     {
-        return true;
+        return ench instanceof Holding;
     }
 
     // I don't want to make a mess of books, to be honest. There's enough results in ench already without

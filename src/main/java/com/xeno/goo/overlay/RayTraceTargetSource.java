@@ -6,5 +6,7 @@ public enum RayTraceTargetSource
 
     BASIN,
 
+    GAUNTLET,
+
     JUST_LOOKING
 }
