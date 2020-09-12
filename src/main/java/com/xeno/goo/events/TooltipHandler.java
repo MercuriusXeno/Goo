@@ -127,7 +127,7 @@ public class TooltipHandler
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
             prepGooCompositionRealEstate(stack, event);
-        } else {
+        } else if (hasEntry) {
             event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
         }
     }

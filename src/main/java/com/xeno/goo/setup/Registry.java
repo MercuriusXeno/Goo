@@ -8,6 +8,8 @@ import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ISTERProvider;
+import com.xeno.goo.enchantments.Geomancy;
+import com.xeno.goo.enchantments.Holding;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gasket;
@@ -15,6 +17,7 @@ import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GooAndYou;
 import com.xeno.goo.tiles.*;
 import net.minecraft.block.Block;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
@@ -35,7 +38,7 @@ public class Registry {
     // private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<TileEntityType<?>>  TILES     = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, GooMod.MOD_ID);
-    // private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
+    private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
 
     public static void init () {
         BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -45,7 +48,7 @@ public class Registry {
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
         COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         COMPOUND_GROUPS.register(FMLJavaModLoadingContext.get().getModEventBus());
-        // ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
@@ -145,6 +148,10 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> SNOW = COMPOUNDS.register("snow", () -> new GooCompoundType(SNOW_GOO, GOO_GROUP));
     public static final RegistryObject<GooCompoundType> VITAL = COMPOUNDS.register("vital", () -> new GooCompoundType(VITAL_GOO, GOO_GROUP));
     public static final RegistryObject<GooCompoundType> WEIRD = COMPOUNDS.register("weird", () -> new GooCompoundType(WEIRD_GOO, GOO_GROUP));
+
+    // enchantments
+    public static final RegistryObject<Holding> HOLDING = ENCHANTMENTS.register("holding", Holding::new);
+    public static final RegistryObject<Geomancy> GEOMANCY = ENCHANTMENTS.register("geomancy", Geomancy::new);
 
     public static String getFluidTranslationKey(String key)
     {
