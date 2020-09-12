@@ -44,12 +44,12 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
     private final boolean applyFluidLuminosity;
 
     @Deprecated
-    public GauntletModel(Fluid fluid, boolean tint, boolean coverIsMask)
+    public GauntletModel(Fluid fluid)
     {
-        this(fluid, tint, coverIsMask, true);
+        this(fluid,true);
     }
 
-    public GauntletModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
+    public GauntletModel(Fluid fluid, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
         this.applyFluidLuminosity = applyFluidLuminosity;
@@ -61,7 +61,7 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
      */
     public GauntletModel withFluid(Fluid newFluid)
     {
-        return new GauntletModel(newFluid, false, applyFluidLuminosity);
+        return new GauntletModel(newFluid, applyFluidLuminosity);
     }
 
     @Override
@@ -177,7 +177,7 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
             }
 
             // create new model with correct liquid
-            return new GauntletModel(fluid, tint, coverIsMask, applyFluidLuminosity);
+            return new GauntletModel(fluid, applyFluidLuminosity);
         }
     }
 

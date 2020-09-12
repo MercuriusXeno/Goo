@@ -38,12 +38,12 @@ public final class BasinModel implements IModelGeometry<BasinModel>
     private final boolean applyFluidLuminosity;
 
     @Deprecated
-    public BasinModel(Fluid fluid, boolean tint, boolean coverIsMask)
+    public BasinModel(Fluid fluid)
     {
-        this(fluid, tint, coverIsMask, true);
+        this(fluid, true);
     }
 
-    public BasinModel(Fluid fluid, boolean tint, boolean coverIsMask, boolean applyFluidLuminosity)
+    public BasinModel(Fluid fluid, boolean applyFluidLuminosity)
     {
         this.fluid = fluid;
         this.applyFluidLuminosity = applyFluidLuminosity;
@@ -55,7 +55,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
      */
     public BasinModel withFluid(Fluid newFluid)
     {
-        return new BasinModel(newFluid, false, applyFluidLuminosity);
+        return new BasinModel(newFluid);
     }
 
     @Override
@@ -152,18 +152,6 @@ public final class BasinModel implements IModelGeometry<BasinModel>
 
             Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidName);
 
-            boolean tint = true;
-            if (modelContents.has("applyTint"))
-            {
-                tint = modelContents.get("applyTint").getAsBoolean();
-            }
-
-            boolean coverIsMask = true;
-            if (modelContents.has("coverIsMask"))
-            {
-                coverIsMask = modelContents.get("coverIsMask").getAsBoolean();
-            }
-
             boolean applyFluidLuminosity = true;
             if (modelContents.has("applyFluidLuminosity"))
             {
@@ -171,7 +159,7 @@ public final class BasinModel implements IModelGeometry<BasinModel>
             }
 
             // create new model with correct liquid
-            return new BasinModel(fluid, tint, coverIsMask, applyFluidLuminosity);
+            return new BasinModel(fluid, applyFluidLuminosity);
         }
     }
 
