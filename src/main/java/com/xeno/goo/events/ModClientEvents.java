@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.models.BasinModel;
+import com.xeno.goo.client.models.GauntletModel;
 import com.xeno.goo.client.render.*;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
@@ -61,14 +62,22 @@ public class ModClientEvents
     private static void setModelLoaders()
     {
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "basin"), BasinModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
     }
 
     @SubscribeEvent
     public static void onTextureStitch(TextureStitchEvent.Pre event) {
         if (event.getMap().getTextureLocation().equals(PlayerContainer.LOCATION_BLOCKS_TEXTURE)) {
             addBasinMaskingTexture(event);
+            addGauntletMaskingTexture(event);
             addUnmappedOverlayTextures(event);
         }
+    }
+
+    private static void addGauntletMaskingTexture(TextureStitchEvent.Pre event)
+    {
+        // event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/gauntlet"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
     }
 
     private static void addUnmappedOverlayTextures(TextureStitchEvent.Pre event)
@@ -79,7 +88,7 @@ public class ModClientEvents
 
     private static void addBasinMaskingTexture(TextureStitchEvent.Pre event)
     {
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/basin"));
+        // event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/basin"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/basin_fluid"));
     }
 }

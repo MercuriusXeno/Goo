@@ -232,7 +232,6 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
     private Vector3f fluidTankDimensionsTo(boolean isRight, Direction facing, int amount, int capacity)
     {
         // this is the total fill percentage of the container
-
         float toY = endingInputFromSideAndFaceY(amount, capacity);
         float toX = endingInputFromSideAndFaceX(isRight, facing);
         float toZ = endingInputFromSideAndFaceZ(isRight, facing);

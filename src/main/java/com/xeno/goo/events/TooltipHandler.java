@@ -215,7 +215,8 @@ public class TooltipHandler
     private static void initializeGooItemContainers() {
         GOO_ITEM_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        Registry.BASIN.get()
+                        Registry.BASIN.get(),
+                        Registry.GAUNTLET.get()
                 )
         );
     }

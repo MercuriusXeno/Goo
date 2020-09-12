@@ -5,15 +5,10 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-public class Gauntlet extends Item
+public class Gauntlet extends GauntletAbstraction
 {
     public Gauntlet()
     {
-        super(
-                new Item.Properties()
-                .maxStackSize(1)
-                .isBurnable()
-                .group(GooMod.ITEM_GROUP)
-        );
+        super(GooMod.config.gauntletCapacity());
     }
 }

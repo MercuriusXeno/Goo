@@ -20,16 +20,16 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
-import java.util.function.Supplier;
-
-public class BasinAbstraction extends ItemFluidContainer
+public class GauntletAbstraction extends ItemFluidContainer
 {
-    public BasinAbstraction(int capacity)
+    public GauntletAbstraction(int capacity)
     {
-        super(new Item.Properties()
-                .maxStackSize(1)
-                .isBurnable()
-                .group(GooMod.ITEM_GROUP), capacity);
+        super(
+                new Item.Properties()
+                        .maxStackSize(1)
+                        .isBurnable()
+                        .group(GooMod.ITEM_GROUP),
+                capacity);
     }
 
     @Override
@@ -66,14 +66,14 @@ public class BasinAbstraction extends ItemFluidContainer
         FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.BASIN);
         // if cap is empty try a drain.
         if (cap.getFluidInTank(0).isEmpty()) {
-            return tryFillingEmptyBasin(cap, tileCap, hitFluid);
+            return tryCoatingBareGauntlet(cap, tileCap, hitFluid);
         }
         // the fluid we contain isn't the type hit or it is, but our receptacle is full so the intent is inverted.
         if (!cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.getFluidInTank(0).getAmount() == cap.getTankCapacity(0)) {
             return tryFillingGooContainer(cap, tileCap, hitFluid);
         }
 
-        return tryFillingBasinWithSameFluid(cap, tileCap, hitFluid);
+        return tryCoatingGauntletWithSameFluid(cap, tileCap, hitFluid);
     }
 
     private ActionResultType tryFillingGooContainer(IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
@@ -94,7 +94,7 @@ public class BasinAbstraction extends ItemFluidContainer
         return ActionResultType.SUCCESS;
     }
 
-    private ActionResultType tryFillingBasinWithSameFluid(IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private ActionResultType tryCoatingGauntletWithSameFluid(IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
         int amountRequested = cap.getTankCapacity(0) - cap.getFluidInTank(0).getAmount();
         FluidStack requestFluid = hitFluid.copy();
@@ -111,7 +111,7 @@ public class BasinAbstraction extends ItemFluidContainer
         return ActionResultType.SUCCESS;
     }
 
-    private ActionResultType tryFillingEmptyBasin(IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private ActionResultType tryCoatingBareGauntlet(IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
         FluidStack requestFluid = hitFluid.copy();
         if (requestFluid.getAmount() > cap.getTankCapacity(0)) {
@@ -132,6 +132,12 @@ public class BasinAbstraction extends ItemFluidContainer
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn)
     {
+        if (worldIn.isRemote()) {
+            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+        }
+
+        // tryFlingingGoo();
+
         return ActionResult.resultPass(playerIn.getHeldItem(handIn));
     }
 }

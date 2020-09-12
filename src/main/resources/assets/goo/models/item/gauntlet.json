@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "layer0": "goo:item/gauntlet"
-  }
+  "parent": "goo:item/template_gauntlet"
 }
