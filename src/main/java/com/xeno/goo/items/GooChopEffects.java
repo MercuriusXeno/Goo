@@ -3,6 +3,7 @@ package com.xeno.goo.items;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.client.particle.HeartParticle;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.SheepEntity;
@@ -21,24 +22,31 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class GooChopEffects
 {
-    public static void resolve(ItemStack stack, LivingEntity attacker, LivingEntity target)
+
+    public static boolean resolve(ItemStack stack, LivingEntity attacker, Entity target)
     {
         if (target.world.isRemote()) {
-            return;
+            return false;
         }
+
+        if (!(target instanceof LivingEntity)) {
+            return false;
+        }
+
         IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
         if (cap == null) {
-            return;
+            return false;
         }
 
         FluidStack goo = cap.getFluidInTank(0);
         if (goo.isEmpty()) {
-            return;
+            return false;
         }
 
         cap.drain(2, IFluidHandler.FluidAction.EXECUTE);
         
-        doGooEffect(goo, attacker, target);
+        doGooEffect(goo, attacker, (LivingEntity)target);
+        return true;
     }
 
     private static void doGooEffect(FluidStack goo, LivingEntity attacker, LivingEntity target)

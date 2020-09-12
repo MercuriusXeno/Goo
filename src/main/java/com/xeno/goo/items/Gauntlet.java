@@ -75,24 +75,4 @@ public class Gauntlet extends GauntletAbstraction
                 .append(new TranslationTextComponent("goo.common.mb"))
         );
     }
-
-    @Override
-    public boolean hitEntity(ItemStack stack, LivingEntity target, LivingEntity attacker)
-    {
-        if (hasGoo(stack)) {
-            GooChopEffects.resolve(stack, attacker, target);
-            return false;
-        }
-        return super.hitEntity(stack, target, attacker);
-    }
-
-    private boolean hasGoo(ItemStack stack)
-    {
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
-        if (cap == null) {
-            return false;
-        }
-
-        return !cap.getFluidInTank(0).isEmpty();
-    }
 }
