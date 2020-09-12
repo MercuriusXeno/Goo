@@ -18,12 +18,21 @@ import net.minecraftforge.fluids.FluidAttributes;
 
 public class GooFluid extends Fluid
 {
+    private static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
+            // alpha
+            192 << 24 |
+            255 << 16 |
+            255 << 8 |
+            255;
     private final ResourceLocation icon;
     private final FluidAttributes.Builder builder;
     public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon)
     {
         super();
-        this.builder = FluidAttributes.builder(still, flowing).temperature(293);;
+        this.builder = FluidAttributes
+                .builder(still, flowing)
+                .temperature(293)
+                .color(UNCOLORED_WITH_PARTIAL_TRANSPARENCY);
         this.icon = icon;
     }
 

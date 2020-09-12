@@ -1,19 +1,17 @@
-package com.xeno.goo.items;
+package com.xeno.goo.blocks;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.enchantments.Geomancy;
 import com.xeno.goo.enchantments.Holding;
-import com.xeno.goo.setup.Registry;
+import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.item.Item;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 
-public class Gauntlet extends GauntletAbstraction
+public class GooBulbItem extends BlockItem
 {
-    public Gauntlet()
+    public GooBulbItem(Block blockIn, Properties builder)
     {
-        super(GooMod.config.gauntletCapacity());
+        super(blockIn, builder);
     }
 
     @Override
@@ -37,6 +35,6 @@ public class Gauntlet extends GauntletAbstraction
     @Override
     public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment)
     {
-        return isEnchantable(stack) && (enchantment instanceof Holding || enchantment instanceof Geomancy);
+        return isEnchantable(stack) && enchantment instanceof Holding;
     }
 }
