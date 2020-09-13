@@ -20,7 +20,7 @@ import java.util.*;
 import static java.lang.Math.PI;
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
-public class GooRenderer extends EntityRenderer<GooEntity>
+public class GooSphereRenderer extends EntityRenderer<GooEntity>
 {
     public static final float CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO = 0.9510565f;
     public static final float VOLUME_TO_CUBIC_EDGE_COEFFICIENT = 2.1816949f;
@@ -45,29 +45,29 @@ public class GooRenderer extends EntityRenderer<GooEntity>
     {
         Triangle[] initialSet = new Triangle[] {
                 // top segment
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[2]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[3]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[4]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[5]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[0], GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[1]),
+                new Triangle(ICOSAHEDRAL_VERTICES[0], ICOSAHEDRAL_VERTICES[1], ICOSAHEDRAL_VERTICES[2]),
+                new Triangle(ICOSAHEDRAL_VERTICES[0], ICOSAHEDRAL_VERTICES[2], ICOSAHEDRAL_VERTICES[3]),
+                new Triangle(ICOSAHEDRAL_VERTICES[0], ICOSAHEDRAL_VERTICES[3], ICOSAHEDRAL_VERTICES[4]),
+                new Triangle(ICOSAHEDRAL_VERTICES[0], ICOSAHEDRAL_VERTICES[4], ICOSAHEDRAL_VERTICES[5]),
+                new Triangle(ICOSAHEDRAL_VERTICES[0], ICOSAHEDRAL_VERTICES[5], ICOSAHEDRAL_VERTICES[1]),
                 // second row
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[4]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[5]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[1]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[2]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[3]),
+                new Triangle(ICOSAHEDRAL_VERTICES[9], ICOSAHEDRAL_VERTICES[5], ICOSAHEDRAL_VERTICES[4]),
+                new Triangle(ICOSAHEDRAL_VERTICES[10], ICOSAHEDRAL_VERTICES[1], ICOSAHEDRAL_VERTICES[5]),
+                new Triangle(ICOSAHEDRAL_VERTICES[6], ICOSAHEDRAL_VERTICES[2], ICOSAHEDRAL_VERTICES[1]),
+                new Triangle(ICOSAHEDRAL_VERTICES[7], ICOSAHEDRAL_VERTICES[3], ICOSAHEDRAL_VERTICES[2]),
+                new Triangle(ICOSAHEDRAL_VERTICES[8], ICOSAHEDRAL_VERTICES[4], ICOSAHEDRAL_VERTICES[3]),
                 // third row
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[5], GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[10]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[1], GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[6]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[2], GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[7]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[3], GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[8]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[4], GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[9]),
+                new Triangle(ICOSAHEDRAL_VERTICES[5], ICOSAHEDRAL_VERTICES[9], ICOSAHEDRAL_VERTICES[10]),
+                new Triangle(ICOSAHEDRAL_VERTICES[1], ICOSAHEDRAL_VERTICES[10], ICOSAHEDRAL_VERTICES[6]),
+                new Triangle(ICOSAHEDRAL_VERTICES[2], ICOSAHEDRAL_VERTICES[6], ICOSAHEDRAL_VERTICES[7]),
+                new Triangle(ICOSAHEDRAL_VERTICES[3], ICOSAHEDRAL_VERTICES[7], ICOSAHEDRAL_VERTICES[8]),
+                new Triangle(ICOSAHEDRAL_VERTICES[4], ICOSAHEDRAL_VERTICES[8], ICOSAHEDRAL_VERTICES[9]),
                 // bottom segment
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[7], GooRenderer.ICOSAHEDRAL_VERTICES[6]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[8], GooRenderer.ICOSAHEDRAL_VERTICES[7]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[9], GooRenderer.ICOSAHEDRAL_VERTICES[8]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[10], GooRenderer.ICOSAHEDRAL_VERTICES[9]),
-                new Triangle(GooRenderer.ICOSAHEDRAL_VERTICES[11], GooRenderer.ICOSAHEDRAL_VERTICES[6], GooRenderer.ICOSAHEDRAL_VERTICES[10])
+                new Triangle(ICOSAHEDRAL_VERTICES[11], ICOSAHEDRAL_VERTICES[7], ICOSAHEDRAL_VERTICES[6]),
+                new Triangle(ICOSAHEDRAL_VERTICES[11], ICOSAHEDRAL_VERTICES[8], ICOSAHEDRAL_VERTICES[7]),
+                new Triangle(ICOSAHEDRAL_VERTICES[11], ICOSAHEDRAL_VERTICES[9], ICOSAHEDRAL_VERTICES[8]),
+                new Triangle(ICOSAHEDRAL_VERTICES[11], ICOSAHEDRAL_VERTICES[10], ICOSAHEDRAL_VERTICES[9]),
+                new Triangle(ICOSAHEDRAL_VERTICES[11], ICOSAHEDRAL_VERTICES[6], ICOSAHEDRAL_VERTICES[10])
         };
         List<Triangle> results = new ArrayList<>(Arrays.asList(initialSet));
         for(int i = 0; i < depth; i++) {
@@ -133,7 +133,7 @@ public class GooRenderer extends EntityRenderer<GooEntity>
         return vertices;
     }
 
-    public GooRenderer(EntityRendererManager renderManager)
+    public GooSphereRenderer(EntityRendererManager renderManager)
     {
         super(renderManager);
     }
