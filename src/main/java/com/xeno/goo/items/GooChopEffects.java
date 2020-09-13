@@ -37,8 +37,7 @@ public class GooChopEffects
             float offsetZ = target.world.rand.nextFloat() - 0.5f;
 
             target.getEntityWorld()
-                    .addParticle(type, centerTop.x + offsetX, centerTop.y, centerTop.z + offsetZ, 0d, 0.4d, 0d);
-
+                    .addParticle(type, centerTop.x + offsetX, centerTop.y, centerTop.z + offsetZ, 0d, 0.0d, 0d);
         }
     }
 
@@ -67,16 +66,12 @@ public class GooChopEffects
     {
         Vector3d attackerCenter = attacker.getPositionVec().add(attacker.getWidth() / 2d, 0d, attacker.getWidth() / 2d);
         Vector3d targetCenter = target.getPositionVec().add(target.getWidth() / 2d, 0d, target.getWidth() / 2d);
-        Vector3d knock = targetCenter.subtract(attackerCenter);
+        Vector3d knock = attackerCenter.subtract(targetCenter);
         target.applyKnockback(v, knock.getX(), knock.getZ());
     }
 
     public static boolean resolve(ItemStack stack, LivingEntity attacker, Entity target)
     {
-        if (target.world.isRemote()) {
-            return false;
-        }
-
         if (!(target instanceof LivingEntity)) {
             return false;
         }
@@ -197,100 +192,132 @@ public class GooChopEffects
 
     private static void aquaChop(LivingEntity attacker, LivingEntity target)
     {
-        if (target.isImmuneToFire()) {
-            attack(attacker, target, 6.0f);
-        } else {
-            attack(attacker, target, 3.0f);
+        if (!target.world.isRemote) {
+            if (target.isImmuneToFire()) {
+                attack(attacker, target, 5.0f);
+            } else {
+                attack(attacker, target, 3.0f);
+            }
+            knockback(attacker, target, 1.0f);
         }
-        knockback(attacker, target, 3.0f);
         particles(target, ParticleTypes.BUBBLE);
     }
 
     private static void chromaChop(LivingEntity attacker, LivingEntity target)
     {
         if (target instanceof SheepEntity) {
-            int dyeColor = attacker.getEntityWorld().getRandom().nextInt(DyeColor.values().length);
-            DyeColor dye = DyeColor.values()[dyeColor];
-            ((SheepEntity) target).setFleeceColor(dye);
+            if (!target.world.isRemote) {
+                int dyeColor = attacker.getEntityWorld().getRandom().nextInt(DyeColor.values().length);
+                DyeColor dye = DyeColor.values()[dyeColor];
+                ((SheepEntity) target).setFleeceColor(dye);
+            }
             particles(target, ParticleTypes.COMPOSTER);
         } else {
-            effect(target, Effects.BLINDNESS, 240);
-            knockback(attacker, target, 3.0f);
-            attack(attacker, target, 3.0f);
+            if (!target.world.isRemote) {
+                effect(target, Effects.BLINDNESS, 240);
+                knockback(attacker, target, 1.0f);
+                attack(attacker, target, 3.0f);
+            }
+            particles(target, ParticleTypes.COMPOSTER);
         }
     }
 
     private static void crystalChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 7.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 7.0f);
+        }
         particles(target, ParticleTypes.CRIT);
     }
 
     private static void decayChop(LivingEntity attacker, LivingEntity target)
     {
         if (target.isEntityUndead()) {
-            target.heal(3.0f);
+            if (!target.world.isRemote) {
+                target.heal(3.0f);
+            }
             particles(target, ParticleTypes.HEART);
         } else {
-            attack(attacker, target, 5.0f);
-            knockback(attacker, target, 3.0f);
+            if (!target.world.isRemote) {
+                attack(attacker, target, 5.0f);
+                knockback(attacker, target, 1.0f);
+                effect(target, Effects.WITHER, 240);
+            }
             particles(target, ParticleTypes.SMOKE);
-            effect(target, Effects.WITHER, 240);
         }
     }
 
     private static void earthChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 3.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 3.0f);
+            knockback(attacker, target, 1.0f);
+        }
         particles(target, ParticleTypes.CRIT);
-        knockback(attacker, target, 3.0f);
     }
 
     private static void energyChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 5.0f);
-        knockback(attacker, target, 5.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 5.0f);
+            knockback(attacker, target, 2.0f);
+        }
         particles(target, ParticleTypes.EXPLOSION);
     }
 
     private static void faunaChop(LivingEntity attacker, LivingEntity target)
     {
         if (target instanceof AnimalEntity) {
-            target.heal(2.0f);
+            if (!target.world.isRemote) {
+                target.heal(2.0f);
+            }
             particles(target, ParticleTypes.HEART);
         } else {
-            attack(attacker, target, 2.0f);
-            knockback(attacker, target, 2.0f);
+            if (!target.world.isRemote) {
+                attack(attacker, target, 2.0f);
+                knockback(attacker, target, 1.0f);
+                particles(target, ParticleTypes.WITCH);
+            }
         }
     }
 
     private static void floraChop(LivingEntity attacker, LivingEntity target)
     {
         if (target instanceof AnimalEntity) {
-            target.heal(2.0f);
-            effect(target, Effects.REGENERATION, 240);
+            if (!target.world.isRemote) {
+                target.heal(2.0f);
+                effect(target, Effects.REGENERATION, 240);
+            }
             particles(target, ParticleTypes.COMPOSTER);
         } else {
             if (!target.isEntityUndead()) {
-                effect(target, Effects.POISON, 240);
-                particles(target, ParticleTypes.WITCH);
+                if (!target.world.isRemote) {
+                    effect(target, Effects.POISON, 240);
+                }
             }
-            attack(attacker, target, 2.0f);
-            knockback(attacker, target, 2.0f);
+            if (!target.world.isRemote) {
+                attack(attacker, target, 2.0f);
+                knockback(attacker, target, 1.0f);
+            }
+            particles(target, ParticleTypes.WITCH);
         }
     }
 
     private static void fungiChop(LivingEntity attacker, LivingEntity target)
     {
         if (target instanceof AnimalEntity) {
-            attack(attacker, target, 2.0f);
-            knockback(attacker, target, 2.0f);
-            effect(target, Effects.POISON, 240);
+            if (!target.world.isRemote) {
+                attack(attacker, target, 2.0f);
+                knockback(attacker, target, 1.0f);
+                effect(target, Effects.POISON, 240);
+            }
             particles(target, ParticleTypes.CRIMSON_SPORE);
         } else {
             if (!target.isEntityUndead()) {
-                target.heal(2.0f);
-                effect(target, Effects.REGENERATION, 240);
+                if (!target.world.isRemote) {
+                    target.heal(2.0f);
+                    effect(target, Effects.REGENERATION, 240);
+                }
                 particles(target, ParticleTypes.CRIMSON_SPORE);
             }
         }
@@ -298,81 +325,93 @@ public class GooChopEffects
 
     private static void honeyChop(LivingEntity attacker, LivingEntity target)
     {
-        if (target instanceof PlayerEntity) {
-            FoodStats stats = ((PlayerEntity) target).getFoodStats();
-            stats.setFoodLevel(stats.getFoodLevel() + 1);
-            stats.setFoodSaturationLevel(stats.getSaturationLevel() + 1f);
-        }
-        if (target instanceof AnimalEntity) {
-            target.heal(2.0f);
-            effect(target, Effects.REGENERATION, 240);
-        } else {
-            if (!target.isEntityUndead()) {
-                attack(attacker, target, 2.0f);
-                knockback(attacker, target, 2.0f);
+        if (!target.world.isRemote) {
+            if (target instanceof PlayerEntity) {
+                FoodStats stats = ((PlayerEntity) target).getFoodStats();
+                stats.setFoodLevel(stats.getFoodLevel() + 1);
+                stats.setFoodSaturationLevel(stats.getSaturationLevel() + 1f);
             }
-            effect(target, Effects.SLOWNESS, 240);
+            if (target instanceof AnimalEntity) {
+                target.heal(2.0f);
+                effect(target, Effects.REGENERATION, 240);
+            } else {
+                if (!target.isEntityUndead()) {
+                    attack(attacker, target, 2.0f);
+                    knockback(attacker, target, 1.0f);
+                }
+                effect(target, Effects.SLOWNESS, 240);
+            }
         }
-        particles(target, ParticleTypes.DRIPPING_HONEY);
     }
 
     private static void logicChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 2.0f);
-        knockback(attacker, target, 2.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 2.0f);
+            knockback(attacker, target, 1.0f);
+            effect(target, Effects.SLOWNESS, 240);
+            effect(target, Effects.WEAKNESS, 240);
+        }
         particles(target, RedstoneParticleData.REDSTONE_DUST);
-        effect(target, Effects.SLOWNESS, 240);
-        effect(target, Effects.WEAKNESS, 240);
     }
 
     private static void metalChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 5.0f);
-        knockback(attacker, target, 3.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 5.0f);
+            knockback(attacker, target, 1.0f);
+        }
         particles(target, ParticleTypes.CRIT);
     }
 
     private static void moltenChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 5.0f, true);
-        knockback(attacker, target, 3.0f);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 5.0f, true);
+            knockback(attacker, target, 1.0f);
+        }
         particles(target, ParticleTypes.FLAME);
-        particles(target, ParticleTypes.DRIPPING_LAVA);
     }
 
     private static void obsidianChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 7.0f, true);
-        knockback(attacker, target, 3.0f);
-        particles(target, ParticleTypes.DRIPPING_OBSIDIAN_TEAR);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 7.0f, true);
+            knockback(attacker, target, 1.0f);
+        }
     }
 
     private static void regalChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 5.0f);
-        knockback(attacker, target, 3.0f);
-        effect(target, Effects.WEAKNESS, 240);
-        effect(target, Effects.MINING_FATIGUE, 240);
-        particles(target, ParticleTypes.FALLING_NECTAR);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 5.0f);
+            knockback(attacker, target, 1.0f);
+            effect(target, Effects.WEAKNESS, 240);
+            effect(target, Effects.MINING_FATIGUE, 240);
+        }
     }
 
     private static void slimeChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 3.0f);
-        knockback(attacker, target, 5.0f);
-        if (!target.isEntityUndead()) {
-            effect(target, Effects.POISON, 240);
+        if (!target.world.isRemote) {
+            attack(attacker, target, 3.0f);
+            knockback(attacker, target, 2.0f);
+            if (!target.isEntityUndead()) {
+                effect(target, Effects.POISON, 240);
+            }
+            effect(target, Effects.WEAKNESS, 240);
+            effect(target, Effects.MINING_FATIGUE, 240);
         }
-        effect(target, Effects.WEAKNESS, 240);
-        effect(target, Effects.MINING_FATIGUE, 240);
         particles(target, ParticleTypes.ITEM_SLIME);
     }
 
     private static void snowChop(LivingEntity attacker, LivingEntity target)
     {
-        attack(attacker, target, 3.0f);
-        knockback(attacker, target, 3.0f);
-        effect(target, Effects.SLOWNESS, 240);
+        if (!target.world.isRemote) {
+            attack(attacker, target, target.isImmuneToFire() ? 6.0f : 3.0f);
+            knockback(attacker, target, 1.0f);
+            effect(target, Effects.SLOWNESS, 240);
+        }
         particles(target, ParticleTypes.ITEM_SNOWBALL);
     }
 
@@ -380,22 +419,28 @@ public class GooChopEffects
     {
 
         if (target.isEntityUndead()) {
-            attack(attacker, target, 5.0f);
-            knockback(attacker, target, 3.0f);
+            if (!target.world.isRemote) {
+                attack(attacker, target, 5.0f);
+                knockback(attacker, target, 1.0f);
+            }
             particles(target, ParticleTypes.CRIT);
         } else {
-            target.heal(3.0f);
+            if (!target.world.isRemote) {
+                target.heal(3.0f);
+            }
             particles(target, ParticleTypes.HEART);
         }
     }
 
     private static void weirdChop(LivingEntity attacker, LivingEntity target)
     {
-        attacker.heal(3.0f);
-        attack(attacker, target, 3.0f);
+        if (!target.world.isRemote) {
+            attacker.heal(3.0f);
+            attack(attacker, target, 3.0f);
+            knockback(attacker, target, 1.0f);
+        }
         particles(target, ParticleTypes.CRIT);
         particles(target, ParticleTypes.WITCH);
-        knockback(attacker, target, 3.0f);
         particles(attacker, ParticleTypes.HEART);
     }
 }
