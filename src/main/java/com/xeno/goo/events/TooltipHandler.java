@@ -2,7 +2,6 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
@@ -17,7 +16,6 @@ import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -30,14 +28,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.client.event.RenderBlockOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -59,12 +55,12 @@ public class TooltipHandler
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
-    private static boolean isHoldingPatchouliBook(PlayerEntity player)
+    private static boolean hasGooAndYou(PlayerEntity player)
     {
         if (PATCHOULI_BOOK.isEmpty()) {
             PATCHOULI_BOOK = new ItemStack(Registry.GOO_AND_YOU.get());
         }
-        return player.getHeldItemOffhand().equals(PATCHOULI_BOOK, false);
+        return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
     }
 
     private static boolean cantSolidify(ItemStack stack, World entityWorld)
@@ -110,7 +106,7 @@ public class TooltipHandler
         }
 
         // you can only see goo values while holding "Goo and You"
-        if (!isHoldingPatchouliBook(event.getPlayer())) {
+        if (!hasGooAndYou(event.getPlayer())) {
             return;
         }
 
@@ -187,7 +183,7 @@ public class TooltipHandler
             return;
         }
 
-        if (!isHoldingPatchouliBook(mc.player)) {
+        if (!hasGooAndYou(mc.player)) {
             return;
         }
 

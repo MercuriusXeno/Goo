@@ -55,7 +55,7 @@
   "patchouli.goo.general.name": "General Info",
   "patchouli.goo.general.description": "About this book, and different types of goo.",
   "patchouli.goo.gateway_to_goo.name": "Gateway to Goo",
-  "patchouli.goo.gateway_to_goo.description": "This book has two purposes.$(br2)First, what's in it: info about machines and goo.$(br2)Secondly, $(thing)put it in your off-hand$() and you can look up what goo things are made from in your inventory! $(thing)Remove it from your off-hand$() to disable the feature.",
+  "patchouli.goo.gateway_to_goo.description": "This book has two purposes.$(br2)First, what's in it: info about machines and goo.$(br2)Secondly, $(thing)keep it in your inventory$() and you'll be able to see what goo things are made from in your inventory.",
   "patchouli.goo.gauntlet.description": "A netherite clad gauntlet capable of protecting the wielder's hand from volatile goo.$(br2)You can get a glob by $(thing)right-clicking a receptacle$(). Fling goo with $(thing)right-click$() or unleash a $(thing)goo chop left-click$().",
   "patchouli.goo.gauntlet.summary": "The gauntlet is indestructible, but flinging and goo-chopping consume some goo.",
   "patchouli.goo.basin.description": "Simply a large reservoir for moving goo around. While mainly for utility, you can coat a gauntlet with it in a pinch.",

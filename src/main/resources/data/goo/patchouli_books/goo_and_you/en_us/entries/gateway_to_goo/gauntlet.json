@@ -5,12 +5,12 @@
   "pages": [
     {
       "type": "text",
-      "text": "patchouli.goo.types_of_goo.description"
+      "text": "patchouli.goo.gauntlet.description"
     },
     {
       "type": "crafting",
-      "recipe": "goo:gasket",
-      "recipe2": "goo:goo_and_you"
+      "recipe": "goo:gauntlet",
+      "text": "patchouli.goo.gauntlet.summary"
     }
   ]
 }
