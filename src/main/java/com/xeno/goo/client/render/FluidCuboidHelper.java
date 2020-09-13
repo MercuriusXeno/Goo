@@ -67,7 +67,7 @@ public class FluidCuboidHelper
     public static int colorizeChromaticGoo()
     {
         if (Minecraft.getInstance().world == null) {
-            return 0xc0ffffff;
+            return 0xd0ffffff;
         }
         // cycle timer
 
@@ -112,42 +112,42 @@ public class FluidCuboidHelper
         // 5 seconds (100 ticks) to shift from
         // red
         if (ticks < (CYCLE_TIMER)) {
-            return 0xc0ff0000;
+            return 0xd0ff0000;
         }
         // orange
         if (ticks < 2 * CYCLE_TIMER) {
-            return 0xc0ff7700;
+            return 0xd0ff7700;
         }
         // yellow
         if (ticks < 3 * CYCLE_TIMER) {
-            return 0xc0ffff00;
+            return 0xd0ffff00;
         }
         // yellow-green
         if (ticks < 4 * CYCLE_TIMER) {
-            return 0xc077ff22;
+            return 0xd077ff22;
         }
         // green
         if (ticks < 5 * CYCLE_TIMER) {
-            return 0xc000ff00;
+            return 0xd000ff00;
         }
         // blue/green!
         if (ticks < 6 * CYCLE_TIMER) {
-            return 0xc000ffff;
+            return 0xd000ffff;
         }
         // blue
         if (ticks < 7 * CYCLE_TIMER) {
-            return 0xc00000ff;
+            return 0xd00000ff;
         }
         // purple
         if (ticks < 8 * CYCLE_TIMER) {
-            return 0xc09000cc;
+            return 0xd09000cc;
         }
         // magenta
         if (ticks < 9 * CYCLE_TIMER) {
-            return 0xc0ff00ff;
+            return 0xd0ff00ff;
         }
 
-        return 0xc0ffffff;
+        return 0xd0ffffff;
     }
 
     /**
