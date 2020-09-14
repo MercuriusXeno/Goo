@@ -374,7 +374,6 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
     public ItemStack getBulbStack(Block block) {
         ItemStack stack = new ItemStack(block);
-
         CompoundNBT bulbTag = new CompoundNBT();
         write(bulbTag);
         bulbTag.remove("x");

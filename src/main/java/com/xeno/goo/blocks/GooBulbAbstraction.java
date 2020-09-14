@@ -49,13 +49,18 @@ public abstract class GooBulbAbstraction extends Block
     public abstract TileEntity createTileEntity(BlockState state, IBlockReader world);
 
     @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player)
-    {
+    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player)    {
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof GooBulbTileAbstraction) {
             GooBulbTileAbstraction gooBulb = (GooBulbTileAbstraction) te;
             if (!world.isRemote) {
+                if (player.isCreative() && ((GooBulbTileAbstraction) te).getTotalGoo() == 0) {
+                    return;
+                }
                 ItemStack stack = gooBulb.getBulbStack(this);
+                if (stack.isEmpty()) {
+                    return;
+                }
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();
                 world.addEntity(itemEntity);
