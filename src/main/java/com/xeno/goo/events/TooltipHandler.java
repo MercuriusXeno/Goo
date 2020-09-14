@@ -8,6 +8,7 @@ import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.blocks.Crucible;
 import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.Mixer;
+import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
@@ -459,15 +460,15 @@ public class TooltipHandler
 
     public static void onGameOverlay(RenderGameOverlayEvent.Post event)
     {
-        if (!Screen.hasShiftDown()) {
-            return;
-        }
-
         if (Minecraft.getInstance().getRenderViewEntity() == null) {
             return;
         }
 
         Entity e = Minecraft.getInstance().getRenderViewEntity();
+
+        if (!HighlightingHelper.needsHighlightForItemHeld(e)) {
+            return;
+        }
 
         RayTracing.INSTANCE.fire();
         if (!RayTracing.INSTANCE.hasTarget()) {

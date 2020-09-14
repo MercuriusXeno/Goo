@@ -301,10 +301,15 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource)
     {
+        if (goo.size() == 0) {
+            return FluidStack.EMPTY;
+        }
         if (isRightSideMostly(hitVector, face)) {
             return goo.get(0);
         }
-
+        if (goo.size() == 1) {
+            return FluidStack.EMPTY;
+        }
         return goo.get(1);
     }
 

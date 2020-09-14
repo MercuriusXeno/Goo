@@ -68,8 +68,13 @@ public class BasinAbstraction extends ItemFluidContainer
         if (cap.getFluidInTank(0).isEmpty()) {
             return tryFillingEmptyBasin(cap, tileCap, hitFluid);
         }
+
+        boolean isAltBehavior = context.getPlayer() != null && context.getPlayer().isSneaking();
+
+        // ordinarily the basin just empties and fills exclusively in a toggle state.
+        // holding [sneak] changes the behavior to try to fill the basin first.
         // the fluid we contain isn't the type hit or it is, but our receptacle is full so the intent is inverted.
-        if (!cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.getFluidInTank(0).getAmount() == cap.getTankCapacity(0)) {
+        if (!isAltBehavior || !cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.getFluidInTank(0).getAmount() == cap.getTankCapacity(0)) {
             return tryFillingGooContainer(cap, tileCap, hitFluid);
         }
 

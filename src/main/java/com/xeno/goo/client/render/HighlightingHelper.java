@@ -3,6 +3,8 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.blocks.GooBulbAbstraction;
+import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Resources;
@@ -12,7 +14,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -56,6 +60,10 @@ public class HighlightingHelper
 
         Entity e = Minecraft.getInstance().getRenderViewEntity();
 
+        if (!needsHighlightForItemHeld(e)) {
+            return false;
+        }
+
         RayTracing.INSTANCE.fire();
         if (!RayTracing.INSTANCE.hasTarget()) {
             return false;
@@ -79,6 +87,27 @@ public class HighlightingHelper
             return true;
         }
         return false;
+    }
+
+    public static boolean needsHighlightForItemHeld(Entity e)
+    {
+        if (e.isSneaking()) {
+            return true;
+        }
+
+        // don't render highlights unless the player is
+        // 1) a player lol
+        // 2) sneaking or holding gauntlet/basin
+        if (!(e instanceof PlayerEntity)) {
+            return false;
+        }
+        return needsHighlight(((PlayerEntity)e).getHeldItemOffhand()) ||
+                needsHighlight(((PlayerEntity)e).getHeldItemMainhand());
+    }
+
+    private static boolean needsHighlight(ItemStack stack)
+    {
+        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet;
     }
 
     public static void renderHighlightAsNeeded(FluidStack goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn, Vector3f from, float fromY, Vector3f to, float toY) {
