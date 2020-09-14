@@ -24,10 +24,10 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     {
         return map
                  .values()
-                 .stream().min((compoundInstances, t1) -> (int) (t1
+                 .stream().min((compoundInstances, t1) -> (int) (compoundInstances
                                                                    .stream()
                                                                    .mapToDouble(CompoundInstance::getAmount)
-                                                                   .sum() - compoundInstances
+                                                                   .sum() - t1
                                                                               .stream()
                                                                               .mapToDouble(CompoundInstance::getAmount)
                                                                               .sum()))
