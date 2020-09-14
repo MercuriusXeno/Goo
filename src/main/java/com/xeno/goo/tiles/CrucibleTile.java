@@ -13,6 +13,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
@@ -60,6 +61,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     public void tick()
     {
         if (world == null || world.isRemote) {
+            return;
+        }
+
+        if (getBlockState().get(BlockStateProperties.POWERED)) {
             return;
         }
 

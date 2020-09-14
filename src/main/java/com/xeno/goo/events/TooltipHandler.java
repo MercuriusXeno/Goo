@@ -46,6 +46,7 @@ import java.util.*;
 
 public class TooltipHandler
 {
+    private static final Minecraft mc = Minecraft.getInstance();
     private static final String PLACE_HOLDER = "\u00a76\u00a7r\u00a7r\u00a7r\u00a7r\u00a7r";
     private static final int ICON_WIDTH = 18;
     private static final int ICON_HEIGHT = 27;
@@ -63,24 +64,22 @@ public class TooltipHandler
         return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
     }
 
-    private static boolean cantSolidify(ItemStack stack, World entityWorld)
+    private static boolean cantSolidify(World entityWorld)
     {
-        return Equivalencies.getEntry(entityWorld, stack.getItem()).isUnattainable();
+        return Equivalencies.getEntry(entityWorld, currentStack.getItem()).isUnattainable();
     }
 
-    private static boolean hasEntry(ItemStack stack, World entityWorld)
+    private static boolean hasEntry(World entityWorld)
     {
-        return Equivalencies.getEntry(entityWorld, stack.getItem()).values().size() > 0;
+        return Equivalencies.getEntry(entityWorld, currentStack.getItem()).values().size() > 0;
     }
 
-    private static void prepGooContentsRealEstate(ItemStack stack, ItemTooltipEvent event)
+    private static void prepGooContentsRealEstate(ItemTooltipEvent event)
     {
-        Minecraft mc = Minecraft.getInstance();
-
         if( mc.world == null || mc.player == null )
             return;
 
-        List<FluidStack> gooEntry = getThisOrLastGooEntry(stack);
+        List<FluidStack> gooEntry = getThisOrLastGooEntry();
 
         addPlaceholderSpaceForTooltipGooIcons(gooEntry.size(), event);
     }
@@ -89,17 +88,17 @@ public class TooltipHandler
     {
 
         //This method will make space for goo icons in the tooltip
-        ItemStack stack = event.getItemStack();
+        currentStack = event.getItemStack();
 
-        handleDisplayingGooValuesOfThings(stack, event);
+        handleDisplayingGooValuesOfThings(event);
 
         // special handler for goo bulbs and basins, which show their contents at rest, but not with shift held.
-        if (hasGooContents(stack) && !Screen.hasShiftDown()) {
-            prepGooContentsRealEstate(stack, event);
+        if (hasGooContents() && !Screen.hasShiftDown()) {
+            prepGooContentsRealEstate(event);
         }
     }
 
-    private static void handleDisplayingGooValuesOfThings(ItemStack stack, ItemTooltipEvent event)
+    private static void handleDisplayingGooValuesOfThings(ItemTooltipEvent event)
     {
         if (event.getPlayer() == null) {
             return;
@@ -111,8 +110,8 @@ public class TooltipHandler
         }
 
         // these always show up
-        boolean hasEntry = hasEntry(stack, event.getPlayer().getEntityWorld());
-        boolean cantSolidify = hasEntry && cantSolidify(stack, event.getPlayer().getEntityWorld());
+        boolean hasEntry = hasEntry(event.getPlayer().getEntityWorld());
+        boolean cantSolidify = hasEntry && cantSolidify(event.getPlayer().getEntityWorld());
         if (cantSolidify) {
             event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
         }
@@ -122,7 +121,7 @@ public class TooltipHandler
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
-            prepGooCompositionRealEstate(stack, event);
+            prepGooCompositionRealEstate(event);
         } else if (hasEntry) {
             event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
         }
@@ -133,7 +132,6 @@ public class TooltipHandler
         if (size == 0) {
             return;
         }
-        Minecraft mc = Minecraft.getInstance();
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         if (mc.world == null || mc.player == null) //populateSearchTreeManager...
             return;
@@ -151,14 +149,12 @@ public class TooltipHandler
         }
     }
 
-    private static void prepGooCompositionRealEstate(ItemStack stack, ItemTooltipEvent event)
+    private static void prepGooCompositionRealEstate(ItemTooltipEvent event)
     {
-        Minecraft mc = Minecraft.getInstance();
-
         if( mc.world == null || mc.player == null )
             return;
 
-        GooEntry gooEntry = Equivalencies.getEntry(mc.world, stack.getItem());
+        GooEntry gooEntry = Equivalencies.getEntry(mc.world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
         }
@@ -168,16 +164,10 @@ public class TooltipHandler
 
     public static void postDraw(RenderTooltipEvent.PostText event)
     {
-        //This method will draw goo icons on the tooltip
-        ItemStack stack = event.getStack();
-
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
-        if (hasGooContents(stack) && !Screen.hasShiftDown()) {
-            tryDrawingGooContents(stack, event);
+        if (hasGooContents() && !Screen.hasShiftDown()) {
+            tryDrawingGooContents(event);
         }
-
-        // you can only see goo values while holding "Goo and You"
-        Minecraft mc = Minecraft.getInstance();
 
         if(mc.player == null) {
             return;
@@ -189,7 +179,7 @@ public class TooltipHandler
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
-            tryDrawingGooComposition(stack, event);
+            tryDrawingGooComposition(event);
         }
     }
 
@@ -213,7 +203,7 @@ public class TooltipHandler
         );
     }
 
-    private static boolean hasGooContents(ItemStack stack)
+    private static boolean hasGooContents()
     {
         if (GOO_CONTAINERS.size() == 0) {
             initializeGooContainers();
@@ -221,22 +211,22 @@ public class TooltipHandler
         if (GOO_ITEM_CONTAINERS.size() == 0) {
             initializeGooItemContainers();
         }
-        return GOO_CONTAINERS.contains(stack.getItem()) || GOO_ITEM_CONTAINERS.contains(stack.getItem());
+        return GOO_CONTAINERS.contains(currentStack.getItem()) || GOO_ITEM_CONTAINERS.contains(currentStack.getItem());
     }
 
     // some client side caching to speed things up a little.
+    private static ItemStack currentStack = ItemStack.EMPTY;
     private static ItemStack lastStack = ItemStack.EMPTY;
     private static List<FluidStack> lastGooEntry = new ArrayList<>();
-    private static void tryDrawingGooContents(ItemStack stack, RenderTooltipEvent.PostText event)
+    private static void tryDrawingGooContents(RenderTooltipEvent.PostText event)
     {
-        Minecraft mc = Minecraft.getInstance();
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
 
         if( mc.world == null || mc.player == null )
             return;
 
-        List<FluidStack> gooEntry = getThisOrLastGooEntry(stack);
+        List<FluidStack> gooEntry = getThisOrLastGooEntry();
 
         int bx = event.getX();
         int by = event.getY();
@@ -271,27 +261,27 @@ public class TooltipHandler
         }
     }
 
-    private static List<FluidStack> getThisOrLastGooEntry(ItemStack stack)
+    private static List<FluidStack> getThisOrLastGooEntry()
     {
-        if (stack.equals(lastStack, false)) {
+        if (currentStack.equals(lastStack, false)) {
             return lastGooEntry;
         } else {
-            lastStack = stack;
+            lastStack = currentStack;
             lastGooEntry = new ArrayList<>();
-            if (!tryFetchingGooContentsAsItem(stack)) {
-                tryFetchingGooContentsAsGooContainerAbstraction(stack);
+            if (!tryFetchingGooContentsAsItem()) {
+                tryFetchingGooContentsAsGooContainerAbstraction();
             }
             return lastGooEntry;
         }
     }
 
-    private static boolean tryFetchingGooContentsAsItem(ItemStack stack)
+    private static boolean tryFetchingGooContentsAsItem()
     {
-        if (!GOO_ITEM_CONTAINERS.contains(stack.getItem())) {
+        if (!GOO_ITEM_CONTAINERS.contains(currentStack.getItem())) {
             return false;
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(currentStack);
         if (cap == null) {
             return false;
         }
@@ -304,9 +294,9 @@ public class TooltipHandler
         return true;
     }
 
-    private static void tryFetchingGooContentsAsGooContainerAbstraction(ItemStack stack)
+    private static void tryFetchingGooContentsAsGooContainerAbstraction()
     {
-        CompoundNBT stackTag = stack.getTag();
+        CompoundNBT stackTag = currentStack.getTag();
         if (stackTag == null) {
             return;
         }
@@ -338,7 +328,7 @@ public class TooltipHandler
         }
     }
 
-    private static void tryDrawingGooComposition(ItemStack stack, RenderTooltipEvent.PostText event)
+    private static void tryDrawingGooComposition(RenderTooltipEvent.PostText event)
     {
         Minecraft mc = Minecraft.getInstance();
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
@@ -347,7 +337,7 @@ public class TooltipHandler
         if( mc.world == null || mc.player == null )
             return;
 
-        GooEntry gooEntry = Equivalencies.getEntry(mc.world, stack.getItem());
+        GooEntry gooEntry = Equivalencies.getEntry(mc.world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
         }
@@ -503,7 +493,6 @@ public class TooltipHandler
 
     private static void renderGooContents(RenderGameOverlayEvent.Post event, BlockRayTraceResult target, GooContainerAbstraction e)
     {
-        Minecraft mc = Minecraft.getInstance();
         MatrixStack matrices = event.getMatrixStack();
 
         if( mc.world == null || mc.player == null )
