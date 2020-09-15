@@ -163,10 +163,8 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             this.remove();
         } else {
             if (ticksExisted >= 20) {
-                if (rand.nextFloat() < 0.1f) {
-                    goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
-                    setSize();
-                }
+                goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
+                setSize();
             }
         }
     }

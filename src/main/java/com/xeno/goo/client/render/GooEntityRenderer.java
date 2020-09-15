@@ -33,19 +33,20 @@ public class GooEntityRenderer extends EntityRenderer<GooEntity>
     {
         return entity.getFluidInTank(0).getFluid().getAttributes().getStillTexture();
     }
-    
+
     @Override
     public void render(GooEntity entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
 
-        Quaternion rot = GooRenderHelper.yawToQuat(entity.rotationYaw);
-        stack.rotate(rot);
-        float cubicRadius = entity.cubicSize() / 2f;
+//        Quaternion rot = GooRenderHelper.yawToQuat(entity.rotationYaw);
+//        stack.rotate(rot);
+//        stack.translate(entity.getPosX(), entity.getPosY(), entity.getPosZ());
+        float cubicRadius = entity.cubicSize() * 8f;
         Vector3d from = entity.getPositionVec().add(-cubicRadius, -cubicRadius, -cubicRadius);
         Vector3d to = entity.getPositionVec().add(cubicRadius, cubicRadius, cubicRadius);
-        FluidCuboidHelper.renderScaledFluidCuboid(entity.goo, stack,
-                bufferType.getBuffer(RenderType.getTranslucent()), light,
+        FluidCuboidHelper.renderFluidCuboid(entity.goo, stack,
+                bufferType.getBuffer(RenderType.getCutout()), light,
                 (float)from.x, (float)from.y, (float)from.z, (float)to.x, (float)to.y, (float)to.z);
         stack.pop();
     }
