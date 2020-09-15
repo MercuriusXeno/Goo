@@ -9,6 +9,7 @@ import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.enchantments.Geomancy;
 import com.xeno.goo.enchantments.Holding;
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gasket;
@@ -17,6 +18,9 @@ import com.xeno.goo.items.GooAndYou;
 import com.xeno.goo.tiles.*;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityClassification;
+import net.minecraft.entity.EntityType;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
@@ -39,7 +43,7 @@ public class Registry {
     private static final DeferredRegister<Item>              ITEMS     = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
-    // private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
+    private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<TileEntityType<?>>  TILES     = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, GooMod.MOD_ID);
     private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
@@ -54,9 +58,17 @@ public class Registry {
         COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         COMPOUND_GROUPS.register(FMLJavaModLoadingContext.get().getModEventBus());
         ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
-        // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
         PARTICLES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
+
+    public static final RegistryObject<EntityType<GooEntity>> GOO_ENTITY = ENTITIES.register("goo_entity",
+            () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC)
+                .size(1, 1)
+            .setShouldReceiveVelocityUpdates(false)
+            .build("goo_entity")
+    );
+
 
     public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);

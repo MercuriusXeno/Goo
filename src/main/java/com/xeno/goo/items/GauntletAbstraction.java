@@ -2,6 +2,7 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.particle.GooParticle;
+import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -181,6 +182,8 @@ public class GauntletAbstraction extends ItemFluidContainer
             return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
 
-        return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+        worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, cap.getFluidInTank(0)));
+
+        return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
     }
 }

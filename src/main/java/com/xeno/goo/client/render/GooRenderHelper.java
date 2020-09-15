@@ -6,8 +6,11 @@ import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 public class GooRenderHelper extends RenderState
@@ -82,5 +85,34 @@ public class GooRenderHelper extends RenderState
         return current.subtract(new Vector3d(MathHelper.lerp(partialTicks, previous.x, current.x),
                 MathHelper.lerp(partialTicks, previous.y, current.y),
                 MathHelper.lerp(partialTicks, previous.z, current.z)));
+    }
+
+    public static Quaternion yawToQuat(float rotationYaw)
+    {
+        return new Quaternion(new Vector3f(0f, 1f, 0f), rotationYaw, true);
+    }
+
+    public static Quaternion toQuaternion(float yaw, float pitch, float roll) // yaw (Z), pitch (Y), roll (X)
+    {
+        //Degree to radius:
+        yaw = yaw * (float)Math.PI / 180f;
+        pitch = pitch * (float)Math.PI / 180f;
+        roll = roll * (float)Math.PI / 180f;
+
+
+        // Abbreviations for the various angular functions
+        float cy = MathHelper.cos(yaw * 0.5f);
+        float sy = MathHelper.sin(yaw * 0.5f);
+        float cp = MathHelper.cos(pitch * 0.5f);
+        float sp = MathHelper.sin(pitch * 0.5f);
+        float cr = MathHelper.cos(roll * 0.5f);
+        float sr = MathHelper.sin(roll * 0.5f);
+
+        Quaternion q = new Quaternion(
+        cy * cp * sr - sy * sp * cr,
+        sy * cp * sr + cy * sp * cr,
+        sy * cp * cr - cy * sp * sr,
+        cy * cp * cr + sy * sp * sr);
+        return q;
     }
 }

@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
     private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooEntity.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
@@ -60,8 +60,12 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
     private boolean isLaunched;
 
 
-    protected GooEntity(EntityType<? extends GooEntity> entityType, World worldIn, Entity sender, FluidStack stack) {
-        super(entityType, worldIn);
+    public GooEntity(EntityType<GooEntity> type, World worldIn) {
+        super(type, worldIn);
+    }
+
+    public GooEntity(EntityType<GooEntity> type, World worldIn, Entity sender, FluidStack stack) {
+        super(type, worldIn);
         goo = stack;
         if (!(stack.getFluid() instanceof GooFluid)) {
             this.setDead();
@@ -104,77 +108,22 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         this.dataManager.register(GOO_SIZE, 1);
     }
 
-    protected abstract void interactWithSolid(BlockPos pos);
-
-    protected abstract void interactWithGoo(BlockPos pos);
-
-    protected abstract void interactWithWater(BlockPos pos);
-
-    protected abstract void interactWithLava(BlockPos pos);
-
-    // cannibalized from forge
-    // the major difference here is this doesn't need an itemstack.
-    // it also doesn't need a player, because we have an owner.
-    public boolean tryPlaceFluid(BlockPos pos)
-    {
-        if (this.world == null || this.world.isRemote())
-        {
-            return false;
-        }
-
-        if (this.owner == null || !(this.owner instanceof PlayerEntity)) {
-            return false;
-        }
-
-        Fluid fluid = this.goo.getFluid();
-        if (fluid == null || !fluid.getAttributes().canBePlacedInWorld(world, pos, this.goo))
-        {
-            return false;
-        }
-
-        if (this.drain(this.goo, IFluidHandler.FluidAction.SIMULATE).isEmpty())
-        {
-            return false;
-        }
-
-        // check that we can place the fluid at the destination
-        BlockState destBlockState = world.getBlockState(pos);
-        Material destMaterial = destBlockState.getMaterial();
-        boolean isDestNonSolid = !destMaterial.isSolid();
-
-        if (!world.isAirBlock(pos) && !isDestNonSolid)
-        {
-            return false; // Non-air, solid, we can't put fluid here. We don't replace in this method.
-        }
-
-        if (world.func_230315_m_().func_236040_e_() && fluid.getAttributes().doesVaporize(world, pos, this.goo))
-        {
-            FluidStack result = this.drain(this.goo, IFluidHandler.FluidAction.EXECUTE);
-            if (!result.isEmpty())
-            {
-                result.getFluid().getAttributes().vaporize((PlayerEntity)owner, world, pos, result);
-                return true;
-            }
-        }
-        else
-        {
-            // This fluid handler places the fluid block when filled
-            IFluidHandler handler = getFluidBlockHandler(fluid, world, pos);
-            FluidStack result = FluidUtil.tryFluidTransfer(handler, this, this.goo, true);
-            if (!result.isEmpty())
-            {
-                SoundEvent soundevent = this.goo.getFluid().getAttributes().getEmptySound(this.goo);
-                world.playSound((PlayerEntity)owner, pos, soundevent, SoundCategory.BLOCKS, 1.0F, 1.0F);
-                return true;
-            }
-        }
-        return false;
+    protected void interactWithSolid(BlockPos pos) {
+        // TODO
     }
 
-    public static IFluidHandler getFluidBlockHandler(Fluid fluid, World world, BlockPos pos)
-    {
-        BlockState state = fluid.getAttributes().getBlock(world, pos, fluid.getDefaultState());
-        return new BlockWrapper(state, world, pos);
+    protected void interactWithGoo(BlockPos pos) {
+        // TODO
+
+    }
+
+    protected void interactWithWater(BlockPos pos) {
+        // TODO
+
+    }
+
+    protected void interactWithLava(BlockPos pos) {
+        // TODO
     }
 
     @Override
@@ -213,8 +162,12 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
             this.setDead();
             this.remove();
         } else {
-            goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
-            setSize();
+            if (ticksExisted >= 20) {
+                if (rand.nextFloat() < 0.1f) {
+                    goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
+                    setSize();
+                }
+            }
         }
     }
 
@@ -477,7 +430,9 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         this.recalculateSize();
     }
 
-    public abstract GooFluid gooBase();
+    public GooFluid gooBase() {
+        return (GooFluid)this.goo.getFluid();
+    }
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
@@ -535,11 +490,23 @@ public abstract class GooEntity extends Entity implements IEntityAdditionalSpawn
         return result;
     }
 
-    protected abstract Vector3d doEverythingElseCollision(Entity entityHit);
+    protected Vector3d doEverythingElseCollision(Entity entityHit)
+    {
+        // TODO
+        return this.getMotion();
+    }
 
-    protected abstract Vector3d doPlayerCollision(ServerPlayerEntity entityHit);
+    protected Vector3d doPlayerCollision(ServerPlayerEntity entityHit)
+    {
+        // TODO
+        return this.getMotion();
+    }
 
-    protected abstract Vector3d doGooCollision(Entity entityHit, GooFluid collidingGoo);
+    protected Vector3d doGooCollision(Entity entityHit, GooFluid collidingGoo)
+    {
+        // TODO
+        return this.getMotion();
+    }
 
     protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
         BlockState blockstate = this.world.getBlockState(rayTraceResult.getPos());
