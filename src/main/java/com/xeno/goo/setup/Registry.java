@@ -21,13 +21,19 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
+import net.minecraft.particles.BasicParticleType;
+import net.minecraft.particles.ParticleType;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Registry {
+
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, GooMod.MOD_ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<Item>              ITEMS     = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
@@ -37,6 +43,7 @@ public class Registry {
     private static final DeferredRegister<TileEntityType<?>>  TILES     = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, GooMod.MOD_ID);
     private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, GooMod.MOD_ID);
     private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
+    private static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, GooMod.MOD_ID);
 
     public static void init () {
         BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -48,6 +55,7 @@ public class Registry {
         COMPOUND_GROUPS.register(FMLJavaModLoadingContext.get().getModEventBus());
         ENCHANTMENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         // ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
+        PARTICLES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);
@@ -134,6 +142,82 @@ public class Registry {
     // enchantments
     public static final RegistryObject<Holding> HOLDING = ENCHANTMENTS.register("holding", Holding::new);
     public static final RegistryObject<Geomancy> GEOMANCY = ENCHANTMENTS.register("geomancy", Geomancy::new);
+
+    // particles
+    public static final RegistryObject<BasicParticleType> AQUATIC_FALLING_GOO_PARTICLE = PARTICLES.register("aquatic_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> AQUATIC_LANDING_GOO_PARTICLE = PARTICLES.register("aquatic_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CHROMATIC_FALLING_GOO_PARTICLE = PARTICLES.register("chromatic_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CHROMATIC_LANDING_GOO_PARTICLE = PARTICLES.register("chromatic_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CRYSTAL_FALLING_GOO_PARTICLE = PARTICLES.register("crystal_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CRYSTAL_LANDING_GOO_PARTICLE = PARTICLES.register("crystal_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> DECAY_FALLING_GOO_PARTICLE = PARTICLES.register("decay_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> DECAY_LANDING_GOO_PARTICLE = PARTICLES.register("decay_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> EARTHEN_FALLING_GOO_PARTICLE = PARTICLES.register("earthen_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> EARTHEN_LANDING_GOO_PARTICLE = PARTICLES.register("earthen_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> ENERGETIC_FALLING_GOO_PARTICLE = PARTICLES.register("energetic_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> ENERGETIC_LANDING_GOO_PARTICLE = PARTICLES.register("energetic_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FAUNAL_FALLING_GOO_PARTICLE = PARTICLES.register("faunal_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FAUNAL_LANDING_GOO_PARTICLE = PARTICLES.register("faunal_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FLORAL_FALLING_GOO_PARTICLE = PARTICLES.register("floral_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FLORAL_LANDING_GOO_PARTICLE = PARTICLES.register("floral_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FUNGAL_FALLING_GOO_PARTICLE = PARTICLES.register("fungal_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FUNGAL_LANDING_GOO_PARTICLE = PARTICLES.register("fungal_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> HONEY_FALLING_GOO_PARTICLE = PARTICLES.register("honey_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> HONEY_LANDING_GOO_PARTICLE = PARTICLES.register("honey_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> LOGIC_FALLING_GOO_PARTICLE = PARTICLES.register("logic_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> LOGIC_LANDING_GOO_PARTICLE = PARTICLES.register("logic_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> METAL_FALLING_GOO_PARTICLE = PARTICLES.register("metal_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> METAL_LANDING_GOO_PARTICLE = PARTICLES.register("metal_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> MOLTEN_FALLING_GOO_PARTICLE = PARTICLES.register("molten_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> MOLTEN_LANDING_GOO_PARTICLE = PARTICLES.register("molten_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> OBSIDIAN_FALLING_GOO_PARTICLE = PARTICLES.register("obsidian_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> OBSIDIAN_LANDING_GOO_PARTICLE = PARTICLES.register("obsidian_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> REGAL_FALLING_GOO_PARTICLE = PARTICLES.register("regal_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> REGAL_LANDING_GOO_PARTICLE = PARTICLES.register("regal_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SLIME_FALLING_GOO_PARTICLE = PARTICLES.register("slime_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SLIME_LANDING_GOO_PARTICLE = PARTICLES.register("slime_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SNOW_FALLING_GOO_PARTICLE = PARTICLES.register("snow_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SNOW_LANDING_GOO_PARTICLE = PARTICLES.register("snow_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> VITAL_FALLING_GOO_PARTICLE = PARTICLES.register("vital_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> VITAL_LANDING_GOO_PARTICLE = PARTICLES.register("vital_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> WEIRD_FALLING_GOO_PARTICLE = PARTICLES.register("weird_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> WEIRD_LANDING_GOO_PARTICLE = PARTICLES.register("weird_landing_goo", () -> new BasicParticleType(false));
+
+
+    private static final Map<Fluid, BasicParticleType> fallingParticleLookupCache = new HashMap<>();
+    private static void initializeParticleLookupCache() {
+        fallingParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(CHROMATIC_GOO.get(), CHROMATIC_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(CRYSTAL_GOO.get(), CRYSTAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(DECAY_GOO.get(), DECAY_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(EARTHEN_GOO.get(), EARTHEN_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(ENERGETIC_GOO.get(), ENERGETIC_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(FAUNAL_GOO.get(), FAUNAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(FLORAL_GOO.get(), FLORAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(FUNGAL_GOO.get(), FUNGAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(HONEY_GOO.get(), HONEY_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(METAL_GOO.get(), METAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(REGAL_GOO.get(), REGAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(SLIME_GOO.get(), SLIME_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(SNOW_GOO.get(), SNOW_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(VITAL_GOO.get(), VITAL_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_FALLING_GOO_PARTICLE.get());
+    }
+
+    public static BasicParticleType fallingParticleFromFluid(Fluid fluid)
+    {
+        if (fallingParticleLookupCache.size() == 0) {
+            initializeParticleLookupCache();
+        }
+        if (!fallingParticleLookupCache.containsKey(fluid)) {
+            return null;
+        }
+
+        return fallingParticleLookupCache.get(fluid);
+    }
 
     public static String getFluidTranslationKey(String key)
     {

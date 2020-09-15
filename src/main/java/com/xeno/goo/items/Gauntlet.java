@@ -65,6 +65,11 @@ public class Gauntlet extends GauntletAbstraction
         return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING.get(), stack);
     }
 
+    public static boolean geomancy(ItemStack gauntlet)
+    {
+        return EnchantmentHelper.getEnchantmentLevel(Registry.GEOMANCY.get(), gauntlet) > 0;
+    }
+
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
