@@ -35,7 +35,6 @@ public class GooParticle extends SpriteTexturedParticle
         this.fluid = f;
         this.isChromatic = f.equals(Registry.CHROMATIC_GOO.get());
         this.setColor();
-
         if (shouldFling) {
             // random fling directions and also a bit of bounce
             double flingX = (world.rand.nextFloat() - 0.5f) * 0.2f;
@@ -44,7 +43,7 @@ public class GooParticle extends SpriteTexturedParticle
             this.motionY = 0.2d;
             this.motionZ = flingZ;
         } else {
-            this.motionZ = 0.1d;
+            this.motionY = 0.1d;
         }
     }
 

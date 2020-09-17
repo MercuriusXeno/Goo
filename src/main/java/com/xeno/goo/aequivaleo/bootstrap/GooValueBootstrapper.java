@@ -158,7 +158,7 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.BROWN_MUSHROOM_BLOCK, fungal(960));
         registerLocking(getRegistry(event), Items.CACTUS, floral(960), chromatic(240), vital (60));
         registerLocking(getRegistry(event), Items.CARROT, floral(60), vital(60));
-        registerLocking(getRegistry(event), Items.CARVED_PUMPKIN, floral(60), weird(60));
+        registerLocking(getRegistry(event), Items.CARVED_PUMPKIN, weird(15));
         registerLocking(getRegistry(event), Items.CHARCOAL, molten(96), floral(96));
         registerLocking(getRegistry(event), Items.CHICKEN, faunal(60), vital(60));
         registerLocking(getRegistry(event), Items.CHORUS_FLOWER, floral(240), weird(240), vital(60));
@@ -169,7 +169,7 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.COD, faunal(60), vital(60));
         registerLocking(getRegistry(event), Items.CRIMSON_NYLIUM, earthen(480d), fungal(480d), chromatic(60));
         registerLocking(getRegistry(event), Items.CRIMSON_FUNGUS, fungal(120));
-        registerLocking(getRegistry(event), Items.CRYING_OBSIDIAN, weird(60), obsidian(960));
+        registerLocking(getRegistry(event), Items.CRYING_OBSIDIAN, weird(60), obsidian(960), crystal(60));
         registerLocking(getRegistry(event), Items.DIAMOND, crystal(120));
         registerLocking(getRegistry(event), Items.EGG, faunal(60), vital(60));
         registerLocking(getRegistry(event), Items.EMERALD, regal(60), crystal(60));
@@ -198,7 +198,7 @@ public class GooValueBootstrapper
         registerLocking(getRegistry(event), Items.NETHERITE_SCRAP, metal(960), obsidian(120));
         registerLocking(getRegistry(event), Items.NETHERRACK, earthen(960), molten(60));
         registerLocking(getRegistry(event), Items.OBSIDIAN, obsidian(120), molten(60), earthen(840));
-        registerLocking(getRegistry(event), Items.PHANTOM_MEMBRANE, decay(60), vital(60), weird(60));
+        registerLocking(getRegistry(event), Items.PHANTOM_MEMBRANE, decay(60), vital(60), weird(180));
         registerLocking(getRegistry(event), Items.POISONOUS_POTATO, floral(60), weird(60), vital(60));
         registerLocking(getRegistry(event), Items.PORKCHOP, faunal(60), vital(60));
         registerLocking(getRegistry(event), Items.POTATO, floral(60), vital(60));

@@ -20,6 +20,7 @@ public class GooRenderHelper extends RenderState
     public static final RenderType GOO_BLOCK;
 
     public static final RenderType GOO_OVERLAY;
+    public static final RenderType GOO_CUBE;
 
     static {
         // GOO
@@ -30,7 +31,8 @@ public class GooRenderHelper extends RenderState
 
 //        RenderState.WriteMaskState colorMask = new RenderState.WriteMaskState(true, false);
         RenderType.ShadeModelState smoothShade = new RenderState.ShadeModelState(true);
-        RenderType.State glState = RenderType.State.getBuilder()
+        RenderType.ShadeModelState notSmoothShade = new RenderState.ShadeModelState(false);
+        RenderType.State sphereGlState = RenderType.State.getBuilder()
                 .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
                 .transparency(TRANSLUCENT_TRANSPARENCY)
 //                .writeMask(colorMask)
@@ -39,8 +41,17 @@ public class GooRenderHelper extends RenderState
                 .overlay(enableOverlay)
                 .shadeModel(smoothShade)
                 .build(true);
-        GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_TRIANGLES, 128, true, false, glState);
-        //GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, glState);
+        RenderType.State cubeGlState = RenderType.State.getBuilder()
+                .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                .transparency(TRANSLUCENT_TRANSPARENCY)
+//                .writeMask(colorMask)
+                .diffuseLighting(enableDiffuse)
+                .cull(disableCull)
+                .overlay(enableOverlay)
+                .shadeModel(notSmoothShade)
+                .build(true);
+        GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_TRIANGLES, 128, true, false, sphereGlState);
+        GOO_CUBE = RenderType.makeType(GooMod.MOD_ID + ":goo_cube", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, cubeGlState);
 
         // GOO BLOCK
         /** Render type used for rendering fluids */

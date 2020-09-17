@@ -1,19 +1,14 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.network.GooLobConfirmationPacket;
-import com.xeno.goo.network.Networking;
-import com.xeno.goo.tiles.BulbFluidHandler;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
 import net.minecraft.network.PacketBuffer;
@@ -23,17 +18,11 @@ import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.*;
-import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.wrappers.BlockWrapper;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
@@ -47,17 +36,13 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     private static final double GENERAL_FRICTION = 0.98d;
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
-    private float enchantedSpeed;
+    private static final double GOO_GRAVITY = 0.06d;
     public FluidStack goo;
-    private boolean isInGround;
     private int quiverTimer;
-    private BlockState inBlockState;
     private List<Entity> touchingEntityIds = new ArrayList<>();
-    private boolean isHeld;
     private Entity owner;
     private float cubicSize;
     private EntitySize size;
-    private boolean isLaunched;
 
 
     public GooEntity(EntityType<GooEntity> type, World worldIn) {
@@ -71,10 +56,28 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             this.setDead();
             this.remove();
         } else {
+            Vector3d pos = initialPosition(sender);
+            this.setPositionAndRotation(pos.x, pos.y, pos.z, sender.rotationYaw, sender.rotationPitch);
+            this.owner = sender;
             this.setSize();
-            this.setInvulnerable(true);
-            this.attachGooToSender(sender);
+            this.shoot();
         }
+    }
+
+    private Vector3d initialPosition(Entity sender)
+    {
+        return sender.getPositionVec().add(0d, sender.getEyeHeight(), 0d).add(sender.getLookVec());
+    }
+
+    private void shoot()
+    {
+        if (owner == null) {
+            return;
+        }
+        startQuivering();
+        Vector3d velVec = owner.getLookVec();
+        velVec = (velVec).normalize().scale(1.0f);
+        this.setMotion(velVec);
     }
 
     public AxisAlignedBB getCollisionBoundingBox() {
@@ -108,148 +111,47 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         this.dataManager.register(GOO_SIZE, 1);
     }
 
-    protected void interactWithSolid(BlockPos pos) {
-        // TODO
-    }
-
-    protected void interactWithGoo(BlockPos pos) {
-        // TODO
-
-    }
-
-    protected void interactWithWater(BlockPos pos) {
-        // TODO
-
-    }
-
-    protected void interactWithLava(BlockPos pos) {
-        // TODO
+    protected void interactWithBlock(BlockPos pos, Direction face, BlockState state) {
+        GooSplatEffects.resolve(this.owner, this, this.world, pos, face, state);
+        // dissipate
+        this.remove();
     }
 
     @Override
     public void tick()
     {
+        super.tick();
+
         // quiver timer is really just a client side thing
         if (this.quiverTimer > 0) {
             quiverTimer--;
         }
 
-        if (this.isHeld) {
-            if (owner == null) {
-                // orphaned, just drop to the ground
-                detachGooFromSender(false);
-            } else {
-                // track owner motion!
-                this.setMotion(owner.getMotion());
-                handleKeepingSteady();
-            }
-        } else {
-
-            handleMovement();
-            this.isCollidingEntity = this.checkForEntityCollision();
-
-            handleDecay();
-            super.tick();
-        }
-    }
-
-    protected void handleDecay() {
-        // goo doesn't decay as long as you're holding it.
-        if (this.isHeld) {
-            return;
-        }
-        if (goo.getAmount() < 1) {
-            this.setDead();
-            this.remove();
-        } else {
-            if (ticksExisted >= 20) {
-                goo.setAmount(goo.getAmount() - 1); // decay system needs work TODO
-                setSize();
-            }
-        }
-    }
-
-    @Override
-    protected void setDead()
-    {
-        super.setDead();
-    }
-
-    @Override
-    public void remove()
-    {
-        super.remove();
-    }
-
-    public Vector3d getSenderHoldPosition() {
-        return new Vector3d(owner.getPosX(), owner.getPosYEye(), owner.getPosZ()).add(owner.getLookVec().normalize().scale(1f + (this.cubicSize / 10f)));
-    }
-
-    protected void handleKeepingSteady() {
-        Vector3d vec = getSenderHoldPosition();
-        if (getPositionVec().subtract(vec).length() > 0.1F) {
-            startQuivering();
-        }
-        this.setLocationAndAngles(vec.x, vec.y, vec.z, owner.rotationYaw, owner.rotationPitch);
+        handleMovement();
+        this.isCollidingEntity = this.checkForEntityCollision();
     }
 
     private void handleMovement() {
+        handleGravity();
+        handleFriction();
+        handleMaterialCollisionChecks();
+        doFreeMovement();
+    }
+
+    private void handleMaterialCollisionChecks()
+    {
         Vector3d motion = this.getMotion();
-        BlockPos blockpos = this.getPosition();
-        BlockState blockstate = this.world.getBlockState(blockpos);
-        if (!blockstate.isAir(this.world, blockpos)) {
-            VoxelShape voxelshape = blockstate.getCollisionShape(this.world, blockpos);
-            if (!voxelshape.isEmpty()) {
-                Vector3d vector3d1 = this.getPositionVec();
-
-                for(AxisAlignedBB axisalignedbb : voxelshape.toBoundingBoxList()) {
-                    if (axisalignedbb.offset(blockpos).contains(vector3d1)) {
-                        this.isInGround = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (this.isInGround) {
-            startQuivering();
-            this.setMotion(Vector3d.ZERO);
-        } else {
-            doFreeMovement(motion);
-        }
-        this.inBlockState = blockstate;
-    }
-
-    protected void splat(BlockPos pos, Direction face) {
-        // the state we're interested in observing is the state of the hit block, not the offset.
-        BlockState state = world.getBlockState(pos);
-        // the result position is, if needed, the offset position based on hit face.
-        pos = pos.offset(face);
-        if (state.isSolid()) {
-            interactWithSolid(pos); // ideally I'd do more than this I think
-        } else if (state.getMaterial() == Material.WATER) {
-            if (state.getFluidState().getFluid() instanceof GooFluid) {
-                if (state.getFluidState().getFluid().isEquivalentTo(goo.getFluid())) {
-                    // same fluid, treat it like it's a solid.
-                    interactWithSolid(pos);
-                } else {
-                    // different goo, maybe a reaction, but maybe it just stacks.
-                    interactWithGoo(pos);
-                }
-            } else {
-                interactWithWater(pos);
-            }
-        } else if (state.getMaterial() == Material.LAVA) {
-            interactWithLava(pos);
-        }
-    }
-
-    protected void doFreeMovement(Vector3d motion) {
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
+
         BlockRayTraceResult blockResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
         if (blockResult.getType() != RayTraceResult.Type.MISS) {
-            splat(blockResult.getPos(), blockResult.getFace());
+            // try colliding with the block for some tank interaction, this entity
+            // wants to enter receptacles first if it can, but splat otherwise
+            collideBlockMaybe(blockResult);
+            if (goo.getAmount() > 0) {
+                splat(blockResult.getPos(), blockResult.getFace());
+            }
             return;
         }
 
@@ -259,30 +161,56 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             this.isAirBorne = true;
         }
 
-        double d3 = motion.x;
-        double d4 = motion.y;
-        double d0 = motion.z;
+        handleLiquidCollisions(motion);
 
-        double d5 = this.getPosX() + d3;
-        double d1 = this.getPosY() + d4;
-        double d2 = this.getPosZ() + d0;
+        this.doBlockCollisions();
+    }
+
+    private void handleFriction()
+    {
+        this.setMotion(this.getMotion().scale(GENERAL_FRICTION));
+    }
+
+    private void handleGravity()
+    {
+        this.setMotion(this.getMotion().add(0d, -GOO_GRAVITY, 0d));
+    }
+
+    protected void splat(BlockPos pos, Direction face) {
+        // the state we're interested in observing is the state of the hit block, not the offset.
+        BlockState state = world.getBlockState(pos);
+        interactWithBlock(pos, face, state); // ideally I'd do more than this I think
+    }
+
+    protected void doFreeMovement() {
+        Vector3d motion = this.getMotion();
+        Vector3d position = this.getPositionVec();
+        Vector3d projection = position.add(motion);
+
+        this.setPositionAndRotation(projection.x, projection.y, projection.z, this.rotationYaw, this.rotationPitch);
+    }
+
+    private void handleLiquidCollisions(Vector3d motion)
+    {
+        double xVel = motion.x;
+        double yVel = motion.y;
+        double zVel = motion.z;
+
+        double xProj = this.getPosX() + xVel;
+        double yProj = this.getPosY() + yVel;
+        double zProj = this.getPosZ() + zVel;
 
         if (this.isInWater()) {
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
-                this.world.addParticle(ParticleTypes.BUBBLE, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+                this.world.addParticle(ParticleTypes.BUBBLE, xProj - xVel * f4, yProj - yVel * f4, zProj - zVel * f4, xVel, yVel, zVel);
             }
         } else if (this.isInLava()) {
             for(int j = 0; j < 4; ++j) {
                 double f4 = 0.25F;
-                this.world.addParticle(ParticleTypes.FLAME, d5 - d3 * f4, d1 - d4 * f4, d2 - d0 * f4, d3, d4, d0);
+                this.world.addParticle(ParticleTypes.FLAME, xProj - xVel * f4, yProj - yVel * f4, zProj - zVel * f4, xVel, yVel, zVel);
             }
         }
-
-        this.setMotion(motion.scale(GENERAL_FRICTION));
-
-        this.doBlockCollisions();
-        this.setPositionAndUpdate(projection.x, projection.y, projection.z);
     }
 
     /**
@@ -315,9 +243,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
         }
         this.isCollidingEntity = tag.getBoolean("LeftOwner");
-        this.enchantedSpeed = tag.getFloat("enchantedSpeed");
-        this.isHeld = tag.getBoolean("isHeld");
-        this.isLaunched = tag.getBoolean("isLaunched");
     }
 
     @Override
@@ -327,22 +252,7 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         tag.putFloat("cubicSize", cubicSize);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
         if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
-        tag.putFloat("enchantedSpeed", this.enchantedSpeed);
-        tag.putBoolean("isHeld", isHeld);
-        tag.putBoolean("isLaunched", isLaunched);
         return tag;
-    }
-
-    public void shoot() {
-        if (owner == null) {
-            return;
-        }
-        this.isLaunched = true;
-        startQuivering();
-        Vector3d velVec = owner.getLookVec();
-        double velocity = this.enchantedSpeed;
-        velVec = (velVec).normalize().scale(velocity);
-        this.setMotion(velVec);
     }
 
     public void startQuivering()
@@ -434,9 +344,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
-        if (this.isHeld) {
-            return false;
-        }
         if (owner != null) {
             Collection<Entity> collidedEntities =
                     this.world.getEntitiesInAABBexcluding(this,
@@ -460,8 +367,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         Vector3d result = Vector3d.ZERO;
         if (resultType == RayTraceResult.Type.ENTITY) {
             result = onEntityHit((EntityRayTraceResult)rayTraceResult);
-        } else if (resultType == RayTraceResult.Type.BLOCK) {
-            result = collideBlockMaybe((BlockRayTraceResult)rayTraceResult);
         }
 
         return result;
@@ -508,9 +413,7 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
 
     protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
         BlockState blockstate = this.world.getBlockState(rayTraceResult.getPos());
-        if (this.inBlockState != blockstate) {
-            doChangeBlockState(blockstate, rayTraceResult.getPos(), this.getPositionUnderneath());
-        }
+        doChangeBlockState(blockstate, rayTraceResult.getPos(), this.getPositionUnderneath());
         return Vector3d.ZERO;
     }
 
@@ -521,55 +424,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         }
     }
 
-    public void attachGooToSender(Entity entity)
-    {
-        this.isHeld = true;
-        this.isLaunched = false;
-        this.owner = entity;
-        this.enchantedSpeed = 3f; //getArmstrongSpeed(entity);
-
-        handleKeepingSteady();
-    }
-
-//    protected float getArmstrongSpeed(Entity entity) {
-//        if (!(entity instanceof PlayerEntity)) {
-//            return 0f;
-//        }
-//
-//        PlayerEntity player = (PlayerEntity)entity;
-//        ItemStack holder = player.getHeldItemMainhand();
-//        if (holder.isEmpty() || !(holder.getItem() instanceof GooHolder)) {
-//            return 0f;
-//        }
-//
-//        return ((GooHolder)holder.getItem()).data(holder).thrownSpeed(holder);
-//    }
-
-    public void detachGooFromSender(boolean isShooting) {
-        if (isShooting) {
-            shoot();
-            if (this.world instanceof ServerWorld && this.owner instanceof PlayerEntity) {
-                Networking.sendToClientsAround(new GooLobConfirmationPacket(this, (PlayerEntity)owner), (ServerWorld)world, this.getPosition());
-            }
-        }
-        clearHolder();
-    }
-
-    public void clearHolder()
-    {
-        // this.owner = null;
-        this.isHeld = false;
-    }
-
-    public Entity owner()
-    {
-        return owner;
-    }
-
-    public boolean isHeld() {
-        return isHeld;
-    }
-
     public float cubicSize()
     {
         return this.cubicSize;
@@ -578,11 +432,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     public int quiverTimer()
     {
         return quiverTimer;
-    }
-
-    public boolean isLaunched()
-    {
-        return isLaunched;
     }
 
     @Override

@@ -26,6 +26,9 @@ import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
+    private static final int GEOMANCY_DRAIN = 27;
+    private static final int NORMAL_DRAIN = 8;
+
     public GauntletAbstraction(int capacity)
     {
         super(
@@ -182,7 +185,13 @@ public class GauntletAbstraction extends ItemFluidContainer
             return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
 
-        worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, cap.getFluidInTank(0)));
+        boolean isGeomancy = Gauntlet.geomancy(playerIn.getHeldItem(handIn));
+
+        if (cap.getFluidInTank(0).getAmount() < (isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN)) {
+            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+        }
+        FluidStack thrownStack = cap.drain((isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN), IFluidHandler.FluidAction.EXECUTE);
+        worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, thrownStack));
 
         return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
     }

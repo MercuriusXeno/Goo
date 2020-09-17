@@ -38,20 +38,20 @@ public class GooLobPacket implements IGooModPacket
     @Override
     public void handle(Supplier<NetworkEvent.Context> supplier)
     {
-        supplier.get().enqueueWork(() -> {
-            if (supplier.get().getDirection().getReceptionSide() == LogicalSide.SERVER) {
-                ServerPlayerEntity player = supplier.get().getSender();
-                if (player == null) {
-                    return;
-                }
-
-                Optional<GooEntity> goo = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(8d), g -> g.getUniqueID().equals(this.goo) && g.isHeld() && g.owner() == player).stream().findFirst();
-                goo.ifPresent(g -> {
-                    g.detachGooFromSender(true);
-                });
-            }
-        });
-
-        supplier.get().setPacketHandled(true);
+//        supplier.get().enqueueWork(() -> {
+//            if (supplier.get().getDirection().getReceptionSide() == LogicalSide.SERVER) {
+//                ServerPlayerEntity player = supplier.get().getSender();
+//                if (player == null) {
+//                    return;
+//                }
+//
+//                Optional<GooEntity> goo = player.world.getEntitiesWithinAABB(GooEntity.class, player.getBoundingBox().grow(8d), g -> g.getUniqueID().equals(this.goo) && g.isHeld() && g.owner() == player).stream().findFirst();
+//                goo.ifPresent(g -> {
+//                    g.detachGooFromSender(true);
+//                });
+//            }
+//        });
+//
+//        supplier.get().setPacketHandled(true);
     }
 }

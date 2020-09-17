@@ -5,11 +5,9 @@ import com.xeno.goo.client.models.BasinModel;
 import com.xeno.goo.client.models.GauntletModel;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.render.*;
-import com.xeno.goo.entities.GooEntity;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -47,7 +45,7 @@ public class ModClientEvents
 
     private static void setEntityRenderers()
     {
-        GooEntityRenderer.register();
+        GooCubeRenderer.register();
     }
 
     private static void setRenderLayers()
