@@ -97,5 +97,7 @@
   "sound_event.goo.goo_splat_sound": "Goo blob splats",
   "sound_event.goo.goo_chop_sound": "Goo chop squish",
   "sound_event.goo.goo_deposit_sound": "Goo deposited",
-  "sound_event.goo.goo_withdraw_sound": "Goo withdrawn"
+  "sound_event.goo.goo_withdraw_sound": "Goo withdrawn",
+  "sound_event.goo.goo_crucible_sound": "Goo crucible crackles",
+  "sound_event.goo.gooifier_sound": "Gooifier crackles"
 }

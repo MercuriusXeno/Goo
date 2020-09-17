@@ -192,4 +192,24 @@ public class GauntletAbstraction extends ItemFluidContainer
 
         return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
     }
+
+    @Override
+    public int getMaxDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) + 1;
+    }
+
+    @Override
+    public int getDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null || fh.getFluidInTank(0).isEmpty()) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
+    }
 }

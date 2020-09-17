@@ -78,6 +78,8 @@ public class Registry {
     public static final RegistryObject<SoundEvent> GOO_SPLAT_SOUND = SOUNDS.register("goo_splat_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_splat_sound")));
     public static final RegistryObject<SoundEvent> GOO_DEPOSIT_SOUND = SOUNDS.register("goo_deposit_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_deposit_sound")));
     public static final RegistryObject<SoundEvent> GOO_WITHDRAW_SOUND = SOUNDS.register("goo_withdraw_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_withdraw_sound")));
+    public static final RegistryObject<SoundEvent> GOO_CRUCIBLE_SOUND = SOUNDS.register("goo_crucible_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_crucible_sound")));
+    public static final RegistryObject<SoundEvent> GOOIFIER_SOUND = SOUNDS.register("gooifier_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "gooifier_sound")));
 
 
     public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);

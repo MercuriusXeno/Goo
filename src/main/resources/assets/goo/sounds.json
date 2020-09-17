@@ -34,5 +34,25 @@
       "minecraft:item/bucket/fill_lava2",
       "minecraft:item/bucket/fill_lava3"
     ]
+  },
+  "goo_crucible_sound": {
+    "subtitle": "sound_event.goo.goo_crucible_sound",
+    "sounds": [
+      "minecraft:block/blastfurnace/blastfurnace1",
+      "minecraft:block/blastfurnace/blastfurnace2",
+      "minecraft:block/blastfurnace/blastfurnace3",
+      "minecraft:block/blastfurnace/blastfurnace4",
+      "minecraft:block/blastfurnace/blastfurnace5"
+    ]
+  },
+  "gooifier_sound": {
+    "subtitle": "sound_event.goo.gooifier_sound",
+    "sounds": [
+      "minecraft:block/blastfurnace/blastfurnace1",
+      "minecraft:block/blastfurnace/blastfurnace2",
+      "minecraft:block/blastfurnace/blastfurnace3",
+      "minecraft:block/blastfurnace/blastfurnace4",
+      "minecraft:block/blastfurnace/blastfurnace5"
+    ]
   }
 }

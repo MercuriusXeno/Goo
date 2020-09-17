@@ -15,6 +15,7 @@ import net.minecraft.util.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
@@ -160,6 +161,26 @@ public class BasinAbstraction extends ItemFluidContainer
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) + 1;
+    }
+
+    @Override
+    public int getDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null || fh.getFluidInTank(0).isEmpty()) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
     }
 
     @Override
