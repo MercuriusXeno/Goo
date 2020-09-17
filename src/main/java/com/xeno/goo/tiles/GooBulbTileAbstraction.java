@@ -220,7 +220,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return didStuff[0];
     }
 
-    private boolean doLateralShare(IFluidHandler c)
+    private boolean doLateralShare(IFluidHandler destination)
     {
         boolean didStuff = false;
         // the maximum amount you can drain in a tick is here.
@@ -234,7 +234,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             // only "distribute" to the bulb adjacent if it has less than this one of whatever type (equalizing)
             // here there be dragons; simulate trying to remove an absurd amount of the fluid from the handler
             // it will return how much it has, if any.
-            FluidStack stackInDestination = c.drain(new FluidStack(s.getFluid(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
+            FluidStack stackInDestination = destination.drain(new FluidStack(s.getFluid(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
             int bulbContains = stackInDestination.getAmount();
             int delta = s.getAmount() - bulbContains;
             // don't send it anything to avoid passing back 1 mB repeatedly.
@@ -244,7 +244,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             int splitDelta = (int)Math.floor(delta / 2d);
             int amountToSend = Math.min(splitDelta, simulatedDrainLeft);
 
-            int simulatedDrain = trySendingFluid(amountToSend, s, c, false);
+            int simulatedDrain = trySendingFluid(amountToSend, s, destination, false);
             if (simulatedDrain != simulatedDrainLeft) {
                 didStuff = true;
             }
@@ -420,6 +420,8 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
             float maxY = getPos().getY() + 1f - FLUID_VERTICAL_MAX;
             float heightScale = maxY - minY;
+
+            heightScale = rescaleHeightForMinimumLevels(heightScale, goo, fluidHandler.getTankCapacity(0));
             float yOffset = 0f;
             for(FluidStack stack : goo) {
                 // this is the total fill of the goo in the tank of this particular goo, as a percentage
@@ -434,6 +436,25 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
             return goo.get(goo.size() - 1);
         }
+    }
+
+    private static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
+    {
+        // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
+        // render very small amounts of fluid so that we can still target really small amounts
+        // the space in the tank has to be recouped by reducing the overall virtual capacity.
+        // we measure it as a percentage because it's close enough.
+        float lostCap = 0f;
+
+        // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
+        for(FluidStack goo : gooList) {
+            // this is the total fill of the goo in the tank of this particular goo, as a percentage
+            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
+            lostCap += gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
+                    GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity)
+                    : 0f;
+        }
+        return heightScale - (heightScale * lostCap);
     }
 
     @Override
