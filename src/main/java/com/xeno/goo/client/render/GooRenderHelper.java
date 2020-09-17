@@ -21,6 +21,7 @@ public class GooRenderHelper extends RenderState
 
     public static final RenderType GOO_OVERLAY;
     public static final RenderType GOO_CUBE;
+    public static final int FULL_BRIGHT = 15728880;
 
     static {
         // GOO

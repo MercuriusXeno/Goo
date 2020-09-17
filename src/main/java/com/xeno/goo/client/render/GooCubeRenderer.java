@@ -10,9 +10,11 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
@@ -141,9 +143,26 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
         Vector3f[][] wiggledQuads = scaleAndWiggle(UNSCALED_QUADS, sgen, entity.quiverTimer(), scale);
         Matrix4f matrix = stack.getLast().getMatrix();
 
-        renderCube(matrix, buffer, wiggledQuads, light, sprite);
+        if (isBrightFluid(entity.goo.getFluid())) {
+            light = GooRenderHelper.FULL_BRIGHT;
+        }
+        renderCube(matrix, buffer, wiggledQuads, GooRenderHelper.FULL_BRIGHT, sprite);
 
         stack.pop();
+    }
+
+    private boolean isBrightFluid(Fluid fluid)
+    {
+        return fluid.equals(Registry.MOLTEN_GOO.get()) || fluid.equals(Registry.ENERGETIC_GOO.get());
+    }
+
+    @Override
+    protected int getBlockLight(GooEntity entityIn, BlockPos partialTicks)
+    {
+        if (isBrightFluid(entityIn.goo.getFluid())) {
+            return 15;
+        }
+        return super.getBlockLight(entityIn, partialTicks);
     }
 
     protected void applyRotations(MatrixStack matrixStackIn, float rotationYaw, float rotationPitch) {

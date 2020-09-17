@@ -3,6 +3,7 @@ package com.xeno.goo.client.particle;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.render.FluidCuboidHelper;
+import com.xeno.goo.client.render.GooRenderHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.*;
@@ -33,6 +34,9 @@ public class GooParticle extends SpriteTexturedParticle
         this.setSize(0.01F, 0.01F);
         this.particleGravity = 0.06F;
         this.fluid = f;
+        if (f.getFluid().equals(Registry.ENERGETIC_GOO) || f.getFluid().equals(Registry.MOLTEN_GOO)) {
+            this.brightnessThingy = true;
+        }
         this.isChromatic = f.equals(Registry.CHROMATIC_GOO.get());
         this.setColor();
         if (shouldFling) {
@@ -152,7 +156,15 @@ public class GooParticle extends SpriteTexturedParticle
     }
 
     public int getBrightnessForRender(float partialTick) {
+        if (isBrightFluid(this.fluid)) {
+            return GooRenderHelper.FULL_BRIGHT;
+        }
         return this.brightnessThingy ? 240 : super.getBrightnessForRender(partialTick);
+    }
+
+    private boolean isBrightFluid(Fluid fluid)
+    {
+        return fluid.equals(Registry.MOLTEN_GOO.get()) || fluid.equals(Registry.ENERGETIC_GOO.get());
     }
 
     public void tick() {
@@ -182,6 +194,7 @@ public class GooParticle extends SpriteTexturedParticle
     }
 
     protected void slowDownAlot() {
+        // NOOP, intentional
     }
 
     public static class FallingGooFactory implements IParticleFactory<BasicParticleType> {
