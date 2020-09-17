@@ -22,7 +22,14 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
-public class Mixer extends Block
+import java.util.HashMap;
+import java.util.Map;
+
+import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
+import static net.minecraft.util.Direction.*;
+import static net.minecraft.util.Direction.UP;
+
+public class Mixer extends BlockWithConnections
 {
     VoxelShape[] shapes;
 
@@ -135,5 +142,28 @@ public class Mixer extends Block
         }
 
         super.onBlockHarvested(world, pos, state, player);
+    }
+
+
+    public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    static {
+        for(Direction.Axis a : Direction.Axis.values()) {
+            switch (a) {
+                case Y:
+                    break;
+                case X:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, DOWN});
+                    break;
+                case Z:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, DOWN});
+                    break;
+            }
+        }
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS.get(state.get(HORIZONTAL_FACING).getAxis());
     }
 }

@@ -238,18 +238,15 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return;
         }
         for(Direction d : getValidDirections()) {
-            TileEntity t = world.getTileEntity(pos.offset(d));
-            if (t == null) {
-                continue;
-            }
-            if (!(t instanceof GooBulbTileAbstraction)) {
-                continue;
-            }
-            int workLeftThisGasket = GooMod.config.gooProcessingRate();
-            IFluidHandler cap = FluidHandlerHelper.capability(t, d);
-            for(GooValue v : mapping.values()) {
-                workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);
-            }
+            int[] workLeftThisGasket = {GooMod.config.gooProcessingRate()};
+            LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfNeighbor(this, d);
+            cap.ifPresent((c) ->
+                    {
+                        for (GooValue v : mapping.values()) {
+                            workLeftThisGasket[0] = tryDrainingFluid(workLeftThisGasket[0], c, v);
+                        }
+                    }
+            );
         }
     }
 

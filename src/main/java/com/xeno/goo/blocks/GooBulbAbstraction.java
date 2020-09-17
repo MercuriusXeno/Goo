@@ -13,13 +13,14 @@ import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 
-public abstract class GooBulbAbstraction extends Block
+public abstract class GooBulbAbstraction extends BlockWithConnections
 {
     public GooBulbAbstraction()
     {
@@ -68,5 +69,11 @@ public abstract class GooBulbAbstraction extends Block
         }
 
         super.onBlockHarvested(world, pos, state, player);
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return Direction.values();
     }
 }

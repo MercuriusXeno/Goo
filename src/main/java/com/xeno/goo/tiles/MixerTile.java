@@ -28,12 +28,19 @@ import java.util.Objects;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
-    private MixerFluidHandler rightHandler = createHandler(0);
-    private LazyOptional<MixerFluidHandler> rightLazy = LazyOptional.of(() -> rightHandler);
+    private final MixerFluidHandler rightHandler = createHandler(0);
+    private final LazyOptional<MixerFluidHandler> rightLazy = LazyOptional.of(() -> rightHandler);
 
-    private MixerFluidHandler leftHandler = createHandler(1);
-    private LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
+    private final MixerFluidHandler leftHandler = createHandler(1);
+    private final LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
 
+
+    @Override
+    protected void invalidateCaps() {
+        super.invalidateCaps();
+        leftLazy.invalidate();
+        rightLazy.invalidate();
+    }
     public MixerTile()
     {
         super(Registry.MIXER_TILE.get());
@@ -136,23 +143,24 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             return;
         }
 
-        IFluidHandler cap = tryGettingFluidCapabilityFromTileBelow();
-        if (cap == null) {
-            return;
-        }
+        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
+        cap.ifPresent((c) -> pushRecipeResult(c, recipe));
+    }
 
-        int sentResult = cap.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
+    private void pushRecipeResult(IFluidHandler c, MixerRecipe recipe)
+    {
+        int sentResult = c.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
         if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
             return;
         }
 
         deductInputQuantities(recipe.inputs());
 
-        cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+        c.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
 
-        if (cap instanceof BulbFluidHandler) {
+        if (c instanceof BulbFluidHandler) {
             float fillVisual =  Math.max(0.3f, recipe.output().getAmount() / (float)GooMod.config.gooTransferRate());
-            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
+            ((BulbFluidHandler) c).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
         }
     }
 
@@ -179,15 +187,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             }
         }
         return true;
-    }
-
-    private IFluidHandler tryGettingFluidCapabilityFromTileBelow()
-    {
-        TileEntity tile = FluidHandlerHelper.tileAtDirection(this, Direction.DOWN);
-        if (tile == null) {
-            return null;
-        }
-        return FluidHandlerHelper.capability(tile, Direction.UP);
     }
 
     public void addGoo(int side, FluidStack fluidStack)

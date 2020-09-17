@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.library.CrucibleRecipe;
 import com.xeno.goo.library.CrucibleRecipes;
 import com.xeno.goo.library.MixerRecipes;
+import com.xeno.goo.library.WeakConsumerWrapper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
@@ -21,21 +22,30 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.common.util.NonNullConsumer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
-    private CrucibleFluidHandler fluidHandler = createHandler();
-    private LazyOptional<CrucibleFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
+    private final CrucibleFluidHandler fluidHandler = createHandler();
+    private final LazyOptional<CrucibleFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
 
     public CrucibleTile()
     {
         super(Registry.CRUCIBLE_TILE.get());
         goo.addAll(Collections.singletonList(FluidStack.EMPTY));
+    }
+
+    @Override
+    protected void invalidateCaps() {
+        super.invalidateCaps();
+        lazyHandler.invalidate();
     }
 
     public FluidStack onlyGoo() {
@@ -87,11 +97,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
             return;
         }
 
-        IFluidHandler cap = tryGettingFluidCapabilityFromTileBelow();
-        if (cap == null) {
-            return;
-        }
+        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
+        cap.ifPresent((c) -> pushRecipeResult(recipe, c));
+    }
 
+    private void pushRecipeResult(CrucibleRecipe recipe, IFluidHandler cap) {
         int sentResult = cap.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
         if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
             return;
@@ -117,12 +127,6 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         return recipe.input().isFluidEqual(onlyGoo()) && recipe.input().getAmount() <= onlyGoo().getAmount();
     }
 
-    private IFluidHandler tryGettingFluidCapabilityFromTileBelow()
-    {
-        TileEntity tile = FluidHandlerHelper.tileAtDirection(this, Direction.DOWN);
-        return FluidHandlerHelper.capability(tile, Direction.UP);
-    }
-
     public void setGoo(FluidStack fluidStack)
     {
         if (goo.size() == 0) {
@@ -142,11 +146,6 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
             }
             Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
         }
-    }
-
-    private List<FluidStack> asList(FluidStack goo)
-    {
-        return Collections.singletonList(goo);
     }
 
     @Override

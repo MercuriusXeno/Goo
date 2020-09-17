@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
@@ -20,17 +19,19 @@ public class GooRenderHelper extends RenderState
     public static final RenderType GOO_BLOCK;
 
     public static final RenderType GOO_OVERLAY;
-    public static final RenderType GOO_CUBE;
+    public static final RenderType GOO_CUBE_BRIGHT;
+    public static final RenderType GOO_CUBE_DULL;
     public static final int FULL_BRIGHT = 15728880;
 
     static {
         // GOO
         // todo 1.16 update to match vanilla where necessary (alternate render targets, etc.)
         RenderState.DiffuseLightingState enableDiffuse = new RenderState.DiffuseLightingState(true);
+        RenderState.DiffuseLightingState disableDiffuse = new RenderState.DiffuseLightingState(false);
         RenderState.OverlayState enableOverlay = new RenderState.OverlayState(true);
         RenderState.CullState disableCull = new RenderState.CullState(false);
 
-//        RenderState.WriteMaskState colorMask = new RenderState.WriteMaskState(true, false);
+        RenderState.WriteMaskState colorMask = new RenderState.WriteMaskState(true, false);
         RenderType.ShadeModelState smoothShade = new RenderState.ShadeModelState(true);
         RenderType.ShadeModelState notSmoothShade = new RenderState.ShadeModelState(false);
         RenderType.State sphereGlState = RenderType.State.getBuilder()
@@ -42,7 +43,16 @@ public class GooRenderHelper extends RenderState
                 .overlay(enableOverlay)
                 .shadeModel(smoothShade)
                 .build(true);
-        RenderType.State cubeGlState = RenderType.State.getBuilder()
+        RenderType.State brightCubeState = RenderType.State.getBuilder()
+                .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                .transparency(TRANSLUCENT_TRANSPARENCY)
+//                .writeMask(colorMask)
+                .diffuseLighting(disableDiffuse)
+                .cull(disableCull)
+                .overlay(enableOverlay)
+                .shadeModel(smoothShade)
+                .build(true);
+        RenderType.State dullCubeState = RenderType.State.getBuilder()
                 .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
                 .transparency(TRANSLUCENT_TRANSPARENCY)
 //                .writeMask(colorMask)
@@ -52,7 +62,8 @@ public class GooRenderHelper extends RenderState
                 .shadeModel(notSmoothShade)
                 .build(true);
         GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_TRIANGLES, 128, true, false, sphereGlState);
-        GOO_CUBE = RenderType.makeType(GooMod.MOD_ID + ":goo_cube", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, cubeGlState);
+        GOO_CUBE_BRIGHT = RenderType.makeType(GooMod.MOD_ID + ":goo_cube_bright", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, brightCubeState);
+        GOO_CUBE_DULL = RenderType.makeType(GooMod.MOD_ID + ":goo_cube_dull", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, dullCubeState);
 
         // GOO BLOCK
         /** Render type used for rendering fluids */

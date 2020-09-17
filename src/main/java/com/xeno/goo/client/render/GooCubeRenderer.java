@@ -22,13 +22,8 @@ import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.gen.SimplexNoiseGenerator;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 
-import static java.lang.Math.PI;
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
 public class GooCubeRenderer extends EntityRenderer<GooEntity>
@@ -124,7 +119,14 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
     public void render(GooEntity entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
-        RenderType rType = GooRenderHelper.GOO_CUBE;
+        RenderType rType = GooRenderHelper.GOO_CUBE_DULL;
+
+        // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
+        // otherwise it just looks dull by nature, which is what we want most of the time.
+        if (isBrightFluid(entity.goo.getFluid())) {
+            light = GooRenderHelper.FULL_BRIGHT;
+            rType = GooRenderHelper.GOO_CUBE_BRIGHT;
+        }
         IVertexBuilder buffer = bufferType.getBuffer(rType);
         TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo.getFluid().getAttributes().getStillTexture());
 
@@ -132,21 +134,13 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
         float f1 = MathHelper.interpolateAngle(partialTicks, entity.prevRotationPitch, entity.rotationPitch);
         this.applyRotations(stack, f, f1);
 
-        Vector3d position = entity.getPositionVec();
-        Vector3d motionStep = entity.getMotion().scale(partialTicks);
-        Vector3d smoothStep = new Vector3d(entity.prevPosX, entity.prevPosY, entity.prevPosZ).add(motionStep);
-
         float scale = entity.cubicSize();
 
         // Texture and noise gen should be stored so they aren't remade every frame...
         SimplexNoiseGenerator sgen = new SimplexNoiseGenerator(new Random(entity.getPosition().toLong()));
         Vector3f[][] wiggledQuads = scaleAndWiggle(UNSCALED_QUADS, sgen, entity.quiverTimer(), scale);
         Matrix4f matrix = stack.getLast().getMatrix();
-
-        if (isBrightFluid(entity.goo.getFluid())) {
-            light = GooRenderHelper.FULL_BRIGHT;
-        }
-        renderCube(matrix, buffer, wiggledQuads, GooRenderHelper.FULL_BRIGHT, sprite);
+        renderCube(matrix, buffer, wiggledQuads, light, sprite);
 
         stack.pop();
     }

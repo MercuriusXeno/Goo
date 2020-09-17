@@ -23,6 +23,9 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class GooChopEffects
 {
+    private static final int GEOMANCY_DRAIN = 16;
+    private static final int NORMAL_DRAIN = 9;
+
     private static void attack(LivingEntity attacker, LivingEntity target, float v, boolean isGeomancy)
     {
         if (isGeomancy) {
@@ -75,14 +78,14 @@ public class GooChopEffects
             return false;
         }
 
-        FluidStack goo = cap.getFluidInTank(0);
+        boolean isGeomancy = Gauntlet.geomancy(stack);
+
+        FluidStack goo = cap.drain(isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         if (goo.isEmpty()) {
             return false;
         }
 
-        cap.drain(2, IFluidHandler.FluidAction.EXECUTE);
-        
-        doGooEffect(goo, stack, attacker, (LivingEntity)target);
+        doGooEffect(goo, isGeomancy, attacker, (LivingEntity)target);
         return true;
     }
 
@@ -112,7 +115,7 @@ public class GooChopEffects
         }
     }
 
-    private static void doGooEffect(FluidStack goo, ItemStack gauntlet, LivingEntity attacker, LivingEntity target)
+    private static void doGooEffect(FluidStack goo, boolean isGeomancy, LivingEntity attacker, LivingEntity target)
     {
         tryGooParticles(goo, attacker, target);
 
@@ -132,8 +135,6 @@ public class GooChopEffects
 
         // all hits have some knockback
         knockback(attacker, target, 0.3f);
-
-        boolean isGeomancy = Gauntlet.geomancy(gauntlet);
 
         if (goo.getFluid().equals(Registry.AQUATIC_GOO.get())) {
             aquaChop(isGeomancy, attacker, target);

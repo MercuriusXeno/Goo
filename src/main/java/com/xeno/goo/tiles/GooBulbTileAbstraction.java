@@ -1,8 +1,7 @@
 package com.xeno.goo.tiles;
 
-import com.google.common.collect.Maps;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.render.FluidCuboidHelper;
+import com.xeno.goo.library.WeakConsumerWrapper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -12,7 +11,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
@@ -21,10 +19,10 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.common.util.NonNullConsumer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -33,8 +31,8 @@ import java.util.*;
 
 public class GooBulbTileAbstraction extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
-    private BulbFluidHandler fluidHandler = createHandler();
-    private LazyOptional<BulbFluidHandler> handler = LazyOptional.of(() -> fluidHandler);
+    private final BulbFluidHandler fluidHandler = createHandler();
+    private final LazyOptional<BulbFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
@@ -42,6 +40,12 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
     public GooBulbTileAbstraction(TileEntityType t) {
         super(t);
+    }
+
+    @Override
+    protected void invalidateCaps() {
+        super.invalidateCaps();
+        lazyHandler.invalidate();
     }
 
     public void enchantHolding(int holding) {
@@ -65,7 +69,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             return;
         }
 
-        boolean didStuff = doVerticalDrain() || doLateralShare();
+        boolean didStuff = tryVerticalDrain() || tryLateralShare();
 
         if (didStuff) {
             pruneEmptyGoo();
@@ -155,24 +159,23 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     // if placed above another bulb, the bulb above will drain everything downward.
-    private boolean doVerticalDrain() {
+    private boolean tryVerticalDrain() {
         if (this.goo.size() == 0) {
             return false;
         }
 
-        // check the tile below us, if it's not a bulb, bail.
-        TileEntity tile = FluidHandlerHelper.tileAtDirection(this, Direction.DOWN);
-        if (tile == null) {
-            return false;
-        }
+        // try fetching the bulb capabilities (below) and throw an exception if it fails. return if null.
+        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
 
-        // try fetching the bulb capabilities (upward) and throw an exception if it fails. return if null.
-        IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
+        final boolean[] verticalDrained = {false};
+        cap.ifPresent((c) -> {
+            verticalDrained[0] = doVerticalDrain(c);
+        });
+        return verticalDrained[0];
+    }
 
-        if (cap == null) {
-            return false;
-        }
-
+    private boolean doVerticalDrain(IFluidHandler c)
+    {
         // the maximum amount you can drain in a tick is here.
         int simulatedDrainLeft = transferRate();
 
@@ -186,7 +189,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             if (simulatedDrainLeft <= 0) {
                 break;
             }
-            int simulatedDrain = trySendingFluid(simulatedDrainLeft, s, cap, true);
+            int simulatedDrain = trySendingFluid(simulatedDrainLeft, s, c, true);
             if (simulatedDrain != simulatedDrainLeft) {
                 didStuff = true;
             }
@@ -202,53 +205,50 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     // bulbs adjacent to one another laterally "equalize" their contents to allow some hotswapping behaviors.
-    private boolean doLateralShare() {
+    private boolean tryLateralShare() {
         if (this.goo.size() == 0) {
             return false;
         }
-        boolean didStuff = false;
+        boolean[] didStuff = {false};
         for(Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST })
         {
-            // check the tile in this direction, if it's not another tile, pass;
-            TileEntity tile = FluidHandlerHelper.tileAtDirection(this, d);
-            if (tile == null) {
-                continue;
-            }
-
             // try fetching the bulb capabilities in the opposing direction and throw an exception if it fails. return if null.
-            IFluidHandler cap = FluidHandlerHelper.capability(tile, d.getOpposite());
+            LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(d);
 
-            if (cap == null) {
+            cap.ifPresent((c) -> didStuff[0] = doLateralShare(c));
+        }
+        return didStuff[0];
+    }
+
+    private boolean doLateralShare(IFluidHandler c)
+    {
+        boolean didStuff = false;
+        // the maximum amount you can drain in a tick is here.
+        int simulatedDrainLeft =  transferRate();
+
+        // iterate over the stacks and ensure
+        for(FluidStack s : goo) {
+            if (simulatedDrainLeft <= 0) {
+                break;
+            }
+            // only "distribute" to the bulb adjacent if it has less than this one of whatever type (equalizing)
+            // here there be dragons; simulate trying to remove an absurd amount of the fluid from the handler
+            // it will return how much it has, if any.
+            FluidStack stackInDestination = c.drain(new FluidStack(s.getFluid(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
+            int bulbContains = stackInDestination.getAmount();
+            int delta = s.getAmount() - bulbContains;
+            // don't send it anything to avoid passing back 1 mB repeatedly.
+            if (delta <= 1) {
                 continue;
             }
+            int splitDelta = (int)Math.floor(delta / 2d);
+            int amountToSend = Math.min(splitDelta, simulatedDrainLeft);
 
-            // the maximum amount you can drain in a tick is here.
-            int simulatedDrainLeft =  transferRate();
-
-            // iterate over the stacks and ensure
-            for(FluidStack s : goo) {
-                if (simulatedDrainLeft <= 0) {
-                    break;
-                }
-                // only "distribute" to the bulb adjacent if it has less than this one of whatever type (equalizing)
-                // here there be dragons; simulate trying to remove an absurd amount of the fluid from the handler
-                // it will return how much it has, if any.
-                FluidStack stackInDestination = cap.drain(new FluidStack(s.getFluid(), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
-                int bulbContains = stackInDestination.getAmount();
-                int delta = s.getAmount() - bulbContains;
-                // don't send it anything to avoid passing back 1 mB repeatedly.
-                if (delta <= 1) {
-                    continue;
-                }
-                int splitDelta = (int)Math.floor(delta / 2d);
-                int amountToSend = Math.min(splitDelta, simulatedDrainLeft);
-
-                int simulatedDrain = trySendingFluid(amountToSend, s, cap, false);
-                if (simulatedDrain != simulatedDrainLeft) {
-                    didStuff = true;
-                }
-                simulatedDrainLeft -= simulatedDrain;
+            int simulatedDrain = trySendingFluid(amountToSend, s, c, false);
+            if (simulatedDrain != simulatedDrainLeft) {
+                didStuff = true;
             }
+            simulatedDrainLeft -= simulatedDrain;
         }
         return didStuff;
     }
@@ -350,7 +350,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
         // tanks have omnidirectional gaskets so side is irrelevant.
         if (cap.equals(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)) {
-            return handler.cast();
+            return lazyHandler.cast();
         }
         return super.getCapability(cap, side);
     }

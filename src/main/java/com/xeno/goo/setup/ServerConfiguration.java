@@ -116,7 +116,7 @@ public class ServerConfiguration
         BASIN_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanted holding capacity of basins is multiplied by this, per level, default: " + defaultBasinHoldingMultiplier)
                 .defineInRange("basinHoldingMultiplier", defaultBasinHoldingMultiplier, 0, Integer.MAX_VALUE);
 
-        int defaultGauntletCapacity = 100;
+        int defaultGauntletCapacity = 250;
         GAUNTLET_CAPACITY = serverBuilder.comment("Max quantity of fluid held on a gauntlet, default: " + defaultGauntletCapacity)
                 .defineInRange("gauntletCapacity", defaultGauntletCapacity, 0, Integer.MAX_VALUE);
 

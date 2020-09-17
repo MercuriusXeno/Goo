@@ -25,10 +25,15 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
-public class Solidifier extends Block {
+import static net.minecraft.util.Direction.*;
+import static net.minecraft.util.Direction.UP;
+
+public class Solidifier extends BlockWithConnections {
     public Solidifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -68,6 +73,7 @@ public class Solidifier extends Block {
     }
 
     public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
         if (!worldIn.isRemote) {
             boolean flag = state.get(BlockStateProperties.POWERED);
             if (flag != worldIn.isBlockPowered(pos)) {
@@ -78,6 +84,29 @@ public class Solidifier extends Block {
                 }
             }
         }
+    }
+
+
+    public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    static {
+        for(Direction.Axis a : Direction.Axis.values()) {
+            switch (a) {
+                case Y:
+                    break;
+                case X:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, UP});
+                    break;
+                case Z:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, UP});
+                    break;
+            }
+        }
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS.get(state.get(BlockStateProperties.HORIZONTAL_FACING).getAxis());
     }
 
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {

@@ -6,26 +6,38 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
-import javax.annotation.Nonnull;
+import static net.minecraftforge.fluids.capability.CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY;
 
 public abstract class FluidHandlerHelper
 {
-    public static IFluidHandler capability(TileEntity tile, Direction dir)
+    public static LazyOptional<IFluidHandler> capabilityOfSelf(TileEntity t, Direction dir)
     {
-        if (tile == null) {
-            return null;
-        }
-        LazyOptional<IFluidHandler> lazyCap = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-        if (lazyCap.isPresent()) {
-            return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
-        }
+        return t.getCapability(FLUID_HANDLER_CAPABILITY, dir);
+    }
 
-        return null;
+    public static LazyOptional<IFluidHandler> capabilityOfNeighbor(TileEntity t, Direction dir)
+    {
+        // check the tile in this direction, if it's not another tile, pass;
+        TileEntity tile = FluidHandlerHelper.tileAtDirection(t, dir);
+        if (tile == null) {
+            return LazyOptional.empty();
+        }
+        // whatever the direction we fetched the neighbor in, the capability we're asking for is the inverse.
+        return tile.getCapability(FLUID_HANDLER_CAPABILITY, dir.getOpposite());
+    }
+
+    public static LazyOptional<IFluidHandler> capability(World world, BlockPos blockPos, Direction d)
+    {
+        // check the tile in this direction, if it's not another tile, pass;
+        TileEntity tile = FluidHandlerHelper.tileAt(world, blockPos);
+        if (tile == null) {
+            return LazyOptional.empty();
+        }
+        return tile.getCapability(FLUID_HANDLER_CAPABILITY, d);
     }
 
     public static IFluidHandlerItem capability(ItemStack stack)
@@ -39,7 +51,8 @@ public abstract class FluidHandlerHelper
         }
         LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         if (lazyCap.isPresent()) {
-            return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
+            // shut up linter, it's present.
+            return lazyCap.orElse(null);
         }
 
         return null;
@@ -56,6 +69,15 @@ public abstract class FluidHandlerHelper
             return null;
         }
         TileEntity t = world.getTileEntity(pos.offset(d));
+        return t;
+    }
+
+    private static TileEntity tileAt(World world, BlockPos pos)
+    {
+        if (world == null) {
+            return null;
+        }
+        TileEntity t = world.getTileEntity(pos);
         return t;
     }
 }

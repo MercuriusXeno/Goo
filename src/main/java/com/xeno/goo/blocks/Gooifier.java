@@ -3,7 +3,6 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.RedstoneLampBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.util.ITooltipFlag;
@@ -24,19 +23,22 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
+import static net.minecraft.util.Direction.*;
 
-public class Gooifier extends Block {
+public class Gooifier extends BlockWithConnections {
     public Gooifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
                 .hardnessAndResistance(4.0f));
         setDefaultState(this.getDefaultState()
                 .with(BlockStateProperties.POWERED, true)
-                .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .with(BlockStateProperties.HORIZONTAL_FACING, NORTH)
         );
     }
 
@@ -57,11 +59,11 @@ public class Gooifier extends Block {
             }
 
             Direction direction = stateIn.get(HORIZONTAL_FACING);
-            Direction.Axis axis = direction.getAxis();
+            Axis axis = direction.getAxis();
             double d4 = rand.nextDouble() * 0.6D - 0.3D;
-            double d5 = axis == Direction.Axis.X ? (double)direction.getXOffset() * 0.52D : d4;
+            double d5 = axis == Axis.X ? (double)direction.getXOffset() * 0.52D : d4;
             double d6 = rand.nextDouble() * 9.0D / 16.0D;
-            double d7 = axis == Direction.Axis.Z ? (double)direction.getZOffset() * 0.52D : d4;
+            double d7 = axis == Axis.Z ? (double)direction.getZOffset() * 0.52D : d4;
             worldIn.addParticle(ParticleTypes.SMOKE, d0 + d5, d1 + d6, d2 + d7, 0.0D, 0.0D, 0.0D);
         }
     }
@@ -88,7 +90,9 @@ public class Gooifier extends Block {
         builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED);
     }
 
+    @Override
     public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
         if (!worldIn.isRemote) {
             boolean flag = state.get(BlockStateProperties.POWERED);
             if (flag != worldIn.isBlockPowered(pos)) {
@@ -99,6 +103,28 @@ public class Gooifier extends Block {
                 }
             }
         }
+    }
+
+    public static final Map<Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    static {
+        for(Direction.Axis a : Direction.Axis.values()) {
+            switch (a) {
+                case Y:
+                    break;
+                case X:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, UP});
+                    break;
+                case Z:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, UP});
+                    break;
+            }
+        }
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS.get(state.get(HORIZONTAL_FACING).getAxis());
     }
 
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {

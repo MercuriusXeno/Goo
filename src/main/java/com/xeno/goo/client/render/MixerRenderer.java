@@ -3,18 +3,14 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.*;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -56,15 +52,15 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
     @Override
     public void render(MixerTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         // mixers have 2 tanks
-        IFluidHandler left = FluidHandlerHelper.capability(tile, tile.orientedLeft());
-        IFluidHandler right = FluidHandlerHelper.capability(tile, tile.orientedRight());
-        if (left == null || right == null) {
-            // this is real bad, abort
-            return;
-        }
-        render(tile.facing(), tile, left.getTankCapacity(0), right.getTankCapacity(0),
-                left.getFluidInTank(0), right.getFluidInTank(0),
-                matrixStack, buffer, combinedLightIn, combinedOverlayIn);
+        LazyOptional<IFluidHandler> left = FluidHandlerHelper.capabilityOfSelf(tile, tile.orientedLeft());
+        LazyOptional<IFluidHandler> right = FluidHandlerHelper.capabilityOfSelf(tile, tile.orientedRight());
+        // weird nesting but okay
+        left.ifPresent((l) ->
+                right.ifPresent((r) ->
+                render(tile.facing(), tile, l.getTankCapacity(0), r.getTankCapacity(0),
+                        l.getFluidInTank(0), r.getFluidInTank(0),
+                        matrixStack, buffer, combinedLightIn, combinedOverlayIn)
+        ));
     }
 
     private void render(Direction facing, MixerTile tile, int leftCap, int rightCap,

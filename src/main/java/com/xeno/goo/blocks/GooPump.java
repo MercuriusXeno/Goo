@@ -28,11 +28,16 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static net.minecraft.state.properties.BlockStateProperties.FACING;
+import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 import static net.minecraft.util.Direction.*;
 import static net.minecraft.util.Direction.DOWN;
 import static net.minecraft.util.Direction.UP;
 
-public class GooPump extends Block
+public class GooPump extends BlockWithConnections
 {
     VoxelShape[] shapes;
     public static final EnumProperty<PumpRenderMode> RENDER = EnumProperty.create("render", PumpRenderMode.class);
@@ -46,7 +51,7 @@ public class GooPump extends Block
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
     {
-        int index = getIndexFromState(state.get(BlockStateProperties.FACING));
+        int index = getIndexFromState(state.get(FACING));
         return  shapes[index];
     }
 
@@ -158,20 +163,20 @@ public class GooPump extends Block
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.FACING, context.getFace().getOpposite())
+                .with(FACING, context.getFace().getOpposite())
                 .with(RENDER, PumpRenderMode.STATIC);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.FACING, RENDER);
+        builder.add(FACING, RENDER);
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
-        if (state.get(BlockStateProperties.FACING).getAxis() == hit.getFace().getAxis()) {
+        if (state.get(FACING).getAxis() == hit.getFace().getAxis()) {
             return ActionResultType.PASS;
         }
         boolean isClient = false;
@@ -196,5 +201,18 @@ public class GooPump extends Block
             return ActionResultType.PASS;
         }
         return ActionResultType.SUCCESS;
+    }
+
+    public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    static {
+        for(Direction d : Direction.values()) {
+            RELEVANT_DIRECTIONS.put(d, new Direction[] { d, d.getOpposite()});
+        }
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS.get(state.get(FACING));
     }
 }

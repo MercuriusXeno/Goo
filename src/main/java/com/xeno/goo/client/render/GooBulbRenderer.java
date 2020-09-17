@@ -2,28 +2,15 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.blocks.GooBulbAbstraction;
-import com.xeno.goo.overlay.RayTraceTargetSource;
-import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.*;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -45,9 +32,9 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
 
     @Override
     public void render(GooBulbTileAbstraction tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
-        IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
-        render(tile.getPos(), cap.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
-                matrixStack, buffer, combinedLightIn);
+        LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
+        cap.ifPresent((c) -> render(tile.getPos(), c.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
+                matrixStack, buffer, combinedLightIn));
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.

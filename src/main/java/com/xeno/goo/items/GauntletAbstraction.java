@@ -186,10 +186,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         }
 
         boolean isGeomancy = Gauntlet.geomancy(playerIn.getHeldItem(handIn));
-
-        if (cap.getFluidInTank(0).getAmount() < (isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN)) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
-        }
+        // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
         FluidStack thrownStack = cap.drain((isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN), IFluidHandler.FluidAction.EXECUTE);
         worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, thrownStack));
 

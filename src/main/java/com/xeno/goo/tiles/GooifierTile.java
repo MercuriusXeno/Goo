@@ -21,13 +21,14 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.text.NumberFormat;
 import java.util.*;
 
-public class GooifierTile extends TileEntity implements ITickableTileEntity, ISidedInventory
+public class GooifierTile extends FluidHandlerInteractionAbstraction implements ITickableTileEntity, ISidedInventory
 {
     private Map<String, Double> fluidBuffer;
     private NonNullList<ItemStack> slots = NonNullList.withSize(5, ItemStack.EMPTY);
@@ -93,47 +94,61 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         return mapping;
     }
 
+    private class DistributionState {
+        boolean isFirstPass;
+        int workRemaining;
+        int workLastCycle;
+
+        private DistributionState (boolean isFirstPass, int workRemaining, int workLastCycle) {
+            this.isFirstPass = isFirstPass;
+            this.workRemaining = workRemaining;
+            this.workLastCycle = workLastCycle;
+        }
+
+        private void setNextPass() {
+            this.isFirstPass = false;
+        }
+
+        private void addWork(int work) {
+            workRemaining -= work;
+            workLastCycle += work;
+        }
+    }
     private void tryDistributingFluid()
     {
-        int maxPerTickPerGasket = GooMod.config.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
-            GooBulbTileAbstraction bulb = BulbFluidHandler.getBulbInDirection(this, d);
-            if (bulb == null) {
-                continue;
-            }
-            if (!bulb.hasSpace()) {
-                continue;
-            }
+            DistributionState[] state = {new DistributionState(true, GooMod.config.gooProcessingRate(), 0)};
+            LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(d);
+            cap.ifPresent((c) -> state[0] = doDistribution(c, state[0]));
+        }
+    }
 
-            int workRemaining = maxPerTickPerGasket;
-            int workLastCycle = 0;
-            boolean isFirstPass = true;
-            IFluidHandler cap = FluidHandlerHelper.capability(bulb, d.getOpposite());
-            while(workRemaining > 0 && (workLastCycle > 0 || isFirstPass)) {
-                isFirstPass = false;
-                workLastCycle = 0;
-                for (Map.Entry<String, Double> fluidInBuffer : fluidBuffer.entrySet()) {
-                    if (fluidInBuffer.getValue() < 1f) {
-                        continue;
-                    }
-
-                    Fluid f = Registry.getFluid(fluidInBuffer.getKey());
-                    if (f == null) {
-                        continue;
-                    }
-                    FluidStack s = new FluidStack(f, Math.min(workRemaining, (int) Math.floor(fluidInBuffer.getValue())));
-                    int fillResult = cap.fill(s, IFluidHandler.FluidAction.SIMULATE);
-                    if (fillResult > 0) {
-                        fillResult = cap.fill(s, IFluidHandler.FluidAction.EXECUTE);
-                    } else {
-                        continue;
-                    }
-                    workRemaining -= fillResult;
-                    workLastCycle += fillResult;
-                    fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
+    private DistributionState doDistribution(IFluidHandler cap, DistributionState state)
+    {
+        while(state.workRemaining > 0 && (state.workLastCycle > 0 || state.isFirstPass)) {
+            state.setNextPass();
+            state.workLastCycle = 0;
+            for (Map.Entry<String, Double> fluidInBuffer : fluidBuffer.entrySet()) {
+                if (fluidInBuffer.getValue() < 1f) {
+                    continue;
                 }
+
+                Fluid f = Registry.getFluid(fluidInBuffer.getKey());
+                if (f == null) {
+                    continue;
+                }
+                FluidStack s = new FluidStack(f, Math.min(state.workRemaining, (int) Math.floor(fluidInBuffer.getValue())));
+                int fillResult = cap.fill(s, IFluidHandler.FluidAction.SIMULATE);
+                if (fillResult > 0) {
+                    fillResult = cap.fill(s, IFluidHandler.FluidAction.EXECUTE);
+                } else {
+                    continue;
+                }
+                state.addWork(fillResult);
+                fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
             }
         }
+        return state;
     }
 
     private final Direction[] VALID_GASKET_DIRECTIONS = new Direction[] { Direction.EAST, Direction.WEST, Direction.UP };

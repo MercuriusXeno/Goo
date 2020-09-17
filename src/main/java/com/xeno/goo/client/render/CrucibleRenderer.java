@@ -3,26 +3,19 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-
-import java.util.List;
 
 public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
@@ -41,12 +34,9 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
 
     @Override
     public void render(CrucibleTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
-        IFluidHandler cap = FluidHandlerHelper.capability(tile, Direction.UP);
-        if (cap == null) {
-            return;
-        }
-        render(cap.getTankCapacity(0), tile.onlyGoo().getAmount(), tile.onlyGoo(), tile.getPos(),
-                matrixStack, buffer, combinedLightIn);
+        LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
+        cap.ifPresent((c) -> render(c.getTankCapacity(0), tile.onlyGoo().getAmount(), tile.onlyGoo(), tile.getPos(),
+                matrixStack, buffer, combinedLightIn));
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.

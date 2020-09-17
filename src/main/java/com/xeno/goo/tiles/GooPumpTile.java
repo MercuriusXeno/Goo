@@ -4,7 +4,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.EntryHelper;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
-import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.network.ChangeItemTargetPacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -22,6 +21,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -179,12 +179,14 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             return;
         }
 
-        IFluidHandler sourceHandler = FluidHandlerHelper.capability(source, sourceDirection().getOpposite());
-        IFluidHandler targetHandler = FluidHandlerHelper.capability(target, targetDirection().getOpposite());
+        LazyOptional<IFluidHandler> sourceHandler = FluidHandlerHelper.capabilityOfNeighbor(this, sourceDirection());
+        LazyOptional<IFluidHandler> targetHandler = FluidHandlerHelper.capabilityOfNeighbor(this, targetDirection());
 
-        if (sourceHandler == null || targetHandler == null) {
-            return;
-        }
+        sourceHandler.ifPresent((s) -> targetHandler.ifPresent((t) -> pushFluid(s, t)));
+    }
+
+    private void pushFluid(IFluidHandler sourceHandler, IFluidHandler targetHandler)
+    {
         int maxDrain = getMaxDrain();
         FluidStack simulatedDrain = FluidStack.EMPTY;
         // iterate over all tanks and try a simulated drain until something sticks.

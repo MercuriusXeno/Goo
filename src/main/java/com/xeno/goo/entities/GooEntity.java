@@ -2,10 +2,7 @@ package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTile;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -16,11 +13,11 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
@@ -310,17 +307,18 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         readAdditional(tag);
     }
 
-    public void tryEnteringTank(BlockPos blockPos)
+    public void tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)
     {
         if (world.isRemote()) {
             return;
         }
-        TileEntity tile = world.getTileEntity(blockPos);
-        if (!(tile instanceof GooBulbTile)) {
-            return;
-        }
 
-        IFluidHandler fh = FluidHandlerHelper.capability(tile, Direction.UP);
+        LazyOptional<IFluidHandler> fh = FluidHandlerHelper.capability(this.world, blockPos, sideHit);
+        fh.ifPresent(this::enterTank);
+    }
+
+    private void enterTank(IFluidHandler fh)
+    {
         int attemptTransfer = fh.fill(goo, IFluidHandler.FluidAction.SIMULATE);
         if (attemptTransfer >= goo.getAmount()) {
             fh.fill(goo, IFluidHandler.FluidAction.EXECUTE);
@@ -412,16 +410,12 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     }
 
     protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
-        BlockState blockstate = this.world.getBlockState(rayTraceResult.getPos());
-        doChangeBlockState(blockstate, rayTraceResult.getPos(), this.getPositionUnderneath());
+        doChangeBlockState(rayTraceResult.getPos(), rayTraceResult.getFace());
         return Vector3d.ZERO;
     }
 
-    protected void doChangeBlockState(BlockState blockstate, BlockPos blockPos, BlockPos positionUnderneath) {
-        TileEntity te = world.getTileEntity(blockPos);
-        if (te instanceof GooBulbTileAbstraction) {
-            tryEnteringTank(blockPos);
-        }
+    protected void doChangeBlockState(BlockPos blockPos, Direction sideHit) {
+        tryFluidHandlerInteraction(blockPos, sideHit);
     }
 
     public float cubicSize()

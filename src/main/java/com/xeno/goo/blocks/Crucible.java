@@ -29,7 +29,7 @@ import java.util.Random;
 
 import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 
-public class Crucible extends Block {
+public class Crucible extends BlockWithConnections {
     public Crucible() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -92,7 +92,9 @@ public class Crucible extends Block {
         builder.add(BlockStateProperties.POWERED);
     }
 
+    @Override
     public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
         if (!worldIn.isRemote) {
             boolean flag = state.get(BlockStateProperties.POWERED);
             if (flag != worldIn.isBlockPowered(pos)) {
@@ -103,6 +105,13 @@ public class Crucible extends Block {
                 }
             }
         }
+    }
+
+    private static final Direction[] RELEVANT_DIRECTIONS = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN};
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS;
     }
 
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
