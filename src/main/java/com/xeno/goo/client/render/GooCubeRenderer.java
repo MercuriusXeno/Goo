@@ -7,6 +7,7 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -119,13 +120,14 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
     public void render(GooEntity entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
-        RenderType rType = GooRenderHelper.GOO_CUBE_DULL;
+        RenderType rType = GooRenderHelper.GOO_CUBE_BRIGHT;
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
         // otherwise it just looks dull by nature, which is what we want most of the time.
         if (isBrightFluid(entity.goo.getFluid())) {
             light = GooRenderHelper.FULL_BRIGHT;
-            rType = GooRenderHelper.GOO_CUBE_BRIGHT;
+        } else {
+            light = WorldRenderer.getCombinedLight(entity.getEntityWorld(), entity.getPosition());
         }
         IVertexBuilder buffer = bufferType.getBuffer(rType);
         TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo.getFluid().getAttributes().getStillTexture());
@@ -174,13 +176,17 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
 
     private void renderQuad(Vector3f[] v, Matrix4f matrix, IVertexBuilder buffer, int light, TextureAtlasSprite sprite)
     {
+        Vector3f[] ns = {v[0].copy(), v[1].copy(), v[2].copy(), v[3].copy()};
+        for(Vector3f n : ns) {
+            n.normalize();
+        }
         buffer.getVertexBuilder()
                 .pos(matrix, v[0].getX(), v[0].getY(), v[0].getZ())
                 .color(1f, 1f, 1f, 0.8f)
                 .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
-                .normal(v[0].getX(), v[0].getY(), v[0].getZ())
+                .normal(ns[0].getX(), ns[0].getY(), ns[0].getZ())
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[1].getX(), v[1].getY(), v[1].getZ())
@@ -188,7 +194,7 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
                 .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
-                .normal(v[1].getX(), v[1].getY(), v[1].getZ())
+                .normal(ns[1].getX(), ns[1].getY(), ns[1].getZ())
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[2].getX(), v[2].getY(), v[2].getZ())
@@ -196,7 +202,7 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
                 .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
-                .normal(v[2].getX(), v[2].getY(), v[2].getZ())
+                .normal(ns[2].getX(), ns[2].getY(), ns[2].getZ())
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[3].getX(), v[3].getY(), v[3].getZ())
@@ -204,7 +210,7 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
                 .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
-                .normal(v[3].getX(), v[3].getY(), v[3].getZ())
+                .normal(ns[3].getX(), ns[3].getY(), ns[3].getZ())
                 .endVertex();
     }
 

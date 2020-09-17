@@ -20,7 +20,6 @@ public class GooRenderHelper extends RenderState
 
     public static final RenderType GOO_OVERLAY;
     public static final RenderType GOO_CUBE_BRIGHT;
-    public static final RenderType GOO_CUBE_DULL;
     public static final int FULL_BRIGHT = 15728880;
 
     static {
@@ -50,20 +49,10 @@ public class GooRenderHelper extends RenderState
                 .diffuseLighting(disableDiffuse)
                 .cull(disableCull)
                 .overlay(enableOverlay)
-                .shadeModel(smoothShade)
-                .build(true);
-        RenderType.State dullCubeState = RenderType.State.getBuilder()
-                .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
-                .transparency(TRANSLUCENT_TRANSPARENCY)
-//                .writeMask(colorMask)
-                .diffuseLighting(enableDiffuse)
-                .cull(disableCull)
-                .overlay(enableOverlay)
                 .shadeModel(notSmoothShade)
                 .build(true);
         GOO = RenderType.makeType(GooMod.MOD_ID + ":goo", DefaultVertexFormats.ENTITY, GL11.GL_TRIANGLES, 128, true, false, sphereGlState);
         GOO_CUBE_BRIGHT = RenderType.makeType(GooMod.MOD_ID + ":goo_cube_bright", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, brightCubeState);
-        GOO_CUBE_DULL = RenderType.makeType(GooMod.MOD_ID + ":goo_cube_dull", DefaultVertexFormats.ENTITY, GL11.GL_QUADS, 128, true, true, dullCubeState);
 
         // GOO BLOCK
         /** Render type used for rendering fluids */

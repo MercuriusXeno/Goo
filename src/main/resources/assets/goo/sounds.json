@@ -1,0 +1,38 @@
+{
+  "goo_chop_sound": {
+    "subtitle": "sound_event.goo.goo_chop_sound",
+    "sounds": [
+      "minecraft:mob/slime/small1",
+      "minecraft:mob/slime/small2",
+      "minecraft:mob/slime/small3",
+      "minecraft:mob/slime/small4",
+      "minecraft:mob/slime/small5"
+    ]
+  },
+  "goo_splat_sound": {
+    "subtitle": "sound_event.goo.goo_splat_sound",
+    "sounds": [
+      "minecraft:mob/slime/small1",
+      "minecraft:mob/slime/small2",
+      "minecraft:mob/slime/small3",
+      "minecraft:mob/slime/small4",
+      "minecraft:mob/slime/small5"
+    ]
+  },
+  "goo_deposit_sound": {
+    "subtitle": "sound_event.goo.goo_deposit_sound",
+    "sounds": [
+      "minecraft:item/bucket/empty_lava1",
+      "minecraft:item/bucket/empty_lava2",
+      "minecraft:item/bucket/empty_lava3"
+    ]
+  },
+  "goo_withdraw_sound": {
+    "subtitle": "sound_event.goo.goo_withdraw_sound",
+    "sounds": [
+      "minecraft:item/bucket/fill_lava1",
+      "minecraft:item/bucket/fill_lava2",
+      "minecraft:item/bucket/fill_lava3"
+    ]
+  }
+}

@@ -156,15 +156,7 @@ public class GooParticle extends SpriteTexturedParticle
     }
 
     public int getBrightnessForRender(float partialTick) {
-        if (isBrightFluid(this.fluid)) {
-            return GooRenderHelper.FULL_BRIGHT;
-        }
-        return this.brightnessThingy ? 240 : super.getBrightnessForRender(partialTick);
-    }
-
-    private boolean isBrightFluid(Fluid fluid)
-    {
-        return fluid.equals(Registry.MOLTEN_GOO.get()) || fluid.equals(Registry.ENERGETIC_GOO.get());
+        return GooRenderHelper.FULL_BRIGHT;
     }
 
     public void tick() {

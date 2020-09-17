@@ -125,11 +125,11 @@ public class GooSplatEffects
 
         if (sender instanceof PlayerEntity) {
             sender.getEntityWorld().playSound((PlayerEntity)sender,
-                    pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ENTITY_SLIME_SQUISH,
+                    pos.getX(), pos.getY(), pos.getZ(), Registry.GOO_SPLAT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, sender.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f);
         } else {
             sender.getEntityWorld().playSound(pos.getX(), pos.getY(), pos.getZ(),
-                    SoundEvents.ENTITY_SLIME_SQUISH_SMALL, SoundCategory.PLAYERS, 1.0f,
+                    Registry.GOO_SPLAT_SOUND.get(), SoundCategory.PLAYERS, 1.0f,
                     sender.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
         }
 

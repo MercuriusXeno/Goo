@@ -121,11 +121,11 @@ public class GooChopEffects
 
         if (attacker instanceof PlayerEntity) {
             attacker.getEntityWorld().playSound((PlayerEntity)attacker,
-                    target.getPosX(), target.getPosY(), target.getPosZ(), SoundEvents.ENTITY_SLIME_SQUISH,
+                    target.getPosX(), target.getPosY(), target.getPosZ(), Registry.GOO_CHOP_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f);
         } else {
             attacker.getEntityWorld().playSound(target.getPosX(), target.getPosY(), target.getPosZ(),
-                    SoundEvents.ENTITY_SLIME_SQUISH_SMALL, SoundCategory.PLAYERS, 1.0f,
+                    Registry.GOO_CHOP_SOUND.get(), SoundCategory.PLAYERS, 1.0f,
                     attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
         }
 

@@ -103,10 +103,10 @@ public class GauntletAbstraction extends ItemFluidContainer
             tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -131,10 +131,10 @@ public class GauntletAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -160,10 +160,10 @@ public class GauntletAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
