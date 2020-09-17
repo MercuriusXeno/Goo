@@ -399,9 +399,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
     // moved this from renderer to here so that both can utilize the same
     // offset logic (and also renderer is client code, not the same in reverse)
-    public static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+    public static final float FLUID_VERTICAL_OFFSET = 0.0005f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     public static final float FLUID_VERTICAL_MAX = 0.0005f;
-    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
+    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.02f;
     @Override
     public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side, RayTraceTargetSource targetSource)
     {
