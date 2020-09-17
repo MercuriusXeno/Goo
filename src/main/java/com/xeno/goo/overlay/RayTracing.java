@@ -1,6 +1,7 @@
 package com.xeno.goo.overlay;
 import com.google.common.collect.Lists;
 import com.xeno.goo.tiles.GooBulbTile;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -45,5 +46,19 @@ public class RayTracing {
         RayTraceContext.FluidMode fluidView = RayTraceContext.FluidMode.ANY;
         RayTraceContext context = new RayTraceContext(eyePosition, traceEnd, RayTraceContext.BlockMode.OUTLINE, fluidView, entity);
         return entity.getEntityWorld().rayTraceBlocks(context);
+    }
+
+    public BlockRayTraceResult target()
+    {
+        if (this.target instanceof BlockRayTraceResult) {
+            return (BlockRayTraceResult)this.target;
+        }
+
+        return null;
+    }
+
+    public boolean hasTarget()
+    {
+        return this.target != null;
     }
 }

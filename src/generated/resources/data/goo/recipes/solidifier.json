@@ -1,14 +1,16 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "goo",
   "pattern": [
-    "ror",
-    "pxp",
+    "ro ",
+    "nxp",
     "o#o"
   ],
   "key": {
     "r": {
       "item": "minecraft:redstone_lamp"
+    },
+    "n": {
+      "item": "minecraft:nether_bricks"
     },
     "o": {
       "item": "goo:gasket"

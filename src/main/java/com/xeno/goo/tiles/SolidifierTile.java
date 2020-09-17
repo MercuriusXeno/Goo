@@ -12,7 +12,6 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -29,8 +28,11 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 import java.text.NumberFormat;
 import java.util.*;
@@ -79,6 +81,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
         
         if (world.isRemote()) {
+            return;
+        }
+
+        if (getBlockState().get(BlockStateProperties.POWERED)) {
             return;
         }
 
@@ -160,35 +166,20 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         if (tile == null) {
             return stack;
         }
-        if (!(tile instanceof IInventory)) {
+        LazyOptional<IItemHandler> lazy = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, this.getHorizontalFacing().getOpposite());
+        if (!lazy.isPresent()) {
             return stack;
         }
-        if (stack.isEmpty()) {
-            return stack;
-        }
+        IItemHandler cap = lazy.orElseThrow(() -> new RuntimeException("Handler missing, this shouldn't have happened."));
 
-        IInventory inventory = ((IInventory)tile);
-        int count = inventory.getSizeInventory();
-        for (int i = 0; i < count; i++) {
-            if (stack.getCount() < 1) {
-                return EMPTY;
-            }
-            if (inventory.isItemValidForSlot(i, stack)) {
-                ItemStack original = inventory.getStackInSlot(i);
-                if (original.isEmpty()) {
-                    inventory.setInventorySlotContents(i, stack);
-                } else {
-                    if (original.isItemEqual(stack)) {
-                        int maxStack = original.getMaxStackSize();
-                        int maxIncrease = Math.min(stack.getCount(), maxStack - original.getCount());
-                        original.setCount(original.getCount() + maxIncrease);
-                        stack.setCount(stack.getCount() - maxIncrease);
-                        inventory.setInventorySlotContents(i, original);
-                    }
-                }
+        int slots = cap.getSlots();
+        for (int i = 0; i < slots; i++) {
+            ItemStack simulated = cap.insertItem(i, stack, true);
+            if (!simulated.equals(stack, false)) {
+                stack = cap.insertItem(i, stack, false);
             }
         }
-        return EMPTY;
+        return stack;
     }
 
     private ItemStack spitStack(World world, ItemStack stack)
@@ -247,19 +238,15 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return;
         }
         for(Direction d : getValidDirections()) {
-            TileEntity t = world.getTileEntity(pos.offset(d));
-            if (t == null) {
-                continue;
-            }
-            if (!(t instanceof GooBulbTile)) {
-                continue;
-            }
-            int workLeftThisGasket = GooMod.config.gooProcessingRate();
-            GooBulbTile b = (GooBulbTile)t;
-            IFluidHandler cap = BulbFluidHandler.bulbCapability(b, d);
-            for(GooValue v : mapping.values()) {
-                workLeftThisGasket = tryDrainingFluid(workLeftThisGasket, cap, v);
-            }
+            int[] workLeftThisGasket = {GooMod.config.gooProcessingRate()};
+            LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfNeighbor(this, d);
+            cap.ifPresent((c) ->
+                    {
+                        for (GooValue v : mapping.values()) {
+                            workLeftThisGasket[0] = tryDrainingFluid(workLeftThisGasket[0], c, v);
+                        }
+                    }
+            );
         }
     }
 

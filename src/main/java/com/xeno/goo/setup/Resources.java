@@ -28,6 +28,7 @@ public class Resources
         public static final ResourceLocation SNOW_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/snow_still");
         public static final ResourceLocation VITAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/vital_still");
         public static final ResourceLocation WEIRD_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/weird_still");
+        public static final ResourceLocation OVERLAY = new ResourceLocation(GooMod.MOD_ID, "block/fluid/overlay_still");
     }
 
     public static class Flowing {
@@ -50,6 +51,7 @@ public class Resources
         public static final ResourceLocation SNOW_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/snow_flow");
         public static final ResourceLocation VITAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/vital_flow");
         public static final ResourceLocation WEIRD_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/weird_flow");
+        public static final ResourceLocation OVERLAY = new ResourceLocation(GooMod.MOD_ID, "block/fluid/overlay_flow");
     }
 
     public static class Icon

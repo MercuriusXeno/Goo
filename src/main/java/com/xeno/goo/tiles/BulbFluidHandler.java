@@ -3,16 +3,21 @@ package com.xeno.goo.tiles;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraftforge.common.util.LazyOptional;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-public class BulbFluidHandler implements IFluidHandler {
-    private final GooBulbTile parent;
-    public BulbFluidHandler(GooBulbTile t) {
+public class BulbFluidHandler implements IFluidHandler
+{
+    private final GooBulbTileAbstraction parent;
+    public BulbFluidHandler(GooBulbTileAbstraction t) {
         parent = t;
+    }
+
+    public void sendVerticalFillSignalForVisuals(Fluid f, float i) {
+        parent.toggleVerticalFillVisuals(f, i);
     }
 
     public void sendVerticalFillSignalForVisuals(Fluid f) {
@@ -21,17 +26,33 @@ public class BulbFluidHandler implements IFluidHandler {
 
     @Override
     public int getTanks() {
-        return 1;
+        return Math.max(1, parent.goo().size());
     }
 
     @Override
     public FluidStack getFluidInTank(int tank) {
-        return tank == 0 ? parent.getLeastQuantityGoo() : FluidStack.EMPTY;
+        return parent.goo().size() <= tank ? FluidStack.EMPTY : parent.goo().get(tank);
     }
 
     @Override
     public int getTankCapacity(int tank) {
-        return tank == 0 ? GooMod.config.bulbCapacity() : 0;
+        return GooMod.config.bulbCapacity() * parent.storageMultiplier();
+    }
+
+    public static GooBulbTileAbstraction getBulbInDirection(TileEntity tile, Direction d)
+    {
+        if (tile.getWorld() == null) {
+            return null;
+        }
+        BlockPos posInDirection = tile.getPos().offset(d);
+        TileEntity result = tile.getWorld().getTileEntity(posInDirection);
+        if (result == null) {
+            return null;
+        }
+        if (!(result instanceof GooBulbTileAbstraction)) {
+            return null;
+        }
+        return (GooBulbTileAbstraction)result;
     }
 
     @Override
@@ -78,12 +99,5 @@ public class BulbFluidHandler implements IFluidHandler {
         }
 
         return result;
-    }
-
-    public static IFluidHandler bulbCapability(GooBulbTile bulb, Direction dir)
-    {
-        LazyOptional<IFluidHandler> lazyCap = bulb.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, dir);
-
-        return lazyCap.orElseThrow(() -> new RuntimeException("Tried to get a fluid capability that wasn't there, oh no."));
     }
 }

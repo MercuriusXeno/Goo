@@ -18,23 +18,21 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.text.NumberFormat;
 import java.util.*;
 
-public class GooifierTile extends TileEntity implements ITickableTileEntity, ISidedInventory
+public class GooifierTile extends FluidHandlerInteractionAbstraction implements ITickableTileEntity, ISidedInventory
 {
     private Map<String, Double> fluidBuffer;
     private NonNullList<ItemStack> slots = NonNullList.withSize(5, ItemStack.EMPTY);
     private boolean isDoingStuff;
-    private int hasNotDoneStuff = 0;
     public GooifierTile() {
         super(Registry.GOOIFIER_TILE.get());
         fluidBuffer = new TreeMap<>();
@@ -51,11 +49,13 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
             return;
         }
 
+        if (getBlockState().get(BlockStateProperties.POWERED)) {
+            return;
+        }
+
         // buffered output means we have work left from our last item destruction where a fluidstack can be generated (>= 1f of any fluid)
         if (hasBufferedOutput()) {
-            if (tryDistributingFluid()) {
-                markDirty();
-            }
+            tryDistributingFluid();
         }
 
         // to make production seamless, return only if we are still pumping out goo. If we ran out of work, resume melting items.
@@ -70,24 +70,8 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
                 }
                 bufferOutput(mapping);
                 s.setCount(s.getCount() - 1);
-                markDirty();
                 break;
             }
-        }
-
-        // latency on when the block goes to a powered off state is to avoid jitter caused by
-        // natural hopper timing.
-        if (!hasBufferedOutput()) {
-            if (hasNotDoneStuff < 10)
-                hasNotDoneStuff++;
-            if (hasNotDoneStuff >= 10) {
-                isDoingStuff = false;
-                updateBlockState();
-            }
-        } else {
-            updateBlockState();
-            isDoingStuff = true;
-            hasNotDoneStuff = 0;
         }
     }
 
@@ -110,78 +94,61 @@ public class GooifierTile extends TileEntity implements ITickableTileEntity, ISi
         return mapping;
     }
 
-    private void updateBlockState()
-    {
-        if (world == null) {
-            return;
+    private class DistributionState {
+        boolean isFirstPass;
+        int workRemaining;
+        int workLastCycle;
+
+        private DistributionState (boolean isFirstPass, int workRemaining, int workLastCycle) {
+            this.isFirstPass = isFirstPass;
+            this.workRemaining = workRemaining;
+            this.workLastCycle = workLastCycle;
         }
 
-        BlockState state = world.getBlockState(pos);
-        if (state.get(BlockStateProperties.POWERED) != isDoingStuff) {
-            world.setBlockState(pos, state.with(BlockStateProperties.POWERED, isDoingStuff), Constants.BlockFlags.NOTIFY_NEIGHBORS + Constants.BlockFlags.BLOCK_UPDATE);
+        private void setNextPass() {
+            this.isFirstPass = false;
+        }
+
+        private void addWork(int work) {
+            workRemaining -= work;
+            workLastCycle += work;
         }
     }
-
-    private boolean tryDistributingFluid()
+    private void tryDistributingFluid()
     {
-        boolean isAnyWorkDone = false;
-        int maxPerTickPerGasket = GooMod.config.gooProcessingRate();
         for(Direction d : getValidGasketDirections()) {
-            GooBulbTile bulb = getBulbInDirection(d);
-            if (bulb == null) {
-                continue;
-            }
-            if (!bulb.hasSpace()) {
-                continue;
-            }
-
-            int workRemaining = maxPerTickPerGasket;
-            int workLastCycle = 0;
-            boolean isFirstPass = true;
-            IFluidHandler cap = BulbFluidHandler.bulbCapability(bulb, d.getOpposite());
-            while(workRemaining > 0 && (workLastCycle > 0 || isFirstPass)) {
-                isFirstPass = false;
-                workLastCycle = 0;
-                for (Map.Entry<String, Double> fluidInBuffer : fluidBuffer.entrySet()) {
-                    if (fluidInBuffer.getValue() < 1f) {
-                        continue;
-                    }
-
-                    Fluid f = Registry.getFluid(fluidInBuffer.getKey());
-                    if (f == null) {
-                        continue;
-                    }
-                    FluidStack s = new FluidStack(f, Math.min(workRemaining, (int) Math.floor(fluidInBuffer.getValue())));
-                    int fillResult = cap.fill(s, IFluidHandler.FluidAction.SIMULATE);
-                    if (fillResult > 0) {
-                        fillResult = cap.fill(s, IFluidHandler.FluidAction.EXECUTE);
-                    } else {
-                        continue;
-                    }
-                    isAnyWorkDone = true;
-                    workRemaining -= fillResult;
-                    workLastCycle += fillResult;
-                    fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
-                }
-            }
+            DistributionState[] state = {new DistributionState(true, GooMod.config.gooProcessingRate(), 0)};
+            LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(d);
+            cap.ifPresent((c) -> state[0] = doDistribution(c, state[0]));
         }
-
-        return isAnyWorkDone;
     }
 
-    private GooBulbTile getBulbInDirection(Direction dir) {
-        if (world == null) {
-            return null;
+    private DistributionState doDistribution(IFluidHandler cap, DistributionState state)
+    {
+        while(state.workRemaining > 0 && (state.workLastCycle > 0 || state.isFirstPass)) {
+            state.setNextPass();
+            state.workLastCycle = 0;
+            for (Map.Entry<String, Double> fluidInBuffer : fluidBuffer.entrySet()) {
+                if (fluidInBuffer.getValue() < 1f) {
+                    continue;
+                }
+
+                Fluid f = Registry.getFluid(fluidInBuffer.getKey());
+                if (f == null) {
+                    continue;
+                }
+                FluidStack s = new FluidStack(f, Math.min(state.workRemaining, (int) Math.floor(fluidInBuffer.getValue())));
+                int fillResult = cap.fill(s, IFluidHandler.FluidAction.SIMULATE);
+                if (fillResult > 0) {
+                    fillResult = cap.fill(s, IFluidHandler.FluidAction.EXECUTE);
+                } else {
+                    continue;
+                }
+                state.addWork(fillResult);
+                fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
+            }
         }
-        BlockPos posInDirection = this.pos.offset(dir);
-        TileEntity tile = world.getTileEntity(posInDirection);
-        if (tile == null) {
-            return null;
-        }
-        if (!(tile instanceof GooBulbTile)) {
-            return null;
-        }
-        return (GooBulbTile)tile;
+        return state;
     }
 
     private final Direction[] VALID_GASKET_DIRECTIONS = new Direction[] { Direction.EAST, Direction.WEST, Direction.UP };

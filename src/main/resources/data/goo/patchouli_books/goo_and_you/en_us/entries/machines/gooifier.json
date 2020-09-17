@@ -9,6 +9,7 @@
     },
     {
       "type": "multiblock",
+      "text": "patchouli.goo.gooifier.power",
       "enable_visualize": false,
       "multiblock": {
         "mapping": {
@@ -22,6 +23,10 @@
           ["H0"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:gooifier"
     }
   ]
 }

@@ -16,27 +16,40 @@ import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
-import java.util.List;
+import net.minecraft.world.server.ServerWorld;
 
-public class Solidifier extends Block {
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import static net.minecraft.util.Direction.*;
+import static net.minecraft.util.Direction.UP;
+
+public class Solidifier extends BlockWithConnections {
     public Solidifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
                 .setOpaque(((p_test_1_, p_test_2_, p_test_3_) -> false))
                 .hardnessAndResistance(4.0f)
                 .notSolid());
+        setDefaultState(this.getDefaultState()
+                .with(BlockStateProperties.POWERED, true)
+                .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+        );
     }
 
     @Override
     public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
     {
-        return state.get(BlockStateProperties.POWERED) ? 15 : 0;
+        return !state.get(BlockStateProperties.POWERED) ? 15 : 0;
     }
 
     @Override
@@ -59,10 +72,53 @@ public class Solidifier extends Block {
         return new SolidifierTile();
     }
 
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
+        if (!worldIn.isRemote) {
+            boolean flag = state.get(BlockStateProperties.POWERED);
+            if (flag != worldIn.isBlockPowered(pos)) {
+                if (flag) {
+                    worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
+                } else {
+                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                }
+            }
+        }
+    }
+
+
+    public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    static {
+        for(Direction.Axis a : Direction.Axis.values()) {
+            switch (a) {
+                case Y:
+                    break;
+                case X:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, UP});
+                    break;
+                case Z:
+                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, UP});
+                    break;
+            }
+        }
+    }
+
+    @Override
+    protected Direction[] relevantConnectionDirections(BlockState state)
+    {
+        return RELEVANT_DIRECTIONS.get(state.get(BlockStateProperties.HORIZONTAL_FACING).getAxis());
+    }
+
+    public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
+        if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
+            worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+        }
+    }
+
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
                 .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
     }
 

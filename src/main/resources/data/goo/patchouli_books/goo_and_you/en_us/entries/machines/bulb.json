@@ -9,6 +9,7 @@
     },
     {
       "type": "multiblock",
+      "text": "patchouli.goo.goo_bulb.upgrades",
       "enable_visualize": false,
       "multiblock": {
         "mapping": {
@@ -20,6 +21,10 @@
           ["B0"]
         ]
       }
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:goo_bulb"
     }
   ]
 }

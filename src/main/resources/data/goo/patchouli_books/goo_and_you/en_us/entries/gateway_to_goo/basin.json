@@ -1,0 +1,16 @@
+{
+  "name": "item.goo.basin",
+  "icon": "goo:basin",
+  "category": "goo:gateway_to_goo",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.basin.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:basin",
+      "text": "patchouli.goo.basin.summary"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "goo:block/crucible_side",
+    "crucible_top": "goo:block/crucible_top",
+    "crucible_bottom": "goo:block/crucible_bottom",
+    "crucible_side_lit": "goo:block/crucible_side_lit"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#crucible_bottom"
+        },
+        "up": {
+          "texture": "#crucible_top"
+        },
+        "north": {
+          "texture": "#crucible_side_lit"
+        },
+        "south": {
+          "texture": "#crucible_side_lit"
+        },
+        "west": {
+          "texture": "#crucible_side_lit"
+        },
+        "east": {
+          "texture": "#crucible_side_lit"
+        }
+      }
+    },
+    {
+      "from": [
+        15.99,
+        15.99,
+        15.99
+      ],
+      "to": [
+        0.01,
+        0.01,
+        0.01
+      ],
+      "faces": {
+        "down": {
+          "texture": "#crucible_top"
+        },
+        "up": {
+          "texture": "#crucible_bottom"
+        },
+        "north": {
+          "texture": "#crucible_side_lit"
+        },
+        "south": {
+          "texture": "#crucible_side_lit"
+        },
+        "west": {
+          "texture": "#crucible_side_lit"
+        },
+        "east": {
+          "texture": "#crucible_side_lit"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 buildscript {
     repositories {
+        mavenLocal()
         maven {
             name 'Forge'
             url 'https://files.minecraftforge.net/maven'
@@ -108,6 +109,9 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft "net.minecraftforge:forge:${project.exactMinecraftVersion}-${project.forgeVersion}"
     implementation 'org.jetbrains:annotations:15.0'
+
+    compileOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:7.0.1.10:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:7.0.1.10")
 
     compileOnly fg.deobf("${project.aequivaleoVersion}:api")
     runtimeOnly fg.deobf("${project.aequivaleoVersion}:universal")

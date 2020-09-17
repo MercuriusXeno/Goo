@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "goo:block/crucible_lit"
+    },
+    "powered=true": {
+      "model": "goo:block/crucible"
+    }
+  }
+}

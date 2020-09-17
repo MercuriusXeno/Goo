@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "group": "goo",
   "ingredients": [
     {
       "item": "minecraft:honeycomb"

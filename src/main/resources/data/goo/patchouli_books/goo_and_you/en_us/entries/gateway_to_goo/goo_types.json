@@ -8,6 +8,11 @@
       "text": "patchouli.goo.types_of_goo.description"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:gasket",
+      "recipe2": "goo:goo_and_you"
+    },
+    {
       "type": "goo:goo_items",
       "1.image": "goo:textures/icons/aquatic_short.png",
       "1.text": "goo.description.aquatic",
@@ -21,8 +26,8 @@
       "5.text": "goo.description.earthen",
       "6.image": "goo:textures/icons/energetic_short.png",
       "6.text": "goo.description.energetic",
-      "7.image": "goo:textures/block/empty.png",
-      "7.text": ""
+      "7.image": "goo:textures/icons/molten_short.png",
+      "7.text": "goo.description.molten"
     },
     {
       "type": "goo:goo_items",
@@ -38,8 +43,8 @@
       "5.text": "goo.description.logic",
       "6.image": "goo:textures/icons/metal_short.png",
       "6.text": "goo.description.metal",
-      "7.image": "goo:textures/icons/molten_short.png",
-      "7.text": "goo.description.molten"
+      "7.image": "goo:textures/block/empty.png",
+      "7.text": ""
     },
     {
       "type": "goo:goo_items",

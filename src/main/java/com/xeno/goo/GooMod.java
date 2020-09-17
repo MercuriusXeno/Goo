@@ -1,6 +1,7 @@
 package com.xeno.goo;
 
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
+import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -54,7 +55,7 @@ public class GooMod
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
     }
 
-    public static final ItemGroup ITEM_GROUP = new ItemGroup(MOD_ID)
+    public static final ItemGroup ITEM_GROUP = new GooCreativeTab(MOD_ID)
     {
         @Override
         public ItemStack createIcon() {

@@ -1,0 +1,76 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "empty": "goo:block/empty",
+    "rod_side": "goo:block/mixer_rod_side",
+    "agitator_top": "goo:block/mixer_agitator_top",
+    "agitator_side": "goo:block/mixer_agitator_side",
+    "agitator_end": "goo:block/mixer_agitator_end"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        4,
+        7
+      ],
+      "to": [
+        9,
+        10.02,
+        9
+      ],
+      "faces": {
+        "down": {
+          "texture": "#empty"
+        },
+        "up": {
+          "texture": "#empty"
+        },
+        "north": {
+          "texture": "#rod_side"
+        },
+        "south": {
+          "texture": "#rod_side"
+        },
+        "west": {
+          "texture": "#rod_side"
+        },
+        "east": {
+          "texture": "#rod_side"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        10.02,
+        7
+      ],
+      "to": [
+        12,
+        12.02,
+        9
+      ],
+      "faces": {
+        "down": {
+          "texture": "#agitator_top"
+        },
+        "up": {
+          "texture": "#agitator_top"
+        },
+        "north": {
+          "texture": "#agitator_side"
+        },
+        "south": {
+          "texture": "#agitator_side"
+        },
+        "west": {
+          "texture": "#agitator_end"
+        },
+        "east": {
+          "texture": "#agitator_end"
+        }
+      }
+    }
+  ]
+}

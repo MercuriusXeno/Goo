@@ -4,8 +4,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.EntryHelper;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
-import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.network.ChangeItemTargetPacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -23,6 +21,7 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -173,46 +172,66 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
 
     private void tryPushingFluid()
     {
-        GooBulbTile source = tryGettingBulbInSourceDirection();
-        GooBulbTile target = tryGettingBulbInTargetDirection();
+        TileEntity source = tileAtSource();
+        TileEntity target = tileAtTarget();
 
         if (source == null || target == null) {
             return;
         }
 
-        BulbFluidHandler sourceHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(source, sourceDirection());
-        BulbFluidHandler targetHandler = (BulbFluidHandler)BulbFluidHandler.bulbCapability(target, targetDirection());
-        if (sourceHandler == null || targetHandler == null) {
-            return;
-        }
+        LazyOptional<IFluidHandler> sourceHandler = FluidHandlerHelper.capabilityOfNeighbor(this, sourceDirection());
+        LazyOptional<IFluidHandler> targetHandler = FluidHandlerHelper.capabilityOfNeighbor(this, targetDirection());
 
+        sourceHandler.ifPresent((s) -> targetHandler.ifPresent((t) -> pushFluid(s, t)));
+    }
+
+    private void pushFluid(IFluidHandler sourceHandler, IFluidHandler targetHandler)
+    {
+        int maxDrain = getMaxDrain();
         FluidStack simulatedDrain = FluidStack.EMPTY;
-        if (this.targetStack.isEmpty()) {
-            simulatedDrain = sourceHandler.drain(getMaxDrain(), IFluidHandler.FluidAction.SIMULATE);
-        } else {
-            for (GooValue e : Equivalencies.getEntry(this.world, this.target).values()) {
-                FluidStack desired = new FluidStack(Objects.requireNonNull(Registry.getFluid(e.getFluidResourceLocation())), getMaxDrain());
-                simulatedDrain = sourceHandler.drain(desired, IFluidHandler.FluidAction.SIMULATE);
-                if (!simulatedDrain.isEmpty()) {
-                    break;
+        // iterate over all tanks and try a simulated drain until something sticks.
+        for (int i = 0; i < sourceHandler.getTanks(); i++) {
+            FluidStack s = sourceHandler.getFluidInTank(i).copy();
+            if (s.isEmpty()) {
+                continue;
+            }
+
+            if (s.getAmount() > maxDrain) {
+                s.setAmount(maxDrain);
+            }
+
+            // skip if we're empty
+            simulatedDrain = sourceHandler.drain(s, IFluidHandler.FluidAction.SIMULATE);
+            if (simulatedDrain.isEmpty()) {
+                continue;
+            }
+
+            // if we're targeting an item, skip this fluid if it's not in the target entry
+            if (!this.targetStack.isEmpty()) {
+                GooEntry entry = Equivalencies.getEntry(this.world, this.target);
+                if (entry.values().stream().noneMatch(v -> v.getFluidResourceLocation().equals(Objects.requireNonNull(s.getFluid().getRegistryName()).toString()))) {
+                    continue;
                 }
             }
+
+            int filled = targetHandler.fill(simulatedDrain, IFluidHandler.FluidAction.SIMULATE);
+            if (filled == 0) {
+                continue;
+            }
+
+            FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+            toggleVerticalFillVisuals(result.getFluid());
+
+            // pump for real though
+            targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
+
+            // this is purely visual and not vital to the fill operation
+            if (targetHandler instanceof BulbFluidHandler && targetDirection() == Direction.DOWN) {
+                ((BulbFluidHandler)targetHandler).sendVerticalFillSignalForVisuals(s.getFluid());
+            }
+            // don't continue if we hit this break, we managed to push some fluid.
+            break;
         }
-        if (simulatedDrain.isEmpty()) {
-            return;
-        }
-
-        int filled = targetHandler.fill(simulatedDrain, IFluidHandler.FluidAction.SIMULATE);
-        if (filled == 0) {
-            return;
-        }
-
-        FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-        toggleVerticalFillVisuals(result.getFluid());
-
-        // pump for real though
-        targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
-
     }
 
     private int getMaxDrain()
@@ -233,26 +252,14 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         return this.facing();
     }
 
-    private GooBulbTile tryGettingBulbInDirection(Direction d)
+    private TileEntity tileAtTarget()
     {
-        if (world == null) {
-            return null;
-        }
-        TileEntity t = world.getTileEntity(pos.offset(d));
-        if (t instanceof GooBulbTile) {
-            return (GooBulbTile)t;
-        }
-        return null;
+        return FluidHandlerHelper.tileAtDirection(this, targetDirection());
     }
 
-    private GooBulbTile tryGettingBulbInTargetDirection()
+    private TileEntity tileAtSource()
     {
-        return tryGettingBulbInDirection(targetDirection());
-    }
-
-    private GooBulbTile tryGettingBulbInSourceDirection()
-    {
-        return tryGettingBulbInDirection(sourceDirection());
+        return FluidHandlerHelper.tileAtDirection(this, sourceDirection());
     }
 
     public ItemStack getDisplayedItem()
