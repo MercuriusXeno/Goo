@@ -1,9 +1,6 @@
 package com.xeno.goo.events;
 
-import com.ldtteam.aequivaleo.api.event.OnWorldDataReloadedEvent;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.aequivaleo.*;
-import com.xeno.goo.aequivaleo.bootstrap.GooValueBootstrapper;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.setup.Registry;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
@@ -24,12 +21,5 @@ public class ForgeCommonEvents {
                 event.setCanceled(true);
             }
         }
-    }
-
-    @SubscribeEvent
-    public static void onWorldDataLoadEvent(OnWorldDataReloadedEvent event)
-    {
-        GooValueBootstrapper.onReload(event);
-        Equivalencies.resetFurnaceProducts(event.getWorld().getWorld());
     }
 }
