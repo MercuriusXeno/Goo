@@ -94,7 +94,8 @@
   "goo.description.vital": "Life",
   "goo.description.weird": "Strange and unknown",
 
-  "sound_event.goo.goo_splat_sound": "Goo blob splats",
+  "sound_event.goo.goo_splat_sound": "Goo splats",
+  "sound_event.goo.goo_lob_sound": "Goo lobbed",
   "sound_event.goo.goo_chop_sound": "Goo chop squish",
   "sound_event.goo.goo_deposit_sound": "Goo deposited",
   "sound_event.goo.goo_withdraw_sound": "Goo withdrawn",

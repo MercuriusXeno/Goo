@@ -1,10 +1,12 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.items.GooChopEffects;
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -14,6 +16,7 @@ import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.Direction;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
@@ -70,6 +73,10 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     {
         if (owner == null) {
             return;
+        }
+        if (owner instanceof PlayerEntity) {
+            world.playSound((PlayerEntity) owner, owner.getPosX(), owner.getPosY(), owner.getPosZ(), Registry.GOO_LOB_SOUND.get(),
+                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         }
         startQuivering();
         Vector3d velVec = owner.getLookVec();
@@ -154,7 +161,7 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
 
         EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
         if (entityResult != null && entityResult.getType() != RayTraceResult.Type.MISS) {
-            motion.add(onImpact(entityResult));
+            onImpact(entityResult);
             this.isAirBorne = true;
         }
 
@@ -360,58 +367,28 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         return true;
     }
 
-    protected Vector3d onImpact(RayTraceResult rayTraceResult) {
+    protected void onImpact(RayTraceResult rayTraceResult) {
         RayTraceResult.Type resultType = rayTraceResult.getType();
-        Vector3d result = Vector3d.ZERO;
         if (resultType == RayTraceResult.Type.ENTITY) {
-            result = onEntityHit((EntityRayTraceResult)rayTraceResult);
+            collideWithEntity(((EntityRayTraceResult)rayTraceResult).getEntity());
         }
-
-        return result;
     }
 
-    /**
-     * Complex/annoying: returns the buoyancy and drag of the material entity collided with (accounting for
-     * things like relative buoyancy or overall stickiness.
-     * @param entityTraceResult
-     * @return
-     */
-    protected Vector3d onEntityHit(EntityRayTraceResult entityTraceResult) {
-        Entity entityHit = entityTraceResult.getEntity();
-        Vector3d result = this.getMotion();
-        if (entityHit instanceof GooEntity) {
-            GooFluid collidingGoo = ((GooEntity) entityHit).gooBase();
-            result.add(doGooCollision(entityHit, collidingGoo));
-        } else if (entityHit instanceof ServerPlayerEntity) {
-            result.add(doPlayerCollision(((ServerPlayerEntity) entityHit)));
-        } else {
-            result.add(doEverythingElseCollision(entityHit));
+    protected void collideWithEntity(Entity entityHit)
+    {
+        if (entityHit == owner) {
+            return;
         }
-
-        return result;
+        if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {
+            int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(this.goo.getAmount()) - 1));
+            GooChopEffects.doChopEffect(this.goo, intensity, (LivingEntity)this.owner, (LivingEntity)entityHit);
+            // dissipate
+            this.remove();
+        }
     }
 
-    protected Vector3d doEverythingElseCollision(Entity entityHit)
-    {
-        // TODO
-        return this.getMotion();
-    }
-
-    protected Vector3d doPlayerCollision(ServerPlayerEntity entityHit)
-    {
-        // TODO
-        return this.getMotion();
-    }
-
-    protected Vector3d doGooCollision(Entity entityHit, GooFluid collidingGoo)
-    {
-        // TODO
-        return this.getMotion();
-    }
-
-    protected Vector3d collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
+    protected void collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
         doChangeBlockState(rayTraceResult.getPos(), rayTraceResult.getFace());
-        return Vector3d.ZERO;
     }
 
     protected void doChangeBlockState(BlockPos blockPos, Direction sideHit) {

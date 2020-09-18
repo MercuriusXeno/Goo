@@ -26,8 +26,9 @@ import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
-    private static final int GEOMANCY_DRAIN = 27;
-    private static final int NORMAL_DRAIN = 8;
+    private static final int GEOMANCY_DRAIN = 16;
+    private static final int NORMAL_DRAIN = 9;
+    private static final int SNEAKING_DRAIN = 4;
 
     public GauntletAbstraction(int capacity)
     {
@@ -185,11 +186,11 @@ public class GauntletAbstraction extends ItemFluidContainer
             return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
 
-        boolean isGeomancy = Gauntlet.geomancy(playerIn.getHeldItem(handIn));
+        int drainAmount = (Gauntlet.geomancy(playerIn.getHeldItem(handIn)) ? GEOMANCY_DRAIN :
+                (playerIn.isSneaking() ? SNEAKING_DRAIN : NORMAL_DRAIN));
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        FluidStack thrownStack = cap.drain((isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN), IFluidHandler.FluidAction.EXECUTE);
+        FluidStack thrownStack = cap.drain(drainAmount, IFluidHandler.FluidAction.EXECUTE);
         worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, thrownStack));
-
         return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
     }
 

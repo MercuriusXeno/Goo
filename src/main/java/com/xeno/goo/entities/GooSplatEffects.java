@@ -11,7 +11,9 @@ import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.LavaFluid;
+import net.minecraft.fluid.WaterFluid;
 import net.minecraft.item.DyeColor;
 import net.minecraft.item.FlintAndSteelItem;
 import net.minecraft.item.ItemStack;
@@ -23,44 +25,42 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
+
+import javax.annotation.Nullable;
 
 public class GooSplatEffects
 {
-    private static void attack(LivingEntity attacker, LivingEntity target, float v, boolean isGeomancy)
+    private static void attack(LivingEntity attacker, LivingEntity target, float v)
     {
-        if (isGeomancy) {
-            v += 2.0f;
-        }
-        attack(attacker, target, v, false, isGeomancy);
+        attack(attacker, target, v, 0);
     }
 
-    private static void attack(LivingEntity attacker, LivingEntity target, float v, boolean isFire, boolean isGeomancy)
+    private static void attack(LivingEntity attacker, LivingEntity target, float v, int fireDuration)
     {
         if (attacker instanceof PlayerEntity) {
             DamageSource source = DamageSource.causePlayerDamage((PlayerEntity) attacker);
-            if (isFire) {
+            if (fireDuration > 0) {
                 source.setFireDamage();
-                target.setFire((int)v + (isGeomancy ? 3 : 0));
+                target.setFire(fireDuration);
             }
             target.attackEntityFrom(source, v);
         }
     }
 
-    private static void heal(LivingEntity attacker, LivingEntity target, float v, boolean isGeomancy)
+    private static void heal(LivingEntity target, float v)
     {
-        if (isGeomancy) {
-            v += 2.0f;
-        }
         target.heal(v);
     }
 
-    private static void effect(LivingEntity target, Effect effect, int i, boolean isGeomancy)
+    private static void effect(LivingEntity target, Effect effect, int i)
     {
-        target.addPotionEffect(new EffectInstance(effect, i * (isGeomancy ? 2 : 1)));
+        target.addPotionEffect(new EffectInstance(effect, i));
     }
 
     private static void knockback(LivingEntity attacker, LivingEntity target, float v)
@@ -97,28 +97,6 @@ public class GooSplatEffects
         }
     }
 
-    private static void tryGooParticles(FluidStack goo, LivingEntity attacker, LivingEntity target)
-    {
-        if (!(target.getEntityWorld() instanceof ServerWorld)) {
-            return;
-        }
-        // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
-        if (goo.getFluid() instanceof GooFluid) {
-            BasicParticleType type = particleTypeFromGoo(goo);
-            if (type == null) {
-                return;
-            }
-            Vector3d spawnVec = target.getPositionVec();
-            // give it a bit of randomness around the critter
-            double offX = (target.getWidth() / 2d) * (target.getEntityWorld().rand.nextFloat() - 0.5f);
-            double offZ = (target.getWidth() / 2d) * (target.getEntityWorld().rand.nextFloat() - 0.5f);
-
-            ((ServerWorld)target.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, 12,
-                    offX, target.getHeight(), offZ, 1.0d);
-        }
-    }
-
-
     public static void resolve(Entity sender, GooEntity entity, World world, BlockPos pos, Direction face, BlockState state)
     {
         spawnParticles(entity);
@@ -138,172 +116,231 @@ public class GooSplatEffects
         }
 
         FluidStack goo = entity.goo;
+        int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(goo.getAmount())) - 1);
         if (goo.getFluid().equals(Registry.AQUATIC_GOO.get())) {
-            aquaSplat(world, pos, face, state);
+            aquaSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.CHROMATIC_GOO.get())) {
-            chromaSplat(world, pos, face, state);
+            chromaSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.CRYSTAL_GOO.get())) {
-            crystalSplat(world, pos, face, state);
+            crystalSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.DECAY_GOO.get())) {
-            decaySplat(world, pos, face, state);
+            decaySplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.EARTHEN_GOO.get())) {
-            earthSplat(world, pos, face, state);
+            earthSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.ENERGETIC_GOO.get())) {
-            energySplat(world, pos, face, state);
+            energySplat(intensity, sender, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FAUNAL_GOO.get())) {
-            faunaSplat(world, pos, face, state);
+            faunaSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FLORAL_GOO.get())) {
-            floraSplat(world, pos, face, state);
+            floraSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FUNGAL_GOO.get())) {
-            fungiSplat(world, pos, face, state);
+            fungiSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.HONEY_GOO.get())) {
-            honeySplat(world, pos, face, state);
+            honeySplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.LOGIC_GOO.get())) {
-            logicSplat(world, pos, face, state);
+            logicSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.METAL_GOO.get())) {
-            metalSplat(world, pos, face, state);
+            metalSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.MOLTEN_GOO.get())) {
-            moltenSplat(world, pos, face, state);
+            moltenSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.OBSIDIAN_GOO.get())) {
-            obsidianSplat(world, pos, face, state);
+            obsidianSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.REGAL_GOO.get())) {
-            regalSplat(world, pos, face, state);
+            regalSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.SLIME_GOO.get())) {
-            slimeSplat(world, pos, face, state);
+            slimeSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.SNOW_GOO.get())) {
-            snowSplat(world, pos, face, state);
+            snowSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.VITAL_GOO.get())) {
-            vitalSplat(world, pos, face, state);
+            vitalSplat(intensity, world, pos, face, state);
             return;
         }
 
         if (goo.getFluid().equals(Registry.WEIRD_GOO.get())) {
-            weirdSplat(world, pos, face, state);
+            weirdSplat(intensity, world, pos, face, state);
             return;
         }
     }
 
-    private static void aquaSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void aquaSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        if (state.getBlock().equals(Blocks.FARMLAND) && state.get(FarmlandBlock.MOISTURE) < 7) {
-            world.setBlockState(pos, state.with(FarmlandBlock.MOISTURE, 7));
+        // hydrate farmland
+        if (state.getBlock().equals(Blocks.FARMLAND)) {
+            int hydration = state.get(FarmlandBlock.MOISTURE);
+            if (hydration < 7) {
+                int newHydration = Math.min(7, hydration + intensity);
+                world.setBlockState(pos, state.with(FarmlandBlock.MOISTURE, newHydration));
+            }
             return;
         }
 
-        if (state.getMaterial() == Material.LAVA) {
+        // cool lava
+        if (state.getFluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds
-            world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
+            if (state.getFluidState().isSource()) {
+                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
+            } else {
+                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+            }
             world.playEvent(1501, pos, 0); // sizzly bits
         }
+
+        // edify non-source water to source water
+        if (state.getFluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
+            // spawn some sizzly smoke and sounds
+            if (!state.getFluidState().isSource()) {
+                world.setBlockState(pos, Blocks.WATER.getDefaultState().with(BlockStateProperties.LEVEL_1_8, 8));
+            }
+        }
+
+        // extinguish fires
+        if (state.getBlock().equals(Blocks.FIRE)) {
+            world.playEvent(null, 1009, pos, 0);
+            world.removeBlock(pos, false);
+        }
     }
 
-    private static void chromaSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void chromaSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        // NO OP
+        // dye things? TODO
+    }
+
+    private static void crystalSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        // NO OP
+        // not really sure what crystal should do
+    }
+
+    private static void decaySplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+        // decay:
+
+        // bush to dead bush
+
+        // leaves to air
+
+        // grass to dirt
+
+        // vines decay
     }
 
-    private static void crystalSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void earthSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        // NO OP
+        // not really sure what crystal should do
+    }
+
+    private static void energySplat(int intensity, Entity sender, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        Explosion explosion = new Explosion(world, sender,
+                pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d,
+                intensity, false, Explosion.Mode.BREAK);
+        if (net.minecraftforge.event.ForgeEventFactory.onExplosionStart(world, explosion)) return;
+
+        explosion.doExplosionA();
+        explosion.doExplosionB(true);
+    }
+
+    private static void faunaSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        // NO OP
+        // not really sure what fauna should do
+    }
+
+    private static void floraSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+        // dirt to grass
+
+        // chance of bonemeal?
+
+        // grow growables?
     }
 
-    private static void decaySplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void fungiSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+
+        // chance of brown/red mushrooms?
     }
 
-    private static void earthSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void honeySplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
+    {
+        // NO OP
+
+        // not sure what things honey can do without a bit more work, finite fluid, sticky patch or something.
+    }
+
+    private static void logicSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+
+        // activate or toggle power states on buttons and switches.
+
+        // maybe other redstone things I haven't considered, temporarily power things, et al.
     }
 
-    private static void energySplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void metalSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        // TODO
+        // NO OP
+
+        // not sure what else metal should do
     }
 
-    private static void faunaSplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void floraSplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void fungiSplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void honeySplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void logicSplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void metalSplat(World world, BlockPos pos, Direction face, BlockState state)
-    {
-        // TODO
-    }
-
-    private static void moltenSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void moltenSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         BlockState blockstate = world.getBlockState(pos);
         if (CampfireBlock.canBeLit(blockstate)) {
@@ -317,33 +354,67 @@ public class GooSplatEffects
         }
     }
 
-    private static void obsidianSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void obsidianSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        // TODO
+        // NO OP
+
+        // not sure what else obsidian should do
     }
 
-    private static void regalSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void regalSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        // TODO
+        // NO OP
+
+        // not sure what else regal should do
     }
 
-    private static void slimeSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void slimeSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+
+        // chance at a slime spawn might be a little exploitable
+        // not sure what else we can do here
     }
 
-    private static void snowSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void snowSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        // TODO
+        // cool lava
+        if (state.getFluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
+            // spawn some sizzly smoke and sounds
+            if (state.getFluidState().isSource()) {
+                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
+            } else {
+                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+            }
+            world.playEvent(1501, pos, 0); // sizzly bits
+        }
+
+        // extinguish fires
+        if (state.getBlock().equals(Blocks.FIRE)) {
+            world.playEvent(null, 1009, pos, 0);
+            world.removeBlock(pos, false);
+        }
+
+        // freeze water
+        if (state.getFluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
+            // spawn some sizzly smoke and sounds
+            if (state.getFluidState().isSource()) {
+                world.setBlockState(pos, Blocks.ICE.getDefaultState());
+            }
+        }
     }
 
-    private static void vitalSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void vitalSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        // TODO
+        // NO OP
+
+        // not sure what to do with vital here
     }
 
-    private static void weirdSplat(World world, BlockPos pos, Direction face, BlockState state)
+    private static void weirdSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
         // TODO
+
+        // I had weird plans for weird but they're a little complicated. For now this is a NO OP.
     }
 }
