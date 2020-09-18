@@ -111,10 +111,6 @@ public class GooSplatEffects
                     sender.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
         }
 
-        if (sender.getEntityWorld().isRemote()) {
-            return;
-        }
-
         FluidStack goo = entity.goo;
         int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(goo.getAmount())) - 1);
         if (goo.getFluid().equals(Registry.AQUATIC_GOO.get())) {
@@ -220,34 +216,41 @@ public class GooSplatEffects
             int hydration = state.get(FarmlandBlock.MOISTURE);
             if (hydration < 7) {
                 int newHydration = Math.min(7, hydration + intensity);
-                world.setBlockState(pos, state.with(FarmlandBlock.MOISTURE, newHydration));
+
+                if (world.isRemote()) {
+                    world.setBlockState(pos, state.with(FarmlandBlock.MOISTURE, newHydration));
+                }
             }
-            return;
         }
 
         // cool lava
         if (state.getFluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds
-            if (state.getFluidState().isSource()) {
-                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
-            } else {
-                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+            if (world.isRemote()) {
+                if (state.getFluidState().isSource()) {
+                    world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
+                } else {
+                    world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+                }
             }
             world.playEvent(1501, pos, 0); // sizzly bits
         }
 
         // edify non-source water to source water
         if (state.getFluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
-            // spawn some sizzly smoke and sounds
-            if (!state.getFluidState().isSource()) {
-                world.setBlockState(pos, Blocks.WATER.getDefaultState().with(BlockStateProperties.LEVEL_1_8, 8));
+            if (world.isRemote()) {
+                if (!state.getFluidState().isSource()) {
+                    world.setBlockState(pos, Blocks.WATER.getDefaultState().with(BlockStateProperties.LEVEL_1_8, 8));
+                }
             }
         }
 
         // extinguish fires
         if (state.getBlock().equals(Blocks.FIRE)) {
             world.playEvent(null, 1009, pos, 0);
-            world.removeBlock(pos, false);
+            if (world.isRemote()) {
+                world.removeBlock(pos, false);
+            }
         }
     }
 
@@ -285,6 +288,7 @@ public class GooSplatEffects
 
     private static void energySplat(int intensity, Entity sender, World world, BlockPos pos, Direction face, BlockState state)
     {
+        pos = pos.offset(face);
         Explosion explosion = new Explosion(world, sender,
                 pos.getX() + 0.5d, pos.getY() + 0.5d, pos.getZ() + 0.5d,
                 intensity, false, Explosion.Mode.BREAK);
@@ -342,14 +346,16 @@ public class GooSplatEffects
 
     private static void moltenSplat(int intensity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        BlockState blockstate = world.getBlockState(pos);
-        if (CampfireBlock.canBeLit(blockstate)) {
-            world.setBlockState(pos, blockstate.with(BlockStateProperties.LIT, Boolean.TRUE), 11);
-        } else {
-            BlockPos offPos = pos.offset(face);
-            if (AbstractFireBlock.canLightBlock(world, offPos)) {
-                BlockState offState = AbstractFireBlock.getFireForPlacement(world, offPos);
-                world.setBlockState(offPos, offState, 11);
+        if (world.isRemote()) {
+            BlockState blockstate = world.getBlockState(pos);
+            if (CampfireBlock.canBeLit(blockstate)) {
+                world.setBlockState(pos, blockstate.with(BlockStateProperties.LIT, Boolean.TRUE), 11);
+            } else {
+                BlockPos offPos = pos.offset(face);
+                if (AbstractFireBlock.canLightBlock(world, offPos)) {
+                    BlockState offState = AbstractFireBlock.getFireForPlacement(world, offPos);
+                    world.setBlockState(offPos, offState, 11);
+                }
             }
         }
     }
@@ -381,10 +387,12 @@ public class GooSplatEffects
         // cool lava
         if (state.getFluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds
-            if (state.getFluidState().isSource()) {
-                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
-            } else {
-                world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+            if (world.isRemote()) {
+                if (state.getFluidState().isSource()) {
+                    world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.OBSIDIAN.getDefaultState()));
+                } else {
+                    world.setBlockState(pos, net.minecraftforge.event.ForgeEventFactory.fireFluidPlaceBlockEvent(world, pos, pos, Blocks.COBBLESTONE.getDefaultState()));
+                }
             }
             world.playEvent(1501, pos, 0); // sizzly bits
         }
@@ -392,14 +400,17 @@ public class GooSplatEffects
         // extinguish fires
         if (state.getBlock().equals(Blocks.FIRE)) {
             world.playEvent(null, 1009, pos, 0);
-            world.removeBlock(pos, false);
+            if (world.isRemote()) {
+                world.removeBlock(pos, false);
+            }
         }
 
         // freeze water
         if (state.getFluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
-            // spawn some sizzly smoke and sounds
-            if (state.getFluidState().isSource()) {
-                world.setBlockState(pos, Blocks.ICE.getDefaultState());
+            if (world.isRemote()) {
+                if (state.getFluidState().isSource()) {
+                    world.setBlockState(pos, Blocks.ICE.getDefaultState());
+                }
             }
         }
     }
