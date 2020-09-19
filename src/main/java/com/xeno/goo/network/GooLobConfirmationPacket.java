@@ -1,16 +1,10 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooEntity;
-import net.minecraft.client.Minecraft;
+import com.xeno.goo.entities.GooBlob;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -18,7 +12,7 @@ public class GooLobConfirmationPacket implements IGooModPacket
 {
     private UUID goo;
     private UUID owner;
-    public GooLobConfirmationPacket(GooEntity g, PlayerEntity player) {
+    public GooLobConfirmationPacket(GooBlob g, PlayerEntity player) {
         this.goo = g.getUniqueID();
         this.owner = player.getUniqueID();
     }

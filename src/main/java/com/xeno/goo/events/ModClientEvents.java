@@ -45,7 +45,8 @@ public class ModClientEvents
 
     private static void setEntityRenderers()
     {
-        GooCubeRenderer.register();
+        GooBlobRenderer.register();
+        GooSplatRenderer.register();
     }
 
     private static void setRenderLayers()

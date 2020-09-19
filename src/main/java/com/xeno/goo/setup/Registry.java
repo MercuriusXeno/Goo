@@ -9,7 +9,8 @@ import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.enchantments.Geomancy;
 import com.xeno.goo.enchantments.Holding;
-import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gasket;
@@ -18,7 +19,6 @@ import com.xeno.goo.items.GooAndYou;
 import com.xeno.goo.tiles.*;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
 import net.minecraft.fluid.Fluid;
@@ -66,11 +66,18 @@ public class Registry {
         SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
-    public static final RegistryObject<EntityType<GooEntity>> GOO_ENTITY = ENTITIES.register("goo_entity",
-            () -> EntityType.Builder.<GooEntity>create(GooEntity::new, EntityClassification.MISC)
-                .size(1, 1)
+    public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
+            () -> EntityType.Builder.<GooBlob>create(GooBlob::new, EntityClassification.MISC)
+                .size(0.1f, 0.1f)
             .setShouldReceiveVelocityUpdates(false)
-            .build("goo_entity")
+            .build("goo_blob")
+    );
+
+    public static final RegistryObject<EntityType<GooSplat>> GOO_SPLAT = ENTITIES.register("goo_splat",
+            () -> EntityType.Builder.<GooSplat>create(GooSplat::new, EntityClassification.MISC)
+                    .size(0.1f, 0.1f)
+                    .setShouldReceiveVelocityUpdates(false)
+                    .build("goo_splat")
     );
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions
@@ -81,7 +88,6 @@ public class Registry {
     public static final RegistryObject<SoundEvent> GOO_WITHDRAW_SOUND = SOUNDS.register("goo_withdraw_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_withdraw_sound")));
     public static final RegistryObject<SoundEvent> GOO_CRUCIBLE_SOUND = SOUNDS.register("goo_crucible_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_crucible_sound")));
     public static final RegistryObject<SoundEvent> GOOIFIER_SOUND = SOUNDS.register("gooifier_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "gooifier_sound")));
-
 
     public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);

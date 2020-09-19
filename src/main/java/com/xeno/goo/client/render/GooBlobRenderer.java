@@ -2,7 +2,7 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -18,7 +18,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.gen.SimplexNoiseGenerator;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
@@ -27,7 +26,7 @@ import java.util.Random;
 
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
-public class GooCubeRenderer extends EntityRenderer<GooEntity>
+public class GooBlobRenderer extends EntityRenderer<GooBlob>
 {
     private static final Vector3f[][] UNSCALED_QUADS = createQuads();
 
@@ -100,24 +99,24 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
         return result;
     }
 
-    public GooCubeRenderer(EntityRendererManager renderManager)
+    public GooBlobRenderer(EntityRendererManager renderManager)
     {
         super(renderManager);
     }
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_ENTITY.get(), GooCubeRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BLOB.get(), GooBlobRenderer::new);
     }
 
     @Override
-    public ResourceLocation getEntityTexture(GooEntity entity)
+    public ResourceLocation getEntityTexture(GooBlob entity)
     {
         return PlayerContainer.LOCATION_BLOCKS_TEXTURE;
     }
 
     @Override
-    public void render(GooEntity entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
+    public void render(GooBlob entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
         RenderType rType = GooRenderHelper.GOO_CUBE_BRIGHT;
@@ -153,7 +152,7 @@ public class GooCubeRenderer extends EntityRenderer<GooEntity>
     }
 
     @Override
-    protected int getBlockLight(GooEntity entityIn, BlockPos partialTicks)
+    protected int getBlockLight(GooBlob entityIn, BlockPos partialTicks)
     {
         if (isBrightFluid(entityIn.goo.getFluid())) {
             return 15;

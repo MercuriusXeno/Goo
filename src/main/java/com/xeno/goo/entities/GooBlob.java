@@ -19,6 +19,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -30,26 +31,25 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
-    private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooEntity.class, DataSerializers.VARINT);
+    private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
     private static final double GOO_GRAVITY = 0.06d;
     public FluidStack goo;
     private int quiverTimer;
-    private List<Entity> touchingEntityIds = new ArrayList<>();
     private Entity owner;
     private float cubicSize;
     private EntitySize size;
 
 
-    public GooEntity(EntityType<GooEntity> type, World worldIn) {
+    public GooBlob(EntityType<GooBlob> type, World worldIn) {
         super(type, worldIn);
     }
 
-    public GooEntity(EntityType<GooEntity> type, World worldIn, Entity sender, FluidStack stack) {
+    public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack) {
         super(type, worldIn);
         goo = stack;
         if (!(stack.getFluid() instanceof GooFluid)) {
@@ -62,6 +62,14 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             this.setSize();
             this.shoot();
         }
+    }
+
+    public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
+        super(type, worldIn);
+        goo = stack;
+        this.setPositionAndRotation(pos.x, pos.y, pos.z, sender.rotationYaw, sender.rotationPitch);
+        this.owner = sender;
+        this.setSize();
     }
 
     private Vector3d initialPosition(Entity sender)
@@ -115,12 +123,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         this.dataManager.register(GOO_SIZE, 1);
     }
 
-    protected void interactWithBlock(BlockPos pos, Direction face, BlockState state) {
-        GooSplatEffects.resolve(this.owner, this, this.world, pos, face, state);
-        // dissipate
-        this.remove();
-    }
-
     @Override
     public void tick()
     {
@@ -154,7 +156,7 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
             // wants to enter receptacles first if it can, but splat otherwise
             collideBlockMaybe(blockResult);
             if (goo.getAmount() > 0) {
-                splat(blockResult.getPos(), blockResult.getFace());
+                splat(blockResult.getPos(), blockResult.getFace(), blockResult.getHitVec());
             }
             return;
         }
@@ -180,10 +182,16 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         this.setMotion(this.getMotion().add(0d, -GOO_GRAVITY, 0d));
     }
 
-    protected void splat(BlockPos pos, Direction face) {
+    protected void splat(BlockPos pos, Direction face, Vector3d hitVec) {
         // the state we're interested in observing is the state of the hit block, not the offset.
         BlockState state = world.getBlockState(pos);
-        interactWithBlock(pos, face, state); // ideally I'd do more than this I think
+        GooSplatEffects.spawnParticles(this);
+        // create a goo splat
+        world.addEntity(
+                new GooSplat(Registry.GOO_SPLAT.get(), world, this.owner, face.getOpposite(), hitVec, goo)
+        );
+        // dissipate
+        this.remove();
     }
 
     protected void doFreeMovement() {
@@ -225,7 +233,7 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
     }
 
     protected boolean canHitEntityAndNotAlready(Entity hitEntity) {
-        return canHitEntity(hitEntity) && (this.touchingEntityIds == null || !this.touchingEntityIds.contains(hitEntity.getEntityId()));
+        return canHitEntity(hitEntity);
     }
 
     protected boolean canHitEntity(Entity hitEntity) {
@@ -343,9 +351,6 @@ public class GooEntity extends Entity implements IEntityAdditionalSpawnData, IFl
         this.recalculateSize();
     }
 
-    public GooFluid gooBase() {
-        return (GooFluid)this.goo.getFluid();
-    }
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {

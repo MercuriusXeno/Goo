@@ -1,8 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.particle.GooParticle;
-import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -12,12 +11,10 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.particles.BasicParticleType;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -171,27 +168,30 @@ public class GauntletAbstraction extends ItemFluidContainer
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn)
+    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, Hand handIn)
     {
-        if (worldIn.isRemote()) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+        if (world.isRemote()) {
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(playerIn.getHeldItem(handIn));
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(handIn));
         if (cap == null) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
         if (cap.getFluidInTank(0).isEmpty()) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
-        int drainAmount = (Gauntlet.geomancy(playerIn.getHeldItem(handIn)) ? GEOMANCY_DRAIN :
-                (playerIn.isSneaking() ? SNEAKING_DRAIN : NORMAL_DRAIN));
+        int drainAmount = (Gauntlet.geomancy(player.getHeldItem(handIn)) ? GEOMANCY_DRAIN :
+                (player.isSneaking() ? SNEAKING_DRAIN : NORMAL_DRAIN));
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
         FluidStack thrownStack = cap.drain(drainAmount, IFluidHandler.FluidAction.EXECUTE);
-        worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, thrownStack));
-        return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
+        world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
+        world.playSound(player, player.getPositionVec().x, player.getPositionVec().y,
+                player.getPositionVec().z, Registry.GOO_LOB_SOUND.get(), SoundCategory.PLAYERS,
+                1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
+        return ActionResult.resultSuccess(player.getHeldItem(handIn));
     }
 
     @Override

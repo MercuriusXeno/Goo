@@ -1,7 +1,7 @@
 package com.xeno.goo.client.render;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.entities.GooBlob;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -83,7 +83,7 @@ public class GooRenderHelper extends RenderState
         super(nameIn, setupTaskIn, clearTaskIn);
     }
 
-    public static Vector3d lerpEntityPosition(float partialTicks, GooEntity entity)
+    public static Vector3d lerpEntityPosition(float partialTicks, GooBlob entity)
     {
         return entity.getPositionVec().subtract(
                 new Vector3d(MathHelper.lerp(partialTicks, entity.lastTickPosX, entity.getPosX()),

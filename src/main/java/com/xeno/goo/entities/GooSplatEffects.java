@@ -2,37 +2,22 @@ package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.block.*;
-import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.LavaFluid;
-import net.minecraft.fluid.WaterFluid;
-import net.minecraft.item.DyeColor;
-import net.minecraft.item.FlintAndSteelItem;
-import net.minecraft.item.ItemStack;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
-import net.minecraft.potion.Effects;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.Explosion;
-import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
-
-import javax.annotation.Nullable;
 
 public class GooSplatEffects
 {
@@ -76,7 +61,7 @@ public class GooSplatEffects
         return Registry.fallingParticleFromFluid(fluidInTank.getFluid());
     }
 
-    private static void spawnParticles(GooEntity e)
+    public static void spawnParticles(GooBlob e)
     {
         if (!(e.getEntityWorld() instanceof ServerWorld)) {
             return;
@@ -97,9 +82,8 @@ public class GooSplatEffects
         }
     }
 
-    public static void resolve(Entity sender, GooEntity entity, World world, BlockPos pos, Direction face, BlockState state)
+    public static void resolve(Entity sender, GooBlob entity, World world, BlockPos pos, Direction face, BlockState state)
     {
-        spawnParticles(entity);
 
         if (sender instanceof PlayerEntity) {
             sender.getEntityWorld().playSound((PlayerEntity)sender,
