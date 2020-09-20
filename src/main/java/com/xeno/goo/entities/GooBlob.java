@@ -31,17 +31,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
+public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
     private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
     private static final double GOO_GRAVITY = 0.06d;
+    private FluidStack goo;
     private int quiverTimer;
     private Entity owner;
     private float cubicSize;
     private EntitySize size;
+    private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
     private boolean isAttachedToBlock;
 
@@ -172,12 +174,19 @@ public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
         // the state we're interested in observing is the state of the hit block, not the offset.
         BlockState state = world.getBlockState(pos);
         GooSplatEffects.spawnParticles(this);
+        attachToBlock(pos, face);
         // create a goo splat
-        world.addEntity(
-                new GooSplat(Registry.GOO_SPLAT.get(), world, this.owner, face.getOpposite(), hitVec, goo)
-        );
-        // dissipate
-        this.remove();
+        GooSplat splat = new GooSplat(Registry.GOO_SPLAT.get(), world, this, hitVec);
+        world.addEntity(splat);
+        splat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+
+    }
+
+    private void attachToBlock(BlockPos pos, Direction face)
+    {
+        this.blockAttached = pos;
+        this.sideWeLiveOn = face;
+        this.isAttachedToBlock = true;
     }
 
     protected void doFreeMovement() {
@@ -236,6 +245,7 @@ public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
         super.read(tag);
         goo = FluidStack.loadFluidStackFromNBT(tag);
         cubicSize = tag.getFloat("cubicSize");
+        deserializeAttachment(tag);
         setSize();
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
@@ -243,14 +253,41 @@ public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
         this.isCollidingEntity = tag.getBoolean("LeftOwner");
     }
 
+    private void deserializeAttachment(CompoundNBT tag)
+    {
+        if (!tag.contains("attachment")) {
+            this.isAttachedToBlock = false;
+            return;
+        }
+        CompoundNBT at = tag.getCompound("attachment");
+        this.blockAttached =
+                new BlockPos(at.getInt("x"), at.getInt("y"), at.getInt("z"));
+        this.sideWeLiveOn = Direction.byIndex(at.getInt("side"));
+        this.isAttachedToBlock = true;
+    }
+
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
         goo.writeToNBT(tag);
+        serializeAttachment(tag);
         tag.putFloat("cubicSize", cubicSize);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
         if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
         return tag;
+    }
+
+    private void serializeAttachment(CompoundNBT tag)
+    {
+        if (!isAttachedToBlock) {
+            return;
+        }
+        CompoundNBT at = new CompoundNBT();
+        at.putInt("x", blockAttached.getX());
+        at.putInt("y", blockAttached.getY());
+        at.putInt("z", blockAttached.getZ());
+        at.putInt("side", sideWeLiveOn.getIndex());
+        tag.put("attachment", at);
     }
 
     public void startQuivering()
@@ -330,12 +367,24 @@ public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
         }
     }
 
-    @Override
     protected void setSize() {
         this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
         this.size = new EntitySize(cubicSize, cubicSize, false);
         this.dataManager.set(GOO_SIZE, goo.getAmount());
         this.recalculateSize();
+    }
+
+    @Override
+    protected void registerData() {
+        this.dataManager.register(GOO_SIZE, 1);
+    }
+
+    public void notifyDataManagerChange(DataParameter<?> key) {
+        if (GOO_SIZE.equals(key)) {
+            this.recalculateSize();
+        }
+
+        super.notifyDataManagerChange(key);
     }
 
     private boolean isCollidingEntity;
@@ -395,5 +444,93 @@ public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
     public int quiverTimer()
     {
         return quiverTimer;
+    }
+
+    @Override
+    public int getTanks()
+    {
+        return 1;
+    }
+
+    @Override
+    public FluidStack getFluidInTank(int tank)
+    {
+        return goo;
+    }
+
+    @Override
+    public int getTankCapacity(int tank)
+    {
+        return 1000;
+    }
+
+    @Override
+    public boolean isFluidValid(int tank, FluidStack stack)
+    {
+        return stack.isFluidEqual(this.goo);
+    }
+
+    @Override
+    public int fill(FluidStack resource, IFluidHandler.FluidAction action)
+    {
+        int spaceRemaining = getTankCapacity(1) - goo.getAmount();
+        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
+        if (action == IFluidHandler.FluidAction.EXECUTE && transferAmount > 0) {
+            goo.setAmount(goo.getAmount() + transferAmount);
+            setSize();
+        }
+
+        return transferAmount;
+    }
+
+    @Override
+    public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action)
+    {
+        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), resource.getAmount()));
+        if (action == IFluidHandler.FluidAction.EXECUTE) {
+            goo.setAmount(goo.getAmount() - result.getAmount());
+            if (goo.isEmpty()) {
+                this.remove();
+            } else {
+                setSize();
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action)
+    {
+        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), maxDrain));
+        if (action == IFluidHandler.FluidAction.EXECUTE) {
+            goo.setAmount(goo.getAmount() - result.getAmount());
+            if (goo.isEmpty()) {
+                this.remove();
+            } else {
+                setSize();
+            }
+        }
+
+        return result;
+    }
+
+    public Entity owner()
+    {
+        return this.owner;
+    }
+
+    public FluidStack goo() {
+        return this.goo;
+    }
+
+    public Direction sideWeLiveOn()
+    {
+        return sideWeLiveOn;
+    }
+
+    public BlockPos blockAttached()
+    {
+        return this.blockAttached;
     }
 }

@@ -67,8 +67,8 @@ public class GooSplatEffects
             return;
         }
         // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
-        if (e.goo.getFluid() instanceof GooFluid) {
-            BasicParticleType type = particleTypeFromGoo(e.goo);
+        if (e.goo().getFluid() instanceof GooFluid) {
+            BasicParticleType type = particleTypeFromGoo(e.goo());
             if (type == null) {
                 return;
             }
@@ -77,7 +77,7 @@ public class GooSplatEffects
             double offX = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
             double offZ = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
 
-            ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo.getAmount(),
+            ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
                     offX, e.cubicSize(), offZ, 0.2d);
         }
     }
@@ -95,7 +95,7 @@ public class GooSplatEffects
                     sender.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
         }
 
-        FluidStack goo = entity.goo;
+        FluidStack goo = entity.goo();
         int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(goo.getAmount())) - 1);
         if (goo.getFluid().equals(Registry.AQUATIC_GOO.get())) {
             aquaSplat(intensity, world, pos, face, state);
