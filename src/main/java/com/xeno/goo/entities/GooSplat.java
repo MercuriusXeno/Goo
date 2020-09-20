@@ -70,14 +70,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = blob.sideWeLiveOn();
         this.blockAttached = blob.blockAttached();
         updateSplatState();
-        if (!(this.goo.getFluid() instanceof GooFluid) || this.goo.isEmpty()) {
-            this.setDead();
-            this.remove();
-        } else {
-            Vector3d findCenter = findCenter(hitVec);
-            this.setPosition(findCenter.x, findCenter.y, findCenter.z);
-            this.setSize();
-        }
+        Vector3d findCenter = findCenter(hitVec);
+        this.setPosition(findCenter.x, findCenter.y, findCenter.z);
+        this.setSize();
         world.playSound(hitVec.x, hitVec.y, hitVec.z, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
                 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
     }
@@ -583,7 +578,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         int spaceRemaining = getTankCapacity(1) - goo.getAmount();
         int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
         if (action == IFluidHandler.FluidAction.EXECUTE && transferAmount > 0) {
-            goo.setAmount(goo.getAmount() + transferAmount);
+            if (goo.isEmpty()) {
+                goo = resource;
+            } else {
+                goo.setAmount(goo.getAmount() + transferAmount);
+            }
             setSize();
         }
 

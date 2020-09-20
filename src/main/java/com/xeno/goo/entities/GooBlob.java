@@ -119,17 +119,41 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
 
         if (isAttachedToBlock) {
-            return;
+            approachAttachmentPoint();
+        } else {
+            handleMovement();
         }
-        handleMovement();
+        doFreeMovement();
         this.isCollidingEntity = this.checkForEntityCollision();
+    }
+
+    private void approachAttachmentPoint()
+    {
+        Vector3d attachmentPoint = attachmentPoint();
+        Vector3d approachVector = attachmentPoint.subtract(this.getPositionVec()).normalize().scale(0.05d);
+        this.setMotion(approachVector);
+    }
+
+    private Vector3d attachmentPoint()
+    {
+        Vector3d attachmentPoint = new Vector3d(
+                blockAttached.getX(),
+                blockAttached.getY(),
+                blockAttached.getZ())
+                .add(0.5d, 0.5d, 0.5d)
+                .add(0.5d * sideWeLiveOn.getXOffset(),
+                        0.5d * sideWeLiveOn.getYOffset(),
+                        0.5d * sideWeLiveOn.getZOffset())
+                .add((this.cubicSize / 2d) * sideWeLiveOn.getXOffset(),
+                        (this.cubicSize / 2d) * sideWeLiveOn.getYOffset(),
+                        (this.cubicSize / 2d) * sideWeLiveOn.getZOffset());
+        return attachmentPoint;
     }
 
     private void handleMovement() {
         handleGravity();
         handleFriction();
         handleMaterialCollisionChecks();
-        doFreeMovement();
     }
 
     private void handleMaterialCollisionChecks()
@@ -179,7 +203,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         GooSplat splat = new GooSplat(Registry.GOO_SPLAT.get(), world, this, hitVec);
         world.addEntity(splat);
         splat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
-
     }
 
     private void attachToBlock(BlockPos pos, Direction face)
