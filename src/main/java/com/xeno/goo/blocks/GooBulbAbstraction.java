@@ -3,7 +3,6 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTile;
 import com.xeno.goo.tiles.GooBulbTileAbstraction;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -35,7 +34,7 @@ public abstract class GooBulbAbstraction extends BlockWithConnections
     public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack)
     {
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
-        int holding = EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING.get(), stack);
+        int holding = EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), stack);
         GooBulbTile tile = (GooBulbTile)worldIn.getTileEntity(pos);
         tile.enchantHolding(holding);
     }

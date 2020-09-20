@@ -1,39 +1,42 @@
 package com.xeno.goo.enchantments;
 
+import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 
-public class Geomancy extends Enchantment
+public class Containment extends Enchantment
 {
-    public Geomancy()
+
+    public Containment()
     {
-        super(Rarity.UNCOMMON, EnchantmentTypes.VALID_FOR_GEOMANCY, new EquipmentSlotType[] {EquipmentSlotType.MAINHAND});
+        super(Rarity.COMMON, EnchantmentTypes.VALID_FOR_CONTAINMENT, new EquipmentSlotType[] {EquipmentSlotType.MAINHAND});
     }
 
     @Override
     public int getMinEnchantability(int enchantmentLevel)
     {
-        return 25;
+        return 1 + (enchantmentLevel - 1) * 10;
     }
 
     @Override
     public int getMaxEnchantability(int enchantmentLevel)
     {
-        return getMinEnchantability(enchantmentLevel) + 35;
+        return getMinEnchantability(enchantmentLevel) + 15;
     }
 
     @Override
     public int getMaxLevel()
     {
-        return 1;
+        return 4;
     }
 
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Gauntlet;
+        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(Registry.GOO_BULB_ITEM.get());
     }
 
     @Override
@@ -58,7 +61,7 @@ public class Geomancy extends Enchantment
     @Override
     protected boolean canApplyTogether(Enchantment ench)
     {
-        return ench instanceof Holding;
+        return false;
     }
 
     // I don't want to make a mess of books, to be honest. There's enough results in ench already without
@@ -78,6 +81,6 @@ public class Geomancy extends Enchantment
     @Override
     public int getMinLevel()
     {
-        return 1;
+        return 0;
     }
 }

@@ -28,16 +28,9 @@ import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.Collection;
 
-import static net.minecraft.util.Direction.Axis.X;
-
-public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooSplat extends GooEntity implements IEntityAdditionalSpawnData
 {
-    private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooSplat.class, DataSerializers.VARINT);
-    private static final int INITIAL_GRACE_TICKS = 60;
-    private static final int DECAY_TICKS_PER_UNIT = 10;
-    private static final double GRAVITY = 0.012d;
-    private static final double GENERAL_FRICTION = 0.98d;
-    public FluidStack goo;
+    private static final int INITIAL_GRACE_TICKS = 10;
     private Entity owner;
     private Vector3d shape;
     private AxisAlignedBB box;
@@ -66,7 +59,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         resetGraceTicks();
         this.decayTicks = 0;
         this.sideWeLiveOn = sideWeLiveOn;
-        updateSplatState(true, false, 0d);
+        updateSplatState();
         if (!(stack.getFluid() instanceof GooFluid) || stack.isEmpty()) {
             this.setDead();
             this.remove();
@@ -93,14 +86,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private static final double LIQUID_CUBIC_RATIO = 1000d;
     private void setShape()
     {
-        double amountWithDecay = goo.getAmount() - (decayTicks / (double)DECAY_TICKS_PER_UNIT);
-        double cubicArea = amountWithDecay / LIQUID_CUBIC_RATIO;
+        double cubicArea = goo.getAmount() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / depth;
         double sideLength = Math.sqrt(targetSurfaceArea);
-        // for visuals only
-        if (amountWithDecay < 1.0d) {
-            sideLength *= amountWithDecay;
-        }
         switch (depthAxis()) {
             case X:
                 shape =  new Vector3d(depth, sideLength, sideLength);
@@ -119,35 +107,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         makeBox();
     }
 
-    private void decay()
+    private void updateSplatState()
     {
-        if (goo.getAmount() - 1 <= 0) {
-            this.remove();
-            return;
-        }
-        goo.setAmount(goo.getAmount() - 1);
-        updateSplatState(false, false, goo.getAmount() / (double)(goo.getAmount() + 1));
-    }
-
-    private void updateSplatState(boolean isInitializing, boolean isDripping, double ratio)
-    {
-        if (isInitializing) {
-            setDepth(defaultDepth());
-        } else {
-            if (ratio < 1.0d || isDripping) {
-                // ratio is actually a cubic reduction, we have to settle that here
-                setDepth(this.depth * Math.cbrt(ratio));
-            } else {
-                setDepth(defaultDepth());
-            }
-        }
+        setDepth(defaultDepth());
         setShape();
         makeBox();
     }
 
     private double defaultDepth()
     {
-        return Math.cbrt(goo.getAmount() / LIQUID_CUBIC_RATIO) * 0.1d;
+        return Math.cbrt(goo.getAmount() / LIQUID_CUBIC_RATIO) * 0.3d;
     }
 
     private void makeBox()
@@ -208,7 +177,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     }
 
     public AxisAlignedBB getCollisionBoundingBox() {
-        return null;
+        return this.box.offset(this.getPositionVec());
     }
 
     public void recalculateSize() {
@@ -219,17 +188,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.setPosition(d0, d1, d2);
     }
 
-    public void notifyDataManagerChange(DataParameter<?> key) {
-        if (GOO_SIZE.equals(key)) {
-            this.recalculateSize();
-        }
-
-        super.notifyDataManagerChange(key);
-    }
-
     @Override
     protected void registerData() {
-        this.dataManager.register(GOO_SIZE, 1);
+        super.registerData();
     }
 
     @Override
@@ -238,23 +199,25 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         super.tick();
         handleMaterialCollisionChecks();
         handleGravity();
-        handleFriction();
-        handleDecay();
-        doFreeMovement();
+        handleResolving();
         this.isCollidingEntity = this.checkForEntityCollision();
+        doFreeMovement();
     }
 
-    private void handleFriction()
+    protected void doFreeMovement()
     {
-        this.setMotion(this.getMotion().scale(GENERAL_FRICTION));
-    }
-
-    protected void doFreeMovement() {
         Vector3d motion = this.getMotion();
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
+        this.setPosition(projection.x, projection.y, projection.z);
+    }
+    private void handleGravity()
+    {
+        if (this.depthAxis() == Direction.Axis.Y) {
+            return;
+        }
 
-        this.setPositionAndRotation(projection.x, projection.y, projection.z, this.rotationYaw, this.rotationPitch);
+        this.setMotion(0d, -0.01d, 0d);
     }
 
     private void handleMaterialCollisionChecks()
@@ -303,45 +266,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
     }
 
-    private void handleGravity()
-    {
-        // if we're clinging to a ceiling or floor, we don't move.
-        if (depthAxis() == Direction.Axis.Y) {
-            // counterintuitively, this means we're on the "top" of a block
-            // (we're on the "bottom" of the block we're inside)
-            if (sideWeLiveOn == Direction.DOWN) {
-                return;
-            } else {
-                // we're dripping!
-                updateSplatState(false, true, 1.1d);
-                if (Math.pow(this.depth, 3) > goo.getAmount() / LIQUID_CUBIC_RATIO) {
-                    detachFromHangingAndFormBlob();
-                }
-                return;
-            }
-
-        }
-        this.setMotion(0d, -GRAVITY / 2d, 0d);
-    }
-
-    private void detachFromHangingAndFormBlob()
-    {
-        this.remove();
-        world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, owner, goo, this.getPositionVec()));
-    }
-
-    private void handleDecay()
+    private void handleResolving()
     {
         if (this.graceTicks > 0) {
             graceTicks--;
             return;
-        }
-        this.decayTicks++;
-        if (this.decayTicks >= DECAY_TICKS_PER_UNIT - 1) {
-            this.decayTicks = 0;
-            decay();
-        } else {
-            setShape();
         }
     }
 
@@ -441,7 +370,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     @Override
     public boolean canBeCollidedWith()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -482,11 +411,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
     }
 
-    protected void setSize() {
-        this.dataManager.set(GOO_SIZE, goo.getAmount());
-        this.recalculateSize();
-    }
-
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
@@ -500,9 +424,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                         // filter
                         (eInBB) -> isGooThing(eInBB) || isValidCollisionEntity(eInBB));
         for(Entity e : collidedEntities) {
-            if (e instanceof GooSplat) {
-                combineSplats((GooSplat)e);
-            } else if (e instanceof GooBlob) {
+            if (e instanceof GooBlob) {
                 absorbBlob((GooBlob)e);
             } else {
                 // some other entity, do nasty stuff to it. Or good stuff, you know, whatever.
@@ -522,32 +444,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return eInBB instanceof GooSplat || eInBB instanceof GooBlob;
     }
 
-    private void combineSplats(GooSplat e)
-    {
-        // side hits different? don't combine them, they're not the same splat.
-        if (e.sideWeLiveOn != this.sideWeLiveOn) {
-            return;
-        }
-        // perform a weighted average of locations
-        int volumeWeight = goo.getAmount() + e.goo.getAmount();
-        double ratio = volumeWeight / (double)goo.getAmount();
-        this.goo.setAmount(volumeWeight);
-        updateSplatState(false, false, ratio);
-        resetGraceTicks();
-        e.remove();
-    }
-
     private void absorbBlob(GooBlob e)
     {
         // perform a weighted average of locations
         int volumeWeight = goo.getAmount() + e.goo.getAmount();
         double ratio = volumeWeight / (double)goo.getAmount();
         this.goo.setAmount(volumeWeight);
-        updateSplatState(false, false, ratio);
+        updateSplatState();
         resetGraceTicks();
         e.remove();
     }
-
 
     protected void onImpact(RayTraceResult rayTraceResult) {
         RayTraceResult.Type resultType = rayTraceResult.getType();
@@ -575,66 +481,5 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
     protected void doChangeBlockState(BlockPos blockPos, Direction sideHit) {
         tryFluidHandlerInteraction(blockPos, sideHit);
-    }
-
-    @Override
-    public int getTanks()
-    {
-        return 1;
-    }
-
-    @Override
-    public FluidStack getFluidInTank(int tank)
-    {
-        return goo;
-    }
-
-    @Override
-    public int getTankCapacity(int tank)
-    {
-        return 1000;
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, FluidStack stack)
-    {
-        return stack.isFluidEqual(this.goo);
-    }
-
-    @Override
-    public int fill(FluidStack resource, FluidAction action)
-    {
-        int spaceRemaining = getTankCapacity(1) - goo.getAmount();
-        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
-        if (action == FluidAction.EXECUTE && transferAmount > 0) {
-            goo.setAmount(goo.getAmount() + transferAmount);
-            setSize();
-        }
-
-        return transferAmount;
-    }
-
-    @Override
-    public FluidStack drain(FluidStack resource, FluidAction action)
-    {
-        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), resource.getAmount()));
-        if (action == FluidAction.EXECUTE) {
-            goo.setAmount(goo.getAmount() - result.getAmount());
-            setSize();
-        }
-
-        return result;
-    }
-
-    @Override
-    public FluidStack drain(int maxDrain, FluidAction action)
-    {
-        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), maxDrain));
-        if (action == FluidAction.EXECUTE) {
-            goo.setAmount(goo.getAmount() - result.getAmount());
-            setSize();
-        }
-
-        return result;
     }
 }

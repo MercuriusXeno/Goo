@@ -23,9 +23,7 @@ import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
-    private static final int GEOMANCY_DRAIN = 16;
-    private static final int NORMAL_DRAIN = 9;
-    private static final int SNEAKING_DRAIN = 4;
+    private static final int NORMAL_DRAIN = 4;
 
     public GauntletAbstraction(int capacity)
     {
@@ -183,14 +181,12 @@ public class GauntletAbstraction extends ItemFluidContainer
             return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
-        int drainAmount = (Gauntlet.geomancy(player.getHeldItem(handIn)) ? GEOMANCY_DRAIN :
-                (player.isSneaking() ? SNEAKING_DRAIN : NORMAL_DRAIN));
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        FluidStack thrownStack = cap.drain(drainAmount, IFluidHandler.FluidAction.EXECUTE);
+        FluidStack thrownStack = cap.drain(NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
-        world.playSound(player, player.getPositionVec().x, player.getPositionVec().y,
+        world.playSound(player.getPositionVec().x, player.getPositionVec().y,
                 player.getPositionVec().z, Registry.GOO_LOB_SOUND.get(), SoundCategory.PLAYERS,
-                1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
+                1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         return ActionResult.resultSuccess(player.getHeldItem(handIn));
     }
 

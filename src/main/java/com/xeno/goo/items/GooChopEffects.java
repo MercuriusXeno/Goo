@@ -74,7 +74,7 @@ public class GooChopEffects
         }
 
         // geomancy lets you drain around twice as much goo to deal around 33% stronger effects (rounded up tho)
-        FluidStack goo = cap.drain(Gauntlet.geomancy(stack) ? GEOMANCY_DRAIN : NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
+        FluidStack goo = cap.drain(NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         if (goo.isEmpty()) {
             return false;
         }

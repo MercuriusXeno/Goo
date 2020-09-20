@@ -7,8 +7,7 @@ import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ISTERProvider;
-import com.xeno.goo.enchantments.Geomancy;
-import com.xeno.goo.enchantments.Holding;
+import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
@@ -171,8 +170,7 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> WEIRD = COMPOUNDS.register("weird", () -> new GooCompoundType(WEIRD_GOO, GOO_GROUP));
 
     // enchantments
-    public static final RegistryObject<Holding> HOLDING = ENCHANTMENTS.register("holding", Holding::new);
-    public static final RegistryObject<Geomancy> GEOMANCY = ENCHANTMENTS.register("geomancy", Geomancy::new);
+    public static final RegistryObject<Containment> CONTAINMENT = ENCHANTMENTS.register("containment", Containment::new);
 
     // particles
     public static final RegistryObject<BasicParticleType> AQUATIC_FALLING_GOO_PARTICLE = PARTICLES.register("aquatic_falling_goo", () -> new BasicParticleType(false));

@@ -54,7 +54,7 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return this.capacity * holdingMultiplier(Gauntlet.holding(this.container));
+        return this.capacity * holdingMultiplier(Gauntlet.containment(this.container));
     }
 
     public static int storageForDisplay(ItemStack stack)

@@ -1,7 +1,6 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.library.WeakConsumerWrapper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
@@ -16,13 +15,11 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -367,7 +364,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     private Map<Enchantment, Integer> stackEnchantmentFactory() {
         Map<Enchantment, Integer> result = new HashMap<>();
         if (enchantHolding > 0) {
-            result.put(Registry.HOLDING.get(), enchantHolding);
+            result.put(Registry.CONTAINMENT.get(), enchantHolding);
         }
         return result;
     }

@@ -12,8 +12,6 @@ import net.minecraft.world.server.ServerWorld;
 @AequivaleoPlugin
 public class GooAequivaleoPlugin implements IAequivaleoPlugin
 {
-
-    
     @Override
     public String getId()
     {

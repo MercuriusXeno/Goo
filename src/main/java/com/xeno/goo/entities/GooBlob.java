@@ -31,19 +31,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooBlob extends GooEntity implements IEntityAdditionalSpawnData
 {
     private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
     private static final double GOO_GRAVITY = 0.06d;
-    public FluidStack goo;
     private int quiverTimer;
     private Entity owner;
     private float cubicSize;
     private EntitySize size;
-
+    private BlockPos blockAttached = null;
+    private boolean isAttachedToBlock;
 
     public GooBlob(EntityType<GooBlob> type, World worldIn) {
         super(type, worldIn);
@@ -52,6 +52,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack) {
         super(type, worldIn);
         goo = stack;
+        isAttachedToBlock = false;
         if (!(stack.getFluid() instanceof GooFluid)) {
             this.setDead();
             this.remove();
@@ -96,31 +97,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return this.getBoundingBox();
     }
 
+    @Override
     public void recalculateSize() {
         double d0 = this.getPosX();
         double d1 = this.getPosY();
         double d2 = this.getPosZ();
         super.recalculateSize();
         this.setPosition(d0, d1, d2);
-    }
-
-    @Override
-    public EntitySize getSize(Pose poseIn)
-    {
-        return this.size;
-    }
-
-    public void notifyDataManagerChange(DataParameter<?> key) {
-        if (GOO_SIZE.equals(key)) {
-            this.recalculateSize();
-        }
-
-        super.notifyDataManagerChange(key);
-    }
-
-    @Override
-    protected void registerData() {
-        this.dataManager.register(GOO_SIZE, 1);
     }
 
     @Override
@@ -133,6 +116,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             quiverTimer--;
         }
 
+        if (isAttachedToBlock) {
+            return;
+        }
         handleMovement();
         this.isCollidingEntity = this.checkForEntityCollision();
     }
@@ -344,8 +330,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
     }
 
+    @Override
     protected void setSize() {
-        this.cubicSize = (float)Math.cbrt(goo.getAmount()) / 10f;
+        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
         this.size = new EntitySize(cubicSize, cubicSize, false);
         this.dataManager.set(GOO_SIZE, goo.getAmount());
         this.recalculateSize();
@@ -408,66 +395,5 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     public int quiverTimer()
     {
         return quiverTimer;
-    }
-
-    @Override
-    public int getTanks()
-    {
-        return 1;
-    }
-
-    @Override
-    public FluidStack getFluidInTank(int tank)
-    {
-        return goo;
-    }
-
-    @Override
-    public int getTankCapacity(int tank)
-    {
-        return 1000;
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, FluidStack stack)
-    {
-        return stack.isFluidEqual(this.goo);
-    }
-
-    @Override
-    public int fill(FluidStack resource, FluidAction action)
-    {
-        int spaceRemaining = getTankCapacity(1) - goo.getAmount();
-        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
-        if (action == FluidAction.EXECUTE && transferAmount > 0) {
-            goo.setAmount(goo.getAmount() + transferAmount);
-            setSize();
-        }
-
-        return transferAmount;
-    }
-
-    @Override
-    public FluidStack drain(FluidStack resource, FluidAction action)
-    {
-        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), resource.getAmount()));
-        if (action == FluidAction.EXECUTE) {
-            goo.setAmount(goo.getAmount() - result.getAmount());
-            setSize();
-        }
-
-        return result;
-    }
-
-    @Override
-    public FluidStack drain(int maxDrain, FluidAction action)
-    {
-        FluidStack result = new FluidStack(goo.getFluid(), Math.min(goo.getAmount(), maxDrain));
-        if (action == FluidAction.EXECUTE) {
-            goo.setAmount(goo.getAmount() - result.getAmount());
-            setSize();
-        }
-
-        return result;
     }
 }
