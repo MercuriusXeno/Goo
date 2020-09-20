@@ -15,8 +15,8 @@ import vazkii.patchouli.api.PatchouliAPI;
 import javax.sound.midi.Patch;
 import java.util.function.Consumer;
 
-public class Recipes extends RecipeProvider {
-    public Recipes(DataGenerator generatorIn) {
+public class RecipesProvider extends RecipeProvider {
+    public RecipesProvider(DataGenerator generatorIn) {
         super(generatorIn);
     }
 

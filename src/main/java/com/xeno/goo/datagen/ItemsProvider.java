@@ -6,8 +6,8 @@ import net.minecraft.data.DataGenerator;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
 
-public class Items extends ItemModelProvider {
-    public Items(DataGenerator generator, ExistingFileHelper existingFileHelper) {
+public class ItemsProvider extends ItemModelProvider {
+    public ItemsProvider(DataGenerator generator, ExistingFileHelper existingFileHelper) {
         super(generator, GooMod.MOD_ID, existingFileHelper);
     }
 

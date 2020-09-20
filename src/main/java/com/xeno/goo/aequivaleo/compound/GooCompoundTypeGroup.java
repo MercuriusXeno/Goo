@@ -5,12 +5,10 @@ import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipe;
-import com.ldtteam.aequivaleo.api.recipe.equivalency.ITagEquivalencyRecipe;
-import net.minecraft.util.ResourceLocation;
+import com.ldtteam.aequivaleo.vanilla.api.recipe.equivalency.ITagEquivalencyRecipe;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;

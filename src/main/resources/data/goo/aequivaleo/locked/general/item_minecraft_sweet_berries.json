@@ -1,0 +1,26 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:sweet_berries"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "floral"
+      }
+    },
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "vital"
+      }
+    }
+  ]
+}

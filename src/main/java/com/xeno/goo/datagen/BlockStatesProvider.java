@@ -12,8 +12,8 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
 
-public class BlockStates extends BlockStateProvider {
-    public BlockStates(DataGenerator gen, ExistingFileHelper exFileHelper) {
+public class BlockStatesProvider extends BlockStateProvider {
+    public BlockStatesProvider(DataGenerator gen, ExistingFileHelper exFileHelper) {
         super(gen, GooMod.MOD_ID, exFileHelper);
     }
 

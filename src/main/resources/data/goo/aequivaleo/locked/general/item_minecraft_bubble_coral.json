@@ -1,0 +1,26 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:bubble_coral"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "faunal"
+      }
+    },
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "vital"
+      }
+    }
+  ]
+}

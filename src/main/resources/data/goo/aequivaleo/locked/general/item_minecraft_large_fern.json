@@ -1,0 +1,26 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:large_fern"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "floral"
+      }
+    },
+    {
+      "amount": 120.0,
+      "type": {
+        "namespace": "goo",
+        "path": "vital"
+      }
+    }
+  ]
+}
