@@ -68,15 +68,17 @@ public class Registry {
     public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
             () -> EntityType.Builder.<GooBlob>create(GooBlob::new, EntityClassification.MISC)
                 .size(0.1f, 0.1f)
+            .setTrackingRange(64)
             .setShouldReceiveVelocityUpdates(false)
             .build("goo_blob")
     );
 
     public static final RegistryObject<EntityType<GooSplat>> GOO_SPLAT = ENTITIES.register("goo_splat",
             () -> EntityType.Builder.<GooSplat>create(GooSplat::new, EntityClassification.MISC)
-                    .size(0.1f, 0.1f)
-                    .setShouldReceiveVelocityUpdates(false)
-                    .build("goo_splat")
+                .size(0.1f, 0.1f)
+            .setTrackingRange(64)
+            .setShouldReceiveVelocityUpdates(false)
+            .build("goo_splat")
     );
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions

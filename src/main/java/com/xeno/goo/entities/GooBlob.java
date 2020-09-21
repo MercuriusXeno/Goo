@@ -121,7 +121,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         if (isAttachedToBlock) {
             approachAttachmentPoint();
         } else {
-            handleMovement();
+            if (handleMovement()) {
+                return; // stop moving
+            }
         }
         doFreeMovement();
         this.isCollidingEntity = this.checkForEntityCollision();
@@ -130,8 +132,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private void approachAttachmentPoint()
     {
         Vector3d attachmentPoint = attachmentPoint();
-        Vector3d approachVector = attachmentPoint.subtract(this.getPositionVec()).normalize().scale(0.05d);
-        this.setMotion(approachVector);
+        Vector3d approachVector = attachmentPoint.subtract(this.getPositionVec());
+        if (approachVector.length() <= 0.1d) {
+            this.setMotion(approachVector);
+        } else {
+            this.setMotion(approachVector.normalize().scale(0.05d));
+        }
     }
 
     private Vector3d attachmentPoint()
@@ -150,13 +156,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return attachmentPoint;
     }
 
-    private void handleMovement() {
+    private boolean handleMovement() {
         handleGravity();
         handleFriction();
-        handleMaterialCollisionChecks();
+        return handleMaterialCollisionChecks();
     }
 
-    private void handleMaterialCollisionChecks()
+    private boolean handleMaterialCollisionChecks()
     {
         Vector3d motion = this.getMotion();
         Vector3d position = this.getPositionVec();
@@ -169,8 +175,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             collideBlockMaybe(blockResult);
             if (goo.getAmount() > 0) {
                 splat(blockResult.getPos(), blockResult.getFace(), blockResult.getHitVec());
+                return true;
             }
-            return;
+            return false;
         }
 
         EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
@@ -182,6 +189,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         handleLiquidCollisions(motion);
 
         this.doBlockCollisions();
+        return false;
     }
 
     private void handleFriction()
