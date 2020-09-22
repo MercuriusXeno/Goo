@@ -69,7 +69,8 @@ public class Registry {
             () -> EntityType.Builder.<GooBlob>create(GooBlob::new, EntityClassification.MISC)
                 .size(0.1f, 0.1f)
             .setTrackingRange(64)
-            .setShouldReceiveVelocityUpdates(false)
+            .setUpdateInterval(1)
+            .setShouldReceiveVelocityUpdates(true)
             .build("goo_blob")
     );
 
@@ -77,7 +78,8 @@ public class Registry {
             () -> EntityType.Builder.<GooSplat>create(GooSplat::new, EntityClassification.MISC)
                 .size(0.1f, 0.1f)
             .setTrackingRange(64)
-            .setShouldReceiveVelocityUpdates(false)
+            .setUpdateInterval(1)
+            .setShouldReceiveVelocityUpdates(true)
             .build("goo_splat")
     );
 

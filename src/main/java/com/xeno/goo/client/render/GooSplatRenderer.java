@@ -119,18 +119,17 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
         // otherwise it just looks dull by nature, which is what we want most of the time.
-        if (isBrightFluid(entity.goo.getFluid())) {
+        if (isBrightFluid(entity.goo().getFluid())) {
             light = GooRenderHelper.FULL_BRIGHT;
         } else {
             light = WorldRenderer.getCombinedLight(entity.getEntityWorld(), entity.getPosition());
         }
         IVertexBuilder buffer = bufferType.getBuffer(rType);
-        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo.getFluid().getAttributes().getStillTexture());
-
-        Vector3d origin = entity.getPositionVec();
+        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager()
+                .getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE)
+                .getSprite(entity.goo().getFluid().getAttributes().getStillTexture());
 
         Vector3d scale = entity.shape();
-        // Texture and noise gen should be stored so they aren't remade every frame...
         Vector3f[][] scaledQuads = scale(UNSCALED_QUADS, scale);
         stack.push();
         Matrix4f matrix = stack.getLast().getMatrix();
@@ -146,7 +145,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
     @Override
     protected int getBlockLight(GooSplat entityIn, BlockPos partialTicks)
     {
-        if (isBrightFluid(entityIn.goo.getFluid())) {
+        if (isBrightFluid(entityIn.goo().getFluid())) {
             return 15;
         }
         return super.getBlockLight(entityIn, partialTicks);

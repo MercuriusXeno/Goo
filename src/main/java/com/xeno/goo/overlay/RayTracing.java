@@ -48,10 +48,19 @@ public class RayTracing {
         return entity.getEntityWorld().rayTraceBlocks(context);
     }
 
-    public BlockRayTraceResult target()
+    public BlockRayTraceResult blockTarget()
     {
         if (this.target instanceof BlockRayTraceResult) {
             return (BlockRayTraceResult)this.target;
+        }
+
+        return null;
+    }
+
+    public EntityRayTraceResult entityTarget()
+    {
+        if (this.target instanceof EntityRayTraceResult) {
+            return (EntityRayTraceResult)this.target;
         }
 
         return null;

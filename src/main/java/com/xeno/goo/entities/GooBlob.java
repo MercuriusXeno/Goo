@@ -1,12 +1,13 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -19,7 +20,6 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -27,13 +27,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
-    private static final DataParameter<Integer> GOO_SIZE = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
+    private static final DataParameter<Integer> GOO_AMOUNT = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
@@ -96,33 +95,55 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     }
 
     public AxisAlignedBB getCollisionBoundingBox() {
-        return this.getBoundingBox();
+        return null;
     }
 
     @Override
     public void recalculateSize() {
-        double d0 = this.getPosX();
-        double d1 = this.getPosY();
-        double d2 = this.getPosZ();
-        super.recalculateSize();
-        this.setPosition(d0, d1, d2);
+        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
+        this.size = new EntitySize(cubicSize, cubicSize, false);
+        realignBoundingBox(this.getPositionVec());
+    }
+
+    // 32 blocks.
+    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
+    @Override
+    public boolean isInRangeToRenderDist(double distance)
+    {
+        return distance < A_REASONABLE_RENDER_DISTANCE_SQUARED;
+    }
+
+    @Override
+    public void removeTrackingPlayer(ServerPlayerEntity player)
+    {
+        super.removeTrackingPlayer(player);
     }
 
     @Override
     public void tick()
     {
         super.tick();
+        if (goo.isEmpty()) {
+            this.remove();
+            return;
+        }
 
         // quiver timer is really just a client side thing
         if (this.quiverTimer > 0) {
             quiverTimer--;
         }
 
+        // let the server handle motion and updates
+        if (world.isRemote()) {
+            goo.setAmount(this.dataManager.get(GOO_AMOUNT));
+            return;
+        }
+
         if (isAttachedToBlock) {
             approachAttachmentPoint();
         } else {
             if (handleMovement()) {
-                return; // stop moving
+                return;
             }
         }
         doFreeMovement();
@@ -147,9 +168,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
                 blockAttached.getY(),
                 blockAttached.getZ())
                 .add(0.5d, 0.5d, 0.5d)
-                .add(0.5d * sideWeLiveOn.getXOffset(),
-                        0.5d * sideWeLiveOn.getYOffset(),
-                        0.5d * sideWeLiveOn.getZOffset())
+                .add(0.51d * sideWeLiveOn.getXOffset(),
+                        0.51d * sideWeLiveOn.getYOffset(),
+                        0.51d * sideWeLiveOn.getZOffset())
                 .add((this.cubicSize / 2d) * sideWeLiveOn.getXOffset(),
                         (this.cubicSize / 2d) * sideWeLiveOn.getYOffset(),
                         (this.cubicSize / 2d) * sideWeLiveOn.getZOffset());
@@ -204,13 +225,36 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     protected void splat(BlockPos pos, Direction face, Vector3d hitVec) {
         // the state we're interested in observing is the state of the hit block, not the offset.
-        BlockState state = world.getBlockState(pos);
         GooSplatEffects.spawnParticles(this);
+        if (world.isRemote()) {
+            return;
+        }
+        // check to see if there's already a splat here
+        List<GooSplat> splats = world.getEntitiesWithinAABB(GooSplat.class,
+                this.getBoundingBox().expand(this.getMotion()),
+                (e) -> e.sideWeLiveOn().equals(face) && e.blockAttached().equals(pos));
+        if (splats.size() > 0) {
+            bounceBlob(splats.get(0).sideWeLiveOn());
+            return;
+        }
         attachToBlock(pos, face);
         // create a goo splat
-        GooSplat splat = new GooSplat(Registry.GOO_SPLAT.get(), world, this, hitVec);
-        world.addEntity(splat);
-        splat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+        FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
+        world.addEntity(new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face));
+    }
+
+    public void bounceBlob(Direction face)
+    {
+        switch(face.getAxis()) {
+            case Y:
+                setMotion(getMotion().getX(), -getMotion().getY(), getMotion().getZ());
+                return;
+            case X:
+                setMotion(-getMotion().getX(), getMotion().getY(), getMotion().getZ());
+                return;
+            case Z:
+                setMotion(getMotion().getX(), getMotion().getY(), -getMotion().getZ());
+        }
     }
 
     private void attachToBlock(BlockPos pos, Direction face)
@@ -226,6 +270,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         Vector3d projection = position.add(motion);
 
         this.setPositionAndRotation(projection.x, projection.y, projection.z, this.rotationYaw, this.rotationPitch);
+        this.realignBoundingBox(projection);
+    }
+
+    private void realignBoundingBox(Vector3d projection)
+    {
+        Vector3d halfSize = new Vector3d(cubicSize / 2d, cubicSize / 2d, cubicSize / 2d);
+        this.setBoundingBox(new AxisAlignedBB(projection.subtract(halfSize), projection.add(halfSize)));
     }
 
     private void handleLiquidCollisions(Vector3d motion)
@@ -255,7 +306,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
      * Gets the EntityRayTraceResult representing the entity hit
      */
     protected EntityRayTraceResult rayTraceEntities(Vector3d startVec, Vector3d endVec) {
-        return ProjectileHelper.rayTraceEntities(this.world, this, startVec, endVec, this.getBoundingBox().expand(this.getMotion()).grow(1.0D), this::canHitEntityAndNotAlready);
+        return ProjectileHelper.rayTraceEntities(this.world, this, startVec, endVec, this.getBoundingBox().expand(this.getMotion()), this::canHitEntityAndNotAlready);
     }
 
     protected boolean canHitEntityAndNotAlready(Entity hitEntity) {
@@ -399,19 +450,17 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     }
 
     protected void setSize() {
-        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
-        this.size = new EntitySize(cubicSize, cubicSize, false);
-        this.dataManager.set(GOO_SIZE, goo.getAmount());
+        this.dataManager.set(GOO_AMOUNT, goo.getAmount());
         this.recalculateSize();
     }
 
     @Override
     protected void registerData() {
-        this.dataManager.register(GOO_SIZE, 1);
+        this.dataManager.register(GOO_AMOUNT, 1);
     }
 
     public void notifyDataManagerChange(DataParameter<?> key) {
-        if (GOO_SIZE.equals(key)) {
+        if (GOO_AMOUNT.equals(key)) {
             this.recalculateSize();
         }
 
@@ -425,7 +474,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             Collection<Entity> collidedEntities =
                     this.world.getEntitiesInAABBexcluding(this,
                             // grow bb
-                            this.getBoundingBox().expand(this.getMotion()).grow(1.0D),
+                            this.getBoundingBox().expand(this.getMotion()),
                             // filter
                             (eInBB) -> !eInBB.isSpectator() && eInBB.canBeCollidedWith());
             for(Entity entity1 : collidedEntities) {

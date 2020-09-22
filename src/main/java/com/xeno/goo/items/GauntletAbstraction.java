@@ -2,10 +2,13 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -23,7 +26,7 @@ import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
-    private static final int NORMAL_DRAIN = 4;
+    private static final int THROWN_GOO_DRAIN = 16;
 
     public GauntletAbstraction(int capacity)
     {
@@ -176,18 +179,50 @@ public class GauntletAbstraction extends ItemFluidContainer
         if (cap == null) {
             return ActionResult.resultPass(player.getHeldItem(handIn));
         }
+//
+//        // try picking goo up off of the ground before we do anything else
+//        if (RayTracing.INSTANCE.entityTarget() != null) {
+//            if (isValidTarget(RayTracing.INSTANCE.entityTarget().getEntity())) {
+//                if (tryExtractingGooFromEntity(cap, (IFluidHandler)RayTracing.INSTANCE.entityTarget().getEntity()) > 0) {
+//                    return ActionResult.resultSuccess(player.getHeldItem(handIn));
+//                }
+//            }
+//        }
 
         if (cap.getFluidInTank(0).isEmpty()) {
             return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        FluidStack thrownStack = cap.drain(NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
+        FluidStack thrownStack = cap.drain(THROWN_GOO_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
         world.playSound(player.getPositionVec().x, player.getPositionVec().y,
                 player.getPositionVec().z, Registry.GOO_LOB_SOUND.get(), SoundCategory.PLAYERS,
                 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         return ActionResult.resultSuccess(player.getHeldItem(handIn));
+    }
+
+    private int tryExtractingGooFromEntity(IFluidHandlerItem item, IFluidHandler entity)
+    {
+        FluidStack heldGoo = item.getFluidInTank(0);
+        if (!item.getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(entity.getFluidInTank(0)) || entity.getFluidInTank(0).isEmpty()) {
+                return 0;
+            }
+        }
+
+        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
+        FluidStack tryDrain = entity.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        if (tryDrain.isEmpty()) {
+            return 0;
+        }
+
+        return item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+    }
+
+    private boolean isValidTarget(Entity entity)
+    {
+        return entity instanceof IFluidHandler && (entity instanceof GooBlob || entity instanceof GooSplat);
     }
 
     @Override
