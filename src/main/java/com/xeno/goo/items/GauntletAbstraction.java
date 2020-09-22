@@ -202,29 +202,6 @@ public class GauntletAbstraction extends ItemFluidContainer
         return ActionResult.resultSuccess(player.getHeldItem(handIn));
     }
 
-    private int tryExtractingGooFromEntity(IFluidHandlerItem item, IFluidHandler entity)
-    {
-        FluidStack heldGoo = item.getFluidInTank(0);
-        if (!item.getFluidInTank(0).isEmpty()) {
-            if (!heldGoo.isFluidEqual(entity.getFluidInTank(0)) || entity.getFluidInTank(0).isEmpty()) {
-                return 0;
-            }
-        }
-
-        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
-        FluidStack tryDrain = entity.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
-        if (tryDrain.isEmpty()) {
-            return 0;
-        }
-
-        return item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-    }
-
-    private boolean isValidTarget(Entity entity)
-    {
-        return entity instanceof IFluidHandler && (entity instanceof GooBlob || entity instanceof GooSplat);
-    }
-
     @Override
     public int getMaxDamage(ItemStack stack)
     {

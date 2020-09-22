@@ -1,12 +1,15 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.items.BasinAbstraction;
+import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
 import net.minecraft.network.PacketBuffer;
@@ -24,7 +27,9 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
@@ -353,15 +358,44 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     }
 
     @Override
-    public ActionResultType processInitialInteract(PlayerEntity player, Hand hand)
-    {
-        return super.processInitialInteract(player, hand);
-    }
-
-    @Override
     public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand)
     {
-        return super.applyPlayerInteraction(player, vec, hand);
+        ItemStack stack = player.getHeldItem(hand);
+        if (!isValidInteractionStack(stack)) {
+            return ActionResultType.PASS;
+        }
+        boolean[] didStuff = {false};
+
+        LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
+        if (didStuff[0]) {
+            return ActionResultType.SUCCESS;
+        }
+        return ActionResultType.CONSUME;
+    }
+
+    private boolean isValidInteractionStack(ItemStack stack)
+    {
+        return stack.getItem() instanceof GauntletAbstraction || stack.getItem() instanceof BasinAbstraction;
+    }
+
+    private static boolean tryExtractingGooFromEntity(IFluidHandlerItem item, GooSplat entity)
+    {
+        FluidStack heldGoo = item.getFluidInTank(0);
+        if (!item.getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(entity.getFluidInTank(0)) || entity.getFluidInTank(0).isEmpty()) {
+                return false;
+            }
+        }
+
+        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
+        FluidStack tryDrain = entity.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        if (tryDrain.isEmpty()) {
+            return false;
+        }
+
+        item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     public void notifyDataManagerChange(DataParameter<?> key) {
