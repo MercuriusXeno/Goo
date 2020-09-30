@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:prismarine_shard"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 36.0,
+      "type": {
+        "namespace": "goo",
+        "path": "aquatic"
+      }
+    },
+    {
+      "amount": 1.0,
+      "type": {
+        "namespace": "goo",
+        "path": "crystal"
+      }
+    },
+    {
+      "amount": 72.0,
+      "type": {
+        "namespace": "goo",
+        "path": "weird"
+      }
+    }
+  ]
+}

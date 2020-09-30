@@ -1,0 +1,47 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:gilded_blackstone"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "earthen"
+      }
+    },
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "obsidian"
+      }
+    },
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "regal"
+      }
+    },
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "metal"
+      }
+    },
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "weird"
+      }
+    }
+  ]
+}

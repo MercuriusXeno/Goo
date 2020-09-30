@@ -1,15 +1,11 @@
 package com.xeno.goo;
 
-import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
-import com.xeno.goo.library.MixerRecipes;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.util.logging.Logger;
 
@@ -20,11 +16,9 @@ public class GooMod
 
     public static final Logger logger = Logger.getLogger(MOD_ID);
 
-    public static ServerConfiguration config;
+    public static GooConfig config;
 
     public GooMod() {
-        initializeConfiguration();
-
         Registry.init();
 
         initializeEventListeners();
@@ -42,24 +36,17 @@ public class GooMod
         logger.info(s);
     }
 
-    private void initializeConfiguration()
-    {
-        // separate configs because the mapper functionality is a mess
-        config = new ServerConfiguration();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, config.server);
-        config.loadConfig(config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
-    }
-
     private void initializeEventListeners()
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::loadComplete);
     }
 
     public static final ItemGroup ITEM_GROUP = new GooCreativeTab(MOD_ID)
     {
         @Override
         public ItemStack createIcon() {
-            return new ItemStack(Registry.SOLIDIFIER.get());
+            return new ItemStack(BlocksRegistry.SOLIDIFIER.get());
         }
     };
 }

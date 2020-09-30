@@ -14,11 +14,10 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
 {
     /**
      * @param container The container itemStack, data is stored on it directly as NBT.
-     * @param capacity  The maximum capacity of this fluid tank.
      */
-    public GauntletAbstractionCapability(@Nonnull ItemStack container, int capacity)
+    public GauntletAbstractionCapability(@Nonnull ItemStack container)
     {
-        super(container, capacity);
+        super(container, 0);
     }
 
     @Override
@@ -54,7 +53,7 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return this.capacity * holdingMultiplier(Gauntlet.holding(this.container));
+        return GooMod.config.gauntletCapacity() * holdingMultiplier(Gauntlet.containment(this.container));
     }
 
     public static int storageForDisplay(ItemStack stack)

@@ -2,14 +2,12 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.world.ClientWorld;
@@ -69,7 +67,7 @@ public class HighlightingHelper
             return false;
         }
 
-        BlockRayTraceResult target = RayTracing.INSTANCE.target();
+        BlockRayTraceResult target = RayTracing.INSTANCE.blockTarget();
         if (target == null) {
             return false;
         }

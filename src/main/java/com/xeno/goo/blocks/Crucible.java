@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
@@ -54,7 +55,7 @@ public class Crucible extends BlockWithConnections {
             double d1 = pos.getY();
             double d2 = pos.getZ() + 0.5D;
             if (rand.nextDouble() < 0.1D) {
-                worldIn.playSound(d0, d1, d2, SoundEvents.BLOCK_FURNACE_FIRE_CRACKLE, SoundCategory.BLOCKS, 1.0F, 1.0F, false);
+                worldIn.playSound(d0, d1, d2, Registry.GOO_CRUCIBLE_SOUND.get(), SoundCategory.BLOCKS, 1.0F, 1.0F, false);
             }
 
             for(Direction direction : Direction.values()) {

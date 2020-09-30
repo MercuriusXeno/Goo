@@ -114,6 +114,7 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:7.0.1.10")
 
     compileOnly fg.deobf("${project.aequivaleoVersion}:api")
+    compileOnly fg.deobf("${project.aequivaleoVersion}:vanilla-api")
     runtimeOnly fg.deobf("${project.aequivaleoVersion}:universal")
 
     compileOnly fg.deobf("${project.patchouliVersion}:api")

@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:warped_nylium"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 60.0,
+      "type": {
+        "namespace": "goo",
+        "path": "molten"
+      }
+    },
+    {
+      "amount": 240.0,
+      "type": {
+        "namespace": "goo",
+        "path": "fungal"
+      }
+    },
+    {
+      "amount": 720.0,
+      "type": {
+        "namespace": "goo",
+        "path": "earthen"
+      }
+    }
+  ]
+}

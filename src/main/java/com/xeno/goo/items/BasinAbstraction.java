@@ -2,6 +2,7 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,6 +15,7 @@ import net.minecraft.util.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
@@ -23,12 +25,12 @@ import java.util.function.Supplier;
 
 public class BasinAbstraction extends ItemFluidContainer
 {
-    public BasinAbstraction(int capacity)
+    public BasinAbstraction()
     {
         super(new Item.Properties()
                 .maxStackSize(1)
                 .isBurnable()
-                .group(GooMod.ITEM_GROUP), capacity);
+                .group(GooMod.ITEM_GROUP), 0);
     }
 
     @Override
@@ -96,10 +98,10 @@ public class BasinAbstraction extends ItemFluidContainer
             tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -123,10 +125,10 @@ public class BasinAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -152,13 +154,33 @@ public class BasinAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) + 1;
+    }
+
+    @Override
+    public int getDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null || fh.getFluidInTank(0).isEmpty()) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
     }
 
     @Override

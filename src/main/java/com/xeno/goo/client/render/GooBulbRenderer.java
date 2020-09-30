@@ -18,7 +18,7 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.List;
 
 public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> {
-    private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
+    private static final float FLUID_HORIZONTAL_OFFSET = 0.01f;
     private static final float FROM_SCALED_VERTICAL = GooBulbTile.FLUID_VERTICAL_OFFSET * 16;
     private static final float TO_SCALED_VERTICAL = 16 - (GooBulbTile.FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
@@ -33,13 +33,13 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     @Override
     public void render(GooBulbTileAbstraction tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
-        cap.ifPresent((c) -> render(tile.getPos(), c.getTankCapacity(0), tile.getTotalGoo(), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
+        cap.ifPresent((c) -> render(tile.getPos(), c.getTankCapacity(0), tile.goo(), tile.isVerticallyFilled(), tile.verticalFillFluid(), tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn));
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
 
-    public static void render(BlockPos pos, int bulbCapacity, float totalGoo, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
+    public static void render(BlockPos pos, int bulbCapacity, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
         gooList.removeIf(FluidStack::isEmpty);
         IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
@@ -54,6 +54,10 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         float maxY = to.getY();
         float heightScale = maxY - minY;
         float highestToY = minY;
+
+        heightScale = rescaleHeightForMinimumLevels(heightScale, gooList, bulbCapacity);
+
+        // then we can render
         for(FluidStack goo : gooList) {
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
@@ -70,6 +74,25 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
             FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
         }
+    }
+
+    private static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
+    {
+        // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
+        // render very small amounts of fluid so that we can still target really small amounts
+        // the space in the tank has to be recouped by reducing the overall virtual capacity.
+        // we measure it as a percentage because it's close enough.
+        float lostCap = 0f;
+
+        // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
+        for(FluidStack goo : gooList) {
+            // this is the total fill of the goo in the tank of this particular goo, as a percentage
+            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
+            lostCap += gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
+                    GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity)
+                    : 0f;
+        }
+        return heightScale - (heightScale * lostCap);
     }
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time

@@ -12,7 +12,7 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
 {
     public BasinAbstractionCapability(ItemStack container, int capacity)
     {
-        super(container, capacity);
+        super(container, 0);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return this.capacity * holdingMultiplier(Basin.holding(this.container));
+        return GooMod.config.basinCapacity() * holdingMultiplier(Basin.holding(this.container));
     }
 
     public static int storageForDisplay(ItemStack stack)

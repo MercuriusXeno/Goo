@@ -1,25 +1,5 @@
 package com.xeno.goo.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.entities.GooEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.*;
-import net.minecraft.world.gen.SimplexNoiseGenerator;
-
-import java.util.*;
-
-import static java.lang.Math.PI;
-import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
-
 public class GooSphereRenderer //extends EntityRenderer<GooEntity>
 {
 //    public static final float CIRCUMSCRIBED_RADIUS_TO_EDGE_RATIO = 0.9510565f;

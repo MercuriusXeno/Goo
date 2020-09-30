@@ -1,8 +1,10 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.BrewingStandBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.util.ITooltipFlag;
@@ -13,6 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.tileentity.BrewingStandTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
@@ -55,7 +58,7 @@ public class Gooifier extends BlockWithConnections {
             double d1 = pos.getY();
             double d2 = pos.getZ() + 0.5D;
             if (rand.nextDouble() < 0.1D) {
-                worldIn.playSound(d0, d1, d2, SoundEvents.BLOCK_FURNACE_FIRE_CRACKLE, SoundCategory.BLOCKS, 1.0F, 1.0F, false);
+                worldIn.playSound(d0, d1, d2,  Registry.GOOIFIER_SOUND.get(), SoundCategory.BLOCKS, 1.0F, 1.0F, false);
             }
 
             Direction direction = stateIn.get(HORIZONTAL_FACING);
@@ -153,7 +156,6 @@ public class Gooifier extends BlockWithConnections {
                 world.addEntity(itemEntity);
             }
         }
-
         super.onBlockHarvested(world, pos, state, player);
     }
 }

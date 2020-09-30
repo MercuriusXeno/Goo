@@ -1,10 +1,9 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.enchantments.Holding;
+import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TooltipHandler;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -20,7 +19,7 @@ public class Basin extends BasinAbstraction
 {
     public Basin()
     {
-        super(GooMod.config.basinCapacity());
+        super();
     }
 
     @Override
@@ -51,12 +50,12 @@ public class Basin extends BasinAbstraction
     @Override
     public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment)
     {
-        return isEnchantable(stack) && enchantment instanceof Holding;
+        return isEnchantable(stack) && enchantment instanceof Containment;
     }
 
     public static int holding(ItemStack stack)
     {
-        return EnchantmentHelper.getEnchantmentLevel(Registry.HOLDING.get(), stack);
+        return EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), stack);
     }
 
     @Override

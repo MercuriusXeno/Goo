@@ -1,6 +1,7 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.BasinModel;
 import com.xeno.goo.client.models.GauntletModel;
 import com.xeno.goo.client.particle.GooParticle;
@@ -45,16 +46,17 @@ public class ModClientEvents
 
     private static void setEntityRenderers()
     {
-        GooCubeRenderer.register();
+        GooBlobRenderer.register();
+        GooSplatRenderer.register();
     }
 
     private static void setRenderLayers()
     {
-        RenderTypeLookup.setRenderLayer(Registry.GOO_BULB.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(Registry.GOO_PUMP.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(Registry.MIXER.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(Registry.CRUCIBLE.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(Registry.SOLIDIFIER.get(), RenderType.getSolid());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GOO_BULB.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GOO_PUMP.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.MIXER.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.CRUCIBLE.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.SOLIDIFIER.get(), RenderType.getSolid());
     }
 
     private static void setTileEntityRenderers()

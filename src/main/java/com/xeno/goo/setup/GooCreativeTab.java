@@ -1,5 +1,6 @@
 package com.xeno.goo.setup;
 
+import com.xeno.goo.blocks.BlocksRegistry;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
@@ -16,7 +17,7 @@ public class GooCreativeTab extends ItemGroup
     @Override
     public ItemStack createIcon()
     {
-        return new ItemStack(Registry.SOLIDIFIER.get());
+        return new ItemStack(BlocksRegistry.SOLIDIFIER.get());
     }
 
     public static final NonNullList<ItemStack> sortedCreativeItems = NonNullList.create();

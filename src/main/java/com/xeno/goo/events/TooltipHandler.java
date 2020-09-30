@@ -9,6 +9,8 @@ import com.xeno.goo.blocks.Crucible;
 import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.Mixer;
 import com.xeno.goo.client.render.HighlightingHelper;
+import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
@@ -30,6 +32,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.EntityRayTraceResult;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.StringTextComponent;
@@ -475,10 +478,33 @@ public class TooltipHandler
             return;
         }
 
-        BlockRayTraceResult target = RayTracing.INSTANCE.target();
+        if (!tryBlockRayTrace(e, event)) {
+            tryEntityRayTrace(e, event);
+        }
+    }
+
+    private static boolean tryEntityRayTrace(Entity e, RenderGameOverlayEvent.Post event)
+    {
+        EntityRayTraceResult target = RayTracing.INSTANCE.entityTarget();
 
         if (target == null) {
-            return;
+            return false;
+        }
+
+        if (hasGooContentsAsEntity(target)) {
+            renderGooContentsOfEntity(event, target);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean tryBlockRayTrace(Entity e, RenderGameOverlayEvent.Post event)
+    {
+        BlockRayTraceResult target = RayTracing.INSTANCE.blockTarget();
+
+        if (target == null) {
+            return false;
         }
         ClientWorld world = (ClientWorld)e.getEntityWorld();
 
@@ -486,10 +512,12 @@ public class TooltipHandler
         if (hasGooContents(state)) {
             TileEntity t = world.getTileEntity(target.getPos());
             if (!(t instanceof GooContainerAbstraction)) {
-                return;
+                return false;
             }
             renderGooContents(event, target, (GooContainerAbstraction)t);
+            return true;
         }
+        return false;
     }
 
     private static void renderGooContents(RenderGameOverlayEvent.Post event, BlockRayTraceResult target, GooContainerAbstraction e)
@@ -510,10 +538,47 @@ public class TooltipHandler
         renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
+    private static void renderGooContentsOfEntity(RenderGameOverlayEvent.Post event, EntityRayTraceResult e)
+    {
+        MatrixStack matrices = event.getMatrixStack();
+
+        if( mc.world == null || mc.player == null )
+            return;
+
+        FluidStack entry = gooInEntity(e);
+
+        int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
+        int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
+
+        if (!(entry.getFluid() instanceof GooFluid)) {
+            return;
+        }
+        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), bx, by, (int)Math.floor(entry.getAmount()));
+    }
+
+    private static FluidStack gooInEntity(EntityRayTraceResult e)
+    {
+        if (e.getEntity() instanceof GooBlob) {
+            return ((GooBlob) e.getEntity()).goo();
+        }
+
+        if (e.getEntity() instanceof GooSplat) {
+            return ((GooSplat) e.getEntity()).goo();
+        }
+
+        return FluidStack.EMPTY;
+    }
+
     private static boolean hasGooContents(BlockState state)
     {
         return state.getBlock() instanceof GooBulbAbstraction
                 || state.getBlock() instanceof Mixer
                 || state.getBlock() instanceof Crucible;
+    }
+
+    private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)
+    {
+        return target.getEntity() instanceof GooBlob ||
+                target.getEntity() instanceof GooSplat;
     }
 }

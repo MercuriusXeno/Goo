@@ -1,13 +1,9 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import com.xeno.goo.entities.GooBlob;
 import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -15,7 +11,7 @@ public class GooLobPacket implements IGooModPacket
 {
     private UUID goo;
 
-    public GooLobPacket(GooEntity goo) {
+    public GooLobPacket(GooBlob goo) {
         this.goo = goo.getUniqueID();
     }
 

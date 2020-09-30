@@ -1,23 +1,23 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.particle.GooParticle;
-import com.xeno.goo.entities.GooEntity;
+import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.particles.BasicParticleType;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -26,23 +26,21 @@ import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
-    private static final int GEOMANCY_DRAIN = 27;
-    private static final int NORMAL_DRAIN = 8;
+    private static final int THROWN_GOO_DRAIN = 16;
 
-    public GauntletAbstraction(int capacity)
+    public GauntletAbstraction()
     {
         super(
                 new Item.Properties()
                         .maxStackSize(1)
                         .isBurnable()
-                        .group(GooMod.ITEM_GROUP),
-                capacity);
+                        .group(GooMod.ITEM_GROUP), 0);
     }
 
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, CompoundNBT nbt)
     {
-        return new GauntletAbstractionCapability(stack, this.capacity);
+        return new GauntletAbstractionCapability(stack);
     }
 
     @Override
@@ -103,10 +101,10 @@ public class GauntletAbstraction extends ItemFluidContainer
             tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_EMPTY_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -131,10 +129,10 @@ public class GauntletAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
@@ -160,36 +158,57 @@ public class GauntletAbstraction extends ItemFluidContainer
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
         if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
         } else {
-            world.playSound(pos.x, pos.y, pos.z, SoundEvents.ITEM_BUCKET_FILL_LAVA,
+            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
                     SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
         }
         return ActionResultType.SUCCESS;
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn)
+    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, Hand handIn)
     {
-        if (worldIn.isRemote()) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+        if (world.isRemote()) {
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(playerIn.getHeldItem(handIn));
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(handIn));
         if (cap == null) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
         if (cap.getFluidInTank(0).isEmpty()) {
-            return ActionResult.resultPass(playerIn.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(handIn));
         }
 
-        boolean isGeomancy = Gauntlet.geomancy(playerIn.getHeldItem(handIn));
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        FluidStack thrownStack = cap.drain((isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN), IFluidHandler.FluidAction.EXECUTE);
-        worldIn.addEntity(new GooEntity(Registry.GOO_ENTITY.get(), worldIn, playerIn, thrownStack));
+        FluidStack thrownStack = cap.drain(THROWN_GOO_DRAIN, IFluidHandler.FluidAction.EXECUTE);
+        world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
+        world.playSound(player.getPositionVec().x, player.getPositionVec().y,
+                player.getPositionVec().z, Registry.GOO_LOB_SOUND.get(), SoundCategory.PLAYERS,
+                1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
+        return ActionResult.resultSuccess(player.getHeldItem(handIn));
+    }
 
-        return ActionResult.resultSuccess(playerIn.getHeldItem(handIn));
+    @Override
+    public int getMaxDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) + 1;
+    }
+
+    @Override
+    public int getDamage(ItemStack stack)
+    {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null || fh.getFluidInTank(0).isEmpty()) {
+            return 0;
+        }
+        return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
     }
 }

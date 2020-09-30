@@ -8,6 +8,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.DyeColor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particles.BasicParticleType;
@@ -23,40 +24,34 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class GooChopEffects
 {
-    private static final int GEOMANCY_DRAIN = 16;
-    private static final int NORMAL_DRAIN = 9;
+    private static final int GEOMANCY_DRAIN = 9;
+    private static final int NORMAL_DRAIN = 4;
 
-    private static void attack(LivingEntity attacker, LivingEntity target, float v, boolean isGeomancy)
+    private static void attack(LivingEntity attacker, LivingEntity target, float v)
     {
-        if (isGeomancy) {
-            v += 2.0f;
-        }
-        attack(attacker, target, v, false, isGeomancy);
+        attack(attacker, target, v, 0);
     }
 
-    private static void attack(LivingEntity attacker, LivingEntity target, float v, boolean isFire, boolean isGeomancy)
+    private static void attack(LivingEntity attacker, LivingEntity target, float v, int fireDuration)
     {
         if (attacker instanceof PlayerEntity) {
             DamageSource source = DamageSource.causePlayerDamage((PlayerEntity) attacker);
-            if (isFire) {
+            if (fireDuration > 0) {
                 source.setFireDamage();
-                target.setFire((int)v + (isGeomancy ? 3 : 0));
+                target.setFire(fireDuration);
             }
             target.attackEntityFrom(source, v);
         }
     }
 
-    private static void heal(LivingEntity attacker, LivingEntity target, float v, boolean isGeomancy)
+    private static void heal(LivingEntity target, float v)
     {
-        if (isGeomancy) {
-            v += 2.0f;
-        }
         target.heal(v);
     }
 
-    private static void effect(LivingEntity target, Effect effect, int i, boolean isGeomancy)
+    private static void effect(LivingEntity target, Effect effect, int i)
     {
-        target.addPotionEffect(new EffectInstance(effect, i * (isGeomancy ? 2 : 1)));
+        target.addPotionEffect(new EffectInstance(effect, i));
     }
 
     private static void knockback(LivingEntity attacker, LivingEntity target, float v)
@@ -67,7 +62,7 @@ public class GooChopEffects
         target.applyKnockback(v, knock.getX(), knock.getZ());
     }
 
-    public static boolean resolve(ItemStack stack, LivingEntity attacker, Entity target)
+    public static boolean tryDoingChopEffect(ItemStack stack, LivingEntity attacker, Entity target)
     {
         if (!(target instanceof LivingEntity)) {
             return false;
@@ -78,15 +73,34 @@ public class GooChopEffects
             return false;
         }
 
-        boolean isGeomancy = Gauntlet.geomancy(stack);
-
-        FluidStack goo = cap.drain(isGeomancy ? GEOMANCY_DRAIN : NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
+        // geomancy lets you drain around twice as much goo to deal around 33% stronger effects (rounded up tho)
+        FluidStack goo = cap.drain(NORMAL_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         if (goo.isEmpty()) {
             return false;
         }
 
-        doGooEffect(goo, isGeomancy, attacker, (LivingEntity)target);
+        doChopEffect(goo, getIntensity(goo.getAmount()), attacker, (LivingEntity)target);
         return true;
+    }
+
+    private static void doAudioAndVisuals(FluidStack goo, LivingEntity attacker, LivingEntity target)
+    {
+        tryGooParticles(goo, target);
+
+        if (attacker instanceof PlayerEntity) {
+            attacker.getEntityWorld().playSound((PlayerEntity)attacker,
+                    target.getPosX(), target.getPosY(), target.getPosZ(), Registry.GOO_CHOP_SOUND.get(),
+                    SoundCategory.PLAYERS, 1.0f, attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f);
+        } else {
+            attacker.getEntityWorld().playSound(target.getPosX(), target.getPosY(), target.getPosZ(),
+                    Registry.GOO_CHOP_SOUND.get(), SoundCategory.PLAYERS, 1.0f,
+                    attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
+        }
+    }
+
+    private static int getIntensity(int amount)
+    {
+        return (int)Math.ceil(Math.sqrt(amount));
     }
 
     private static BasicParticleType particleTypeFromGoo(FluidStack fluidInTank)
@@ -94,7 +108,7 @@ public class GooChopEffects
         return Registry.fallingParticleFromFluid(fluidInTank.getFluid());
     }
 
-    private static void tryGooParticles(FluidStack goo, LivingEntity attacker, LivingEntity target)
+    private static void tryGooParticles(FluidStack goo, LivingEntity target)
     {
         if (!(target.getEntityWorld() instanceof ServerWorld)) {
             return;
@@ -115,281 +129,266 @@ public class GooChopEffects
         }
     }
 
-    private static void doGooEffect(FluidStack goo, boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    public static void doChopEffect(FluidStack gooStack, int intensity, LivingEntity attacker, LivingEntity target)
     {
-        tryGooParticles(goo, attacker, target);
-
-        if (attacker instanceof PlayerEntity) {
-            attacker.getEntityWorld().playSound((PlayerEntity)attacker,
-                    target.getPosX(), target.getPosY(), target.getPosZ(), SoundEvents.ENTITY_SLIME_SQUISH,
-                    SoundCategory.PLAYERS, 1.0f, attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f);
-        } else {
-            attacker.getEntityWorld().playSound(target.getPosX(), target.getPosY(), target.getPosZ(),
-                    SoundEvents.ENTITY_SLIME_SQUISH_SMALL, SoundCategory.PLAYERS, 1.0f,
-                    attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
-        }
+        Fluid goo = gooStack.getFluid();
+        doAudioAndVisuals(gooStack, attacker, target);
 
         if (attacker.getEntityWorld().isRemote()) {
             return;
         }
 
         // all hits have some knockback
-        knockback(attacker, target, 0.3f);
+        knockback(attacker, target, intensity * 0.1f);
 
         if (goo.getFluid().equals(Registry.AQUATIC_GOO.get())) {
-            aquaChop(isGeomancy, attacker, target);
+            aquaChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.CHROMATIC_GOO.get())) {
-            chromaChop(isGeomancy, attacker, target);
+            chromaChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.CRYSTAL_GOO.get())) {
-            crystalChop(isGeomancy, attacker, target);
+            crystalChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.DECAY_GOO.get())) {
-            decayChop(isGeomancy, attacker, target);
+            decayChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.EARTHEN_GOO.get())) {
-            earthChop(isGeomancy, attacker, target);
+            earthChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.ENERGETIC_GOO.get())) {
-            energyChop(isGeomancy, attacker, target);
+            energyChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FAUNAL_GOO.get())) {
-            faunaChop(isGeomancy, attacker, target);
+            faunaChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FLORAL_GOO.get())) {
-            floraChop(isGeomancy, attacker, target);
+            floraChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.FUNGAL_GOO.get())) {
-            fungiChop(isGeomancy, attacker, target);
+            fungiChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.HONEY_GOO.get())) {
-            honeyChop(isGeomancy, attacker, target);
+            honeyChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.LOGIC_GOO.get())) {
-            logicChop(isGeomancy, attacker, target);
+            logicChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.METAL_GOO.get())) {
-            metalChop(isGeomancy, attacker, target);
+            metalChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.MOLTEN_GOO.get())) {
-            moltenChop(isGeomancy, attacker, target);
+            moltenChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.OBSIDIAN_GOO.get())) {
-            obsidianChop(isGeomancy, attacker, target);
+            obsidianChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.REGAL_GOO.get())) {
-            regalChop(isGeomancy, attacker, target);
+            regalChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.SLIME_GOO.get())) {
-            slimeChop(isGeomancy, attacker, target);
+            slimeChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.SNOW_GOO.get())) {
-            snowChop(isGeomancy, attacker, target);
+            snowChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.VITAL_GOO.get())) {
-            vitalChop(isGeomancy, attacker, target);
+            vitalChop(attacker, target, intensity);
             return;
         }
 
         if (goo.getFluid().equals(Registry.WEIRD_GOO.get())) {
-            weirdChop(isGeomancy, attacker, target);
+            weirdChop(attacker, target, intensity);
             return;
         }
     }
 
-    private static void aquaChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void aquaChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target.isImmuneToFire()) {
-            attack(attacker, target, 5.0f, isGeomancy);
+            attack(attacker, target, intensity * 2f - 1f);
         } else {
-            attack(attacker, target, 3.0f, isGeomancy);
+            attack(attacker, target, intensity);
         }
     }
 
-    private static void chromaChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void chromaChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target instanceof SheepEntity) {
             int dyeColor = attacker.getEntityWorld().getRandom().nextInt(DyeColor.values().length);
             DyeColor dye = DyeColor.values()[dyeColor];
             ((SheepEntity) target).setFleeceColor(dye);
         } else {
-            effect(target, Effects.BLINDNESS, 120, isGeomancy);
-            attack(attacker, target, 3.0f, isGeomancy);
+            effect(target, Effects.BLINDNESS, intensity * 40);
+            attack(attacker, target, intensity);
         }
     }
 
-    private static void crystalChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void crystalChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 7.0f, isGeomancy);
+        attack(attacker, target, intensity * 3f - 2f);
     }
 
-    private static void decayChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void decayChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target.isEntityUndead()) {
-            heal(attacker, target, 3.0f, isGeomancy);
+            heal(target, intensity);
         } else {
-            attack(attacker, target, 5.0f, isGeomancy);
-            effect(target, Effects.WITHER, 120, isGeomancy);
+            attack(attacker, target, intensity + 1f);
+            effect(target, Effects.WITHER, intensity * 40);
         }
     }
 
-    private static void earthChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void earthChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 3.0f, isGeomancy);
+        attack(attacker, target, intensity);
     }
 
-    private static void energyChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void energyChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 5.0f, isGeomancy);
-        knockback(attacker, target, 1.0f);
+        attack(attacker, target, intensity * 2f);
+        knockback(attacker, target, intensity);
     }
 
-    private static void faunaChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void faunaChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target instanceof AnimalEntity) {
-            heal(attacker, target, 2.0f, isGeomancy);
+            heal(target, intensity - 1f);
         } else {
-            attack(attacker, target, 2.0f, isGeomancy);
+            attack(attacker, target, intensity - 1f);
         }
     }
 
-    private static void floraChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void floraChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target instanceof AnimalEntity) {
-            heal(attacker, target, 2.0f, isGeomancy);
-            effect(target, Effects.REGENERATION, 120, isGeomancy);
+            heal(target, intensity - 1f);
+            effect(target, Effects.REGENERATION, intensity * 20);
         } else {
             if (!target.isEntityUndead()) {
-                effect(target, Effects.POISON, 120, isGeomancy);
+                effect(target, Effects.POISON, intensity * 20);
             }
-            attack(attacker, target, 2.0f, isGeomancy);
+            attack(attacker, target, intensity - 1f);
         }
     }
 
-    private static void fungiChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void fungiChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        if (target instanceof AnimalEntity) {
-            attack(attacker, target, 2.0f, isGeomancy);
-            effect(target, Effects.POISON, 120, isGeomancy);
-        } else {
-            if (!target.isEntityUndead()) {
-                heal(attacker, target, 2.0f, isGeomancy);
-                effect(target, Effects.REGENERATION, 120, isGeomancy);
-            }
+        attack(attacker, target, intensity);
+        if (!target.isEntityUndead()) {
+            effect(target, Effects.POISON, intensity * 40);
         }
     }
 
-    private static void honeyChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void honeyChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target instanceof PlayerEntity) {
             FoodStats stats = ((PlayerEntity) target).getFoodStats();
-            stats.setFoodLevel(stats.getFoodLevel() + 1);
-            stats.setFoodSaturationLevel(stats.getSaturationLevel() + 1f);
+            stats.setFoodLevel(stats.getFoodLevel() + intensity - 1);
+            stats.setFoodSaturationLevel(stats.getSaturationLevel() + intensity * 0.2f);
         }
         if (target instanceof AnimalEntity) {
-            heal(attacker, target, 2.0f, isGeomancy);
-            effect(target, Effects.REGENERATION, 120, isGeomancy);
+            heal(target, intensity - 1f);
+            effect(target, Effects.REGENERATION, intensity * 20);
         } else {
             if (!target.isEntityUndead()) {
-                attack(attacker, target, 2.0f, isGeomancy);
+                attack(attacker, target, intensity);
             }
-            effect(target, Effects.SLOWNESS, 120, isGeomancy);
+            effect(target, Effects.SLOWNESS, intensity * 40);
         }
     }
 
-    private static void logicChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void logicChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 2.0f, isGeomancy);
-        effect(target, Effects.SLOWNESS, 120, isGeomancy);
-        effect(target, Effects.WEAKNESS, 120, isGeomancy);
+        attack(attacker, target, intensity);
+        effect(target, Effects.WEAKNESS, intensity * 40);
     }
 
-    private static void metalChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void metalChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 5.0f, isGeomancy);
+        attack(attacker, target, intensity * 2f - 1f);
     }
 
-    private static void moltenChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void moltenChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 5.0f, true, isGeomancy);
+        attack(attacker, target, intensity * 2f - 1f, intensity * 3);
     }
 
-    private static void obsidianChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void obsidianChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 7.0f, isGeomancy);
+        attack(attacker, target, intensity * 3f - 1f, intensity * 2);
     }
 
-    private static void regalChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void regalChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 5.0f, isGeomancy);
-        effect(target, Effects.WEAKNESS, 120, isGeomancy);
-        effect(target, Effects.MINING_FATIGUE, 120, isGeomancy);
+        attack(attacker, target, intensity * 2f - 1f);
+        effect(target, Effects.WEAKNESS, intensity * 40);
+        effect(target, Effects.MINING_FATIGUE, intensity * 40);
     }
 
-    private static void slimeChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void slimeChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, 3.0f, isGeomancy);
-        knockback(attacker, target, 1.0f);
+        attack(attacker, target, intensity);
+        knockback(attacker, target, intensity - 1);
         if (!target.isEntityUndead()) {
-            effect(target, Effects.POISON, 120, isGeomancy);
+            effect(target, Effects.POISON, intensity * 40);
         }
-        effect(target, Effects.WEAKNESS, 120, isGeomancy);
-        effect(target, Effects.MINING_FATIGUE, 120, isGeomancy);
+        effect(target, Effects.WEAKNESS, intensity * 40);
+        effect(target, Effects.MINING_FATIGUE, intensity * 40);
     }
 
-    private static void snowChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void snowChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        attack(attacker, target, target.isImmuneToFire() ? 6.0f : 3.0f, isGeomancy);
-        effect(target, Effects.SLOWNESS, 120, isGeomancy);
+        attack(attacker, target, target.isImmuneToFire() ? intensity * 3f - 2f : intensity);
+        effect(target, Effects.SLOWNESS, intensity * 40);
     }
 
-    private static void vitalChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void vitalChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
         if (target.isEntityUndead()) {
-            attack(attacker, target, 5.0f, isGeomancy);
+            attack(attacker, target, intensity * 2f - 1);
         } else {
-            heal(attacker, target, 3.0f, isGeomancy);
+            heal(target, intensity);
         }
     }
 
-    private static void weirdChop(boolean isGeomancy, LivingEntity attacker, LivingEntity target)
+    private static void weirdChop(LivingEntity attacker, LivingEntity target, int intensity)
     {
-        heal(target, attacker, 2.0f, isGeomancy);
-        attack(attacker, target, 3.0f, isGeomancy);
+        heal(attacker, intensity - 1f);
+        attack(attacker, target, intensity);
     }
 }
