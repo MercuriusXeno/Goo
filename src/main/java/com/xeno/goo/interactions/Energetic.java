@@ -31,29 +31,30 @@ public class Energetic
 
     private static boolean miningBlast(InteractionContext context)
     {
-        LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
         // in a radius centered around the block with a spherical distance of [configurable] or less
         // and a harvest level of wood (stone type blocks only) only
         // destroy blocks in the radius and yield full drops.
         double radius = GooMod.config.energeticMiningBlastRadius();
         List<BlockPos> blockPosList = blockPositionsByRadius(context.blockCenterVec(), context.blockPos(), radius);
 
-        blockPosList.forEach((p) -> tryMiningBlast(p, context, lootBuilder));
-        Vector3d hitVec =context.hitResult().getHitVec();
+        blockPosList.forEach((p) -> tryMiningBlast(p, context));
+        Vector3d hitVec = context.hitResult().getHitVec();
         float pitchShift = context.world().rand.nextFloat() * 0.4f + 0.6f;
-        if (context.isRemote()) {
-            context.world().playSound(hitVec.x, hitVec.y, hitVec.z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 1.0f, pitchShift, false);
+        if (context.world() instanceof ServerWorld) {
+            context.world().playSound(hitVec.x, hitVec.y, hitVec.z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 3.0f, pitchShift, false);
         }
         return true;
     }
 
-    private static void tryMiningBlast(BlockPos blockPos, InteractionContext context, LootContext.Builder lootBuilder)
+    private static void tryMiningBlast(BlockPos blockPos, InteractionContext context)
     {
         BlockState state = context.world().getBlockState(blockPos);
         Vector3d dropPos = new Vector3d(blockPos.getX(), blockPos.getY(), blockPos.getZ())
                 .add(0.5d, 0.5d, 0.5d);
         if (state.getHarvestLevel() == WORST_HARVEST_LEVEL) {
             if ((context.world() instanceof ServerWorld)) {
+                ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
+                LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
                 List<ItemStack> drops = state.getDrops(lootBuilder
                         .withParameter(LootParameters.POSITION, blockPos)
                         .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
@@ -62,9 +63,6 @@ public class Energetic
                         new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
                 ));
                 context.world().removeBlock(blockPos, false);
-            }
-            if (context.isRemote()) {
-                context.world().addParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1d, 0d, 0d);
             }
         }
     }
