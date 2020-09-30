@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
@@ -382,7 +383,7 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
 
     public ItemStack getGooifierStack()
     {
-        ItemStack stack = new ItemStack(Registry.GOOIFIER.get());
+        ItemStack stack = new ItemStack(BlocksRegistry.GOOIFIER.get());
 
         CompoundNBT gooifierTag = new CompoundNBT();
         write(gooifierTag);

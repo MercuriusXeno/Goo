@@ -6,9 +6,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootContext;
+import net.minecraft.loot.LootParameters;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tags.ITag;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.ArrayList;
@@ -26,9 +31,6 @@ public class Energetic
 
     private static boolean miningBlast(InteractionContext context)
     {
-        if (!(context.world() instanceof ServerWorld)) {
-            return false;
-        }
         LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
         // in a radius centered around the block with a spherical distance of [configurable] or less
         // and a harvest level of wood (stone type blocks only) only
@@ -37,6 +39,11 @@ public class Energetic
         List<BlockPos> blockPosList = blockPositionsByRadius(context.blockCenterVec(), context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context, lootBuilder));
+        Vector3d hitVec =context.hitResult().getHitVec();
+        float pitchShift = context.world().rand.nextFloat() * 0.4f + 0.6f;
+        if (context.isRemote()) {
+            context.world().playSound(hitVec.x, hitVec.y, hitVec.z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 1.0f, pitchShift, false);
+        }
         return true;
     }
 
@@ -46,11 +53,19 @@ public class Energetic
         Vector3d dropPos = new Vector3d(blockPos.getX(), blockPos.getY(), blockPos.getZ())
                 .add(0.5d, 0.5d, 0.5d);
         if (state.getHarvestLevel() == WORST_HARVEST_LEVEL) {
-            List<ItemStack> drops = state.getDrops(lootBuilder);
-            drops.forEach((d) -> context.world().addEntity(
-                    new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
-            ));
-            context.world().removeBlock(blockPos, false);
+            if ((context.world() instanceof ServerWorld)) {
+                List<ItemStack> drops = state.getDrops(lootBuilder
+                        .withParameter(LootParameters.POSITION, blockPos)
+                        .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
+                );
+                drops.forEach((d) -> context.world().addEntity(
+                        new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
+                ));
+                context.world().removeBlock(blockPos, false);
+            }
+            if (context.isRemote()) {
+                context.world().addParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1d, 0d, 0d);
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.xeno.goo;
 
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -45,7 +46,7 @@ public class GooMod
     {
         @Override
         public ItemStack createIcon() {
-            return new ItemStack(Registry.SOLIDIFIER.get());
+            return new ItemStack(BlocksRegistry.SOLIDIFIER.get());
         }
     };
 }

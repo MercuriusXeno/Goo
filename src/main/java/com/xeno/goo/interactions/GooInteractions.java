@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
@@ -78,7 +79,21 @@ public class GooInteractions
 
     public static void tryResolving(GooSplat gooSplat)
     {
+        InteractionContext context = new InteractionContext(gooSplat);
         // cycle over resolvers in rank order and drain/apply when possible.
+        Map<Tuple<Integer, String>, IGooInteraction> map = registry.get(gooSplat.goo().getFluid());
+        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context));
+    }
 
+    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IGooInteraction iGooInteraction, InteractionContext context)
+    {
+        int keyCost = GooMod.config.costOfInteraction(fluid, interactionKey.getB());
+        FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
+        if (drained.getAmount() < keyCost) {
+            return;
+        }
+        if (iGooInteraction.resolve(context)) {
+            context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+        }
     }
 }

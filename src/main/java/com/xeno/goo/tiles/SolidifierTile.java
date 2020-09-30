@@ -5,6 +5,7 @@ import com.xeno.goo.aequivaleo.EntryHelper;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.network.ChangeItemTargetPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.network.SolidifierPoppedPacket;
@@ -538,7 +539,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     public ItemStack getSolidifierStack()
     {
-        ItemStack stack = new ItemStack(Registry.SOLIDIFIER.get());
+        ItemStack stack = new ItemStack(BlocksRegistry.SOLIDIFIER.get());
 
         CompoundNBT solidifierTag = new CompoundNBT();
         write(solidifierTag);

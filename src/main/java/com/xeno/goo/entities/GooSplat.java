@@ -24,6 +24,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
@@ -172,14 +173,14 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
+        GooInteractions.tryResolving(this);
+
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
             goo.setAmount(this.dataManager.get(GOO_AMOUNT));
             return;
         }
-
-        GooInteractions.tryResolving(this);
 
         handleMaterialCollisionChecks();
         this.isCollidingEntity = this.checkForEntityCollision();

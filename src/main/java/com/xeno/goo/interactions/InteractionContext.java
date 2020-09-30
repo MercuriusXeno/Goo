@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEventData;
@@ -32,6 +33,16 @@ public class InteractionContext
         this.hitVec = trace.getHitVec();
         this.blockCenterVec = new Vector3d(this.blockPos.getX(), this.blockPos.getY(), this.blockPos.getZ())
             .add(0.5d, 0.5d, 0.5d);
+    }
+
+    public InteractionContext(GooSplat gooSplat)
+    {
+        this(rayTraceResultFrom(gooSplat), gooSplat.getEntityWorld(), gooSplat);
+    }
+
+    private static BlockRayTraceResult rayTraceResultFrom(GooSplat gooSplat)
+    {
+        return new BlockRayTraceResult(gooSplat.getPositionVec(), gooSplat.sideWeLiveOn(), gooSplat.blockAttached(), false);
     }
 
     public BlockState blockState()
@@ -82,5 +93,10 @@ public class InteractionContext
     public Direction sideHit()
     {
         return this.sideHit;
+    }
+
+    public IFluidHandler fluidHandler()
+    {
+        return this.fluidHandler;
     }
 }

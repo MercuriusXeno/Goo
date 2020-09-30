@@ -1,6 +1,7 @@
 package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.block.Blocks;
@@ -83,7 +84,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_BULB.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOO_BULB.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
@@ -95,7 +96,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOO_PUMP.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOO_PUMP.get())
                 .patternLine("so ")
                 .patternLine("pg ")
                 .patternLine("bof")
@@ -110,7 +111,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GOOIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOOIFIER.get())
                 .patternLine("non")
                 .patternLine("pfp")
                 .patternLine("obo")
@@ -124,7 +125,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.SOLIDIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.SOLIDIFIER.get())
                 .patternLine("ro ")
                 .patternLine("nxp")
                 .patternLine("o#o")
@@ -139,20 +140,20 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.MIXER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.MIXER.get())
                 .patternLine("n n")
                 .patternLine("bcb")
                 .patternLine("npn")
-                .key('b', Registry.GOO_BULB.get())
+                .key('b', BlocksRegistry.GOO_BULB.get())
                 .key('c', Items.CAULDRON)
                 .key('n', Items.NETHERITE_INGOT)
-                .key('p', Registry.GOO_PUMP.get())
+                .key('p', BlocksRegistry.GOO_PUMP.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
     }
 
     private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.CRUCIBLE.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.CRUCIBLE.get())
                 .patternLine("xix")
                 .patternLine("ici")
                 .patternLine("fbf")
@@ -160,7 +161,7 @@ public class RecipesProvider extends RecipeProvider {
                 .key('i', Items.NETHERITE_INGOT)
                 .key('c', Items.CAULDRON)
                 .key('f', Items.BLAST_FURNACE)
-                .key('b', Registry.GOO_BULB.get())
+                .key('b', BlocksRegistry.GOO_BULB.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
     }
