@@ -133,7 +133,11 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         Vector3f[][] scaledQuads = scale(UNSCALED_QUADS, scale);
         stack.push();
         Matrix4f matrix = stack.getLast().getMatrix();
-        renderCube(matrix, buffer, scaledQuads, light, sprite);
+        int color = 0xCCFFFFFF;
+        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
+            color = FluidCuboidHelper.colorizeChromaticGoo();
+        }
+        renderCube(matrix, buffer, scaledQuads, color, light, sprite);
         stack.pop();
     }
 
@@ -151,15 +155,15 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         return super.getBlockLight(entityIn, partialTicks);
     }
 
-    private void renderCube(Matrix4f matrix, IVertexBuilder buffer, Vector3f[][] wiggledQuads, int light, TextureAtlasSprite sprite)
+    private void renderCube(Matrix4f matrix, IVertexBuilder buffer, Vector3f[][] wiggledQuads, int color, int light, TextureAtlasSprite sprite)
     {
         // 6 quads, it's just a cube
         for(Vector3f[] surface : wiggledQuads) {            
-            renderQuad(surface, matrix, buffer, light, sprite);
+            renderQuad(surface, matrix, buffer, color, light, sprite);
         }
     }
 
-    private void renderQuad(Vector3f[] v, Matrix4f matrix, IVertexBuilder buffer, int light, TextureAtlasSprite sprite)
+    private void renderQuad(Vector3f[] v, Matrix4f matrix, IVertexBuilder buffer, int color, int light, TextureAtlasSprite sprite)
     {
         Vector3f[] ns = {v[0].copy(), v[1].copy(), v[2].copy(), v[3].copy()};
         for(Vector3f n : ns) {
@@ -167,7 +171,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         }
         buffer.getVertexBuilder()
                 .pos(matrix, v[0].getX(), v[0].getY(), v[0].getZ())
-                .color(1f, 1f, 1f, 0.8f)
+                .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
                 .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
@@ -175,7 +179,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[1].getX(), v[1].getY(), v[1].getZ())
-                .color(1f, 1f, 1f, 0.8f)
+                .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
                 .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
@@ -183,7 +187,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[2].getX(), v[2].getY(), v[2].getZ())
-                .color(1f, 1f, 1f, 0.8f)
+                .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
                 .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
@@ -191,7 +195,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
                 .endVertex();
         buffer.getVertexBuilder()
                 .pos(matrix, v[3].getX(), v[3].getY(), v[3].getZ())
-                .color(1f, 1f, 1f, 0.8f)
+                .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
                 .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
