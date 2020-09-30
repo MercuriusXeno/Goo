@@ -23,8 +23,8 @@ public class Networking {
     public static void registerNetworkMessages() {
         INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GooMod.MOD_ID, "goo"),
                 () -> "1.0",
-                s -> true,
-                s -> true);
+                clientAcceptedVersions -> true,
+                serverAcceptedVersions -> true);
 
         INSTANCE.messageBuilder(FluidUpdatePacket.class, nextID())
                 .encoder(FluidUpdatePacket::toBytes)
