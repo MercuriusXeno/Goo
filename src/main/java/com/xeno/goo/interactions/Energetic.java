@@ -1,6 +1,7 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
@@ -38,11 +39,9 @@ public class Energetic
         List<BlockPos> blockPosList = blockPositionsByRadius(context.blockCenterVec(), context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context));
-        Vector3d hitVec = context.hitResult().getHitVec();
-        float pitchShift = context.world().rand.nextFloat() * 0.4f + 0.6f;
-        if (context.world() instanceof ServerWorld) {
-            context.world().playSound(hitVec.x, hitVec.y, hitVec.z, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 3.0f, pitchShift, false);
-        }
+        AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS,
+                3.0f, AudioHelper.PitchFormulas.HalfToOne);
+
         return true;
     }
 

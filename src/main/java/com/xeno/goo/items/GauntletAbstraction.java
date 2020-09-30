@@ -2,13 +2,11 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
-import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -100,13 +98,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         if (!world.isRemote()) {
             tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
-        if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
-        } else {
-            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_DEPOSIT_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
-        }
+        AudioHelper.playerAudioEvent(player, Registry.GOO_DEPOSIT_SOUND.get(), 1.0f);
         return ActionResultType.SUCCESS;
     }
 
@@ -128,13 +120,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         if (!world.isRemote()) {
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
-        if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
-        } else {
-            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
-        }
+        AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
         return ActionResultType.SUCCESS;
     }
 
@@ -157,13 +143,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         if (!world.isRemote()) {
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
-        if (player != null) {
-            world.playSound(player, pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
-        } else {
-            world.playSound(pos.x, pos.y, pos.z, Registry.GOO_WITHDRAW_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
-        }
+        AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
         return ActionResultType.SUCCESS;
     }
 
@@ -186,9 +166,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
         FluidStack thrownStack = cap.drain(THROWN_GOO_DRAIN, IFluidHandler.FluidAction.EXECUTE);
         world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
-        world.playSound(player.getPositionVec().x, player.getPositionVec().y,
-                player.getPositionVec().z, Registry.GOO_LOB_SOUND.get(), SoundCategory.PLAYERS,
-                1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
+        AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
         return ActionResult.resultSuccess(player.getHeldItem(handIn));
     }
 

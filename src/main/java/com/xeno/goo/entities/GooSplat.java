@@ -5,6 +5,7 @@ import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.GooChopEffects;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.entity.*;
@@ -87,8 +88,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         Vector3d findCenter = findCenter(face, pos, hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         this.setSize();
-        world.playSound(hitVec.x, hitVec.y, hitVec.z, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
-                1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
+        AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
+                1.0f, AudioHelper.PitchFormulas.HalfToOne);
     }
 
     private void updateSplatState()

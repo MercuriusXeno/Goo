@@ -1,6 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.entity.Entity;
@@ -87,15 +88,8 @@ public class GooChopEffects
     {
         tryGooParticles(goo, target);
 
-        if (attacker instanceof PlayerEntity) {
-            attacker.getEntityWorld().playSound((PlayerEntity)attacker,
-                    target.getPosX(), target.getPosY(), target.getPosZ(), Registry.GOO_CHOP_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f);
-        } else {
-            attacker.getEntityWorld().playSound(target.getPosX(), target.getPosY(), target.getPosZ(),
-                    Registry.GOO_CHOP_SOUND.get(), SoundCategory.PLAYERS, 1.0f,
-                    attacker.getEntityWorld().rand.nextFloat() * 0.5f + 0.5f, false);
-        }
+        AudioHelper.entityAudioEvent(attacker, Registry.GOO_CHOP_SOUND.get(), SoundCategory.PLAYERS,
+                1.0f, AudioHelper.PitchFormulas.HalfToOne);
     }
 
     private static int getIntensity(int amount)

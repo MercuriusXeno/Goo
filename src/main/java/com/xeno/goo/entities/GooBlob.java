@@ -5,6 +5,7 @@ import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.GooChopEffects;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.BlockState;
@@ -92,10 +93,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         if (owner == null) {
             return;
         }
-        if (owner instanceof PlayerEntity) {
-            world.playSound((PlayerEntity) owner, owner.getPosX(), owner.getPosY(), owner.getPosZ(), Registry.GOO_LOB_SOUND.get(),
-                    SoundCategory.PLAYERS, 1.0f, world.rand.nextFloat() * 0.5f + 0.5f);
-        }
+        AudioHelper.entityAudioEvent(this, Registry.GOO_LOB_SOUND.get(), SoundCategory.AMBIENT,
+                1.0f, AudioHelper.PitchFormulas.HalfToOne);
         startQuivering();
         Vector3d velVec = owner.getLookVec();
         velVec = (velVec).normalize().scale(1.0f);
