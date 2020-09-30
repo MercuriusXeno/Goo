@@ -9,10 +9,7 @@ import net.minecraft.item.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Chromatic
 {
@@ -22,19 +19,23 @@ public class Chromatic
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", 1, Chromatic::dyeConcretePowder);
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_concrete", 2, Chromatic::dyeConcrete);
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_terracotta", 3, Chromatic::dyeTerracotta);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", 4, Chromatic::dyeTerracotta);
+        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", 4, Chromatic::dyeGlazedTerracotta);
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glass", 5, Chromatic::dyeGlass);
     }
 
-    private final static Map<MaterialColor, DyeColor> cycleMap = new HashMap<>();
+    private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();
+    private final static List<MaterialColor> terracottaColors = new ArrayList<>();
+    // terracotta is weird
+    private final static Map<MaterialColor, MaterialColor> terracottaCycleMap = new HashMap<>();
     private final static Map<MaterialColor, Block> woolMap = new HashMap<>();
     private final static Map<MaterialColor, Block> concretePowderMap = new HashMap<>();
     private final static Map<MaterialColor, Block> concreteMap = new HashMap<>();
     private final static Map<MaterialColor, Block> terracottaMap = new HashMap<>();
     private final static Map<MaterialColor, Block> glazedTerracottaMap = new HashMap<>();
     private final static Map<MaterialColor, Block> glassMap = new HashMap<>();
-    private final static Map<Block, MaterialColor> uncoloredVariants = new HashMap<>();
 
+    private final static int minTerracottaColorIndex = 36;
+    private final static int maxTerracottaColorIndex = 51;
     static {
         // map cycled dye colors loop
         for(DyeColor color : DyeColor.values()) {
@@ -44,7 +45,19 @@ public class Chromatic
             } else {
                 i++;
             }
-            cycleMap.put(color.getMapColor(), DyeColor.byId(i));
+            cycleMap.put(color.getMapColor(), DyeColor.byId(i).getMapColor());
+        }
+
+        terracottaColors.addAll(Arrays.asList(MaterialColor.COLORS).subList(minTerracottaColorIndex, maxTerracottaColorIndex + 1));
+
+        for(MaterialColor color : terracottaColors) {
+            int i = color.colorIndex;
+            if (i == maxTerracottaColorIndex) {
+                i = minTerracottaColorIndex;
+            } else {
+                i++;
+            }
+            terracottaCycleMap.put(color, MaterialColor.COLORS[i]);
         }
 
         // map wool colors to each respective block
@@ -120,22 +133,22 @@ public class Chromatic
         glassMap.put(MaterialColor.BLACK, Blocks.BLACK_STAINED_GLASS);
 
         // map terracotta to each respective block
-        terracottaMap.put(MaterialColor.SNOW, Blocks.WHITE_TERRACOTTA);
-        terracottaMap.put(MaterialColor.ADOBE, Blocks.ORANGE_TERRACOTTA);
-        terracottaMap.put(MaterialColor.MAGENTA, Blocks.MAGENTA_TERRACOTTA);
-        terracottaMap.put(MaterialColor.LIGHT_BLUE, Blocks.LIGHT_BLUE_TERRACOTTA);
-        terracottaMap.put(MaterialColor.YELLOW, Blocks.YELLOW_TERRACOTTA);
-        terracottaMap.put(MaterialColor.LIME, Blocks.LIME_TERRACOTTA);
-        terracottaMap.put(MaterialColor.PINK, Blocks.PINK_TERRACOTTA);
-        terracottaMap.put(MaterialColor.GRAY, Blocks.GRAY_TERRACOTTA);
-        terracottaMap.put(MaterialColor.LIGHT_GRAY, Blocks.LIGHT_GRAY_TERRACOTTA);
-        terracottaMap.put(MaterialColor.CYAN, Blocks.CYAN_TERRACOTTA);
-        terracottaMap.put(MaterialColor.PURPLE, Blocks.PURPLE_TERRACOTTA);
-        terracottaMap.put(MaterialColor.BLUE, Blocks.BLUE_TERRACOTTA);
-        terracottaMap.put(MaterialColor.BROWN, Blocks.BROWN_TERRACOTTA);
-        terracottaMap.put(MaterialColor.GREEN, Blocks.GREEN_TERRACOTTA);
-        terracottaMap.put(MaterialColor.RED, Blocks.RED_TERRACOTTA);
-        terracottaMap.put(MaterialColor.BLACK, Blocks.BLACK_TERRACOTTA);
+        terracottaMap.put(MaterialColor.WHITE_TERRACOTTA, Blocks.WHITE_TERRACOTTA);
+        terracottaMap.put(MaterialColor.ORANGE_TERRACOTTA, Blocks.ORANGE_TERRACOTTA);
+        terracottaMap.put(MaterialColor.MAGENTA_TERRACOTTA, Blocks.MAGENTA_TERRACOTTA);
+        terracottaMap.put(MaterialColor.LIGHT_BLUE_TERRACOTTA, Blocks.LIGHT_BLUE_TERRACOTTA);
+        terracottaMap.put(MaterialColor.YELLOW_TERRACOTTA, Blocks.YELLOW_TERRACOTTA);
+        terracottaMap.put(MaterialColor.LIME_TERRACOTTA, Blocks.LIME_TERRACOTTA);
+        terracottaMap.put(MaterialColor.PINK_TERRACOTTA, Blocks.PINK_TERRACOTTA);
+        terracottaMap.put(MaterialColor.GRAY_TERRACOTTA, Blocks.GRAY_TERRACOTTA);
+        terracottaMap.put(MaterialColor.LIGHT_GRAY_TERRACOTTA, Blocks.LIGHT_GRAY_TERRACOTTA);
+        terracottaMap.put(MaterialColor.CYAN_TERRACOTTA, Blocks.CYAN_TERRACOTTA);
+        terracottaMap.put(MaterialColor.PURPLE_TERRACOTTA, Blocks.PURPLE_TERRACOTTA);
+        terracottaMap.put(MaterialColor.BLUE_TERRACOTTA, Blocks.BLUE_TERRACOTTA);
+        terracottaMap.put(MaterialColor.BROWN_TERRACOTTA, Blocks.BROWN_TERRACOTTA);
+        terracottaMap.put(MaterialColor.GREEN_TERRACOTTA, Blocks.GREEN_TERRACOTTA);
+        terracottaMap.put(MaterialColor.RED_TERRACOTTA, Blocks.RED_TERRACOTTA);
+        terracottaMap.put(MaterialColor.BLACK_TERRACOTTA, Blocks.BLACK_TERRACOTTA);
 
         // map glazed terracotta to each respective block
         glazedTerracottaMap.put(MaterialColor.SNOW, Blocks.WHITE_GLAZED_TERRACOTTA);
@@ -154,19 +167,26 @@ public class Chromatic
         glazedTerracottaMap.put(MaterialColor.GREEN, Blocks.GREEN_GLAZED_TERRACOTTA);
         glazedTerracottaMap.put(MaterialColor.RED, Blocks.RED_GLAZED_TERRACOTTA);
         glazedTerracottaMap.put(MaterialColor.BLACK, Blocks.BLACK_GLAZED_TERRACOTTA);
-
-        // map uncolored variants
-        uncoloredVariants.put(Blocks.GLASS, MaterialColor.SNOW);
-        uncoloredVariants.put(Blocks.TERRACOTTA, MaterialColor.ADOBE);
     }
-    private static DyeColor cycleDyeColor(World world, BlockState state, BlockPos pos)
+
+    private static MaterialColor cycleDyeColor(World world, BlockState state, BlockPos pos)
     {
         return cycleDyeColor(state.getMaterialColor(world, pos));
     }
 
-    private static DyeColor cycleDyeColor(MaterialColor originalColor)
+    private static MaterialColor cycleDyeColor(MaterialColor originalColor)
     {
         return cycleMap.get(originalColor);
+    }
+
+    private static MaterialColor cycleTerracottaColor(World world, BlockState state, BlockPos pos)
+    {
+        return cycleTerracottaColor(state.getMaterialColor(world, pos));
+    }
+
+    private static MaterialColor cycleTerracottaColor(MaterialColor originalColor)
+    {
+        return terracottaCycleMap.get(originalColor);
     }
 
     private static boolean dyeTerracotta(InteractionContext ic)
@@ -175,25 +195,15 @@ public class Chromatic
             return false;
         }
 
-        DyeColor newColor;
-        if (isUncoloredVariant(ic)) {
-            newColor = colorOfUncoloredVariant(ic);
+        MaterialColor newColor;
+        if (ic.block().equals(Blocks.TERRACOTTA)) {
+            newColor = MaterialColor.ORANGE_TERRACOTTA;
         } else {
-            newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
+            newColor = cycleTerracottaColor(ic.world(), ic.blockState(), ic.blockPos());
         }
-        Block dyedBlock = terracottaMap.get(newColor.getMapColor());
+        Block dyedBlock = terracottaMap.get(newColor);
         ic.setBlockState(dyedBlock.getDefaultState());
         return true;
-    }
-
-    private static DyeColor colorOfUncoloredVariant(InteractionContext ic)
-    {
-        return cycleDyeColor(uncoloredVariants.get(ic.block()));
-    }
-
-    private static boolean isUncoloredVariant(InteractionContext ic)
-    {
-        return uncoloredVariants.containsKey(ic.block());
     }
 
     private static boolean isTerracotta(InteractionContext ic)
@@ -208,13 +218,13 @@ public class Chromatic
             return false;
         }
 
-        DyeColor newColor;
-        if (isUncoloredVariant(ic)) {
-            newColor = colorOfUncoloredVariant(ic);
+        MaterialColor newColor;
+        if (ic.block().equals(Blocks.GLASS)) {
+            newColor = MaterialColor.SNOW;
         } else {
             newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
         }
-        Block dyedBlock = glassMap.get(newColor.getMapColor());
+        Block dyedBlock = glassMap.get(newColor);
         ic.setBlockState(dyedBlock.getDefaultState());
         return true;
     }
@@ -231,10 +241,27 @@ public class Chromatic
             return false;
         }
 
-        DyeColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = concreteMap.get(newColor.getMapColor());
+        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
+        Block dyedBlock = concreteMap.get(newColor);
         ic.setBlockState(dyedBlock.getDefaultState());
         return true;
+    }
+
+    private static boolean dyeGlazedTerracotta(InteractionContext ic)
+    {
+        if (!isGlazedTerracotta(ic)) {
+            return false;
+        }
+
+        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
+        Block dyedBlock = glazedTerracottaMap.get(newColor);
+        ic.setBlockState(dyedBlock.getDefaultState());
+        return true;
+    }
+
+    private static boolean isGlazedTerracotta(InteractionContext ic)
+    {
+        return glazedTerracottaMap.containsValue(ic.block());
     }
 
     private static boolean isConcrete(InteractionContext ic)
@@ -248,8 +275,8 @@ public class Chromatic
             return false;
         }
 
-        DyeColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = concretePowderMap.get(newColor.getMapColor());
+        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
+        Block dyedBlock = concretePowderMap.get(newColor);
         ic.setBlockState(dyedBlock.getDefaultState());
         return true;
     }
@@ -265,8 +292,8 @@ public class Chromatic
             return false;
         }
 
-        DyeColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = woolMap.get(newColor.getMapColor());
+        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
+        Block dyedBlock = woolMap.get(newColor);
         ic.setBlockState(dyedBlock.getDefaultState());
         return true;
     }

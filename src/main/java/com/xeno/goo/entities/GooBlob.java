@@ -9,6 +9,9 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.GlassBlock;
+import net.minecraft.block.StainedGlassBlock;
+import net.minecraft.block.StainedGlassPaneBlock;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -235,7 +238,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private boolean isValidForSplat(BlockRayTraceResult result)
     {
         BlockState state = world.getBlockState(result.getPos());
-        return state.isSolid() && state.isNormalCube(world, result.getPos());
+        return (state.isSolid() && state.isNormalCube(world, result.getPos())) || isGlass(state);
+    }
+
+    private boolean isGlass(BlockState state)
+    {
+        return state.getBlock() instanceof StainedGlassBlock || state.getBlock() instanceof GlassBlock;
     }
 
     private void handleFriction()
