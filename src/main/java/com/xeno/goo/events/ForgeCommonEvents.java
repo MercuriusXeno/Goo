@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.items.GooChopEffects;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -16,7 +17,7 @@ public class ForgeCommonEvents {
             return;
         }
 
-        if (event.getPlayer().getHeldItemMainhand().getItem().equals(Registry.GAUNTLET.get())) {
+        if (event.getPlayer().getHeldItemMainhand().getItem().equals(ItemsRegistry.Gauntlet.get())) {
             if (GooChopEffects.tryDoingChopEffect(event.getPlayer().getHeldItemMainhand(), event.getEntityLiving(), event.getTarget())) {
                 event.setCanceled(true);
             }

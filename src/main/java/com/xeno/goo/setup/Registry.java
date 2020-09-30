@@ -11,10 +11,7 @@ import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.items.Basin;
-import com.xeno.goo.items.Gasket;
-import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.items.GooAndYou;
+import com.xeno.goo.items.*;
 import com.xeno.goo.tiles.*;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityClassification;
@@ -39,7 +36,7 @@ import java.util.Map;
 public class Registry {
 
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
-    private static final DeferredRegister<Item>              ITEMS     = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
+
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
@@ -51,9 +48,9 @@ public class Registry {
 
     public static void init () {
         BlocksRegistry.initialize();
+        ItemsRegistry.initialize();
 
         FLUIDS.register(FMLJavaModLoadingContext.get().getModEventBus());
-        ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
         COMPOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -91,35 +88,22 @@ public class Registry {
     public static final RegistryObject<SoundEvent> GOO_CRUCIBLE_SOUND = SOUNDS.register("goo_crucible_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_crucible_sound")));
     public static final RegistryObject<SoundEvent> GOOIFIER_SOUND = SOUNDS.register("gooifier_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "gooifier_sound")));
 
-    public static final RegistryObject<Gasket>   GASKET   = ITEMS.register("gasket", Gasket::new);
-    public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
-    public static final RegistryObject<Basin>    BASIN    = ITEMS.register("basin", Basin::new);
-
-    public static final RegistryObject<GooAndYou> GOO_AND_YOU = ITEMS.register("goo_and_you", GooAndYou::new);
-
     // Goo Bulb registration
-
-    public static final RegistryObject<Item> GOO_BULB_ITEM = ITEMS.register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.GooBulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.GooBulb.get()).build(null));
 
     // Goo Pumps registration
-    public static final RegistryObject<Item> GOO_PUMP_ITEM = ITEMS.register("goo_pump", () -> new BlockItem(BlocksRegistry.GooPump.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, BlocksRegistry.GooPump.get()).build(null));
 
     // Mixer registration
-    public static final RegistryObject<Item> MIXER_ITEM = ITEMS.register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::mixer)));
     public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, BlocksRegistry.Mixer.get()).build(null));
 
     // Crucible registration
-    public static final RegistryObject<Item> CRUCIBLE_ITEM = ITEMS.register("crucible", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::crucible)));
     public static final RegistryObject<TileEntityType<CrucibleTile>> CRUCIBLE_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(CrucibleTile::new, BlocksRegistry.Crucible.get()).build(null));
 
     // Gooifier registration
-    public static final RegistryObject<Item> GOOIFIER_ITEM = ITEMS.register("gooifier", () -> new BlockItem(BlocksRegistry.Gooifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<GooifierTile>> GOOIFIER_TILE = TILES.register("gooifier", () -> TileEntityType.Builder.create(GooifierTile::new, BlocksRegistry.Gooifier.get()).build(null));
 
     // Solidifier registration
-    public static final RegistryObject<Item> SOLIDIFIER_ITEM = ITEMS.register("solidifier", () -> new BlockItem(BlocksRegistry.Solidier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidier.get()).build(null));
 
     // Goo!

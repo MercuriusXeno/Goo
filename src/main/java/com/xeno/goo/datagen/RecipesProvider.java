@@ -2,6 +2,7 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.data.*;
@@ -32,44 +33,44 @@ public class RecipesProvider extends RecipeProvider {
 
 
     private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.GAUNTLET.get())
+        ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.Gauntlet.get())
                 .patternLine("ss ")
                 .patternLine("sls")
                 .patternLine("sgs")
                 .key('s', Items.NETHERITE_SCRAP)
                 .key('l', Items.LEATHER)
-                .key('g', Registry.GASKET.get())
+                .key('g', ItemsRegistry.Gasket.get())
                 .setGroup(GooMod.MOD_ID)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
     private void registerBasinRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(Registry.BASIN.get())
+        ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.Basin.get())
                 .patternLine("sgs")
                 .patternLine("scs")
                 .patternLine("sbs")
                 .key('s', Items.NETHERITE_SCRAP)
-                .key('g', Registry.GASKET.get())
+                .key('g', ItemsRegistry.Gasket.get())
                 .key('b', Items.MAGMA_CREAM)
                 .key('c', Items.BUCKET)
                 .setGroup(GooMod.MOD_ID)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
     // doesn't work, needs a custom serializer to get the NBT on the stack to identify
     // it isn't just any patchouli book, but goo's patchouli book. leaving this a manual recipe for the time being.
     private void registerBookRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(Registry.GOO_AND_YOU.get())
-                .addIngredient(Registry.GASKET.get())
+        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.GooAndYou.get())
+                .addIngredient(ItemsRegistry.Gasket.get())
                 .addIngredient(Items.BOOK)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(Registry.GASKET.get(), 3)
+        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.Gasket.get(), 3)
                 .addIngredient(Items.HONEYCOMB)
                 .addIngredient(Items.GOLD_INGOT)
                 .addIngredient(Items.MAGMA_CREAM)
@@ -82,10 +83,10 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
-                .key('o', Registry.GASKET.get())
+                .key('o', ItemsRegistry.Gasket.get())
                 .key('e', Items.ENDER_PEARL)
                 .key('#', Tags.Items.GLASS)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
@@ -95,12 +96,12 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("pg ")
                 .patternLine("bof")
                 .key('s', Items.POLISHED_BLACKSTONE_SLAB)
-                .key('o', Registry.GASKET.get())
+                .key('o', ItemsRegistry.Gasket.get())
                 .key('p', Items.PISTON)
                 .key('g', Items.GLASS)
                 .key('f', Items.ITEM_FRAME)
                 .key('b', Items.POLISHED_BASALT)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
@@ -110,11 +111,11 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("pfp")
                 .patternLine("obo")
                 .key('n', Items.CRYING_OBSIDIAN)
-                .key('o', Registry.GASKET.get())
+                .key('o', ItemsRegistry.Gasket.get())
                 .key('b', Items.BREWING_STAND)
                 .key('p', Items.PISTON)
                 .key('f', Items.BLAST_FURNACE)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
@@ -125,11 +126,11 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("o#o")
                 .key('r', Items.REDSTONE_LAMP)
                 .key('n', Items.NETHER_BRICKS)
-                .key('o', Registry.GASKET.get())
+                .key('o', ItemsRegistry.Gasket.get())
                 .key('p', Items.STICKY_PISTON)
                 .key('x', Items.DISPENSER)
                 .key('#', Items.ITEM_FRAME)
-                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(Registry.GASKET.get()))
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
