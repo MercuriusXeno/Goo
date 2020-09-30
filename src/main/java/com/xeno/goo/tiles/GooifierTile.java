@@ -16,7 +16,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.IFormattableTextComponent;
@@ -383,7 +382,7 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
 
     public ItemStack getGooifierStack()
     {
-        ItemStack stack = new ItemStack(BlocksRegistry.GOOIFIER.get());
+        ItemStack stack = new ItemStack(BlocksRegistry.Gooifier.get());
 
         CompoundNBT gooifierTag = new CompoundNBT();
         write(gooifierTag);

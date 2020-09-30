@@ -52,11 +52,11 @@ public class ModClientEvents
 
     private static void setRenderLayers()
     {
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.GOO_BULB.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.GOO_PUMP.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.MIXER.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.CRUCIBLE.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.SOLIDIFIER.get(), RenderType.getSolid());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooBulb.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooPump.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidier.get(), RenderType.getSolid());
     }
 
     private static void setTileEntityRenderers()

@@ -4,16 +4,10 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
-import net.minecraft.block.Blocks;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
-import net.minecraft.item.crafting.ShapelessRecipe;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.Tags;
-import vazkii.patchouli.api.PatchouliAPI;
 
-import javax.sound.midi.Patch;
 import java.util.function.Consumer;
 
 public class RecipesProvider extends RecipeProvider {
@@ -84,7 +78,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOO_BULB.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GooBulb.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
@@ -96,7 +90,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOO_PUMP.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GooPump.get())
                 .patternLine("so ")
                 .patternLine("pg ")
                 .patternLine("bof")
@@ -111,7 +105,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GOOIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Gooifier.get())
                 .patternLine("non")
                 .patternLine("pfp")
                 .patternLine("obo")
@@ -125,7 +119,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.SOLIDIFIER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Solidier.get())
                 .patternLine("ro ")
                 .patternLine("nxp")
                 .patternLine("o#o")
@@ -140,20 +134,20 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.MIXER.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Mixer.get())
                 .patternLine("n n")
                 .patternLine("bcb")
                 .patternLine("npn")
-                .key('b', BlocksRegistry.GOO_BULB.get())
+                .key('b', BlocksRegistry.GooBulb.get())
                 .key('c', Items.CAULDRON)
                 .key('n', Items.NETHERITE_INGOT)
-                .key('p', BlocksRegistry.GOO_PUMP.get())
+                .key('p', BlocksRegistry.GooPump.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
     }
 
     private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.CRUCIBLE.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Crucible.get())
                 .patternLine("xix")
                 .patternLine("ici")
                 .patternLine("fbf")
@@ -161,7 +155,7 @@ public class RecipesProvider extends RecipeProvider {
                 .key('i', Items.NETHERITE_INGOT)
                 .key('c', Items.CAULDRON)
                 .key('f', Items.BLAST_FURNACE)
-                .key('b', BlocksRegistry.GOO_BULB.get())
+                .key('b', BlocksRegistry.GooBulb.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
                 .build(consumer);
     }
