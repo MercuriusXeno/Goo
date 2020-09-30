@@ -85,12 +85,24 @@ public class GooInteractions
     public static void initialize()
     {
         Aquatic.registerInteractions();
-
+        Chromatic.registerInteractions();
+        Crystal.registerInteractions();
+        Decay.registerInteractions();
+        Earthen.registerInteractions();
         Energetic.registerInteractions();
-
+        Faunal.registerInteractions();
+        Floral.registerInteractions();
+        Fungal.registerInteractions();
+        Honey.registerInteractions();
+        Logic.registerInteractions();
+        Metal.registerInteractions();
         Molten.registerInteractions();
-
+        Obsidian.registerInteractions();
+        Regal.registerInteractions();
+        Slime.registerInteractions();
         Snow.registerInteractions();
+        Vital.registerInteractions();
+        Weird.registerInteractions();
     }
 
     public static void tryResolving(GooSplat gooSplat)

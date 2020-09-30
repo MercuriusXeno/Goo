@@ -118,6 +118,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private void makeBox()
     {
         this.box = new AxisAlignedBB(shape.scale(-0.5d), shape.scale(0.5d));
+        updateOffsetBounds();
+    }
+
+    private void updateOffsetBounds()
+    {
         this.setBoundingBox(box.offset(this.getPositionVec()));
     }
 
@@ -221,7 +226,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         Vector3d motion = this.getMotion();
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
+        if (projection.equals(position)) {
+            return;
+        }
         this.setPosition(projection.x, projection.y, projection.z);
+        updateOffsetBounds();
     }
 
     private void handleMaterialCollisionChecks()
