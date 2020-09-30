@@ -13,6 +13,7 @@ import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -190,6 +191,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return handleMaterialCollisionChecks();
     }
 
+    // return true to halt movement processing for whatever reason
     private boolean handleMaterialCollisionChecks()
     {
         Vector3d motion = this.getMotion();
@@ -200,7 +202,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         if (blockResult.getType() != RayTraceResult.Type.MISS) {
             // try colliding with the block for some tank interaction, this entity
             // wants to enter receptacles first if it can, but splat otherwise
-            collideBlockMaybe(blockResult);
+            if (tryFluidHandlerInteraction(blockResult.getPos(), blockResult.getFace())) {
+                return true;
+            }
 
             // check to see if the block is a solid cube.
             // goo bounces off of anything that isn't.
@@ -452,6 +456,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
         if (didStuff[0]) {
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
             return ActionResultType.SUCCESS;
         }
         return ActionResultType.CONSUME;
@@ -476,8 +481,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         if (tryDrain.isEmpty()) {
             return false;
         }
-
         item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+
         return true;
     }
 
@@ -497,26 +502,44 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         readAdditional(tag);
     }
 
-    public void tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)
+    public boolean tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)
     {
         if (world.isRemote()) {
-            return;
+            return false;
         }
 
+        boolean[] result = {false};
         LazyOptional<IFluidHandler> fh = FluidHandlerHelper.capability(this.world, blockPos, sideHit);
-        fh.ifPresent(this::enterTank);
+        fh.ifPresent((c) -> result[0] = enterTank(c));
+        return result[0];
     }
 
-    private void enterTank(IFluidHandler fh)
+    // return true if 100% of the goo is drained, which chains up as "stop processing movement"
+    // return false if we need to keep processing movement because some or all of the goo is still there
+    private boolean enterTank(IFluidHandler fh)
     {
         int attemptTransfer = fh.fill(goo, IFluidHandler.FluidAction.SIMULATE);
+        if (attemptTransfer == 0) {
+            return false;
+        }
+        if (attemptTransfer > 0) {
+            GooInteractions.spawnParticles(this);
+            AudioHelper.entityAudioEvent(this, Registry.GOO_DEPOSIT_SOUND.get(), SoundCategory.PLAYERS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+        }
         if (attemptTransfer >= goo.getAmount()) {
             fh.fill(goo, IFluidHandler.FluidAction.EXECUTE);
             goo.setAmount(0);
+            return true;
         } else {
             fh.fill(new FluidStack(goo.getFluid(), attemptTransfer), IFluidHandler.FluidAction.EXECUTE);
             goo.setAmount(goo.getAmount() - attemptTransfer);
         }
+
+        if (goo.getAmount() > 0) {
+            return false;
+        }
+
+        return true;
     }
 
     protected void setSize() {
@@ -576,14 +599,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             // dissipate
             this.remove();
         }
-    }
-
-    protected void collideBlockMaybe(BlockRayTraceResult rayTraceResult) {
-        doChangeBlockState(rayTraceResult.getPos(), rayTraceResult.getFace());
-    }
-
-    protected void doChangeBlockState(BlockPos blockPos, Direction sideHit) {
-        tryFluidHandlerInteraction(blockPos, sideHit);
     }
 
     public float cubicSize()

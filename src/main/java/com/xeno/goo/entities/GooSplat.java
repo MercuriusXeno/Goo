@@ -383,6 +383,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
         if (didStuff[0]) {
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
             return ActionResultType.SUCCESS;
         }
         return ActionResultType.CONSUME;

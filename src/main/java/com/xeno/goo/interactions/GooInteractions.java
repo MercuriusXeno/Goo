@@ -32,7 +32,12 @@ public class GooInteractions
 {
     private static BasicParticleType particleTypeFromGoo(FluidStack fluidInTank)
     {
-        return Registry.fallingParticleFromFluid(fluidInTank.getFluid());
+        return particleTypeFromGoo(fluidInTank.getFluid());
+    }
+
+    private static BasicParticleType particleTypeFromGoo(Fluid f)
+    {
+        return Registry.fallingParticleFromFluid(f);
     }
 
     public static void spawnParticles(GooBlob e)
@@ -42,24 +47,35 @@ public class GooInteractions
         }
         // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
         if (e.goo().getFluid() instanceof GooFluid) {
-            BasicParticleType type = particleTypeFromGoo(e.goo());
-            if (type == null) {
-                return;
-            }
-            Vector3d spawnVec = e.getPositionVec();
-            // give it a bit of randomness around the hit location
-            double offX = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
-            double offZ = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
-
-            ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
-                    offX, e.cubicSize(), offZ, 0.2d);
+            spawnParticles(e, (GooFluid) e.goo().getFluid());
         }
+    }
+
+    // the difference here is that we can call this one during events where
+    // the blob is being "emptied" and hang onto its fluid type.
+    public static void spawnParticles(GooBlob e, GooFluid f)
+    {
+        if (!(e.getEntityWorld() instanceof ServerWorld)) {
+            return;
+        }
+        // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
+        BasicParticleType type = particleTypeFromGoo(f);
+        if (type == null) {
+            return;
+        }
+        Vector3d spawnVec = e.getPositionVec();
+        // give it a bit of randomness around the hit location
+        double offX = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
+        double offZ = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
+
+        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
+                offX, e.cubicSize(), offZ, 0.2d);
     }
 
     public static final Map<Fluid, Map<Tuple<Integer, String>, IGooInteraction>> registry = new HashMap<>();
     public static void register(Fluid fluid, String key, int rank, IGooInteraction interaction) {
         Tuple<Integer, String> compositeKey = new Tuple<>(rank, key);
-        if (!registry.containsKey(compositeKey)) {
+        if (!registry.containsKey(fluid)) {
             registry.put(fluid, new HashMap<>());
         }
 
@@ -79,6 +95,10 @@ public class GooInteractions
 
     public static void tryResolving(GooSplat gooSplat)
     {
+        // no interactions registered, we don't want to crash.
+        if (!registry.containsKey(gooSplat.goo().getFluid())) {
+            return;
+        }
         InteractionContext context = new InteractionContext(gooSplat);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IGooInteraction> map = registry.get(gooSplat.goo().getFluid());
