@@ -25,12 +25,12 @@ import java.util.function.Supplier;
 
 public class BasinAbstraction extends ItemFluidContainer
 {
-    public BasinAbstraction(int capacity)
+    public BasinAbstraction()
     {
         super(new Item.Properties()
                 .maxStackSize(1)
                 .isBurnable()
-                .group(GooMod.ITEM_GROUP), capacity);
+                .group(GooMod.ITEM_GROUP), 0);
     }
 
     @Override

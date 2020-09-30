@@ -28,20 +28,19 @@ public class GauntletAbstraction extends ItemFluidContainer
 {
     private static final int THROWN_GOO_DRAIN = 16;
 
-    public GauntletAbstraction(int capacity)
+    public GauntletAbstraction()
     {
         super(
                 new Item.Properties()
                         .maxStackSize(1)
                         .isBurnable()
-                        .group(GooMod.ITEM_GROUP),
-                capacity);
+                        .group(GooMod.ITEM_GROUP), 0);
     }
 
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, CompoundNBT nbt)
     {
-        return new GauntletAbstractionCapability(stack, this.capacity);
+        return new GauntletAbstractionCapability(stack);
     }
 
     @Override
@@ -179,15 +178,6 @@ public class GauntletAbstraction extends ItemFluidContainer
         if (cap == null) {
             return ActionResult.resultPass(player.getHeldItem(handIn));
         }
-//
-//        // try picking goo up off of the ground before we do anything else
-//        if (RayTracing.INSTANCE.entityTarget() != null) {
-//            if (isValidTarget(RayTracing.INSTANCE.entityTarget().getEntity())) {
-//                if (tryExtractingGooFromEntity(cap, (IFluidHandler)RayTracing.INSTANCE.entityTarget().getEntity()) > 0) {
-//                    return ActionResult.resultSuccess(player.getHeldItem(handIn));
-//                }
-//            }
-//        }
 
         if (cap.getFluidInTank(0).isEmpty()) {
             return ActionResult.resultPass(player.getHeldItem(handIn));

@@ -1,6 +1,7 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.GooChopEffects;
@@ -35,16 +36,24 @@ import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
     private static final DataParameter<Integer> GOO_AMOUNT = EntityDataManager.createKey(GooSplat.class, DataSerializers.VARINT);
+
+    // vars that help determine the dimensions of the splat
+    // the first Single-Tile-Liquid-Covering amount is what it takes to get
+    // the entire block covered, after which the depth increases instead.
     private static final double PUDDLE_DEPTH = 0.1d;
     private static final double SINGLE_TILE_LIQUID_COVERING_RATIO = 16d; // 16 units is expected to cover 1x1
+    // these ratios are "fixed" ratios that get used up until the amount of liquid is greater than the covering ratio.
     private static final double LIQUID_CUBIC_RATIO = 1000d;
     private static final double LIQUID_CUBIC_TILE_COVERAGE_VOLUME = SINGLE_TILE_LIQUID_COVERING_RATIO / LIQUID_CUBIC_RATIO;
     private static final double LIQUID_CUBIC_SIDE_LENGTH_DERIVED = Math.sqrt(LIQUID_CUBIC_TILE_COVERAGE_VOLUME / PUDDLE_DEPTH);
     private static final double PUDDLE_EXPANSION_RATIO = 1d / LIQUID_CUBIC_SIDE_LENGTH_DERIVED;
+
+    // actual properties of the splat
     private FluidStack goo;
     private Entity owner;
     private Vector3d shape;
@@ -169,6 +178,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             goo.setAmount(this.dataManager.get(GOO_AMOUNT));
             return;
         }
+
+        GooInteractions.tryResolving(this);
+
         handleMaterialCollisionChecks();
         this.isCollidingEntity = this.checkForEntityCollision();
         approachAttachmentPoint();
@@ -645,5 +657,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public FluidStack goo()
     {
         return this.goo;
+    }
+
+    public Entity owner()
+    {
+        return this.owner;
     }
 }

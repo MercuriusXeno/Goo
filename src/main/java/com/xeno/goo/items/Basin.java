@@ -19,7 +19,7 @@ public class Basin extends BasinAbstraction
 {
     public Basin()
     {
-        super(GooMod.config.basinCapacity());
+        super();
     }
 
     @Override

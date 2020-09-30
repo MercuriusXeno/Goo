@@ -19,7 +19,7 @@ public class Gauntlet extends GauntletAbstraction
 {
     public Gauntlet()
     {
-        super(GooMod.config.gauntletCapacity());
+        super();
     }
 
     @Override

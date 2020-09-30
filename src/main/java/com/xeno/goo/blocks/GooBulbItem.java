@@ -51,6 +51,9 @@ public class GooBulbItem extends BlockItem
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
+        if (worldIn == null) {
+            return;
+        }
         int holdsAmount = GooBulbTileAbstraction.storageForDisplay(holding(stack));
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(new TranslationTextComponent("goo.common.holds")

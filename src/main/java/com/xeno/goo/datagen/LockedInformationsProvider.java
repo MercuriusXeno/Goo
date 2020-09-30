@@ -126,7 +126,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.SAND, earthen(1080));
         saveData(Items.APPLE, floral(60), vital(60));
         saveData(Items.BAMBOO, floral(60));
-        saveData(Items.BASALT, earthen(960), obsidian(60));
+        saveData(Items.BASALT, earthen(960), obsidian(6));
         saveData(Items.BEEF, faunal(60), vital(60));
         saveData(Items.BEETROOT, floral(60), vital(60), chromatic(240));
         saveData(Items.BEETROOT_SEEDS, floral(60));
@@ -162,7 +162,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.GUNPOWDER, molten(60), energetic(120));
         saveData(Items.HONEYCOMB, honey(120), regal(24));
         saveData(Items.HONEY_BLOCK, honey(960), regal(60), crystal(4));
-        saveData(Items.ICE, snow(960), aquatic(60));
+        saveData(Items.ICE, snow(60), aquatic(60));
         saveData(Items.INK_SAC, faunal(60), chromatic(240));
         saveData(Items.IRON_INGOT, metal(72));
         saveData(Items.KELP, floral(60), vital(60));
@@ -199,7 +199,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.SHULKER_SHELL, faunal(60), weird(180));
         saveData(Items.SHROOMLIGHT, weird(120), fungal(360));
         saveData(Items.SLIME_BALL, slime(240));
-        saveData(Items.SNOWBALL, snow(120), aquatic(60));
+        saveData(Items.SNOWBALL, snow(15), aquatic(15));
         saveData(Items.SOUL_SAND, earthen(720), vital(240), decay(60));
         saveData(Items.SOUL_SOIL, earthen(720), vital(240), decay(60));
         saveData(Items.SPIDER_EYE, faunal(60), weird(60));
