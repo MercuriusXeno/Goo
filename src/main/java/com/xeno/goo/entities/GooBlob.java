@@ -3,6 +3,7 @@ package com.xeno.goo.entities;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
+import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.library.AudioHelper;
@@ -30,6 +31,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
@@ -57,6 +59,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
+    private GooSplat attachedSplat = null;
     private boolean isAttachedToBlock;
 
     public GooBlob(EntityType<GooBlob> type, World worldIn) {
@@ -79,6 +82,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
     }
 
+    // special constructor for goo blobs that doesn't shoot; this is important.
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
         goo = stack;
@@ -150,42 +154,18 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             return;
         }
 
-        if (isAttachedToBlock) {
-            approachAttachmentPoint();
-        } else {
+        if (!isAttachedToBlock) {
             if (handleMovement()) {
                 return;
             }
         }
         doFreeMovement();
         this.isCollidingEntity = this.checkForEntityCollision();
-    }
 
-    private void approachAttachmentPoint()
-    {
-        Vector3d attachmentPoint = attachmentPoint();
-        Vector3d approachVector = attachmentPoint.subtract(this.getPositionVec());
-        if (approachVector.length() <= 0.1d) {
-            this.setMotion(approachVector);
-        } else {
-            this.setMotion(approachVector.normalize().scale(0.05d));
+        // feed the splat we belong to
+        if (attachedSplat != null) {
+            attachedSplat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
         }
-    }
-
-    private Vector3d attachmentPoint()
-    {
-        Vector3d attachmentPoint = new Vector3d(
-                blockAttached.getX(),
-                blockAttached.getY(),
-                blockAttached.getZ())
-                .add(0.5d, 0.5d, 0.5d)
-                .add(0.51d * sideWeLiveOn.getXOffset(),
-                        0.51d * sideWeLiveOn.getYOffset(),
-                        0.51d * sideWeLiveOn.getZOffset())
-                .add((this.cubicSize / 2d) * sideWeLiveOn.getXOffset(),
-                        (this.cubicSize / 2d) * sideWeLiveOn.getYOffset(),
-                        (this.cubicSize / 2d) * sideWeLiveOn.getZOffset());
-        return attachmentPoint;
     }
 
     private boolean handleMovement() {
@@ -238,7 +218,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private boolean isValidForSplat(BlockRayTraceResult result)
     {
         BlockState state = world.getBlockState(result.getPos());
-        return (state.isSolid() && state.isNormalCube(world, result.getPos())) || isGlass(state);
+        return state.isSolidSide(world, result.getPos(), result.getFace());
+
+        // return (state.isSolid() && state.isNormalCube(world, result.getPos())) || isGlass(state);
     }
 
     private boolean isGlass(BlockState state)
@@ -268,18 +250,11 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
         // nerf motion on impact.
         this.setMotion(this.getMotion().scale(0.02d));
-        // check to see if there's already a splat here
-        List<GooSplat> splats = world.getEntitiesWithinAABB(GooSplat.class,
-                this.getBoundingBox().expand(this.getMotion()),
-                (e) -> e.sideWeLiveOn().equals(face) && e.blockAttached().equals(pos));
-        if (splats.size() > 0) {
-            bounceBlob(splats.get(0).sideWeLiveOn());
-            return;
-        }
-        attachToBlock(pos, face);
         // create a goo splat
         FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
-        world.addEntity(new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face));
+        GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
+        world.addEntity(splatToAdd);
+        attachToBlock(pos, face, splatToAdd);
     }
 
     private static final double BOUNCE_DECAY = 0.65d;
@@ -298,11 +273,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
     }
 
-    private void attachToBlock(BlockPos pos, Direction face)
+    private void attachToBlock(BlockPos pos, Direction face, GooSplat splat)
     {
         this.blockAttached = pos;
         this.sideWeLiveOn = face;
         this.isAttachedToBlock = true;
+        this.attachedSplat = splat;
     }
 
     protected void doFreeMovement() {
@@ -449,7 +425,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     @Override
     public boolean canBeCollidedWith()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -599,6 +575,23 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     protected void collideWithEntity(Entity entityHit)
     {
         if (entityHit == owner) {
+            // try catching  it!
+            if (owner instanceof PlayerEntity) {
+                // check if the player has a gauntlet either empty or with the same goo as me
+                ItemStack heldItem = ((PlayerEntity) owner).getHeldItem(Hand.MAIN_HAND);
+                if (heldItem.getItem() instanceof Gauntlet) {
+                    LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+                    lazyCap.ifPresent((c) -> {
+                        int drain = c.fill(this.goo(), FluidAction.SIMULATE);
+                        if (drain > 0) {
+                            c.fill(this.drain(drain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+                        }
+                        if (this.goo.isEmpty()) {
+                            this.remove();
+                        }
+                    });
+                }
+            }
             return;
         }
         if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {

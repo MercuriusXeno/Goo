@@ -111,15 +111,19 @@ public class GooInteractions
         if (!registry.containsKey(gooSplat.goo().getFluid())) {
             return;
         }
-        InteractionContext context = new InteractionContext(gooSplat);
+        InteractionContext context = new InteractionContext(gooSplat, gooSplat.goo().getFluid());
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IGooInteraction> map = registry.get(gooSplat.goo().getFluid());
-        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context));
+        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context.withKey(k.getB())));
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IGooInteraction iGooInteraction, InteractionContext context)
     {
         int keyCost = GooMod.config.costOfInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction is disabled, abort
+            return;
+        }
         FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
         if (drained.getAmount() < keyCost) {
             return;

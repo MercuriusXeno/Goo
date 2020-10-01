@@ -4,17 +4,17 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.OreBlock;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.tags.ITag;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.ArrayList;
@@ -23,6 +23,7 @@ import java.util.List;
 public class Energetic
 {
     private static final int WORST_HARVEST_LEVEL = 0;
+    private static final int BEDROCK_HARDNESS = -1;
 
 
     public static void registerInteractions()
@@ -50,7 +51,7 @@ public class Energetic
         BlockState state = context.world().getBlockState(blockPos);
         Vector3d dropPos = new Vector3d(blockPos.getX(), blockPos.getY(), blockPos.getZ())
                 .add(0.5d, 0.5d, 0.5d);
-        if (state.getHarvestLevel() == WORST_HARVEST_LEVEL) {
+        if (state.getHarvestLevel() == WORST_HARVEST_LEVEL && !(state.getBlock() instanceof OreBlock) && state.getBlockHardness(context.world(), blockPos) != BEDROCK_HARDNESS) {
             if ((context.world() instanceof ServerWorld)) {
                 ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());

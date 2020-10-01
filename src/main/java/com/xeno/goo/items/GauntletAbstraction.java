@@ -17,15 +17,15 @@ import net.minecraft.util.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.ItemFluidContainer;
 
 public class GauntletAbstraction extends ItemFluidContainer
 {
-    private static final int THROWN_GOO_DRAIN = 16;
-
     public GauntletAbstraction()
     {
         super(
@@ -148,26 +148,58 @@ public class GauntletAbstraction extends ItemFluidContainer
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, Hand handIn)
+    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, Hand hand)
     {
         if (world.isRemote()) {
-            return ActionResult.resultPass(player.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(hand));
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(handIn));
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(hand));
         if (cap == null) {
-            return ActionResult.resultPass(player.getHeldItem(handIn));
+            return ActionResult.resultPass(player.getHeldItem(hand));
         }
 
         if (cap.getFluidInTank(0).isEmpty()) {
-            return ActionResult.resultPass(player.getHeldItem(handIn));
+            tryRaidingInventoryForGoo(player, cap);
+            return ActionResult.resultPass(player.getHeldItem(hand));
         }
 
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        FluidStack thrownStack = cap.drain(THROWN_GOO_DRAIN, IFluidHandler.FluidAction.EXECUTE);
+        int drainAmountThrown = GooMod.config.thrownGooAmount(cap.getFluidInTank(0).getFluid());
+        // -1 is disabled
+        if (drainAmountThrown == -1) {
+            return ActionResult.resultPass(player.getHeldItem(hand));
+        }
+        FluidStack thrownStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
         world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
-        return ActionResult.resultSuccess(player.getHeldItem(handIn));
+        return ActionResult.resultSuccess(player.getHeldItem(hand));
+    }
+
+    private void tryRaidingInventoryForGoo(PlayerEntity player,IFluidHandlerItem cap)
+    {
+        for(ItemStack i : player.inventory.mainInventory) {
+            if (!(i.getItem() instanceof Basin)) {
+                continue;
+            }
+            LazyOptional<IFluidHandlerItem> basinCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+            boolean[] foundFluid = {false};
+            basinCap.ifPresent((c) ->
+                    foundFluid[0] = tryDrain(c, cap)
+            );
+            if (foundFluid[0]) {
+                break;
+            }
+        }
+    }
+
+    private boolean tryDrain(IFluidHandlerItem source, IFluidHandlerItem destination)
+    {
+        if (source.drain(destination.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
+            return false;
+        }
+        destination.fill(source.drain(destination.getTankCapacity(0), IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     @Override
