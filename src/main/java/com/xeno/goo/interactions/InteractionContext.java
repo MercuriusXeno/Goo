@@ -39,8 +39,7 @@ public class InteractionContext
         this.sideHit = trace.getFace();
         this.blockState = world.getBlockState(this.blockPos);
         this.hitVec = trace.getHitVec();
-        this.blockCenterVec = new Vector3d(this.blockPos.getX(), this.blockPos.getY(), this.blockPos.getZ())
-            .add(0.5d, 0.5d, 0.5d);
+        this.blockCenterVec = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
         this.fluid = fluid;
         this.splat = entity;
     }

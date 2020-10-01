@@ -41,8 +41,7 @@ public class Crystal
     {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);
-        Vector3d dropPos = new Vector3d(blockPos.getX(), blockPos.getY(), blockPos.getZ())
-                .add(0.5d, 0.5d, 0.5d);
+        Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
 
         if (state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness) {
             if ((context.world() instanceof ServerWorld)) {
@@ -66,8 +65,7 @@ public class Crystal
 
                 GooBlob returnBlob = new GooBlob(Registry.GOO_BLOB.get(), context.world(), context.splat().owner(),
                         new FluidStack(context.fluid(), amountReturned), dropPos);
-                Vector3i directionVec = context.splat().sideWeLiveOn().getDirectionVec();
-                Vector3d motionVec = new Vector3d(directionVec.getX(), directionVec.getY(), directionVec.getZ())
+                Vector3d motionVec = Vector3d.copy(context.splat().sideWeLiveOn().getDirectionVec())
                         .scale(0.5d); // unit vector is a little too forceful, dial it back a lot
                 returnBlob.setMotion(motionVec);
                 context.world().addEntity(returnBlob);

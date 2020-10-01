@@ -33,6 +33,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -158,14 +159,23 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             if (handleMovement()) {
                 return;
             }
+            doFreeMovement();
+            this.isCollidingEntity = this.checkForEntityCollision();
         }
-        doFreeMovement();
-        this.isCollidingEntity = this.checkForEntityCollision();
 
         // feed the splat we belong to
         if (attachedSplat != null) {
+            approachSplatOffset();
             attachedSplat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
         }
+    }
+
+    private void approachSplatOffset() {
+        Vector3d splatPosition = attachedSplat.getPositionVec();
+        Vector3f offsetPosition = attachedSplat.sideWeLiveOn().toVector3f();
+        offsetPosition.mul(cubicSize() / 2f);
+        Vector3d trueOffset = splatPosition.add(offsetPosition.getX(), offsetPosition.getY(), offsetPosition.getZ());
+        setPositionAndRotation(trueOffset.x, trueOffset.y, trueOffset.z, this.rotationYaw, this.rotationPitch);
     }
 
     private boolean handleMovement() {
@@ -525,6 +535,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
         return true;
     }
+
 
     protected void setSize() {
         this.dataManager.set(GOO_AMOUNT, goo.getAmount());
