@@ -3,10 +3,7 @@ package com.xeno.goo.interactions;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.OreBlock;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -27,9 +24,9 @@ import java.util.List;
 
 public class Energetic
 {
-    // private static final int WORST_HARVEST_LEVEL = 0;
-    private static final int BEDROCK_HARDNESS = -1;
-    private static final int IRON_HARVEST_LEVEL = 2;
+    private static final int bedrockHardness = -1;
+    private static final int ironHarvestLevel = 2;
+    private static final float particleChance = 0.33f;
 
 
     public static void registerInteractions()
@@ -46,6 +43,10 @@ public class Energetic
         List<BlockPos> blockPosList = blockPositionsByRadius(context.blockCenterVec(), context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context));
+        // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
+        // always hit at least one visual here.
+        ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, context.blockCenterVec().x,
+                context.blockCenterVec().y, context.blockCenterVec().z, 1, 0d, 0d, 0d, 0d);
         AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS,
                 3.0f, AudioHelper.PitchFormulas.HalfToOne);
 
@@ -71,7 +72,7 @@ public class Energetic
                 return;
             }
         }
-        if (state.getHarvestLevel() <= IRON_HARVEST_LEVEL && state.getBlockHardness(context.world(), blockPos) != BEDROCK_HARDNESS) {
+        if (state.getHarvestLevel() <= ironHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness) {
             if ((context.world() instanceof ServerWorld)) {
                 // figure out drops for this block
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
@@ -85,7 +86,11 @@ public class Energetic
                 if (!validDropsForMiningBlast(drops, state)) {
                     return;
                 }
-                ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
+                // throttle particles to look a bit less dense.
+                // spawning roughly a 1/3 chance
+                if (context.world().rand.nextFloat() <= particleChance) {
+                    ((ServerWorld) context.world()).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
+                }
                 drops.forEach((d) -> context.world().addEntity(
                         new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
                 ));
