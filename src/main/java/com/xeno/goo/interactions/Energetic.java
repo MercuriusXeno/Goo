@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.LeavesBlock;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -61,17 +62,11 @@ public class Energetic
             return;
         }
         Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
-        // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
-        // the force is blocked. True center here is because the block we're attached to is obviously solid.
-        Vector3d trueCenter = context.blockCenterVec().add(Vector3d.copy(context.sideHit().getDirectionVec()));
-        RayTraceContext rtc = new RayTraceContext(trueCenter, dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
-        BlockRayTraceResult result = context.world().rayTraceBlocks(rtc);
-        if (result.getType() != RayTraceResult.Type.MISS) {
-            // we intersected with a block that isn't the one we're trying to break
-            if (!result.getPos().equals(blockPos)) {
-                return;
-            }
+
+        if (isExplosionOccluded(dropPos, blockPos, state, context)) {
+            return;
         }
+
         if (state.getHarvestLevel() <= ironHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness) {
             if ((context.world() instanceof ServerWorld)) {
                 // figure out drops for this block
@@ -99,8 +94,29 @@ public class Energetic
         }
     }
 
+    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, InteractionContext context) {
+        // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
+        // the force is blocked. True center here is because the block we're attached to is obviously solid.
+        Vector3d trueCenter = context.blockCenterVec().add(Vector3d.copy(context.sideHit().getDirectionVec()));
+        RayTraceContext rtc = new RayTraceContext(trueCenter, dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
+        BlockRayTraceResult result = context.world().rayTraceBlocks(rtc);
+        if (result.getType() != RayTraceResult.Type.MISS) {
+            // we intersected with a block that isn't the one we're trying to break
+            if (!result.getPos().equals(blockPos)) {
+                return state.getMaterial().blocksMovement() && !(state.getBlock() instanceof LeavesBlock);
+            }
+        }
+
+        return false;
+    }
+
     private static boolean validDropsForMiningBlast(List<ItemStack> drops, BlockState state)
     {
+        // leaves are fine lol
+        if (state.getBlock() instanceof LeavesBlock) {
+            return true;
+        }
+
         // singleton drops indicate a "normal" block drop. Anything else we reject.
         if (drops.size() != 1) {
             return false;

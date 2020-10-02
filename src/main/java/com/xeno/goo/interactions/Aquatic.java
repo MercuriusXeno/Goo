@@ -16,7 +16,7 @@ public class Aquatic
             if (hydration < 7) {
                 int newHydration = Math.min(7, hydration + 1);
 
-                if (context.isRemote()) {
+                if (!context.isRemote()) {
                     context.setBlockState(context.blockState().with(FarmlandBlock.MOISTURE, newHydration));
                 }
                 return true;
@@ -30,7 +30,7 @@ public class Aquatic
         // cool lava
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds
-            if (context.isRemote()) {
+            if (!context.isRemote()) {
                 if (context.fluidState().isSource()) {
                     context.setBlockState(net.minecraftforge.event.ForgeEventFactory
                             .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
@@ -49,7 +49,7 @@ public class Aquatic
     {
         // edify non-source water to source water
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
-            if (context.isRemote()) {
+            if (!context.isRemote()) {
                 if (!context.fluidState().isSource()) {
                     context.setBlockState(Blocks.WATER.getDefaultState().with(BlockStateProperties.LEVEL_1_8, 8));
                 }
@@ -64,7 +64,7 @@ public class Aquatic
         // extinguish fires
         if (context.blockState().getBlock().equals(Blocks.FIRE)) {
             context.world().playEvent(null, 1009, context.blockPos(), 0);
-            if (context.isRemote()) {
+            if (!context.isRemote()) {
                 context.world().removeBlock(context.blockPos(), false);
             }
             return true;

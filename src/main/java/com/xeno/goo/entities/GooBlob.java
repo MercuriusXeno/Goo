@@ -9,15 +9,14 @@ import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.GlassBlock;
-import net.minecraft.block.StainedGlassBlock;
-import net.minecraft.block.StainedGlassPaneBlock;
+import net.minecraft.block.*;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -35,6 +34,7 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -199,6 +199,21 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
                 return true;
             }
 
+            if (isValidForPassThrough(blockResult)) {
+                if (isLeafBlockAndDecayGoo(blockResult) && this.goo.getAmount() > 0) {
+                    // leaf blocks get passthrough behavior for blobs, which means decay goo can't destroy them
+                    // but decay goo is supposed to have an effect. Thus, we handle it here, which makes it
+                    // a bit weird from other interactions.
+                    world.removeBlock(blockResult.getPos(), false);
+                    if (world instanceof ServerWorld) {
+                        ((ServerWorld) world).spawnParticle(ParticleTypes.SMOKE, position.x, position.y, position.z, 1, 0d, 0d, 0d, 0d);
+                    }
+                    AudioHelper.entityAudioEvent(this, Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+                    this.drain(1, FluidAction.EXECUTE);
+                }
+                return false;
+            }
+
             // check to see if the block is a solid cube.
             // goo bounces off of anything that isn't.
             if (!isValidForSplat(blockResult)) {
@@ -225,12 +240,31 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return false;
     }
 
+    private boolean isLeafBlockAndDecayGoo(BlockRayTraceResult blockResult) {
+        BlockState state = world.getBlockState(blockResult.getPos());
+        return this.goo.getFluid().equals(Registry.DECAY_GOO.get())
+                && (state.getBlock() instanceof LeavesBlock || state.getBlock() instanceof VineBlock
+                    || state.getBlock() instanceof BushBlock)
+                && !state.getBlock().hasTileEntity(state);
+    }
+
+    private boolean isValidForPassThrough(BlockRayTraceResult blockResult) {
+        BlockState state = world.getBlockState(blockResult.getPos());
+        return isPassableMaterial(state);
+    }
+
+    private boolean isPassableMaterial(BlockState state) {
+        return (!state.getMaterial().blocksMovement() || state.getBlock() instanceof LeavesBlock) && !isFullFluidBlock(state);
+    }
+
     private boolean isValidForSplat(BlockRayTraceResult result)
     {
         BlockState state = world.getBlockState(result.getPos());
-        return state.isSolidSide(world, result.getPos(), result.getFace());
+        return state.isSolidSide(world, result.getPos(), result.getFace()) || isFullFluidBlock(state);
+    }
 
-        // return (state.isSolid() && state.isNormalCube(world, result.getPos())) || isGlass(state);
+    private boolean isFullFluidBlock(BlockState state) {
+        return !state.getFluidState().getFluid().equals(Fluids.EMPTY) && state.getFluidState().isSource();
     }
 
     private boolean isGlass(BlockState state)

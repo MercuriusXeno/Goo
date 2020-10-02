@@ -64,5 +64,17 @@
       "minecraft:block/blastfurnace/blastfurnace4",
       "minecraft:block/blastfurnace/blastfurnace5"
     ]
+  },
+  "deteriorate_block_sound": {
+    "subtitle": "sound_event.goo.deteriorate",
+    "sounds": [
+      "minecraft:random/fizz"
+    ]
+  },
+  "freeze_water_sound": {
+    "subtitle": "sound_event.goo.freeze",
+    "sounds": [
+      "minecraft:random/orb"
+    ]
   }
 }

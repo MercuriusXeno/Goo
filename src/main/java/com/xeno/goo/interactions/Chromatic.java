@@ -6,6 +6,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.MaterialColor;
 import net.minecraft.item.DyeColor;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -21,6 +22,7 @@ public class Chromatic
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_terracotta", 3, Chromatic::dyeTerracotta);
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", 4, Chromatic::dyeGlazedTerracotta);
         GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glass", 5, Chromatic::dyeGlass);
+        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "sand_color", 6, Chromatic::colorSand);
     }
 
     private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();
@@ -301,5 +303,34 @@ public class Chromatic
     private static boolean isWool(InteractionContext ic)
     {
         return woolMap.containsValue(ic.block());
+    }
+
+    private static final List<Tuple<Block, Block>> sandEquivalents = new ArrayList<>();
+    static {
+        sandEquivalents.add(new Tuple<>(Blocks.SAND, Blocks.RED_SAND));
+        sandEquivalents.add(new Tuple<>(Blocks.SANDSTONE, Blocks.RED_SANDSTONE));
+        sandEquivalents.add(new Tuple<>(Blocks.CUT_SANDSTONE, Blocks.CUT_RED_SANDSTONE));
+        sandEquivalents.add(new Tuple<>(Blocks.CHISELED_SANDSTONE, Blocks.CHISELED_RED_SANDSTONE));
+        sandEquivalents.add(new Tuple<>(Blocks.SMOOTH_SANDSTONE, Blocks.SMOOTH_RED_SANDSTONE));
+    }
+    private static boolean colorSand(InteractionContext context) {
+        for (Tuple<Block, Block> sandPair : sandEquivalents) {
+            if (isMatch(context.block(), sandPair)) {
+                if (!context.isRemote()) {
+                    context.setBlockState(otherBlock(context.block(), sandPair).getDefaultState());
+                }
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Block otherBlock(Block block, Tuple<Block, Block> sandPair) {
+        return block.equals(sandPair.getA()) ? sandPair.getB() : sandPair.getA();
+    }
+
+    private static boolean isMatch(Block block, Tuple<Block, Block> sandPair) {
+        return block.equals(sandPair.getA()) || block.equals(sandPair.getB());
     }
 }
