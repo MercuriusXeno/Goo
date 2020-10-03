@@ -20,7 +20,7 @@ public class Snow
         // freeze water
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
             if (!context.isRemote()) {
-                if (context.fluidState().isSource()) {
+                if (context.fluidState().isSource() && context.isBlockAboveAir()) {
                     context.setBlockState(Blocks.ICE.getDefaultState());
                 }
                 AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), Registry.FREEZE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, () -> 1.5f);

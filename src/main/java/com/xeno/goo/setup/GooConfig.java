@@ -118,6 +118,9 @@ public class GooConfig
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
                 returnMap.put(k.getB() + "_returned", returnOfInteraction);
             }
+            if (fluid.equals(Registry.FAUNAL_GOO.get())) {
+                actualCost = 1;
+            }
             ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
                     .defineInRange(k.getB(), actualCost, -1, 1000);
             costMap.put(k.getB(), costOfInteraction);

@@ -41,11 +41,43 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_vines", Decay::destroyVines);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_grass", Decay::destroyGrass);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_crops", Decay::destroyCrops);
+        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_cactus", Decay::destroyCactus);
+        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_flowers", Decay::destroyFlowers);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sugar_cane", Decay::destroySugarCane);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo", Decay::destroyBamboo);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+    }
+
+    private static boolean destroyFlowers(BlobContext blobContext) {
+        if (blobContext.block() instanceof FlowerBlock || blobContext.block() instanceof TallFlowerBlock) {
+            blobContext.world().removeBlock(blobContext.blockPos(), false);
+            if (blobContext.world() instanceof ServerWorld) {
+                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
+                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
+                        0d, 0d, 0d, 0d);
+            }
+            AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+            blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean destroyCactus(BlobContext blobContext) {
+        if (blobContext.block() instanceof CactusBlock) {
+            blobContext.world().removeBlock(blobContext.blockPos(), false);
+            if (blobContext.world() instanceof ServerWorld) {
+                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
+                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
+                        0d, 0d, 0d, 0d);
+            }
+            AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+            blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
+            return true;
+        }
+        return false;
     }
 
     private static boolean destroyLilypad(BlobContext blobContext) {
@@ -200,9 +232,10 @@ public class Decay
 
     private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
         BlockState state = gooBlob.getEntityWorld().getBlockState(blockRayTraceResult.getPos());
+        if (state.getBlock().hasTileEntity(state)) {
+            return false;
+        }
         return
-            (
-                // various things we need pass through resolvers for to destroy
                 state.getBlock() instanceof LeavesBlock
                 || state.getBlock() instanceof VineBlock
                 || state.getBlock() instanceof BushBlock
@@ -213,8 +246,9 @@ public class Decay
                 || state.getBlock() instanceof BambooBlock
                 || state.getBlock() instanceof BambooSaplingBlock
                 || state.getBlock() instanceof SaplingBlock
-            )
-            && !state.getBlock().hasTileEntity(state);
+                || state.getBlock() instanceof CactusBlock
+                || state.getBlock() instanceof FlowerBlock
+                || state.getBlock() instanceof TallFlowerBlock;
     }
 
     private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {

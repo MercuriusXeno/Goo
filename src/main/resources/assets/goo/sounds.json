@@ -85,5 +85,15 @@
     "sounds": [
       "minecraft:random/orb"
     ]
+  },
+  "twitterpate_animal_sound": {
+    "subtitle": "sound_event.goo.twitterpate_animal_sound",
+    "sounds": [
+      "minecraft:mob/slime/small1",
+      "minecraft:mob/slime/small2",
+      "minecraft:mob/slime/small3",
+      "minecraft:mob/slime/small4",
+      "minecraft:mob/slime/small5"
+    ]
   }
 }

@@ -103,5 +103,6 @@
   "sound_event.goo.gooifier_sound": "Gooifier crackles",
   "sound_event.goo.deteriorate": "Block deteriorates",
   "sound_event.goo.edify": "Block hardens",
-  "sound_event.goo.freeze": "Goo froze water"
+  "sound_event.goo.freeze": "Goo froze water",
+  "sound_event.goo.twitterpate_animal_sound": "Fauna infatuated"
 }
