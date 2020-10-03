@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.GooifierTile;
@@ -55,7 +56,7 @@ public class Crucible extends BlockWithConnections {
             double d1 = pos.getY();
             double d2 = pos.getZ() + 0.5D;
             if (rand.nextDouble() < 0.1D) {
-                worldIn.playSound(d0, d1, d2, Registry.GOO_CRUCIBLE_SOUND.get(), SoundCategory.BLOCKS, 1.0F, 1.0F, false);
+                AudioHelper.tileAudioEvent(worldIn, pos, Registry.GOO_CRUCIBLE_SOUND.get(), SoundCategory.BLOCKS, 1.0F, AudioHelper.PitchFormulas.FlatOne);
             }
 
             for(Direction direction : Direction.values()) {

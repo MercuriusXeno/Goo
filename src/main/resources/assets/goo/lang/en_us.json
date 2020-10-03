@@ -99,6 +99,9 @@
   "sound_event.goo.goo_chop_sound": "Goo chop squish",
   "sound_event.goo.goo_deposit_sound": "Goo deposited",
   "sound_event.goo.goo_withdraw_sound": "Goo withdrawn",
-  "sound_event.goo.goo_crucible_sound": "Goo crucible crackles",
-  "sound_event.goo.gooifier_sound": "Gooifier crackles"
+  "sound_event.goo.goo_crucible_sound": "Crucible crackles",
+  "sound_event.goo.gooifier_sound": "Gooifier crackles",
+  "sound_event.goo.deteriorate": "Block deteriorates",
+  "sound_event.goo.edify": "Block hardens",
+  "sound_event.goo.freeze": "Goo froze water"
 }

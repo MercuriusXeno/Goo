@@ -2,6 +2,7 @@ package com.xeno.goo.enchantments;
 
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.inventory.EquipmentSlotType;
@@ -36,7 +37,7 @@ public class Containment extends Enchantment
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(Registry.GOO_BULB_ITEM.get());
+        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(ItemsRegistry.GooBulb.get());
     }
 
     @Override

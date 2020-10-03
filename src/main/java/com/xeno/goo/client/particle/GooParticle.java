@@ -167,8 +167,10 @@ public class GooParticle extends SpriteTexturedParticle
         this.prevPosY = this.posY;
         this.prevPosZ = this.posZ;
         this.decay();
-        if (!this.isExpired) {
+        if (!this.onGround) {
             this.motionY -= this.particleGravity;
+        }
+        if (!this.isExpired) {
             this.move(this.motionX, this.motionY, this.motionZ);
             this.slowDownAlot();
             if (!this.isExpired) {
@@ -221,7 +223,6 @@ public class GooParticle extends SpriteTexturedParticle
                 this.setExpired();
                 this.world.addParticle(this.decaysInto, this.posX, this.posY, this.posZ, 0.0D, 0.0D, 0.0D);
             }
-
         }
     }
 

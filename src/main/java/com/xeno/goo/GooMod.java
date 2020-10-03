@@ -46,7 +46,7 @@ public class GooMod
     {
         @Override
         public ItemStack createIcon() {
-            return new ItemStack(BlocksRegistry.SOLIDIFIER.get());
+            return new ItemStack(BlocksRegistry.Solidier.get());
         }
     };
 }

@@ -12,6 +12,7 @@ import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
@@ -63,7 +64,7 @@ public class TooltipHandler
     private static boolean hasGooAndYou(PlayerEntity player)
     {
         if (PATCHOULI_BOOK.isEmpty()) {
-            PATCHOULI_BOOK = new ItemStack(Registry.GOO_AND_YOU.get());
+            PATCHOULI_BOOK = new ItemStack(ItemsRegistry.GooAndYou.get());
         }
         return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
     }
@@ -192,17 +193,17 @@ public class TooltipHandler
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        Registry.GOO_BULB_ITEM.get(),
-                        Registry.MIXER_ITEM.get(),
-                        Registry.CRUCIBLE_ITEM.get()
+                        ItemsRegistry.Crucible.get(),
+                        ItemsRegistry.Mixer.get(),
+                        ItemsRegistry.GooBulb.get()
                 )
         );
     }
     private static void initializeGooItemContainers() {
         GOO_ITEM_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        Registry.BASIN.get(),
-                        Registry.GAUNTLET.get()
+                        ItemsRegistry.Basin.get(),
+                        ItemsRegistry.Gauntlet.get()
                 )
         );
     }

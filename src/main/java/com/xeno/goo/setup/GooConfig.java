@@ -4,7 +4,8 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.interactions.GooInteractions;
-import com.xeno.goo.interactions.IGooInteraction;
+import com.xeno.goo.interactions.IBlobInteraction;
+import com.xeno.goo.interactions.ISplatInteraction;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Tuple;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -79,31 +80,103 @@ public class GooConfig
     public double energeticMiningBlastRadius() { return ENERGETIC_MINING_BLAST_RADIUS.get(); }
 
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
-    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> GOO_INTERACTION_COSTS = new HashMap<>();
+    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
+    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_RETURNS = new HashMap<>();
+    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> BLOB_RESOLVER_COSTS = new HashMap<>();
+    private Map<Fluid, ForgeConfigSpec.IntValue> THROWN_GOO_AMOUNTS = new HashMap<>();
 
-    private void registerGooTypeInteractions(Fluid fluid, Map<Tuple<Integer, String>, IGooInteraction> interactionMap)
-    {
-        int defaultGooCostForEveryInteraction = 16;
+    private void registerBlobInteractions(Fluid fluid, Map<Tuple<Integer, String>, IBlobInteraction> blobInteractions) {
+        int defaultCostForInteractions = 16;
         HashMap<String, ForgeConfigSpec.IntValue> costMap = new HashMap<>();
         serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
-        interactionMap.forEach((k, v) -> {
-            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of interaction " + k + ", -1 to disable, default:" + defaultGooCostForEveryInteraction)
-                    .defineInRange(k.getB(), defaultGooCostForEveryInteraction, -1, 10000);
+        blobInteractions.forEach((k, v) -> {
+            int actualCost = defaultCostForInteractions;
+            if (fluid.equals(Registry.DECAY_GOO.get())) {
+                actualCost = 2;
+            }
+            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of blob interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
+                    .defineInRange(k.getB(), actualCost, -1, 1000);
             costMap.put(k.getB(), costOfInteraction);
-
         });
         serverBuilder.pop();
-        GOO_INTERACTION_COSTS.put(fluid, costMap);
+        BLOB_RESOLVER_COSTS.put(fluid, costMap);
     }
 
-    public int costOfInteraction(Fluid fluid, String key) {
-        if (!GOO_INTERACTION_COSTS.containsKey(fluid)) {
+    private void registerSplatInteractions(Fluid fluid, Map<Tuple<Integer, String>, ISplatInteraction> splatInteractions)
+    {
+        int defaultCostForInteractions = 16;
+        HashMap<String, ForgeConfigSpec.IntValue> costMap = new HashMap<>();
+        HashMap<String, ForgeConfigSpec.IntValue> returnMap = new HashMap<>();
+        serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
+        int[] lowestCost = {Integer.MAX_VALUE};
+        splatInteractions.forEach((k, v) -> {
+            int actualCost = defaultCostForInteractions;
+            if (isBreakerSplatEffect(fluid, k.getB())) {
+                actualCost = 2;
+                int returnedAmount = actualCost - 1;
+                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
+                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
+                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+            }
+            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
+                    .defineInRange(k.getB(), actualCost, -1, 1000);
+            costMap.put(k.getB(), costOfInteraction);
+            if (actualCost < lowestCost[0]) {
+                lowestCost[0] = actualCost;
+            }
+        });
+        ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + (lowestCost))
+                .defineInRange("thrown_amount", lowestCost[0], -1, 1000);
+        serverBuilder.pop();
+        SPLAT_RESOLVER_COSTS.put(fluid, costMap);
+        SPLAT_RESOLVER_RETURNS.put(fluid, returnMap);
+        THROWN_GOO_AMOUNTS.put(fluid, thrownAmount);
+    }
+
+    private boolean isBreakerSplatEffect(Fluid fluid, String key)
+    {
+        return fluid.equals(Registry.CRYSTAL_GOO.get()) // fortune + diamond pick
+                || fluid.equals(Registry.HONEY_GOO.get()) // silk touch any
+                || fluid.equals(Registry.METAL_GOO.get()) // iron pick
+                || fluid.equals(Registry.REGAL_GOO.get()); // fortune + iron pick;
+    }
+
+    public int costOfSplatInteraction(Fluid fluid, String key) {
+        if (!SPLAT_RESOLVER_COSTS.containsKey(fluid)) {
             return -1;
         }
-        if (!GOO_INTERACTION_COSTS.get(fluid).containsKey(key)) {
+        if (!SPLAT_RESOLVER_COSTS.get(fluid).containsKey(key)) {
             return -1;
         }
-        return GOO_INTERACTION_COSTS.get(fluid).get(key).get();
+        return SPLAT_RESOLVER_COSTS.get(fluid).get(key).get();
+    }
+
+    public int costOfBlobInteraction(Fluid fluid, String key) {
+        if (!BLOB_RESOLVER_COSTS.containsKey(fluid)) {
+            return -1;
+        }
+        if (!BLOB_RESOLVER_COSTS.get(fluid).containsKey(key)) {
+            return -1;
+        }
+        return BLOB_RESOLVER_COSTS.get(fluid).get(key).get();
+    }
+
+    public int returnOfInteraction(Fluid fluid, String key) {
+        key = key + "_returned";
+        if (!SPLAT_RESOLVER_RETURNS.containsKey(fluid)) {
+            return -1;
+        }
+        if (!SPLAT_RESOLVER_RETURNS.get(fluid).containsKey(key)) {
+            return -1;
+        }
+        return SPLAT_RESOLVER_RETURNS.get(fluid).get(key).get();
+    }
+
+    public int thrownGooAmount(Fluid fluid) {
+        if (!THROWN_GOO_AMOUNTS.containsKey(fluid)) {
+            return -1;
+        }
+        return THROWN_GOO_AMOUNTS.get(fluid).get();
     }
 
     private static class Defaults {
@@ -118,7 +191,7 @@ public class GooConfig
         private static final int BASIN_HOLDING_MULTIPLIER = 8;
         private static final int GAUNTLET_CAPACITY = 400;
         private static final int GAUNTLET_HOLDING_MULTIPLIER = 2;
-        private static final double ENERGETIC_MINING_BLAST_RADIUS = 4d;
+        private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
     }
 
     private void setupGeneralMachineConfig() {
@@ -147,7 +220,8 @@ public class GooConfig
                 .defineInRange("gauntletHoldingMultiplier", Defaults.GAUNTLET_HOLDING_MULTIPLIER, 0, 10);
         ENERGETIC_MINING_BLAST_RADIUS = serverBuilder.comment("Mining blast radius of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_RADIUS)
                 .defineInRange("energeticMiningBlastRadius", Defaults.ENERGETIC_MINING_BLAST_RADIUS, 1d, 10d);
-        GooInteractions.registry.forEach(this::registerGooTypeInteractions);
+        GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);
+        GooInteractions.blobRegistry.forEach(this::registerBlobInteractions);
         serverBuilder.pop();
     }
 

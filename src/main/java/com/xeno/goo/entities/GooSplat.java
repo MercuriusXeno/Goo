@@ -1,10 +1,10 @@
 package com.xeno.goo.entities;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
+import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
-import com.xeno.goo.items.GooChopEffects;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.entity.*;
@@ -24,7 +24,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
@@ -37,7 +36,6 @@ import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.List;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -84,11 +82,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
         updateSplatState();
-        Vector3d findCenter = findCenter(face, pos, hitVec);
-        this.setPosition(findCenter.x, findCenter.y, findCenter.z);
+        Vector3d findCenter = findCenter(hitVec);
         this.setSize();
-        world.playSound(hitVec.x, hitVec.y, hitVec.z, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
-                1.0f, world.rand.nextFloat() * 0.5f + 0.5f, false);
+        this.setPosition(findCenter.x, findCenter.y, findCenter.z);
+        AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
+                1.0f, AudioHelper.PitchFormulas.HalfToOne);
     }
 
     private void updateSplatState()
@@ -111,25 +109,30 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 break;
         }
 
-        makeBox();
+        reshapeBoundingBox();
     }
 
-    private void makeBox()
+    private void reshapeBoundingBox()
     {
         this.box = new AxisAlignedBB(shape.scale(-0.5d), shape.scale(0.5d));
-        this.setBoundingBox(box.offset(this.getPositionVec()));
     }
 
     /**
      * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
      */
+    @Override
     public void setPosition(double x, double y, double z) {
         this.setRawPosition(x, y, z);
         if (this.isAddedToWorld() && !this.world.isRemote && world instanceof ServerWorld)
             ((ServerWorld)this.world).chunkCheck(this); // Forge - Process chunk registration after moving.
+        // on initialization this box doesn't exist
+        // but almost immediately afterwards we should always have a shape
+        if (box != null && this.goo.getAmount() > 0) {
+            this.setBoundingBox(box.offset(this.getPositionVec()));
+        }
     }
 
-    private Vector3d findCenter(Direction face, BlockPos pos, Vector3d hitVec)
+    private Vector3d findCenter(Vector3d hitVec)
     {
         switch(sideWeLiveOn) {
             case NORTH:
@@ -186,8 +189,13 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.isCollidingEntity = this.checkForEntityCollision();
         approachAttachmentPoint();
         doFreeMovement();
-    }
 
+        // check if we're floating lol
+        if (world.getBlockState(blockAttached).isAir(world, blockAttached)) {
+            world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, this.owner, this.goo, this.getPositionVec()));
+            this.remove();
+        }
+    }
     private void approachAttachmentPoint()
     {
         Vector3d attachmentPoint = attachmentPoint();
@@ -201,10 +209,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
     private Vector3d attachmentPoint()
     {
-        Vector3d attachmentPoint = new Vector3d(
-                blockAttached.getX(),
-                blockAttached.getY(),
-                blockAttached.getZ())
+        Vector3d attachmentPoint = Vector3d.copy(blockAttached)
                 .add(0.5d, 0.5d, 0.5d)
                 .add(0.51d * sideWeLiveOn.getXOffset(),
                         0.51d * sideWeLiveOn.getYOffset(),
@@ -217,9 +222,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
     protected void doFreeMovement()
     {
-        Vector3d motion = this.getMotion();
-        Vector3d position = this.getPositionVec();
-        Vector3d projection = position.add(motion);
+        Vector3d projection = getPositionVec().add(getMotion());
         this.setPosition(projection.x, projection.y, projection.z);
     }
 
@@ -233,12 +236,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         if (blockResult.getType() != RayTraceResult.Type.MISS) {
             // try colliding with the block for some tank interaction, this entity
             collideBlockMaybe(blockResult);
-        }
-
-        EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
-        if (entityResult != null && entityResult.getType() != RayTraceResult.Type.MISS) {
-            onImpact(entityResult);
-            this.isAirBorne = true;
         }
 
         handleLiquidCollisions(motion);
@@ -319,7 +316,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 tag.getDouble("shape_y"),
                 tag.getDouble("shape_z")
         );
-        makeBox();
+        reshapeBoundingBox();
     }
 
     @Override
@@ -382,6 +379,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
         if (didStuff[0]) {
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
             return ActionResultType.SUCCESS;
         }
         return ActionResultType.CONSUME;
@@ -489,28 +487,39 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         Collection<Entity> collidedEntities =
                 this.world.getEntitiesInAABBexcluding(this,
                         // grow bb
-                        this.getBoundingBox().expand(this.getMotion()).grow(0.25d, 0.25d, 0.25d),
+                        this.getBoundingBox(),
                         // filter
-                        (eInBB) -> isGooThing(eInBB) || isValidCollisionEntity(eInBB));
+                        (eInBB) -> eInBB.equals(owner) || isGooThing(eInBB) || isValidCollisionEntity(eInBB));
         for(Entity e : collidedEntities) {
-            if (e instanceof GooBlob) {
-                if (isSameAttachment((GooBlob)e)) {
-                    absorbBlob((GooBlob) e);
+            if (e instanceof GooBlob && ((GooBlob) e).goo().isFluidEqual(this.goo)) {
+                this.fill(((GooBlob) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+            } else if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
+                this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+            } else if (e.equals(owner)) {
+                if (e == owner) {
+                    // try catching  it!
+                    if (owner instanceof PlayerEntity) {
+                        // check if the player has a gauntlet either empty or with the same goo as me
+                        ItemStack heldItem = ((PlayerEntity) owner).getHeldItem(Hand.MAIN_HAND);
+                        if (heldItem.getItem() instanceof Gauntlet) {
+                            LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+                            lazyCap.ifPresent((c) -> {
+                                int drain = c.fill(this.goo(), FluidAction.SIMULATE);
+                                if (drain > 0) {
+                                    c.fill(this.drain(drain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+                                }
+                                if (this.goo.isEmpty()) {
+                                    this.remove();
+                                }
+                            });
+                        }
+                    }
+                    return true;
                 }
-            } else {
-                // some other entity, do nasty stuff to it. Or good stuff, you know, whatever.
             }
         }
 
         return false;
-    }
-
-    private boolean isSameAttachment(GooBlob e)
-    {
-        if (e.blockAttached() == null || e.sideWeLiveOn() == null) {
-            return false;
-        }
-        return e.blockAttached().equals(this.blockAttached) && e.sideWeLiveOn().equals(this.sideWeLiveOn);
     }
 
     private boolean isValidCollisionEntity(Entity eInBB)
@@ -521,39 +530,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private boolean isGooThing(Entity eInBB)
     {
         return eInBB instanceof GooSplat || eInBB instanceof GooBlob;
-    }
-
-    private void absorbBlob(GooBlob e)
-    {
-        if (this.world.isRemote()) {
-            return;
-        }
-        FluidStack drained = e.drain(1, FluidAction.EXECUTE);
-        fill(drained, FluidAction.EXECUTE);
-    }
-
-    protected void onImpact(RayTraceResult rayTraceResult) {
-        RayTraceResult.Type resultType = rayTraceResult.getType();
-        if (resultType == RayTraceResult.Type.ENTITY) {
-            collideWithEntity(((EntityRayTraceResult)rayTraceResult).getEntity());
-        }
-    }
-
-    protected void collideWithEntity(Entity entityHit)
-    {
-        if (this.world.isRemote()) {
-            return;
-        }
-        if (entityHit == owner) {
-            return;
-        }
-        if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {
-            int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(this.goo.getAmount()) - 1));
-            GooChopEffects.doChopEffect(this.goo, intensity, (LivingEntity)this.owner, (LivingEntity)entityHit);
-            this.drain(1, FluidAction.EXECUTE);
-        } else if (entityHit instanceof GooBlob && ((GooBlob) entityHit).goo().isFluidEqual(this.goo)) {
-            this.fill(((GooBlob) entityHit).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
-        }
     }
 
     protected void collideBlockMaybe(BlockRayTraceResult rayTraceResult) {

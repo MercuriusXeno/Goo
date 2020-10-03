@@ -5,8 +5,6 @@ import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.PumpRenderMode;
-import com.xeno.goo.setup.Registry;
-import net.minecraft.block.RotatedPillarBlock;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -20,7 +18,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        registerGooBulbGeneric(BlocksRegistry.GOO_BULB.get());
+        registerGooBulbGeneric(BlocksRegistry.GooBulb.get());
         registerGooPump();
         registerGooifier();
         registerSolidifier();
@@ -76,7 +74,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .texture("crucible_bottom", crucible_bottom)
                 .texture("crucible_side_lit", crucible_side_lit);
 
-        getVariantBuilder(BlocksRegistry.CRUCIBLE.get())
+        getVariantBuilder(BlocksRegistry.Crucible.get())
             .forAllStates(
                     (s) -> ConfiguredModel.builder()
                             .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
@@ -192,7 +190,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .texture("merger_bottom", merger_bottom)
                 .texture("merger_side", merger_side);
 
-        horizontalBlock(BlocksRegistry.MIXER.get(), model);
+        horizontalBlock(BlocksRegistry.Mixer.get(), model);
     }
 
     private void registerGooBulbGeneric(GooBulbAbstraction base) {
@@ -287,7 +285,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         actuator.texture("actuator_inner", actuatorInner);
         actuator.texture("empty", empty);
 
-        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.GOO_PUMP.get());
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.GooPump.get());
         for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
             int rotationX = getRotationXFromDirection(d);
             int rotationY = getRotationYFromDirection(d);
@@ -304,7 +302,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);;
         }
 
-        simpleBlockItem(BlocksRegistry.GOO_PUMP.get(), base);
+        simpleBlockItem(BlocksRegistry.GooPump.get(), base);
     }
 
     private int getRotationYFromDirection(Direction d)
@@ -348,8 +346,8 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelActive = models()
                 .cube("gooifier_powered", bottom, top, front_on, back, side, side)
                 .texture("particle", front_on);
-        horizontalBlock(BlocksRegistry.GOOIFIER.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.GOOIFIER.get(), modelInactive);
+        horizontalBlock(BlocksRegistry.Gooifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Gooifier.get(), modelInactive);
     }
 
     private void registerSolidifier() {
@@ -397,7 +395,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         modelActive.texture("side_on", side_on);
         modelActive.texture("front_on", front_on);
         modelActive.texture("back_on", back_on);
-        horizontalBlock(BlocksRegistry.SOLIDIFIER.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.SOLIDIFIER.get(), modelInactive);
+        horizontalBlock(BlocksRegistry.Solidier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Solidier.get(), modelInactive);
     }
 }

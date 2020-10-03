@@ -29,7 +29,7 @@ public class GooAndYou extends Item
             return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
         ServerPlayerEntity player = (ServerPlayerEntity)playerIn;
-        PatchouliAPI.instance.openBookGUI(player, Objects.requireNonNull(Registry.GOO_AND_YOU.get().getRegistryName()));
+        PatchouliAPI.instance.openBookGUI(player, Objects.requireNonNull(ItemsRegistry.GooAndYou.get().getRegistryName()));
         return super.onItemRightClick(worldIn, playerIn, handIn);
     }
 }
