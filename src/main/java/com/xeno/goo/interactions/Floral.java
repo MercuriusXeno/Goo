@@ -6,10 +6,15 @@ import net.minecraft.block.*;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BoneMealItem;
 import net.minecraft.state.BooleanProperty;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Floral
 {
@@ -21,6 +26,7 @@ public class Floral
         GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_grass", Floral::growGrass);
         GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_moss", Floral::growMoss);
         GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_lilypad", Floral::growLilypad);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_bark", Floral::growBark);
         GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "flourish", Floral::flourish);
 
         GooInteractions.registerPassThroughPredicate(Registry.FLORAL_GOO.get(), Floral::blobPassThroughPredicate);
@@ -164,5 +170,52 @@ public class Floral
         }
         return state.getBlock() instanceof LeavesBlock
                 || (state.getBlock() instanceof IGrowable && !(state.getBlock() instanceof GrassBlock));
+    }
+
+    // similar to exchange block but respect the state of the original log
+    private static boolean exchangeLog(SplatContext context, Block source, Block target) {
+        if (context.block().equals(source)) {
+            Direction.Axis preservedAxis = context.blockState().get(BlockStateProperties.AXIS);
+            if (!context.isRemote()) {
+                context.setBlockState(target.getDefaultState().with(BlockStateProperties.AXIS, preservedAxis));
+            }
+            // spawn particles and stuff
+            doEffects(context);
+            return true;
+        }
+        return false;
+    }
+
+    public static final List<Tuple<Block, Block>> logBarkPairs = new ArrayList<>();
+    public static void registerLogBarkPair(Block source, Block target) {
+        logBarkPairs.add(new Tuple<>(source, target));
+    }
+
+    static {
+        registerLogBarkPair(Blocks.ACACIA_LOG, Blocks.STRIPPED_ACACIA_LOG);
+        registerLogBarkPair(Blocks.ACACIA_WOOD, Blocks.STRIPPED_ACACIA_WOOD);
+        registerLogBarkPair(Blocks.BIRCH_LOG, Blocks.STRIPPED_BIRCH_LOG);
+        registerLogBarkPair(Blocks.BIRCH_WOOD, Blocks.STRIPPED_BIRCH_WOOD);
+        registerLogBarkPair(Blocks.DARK_OAK_LOG, Blocks.STRIPPED_DARK_OAK_LOG);
+        registerLogBarkPair(Blocks.DARK_OAK_WOOD, Blocks.STRIPPED_DARK_OAK_WOOD);
+        registerLogBarkPair(Blocks.JUNGLE_LOG, Blocks.STRIPPED_JUNGLE_LOG);
+        registerLogBarkPair(Blocks.JUNGLE_WOOD, Blocks.STRIPPED_JUNGLE_WOOD);
+        registerLogBarkPair(Blocks.OAK_LOG, Blocks.STRIPPED_OAK_LOG);
+        registerLogBarkPair(Blocks.OAK_WOOD, Blocks.STRIPPED_OAK_WOOD);
+        registerLogBarkPair(Blocks.SPRUCE_LOG, Blocks.STRIPPED_SPRUCE_LOG);
+        registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
+        registerLogBarkPair(Blocks.WARPED_STEM, Blocks.STRIPPED_WARPED_STEM);
+        registerLogBarkPair(Blocks.WARPED_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE);
+        registerLogBarkPair(Blocks.CRIMSON_STEM, Blocks.STRIPPED_CRIMSON_STEM);
+        registerLogBarkPair(Blocks.CRIMSON_HYPHAE, Blocks.STRIPPED_CRIMSON_HYPHAE);
+    }
+
+    private static boolean growBark(SplatContext splatContext) {
+        for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
+            if (exchangeLog(splatContext, blockPair.getB(), blockPair.getA())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

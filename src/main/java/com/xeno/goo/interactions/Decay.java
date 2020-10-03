@@ -330,32 +330,8 @@ public class Decay
         return exchangeBlock(context, Blocks.DIRT, Blocks.GRASS_BLOCK);
     }
 
-    private static final List<Tuple<Block, Block>> logBarkPairs = new ArrayList<>();
-    public static void registerLogBarkPair(Block source, Block target) {
-        logBarkPairs.add(new Tuple<>(source, target));
-    }
-
-    static {
-        registerLogBarkPair(Blocks.ACACIA_LOG, Blocks.STRIPPED_ACACIA_LOG);
-        registerLogBarkPair(Blocks.ACACIA_WOOD, Blocks.STRIPPED_ACACIA_WOOD);
-        registerLogBarkPair(Blocks.BIRCH_LOG, Blocks.STRIPPED_BIRCH_LOG);
-        registerLogBarkPair(Blocks.BIRCH_WOOD, Blocks.STRIPPED_BIRCH_WOOD);
-        registerLogBarkPair(Blocks.DARK_OAK_LOG, Blocks.STRIPPED_DARK_OAK_LOG);
-        registerLogBarkPair(Blocks.DARK_OAK_WOOD, Blocks.STRIPPED_DARK_OAK_WOOD);
-        registerLogBarkPair(Blocks.JUNGLE_LOG, Blocks.STRIPPED_JUNGLE_LOG);
-        registerLogBarkPair(Blocks.JUNGLE_WOOD, Blocks.STRIPPED_JUNGLE_WOOD);
-        registerLogBarkPair(Blocks.OAK_LOG, Blocks.STRIPPED_OAK_LOG);
-        registerLogBarkPair(Blocks.OAK_WOOD, Blocks.STRIPPED_OAK_WOOD);
-        registerLogBarkPair(Blocks.SPRUCE_LOG, Blocks.STRIPPED_SPRUCE_LOG);
-        registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
-        registerLogBarkPair(Blocks.WARPED_STEM, Blocks.STRIPPED_WARPED_STEM);
-        registerLogBarkPair(Blocks.WARPED_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE);
-        registerLogBarkPair(Blocks.CRIMSON_STEM, Blocks.STRIPPED_CRIMSON_STEM);
-        registerLogBarkPair(Blocks.CRIMSON_HYPHAE, Blocks.STRIPPED_CRIMSON_HYPHAE);
-    }
-
     private static boolean stripBark(SplatContext context) {
-        for(Tuple<Block, Block> blockPair : logBarkPairs) {
+        for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
             if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
                 return true;
             }

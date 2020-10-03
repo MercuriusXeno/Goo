@@ -17,20 +17,20 @@ public class LockedInformationsProvider extends LockedInformationProvider
     @Override
     public void calculateDataToSave()
     {
-        saveData(Items.ACACIA_LEAVES, floral(5), vital(5));
-        saveData(Items.BIRCH_LEAVES, floral(5), vital(5));
-        saveData(Items.DARK_OAK_LEAVES, floral(5), vital(5));
-        saveData(Items.JUNGLE_LEAVES, floral(5), vital(5));
-        saveData(Items.OAK_LEAVES, floral(5), vital(5));
-        saveData(Items.SPRUCE_LEAVES, floral(5), vital(5));
-        saveData(Items.ACACIA_LOG, floral(960), vital(5));
-        saveData(Items.BIRCH_LOG, floral(960), vital(5));
-        saveData(Items.DARK_OAK_LOG, floral(960), vital(5));
-        saveData(Items.JUNGLE_LOG, floral(960), vital(5));
-        saveData(Items.OAK_LOG, floral(960), vital(5));
-        saveData(Items.SPRUCE_LOG, floral(960), vital(5));
-        saveData(Items.CRIMSON_STEM, fungal(960), chromatic(60), vital (5));
-        saveData(Items.WARPED_STEM, fungal(960), chromatic(60), vital (5));
+        saveData(Items.ACACIA_LEAVES, floral(5), vital(1));
+        saveData(Items.BIRCH_LEAVES, floral(5), vital(1));
+        saveData(Items.DARK_OAK_LEAVES, floral(5), vital(1));
+        saveData(Items.JUNGLE_LEAVES, floral(5), vital(1));
+        saveData(Items.OAK_LEAVES, floral(5), vital(1));
+        saveData(Items.SPRUCE_LEAVES, floral(5), vital(6));
+        saveData(Items.ACACIA_LOG, floral(960), vital(6));
+        saveData(Items.BIRCH_LOG, floral(960), vital(6));
+        saveData(Items.DARK_OAK_LOG, floral(960), vital(6));
+        saveData(Items.JUNGLE_LOG, floral(960), vital(6));
+        saveData(Items.OAK_LOG, floral(960), vital(6));
+        saveData(Items.SPRUCE_LOG, floral(960), vital(6));
+        saveData(Items.CRIMSON_STEM, fungal(960), chromatic(60), vital (6));
+        saveData(Items.WARPED_STEM, fungal(960), chromatic(60), vital (6));
         saveData(Items.STRIPPED_ACACIA_LOG, floral(960));
         saveData(Items.STRIPPED_BIRCH_LOG, floral(960));
         saveData(Items.STRIPPED_DARK_OAK_LOG, floral(960));
