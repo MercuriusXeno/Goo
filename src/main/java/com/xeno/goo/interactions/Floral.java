@@ -18,8 +18,6 @@ import java.util.List;
 
 public class Floral
 {
-    private static final float FLOURISH_CHANCE = 0.33f;
-
     public static void registerInteractions()
     {
         // splat interactions
@@ -43,29 +41,28 @@ public class Floral
                 if (d == Direction.DOWN) {
                     continue;
                 }
-                if (blobContext.world().rand.nextFloat() <= FLOURISH_CHANCE) {
-                    if (blobContext.world() instanceof ServerWorld) {
-                        BooleanProperty prop = vinePlacementPropertyFromDirection(d);
-                        BlockPos offset = blobContext.blockPos().offset(face);
-                        BlockState state;
-                        if (blobContext.world().getBlockState(offset).isAir(blobContext.world(), offset)) {
-                            state = Blocks.VINE.getDefaultState().with(prop, true);
-                        } else {
-                            if (blobContext.world().getBlockState(offset).getBlock() instanceof VineBlock) {
-                                state = blobContext.world().getBlockState(offset);
-                                if (state.get(prop)) {
-                                    continue;
-                                } else {
-                                    state = state.with(prop, true);
-                                }
-                            } else {
+                doEffects(blobContext);
+                
+                if (blobContext.world() instanceof ServerWorld) {
+                    BooleanProperty prop = vinePlacementPropertyFromDirection(d);
+                    BlockPos offset = blobContext.blockPos().offset(face);
+                    BlockState state;
+                    if (blobContext.world().getBlockState(offset).isAir(blobContext.world(), offset)) {
+                        state = Blocks.VINE.getDefaultState().with(prop, true);
+                    } else {
+                        if (blobContext.world().getBlockState(offset).getBlock() instanceof VineBlock) {
+                            state = blobContext.world().getBlockState(offset);
+                            if (state.get(prop)) {
                                 continue;
+                            } else {
+                                state = state.with(prop, true);
                             }
+                        } else {
+                            continue;
                         }
-
-                        blobContext.world().setBlockState(offset, state);
-                        doEffects(blobContext);
                     }
+
+                    blobContext.world().setBlockState(offset, state);
                     return true;
                 }
             }
@@ -91,11 +88,12 @@ public class Floral
 
     private static boolean growableTick(BlobContext blobContext) {
         if (blobContext.block() instanceof IGrowable) {
-            if (blobContext.world().rand.nextFloat() <= FLOURISH_CHANCE) {
-                if (blobContext.world() instanceof ServerWorld) {
-                    ((IGrowable) blobContext.block()).grow((ServerWorld) blobContext.world(), blobContext.world().rand,
-                            blobContext.blockPos(), blobContext.blockState());
-                }
+            if (blobContext.block() instanceof MushroomBlock) {
+                return false;
+            }
+            if (blobContext.world() instanceof ServerWorld) {
+                ((IGrowable) blobContext.block()).grow((ServerWorld) blobContext.world(), blobContext.world().rand,
+                        blobContext.blockPos(), blobContext.blockState());
             }
             doEffects(blobContext);
             return true;
@@ -103,15 +101,13 @@ public class Floral
         return false;
     }
 
-    private static boolean flourish(SplatContext splatContext) {
-        if (splatContext.block() instanceof GrassBlock) {
-            if (splatContext.world().rand.nextFloat() <= FLOURISH_CHANCE) {
-                if (splatContext.world() instanceof ServerWorld) {
-                    ((GrassBlock) splatContext.block()).grow((ServerWorld)splatContext.world(),
-                            splatContext.world().rand, splatContext.blockPos(), splatContext.blockState());
-                }
+    private static boolean flourish(SplatContext context) {
+        if (context.block() instanceof GrassBlock) {
+            if (context.world() instanceof ServerWorld) {
+                ((GrassBlock) context.block()).grow((ServerWorld)context.world(),
+                        context.world().rand, context.blockPos(), context.blockState());
             }
-            doEffects(splatContext);
+            doEffects(context);
             return true;
         }
         return false;
@@ -154,13 +150,13 @@ public class Floral
         BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
     }
 
-    private static boolean growMoss(SplatContext splatContext) {
-        return exchangeBlock(splatContext, Blocks.MOSSY_COBBLESTONE, Blocks.COBBLESTONE)
-                || exchangeBlock(splatContext, Blocks.MOSSY_STONE_BRICKS, Blocks.STONE_BRICKS);
+    private static boolean growMoss(SplatContext context) {
+        return exchangeBlock(context, Blocks.MOSSY_COBBLESTONE, Blocks.COBBLESTONE)
+                || exchangeBlock(context, Blocks.MOSSY_STONE_BRICKS, Blocks.STONE_BRICKS);
     }
 
-    private static boolean growGrass(SplatContext splatContext) {
-        return exchangeBlock(splatContext, Blocks.GRASS_BLOCK, Blocks.DIRT);
+    private static boolean growGrass(SplatContext context) {
+        return exchangeBlock(context, Blocks.GRASS_BLOCK, Blocks.DIRT);
     }
 
     private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
@@ -204,15 +200,11 @@ public class Floral
         registerLogBarkPair(Blocks.OAK_WOOD, Blocks.STRIPPED_OAK_WOOD);
         registerLogBarkPair(Blocks.SPRUCE_LOG, Blocks.STRIPPED_SPRUCE_LOG);
         registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
-        registerLogBarkPair(Blocks.WARPED_STEM, Blocks.STRIPPED_WARPED_STEM);
-        registerLogBarkPair(Blocks.WARPED_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE);
-        registerLogBarkPair(Blocks.CRIMSON_STEM, Blocks.STRIPPED_CRIMSON_STEM);
-        registerLogBarkPair(Blocks.CRIMSON_HYPHAE, Blocks.STRIPPED_CRIMSON_HYPHAE);
     }
 
-    private static boolean growBark(SplatContext splatContext) {
+    private static boolean growBark(SplatContext context) {
         for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
-            if (exchangeLog(splatContext, blockPair.getB(), blockPair.getA())) {
+            if (exchangeLog(context, blockPair.getB(), blockPair.getA())) {
                 return true;
             }
         }

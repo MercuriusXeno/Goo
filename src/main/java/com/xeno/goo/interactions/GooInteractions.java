@@ -142,12 +142,23 @@ public class GooInteractions
             // interaction is disabled, abort
             return;
         }
+
+        boolean shouldResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (!shouldResolve) {
+            return;
+        }
+
         FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
         if (drained.getAmount() < keyCost) {
             return;
         }
-        if (iBlobInteraction.resolve(context)) {
-            context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+
+        boolean failureShortCircuit = GooMod.config.chanceOfBlobInteractionFailure(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (failureShortCircuit || iBlobInteraction.resolve(context)) {
+            boolean shouldDrain = GooMod.config.chanceOfBlobInteractionCost(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+            if (shouldDrain) {
+                context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+            }
         }
     }
 
@@ -170,12 +181,24 @@ public class GooInteractions
             // interaction is disabled, abort
             return;
         }
+
+        boolean shouldResolve = GooMod.config.chanceOfSplatInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (!shouldResolve) {
+            return;
+        }
+
+        // we still need the full amount to resolve but a chance not to drain prevents it from deducting
         FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
         if (drained.getAmount() < keyCost) {
             return;
         }
-        if (iSplatInteraction.resolve(context)) {
-            context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+
+        boolean failureShortCircuit = GooMod.config.chanceOfSplatInteractionFailure(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (failureShortCircuit || iSplatInteraction.resolve(context)) {
+            boolean shouldDrain = GooMod.config.chanceOfSplatInteractionCost(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+            if (shouldDrain) {
+                context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+            }
         }
     }
 }

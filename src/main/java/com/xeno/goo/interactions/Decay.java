@@ -32,6 +32,9 @@ public class Decay
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_gravel", Decay::deteriorateGravel);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_dirt", Decay::deteriorateDirt);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol);
 
         GooInteractions.registerPassThroughPredicate(Registry.DECAY_GOO.get(), Decay::blobPassThroughPredicate);
 
@@ -48,6 +51,19 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+    }
+
+    private static boolean deterioratePodzol(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.DIRT, Blocks.PODZOL);
+    }
+
+    private static boolean deteriorateMycelium(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.PODZOL, Blocks.MYCELIUM);
+    }
+
+    private static boolean deteriorateNylium(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.NETHERRACK, Blocks.CRIMSON_NYLIUM)
+                || exchangeBlock(splatContext, Blocks.NETHERRACK, Blocks.WARPED_NYLIUM);
     }
 
     private static boolean destroyFlowers(BlobContext blobContext) {
@@ -332,6 +348,11 @@ public class Decay
 
     private static boolean stripBark(SplatContext context) {
         for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
+            if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
+                return true;
+            }
+        }
+        for(Tuple<Block, Block> blockPair : Fungal.stemPairs) {
             if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
                 return true;
             }
