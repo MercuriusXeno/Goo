@@ -19,10 +19,6 @@ apply plugin: 'maven-publish'
 
 version = "${project.exactMinecraftVersion}-${project.modVersion}"
 group = modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = modBaseName
-
-
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 minecraft {
     // The mappings can be changed at any time, and must be in the following format.
@@ -110,8 +106,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${project.exactMinecraftVersion}-${project.forgeVersion}"
     implementation 'org.jetbrains:annotations:15.0'
 
-    compileOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:7.0.1.10:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:7.0.1.10")
+    compileOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:${project.jeiVersion}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:${project.jeiVersion}")
 
     compileOnly fg.deobf("${project.aequivaleoVersion}:api")
     compileOnly fg.deobf("${project.aequivaleoVersion}:vanilla-api")

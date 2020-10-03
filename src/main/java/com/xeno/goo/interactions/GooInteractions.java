@@ -5,28 +5,19 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.*;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.particles.BasicParticleType;
-import net.minecraft.potion.Effect;
-import net.minecraft.potion.EffectInstance;
-import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.*;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class GooInteractions
 {
@@ -72,14 +63,41 @@ public class GooInteractions
                 offX, e.cubicSize(), offZ, 0.2d);
     }
 
-    public static final Map<Fluid, Map<Tuple<Integer, String>, IGooInteraction>> registry = new HashMap<>();
-    public static void register(Fluid fluid, String key, int rank, IGooInteraction interaction) {
-        Tuple<Integer, String> compositeKey = new Tuple<>(rank, key);
-        if (!registry.containsKey(fluid)) {
-            registry.put(fluid, new HashMap<>());
-        }
+    public static final Map<Fluid, Map<Tuple<Integer, String>, ISplatInteraction>> splatRegistry = new HashMap<>();
+    public static void registerSplat(Fluid fluid, String key, ISplatInteraction interaction) {
+        ensureSplatMapContainsFluid(fluid);
+        registerSplat(fluid, key, splatRegistry.get(fluid).size(), interaction);
+    }
 
-        registry.get(fluid).put(compositeKey, interaction);
+    private static void registerSplat(Fluid fluid, String key, int rank, ISplatInteraction interaction) {
+        splatRegistry.get(fluid).put(new Tuple<>(rank, key), interaction);
+    }
+
+    private static void ensureSplatMapContainsFluid(Fluid fluid) {
+        if (!splatRegistry.containsKey(fluid)) {
+            splatRegistry.put(fluid, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank
+        }
+    }
+
+    public static void registerBlob(Fluid f, String key, IBlobInteraction i) {
+        ensureBlobMapContainsFluid(f);
+        registerBlob(f, key, blobRegistry.get(f).size(), i);
+    }
+
+    public static final Map<Fluid, Map<Tuple<Integer, String>, IBlobInteraction>> blobRegistry = new HashMap<>();
+    private static void registerBlob(Fluid fluid, String key, int rank, IBlobInteraction interaction) {
+        blobRegistry.get(fluid).put(new Tuple<>(rank, key), interaction);
+    }
+
+    private static void ensureBlobMapContainsFluid(Fluid f) {
+        if (!blobRegistry.containsKey(f)) {
+            blobRegistry.put(f, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank
+        }
+    }
+
+    public static final Map<Fluid, IPassThroughPredicate> materialPassThroughPredicateRegistry = new HashMap<>();
+    public static void registerPassThroughPredicate(Fluid fluid, IPassThroughPredicate p) {
+        materialPassThroughPredicateRegistry.put(fluid, p);
     }
 
     public static void initialize()
@@ -105,21 +123,21 @@ public class GooInteractions
         Weird.registerInteractions();
     }
 
-    public static void tryResolving(GooSplat gooSplat)
+    public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)
     {
         // no interactions registered, we don't want to crash.
-        if (!registry.containsKey(gooSplat.goo().getFluid())) {
+        if (!blobRegistry.containsKey(gooBlob.goo().getFluid())) {
             return;
         }
-        InteractionContext context = new InteractionContext(gooSplat, gooSplat.goo().getFluid());
+        BlobContext context = new BlobContext(blockResult, gooBlob, gooBlob.goo().getFluid());
         // cycle over resolvers in rank order and drain/apply when possible.
-        Map<Tuple<Integer, String>, IGooInteraction> map = registry.get(gooSplat.goo().getFluid());
-        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context.withKey(k.getB())));
+        Map<Tuple<Integer, String>, IBlobInteraction> map = blobRegistry.get(gooBlob.goo().getFluid());
+        map.forEach((k, v) -> tryResolving(gooBlob.goo().getFluid(), k, v, context.withKey(k.getB())));
     }
 
-    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IGooInteraction iGooInteraction, InteractionContext context)
+    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobInteraction iBlobInteraction, BlobContext context)
     {
-        int keyCost = GooMod.config.costOfInteraction(fluid, interactionKey.getB());
+        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
         if (keyCost == -1) {
             // interaction is disabled, abort
             return;
@@ -128,7 +146,35 @@ public class GooInteractions
         if (drained.getAmount() < keyCost) {
             return;
         }
-        if (iGooInteraction.resolve(context)) {
+        if (iBlobInteraction.resolve(context)) {
+            context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+        }
+    }
+
+    public static void tryResolving(GooSplat gooSplat)
+    {
+        // no interactions registered, we don't want to crash.
+        if (!splatRegistry.containsKey(gooSplat.goo().getFluid())) {
+            return;
+        }
+        SplatContext context = new SplatContext(gooSplat, gooSplat.goo().getFluid());
+        // cycle over resolvers in rank order and drain/apply when possible.
+        Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(gooSplat.goo().getFluid());
+        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context.withKey(k.getB())));
+    }
+
+    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)
+    {
+        int keyCost = GooMod.config.costOfSplatInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction is disabled, abort
+            return;
+        }
+        FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
+        if (drained.getAmount() < keyCost) {
+            return;
+        }
+        if (iSplatInteraction.resolve(context)) {
             context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
         }
     }

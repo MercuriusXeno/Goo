@@ -8,7 +8,17 @@ import net.minecraft.state.properties.BlockStateProperties;
 
 public class Aquatic
 {
-    public static boolean hydrateFarmland(InteractionContext context)
+    public static void registerInteractions()
+    {
+        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "cool_lava", Aquatic::waterCoolLava);
+        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "extinguish_fire", Aquatic::extinguishFire);
+
+        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
+        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
+    }
+
+    public static boolean hydrateFarmland(BlobContext context)
     {
         // hydrate farmland
         if (context.block().equals(Blocks.FARMLAND)) {
@@ -25,7 +35,7 @@ public class Aquatic
         return false;
     }
 
-    public static boolean waterCoolLava(InteractionContext context)
+    public static boolean waterCoolLava(SplatContext context)
     {
         // cool lava
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
@@ -34,9 +44,6 @@ public class Aquatic
                 if (context.fluidState().isSource()) {
                     context.setBlockState(net.minecraftforge.event.ForgeEventFactory
                             .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
-                } else {
-                    context.setBlockState(net.minecraftforge.event.ForgeEventFactory
-                            .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.COBBLESTONE.getDefaultState()));
                 }
             }
             context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
@@ -45,8 +52,23 @@ public class Aquatic
         return false;
     }
 
-    public static boolean edifyNonSourceWater(InteractionContext context)
-    {
+    private static boolean waterCoolFlowingLava(BlobContext context) {
+        // cool lava
+        if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
+            // spawn some sizzly smoke and sounds
+            if (!context.isRemote()) {
+                if (!context.fluidState().isSource()) {
+                    context.setBlockState(net.minecraftforge.event.ForgeEventFactory
+                            .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.STONE.getDefaultState()));
+                }
+            }
+            context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean edifyNonSourceWater(BlobContext context) {
         // edify non-source water to source water
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
             if (!context.isRemote()) {
@@ -59,7 +81,7 @@ public class Aquatic
         return false;
     }
 
-    public static boolean extinguishFire(InteractionContext context)
+    public static boolean extinguishFire(SplatContext context)
     {
         // extinguish fires
         if (context.blockState().getBlock().equals(Blocks.FIRE)) {
@@ -70,13 +92,5 @@ public class Aquatic
             return true;
         }
         return false;
-    }
-
-    public static void registerInteractions()
-    {
-        GooInteractions.register(Registry.AQUATIC_GOO.get(), "hydrate_farmland", 0, Aquatic::hydrateFarmland);
-        GooInteractions.register(Registry.AQUATIC_GOO.get(), "edify_flowing_water", 1, Aquatic::edifyNonSourceWater);
-        GooInteractions.register(Registry.AQUATIC_GOO.get(), "cool_lava", 2, Aquatic::waterCoolLava);
-        GooInteractions.register(Registry.AQUATIC_GOO.get(), "extinguish_fire", 3, Aquatic::extinguishFire);
     }
 }

@@ -3,14 +3,19 @@ package com.xeno.goo.interactions;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.FarmlandBlock;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.SoundCategory;
 
 public class Snow
 {
-    public static boolean freezeWater(InteractionContext context)
+    public static void registerInteractions()
+    {
+        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "freeze_water", Snow::freezeWater);
+        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "cool_lava", Snow::iceCoolLava);
+        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "extinguish_fire", Snow::extinguishFire);
+    }
+
+    public static boolean freezeWater(SplatContext context)
     {
         // freeze water
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
@@ -25,7 +30,7 @@ public class Snow
         return false;
     }
 
-    public static boolean iceCoolLava(InteractionContext context)
+    public static boolean iceCoolLava(SplatContext context)
     {
         // cool lava
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
@@ -45,7 +50,7 @@ public class Snow
         return false;
     }
 
-    public static boolean extinguishFire(InteractionContext context)
+    public static boolean extinguishFire(SplatContext context)
     {
         // extinguish fires
         if (context.blockState().getBlock().equals(Blocks.FIRE)) {
@@ -56,12 +61,5 @@ public class Snow
             return true;
         }
         return false;
-    }
-
-    public static void registerInteractions()
-    {
-        GooInteractions.register(Registry.SNOW_GOO.get(), "freeze_water", 0, Snow::freezeWater);
-        GooInteractions.register(Registry.SNOW_GOO.get(), "cool_lava", 1, Snow::iceCoolLava);
-        GooInteractions.register(Registry.SNOW_GOO.get(), "extinguish_fire", 2, Snow::extinguishFire);
     }
 }

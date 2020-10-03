@@ -9,15 +9,20 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 import java.util.Optional;
 
 public class Molten
 {
-    private static boolean igniteBlock(InteractionContext context) {
+    public static void registerInteractions()
+    {
+        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian);
+        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock);
+        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "ignite_block", Molten::igniteBlock);
+    }
+
+    private static boolean igniteBlock(SplatContext context) {
         if (CampfireBlock.canBeLit(context.blockState())) {
             if (!context.isRemote()) {
                 context.world().setBlockState(context.blockPos(), context.blockState().with(BlockStateProperties.LIT, Boolean.TRUE), 11);
@@ -37,7 +42,7 @@ public class Molten
         return false;
     }
 
-    private static boolean cookBlock(InteractionContext context)
+    private static boolean cookBlock(SplatContext context)
     {
         Optional<IRecipe<?>> matchRecipe = Equivalencies.furnaceRecipes(context.world()).stream()
                 .filter((r) -> soleIngredient(r, context.block()))
@@ -47,7 +52,7 @@ public class Molten
         return result[0];
     }
 
-    private static boolean cookBlock(IRecipe<?> c, InteractionContext context)
+    private static boolean cookBlock(IRecipe<?> c, SplatContext context)
     {
         if (!context.isRemote()) {
             Item output = c.getRecipeOutput().getItem();
@@ -83,7 +88,7 @@ public class Molten
         return false;
     }
 
-    private static boolean meltObsidian(InteractionContext context)
+    private static boolean meltObsidian(SplatContext context)
     {
         if (context.block().equals(Blocks.OBSIDIAN)) {
             if (!context.isRemote()) {
@@ -93,12 +98,5 @@ public class Molten
         }
 
         return false;
-    }
-
-    public static void registerInteractions()
-    {
-        GooInteractions.register(Registry.MOLTEN_GOO.get(), "melt_obsidian", 0,  Molten::meltObsidian);
-        GooInteractions.register(Registry.MOLTEN_GOO.get(), "cook_block", 1, Molten::cookBlock);
-        GooInteractions.register(Registry.MOLTEN_GOO.get(), "ignite_block", 2, Molten::igniteBlock);
     }
 }

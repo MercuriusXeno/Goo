@@ -2,6 +2,7 @@ package com.xeno.goo.entities;
 
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
+import com.xeno.goo.interactions.IPassThroughPredicate;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
@@ -10,12 +11,10 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.*;
-import net.minecraft.block.material.Material;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -30,11 +29,9 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
-import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -44,7 +41,6 @@ import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.Collection;
-import java.util.List;
 
 public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -53,8 +49,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
     private static final double GOO_GRAVITY = 0.06d;
-    private FluidStack goo;
     private int quiverTimer;
+    private FluidStack goo;
     private Entity owner;
     private float cubicSize;
     private EntitySize size;
@@ -200,17 +196,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             }
 
             if (isValidForPassThrough(blockResult)) {
-                if (isLeafBlockAndDecayGoo(blockResult) && this.goo.getAmount() > 0) {
-                    // leaf blocks get passthrough behavior for blobs, which means decay goo can't destroy them
-                    // but decay goo is supposed to have an effect. Thus, we handle it here, which makes it
-                    // a bit weird from other interactions.
-                    world.removeBlock(blockResult.getPos(), false);
-                    if (world instanceof ServerWorld) {
-                        ((ServerWorld) world).spawnParticle(ParticleTypes.SMOKE, position.x, position.y, position.z, 1, 0d, 0d, 0d, 0d);
-                    }
-                    AudioHelper.entityAudioEvent(this, Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
-                    this.drain(1, FluidAction.EXECUTE);
-                }
+                GooInteractions.tryResolving(blockResult, this);
                 return false;
             }
 
@@ -240,17 +226,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return false;
     }
 
-    private boolean isLeafBlockAndDecayGoo(BlockRayTraceResult blockResult) {
-        BlockState state = world.getBlockState(blockResult.getPos());
-        return this.goo.getFluid().equals(Registry.DECAY_GOO.get())
-                && (state.getBlock() instanceof LeavesBlock || state.getBlock() instanceof VineBlock
-                    || state.getBlock() instanceof BushBlock)
-                && !state.getBlock().hasTileEntity(state);
-    }
-
     private boolean isValidForPassThrough(BlockRayTraceResult blockResult) {
         BlockState state = world.getBlockState(blockResult.getPos());
-        return isPassableMaterial(state);
+        if (!GooInteractions.materialPassThroughPredicateRegistry.containsKey(goo.getFluid())) {
+            return isPassableMaterial(state);
+        }
+        IPassThroughPredicate funk = GooInteractions.materialPassThroughPredicateRegistry.get(goo.getFluid());
+        return funk.blobPassThroughPredicate(blockResult, this);
     }
 
     private boolean isPassableMaterial(BlockState state) {

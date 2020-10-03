@@ -32,10 +32,10 @@ public class Energetic
 
     public static void registerInteractions()
     {
-        GooInteractions.register(Registry.ENERGETIC_GOO.get(), "mining_blast", 0, Energetic::miningBlast);
+        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast);
     }
 
-    private static boolean miningBlast(InteractionContext context)
+    private static boolean miningBlast(SplatContext context)
     {
         // in a radius centered around the block with a spherical distance of [configurable] or less
         // and a harvest level of wood (stone type blocks only) only
@@ -54,7 +54,7 @@ public class Energetic
         return true;
     }
 
-    private static void tryMiningBlast(BlockPos blockPos, InteractionContext context)
+    private static void tryMiningBlast(BlockPos blockPos, SplatContext context)
     {
         BlockState state = context.world().getBlockState(blockPos);
         // we don't break blocks with tile entities, sorry not sorry
@@ -94,7 +94,7 @@ public class Energetic
         }
     }
 
-    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, InteractionContext context) {
+    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, SplatContext context) {
         // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
         // the force is blocked. True center here is because the block we're attached to is obviously solid.
         Vector3d trueCenter = context.blockCenterVec().add(Vector3d.copy(context.sideHit().getDirectionVec()));

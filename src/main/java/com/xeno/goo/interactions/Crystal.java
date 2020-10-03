@@ -6,7 +6,6 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
-import net.minecraft.client.particle.HugeExplosionParticle;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
@@ -18,7 +17,6 @@ import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -34,10 +32,10 @@ public class Crystal
     }
     public static void registerInteractions()
     {
-        GooInteractions.register(Registry.CRYSTAL_GOO.get(), "crystal_breaker", 0, Crystal::breaker);
+        GooInteractions.registerSplat(Registry.CRYSTAL_GOO.get(), "crystal_breaker", Crystal::breaker);
     }
 
-    private static boolean breaker(InteractionContext context)
+    private static boolean breaker(SplatContext context)
     {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);

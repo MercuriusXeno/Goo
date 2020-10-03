@@ -16,13 +16,13 @@ public class Chromatic
 {
     public static void registerInteractions()
     {
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_wool", 0, Chromatic::dyeWool);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", 1, Chromatic::dyeConcretePowder);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_concrete", 2, Chromatic::dyeConcrete);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_terracotta", 3, Chromatic::dyeTerracotta);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", 4, Chromatic::dyeGlazedTerracotta);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "dye_glass", 5, Chromatic::dyeGlass);
-        GooInteractions.register(Registry.CHROMATIC_GOO.get(), "sand_color", 6, Chromatic::colorSand);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_wool", Chromatic::dyeWool);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete", Chromatic::dyeConcrete);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_terracotta", Chromatic::dyeTerracotta);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glass", Chromatic::dyeGlass);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "sand_color", Chromatic::colorSand);
     }
 
     private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();
@@ -191,7 +191,7 @@ public class Chromatic
         return terracottaCycleMap.get(originalColor);
     }
 
-    private static boolean dyeTerracotta(InteractionContext ic)
+    private static boolean dyeTerracotta(SplatContext ic)
     {
         if (!isTerracotta(ic)) {
             return false;
@@ -208,13 +208,13 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isTerracotta(InteractionContext ic)
+    private static boolean isTerracotta(SplatContext ic)
     {
         // in the colored map or the uncolored variant
         return terracottaMap.containsValue(ic.block()) || ic.block().equals(Blocks.TERRACOTTA);
     }
 
-    private static boolean dyeGlass(InteractionContext ic)
+    private static boolean dyeGlass(SplatContext ic)
     {
         if (!isGlass(ic)) {
             return false;
@@ -231,13 +231,13 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isGlass(InteractionContext ic)
+    private static boolean isGlass(SplatContext ic)
     {
         // in the colored map or the uncolored variant
         return glassMap.containsValue(ic.block()) || ic.block().equals(Blocks.GLASS);
     }
 
-    private static boolean dyeConcrete(InteractionContext ic)
+    private static boolean dyeConcrete(SplatContext ic)
     {
         if (!isConcrete(ic)) {
             return false;
@@ -249,7 +249,7 @@ public class Chromatic
         return true;
     }
 
-    private static boolean dyeGlazedTerracotta(InteractionContext ic)
+    private static boolean dyeGlazedTerracotta(SplatContext ic)
     {
         if (!isGlazedTerracotta(ic)) {
             return false;
@@ -261,17 +261,17 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isGlazedTerracotta(InteractionContext ic)
+    private static boolean isGlazedTerracotta(SplatContext ic)
     {
         return glazedTerracottaMap.containsValue(ic.block());
     }
 
-    private static boolean isConcrete(InteractionContext ic)
+    private static boolean isConcrete(SplatContext ic)
     {
         return concreteMap.containsValue(ic.block());
     }
 
-    private static boolean dyeConcretePowder(InteractionContext ic)
+    private static boolean dyeConcretePowder(SplatContext ic)
     {
         if (!isConcretePowder(ic)) {
             return false;
@@ -283,12 +283,12 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isConcretePowder(InteractionContext ic)
+    private static boolean isConcretePowder(SplatContext ic)
     {
         return concretePowderMap.containsValue(ic.block());
     }
 
-    private static boolean dyeWool(InteractionContext ic)
+    private static boolean dyeWool(SplatContext ic)
     {
         if (!isWool(ic)) {
             return false;
@@ -300,7 +300,7 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isWool(InteractionContext ic)
+    private static boolean isWool(SplatContext ic)
     {
         return woolMap.containsValue(ic.block());
     }
@@ -313,7 +313,7 @@ public class Chromatic
         sandEquivalents.add(new Tuple<>(Blocks.CHISELED_SANDSTONE, Blocks.CHISELED_RED_SANDSTONE));
         sandEquivalents.add(new Tuple<>(Blocks.SMOOTH_SANDSTONE, Blocks.SMOOTH_RED_SANDSTONE));
     }
-    private static boolean colorSand(InteractionContext context) {
+    private static boolean colorSand(SplatContext context) {
         for (Tuple<Block, Block> sandPair : sandEquivalents) {
             if (isMatch(context.block(), sandPair)) {
                 if (!context.isRemote()) {
