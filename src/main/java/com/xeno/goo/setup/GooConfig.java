@@ -157,6 +157,9 @@ public class GooConfig
             if (fluid.equals(Registry.FAUNAL_GOO.get())) {
                 actualCost = 1;
             }
+            if (fluid.equals(Registry.FLORAL_GOO.get()) && k.getB().equals("flourish")) {
+                actualFailChance = 0.8d;
+            }
             ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
                     .defineInRange(k.getB(), actualCost, -1, 1000);
             ForgeConfigSpec.DoubleValue chanceOfInteraction = serverBuilder.comment("Chance of blob interaction " + k.getB() + ", 0 to disable, default:" + actualChance)
