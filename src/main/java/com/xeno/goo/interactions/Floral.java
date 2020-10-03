@@ -32,14 +32,15 @@ public class Floral
 
     private static boolean growVines(BlobContext blobContext) {
         if (blobContext.block() instanceof LeavesBlock) {
-            for (Direction d : Direction.values()) {
+            for (Direction face : Direction.values()) {
+                Direction d = face.getOpposite();
                 if (d == Direction.DOWN) {
                     continue;
                 }
                 if (blobContext.world().rand.nextFloat() <= FLOURISH_CHANCE) {
                     if (blobContext.world() instanceof ServerWorld) {
                         BooleanProperty prop = vinePlacementPropertyFromDirection(d);
-                        BlockPos offset = blobContext.blockPos().offset(d);
+                        BlockPos offset = blobContext.blockPos().offset(face);
                         BlockState state;
                         if (blobContext.world().getBlockState(offset).isAir(blobContext.world(), offset)) {
                             state = Blocks.VINE.getDefaultState().with(prop, true);
