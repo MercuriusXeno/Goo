@@ -90,6 +90,7 @@ public class GooConfig
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> BLOB_FAILURE_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> BLOB_DRAIN_CHANCE = new HashMap<>();
     private Map<Fluid, ForgeConfigSpec.IntValue> THROWN_GOO_AMOUNTS = new HashMap<>();
+    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_COOLDOWNS = new HashMap<>();
 
     private void registerBlobInteractions(Fluid fluid, Map<Tuple<Integer, String>, IBlobInteraction> blobInteractions) {
         int defaultCostForInteractions = 16;
@@ -135,11 +136,13 @@ public class GooConfig
         double defaultChanceOfInteraction = 1.0d;
         double defaultChanceOfDrain = 1.0d;
         double defaultChanceofFail = 0d;
+        int defaultTickCooldown = 0;
         HashMap<String, ForgeConfigSpec.IntValue> costMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.DoubleValue> triggerMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.DoubleValue> drainMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.DoubleValue> failMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.IntValue> returnMap = new HashMap<>();
+        HashMap<String, ForgeConfigSpec.IntValue> cooldownMap = new HashMap<>();
         serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
         int[] lowestCost = {Integer.MAX_VALUE};
         splatInteractions.forEach((k, v) -> {
@@ -147,6 +150,7 @@ public class GooConfig
             double actualChance = defaultChanceOfInteraction;
             double actualDrainChance = defaultChanceOfDrain;
             double actualFailChance = defaultChanceofFail;
+            int actualCooldown = defaultTickCooldown;
             // specific overrides for map defaults for goos that need it.
             if (fluid.equals(Registry.CRYSTAL_GOO.get())) {
                 actualCost = 4;
@@ -201,6 +205,9 @@ public class GooConfig
                 actualDrainChance = 0.5d;
                 actualCost = 1;
             }
+            if (fluid.equals(Registry.WEIRD_GOO.get())) {
+                actualCooldown = 60;
+            }
             ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
                     .defineInRange(k.getB(), actualCost, -1, 1000);
             ForgeConfigSpec.DoubleValue chanceOfInteraction = serverBuilder.comment("Chance of blob interaction " + k.getB() + ", 0 to disable, default:" + actualChance)
@@ -209,10 +216,13 @@ public class GooConfig
                     .defineInRange(k.getB() + "_drain_chance", actualDrainChance, 0d, 1d);
             ForgeConfigSpec.DoubleValue chanceOfFail = serverBuilder.comment("Chance of interaction failure " + k.getB() + ", 1 to disable, default:" + actualFailChance)
                     .defineInRange(k.getB() + "_fail_chance", actualFailChance, 0d, 1d);
+            ForgeConfigSpec.IntValue cooldownOfInteraction = serverBuilder.comment("Cooldown of splat interaction " + k.getB() + ", default:" + actualCooldown)
+                    .defineInRange(k.getB() + "_cooldown", actualCooldown, 0, 1000);
             costMap.put(k.getB(), costOfInteraction);
             triggerMap.put(k.getB() + "_chance", chanceOfInteraction);
             drainMap.put(k.getB() + "_drain_chance", chanceOfDrain);
             failMap.put(k.getB() + "_fail_chance", chanceOfFail);
+            cooldownMap.put(k.getB() + "_cooldown", cooldownOfInteraction);
             if (actualCost < lowestCost[0]) {
                 lowestCost[0] = actualCost;
             }
@@ -236,6 +246,7 @@ public class GooConfig
         SPLAT_TRIGGER_CHANCE.put(fluid, triggerMap);
         SPLAT_DRAIN_CHANCE.put(fluid, drainMap);
         SPLAT_FAILURE_CHANCE.put(fluid, failMap);
+        SPLAT_COOLDOWNS.put(fluid, cooldownMap);
         THROWN_GOO_AMOUNTS.put(fluid, thrownAmount);
     }
 
@@ -247,6 +258,17 @@ public class GooConfig
             return -1;
         }
         return SPLAT_RESOLVER_COSTS.get(fluid).get(key).get();
+    }
+
+    public int cooldownOfSplatInteraction(Fluid fluid, String key) {
+        key = key + "_cooldown";
+        if (!SPLAT_COOLDOWNS.containsKey(fluid)) {
+            return -1;
+        }
+        if (!SPLAT_COOLDOWNS.get(fluid).containsKey(key)) {
+            return -1;
+        }
+        return SPLAT_COOLDOWNS.get(fluid).get(key).get();
     }
 
     public double chanceOfSplatInteraction(Fluid fluid, String key) {

@@ -199,6 +199,11 @@ public class GooInteractions
             if (shouldDrain) {
                 context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
             }
+
+            int cooldown = GooMod.config.cooldownOfSplatInteraction(fluid, interactionKey.getB());
+            if (cooldown > 0) {
+                context.splat().setCooldown(cooldown);
+            }
         }
     }
 }

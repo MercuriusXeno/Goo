@@ -95,5 +95,12 @@
       "minecraft:mob/slime/small4",
       "minecraft:mob/slime/small5"
     ]
+  },
+  "weird_teleport_sound": {
+    "subtitle": "sound_event.goo.weird_teleport_sound",
+    "sounds": [
+      "minecraft:mob/endermen/portal",
+      "minecraft:mob/endermen/portal2"
+    ]
   }
 }

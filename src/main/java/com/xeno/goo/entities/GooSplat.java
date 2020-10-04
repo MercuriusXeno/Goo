@@ -61,6 +61,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
+    private int cooldown = 0;
 
     public Vector3d shape()
     {
@@ -178,7 +179,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        GooInteractions.tryResolving(this);
+        if (cooldown == 0) {
+            GooInteractions.tryResolving(this);
+        } else {
+            cooldown--;
+        }
 
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
@@ -652,5 +657,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public Entity owner()
     {
         return this.owner;
+    }
+
+    public void setCooldown(int cooldown) {
+        this.cooldown = cooldown;
     }
 }
