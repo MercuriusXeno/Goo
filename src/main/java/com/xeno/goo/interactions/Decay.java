@@ -4,9 +4,11 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.BambooLeaves;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.Tuple;
@@ -35,6 +37,7 @@ public class Decay
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "death_pulse", Decay::deathPulse);
 
         GooInteractions.registerPassThroughPredicate(Registry.DECAY_GOO.get(), Decay::blobPassThroughPredicate);
 
@@ -51,6 +54,26 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+    }
+
+    private static boolean deathPulse(SplatContext splatContext) {
+        if (splatContext.world().getGameTime() % 10 > 0) {
+            return false;
+        }
+        List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d), null);
+        for(LivingEntity entity : nearbyEntities) {
+            if (!entity.isEntityUndead()) {
+                entity.attackEntityFrom(DamageSource.causeIndirectDamage(splatContext.splat(), entity), 1f);
+                spawnDeteriorateParticles(splatContext);
+            } else {
+                if (entity.getHealth() < entity.getMaxHealth()) {
+                    entity.heal(1f);
+                    spawnDeteriorateParticles(splatContext);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean deterioratePodzol(SplatContext splatContext) {

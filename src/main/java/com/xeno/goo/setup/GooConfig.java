@@ -194,6 +194,10 @@ public class GooConfig
                 actualCost = 1;
             }
             if (fluid.equals(Registry.SLIME_GOO.get())) {
+                actualDrainChance = 0.125d;
+                actualCost = 1;
+            }
+            if (fluid.equals(Registry.VITAL_GOO.get())) {
                 actualDrainChance = 0.5d;
                 actualCost = 1;
             }
@@ -218,7 +222,9 @@ public class GooConfig
             // but it's better conveyance if you don't do that in some cases.
             if (fluid.equals(Registry.HONEY_GOO.get())
                     || fluid.equals(Registry.LOGIC_GOO.get())
-                    || fluid.equals(Registry.SLIME_GOO.get())) {
+                    || fluid.equals(Registry.SLIME_GOO.get())
+                    || fluid.equals(Registry.VITAL_GOO.get())
+                ) {
                 lowestCost[0] = defaultCostForInteractions;
             }
         });
