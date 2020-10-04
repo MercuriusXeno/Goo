@@ -190,7 +190,11 @@ public class GooConfig
                 actualCost = 1;
             }
             if (fluid.equals(Registry.LOGIC_GOO.get())) {
-                actualDrainChance = 0.001d;
+                actualDrainChance = 0.01d;
+                actualCost = 1;
+            }
+            if (fluid.equals(Registry.SLIME_GOO.get())) {
+                actualDrainChance = 0.5d;
                 actualCost = 1;
             }
             ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
@@ -212,7 +216,9 @@ public class GooConfig
             // specifically override cost back to defaults on goos that generally have lower costs
             // by default the config wants to make the thrown amount as low as possible
             // but it's better conveyance if you don't do that in some cases.
-            if (fluid.equals(Registry.HONEY_GOO.get()) || fluid.equals(Registry.LOGIC_GOO.get())) {
+            if (fluid.equals(Registry.HONEY_GOO.get())
+                    || fluid.equals(Registry.LOGIC_GOO.get())
+                    || fluid.equals(Registry.SLIME_GOO.get())) {
                 lowestCost[0] = defaultCostForInteractions;
             }
         });

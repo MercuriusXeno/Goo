@@ -12,8 +12,10 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -34,9 +36,22 @@ public class Logic
             return false;
         }
         if (context.world() instanceof ServerWorld) {
-            ((ServerWorld)context.world()).spawnParticle(RedstoneParticleData.REDSTONE_DUST,
-                    context.blockCenterVec().x, context.blockCenterVec().y, context.blockCenterVec().z, 1,
-                    0d, 0d, 0d, 0d);
+            Vector3d particlePos = context.splat().getPositionVec();
+            AxisAlignedBB bounds = context.splat().getBoundingBox();
+            // vec representing the "domain" of the bounding box.
+            Vector3d rangeVec = new Vector3d(
+                    bounds.maxX - bounds.minX,
+                    bounds.maxY - bounds.minY,
+                    bounds.maxZ - bounds.minZ);
+            for (int i = 0; i < 5; i++) {
+                Vector3d finalPos = particlePos.add(
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.x,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.y,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.z
+                );
+                ((ServerWorld) context.world()).spawnParticle(RedstoneParticleData.REDSTONE_DUST,
+                        finalPos.x, finalPos.y, finalPos.z, 1, 0d, 0d, 0d, 0d);
+            }
         }
         if (isValidLogicBlock(state)) {
             if (!isLegalStateAndSideHitCombo(state, context)) {

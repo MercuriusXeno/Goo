@@ -374,7 +374,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         ItemStack stack = player.getHeldItem(hand);
         if (!isValidInteractionStack(stack)) {
-            return ActionResultType.PASS;
+            return ActionResultType.FAIL;
         }
         boolean[] didStuff = {false};
 
