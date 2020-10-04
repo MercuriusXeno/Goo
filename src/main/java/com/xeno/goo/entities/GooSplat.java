@@ -61,6 +61,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
+    private int cooldown = 0;
 
     public Vector3d shape()
     {
@@ -93,16 +94,18 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         double cubicArea = goo.getAmount() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / PUDDLE_DEPTH;
-        double sideLength = Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO;
+        double sideLength = Math.min(1d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
+        // this will be puddle depth const until sidelength gets throttled.
+        double actualDepth = cubicArea / (sideLength * sideLength);
         switch (depthAxis()) {
             case X:
-                shape =  new Vector3d(PUDDLE_DEPTH, sideLength, sideLength);
+                shape =  new Vector3d(actualDepth, sideLength, sideLength);
                 break;
             case Y:
-                shape =  new Vector3d(sideLength, PUDDLE_DEPTH, sideLength);
+                shape =  new Vector3d(sideLength, actualDepth, sideLength);
                 break;
             case Z:
-                shape =  new Vector3d(sideLength, sideLength, PUDDLE_DEPTH);
+                shape =  new Vector3d(sideLength, sideLength, actualDepth);
                 break;
             default:
                 shape = Vector3d.ZERO;
@@ -136,17 +139,17 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         switch(sideWeLiveOn) {
             case NORTH:
-                return new Vector3d(hitVec.x - (0.01d + PUDDLE_DEPTH / 2d), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x + (0.01d + box.minX), hitVec.y, hitVec.z);
             case SOUTH:
-                return new Vector3d(hitVec.x + (0.01d + PUDDLE_DEPTH / 2d), hitVec.y, hitVec.z);
-            case UP:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + PUDDLE_DEPTH / 2d), hitVec.z);
+                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
             case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y - (0.01d + PUDDLE_DEPTH / 2d), hitVec.z);
-            case EAST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + PUDDLE_DEPTH / 2d));
+                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.minY), hitVec.z);
+            case UP:
+                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
             case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + PUDDLE_DEPTH / 2d));
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + box.minZ));
+            case EAST:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
         }
         // something weird happened that wasn't supposed to.
         return hitVec;
@@ -176,7 +179,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        GooInteractions.tryResolving(this);
+        if (cooldown == 0) {
+            GooInteractions.tryResolving(this);
+        } else {
+            cooldown--;
+        }
 
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
@@ -214,9 +221,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 .add(0.51d * sideWeLiveOn.getXOffset(),
                         0.51d * sideWeLiveOn.getYOffset(),
                         0.51d * sideWeLiveOn.getZOffset())
-                .add((PUDDLE_DEPTH / 2d) * sideWeLiveOn.getXOffset(),
-                        (PUDDLE_DEPTH / 2d) * sideWeLiveOn.getYOffset(),
-                        (PUDDLE_DEPTH / 2d) * sideWeLiveOn.getZOffset());
+                .add((box.maxX) * sideWeLiveOn.getXOffset(),
+                        (box.maxY) * sideWeLiveOn.getYOffset(),
+                        (box.maxZ) * sideWeLiveOn.getZOffset());
         return attachmentPoint;
     }
 
@@ -372,7 +379,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         ItemStack stack = player.getHeldItem(hand);
         if (!isValidInteractionStack(stack)) {
-            return ActionResultType.PASS;
+            return ActionResultType.FAIL;
         }
         boolean[] didStuff = {false};
 
@@ -497,6 +504,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e.equals(owner)) {
                 if (e == owner) {
+                    // only try catching the goos flagged to bounce/return goo
+                    // at the time of writing, hard coded.
+                    if (!isAutoGrabbedGoo()) {
+                        return false;
+                    }
                     // try catching  it!
                     if (owner instanceof PlayerEntity) {
                         // check if the player has a gauntlet either empty or with the same goo as me
@@ -520,6 +532,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
 
         return false;
+    }
+
+    private boolean isAutoGrabbedGoo() {
+        return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
+                || goo.getFluid().equals(Registry.METAL_GOO.get())
+                || goo.getFluid().equals(Registry.REGAL_GOO.get());
     }
 
     private boolean isValidCollisionEntity(Entity eInBB)
@@ -639,5 +657,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public Entity owner()
     {
         return this.owner;
+    }
+
+    public void setCooldown(int cooldown) {
+        this.cooldown = cooldown;
     }
 }

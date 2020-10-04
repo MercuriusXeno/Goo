@@ -11,11 +11,11 @@ public class Aquatic
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "cool_lava", Aquatic::waterCoolLava);
-        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "extinguish_fire", Aquatic::extinguishFire);
 
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
+        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "extinguish_fire", Aquatic::extinguishFire);
     }
 
     public static boolean hydrateFarmland(BlobContext context)
@@ -81,7 +81,7 @@ public class Aquatic
         return false;
     }
 
-    public static boolean extinguishFire(SplatContext context)
+    public static boolean extinguishFire(BlobContext context)
     {
         // extinguish fires
         if (context.blockState().getBlock().equals(Blocks.FIRE)) {

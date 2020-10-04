@@ -27,9 +27,6 @@ public class Crystal
     private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
-    static {
-        mockPick.addEnchantment(Enchantments.FORTUNE, 3); // POGCHAMPU
-    }
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.CRYSTAL_GOO.get(), "crystal_breaker", Crystal::breaker);

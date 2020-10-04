@@ -1,15 +1,23 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.particles.ParticleTypes;
+import net.minecraft.particles.RedstoneParticleData;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.server.ServerWorld;
 
 import java.util.Optional;
 
@@ -56,12 +64,49 @@ public class Molten
     {
         if (!context.isRemote()) {
             Item output = c.getRecipeOutput().getItem();
+            doEffects(context);
             if (output instanceof BlockItem) {
                 Block block = ((BlockItem) output).getBlock();
                 context.setBlockState(block.getDefaultState());
+            } else {
+                ItemStack result = c.getRecipeOutput().copy();
+                Vector3d spawnLoc = Vector3d.copy(context.blockPos()).add(0.5d, 0.5d, 0.5d);
+                context.world().removeBlock(context.blockPos(), false);
+                context.world().addEntity(new ItemEntity(context.world(), spawnLoc.x,
+                        spawnLoc.y, spawnLoc.z, result));
             }
         }
         return true;
+    }
+
+    private static void doEffects(SplatContext context) {
+        if (context.world() instanceof ServerWorld) {
+            Vector3d particlePos = context.splat().getPositionVec();
+            AxisAlignedBB bounds = context.splat().getBoundingBox();
+            // vec representing the "domain" of the bounding box.
+            Vector3d rangeVec = new Vector3d(
+                    bounds.maxX - bounds.minX,
+                    bounds.maxY - bounds.minY,
+                    bounds.maxZ - bounds.minZ);
+            for (int i = 0; i < 5; i++) {
+                Vector3d finalPos = particlePos.add(
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.x,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.y,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.z
+                );
+                Vector3d finalPos2 = particlePos.add(
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.x,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.y,
+                        (context.world().rand.nextDouble() - 0.5d) * rangeVec.z
+                );
+                ((ServerWorld) context.world()).spawnParticle(ParticleTypes.FLAME,
+                        finalPos.x, finalPos.y, finalPos.z, 1, 0d, 0d, 0d, 0d);
+                ((ServerWorld) context.world()).spawnParticle(ParticleTypes.SMOKE,
+                        finalPos2.x, finalPos2.y, finalPos2.z, 1, 0d, 0d, 0d, 0d);
+            }
+            AudioHelper.entityAudioEvent(context.splat(), Registry.MOLTEN_SIZZLE_SOUND.get(), SoundCategory.BLOCKS,
+                    1f, AudioHelper.PitchFormulas.HalfToOne);
+        }
     }
 
     private static boolean soleIngredient(IRecipe<?> r, Block block)

@@ -90,6 +90,9 @@ public class Registry {
     public static final RegistryObject<SoundEvent> DETERIORATE_SOUND = SOUNDS.register("deteriorate_block_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "deteriorate_block_sound")));
     public static final RegistryObject<SoundEvent> EDIFY_SOUND = SOUNDS.register("edify_block_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "edify_block_sound")));
     public static final RegistryObject<SoundEvent> FREEZE_SOUND = SOUNDS.register("freeze_water_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "freeze_water_sound")));
+    public static final RegistryObject<SoundEvent> TWITTERPATE_ANIMAL_SOUND = SOUNDS.register("twitterpate_animal_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "twitterpate_animal_sound")));
+    public static final RegistryObject<SoundEvent> WEIRD_TELEPORT_SOUND = SOUNDS.register("weird_teleport_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "weird_teleport_sound")));
+    public static final RegistryObject<SoundEvent> MOLTEN_SIZZLE_SOUND = SOUNDS.register("molten_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "molten_sizzle_sound")));
 
     // Goo Bulb registration
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.GooBulb.get()).build(null));

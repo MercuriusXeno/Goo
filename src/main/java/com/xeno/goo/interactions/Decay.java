@@ -4,9 +4,11 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.BambooLeaves;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.Tuple;
@@ -32,6 +34,10 @@ public class Decay
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_gravel", Decay::deteriorateGravel);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt);
         GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_dirt", Decay::deteriorateDirt);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "death_pulse", Decay::deathPulse);
 
         GooInteractions.registerPassThroughPredicate(Registry.DECAY_GOO.get(), Decay::blobPassThroughPredicate);
 
@@ -41,11 +47,76 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_vines", Decay::destroyVines);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_grass", Decay::destroyGrass);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_crops", Decay::destroyCrops);
+        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_cactus", Decay::destroyCactus);
+        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_flowers", Decay::destroyFlowers);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sugar_cane", Decay::destroySugarCane);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo", Decay::destroyBamboo);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+    }
+
+    private static boolean deathPulse(SplatContext splatContext) {
+        if (splatContext.world().getGameTime() % 10 > 0) {
+            return false;
+        }
+        List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d), null);
+        for(LivingEntity entity : nearbyEntities) {
+            if (!entity.isEntityUndead()) {
+                entity.attackEntityFrom(DamageSource.causeIndirectDamage(splatContext.splat(), entity), 1f);
+                spawnDeteriorateParticles(splatContext);
+            } else {
+                if (entity.getHealth() < entity.getMaxHealth()) {
+                    entity.heal(1f);
+                    spawnDeteriorateParticles(splatContext);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean deterioratePodzol(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.DIRT, Blocks.PODZOL);
+    }
+
+    private static boolean deteriorateMycelium(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.PODZOL, Blocks.MYCELIUM);
+    }
+
+    private static boolean deteriorateNylium(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.NETHERRACK, Blocks.CRIMSON_NYLIUM)
+                || exchangeBlock(splatContext, Blocks.NETHERRACK, Blocks.WARPED_NYLIUM);
+    }
+
+    private static boolean destroyFlowers(BlobContext blobContext) {
+        if (blobContext.block() instanceof FlowerBlock || blobContext.block() instanceof TallFlowerBlock) {
+            blobContext.world().removeBlock(blobContext.blockPos(), false);
+            if (blobContext.world() instanceof ServerWorld) {
+                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
+                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
+                        0d, 0d, 0d, 0d);
+            }
+            AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+            blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean destroyCactus(BlobContext blobContext) {
+        if (blobContext.block() instanceof CactusBlock) {
+            blobContext.world().removeBlock(blobContext.blockPos(), false);
+            if (blobContext.world() instanceof ServerWorld) {
+                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
+                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
+                        0d, 0d, 0d, 0d);
+            }
+            AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+            blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
+            return true;
+        }
+        return false;
     }
 
     private static boolean destroyLilypad(BlobContext blobContext) {
@@ -200,9 +271,10 @@ public class Decay
 
     private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
         BlockState state = gooBlob.getEntityWorld().getBlockState(blockRayTraceResult.getPos());
+        if (state.getBlock().hasTileEntity(state)) {
+            return false;
+        }
         return
-            (
-                // various things we need pass through resolvers for to destroy
                 state.getBlock() instanceof LeavesBlock
                 || state.getBlock() instanceof VineBlock
                 || state.getBlock() instanceof BushBlock
@@ -213,8 +285,9 @@ public class Decay
                 || state.getBlock() instanceof BambooBlock
                 || state.getBlock() instanceof BambooSaplingBlock
                 || state.getBlock() instanceof SaplingBlock
-            )
-            && !state.getBlock().hasTileEntity(state);
+                || state.getBlock() instanceof CactusBlock
+                || state.getBlock() instanceof FlowerBlock
+                || state.getBlock() instanceof TallFlowerBlock;
     }
 
     private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {
@@ -296,32 +369,13 @@ public class Decay
         return exchangeBlock(context, Blocks.DIRT, Blocks.GRASS_BLOCK);
     }
 
-    private static final List<Tuple<Block, Block>> logBarkPairs = new ArrayList<>();
-    public static void registerLogBarkPair(Block source, Block target) {
-        logBarkPairs.add(new Tuple<>(source, target));
-    }
-
-    static {
-        registerLogBarkPair(Blocks.ACACIA_LOG, Blocks.STRIPPED_ACACIA_LOG);
-        registerLogBarkPair(Blocks.ACACIA_WOOD, Blocks.STRIPPED_ACACIA_WOOD);
-        registerLogBarkPair(Blocks.BIRCH_LOG, Blocks.STRIPPED_BIRCH_LOG);
-        registerLogBarkPair(Blocks.BIRCH_WOOD, Blocks.STRIPPED_BIRCH_WOOD);
-        registerLogBarkPair(Blocks.DARK_OAK_LOG, Blocks.STRIPPED_DARK_OAK_LOG);
-        registerLogBarkPair(Blocks.DARK_OAK_WOOD, Blocks.STRIPPED_DARK_OAK_WOOD);
-        registerLogBarkPair(Blocks.JUNGLE_LOG, Blocks.STRIPPED_JUNGLE_LOG);
-        registerLogBarkPair(Blocks.JUNGLE_WOOD, Blocks.STRIPPED_JUNGLE_WOOD);
-        registerLogBarkPair(Blocks.OAK_LOG, Blocks.STRIPPED_OAK_LOG);
-        registerLogBarkPair(Blocks.OAK_WOOD, Blocks.STRIPPED_OAK_WOOD);
-        registerLogBarkPair(Blocks.SPRUCE_LOG, Blocks.STRIPPED_SPRUCE_LOG);
-        registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
-        registerLogBarkPair(Blocks.WARPED_STEM, Blocks.STRIPPED_WARPED_STEM);
-        registerLogBarkPair(Blocks.WARPED_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE);
-        registerLogBarkPair(Blocks.CRIMSON_STEM, Blocks.STRIPPED_CRIMSON_STEM);
-        registerLogBarkPair(Blocks.CRIMSON_HYPHAE, Blocks.STRIPPED_CRIMSON_HYPHAE);
-    }
-
     private static boolean stripBark(SplatContext context) {
-        for(Tuple<Block, Block> blockPair : logBarkPairs) {
+        for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
+            if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
+                return true;
+            }
+        }
+        for(Tuple<Block, Block> blockPair : Fungal.stemPairs) {
             if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
                 return true;
             }

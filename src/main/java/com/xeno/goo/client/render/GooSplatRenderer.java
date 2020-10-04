@@ -119,7 +119,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
         // otherwise it just looks dull by nature, which is what we want most of the time.
-        if (isBrightFluid(entity.goo().getFluid())) {
+        if (isBrightFluid(entity.goo().getFluid(), entity.world.getGameTime())) {
             light = GooRenderHelper.FULL_BRIGHT;
         } else {
             light = WorldRenderer.getCombinedLight(entity.getEntityWorld(), entity.getPosition());
@@ -141,15 +141,16 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         stack.pop();
     }
 
-    private boolean isBrightFluid(Fluid fluid)
+    private boolean isBrightFluid(Fluid fluid, long gameTime)
     {
-        return fluid.equals(Registry.MOLTEN_GOO.get()) || fluid.equals(Registry.ENERGETIC_GOO.get());
+        return fluid.equals(Registry.MOLTEN_GOO.get()) || fluid.equals(Registry.ENERGETIC_GOO.get())
+                || (fluid.equals(Registry.LOGIC_GOO.get()) && gameTime % 20 == 0);
     }
 
     @Override
     protected int getBlockLight(GooSplat entityIn, BlockPos partialTicks)
     {
-        if (isBrightFluid(entityIn.goo().getFluid())) {
+        if (isBrightFluid(entityIn.goo().getFluid(), entityIn.world.getGameTime())) {
             return 15;
         }
         return super.getBlockLight(entityIn, partialTicks);

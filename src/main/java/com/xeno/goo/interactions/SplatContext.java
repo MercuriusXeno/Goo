@@ -118,4 +118,20 @@ public class SplatContext
     {
         return this.splat;
     }
+
+    public boolean isBlockAboveAir() {
+        return world.getBlockState(blockPos().offset(Direction.UP)).isAir(world(), blockPos());
+    }
+
+    public void setBlockStateAbove(BlockState newState) {
+        this.world.setBlockState(this.blockPos.offset(Direction.UP), newState);
+    }
+
+    public boolean isBlockBelowAir() {
+        return world.getBlockState(blockPos().offset(Direction.DOWN)).isAir(world(), blockPos());
+    }
+
+    public void setBlockStateBelow(BlockState newState) {
+        this.world.setBlockState(this.blockPos.offset(Direction.DOWN), newState);
+    }
 }
