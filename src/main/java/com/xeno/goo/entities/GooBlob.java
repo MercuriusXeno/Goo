@@ -6,7 +6,6 @@ import com.xeno.goo.interactions.IPassThroughPredicate;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
-import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -602,6 +601,11 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     protected void collideWithEntity(Entity entityHit)
     {
         if (entityHit == owner) {
+            // only try catching the goos flagged to bounce/return goo
+            // at the time of writing, hard coded.
+            if (!isAutoGrabbedGoo()) {
+                return;
+            }
             // try catching  it!
             if (owner instanceof PlayerEntity) {
                 // check if the player has a gauntlet either empty or with the same goo as me
@@ -621,12 +625,16 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             }
             return;
         }
+        // collisions with entities cause a dead drop but nothing else
         if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {
-            int intensity = Math.max(1, (int)Math.ceil(Math.sqrt(this.goo.getAmount()) - 1));
-            GooChopEffects.doChopEffect(this.goo, intensity, (LivingEntity)this.owner, (LivingEntity)entityHit);
-            // dissipate
-            this.remove();
+            this.setMotion(this.getMotion().mul(0d, -GOO_GRAVITY, 0d));
         }
+    }
+
+    private boolean isAutoGrabbedGoo() {
+        return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
+                || goo.getFluid().equals(Registry.METAL_GOO.get())
+                || goo.getFluid().equals(Registry.REGAL_GOO.get());
     }
 
     public float cubicSize()

@@ -497,6 +497,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e.equals(owner)) {
                 if (e == owner) {
+                    // only try catching the goos flagged to bounce/return goo
+                    // at the time of writing, hard coded.
+                    if (!isAutoGrabbedGoo()) {
+                        return false;
+                    }
                     // try catching  it!
                     if (owner instanceof PlayerEntity) {
                         // check if the player has a gauntlet either empty or with the same goo as me
@@ -520,6 +525,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
 
         return false;
+    }
+
+    private boolean isAutoGrabbedGoo() {
+        return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
+                || goo.getFluid().equals(Registry.METAL_GOO.get())
+                || goo.getFluid().equals(Registry.REGAL_GOO.get());
     }
 
     private boolean isValidCollisionEntity(Entity eInBB)

@@ -19,13 +19,13 @@ public class Fungal
         GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_mycelium", Fungal::growMycelium);
         GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_nylium", Fungal::growNylium);
         GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_shroom", Fungal::growShroom);
+        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_vines", Fungal::growVines);
 
 
         GooInteractions.registerPassThroughPredicate(Registry.FUNGAL_GOO.get(), Fungal::blobPassThroughPredicate);
 
         // blob interactions
         GooInteractions.registerBlob(Registry.FUNGAL_GOO.get(), "trigger_growable", Fungal::growableTick);
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_vines", Fungal::growVines);
     }
 
     private static boolean growShroom(SplatContext context) {
