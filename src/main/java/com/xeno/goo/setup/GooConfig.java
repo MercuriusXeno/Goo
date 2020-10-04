@@ -148,9 +148,33 @@ public class GooConfig
             double actualDrainChance = defaultChanceOfDrain;
             double actualFailChance = defaultChanceofFail;
             // specific overrides for map defaults for goos that need it.
-            if (isBreakerSplatEffect(fluid, k.getB())) {
-                actualCost = 2;
+            if (fluid.equals(Registry.CRYSTAL_GOO.get())) {
+                actualCost = 4;
                 int returnedAmount = actualCost - 1;
+                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
+                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
+                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+            }
+            if (fluid.equals(Registry.METAL_GOO.get())) {
+                actualCost = 8;
+                actualChance = 0.1d;
+                int returnedAmount = actualCost - 1;
+                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
+                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
+                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+            }
+            if (fluid.equals(Registry.OBSIDIAN_GOO.get())) {
+                actualCost = 8;
+                actualChance = 0.2d;
+                int returnedAmount = actualCost - 2;
+                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
+                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
+                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+            }
+            if (fluid.equals(Registry.REGAL_GOO.get())) {
+                actualCost = 16;
+                actualChance = 0.1d;
+                int returnedAmount = actualCost - 8;
                 ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
                 returnMap.put(k.getB() + "_returned", returnOfInteraction);
@@ -163,6 +187,10 @@ public class GooConfig
             }
             if (fluid.equals(Registry.HONEY_GOO.get())) {
                 actualDrainChance = 0.01d;
+                actualCost = 1;
+            }
+            if (fluid.equals(Registry.LOGIC_GOO.get())) {
+                actualDrainChance = 0.001d;
                 actualCost = 1;
             }
             ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
@@ -181,8 +209,10 @@ public class GooConfig
                 lowestCost[0] = actualCost;
             }
 
-            // specifically override cost defaults on goos that need it
-            if (fluid.equals(Registry.HONEY_GOO.get())) {
+            // specifically override cost back to defaults on goos that generally have lower costs
+            // by default the config wants to make the thrown amount as low as possible
+            // but it's better conveyance if you don't do that in some cases.
+            if (fluid.equals(Registry.HONEY_GOO.get()) || fluid.equals(Registry.LOGIC_GOO.get())) {
                 lowestCost[0] = defaultCostForInteractions;
             }
         });
@@ -195,13 +225,6 @@ public class GooConfig
         SPLAT_DRAIN_CHANCE.put(fluid, drainMap);
         SPLAT_FAILURE_CHANCE.put(fluid, failMap);
         THROWN_GOO_AMOUNTS.put(fluid, thrownAmount);
-    }
-
-    public boolean isBreakerSplatEffect(Fluid fluid, String key)
-    {
-        return fluid.equals(Registry.CRYSTAL_GOO.get()) // diamond pick
-                || fluid.equals(Registry.METAL_GOO.get()) // iron pick
-                || fluid.equals(Registry.REGAL_GOO.get()); // silk touch
     }
 
     public int costOfSplatInteraction(Fluid fluid, String key) {

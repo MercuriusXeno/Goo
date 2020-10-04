@@ -93,16 +93,18 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         double cubicArea = goo.getAmount() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / PUDDLE_DEPTH;
-        double sideLength = Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO;
+        double sideLength = Math.min(1d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
+        // this will be puddle depth const until sidelength gets throttled.
+        double actualDepth = cubicArea / (sideLength * sideLength);
         switch (depthAxis()) {
             case X:
-                shape =  new Vector3d(PUDDLE_DEPTH, sideLength, sideLength);
+                shape =  new Vector3d(actualDepth, sideLength, sideLength);
                 break;
             case Y:
-                shape =  new Vector3d(sideLength, PUDDLE_DEPTH, sideLength);
+                shape =  new Vector3d(sideLength, actualDepth, sideLength);
                 break;
             case Z:
-                shape =  new Vector3d(sideLength, sideLength, PUDDLE_DEPTH);
+                shape =  new Vector3d(sideLength, sideLength, actualDepth);
                 break;
             default:
                 shape = Vector3d.ZERO;
@@ -136,17 +138,17 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         switch(sideWeLiveOn) {
             case NORTH:
-                return new Vector3d(hitVec.x - (0.01d + PUDDLE_DEPTH / 2d), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x + (0.01d + box.minX), hitVec.y, hitVec.z);
             case SOUTH:
-                return new Vector3d(hitVec.x + (0.01d + PUDDLE_DEPTH / 2d), hitVec.y, hitVec.z);
-            case UP:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + PUDDLE_DEPTH / 2d), hitVec.z);
+                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
             case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y - (0.01d + PUDDLE_DEPTH / 2d), hitVec.z);
-            case EAST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + PUDDLE_DEPTH / 2d));
+                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.minY), hitVec.z);
+            case UP:
+                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
             case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + PUDDLE_DEPTH / 2d));
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + box.minZ));
+            case EAST:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
         }
         // something weird happened that wasn't supposed to.
         return hitVec;
@@ -214,9 +216,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 .add(0.51d * sideWeLiveOn.getXOffset(),
                         0.51d * sideWeLiveOn.getYOffset(),
                         0.51d * sideWeLiveOn.getZOffset())
-                .add((PUDDLE_DEPTH / 2d) * sideWeLiveOn.getXOffset(),
-                        (PUDDLE_DEPTH / 2d) * sideWeLiveOn.getYOffset(),
-                        (PUDDLE_DEPTH / 2d) * sideWeLiveOn.getZOffset());
+                .add((box.maxX) * sideWeLiveOn.getXOffset(),
+                        (box.maxY) * sideWeLiveOn.getYOffset(),
+                        (box.maxZ) * sideWeLiveOn.getZOffset());
         return attachmentPoint;
     }
 
