@@ -4,17 +4,13 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:emerald"
+      "item": "minecraft:stick"
     }
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:regal"
-    },
-    {
-      "amount": 60.0,
-      "type": "goo:crystal"
+      "amount": 15.0,
+      "type": "goo:floral"
     }
   ]
 }

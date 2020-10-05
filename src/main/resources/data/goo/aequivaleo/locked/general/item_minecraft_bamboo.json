@@ -9,7 +9,11 @@
   },
   "compounds": [
     {
-      "amount": 8.0,
+      "amount": 1.0,
+      "type": "goo:vital"
+    },
+    {
+      "amount": 7.0,
       "type": "goo:floral"
     }
   ]
