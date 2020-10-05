@@ -31,7 +31,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         super(
                 new Item.Properties()
                         .maxStackSize(1)
-                        .isBurnable()
+                        .isImmuneToFire()
                         .group(GooMod.ITEM_GROUP), 0);
     }
 

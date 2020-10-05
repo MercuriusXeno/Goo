@@ -28,7 +28,7 @@ public class ChangeItemTargetPacket implements IGooModPacket
     @Override
     public void read(PacketBuffer buf)
     {
-        worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
+        worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         pos = buf.readBlockPos();
         target = buf.readItemStack();
         newTarget = buf.readItemStack();
@@ -44,7 +44,7 @@ public class ChangeItemTargetPacket implements IGooModPacket
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
+        buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeBlockPos(pos);
         buf.writeItemStack(target);
         buf.writeItemStack(newTarget);
@@ -57,7 +57,7 @@ public class ChangeItemTargetPacket implements IGooModPacket
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
+                if (Minecraft.getInstance().world.getDimensionKey() != worldRegistryKey) {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);

@@ -26,7 +26,7 @@ public class SolidifierPoppedPacket implements IGooModPacket
     @Override
     public void read(PacketBuffer buf)
     {
-        this.worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
+        this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.vector = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
         this.nozzle = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
@@ -38,7 +38,7 @@ public class SolidifierPoppedPacket implements IGooModPacket
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
+        buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeDouble(vector.x);
         buf.writeDouble(vector.y);
         buf.writeDouble(vector.z);
@@ -53,7 +53,7 @@ public class SolidifierPoppedPacket implements IGooModPacket
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
+                if (Minecraft.getInstance().world.getDimensionKey() != worldRegistryKey) {
                     return;
                 }
                 Minecraft.getInstance().world.addParticle(ParticleTypes.SMOKE, nozzle.x, nozzle.y, nozzle.z, vector.x, vector.y, vector.z);

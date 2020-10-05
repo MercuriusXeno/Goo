@@ -442,13 +442,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return true;
     }
 
-    @Nullable
-    @Override
-    public AxisAlignedBB getCollisionBox(Entity entityIn)
-    {
-        return null;
-    }
-
     @Override
     public void writeSpawnData(PacketBuffer buffer)
     {

@@ -38,7 +38,7 @@ public class Molten
             return true;
         } else {
             BlockPos offPos = context.blockPos().offset(context.sideHit());
-            if (AbstractFireBlock.canLightBlock(context.world(), offPos)) {
+            if (AbstractFireBlock.canLightBlock(context.world(), offPos, context.sideHit())) {
                 if (!context.isRemote()) {
                     BlockState offState = AbstractFireBlock.getFireForPlacement(context.world(), offPos);
                     context.world().setBlockState(offPos, offState, 11);

@@ -198,7 +198,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         itemEntity.setMotion(spitVector.getX(), spitVector.getY(), spitVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
-        Networking.sendToClientsAround(new SolidifierPoppedPacket(this.getWorld().func_234923_W_(), getSpitVector(), getNozzleLocation()), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos );
+        Networking.sendToClientsAround(new SolidifierPoppedPacket(this.getWorld().getDimensionKey(), getSpitVector(), getNozzleLocation()), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos );
         lastItem = itemEntity;
         return EMPTY;
     }
@@ -364,7 +364,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return;
         }
 
-        Networking.sendToClientsAround(new ChangeItemTargetPacket(world.func_234923_W_(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new ChangeItemTargetPacket(world.getDimensionKey(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
     }
 
     private void changeTarget(Item item)

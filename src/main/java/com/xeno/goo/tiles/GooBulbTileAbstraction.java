@@ -96,7 +96,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         if (world == null) {
             return;
         }
-        Networking.sendToClientsAround(new GooFlowPacket(world.func_234923_W_(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new GooFlowPacket(world.getDimensionKey(), pos, verticalFillFluid, verticalFillIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
     }
 
     public void toggleVerticalFillVisuals(Fluid f)
@@ -315,7 +315,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             if (world.getServer() == null) {
                 return;
             }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+            Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
         }
     }
 
