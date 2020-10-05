@@ -9,25 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 480.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
+      "amount": 120.0,
+      "type": "goo:earthen"
     },
     {
-      "amount": 480.0,
-      "type": {
-        "namespace": "goo",
-        "path": "fungal"
-      }
+      "amount": 15.0,
+      "type": "goo:fungal"
     },
     {
       "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "chromatic"
-      }
+      "type": "goo:chromatic"
     }
   ]
 }

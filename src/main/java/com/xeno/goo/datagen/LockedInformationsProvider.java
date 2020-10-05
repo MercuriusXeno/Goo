@@ -125,7 +125,8 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.RED_SAND, earthen(180));
         saveData(Items.SAND, earthen(180));
         saveData(Items.APPLE, floral(15), vital(1));
-        saveData(Items.BAMBOO, floral(8));
+        saveData(Items.BAMBOO, floral(8), vital(1));
+        saveData(Items.STICK, floral(15));
         saveData(Items.BASALT, earthen(180), obsidian(6));
         saveData(Items.BEEF, faunal(15), vital(1));
         saveData(Items.BEETROOT, floral(15), vital(1), chromatic(240));

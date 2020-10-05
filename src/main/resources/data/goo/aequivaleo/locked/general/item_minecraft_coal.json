@@ -9,18 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 96.0,
-      "type": {
-        "namespace": "goo",
-        "path": "molten"
-      }
+      "amount": 36.0,
+      "type": "goo:energetic"
     },
     {
-      "amount": 72.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
+      "amount": 18.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 108.0,
+      "type": "goo:molten"
     }
   ]
 }

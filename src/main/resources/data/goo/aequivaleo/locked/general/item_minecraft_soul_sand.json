@@ -9,25 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "vital"
-      }
-    },
-    {
-      "amount": 720.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
-    },
-    {
       "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "decay"
-      }
+      "type": "goo:decay"
+    },
+    {
+      "amount": 180.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:vital"
     }
   ]
 }

@@ -9,25 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "floral"
-      }
-    },
-    {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "vital"
-      }
+      "amount": 5.0,
+      "type": "goo:floral"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "chromatic"
-      }
+      "type": "goo:chromatic"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }

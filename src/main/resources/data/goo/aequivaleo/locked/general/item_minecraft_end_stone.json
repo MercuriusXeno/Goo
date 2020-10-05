@@ -9,25 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "vital"
-      }
+      "amount": 5.0,
+      "type": "goo:weird"
     },
     {
-      "amount": 720.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
+      "amount": 120.0,
+      "type": "goo:earthen"
     },
     {
-      "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }

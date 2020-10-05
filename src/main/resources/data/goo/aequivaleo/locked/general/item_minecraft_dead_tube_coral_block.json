@@ -9,11 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 480.0,
-      "type": {
-        "namespace": "goo",
-        "path": "faunal"
-      }
+      "amount": 20.0,
+      "type": "goo:decay"
+    },
+    {
+      "amount": 20.0,
+      "type": "goo:faunal"
     }
   ]
 }
