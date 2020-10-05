@@ -13,12 +13,12 @@
       "type": "goo:weird"
     },
     {
-      "amount": 36.0,
-      "type": "goo:aquatic"
-    },
-    {
       "amount": 1.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 36.0,
+      "type": "goo:aquatic"
     }
   ]
 }

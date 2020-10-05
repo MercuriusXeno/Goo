@@ -17,12 +17,12 @@
       "type": "goo:vital"
     },
     {
-      "amount": 60.0,
-      "type": "goo:decay"
-    },
-    {
       "amount": 360.0,
       "type": "goo:chromatic"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:decay"
     }
   ]
 }
