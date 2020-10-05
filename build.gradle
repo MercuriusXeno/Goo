@@ -45,6 +45,8 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
+            // disable ref map so patchouli doesn't poop itself
+            properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
                     source sourceSets.main
@@ -61,6 +63,8 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
+            // disable ref map so patchouli doesn't poop itself
+            properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
                     source sourceSets.main
@@ -76,6 +80,9 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+
+            // disable ref map so patchouli doesn't poop itself
+            properties 'mixin.env.disableRefMap': 'true'
 
             args '--mod', 'goo', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources')
 
