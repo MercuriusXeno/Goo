@@ -13,12 +13,12 @@
       "type": "goo:regal"
     },
     {
-      "amount": 960.0,
-      "type": "goo:honey"
-    },
-    {
       "amount": 4.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 960.0,
+      "type": "goo:honey"
     }
   ]
 }

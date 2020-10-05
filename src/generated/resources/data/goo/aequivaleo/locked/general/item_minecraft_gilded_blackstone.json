@@ -9,20 +9,20 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "amount": 240.0,
+      "type": "goo:metal"
     },
     {
       "amount": 240.0,
       "type": "goo:earthen"
     },
     {
-      "amount": 240.0,
-      "type": "goo:obsidian"
+      "amount": 60.0,
+      "type": "goo:weird"
     },
     {
       "amount": 240.0,
-      "type": "goo:metal"
+      "type": "goo:obsidian"
     },
     {
       "amount": 240.0,

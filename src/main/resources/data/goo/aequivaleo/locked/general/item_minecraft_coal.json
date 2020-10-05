@@ -13,12 +13,12 @@
       "type": "goo:energetic"
     },
     {
-      "amount": 18.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 108.0,
       "type": "goo:molten"
+    },
+    {
+      "amount": 18.0,
+      "type": "goo:earthen"
     }
   ]
 }

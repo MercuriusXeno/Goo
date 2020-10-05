@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 180.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 120.0,
       "type": "goo:obsidian"
+    },
+    {
+      "amount": 180.0,
+      "type": "goo:earthen"
     },
     {
       "amount": 60.0,

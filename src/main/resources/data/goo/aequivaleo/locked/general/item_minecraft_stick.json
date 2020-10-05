@@ -4,17 +4,13 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:podzol"
+      "item": "minecraft:stick"
     }
   },
   "compounds": [
     {
-      "amount": 180.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 15.0,
-      "type": "goo:fungal"
+      "type": "goo:floral"
     }
   ]
 }
