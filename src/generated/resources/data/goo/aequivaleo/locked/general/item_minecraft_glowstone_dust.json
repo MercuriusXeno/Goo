@@ -9,18 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "energetic"
-      }
+      "amount": 5.0,
+      "type": "goo:weird"
     },
     {
-      "amount": 5.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "amount": 60.0,
+      "type": "goo:energetic"
     }
   ]
 }

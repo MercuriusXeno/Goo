@@ -10,10 +10,7 @@
   "compounds": [
     {
       "amount": 180.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
+      "type": "goo:earthen"
     }
   ]
 }

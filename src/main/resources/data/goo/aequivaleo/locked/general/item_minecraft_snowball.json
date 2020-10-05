@@ -10,17 +10,11 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": {
-        "namespace": "goo",
-        "path": "aquatic"
-      }
+      "type": "goo:snow"
     },
     {
       "amount": 15.0,
-      "type": {
-        "namespace": "goo",
-        "path": "snow"
-      }
+      "type": "goo:aquatic"
     }
   ]
 }

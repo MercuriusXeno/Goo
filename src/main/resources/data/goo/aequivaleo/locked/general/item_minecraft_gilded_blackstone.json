@@ -10,38 +10,23 @@
   "compounds": [
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "regal"
-      }
+      "type": "goo:metal"
     },
     {
       "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "type": "goo:weird"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "earthen"
-      }
+      "type": "goo:regal"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "metal"
-      }
+      "type": "goo:earthen"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "obsidian"
-      }
+      "type": "goo:obsidian"
     }
   ]
 }

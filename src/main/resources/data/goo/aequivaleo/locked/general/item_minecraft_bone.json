@@ -10,31 +10,19 @@
   "compounds": [
     {
       "amount": 30.0,
-      "type": {
-        "namespace": "goo",
-        "path": "faunal"
-      }
-    },
-    {
-      "amount": 360.0,
-      "type": {
-        "namespace": "goo",
-        "path": "chromatic"
-      }
-    },
-    {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "decay"
-      }
+      "type": "goo:faunal"
     },
     {
       "amount": 3.0,
-      "type": {
-        "namespace": "goo",
-        "path": "vital"
-      }
+      "type": "goo:vital"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:decay"
+    },
+    {
+      "amount": 360.0,
+      "type": "goo:chromatic"
     }
   ]
 }

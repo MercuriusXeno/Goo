@@ -10,10 +10,7 @@
   "compounds": [
     {
       "amount": 8.0,
-      "type": {
-        "namespace": "goo",
-        "path": "floral"
-      }
+      "type": "goo:floral"
     }
   ]
 }

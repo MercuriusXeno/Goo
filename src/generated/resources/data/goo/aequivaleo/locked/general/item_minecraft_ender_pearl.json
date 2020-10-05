@@ -10,10 +10,7 @@
   "compounds": [
     {
       "amount": 30.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "type": "goo:weird"
     }
   ]
 }

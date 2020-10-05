@@ -10,10 +10,7 @@
   "compounds": [
     {
       "amount": 5.0,
-      "type": {
-        "namespace": "goo",
-        "path": "fungal"
-      }
+      "type": "goo:fungal"
     }
   ]
 }

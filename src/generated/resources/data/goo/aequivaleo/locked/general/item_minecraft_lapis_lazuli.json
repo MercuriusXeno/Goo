@@ -10,24 +10,15 @@
   "compounds": [
     {
       "amount": 4.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "type": "goo:weird"
     },
     {
       "amount": 4.0,
-      "type": {
-        "namespace": "goo",
-        "path": "crystal"
-      }
+      "type": "goo:crystal"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "chromatic"
-      }
+      "type": "goo:chromatic"
     }
   ]
 }

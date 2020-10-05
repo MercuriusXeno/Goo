@@ -10,24 +10,15 @@
   "compounds": [
     {
       "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "faunal"
-      }
-    },
-    {
-      "amount": 60.0,
-      "type": {
-        "namespace": "goo",
-        "path": "aquatic"
-      }
+      "type": "goo:faunal"
     },
     {
       "amount": 240.0,
-      "type": {
-        "namespace": "goo",
-        "path": "chromatic"
-      }
+      "type": "goo:chromatic"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:aquatic"
     }
   ]
 }

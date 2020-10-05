@@ -10,10 +10,7 @@
   "compounds": [
     {
       "amount": 72.0,
-      "type": {
-        "namespace": "goo",
-        "path": "metal"
-      }
+      "type": "goo:metal"
     }
   ]
 }

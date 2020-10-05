@@ -9,25 +9,16 @@
   },
   "compounds": [
     {
+      "amount": 12.0,
+      "type": "goo:weird"
+    },
+    {
       "amount": 36.0,
-      "type": {
-        "namespace": "goo",
-        "path": "aquatic"
-      }
+      "type": "goo:aquatic"
     },
     {
       "amount": 1.0,
-      "type": {
-        "namespace": "goo",
-        "path": "crystal"
-      }
-    },
-    {
-      "amount": 12.0,
-      "type": {
-        "namespace": "goo",
-        "path": "weird"
-      }
+      "type": "goo:crystal"
     }
   ]
 }
