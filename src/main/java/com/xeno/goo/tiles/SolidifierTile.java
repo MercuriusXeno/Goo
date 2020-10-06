@@ -539,7 +539,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     public ItemStack getSolidifierStack()
     {
-        ItemStack stack = new ItemStack(BlocksRegistry.Solidier.get());
+        ItemStack stack = new ItemStack(BlocksRegistry.Solidifier.get());
 
         CompoundNBT solidifierTag = new CompoundNBT();
         write(solidifierTag);

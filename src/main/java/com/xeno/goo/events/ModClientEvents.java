@@ -56,7 +56,7 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(BlocksRegistry.GooPump.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutout());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidier.get(), RenderType.getSolid());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getSolid());
     }
 
     private static void setTileEntityRenderers()

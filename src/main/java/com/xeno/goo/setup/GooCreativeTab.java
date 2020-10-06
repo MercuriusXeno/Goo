@@ -17,7 +17,7 @@ public class GooCreativeTab extends ItemGroup
     @Override
     public ItemStack createIcon()
     {
-        return new ItemStack(BlocksRegistry.Solidier.get());
+        return new ItemStack(BlocksRegistry.Solidifier.get());
     }
 
     public static final NonNullList<ItemStack> sortedCreativeItems = NonNullList.create();

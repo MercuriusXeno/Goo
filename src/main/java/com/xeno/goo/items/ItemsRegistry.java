@@ -32,5 +32,5 @@ public class ItemsRegistry {
 
     public static final RegistryObject<Item> Crucible = Items.register("crucible", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::crucible)));
     public static final RegistryObject<Item> Mixer = Items.register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::mixer)));
-    public static final RegistryObject<Item> Solidifier = Items.register("solidifier", () -> new BlockItem(BlocksRegistry.Solidier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<Item> Solidifier = Items.register("solidifier", () -> new BlockItem(BlocksRegistry.Solidifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
 }
