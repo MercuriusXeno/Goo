@@ -9,15 +9,15 @@
   },
   "compounds": [
     {
-      "amount": 36.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 36.0,
+      "amount": 32.0,
       "type": "goo:energetic"
     },
     {
-      "amount": 108.0,
+      "amount": 32.0,
+      "type": "goo:floral"
+    },
+    {
+      "amount": 128.0,
       "type": "goo:molten"
     }
   ]
