@@ -11,6 +11,8 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeClientEvents
 {
+    private static final String EVENT_PHASE_FOR_OVERLAY_INJECTION = "ALL";
+
     @SubscribeEvent
     public static void onDrawTooltip(ItemTooltipEvent event) {
         TooltipHandler.onDraw(event);
@@ -23,6 +25,9 @@ public class ForgeClientEvents
 
     @SubscribeEvent
     public static void onGameOverlay(RenderGameOverlayEvent.Post event) {
+        if (!event.getType().name().equals(EVENT_PHASE_FOR_OVERLAY_INJECTION)) {
+            return;
+        }
         TooltipHandler.onGameOverlay(event);
     }
 }

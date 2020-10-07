@@ -9,11 +9,11 @@
   },
   "compounds": [
     {
-      "amount": 120.0,
+      "amount": 40.0,
       "type": "goo:honey"
     },
     {
-      "amount": 24.0,
+      "amount": 32.0,
       "type": "goo:regal"
     }
   ]
