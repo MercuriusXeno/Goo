@@ -57,23 +57,26 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
             if (model == null) {
                 return;
             }
-            matrices.push();
-            // translate to center
-            matrices.translate(0.5D, 0.15625D, 0.5D);
-            // translate
-            Vector3d vecOrient = this.getRenderOffset(tile, partialTicks);
-            matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
-            // rotate
-            Direction direction = tile.getHorizontalFacing();
-            matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(direction.getHorizontalIndex() * 90)));
-            // scale
-            Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.0001f);
-            // special scaling that doesn't scale the normals, prevents weird lighting issues.
-            MatrixStack.Entry last = matrices.getLast();
-            last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
+            for (Direction d : Direction.values()) {
+                if (d == Direction.UP || d == Direction.DOWN) {
+                    continue;
+                }
+                matrices.push();
+                // translate to center
+                matrices.translate(0.5D, 0.15625D, 0.5D);
+                // translate
+                Vector3d vecOrient = renderVec.get(d);
+                matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
+                matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(d.getHorizontalIndex() * 90)));
+                // scale
+                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.0001f);
+                // special scaling that doesn't scale the normals, prevents weird lighting issues.
+                MatrixStack.Entry last = matrices.getLast();
+                last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-            Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
-            matrices.pop();
+                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+                matrices.pop();
+            }
         }
     }
 
@@ -83,13 +86,5 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
         renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.5001D));
         renderVec.put(Direction.EAST, new Vector3d(0.5001D, 0D, 0D));
         renderVec.put(Direction.WEST, new Vector3d(-0.5001D, 0D, 0D));
-    }
-
-    private Vector3d getRenderOffset(SolidifierTile entityIn, float partialTicks)
-    {
-        if (!renderVec.containsKey(entityIn.getHorizontalFacing())) {
-            return Vector3d.ZERO;
-        }
-        return renderVec.get(entityIn.getHorizontalFacing());
     }
 }

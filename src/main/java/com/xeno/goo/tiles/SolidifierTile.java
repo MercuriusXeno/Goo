@@ -74,6 +74,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         fluidBuffer = new HashMap<>();
     }
 
+    public Map<String, Double> fluidBuffer() {
+        return fluidBuffer;
+    }
+
     @Override
     public void tick() {
         handleTargetChangingCountdown();
@@ -434,24 +438,6 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
     }
 
-    private static Map<String, Double> deserializeGooForDisplay(CompoundNBT tag)
-    {
-        Map<String, Double> unsorted = new HashMap<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            String key = gooTag.getString("key");
-            double value = gooTag.getDouble("value");
-            unsorted.put(key, value);
-        }
-
-        Map<String, Double> sorted = new LinkedHashMap<>();
-        unsorted.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .forEachOrdered(x -> sorted.put(x.getKey(), x.getValue()));
-
-        return sorted;
-    }
-
     private CompoundNBT serializeItems()
     {
         CompoundNBT itemTag = new CompoundNBT();
@@ -487,43 +473,6 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
 
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-
-        if (bulbTag.contains("goo")) {
-            CompoundNBT gooTag = bulbTag.getCompound("goo");
-            Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
-            int index = 0;
-            int displayIndex = 0;
-            IFormattableTextComponent fluidAmount = null;
-
-            if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
-                tooltip.add(new TranslationTextComponent("tooltip.goo.goo_in_buffer"));
-            }
-
-            for(Map.Entry<String, Double> v : sortedValues.entrySet()) {
-                index++;
-                if (v.getValue() == 0D) {
-                    continue;
-                }
-                String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getValue()) + " mB";
-                String key = v.getKey();
-                String fluidTranslationKey = Registry.getFluidTranslationKey(key);
-                if (fluidTranslationKey == null) {
-                    continue;
-                }
-                displayIndex++;
-                if (displayIndex % 2 == 1) {
-                    fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
-                } else {
-                    if (fluidAmount != null) {
-                        fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
-                    }
-                }
-                if (displayIndex % 2 == 0 || index == sortedValues.size()) {
-                    tooltip.add(fluidAmount);
-                }
-            }
-        }
 
         if (bulbTag.contains("items")) {
             CompoundNBT gooTag = bulbTag.getCompound("items");
