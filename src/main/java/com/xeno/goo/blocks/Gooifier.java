@@ -2,6 +2,7 @@ package com.xeno.goo.blocks;
 
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -138,18 +139,14 @@ public class Gooifier extends BlockWithConnections {
     }
 
     @Override
-    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
-    {
-        super.addInformation(stack, worldIn, tooltip, flagIn);
-        GooifierTile.addInformation(stack, tooltip);
-    }
-
-    @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof GooifierTile) {
             GooifierTile gooifier = (GooifierTile)te;
             if (!world.isRemote) {
+                if (player.isCreative() && ((GooifierTile) te).getTotalGoo() == 0d) {
+                    return;
+                }
                 gooifier.spewItems();
                 ItemStack stack = gooifier.getGooifierStack();
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);

@@ -3,6 +3,7 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
+import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -128,6 +129,9 @@ public class Crucible extends BlockWithConnections {
         if (te instanceof CrucibleTile) {
             CrucibleTile crucible = (CrucibleTile)te;
             if (!world.isRemote) {
+                if (player.isCreative() && ((CrucibleTile) te).getTotalGoo() == 0) {
+                    return;
+                }
                 ItemStack stack = crucible.getCrucibleStack(this);
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();

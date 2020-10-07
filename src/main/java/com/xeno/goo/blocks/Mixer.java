@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -134,6 +135,9 @@ public class Mixer extends BlockWithConnections
         if (te instanceof MixerTile) {
             MixerTile mixer = (MixerTile) te;
             if (!world.isRemote) {
+                if (player.isCreative() && ((MixerTile) te).getTotalGoo() == 0) {
+                    return;
+                }
                 ItemStack stack = mixer.mixerStack(this);
                 ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
                 itemEntity.setDefaultPickupDelay();

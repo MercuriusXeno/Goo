@@ -333,4 +333,10 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     {
         return isRightSideMostly(hitVec, face) ? rightHandler : leftHandler;
     }
+
+    public int getTotalGoo() {
+        int[] total = {0};
+        goo().forEach((g) -> total[0] += g.getAmount());
+        return total[0];
+    }
 }

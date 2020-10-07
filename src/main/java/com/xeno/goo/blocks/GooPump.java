@@ -1,15 +1,19 @@
 package com.xeno.goo.blocks;
 
 import com.xeno.goo.client.render.PumpRenderMode;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.GooPumpTile;
+import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SlabBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
@@ -214,5 +218,19 @@ public class GooPump extends BlockWithConnections
     protected Direction[] relevantConnectionDirections(BlockState state)
     {
         return RELEVANT_DIRECTIONS.get(state.get(FACING));
+    }
+
+    @Override
+    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        if (!world.isRemote) {
+            if (player.isCreative()) {
+                return;
+            }
+            ItemStack stack = new ItemStack(ItemsRegistry.GooPump.get());
+            ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
+            itemEntity.setDefaultPickupDelay();
+            world.addEntity(itemEntity);
+        }
+        super.onBlockHarvested(world, pos, state, player);
     }
 }

@@ -219,7 +219,11 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
                 continue;
             }
 
-            FluidStack result = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+            if (filled < simulatedDrain.getAmount()) {
+                simulatedDrain.setAmount(filled);
+            }
+
+            FluidStack result = sourceHandler.drain(simulatedDrain, IFluidHandler.FluidAction.EXECUTE);
             toggleVerticalFillVisuals(result.getFluid());
 
             // pump for real though

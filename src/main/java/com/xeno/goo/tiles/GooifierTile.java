@@ -94,6 +94,16 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         return mapping;
     }
 
+    public double getTotalGoo() {
+        double[] total = {0d};
+        fluidBuffer.forEach((k, v) -> total[0] += v);
+        return total[0];
+    }
+
+    public Map<String, Double> fluidBuffer() {
+        return fluidBuffer;
+    }
+
     private class DistributionState {
         boolean isFirstPass;
         int workRemaining;
@@ -328,24 +338,6 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         }
     }
 
-    private static Map<String, Double> deserializeGooForDisplay(CompoundNBT tag)
-    {
-        Map<String, Double> unsorted = new HashMap<>();
-        int size = tag.getInt("count");
-        for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            String key = gooTag.getString("key");
-            double value = gooTag.getDouble("value");
-            unsorted.put(key, value);
-        }
-
-        Map<String, Double> sorted = new LinkedHashMap<>();
-        unsorted.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .forEachOrdered(x -> sorted.put(x.getKey(), x.getValue()));
-
-        return sorted;
-    }
-
     private void deserializeItems(CompoundNBT tag)
     {
         CompoundNBT itemTag = tag.getCompound("items");
@@ -398,58 +390,5 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         stack.setTag(stackTag);
 
         return stack;
-    }
-
-    // gooifier itemstack retains its buffer, if it had anything in the buffer that wasn't pumped out yet.
-    public static void addInformation(ItemStack stack, List<ITextComponent> tooltip)
-    {
-        CompoundNBT stackTag = stack.getTag();
-        if (stackTag == null) {
-            return;
-        }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return;
-        }
-
-        CompoundNBT gooTag = bulbTag.getCompound("goo");
-        Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
-        int index = 0;
-        int displayIndex = 0;
-        IFormattableTextComponent fluidAmount = null;
-
-        if (sortedValues.entrySet().stream().anyMatch((kv) -> kv.getValue() > 0)) {
-            tooltip.add(new TranslationTextComponent("tooltip.goo.goo_in_buffer"));
-        }
-
-        for(Map.Entry<String, Double> v : sortedValues.entrySet()) {
-            index++;
-            if (v.getValue() == 0D) {
-                continue;
-            }
-            String decimalValue = " " + NumberFormat.getNumberInstance(Locale.ROOT).format(v.getValue()) + " mB";
-            String key = v.getKey();
-            String fluidTranslationKey = Registry.getFluidTranslationKey(key);
-            if (fluidTranslationKey == null) {
-                continue;
-            }
-            displayIndex++;
-            if (displayIndex % 2 == 1) {
-                fluidAmount = new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue);
-            } else {
-                if (fluidAmount != null) {
-                    fluidAmount = fluidAmount.appendString(", ").append(new TranslationTextComponent(fluidTranslationKey).appendString(decimalValue));
-                }
-            }
-            if (displayIndex % 2 == 0 || index == sortedValues.size()) {
-                tooltip.add(fluidAmount);
-            }
-        }
     }
 }
