@@ -20,6 +20,14 @@ apply plugin: 'maven-publish'
 version = "${project.exactMinecraftVersion}-${project.modVersion}"
 group = modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
+sourceSets.main {
+    resources {
+        include '**/**'
+        srcDirs += "$rootDir/src/generated/resources"
+        exclude '.cache'
+    }
+}
+
 minecraft {
     // The mappings can be changed at any time, and must be in the following format.
     // snapshot_YYYYMMDD   Snapshot are built nightly.
@@ -47,7 +55,7 @@ minecraft {
 
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
@@ -63,7 +71,7 @@ minecraft {
 
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
@@ -77,11 +85,13 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
-            args '--mod', 'goo', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources')
+            args '--all', '--output', file('src/generated/resources/'),
+                    '--reports',
+                    '--mod', 'transport', '--existing', sourceSets.main.resources.srcDirs[0]
 
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
