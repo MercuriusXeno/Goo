@@ -82,6 +82,6 @@ public class Containment extends Enchantment
     @Override
     public int getMinLevel()
     {
-        return 0;
+        return 1;
     }
 }
