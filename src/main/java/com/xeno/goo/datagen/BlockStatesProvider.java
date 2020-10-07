@@ -395,7 +395,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         modelActive.texture("side_on", side_on);
         modelActive.texture("front_on", front_on);
         modelActive.texture("back_on", back_on);
-        horizontalBlock(BlocksRegistry.Solidier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.Solidier.get(), modelInactive);
+        horizontalBlock(BlocksRegistry.Solidifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
     }
 }

@@ -120,7 +120,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Solidier.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Solidifier.get())
                 .patternLine("ro ")
                 .patternLine("nxp")
                 .patternLine("o#o")
