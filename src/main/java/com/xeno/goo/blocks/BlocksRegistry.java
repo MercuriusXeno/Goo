@@ -21,5 +21,5 @@ public class BlocksRegistry {
 
     public static final RegistryObject<Mixer> Mixer = Blocks.register("mixer", Mixer::new);
     public static final RegistryObject<Crucible> Crucible = Blocks.register("crucible", Crucible::new);
-    public static final RegistryObject<Solidifier> Solidier = Blocks.register("solidifier", Solidifier::new);
+    public static final RegistryObject<Solidifier> Solidifier = Blocks.register("solidifier", Solidifier::new);
 }

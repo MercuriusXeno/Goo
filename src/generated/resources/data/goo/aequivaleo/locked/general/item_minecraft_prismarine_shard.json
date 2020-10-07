@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 36.0,
-      "type": "goo:aquatic"
-    },
-    {
       "amount": 12.0,
       "type": "goo:weird"
+    },
+    {
+      "amount": 36.0,
+      "type": "goo:aquatic"
     },
     {
       "amount": 1.0,

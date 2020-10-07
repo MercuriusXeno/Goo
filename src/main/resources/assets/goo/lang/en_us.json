@@ -17,8 +17,7 @@
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Basin",
 
-  "enchantment.goo.holding": "Containment",
-  "enchantment.goo.geomancy": "Geomancy",
+  "enchantment.goo.containment": "Containment",
 
   "fluid.goo.aquatic_goo": "Aquatic",
   "fluid.goo.chromatic_goo": "Chromatic",

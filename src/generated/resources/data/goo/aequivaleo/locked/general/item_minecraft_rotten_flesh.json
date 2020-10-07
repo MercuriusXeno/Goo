@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:decay"
+      "amount": 5.0,
+      "type": "goo:faunal"
     },
     {
       "amount": 60.0,
-      "type": "goo:faunal"
+      "type": "goo:decay"
     }
   ]
 }

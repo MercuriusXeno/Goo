@@ -10,7 +10,7 @@
   "compounds": [
     {
       "amount": 240.0,
-      "type": "goo:metal"
+      "type": "goo:regal"
     },
     {
       "amount": 240.0,
@@ -25,8 +25,8 @@
       "type": "goo:obsidian"
     },
     {
-      "amount": 240.0,
-      "type": "goo:regal"
+      "amount": 60.0,
+      "type": "goo:weird"
     }
   ]
 }
