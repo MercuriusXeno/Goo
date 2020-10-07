@@ -26,15 +26,15 @@ public class Equivalencies
     }
 
     public static void resetFurnaceProducts(World world) {
-        furnaceProducts.put(world.func_234923_W_(), Sets.newHashSet(furnaceRecipes(world).stream().map(r -> r.getRecipeOutput().getItem()).collect(Collectors.toList())));
+        furnaceProducts.put(world.getDimensionKey(), Sets.newHashSet(furnaceRecipes(world).stream().map(r -> r.getRecipeOutput().getItem()).collect(Collectors.toList())));
     }
 
     public static Map<ICompoundContainer<?>, ImmutableSet<CompoundInstance>> locked(World world) {
-        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.func_234923_W_()).get();
+        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.getDimensionKey()).get();
     }
 
     public static IResultsInformationCache cache(World world) {
-        return IAequivaleoAPI.getInstance().getResultsInformationCache(world.func_234923_W_());
+        return IAequivaleoAPI.getInstance().getResultsInformationCache(world.getDimensionKey());
     }
 
     public static GooEntry getEntry(World entityWorld, Item item)
@@ -50,6 +50,6 @@ public class Equivalencies
 
     public static boolean isSmelted(World world, Item item)
     {
-        return furnaceProducts.containsKey(world.func_234923_W_()) && furnaceProducts.get(world.func_234923_W_()).stream().anyMatch(p -> p.asItem().equals(item));
+        return furnaceProducts.containsKey(world.getDimensionKey()) && furnaceProducts.get(world.getDimensionKey()).stream().anyMatch(p -> p.asItem().equals(item));
     }
 }

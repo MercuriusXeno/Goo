@@ -26,7 +26,7 @@ public class FluidUpdatePacket implements IGooModPacket {
     }
 
     public void read(PacketBuffer buf) {
-        this.worldRegistryKey = RegistryKey.func_240903_a_(Registry.WORLD_KEY, buf.readResourceLocation());
+        this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.pos = buf.readBlockPos();
         this.indexes = buf.readInt();
         this.fluids = new ArrayList<>();
@@ -44,7 +44,7 @@ public class FluidUpdatePacket implements IGooModPacket {
     }
 
     public void toBytes(PacketBuffer buf) {
-        buf.writeResourceLocation(worldRegistryKey.func_240901_a_());
+        buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeBlockPos(pos);
         buf.writeInt(indexes);
         for(int i = 0; i < indexes; i++) {
@@ -58,7 +58,7 @@ public class FluidUpdatePacket implements IGooModPacket {
                 if (Minecraft.getInstance().world == null) {
                     return;
                 }
-                if (Minecraft.getInstance().world.func_234923_W_() != worldRegistryKey) {
+                if (Minecraft.getInstance().world.getDimensionKey() != worldRegistryKey) {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);

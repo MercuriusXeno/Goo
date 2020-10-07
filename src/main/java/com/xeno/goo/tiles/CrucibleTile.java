@@ -144,7 +144,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
             if (world.getServer() == null) {
                 return;
             }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.func_234923_W_(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+            Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
         }
     }
 

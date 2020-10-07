@@ -203,9 +203,9 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
         }
 
         @Override
-        public IBakedModel func_239290_a_(IBakedModel originalModel, ItemStack stack, ClientWorld world, LivingEntity entity)
+        public IBakedModel getOverrideModel(IBakedModel originalModel, ItemStack stack, ClientWorld world, LivingEntity entity)
         {
-            IBakedModel overridden = nested.func_239290_a_(originalModel, stack, world, entity);
+            IBakedModel overridden = nested.getOverrideModel(originalModel, stack, world, entity);
             if (overridden != originalModel) return overridden;
             return FluidUtil.getFluidContained(stack)
                     .map(fluidStack -> {

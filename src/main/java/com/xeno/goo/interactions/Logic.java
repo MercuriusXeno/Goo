@@ -112,7 +112,7 @@ public class Logic
                 doLeverParticles(newState, world, pos, 1.0F);
             }
         } else {
-            button.func_226910_d_(state, world, pos);
+            button.powerBlock(state, world, pos);
             SoundEvent stoneOrWood = button instanceof StoneButtonBlock ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON
                     : SoundEvents.BLOCK_WOODEN_BUTTON_CLICK_ON;
             AudioHelper.headlessAudioEvent(world, pos, stoneOrWood, SoundCategory.BLOCKS, 0.3F,

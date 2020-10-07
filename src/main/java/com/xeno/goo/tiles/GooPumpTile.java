@@ -131,7 +131,7 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
         if (this.animationFrames == 0) {
             animationFrames = DEFAULT_ANIMATION_FRAMES;
         }
-        Networking.sendToClientsAround(new GooFlowPacket(world.func_234923_W_(), pos, pumpFluid, flowIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new GooFlowPacket(world.getDimensionKey(), pos, pumpFluid, flowIntensity), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
     }
 
     @Override
@@ -314,7 +314,7 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             return;
         }
 
-        Networking.sendToClientsAround(new ChangeItemTargetPacket(world.func_234923_W_(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.func_234923_W_())), pos);
+        Networking.sendToClientsAround(new ChangeItemTargetPacket(world.getDimensionKey(), pos, targetStack, newTargetStack, changeTargetTimer), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
     }
 
     private void changeTarget(Item item)
