@@ -25,8 +25,6 @@ public class GooConfig
     private ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
 
     public GooConfig() {
-        FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(GooMod.MOD_ID), GooMod.MOD_ID);
-
         setupGeneralMachineConfig();
 
         finalizeServerConfig();

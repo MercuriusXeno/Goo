@@ -20,6 +20,14 @@ apply plugin: 'maven-publish'
 version = "${project.exactMinecraftVersion}-${project.modVersion}"
 group = modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 
+sourceSets.main {
+    resources {
+        include '**/**'
+        srcDirs += "$rootDir/src/generated/resources"
+        exclude '.cache'
+    }
+}
+
 minecraft {
     // The mappings can be changed at any time, and must be in the following format.
     // snapshot_YYYYMMDD   Snapshot are built nightly.
@@ -49,7 +57,7 @@ minecraft {
             properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
@@ -67,7 +75,7 @@ minecraft {
             properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
@@ -83,12 +91,13 @@ minecraft {
 
             // disable ref map so patchouli doesn't poop itself
             properties 'mixin.env.disableRefMap': 'true'
-
-            args '--mod', 'goo', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources')
+            args '--all', '--output', file('src/generated/resources/'),
+                    '--reports',
+                    '--mod', 'transport', '--existing', sourceSets.main.resources.srcDirs[0]
 
             mods {
                 goo {
-                    source sourceSets.main
+                    source(sourceSets.main)
                 }
             }
         }
