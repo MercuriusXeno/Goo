@@ -5,9 +5,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.blocks.Crucible;
-import com.xeno.goo.blocks.GooBulbAbstraction;
-import com.xeno.goo.blocks.Mixer;
+import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
@@ -18,8 +16,11 @@ import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import com.xeno.goo.tiles.GooifierTile;
+import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.recipebook.GhostRecipe;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -27,6 +28,8 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -190,6 +193,7 @@ public class TooltipHandler
 
     private static Set<Item> GOO_CONTAINERS = new HashSet<>();
     private static Set<Item> GOO_ITEM_CONTAINERS = new HashSet<>();
+    private static Set<Item> GOO_DOUBLE_MAPS = new HashSet<>();
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
@@ -207,16 +211,28 @@ public class TooltipHandler
                 )
         );
     }
+    private static void initializeGooDoubleMaps() {
+        GOO_DOUBLE_MAPS.addAll(
+                Sets.newHashSet(
+                        ItemsRegistry.Gooifier.get(),
+                        ItemsRegistry.Solidifier.get()
+                )
+        );
+    }
 
     private static boolean hasGooContents()
     {
+        if (GOO_DOUBLE_MAPS.size() == 0) {
+            initializeGooDoubleMaps();
+        }
         if (GOO_CONTAINERS.size() == 0) {
             initializeGooContainers();
         }
         if (GOO_ITEM_CONTAINERS.size() == 0) {
             initializeGooItemContainers();
         }
-        return GOO_CONTAINERS.contains(currentStack.getItem()) || GOO_ITEM_CONTAINERS.contains(currentStack.getItem());
+        return GOO_CONTAINERS.contains(currentStack.getItem()) || GOO_ITEM_CONTAINERS.contains(currentStack.getItem())
+                || GOO_DOUBLE_MAPS.contains(currentStack.getItem());
     }
 
     // some client side caching to speed things up a little.
@@ -274,7 +290,9 @@ public class TooltipHandler
             lastStack = currentStack;
             lastGooEntry = new ArrayList<>();
             if (!tryFetchingGooContentsAsItem()) {
-                tryFetchingGooContentsAsGooContainerAbstraction();
+                if (!tryFetchingGooContentsAsDoubleMap()) {
+                    tryFetchingGooContentsAsGooContainerAbstraction();
+                }
             }
             return lastGooEntry;
         }
@@ -512,13 +530,76 @@ public class TooltipHandler
         BlockState state = world.getBlockState(target.getPos());
         if (hasGooContents(state)) {
             TileEntity t = world.getTileEntity(target.getPos());
-            if (!(t instanceof GooContainerAbstraction)) {
-                return false;
+            if (t instanceof GooContainerAbstraction) {
+                renderGooContents(event, target, (GooContainerAbstraction)t);
+                return true;
             }
-            renderGooContents(event, target, (GooContainerAbstraction)t);
-            return true;
+            return false;
         }
         return false;
+    }
+
+    private static Map<String, Double> deserializeGooForDisplay(CompoundNBT tag)
+    {
+        Map<String, Double> unsorted = new HashMap<>();
+        int size = tag.getInt("count");
+        for(int i = 0; i < size; i++) {
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            String key = gooTag.getString("key");
+            double value = gooTag.getDouble("value");
+            unsorted.put(key, value);
+        }
+
+        Map<String, Double> sorted = new LinkedHashMap<>();
+        unsorted.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> sorted.put(x.getKey(), x.getValue()));
+
+        return sorted;
+    }
+
+    private static boolean tryFetchingGooContentsAsDoubleMap()
+    {
+        if (!currentStack.getItem().equals(ItemsRegistry.Gooifier.get())
+        && !currentStack.getItem().equals(ItemsRegistry.Solidifier.get())) {
+            return false;
+        }
+
+        CompoundNBT stackTag = currentStack.getTag();
+        if (stackTag == null) {
+            return false;
+        }
+
+        if (!stackTag.contains("BlockEntityTag")) {
+            return false;
+        }
+
+        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
+
+        if (!bulbTag.contains("goo")) {
+            return false;
+        }
+
+        CompoundNBT gooTag = bulbTag.getCompound("goo");
+        Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
+
+        List<FluidStack> gooEntryForDisplay = new ArrayList<>();
+
+        for(Map.Entry<String, Double> v : sortedValues.entrySet()) {
+            if (v.getValue() == 0D) {
+                continue;
+            }
+
+            Fluid fluid = Registry.getFluid(v.getKey());
+            if (fluid == null || fluid.equals(Fluids.EMPTY)) {
+                continue;
+            }
+            int fluidAmount = (int)Math.ceil(v.getValue());
+            gooEntryForDisplay.add(new FluidStack(fluid, fluidAmount));
+        }
+
+        lastGooEntry.addAll(gooEntryForDisplay);
+        lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
+        return true;
     }
 
     private static void renderGooContents(RenderGameOverlayEvent.Post event, BlockRayTraceResult target, GooContainerAbstraction e)
@@ -574,7 +655,9 @@ public class TooltipHandler
     {
         return state.getBlock() instanceof GooBulbAbstraction
                 || state.getBlock() instanceof Mixer
-                || state.getBlock() instanceof Crucible;
+                || state.getBlock() instanceof Crucible
+                || state.getBlock() instanceof Solidifier
+                || state.getBlock() instanceof Gooifier;
     }
 
     private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)

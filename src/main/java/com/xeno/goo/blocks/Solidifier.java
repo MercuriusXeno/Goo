@@ -20,6 +20,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
@@ -56,9 +57,6 @@ public class Solidifier extends BlockWithConnections {
     public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
     {
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        if (Screen.hasShiftDown()) {
-            return;
-        }
         SolidifierTile.addInformation(stack, tooltip);
     }
 
@@ -153,11 +151,9 @@ public class Solidifier extends BlockWithConnections {
         }
 
         if (worldIn != null) {
-            // ignore all hits other than north facing hit.
-            if (hit.getFace() != state.get(BlockStateProperties.HORIZONTAL_FACING)) {
+            if (!isInItemFrameBounds(hit)) {
                 return ActionResultType.SUCCESS;
             }
-
             TileEntity tile = worldIn.getTileEntity(pos);
             if (!(tile instanceof SolidifierTile)) {
                 return ActionResultType.SUCCESS;
@@ -174,5 +170,31 @@ public class Solidifier extends BlockWithConnections {
             return ActionResultType.PASS;
         }
         return ActionResultType.SUCCESS;
+    }
+
+    private static final float horizontalStart = 0.3125f;
+    private static final float horizontalEnd = 0.6875f;
+    private static final float verticalStart = 0f;
+    private static final float verticalEnd = 0.3125f;
+    private boolean isInItemFrameBounds(BlockRayTraceResult hit) {
+        Direction side = hit.getFace();
+        if (side == Direction.UP || side == Direction.DOWN) {
+            return false;
+        }
+        // 'zero out' the hitvec so that we're comparing sort of raw unit values.
+        Vector3d adjustedHitVec = hit.getHitVec().add(-hit.getPos().getX(), -hit.getPos().getY(),
+                -hit.getPos().getZ());
+        // the item frame bounds are between width (x or z) of 0.3125 to 0.6875
+        // and height (y) of 0 to 0.3125
+        Direction.Axis axis = side.getAxis();
+        if (axis == Axis.Z) {
+            return isHitInBounds(adjustedHitVec.x, adjustedHitVec.y);
+        } else {
+            return isHitInBounds(adjustedHitVec.z, adjustedHitVec.y);
+        }
+    }
+
+    private boolean isHitInBounds(double z, double y) {
+        return z >= horizontalStart && z <= horizontalEnd && y >= verticalStart && y <= verticalEnd;
     }
 }

@@ -139,13 +139,6 @@ public class Gooifier extends BlockWithConnections {
     }
 
     @Override
-    public void addInformation(ItemStack stack, IBlockReader worldIn, List<ITextComponent> tooltip, ITooltipFlag flagIn)
-    {
-        super.addInformation(stack, worldIn, tooltip, flagIn);
-        GooifierTile.addInformation(stack, tooltip);
-    }
-
-    @Override
     public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         TileEntity te = world.getTileEntity(pos);
         if (te instanceof GooifierTile) {
