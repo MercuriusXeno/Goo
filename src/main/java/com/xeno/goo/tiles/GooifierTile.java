@@ -94,6 +94,12 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         return mapping;
     }
 
+    public double getTotalGoo() {
+        double[] total = {0d};
+        fluidBuffer.forEach((k, v) -> total[0] += v);
+        return total[0];
+    }
+
     private class DistributionState {
         boolean isFirstPass;
         int workRemaining;

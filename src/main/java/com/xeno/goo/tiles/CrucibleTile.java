@@ -235,4 +235,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     {
         return fluidHandler;
     }
+
+    public int getTotalGoo() {
+        int[] total = {0};
+        goo().forEach((g) -> total[0] += g.getAmount());
+        return total[0];
+    }
 }
