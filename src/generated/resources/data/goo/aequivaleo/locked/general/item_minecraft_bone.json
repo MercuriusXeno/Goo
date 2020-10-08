@@ -17,12 +17,12 @@
       "type": "goo:vital"
     },
     {
-      "amount": 360.0,
-      "type": "goo:chromatic"
-    },
-    {
       "amount": 30.0,
       "type": "goo:faunal"
+    },
+    {
+      "amount": 360.0,
+      "type": "goo:chromatic"
     }
   ]
 }

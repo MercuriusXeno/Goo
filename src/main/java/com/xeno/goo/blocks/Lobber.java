@@ -6,6 +6,7 @@ import com.xeno.goo.tiles.GooPumpTile;
 import com.xeno.goo.tiles.LobberTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.DispenserBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.item.ItemEntity;
@@ -16,6 +17,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
@@ -29,11 +31,13 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static net.minecraft.state.properties.BlockStateProperties.FACING;
+import static net.minecraft.state.properties.BlockStateProperties.POWERED;
 
 public class Lobber extends BlockWithConnections
 {
@@ -43,6 +47,29 @@ public class Lobber extends BlockWithConnections
                 .sound(SoundType.STONE)
                 .hardnessAndResistance(1.0f)
         );
+        setDefaultState(this.getDefaultState()
+                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.FACING, Direction.NORTH)
+        );
+    }
+
+    @Override
+    public boolean canConnectRedstone(BlockState state, IBlockReader world, BlockPos pos, @Nullable Direction side) {
+        return true;
+    }
+
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
+        if (!worldIn.isRemote) {
+            boolean flag = state.get(BlockStateProperties.POWERED);
+            if (flag != worldIn.isBlockPowered(pos)) {
+                if (flag) {
+                    worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
+                } else {
+                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                }
+            }
+        }
     }
 
     @Override
@@ -60,12 +87,14 @@ public class Lobber extends BlockWithConnections
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(FACING, context.getFace().getOpposite());
+                .with(BlockStateProperties.POWERED, false)
+                .with(FACING, context.getNearestLookingDirection().getOpposite());
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+
+        builder.add(POWERED).add(FACING);
     }
 
     @Override

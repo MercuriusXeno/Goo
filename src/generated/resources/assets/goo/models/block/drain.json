@@ -19,22 +19,10 @@
       ],
       "faces": {
         "down": {
-          "texture": "#top",
-          "uv": [
-            0.0,
-            0.0,
-            16.0,
-            0.0
-          ]
+          "texture": "#top"
         },
         "up": {
-          "texture": "#top",
-          "uv": [
-            0.0,
-            0.0,
-            16.0,
-            0.0
-          ]
+          "texture": "#top"
         },
         "north": {
           "texture": "#side",

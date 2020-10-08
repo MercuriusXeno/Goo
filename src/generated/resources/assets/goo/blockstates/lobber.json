@@ -1,27 +1,53 @@
 {
   "variants": {
-    "facing=down": {
+    "facing=down,powered=false": {
       "model": "goo:block/lobber",
       "x": 180
     },
-    "facing=up": {
+    "facing=up,powered=false": {
       "model": "goo:block/lobber"
     },
-    "facing=north": {
+    "facing=north,powered=false": {
       "model": "goo:block/lobber",
       "x": 90
     },
-    "facing=south": {
+    "facing=south,powered=false": {
       "model": "goo:block/lobber",
       "x": 90,
       "y": 180
     },
-    "facing=west": {
+    "facing=west,powered=false": {
       "model": "goo:block/lobber",
       "x": 90,
       "y": 270
     },
-    "facing=east": {
+    "facing=east,powered=false": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 90
+    },
+    "facing=down,powered=true": {
+      "model": "goo:block/lobber",
+      "x": 180
+    },
+    "facing=up,powered=true": {
+      "model": "goo:block/lobber"
+    },
+    "facing=north,powered=true": {
+      "model": "goo:block/lobber",
+      "x": 90
+    },
+    "facing=south,powered=true": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,powered=true": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,powered=true": {
       "model": "goo:block/lobber",
       "x": 90,
       "y": 90

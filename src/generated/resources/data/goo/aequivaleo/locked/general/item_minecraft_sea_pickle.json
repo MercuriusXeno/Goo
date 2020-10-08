@@ -9,16 +9,16 @@
   },
   "compounds": [
     {
+      "amount": 30.0,
+      "type": "goo:faunal"
+    },
+    {
       "amount": 60.0,
       "type": "goo:aquatic"
     },
     {
       "amount": 240.0,
       "type": "goo:chromatic"
-    },
-    {
-      "amount": 30.0,
-      "type": "goo:faunal"
     }
   ]
 }
