@@ -41,165 +41,29 @@ public class GauntletAbstraction extends ItemFluidContainer
         return new GauntletAbstractionCapability(stack);
     }
 
-    @Override
-    public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context)
-    {
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
+    public static void tryLobbingGoo(PlayerEntity player) {
+        if (player.getEntityWorld().isRemote()) {
+            return;
+        }
+
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(Hand.MAIN_HAND));
         if (cap == null) {
-            return ActionResultType.PASS;
-        }
-
-        ActionResultType result = tryBlockInteraction(cap, context);
-        return result;
-    }
-
-    private ActionResultType tryBlockInteraction(IFluidHandlerItem cap, ItemUseContext context)
-    {
-        TileEntity t = context.getWorld().getTileEntity(context.getPos());
-        if (!(t instanceof GooContainerAbstraction)) {
-            return ActionResultType.PASS;
-        }
-
-        // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
-        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.GAUNTLET);
-
-        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(context.getHitVec(), context.getFace(), RayTraceTargetSource.GAUNTLET);
-        // if cap is empty try a drain.
-        if (cap.getFluidInTank(0).isEmpty()) {
-            return tryCoatingBareGauntlet(context.getWorld(), context.getHitVec(), context.getPlayer(), cap, tileCap, hitFluid);
-        }
-
-        boolean isAltBehavior = context.getPlayer() != null && context.getPlayer().isSneaking();
-
-        // the fluid we contain isn't the type hit or it is, but our receptacle is full so the intent is inverted.
-        if (!isAltBehavior || !cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.getFluidInTank(0).getAmount() == cap.getTankCapacity(0)) {
-            return tryFillingGooContainer(context.getWorld(), context.getHitVec(), context.getPlayer(), cap, tileCap, hitFluid);
-        }
-
-        return tryCoatingGauntletWithSameFluid(context.getWorld(), context.getHitVec(), context.getPlayer(), cap, tileCap, hitFluid);
-    }
-
-    private ActionResultType tryFillingGooContainer(World world, Vector3d pos, PlayerEntity player,
-            IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
-    {
-        FluidStack sendingFluid = cap.getFluidInTank(0).copy();
-        int amountSent = tileCap.fill(sendingFluid, IFluidHandler.FluidAction.SIMULATE);
-        if (amountSent == 0) {
-            return ActionResultType.PASS;
-        }
-        if (amountSent < sendingFluid.getAmount()) {
-            sendingFluid.setAmount(amountSent);
-        }
-        FluidStack drainResult = cap.drain(sendingFluid, IFluidHandler.FluidAction.SIMULATE);
-        if (drainResult.isEmpty()) {
-            return ActionResultType.PASS;
-        }
-
-        if (!world.isRemote()) {
-            tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-        }
-        AudioHelper.playerAudioEvent(player, Registry.GOO_DEPOSIT_SOUND.get(), 1.0f);
-        return ActionResultType.SUCCESS;
-    }
-
-    private ActionResultType tryCoatingGauntletWithSameFluid(World world, Vector3d pos, PlayerEntity player,
-            IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
-    {
-        int amountRequested = cap.getTankCapacity(0) - cap.getFluidInTank(0).getAmount();
-        FluidStack requestFluid = hitFluid.copy();
-        requestFluid.setAmount(Math.min(requestFluid.getAmount(), amountRequested));
-        FluidStack drainResult = tileCap.drain(requestFluid, IFluidHandler.FluidAction.SIMULATE);
-        if (drainResult.isEmpty()) {
-            return ActionResultType.PASS;
-        }
-        int fillResult = cap.fill(drainResult, IFluidHandler.FluidAction.SIMULATE);
-        if (fillResult == 0) {
-            return ActionResultType.PASS;
-        }
-
-        if (!world.isRemote()) {
-            cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-        }
-        AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
-        return ActionResultType.SUCCESS;
-    }
-
-    private ActionResultType tryCoatingBareGauntlet(World world, Vector3d pos,  PlayerEntity player,
-            IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
-    {
-        FluidStack requestFluid = hitFluid.copy();
-        if (requestFluid.getAmount() > cap.getTankCapacity(0)) {
-            requestFluid.setAmount(cap.getTankCapacity(0));
-        }
-        FluidStack result = tileCap.drain(requestFluid, IFluidHandler.FluidAction.SIMULATE);
-        if (result.isEmpty()) {
-            return ActionResultType.PASS;
-        }
-        int fillResult = cap.fill(result, IFluidHandler.FluidAction.SIMULATE);
-        if (fillResult == 0) {
-            return ActionResultType.PASS;
-        }
-
-        if (!world.isRemote()) {
-            cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-        }
-        AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
-        return ActionResultType.SUCCESS;
-    }
-
-    @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, Hand hand)
-    {
-        if (world.isRemote()) {
-            return ActionResult.resultPass(player.getHeldItem(hand));
-        }
-
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(hand));
-        if (cap == null) {
-            return ActionResult.resultPass(player.getHeldItem(hand));
-        }
-
-        if (cap.getFluidInTank(0).isEmpty()) {
-            tryRaidingInventoryForGoo(player, cap);
-            return ActionResult.resultPass(player.getHeldItem(hand));
+            return;
         }
 
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
         int drainAmountThrown = GooMod.config.thrownGooAmount(cap.getFluidInTank(0).getFluid());
+
         // -1 is disabled
         if (drainAmountThrown == -1) {
-            return ActionResult.resultPass(player.getHeldItem(hand));
+            return;
         }
+
         FluidStack thrownStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
-        world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, player, thrownStack));
+        player.getEntityWorld().addEntity(new GooBlob(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
-        return ActionResult.resultSuccess(player.getHeldItem(hand));
-    }
 
-    private void tryRaidingInventoryForGoo(PlayerEntity player,IFluidHandlerItem cap)
-    {
-        for(ItemStack i : player.inventory.mainInventory) {
-            if (!(i.getItem() instanceof Basin)) {
-                continue;
-            }
-            LazyOptional<IFluidHandlerItem> basinCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-            boolean[] foundFluid = {false};
-            basinCap.ifPresent((c) ->
-                    foundFluid[0] = tryDrain(c, cap)
-            );
-            if (foundFluid[0]) {
-                break;
-            }
-        }
-    }
-
-    private boolean tryDrain(IFluidHandlerItem source, IFluidHandlerItem destination)
-    {
-        if (source.drain(destination.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
-            return false;
-        }
-        destination.fill(source.drain(destination.getTankCapacity(0), IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-        return true;
+        player.swing(Hand.MAIN_HAND, false);
     }
 
     @Override

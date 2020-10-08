@@ -374,48 +374,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.recalculateSize();
     }
 
-    @Override
-    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand)
-    {
-        ItemStack stack = player.getHeldItem(hand);
-        if (!isValidInteractionStack(stack)) {
-            return ActionResultType.FAIL;
-        }
-        boolean[] didStuff = {false};
-
-        LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
-        if (didStuff[0]) {
-            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
-            return ActionResultType.SUCCESS;
-        }
-        return ActionResultType.CONSUME;
-    }
-
-    private boolean isValidInteractionStack(ItemStack stack)
-    {
-        return stack.getItem() instanceof GauntletAbstraction || stack.getItem() instanceof BasinAbstraction;
-    }
-
-    private static boolean tryExtractingGooFromEntity(IFluidHandlerItem item, GooSplat entity)
-    {
-        FluidStack heldGoo = item.getFluidInTank(0);
-        if (!item.getFluidInTank(0).isEmpty()) {
-            if (!heldGoo.isFluidEqual(entity.getFluidInTank(0)) || entity.getFluidInTank(0).isEmpty()) {
-                return false;
-            }
-        }
-
-        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
-        FluidStack tryDrain = entity.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
-        if (tryDrain.isEmpty()) {
-            return false;
-        }
-
-        item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-        return true;
-    }
-
     public void notifyDataManagerChange(DataParameter<?> key) {
         if (GOO_AMOUNT.equals(key)) {
             this.recalculateSize();
@@ -494,6 +452,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             if (e instanceof GooBlob && ((GooBlob) e).goo().isFluidEqual(this.goo)) {
                 this.fill(((GooBlob) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
+                // must be dominant
+                if (this.goo.getAmount() < ((GooSplat)e).goo().getAmount()) {
+                    return false;
+                }
                 this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e.equals(owner)) {
                 if (e == owner) {

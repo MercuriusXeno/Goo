@@ -29,22 +29,22 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.JUNGLE_LOG, floral(128), vital(16));
         saveData(Items.OAK_LOG, floral(128), vital(16));
         saveData(Items.SPRUCE_LOG, floral(128), vital(16));
-        saveData(Items.CRIMSON_STEM, fungal(16), chromatic(120), vital (16));
-        saveData(Items.WARPED_STEM, fungal(16), chromatic(120), vital (16));
+        saveData(Items.CRIMSON_STEM, fungal(16), chromatic(128), vital (16));
+        saveData(Items.WARPED_STEM, fungal(16), chromatic(128), vital (16));
         saveData(Items.STRIPPED_ACACIA_LOG, floral(128));
         saveData(Items.STRIPPED_BIRCH_LOG, floral(128));
         saveData(Items.STRIPPED_DARK_OAK_LOG, floral(128));
         saveData(Items.STRIPPED_JUNGLE_LOG, floral(128));
         saveData(Items.STRIPPED_OAK_LOG, floral(128));
         saveData(Items.STRIPPED_SPRUCE_LOG, floral(128));
-        saveData(Items.STRIPPED_CRIMSON_STEM, fungal(16), chromatic(120));
-        saveData(Items.STRIPPED_WARPED_STEM, fungal(16), chromatic(120));
-        saveData(Items.ACACIA_SAPLING, floral(360), vital(1));
-        saveData(Items.BIRCH_SAPLING, floral(360), vital(1));
-        saveData(Items.DARK_OAK_SAPLING, floral(360), vital(1));
-        saveData(Items.JUNGLE_SAPLING, floral(360), vital(1));
-        saveData(Items.OAK_SAPLING, floral(360), vital(1));
-        saveData(Items.SPRUCE_SAPLING, floral(360), vital(1));
+        saveData(Items.STRIPPED_CRIMSON_STEM, fungal(16), chromatic(128));
+        saveData(Items.STRIPPED_WARPED_STEM, fungal(16), chromatic(128));
+        saveData(Items.ACACIA_SAPLING, floral(394), vital(16));
+        saveData(Items.BIRCH_SAPLING, floral(394), vital(16));
+        saveData(Items.DARK_OAK_SAPLING, floral(394), vital(16));
+        saveData(Items.JUNGLE_SAPLING, floral(394), vital(16));
+        saveData(Items.OAK_SAPLING, floral(394), vital(16));
+        saveData(Items.SPRUCE_SAPLING, floral(394), vital(16));
         saveData(Items.ALLIUM, floral(5), chromatic(240), vital(1));
         saveData(Items.AZURE_BLUET, floral(5), chromatic(240), vital(1));
         saveData(Items.BLUE_ORCHID, floral(5), chromatic(240), vital(1));
@@ -108,7 +108,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.FIRE_CORAL_FAN, faunal(5), vital(1));
         saveData(Items.HORN_CORAL_FAN, faunal(5), vital(1));
         saveData(Items.TUBE_CORAL_FAN, faunal(5), vital(1));
-        saveData(Items.DEAD_BUSH, floral(15), decay(15));
+        saveData(Items.DEAD_BUSH, floral(15), decay(5));
         saveData(Items.FERN, floral(15), vital(1));
         saveData(Items.GRASS, floral(15), vital(1));
         saveData(Items.CRIMSON_ROOTS, fungal(15), vital(1));
@@ -130,7 +130,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.BEEF, faunal(15), vital(1));
         saveData(Items.BEETROOT, floral(15), vital(1), chromatic(240));
         saveData(Items.BEETROOT_SEEDS, floral(15));
-        saveData(Items.BLAZE_ROD, molten(120), energetic(60), vital(1));
+        saveData(Items.BLAZE_ROD, molten(120));
         saveData(Items.BONE, faunal(30), chromatic(360), vital(3), decay(60));
         saveData(Items.BROWN_MUSHROOM, fungal(15), vital(1));
         saveData(Items.BROWN_MUSHROOM_BLOCK, fungal(5));
@@ -156,10 +156,10 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.FEATHER, faunal(15));
         saveData(Items.GHAST_TEAR, weird(30), crystal(24));
         saveData(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), obsidian(240));
-        saveData(Items.GLOWSTONE_DUST, weird(5), energetic(60));
+        saveData(Items.GLOWSTONE_DUST, weird(5), energetic(30));
         saveData(Items.GOLD_INGOT, metal(36), regal(72));
         saveData(Items.GRASS_BLOCK, earthen(180), floral(15));
-        saveData(Items.GUNPOWDER, molten(60), energetic(120));
+        saveData(Items.GUNPOWDER, energetic(120));
         saveData(Items.HONEYCOMB, honey(40), regal(32));
         saveData(Items.HONEY_BLOCK, honey(120), regal(96));
         saveData(Items.ICE, snow(60), aquatic(60));
@@ -189,7 +189,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.RABBIT, faunal(15), vital(1));
         saveData(Items.RABBIT_FOOT, faunal(30), weird(30));
         saveData(Items.RABBIT_HIDE, faunal(15));
-        saveData(Items.RED_MUSHROOM, fungal(15));
+        saveData(Items.RED_MUSHROOM, fungal(15), vital(1));
         saveData(Items.RED_MUSHROOM_BLOCK, fungal(5));
         saveData(Items.REDSTONE, logic(15));
         saveData(Items.ROTTEN_FLESH, faunal(5), decay(60));
@@ -215,8 +215,8 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.WARPED_FUNGUS, fungal(15));
         saveData(Items.WEEPING_VINES, fungal(5));
         saveData(Items.WET_SPONGE, aquatic(60), weird(6), faunal(30), vital(15));
-        saveData(Items.WHEAT, floral(15));
-        saveData(Items.WHEAT_SEEDS, floral(15));
+        saveData(Items.WHEAT, floral(15), vital(1));
+        saveData(Items.WHEAT_SEEDS, floral(15), vital(1));
 
         // containers
         saveData(Items.LAVA_BUCKET, metal(216), molten(1080));
