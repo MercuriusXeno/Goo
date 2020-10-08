@@ -9,12 +9,8 @@
   },
   "compounds": [
     {
-      "amount": 240.0,
-      "type": "goo:regal"
-    },
-    {
-      "amount": 240.0,
-      "type": "goo:earthen"
+      "amount": 60.0,
+      "type": "goo:weird"
     },
     {
       "amount": 240.0,
@@ -25,8 +21,12 @@
       "type": "goo:metal"
     },
     {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "amount": 240.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 240.0,
+      "type": "goo:earthen"
     }
   ]
 }

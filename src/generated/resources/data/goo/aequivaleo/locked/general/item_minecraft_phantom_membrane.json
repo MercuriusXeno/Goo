@@ -9,16 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:decay"
-    },
-    {
       "amount": 1.0,
       "type": "goo:vital"
     },
     {
       "amount": 60.0,
       "type": "goo:weird"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:decay"
     }
   ]
 }

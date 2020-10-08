@@ -10,11 +10,11 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:weird"
+      "type": "goo:faunal"
     },
     {
       "amount": 15.0,
-      "type": "goo:faunal"
+      "type": "goo:weird"
     }
   ]
 }

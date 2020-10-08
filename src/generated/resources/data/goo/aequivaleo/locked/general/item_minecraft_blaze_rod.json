@@ -9,16 +9,8 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:energetic"
-    },
-    {
       "amount": 120.0,
       "type": "goo:molten"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
     }
   ]
 }
