@@ -29,8 +29,9 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> GooBulb = Items.register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.GooBulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
     public static final RegistryObject<Item> GooPump = Items.register("goo_pump", () -> new BlockItem(BlocksRegistry.GooPump.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<Item> Gooifier = Items.register("gooifier", () -> new BlockItem(BlocksRegistry.Gooifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
-
     public static final RegistryObject<Item> Crucible = Items.register("crucible", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::crucible)));
     public static final RegistryObject<Item> Mixer = Items.register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::mixer)));
     public static final RegistryObject<Item> Solidifier = Items.register("solidifier", () -> new BlockItem(BlocksRegistry.Solidifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<Item> Lobber = Items.register("lobber", () -> new BlockItem(BlocksRegistry.Lobber.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+    public static final RegistryObject<Item> Drain = Items.register("drain", () -> new BlockItem(BlocksRegistry.Drain.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
 }

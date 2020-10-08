@@ -1,6 +1,5 @@
 package com.xeno.goo.aequivaleo.compound;
 
-import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
@@ -9,6 +8,7 @@ import com.ldtteam.aequivaleo.vanilla.api.recipe.equivalency.ITagEquivalencyReci
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,7 +29,7 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
                                                                               .stream()
                                                                               .mapToDouble(CompoundInstance::getAmount)
                                                                               .sum()))
-          .orElse(Sets.newHashSet());
+          .orElse(new HashSet<>());
     }
 
     @Override

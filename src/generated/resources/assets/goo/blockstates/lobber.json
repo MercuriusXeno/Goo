@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "goo:block/lobber",
+      "x": 180
+    },
+    "facing=up": {
+      "model": "goo:block/lobber"
+    },
+    "facing=north": {
+      "model": "goo:block/lobber",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

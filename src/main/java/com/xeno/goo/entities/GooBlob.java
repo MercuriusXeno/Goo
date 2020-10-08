@@ -11,6 +11,7 @@ import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.*;
 import net.minecraft.entity.*;
+import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -414,13 +415,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         tag.put("attachment", at);
     }
 
-    public void startQuivering()
-    {
-        if (this.quiverTimer < QUIVER_TIMER_ONE_CYCLE_DOWN) {
-            this.quiverTimer = QUIVER_TIMER_INITIALIZED_VALUE;
-        }
-    }
-
     @Override
     public IPacket<?> createSpawnPacket()
     {
@@ -433,6 +427,29 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     @Override
     public void writeAdditional(CompoundNBT tag) {
+    }
+
+    @Override
+    public void writeSpawnData(PacketBuffer buffer)
+    {
+        CompoundNBT tag = serializeNBT();
+        writeAdditional(tag);
+        buffer.writeCompoundTag(tag);
+    }
+
+    @Override
+    public void readSpawnData(PacketBuffer additionalData)
+    {
+        CompoundNBT tag = additionalData.readCompoundTag();
+        deserializeNBT(tag);
+        readAdditional(tag);
+    }
+
+    public void startQuivering()
+    {
+        if (this.quiverTimer < QUIVER_TIMER_ONE_CYCLE_DOWN) {
+            this.quiverTimer = QUIVER_TIMER_INITIALIZED_VALUE;
+        }
     }
 
     @Override
@@ -493,22 +510,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
 
         return true;
-    }
-
-    @Override
-    public void writeSpawnData(PacketBuffer buffer)
-    {
-        CompoundNBT tag = serializeNBT();
-        writeAdditional(tag);
-        buffer.writeCompoundTag(tag);
-    }
-
-    @Override
-    public void readSpawnData(PacketBuffer additionalData)
-    {
-        CompoundNBT tag = additionalData.readCompoundTag();
-        deserializeNBT(tag);
-        readAdditional(tag);
     }
 
     public boolean tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)

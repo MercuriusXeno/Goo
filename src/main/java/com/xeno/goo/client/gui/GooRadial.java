@@ -129,14 +129,12 @@ public class GooRadial extends Screen {
         BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        String hovering = "";
         if (!closing) {
             selectedItem = -1;
             for (int i = 0; i < numberOfSlices; i++) {
                 float s = (((i - 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
                 float e = (((i + 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
                 if (a >= s && a < e && d >= radiusIn && d < radiusOut) {
-                    hovering = "" + i;
                     selectedItem = i;
                     break;
                 }
@@ -175,7 +173,6 @@ public class GooRadial extends Screen {
             }
 
             if (i == selectedItem) {
-                GooMod.debug(hovering + " hovered over, corresponds to " + s.getFluid().getRegistryName());
                 lastFluidStackTarget = s;
             }
         }

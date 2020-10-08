@@ -25,6 +25,49 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerSolidifier();
         registerMixer();
         registerCrucible();
+        registerLobber();
+        registerDrain();
+    }
+
+    private void registerDrain() {
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain_top");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain_side");
+        BlockModelBuilder model = models()
+                .withExistingParent("drain", "block/block")
+                .texture("particle", side)
+                .element()
+                .from(0, 12, 0)
+                .to(16, 16, 16)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.UP || t == Direction.DOWN ? "#top" : "#side")
+                                .uvs(0f,
+                                        t.getAxis() == Direction.Axis.Y ? 0f : 6f,
+                                        16f,
+                                        t.getAxis() == Direction.Axis.Y ? 0f : 10f))
+                .end();
+
+        model.texture("top", top);
+        model.texture("side", side);
+        simpleBlock(BlocksRegistry.Drain.get(), model);
+        simpleBlockItem(BlocksRegistry.Drain.get(), model);
+    }
+
+    private void registerLobber() {
+        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber_front");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber_side");
+        BlockModelBuilder model = models()
+                .withExistingParent("lobber", "block/block")
+                .element()
+                .from(0f, 0, 0f).to(16f, 16, 16f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.NORTH ? "#front" :
+                                "#side"))
+                .end();
+        model.texture("particle", front);
+        model.texture("front", front);
+        model.texture("side", side);
+        directionalBlock(BlocksRegistry.Lobber.get(), model);
+        simpleBlockItem(BlocksRegistry.Lobber.get(), model);
     }
 
     private void registerCrucible()
