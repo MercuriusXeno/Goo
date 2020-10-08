@@ -1,8 +1,7 @@
 package com.xeno.goo.items;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.enchantments.Containment;
-import com.xeno.goo.events.TooltipHandler;
+import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
@@ -64,7 +63,7 @@ public class Basin extends BasinAbstraction
         int holdsAmount = BasinAbstractionCapability.storageForDisplay(stack);
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(new TranslationTextComponent("goo.common.holds")
-                .append(TooltipHandler.getGooAmountForDisplay(holdsAmount))
+                .append(TargetingHandler.getGooAmountForDisplay(holdsAmount))
                 .append(new TranslationTextComponent("goo.common.mb"))
         );
     }

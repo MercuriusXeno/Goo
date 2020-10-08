@@ -34,9 +34,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.EntityRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextProperties;
 import net.minecraft.util.text.StringTextComponent;
@@ -52,7 +55,7 @@ import org.lwjgl.opengl.GL11;
 import java.text.NumberFormat;
 import java.util.*;
 
-public class TooltipHandler
+public class TargetingHandler
 {
     private static final Minecraft mc = Minecraft.getInstance();
     private static final String PLACE_HOLDER = "\u00a76\u00a7r\u00a7r\u00a7r\u00a7r\u00a7r";
@@ -393,7 +396,7 @@ public class TooltipHandler
         }
     }
 
-    private static void renderGooIcon(MatrixStack matrices, ResourceLocation icon, int x, int y, int count) {
+    public static void renderGooIcon(MatrixStack matrices, ResourceLocation icon, int x, int y, int count) {
         Minecraft mc = Minecraft.getInstance();
 
         mc.getTextureManager().bindTexture(icon);
@@ -480,6 +483,12 @@ public class TooltipHandler
         return fluidCache.get(gooFluidName);
     }
 
+    // cached player targets allow us to recall what the player is targeting when sending
+    // goo grab requests to the server since our control scheme is unconventional.
+    public static Entity lastTargetedEntity = null;
+    public static BlockPos lastTargetedBlock = null;
+    public static Direction lastHitSide = null;
+    public static Vector3d lastHitVector = null;
     public static void onGameOverlay(RenderGameOverlayEvent.Post event)
     {
         if (Minecraft.getInstance().getRenderViewEntity() == null) {
@@ -497,6 +506,11 @@ public class TooltipHandler
             return;
         }
 
+        // clear the cached BlockPos and entity targets
+        lastTargetedBlock = null;
+        lastTargetedEntity = null;
+        lastHitSide = null;
+        lastHitVector = null;
         if (!tryBlockRayTrace(e, event)) {
             tryEntityRayTrace(e, event);
         }
@@ -512,6 +526,7 @@ public class TooltipHandler
 
         if (hasGooContentsAsEntity(target)) {
             renderGooContentsOfEntity(event, target);
+            lastTargetedEntity = target.getEntity();
             return true;
         }
 
@@ -532,6 +547,9 @@ public class TooltipHandler
             TileEntity t = world.getTileEntity(target.getPos());
             if (t instanceof GooContainerAbstraction) {
                 renderGooContents(event, target, (GooContainerAbstraction)t);
+                lastTargetedBlock = target.getPos();
+                lastHitSide = target.getFace();
+                lastHitVector = target.getHitVec();
                 return true;
             }
             return false;
@@ -664,5 +682,12 @@ public class TooltipHandler
     {
         return target.getEntity() instanceof GooBlob ||
                 target.getEntity() instanceof GooSplat;
+    }
+
+    public static ResourceLocation iconFromFluidStack(FluidStack s) {
+        if (s.getFluid() instanceof GooFluid) {
+            return ((GooFluid) s.getFluid()).getIcon();
+        }
+        return null;
     }
 }

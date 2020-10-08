@@ -44,22 +44,10 @@ public class Networking {
                 .consumer(ChangeItemTargetPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooValueSyncPacket.class, nextID())
-                .encoder(GooValueSyncPacket::toBytes)
-                .decoder(GooValueSyncPacket::new)
-                .consumer(GooValueSyncPacket::handle)
-                .add();
-
         INSTANCE.messageBuilder(SolidifierPoppedPacket.class, nextID())
                 .encoder(SolidifierPoppedPacket::toBytes)
                 .decoder(SolidifierPoppedPacket::new)
                 .consumer(SolidifierPoppedPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooGrabPacket.class, nextID())
-                .encoder(GooGrabPacket::toBytes)
-                .decoder(GooGrabPacket::new)
-                .consumer(GooGrabPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(GooLobPacket.class, nextID())
@@ -68,10 +56,22 @@ public class Networking {
                 .consumer(GooLobPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooLobConfirmationPacket.class, nextID())
-                .encoder(GooLobConfirmationPacket::toBytes)
-                .decoder(GooLobConfirmationPacket::new)
-                .consumer(GooLobConfirmationPacket::handle)
+        INSTANCE.messageBuilder(GooGrabPacket.class, nextID())
+                .encoder(GooGrabPacket::toBytes)
+                .decoder(GooGrabPacket::new)
+                .consumer(GooGrabPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooCollectPacket.class, nextID())
+                .encoder(GooCollectPacket::toBytes)
+                .decoder(GooCollectPacket::new)
+                .consumer(GooCollectPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
+                .encoder(GooGauntletSwapPacket::toBytes)
+                .decoder(GooGauntletSwapPacket::new)
+                .consumer(GooGauntletSwapPacket::handle)
                 .add();
     }
 
