@@ -93,7 +93,7 @@ minecraft {
             properties 'mixin.env.disableRefMap': 'true'
             args '--all', '--output', file('src/generated/resources/'),
                     '--reports',
-                    '--mod', 'transport', '--existing', sourceSets.main.resources.srcDirs[0]
+                    '--mod', 'goo', '--existing', sourceSets.main.resources.srcDirs[0]
 
             mods {
                 goo {
