@@ -77,6 +77,9 @@ public class GooConfig
     private ForgeConfigSpec.DoubleValue ENERGETIC_MINING_BLAST_RADIUS;
     public double energeticMiningBlastRadius() { return ENERGETIC_MINING_BLAST_RADIUS.get(); }
 
+    private ForgeConfigSpec.IntValue RADIAL_MENU_HELD_TICKS_THRESHOLD;
+    public int radialMenuThreshold() { return RADIAL_MENU_HELD_TICKS_THRESHOLD.get(); }
+
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
     private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
@@ -367,15 +370,16 @@ public class GooConfig
         private static final int GOO_TRANSFER_RATE = 30;
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
-        private static final int BULB_HOLDING_MULTIPLIER = 8;
+        private static final int BULB_HOLDING_MULTIPLIER = 4;
         private static final int MIXER_INPUT_CAPACITY = 16000;
         private static final int CRUCIBLE_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
         private static final int BASIN_CAPACITY = 8000;
-        private static final int BASIN_HOLDING_MULTIPLIER = 8;
+        private static final int BASIN_HOLDING_MULTIPLIER = 4;
         private static final int GAUNTLET_CAPACITY = 400;
-        private static final int GAUNTLET_HOLDING_MULTIPLIER = 2;
+        private static final int GAUNTLET_HOLDING_MULTIPLIER = 4;
         private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
+        private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
     }
 
     private void setupGeneralMachineConfig() {
@@ -404,6 +408,8 @@ public class GooConfig
                 .defineInRange("gauntletHoldingMultiplier", Defaults.GAUNTLET_HOLDING_MULTIPLIER, 0, 10);
         ENERGETIC_MINING_BLAST_RADIUS = serverBuilder.comment("Mining blast radius of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_RADIUS)
                 .defineInRange("energeticMiningBlastRadius", Defaults.ENERGETIC_MINING_BLAST_RADIUS, 1d, 10d);
+        RADIAL_MENU_HELD_TICKS_THRESHOLD = serverBuilder.comment("Held ticks threshold for radial menu to open, default: " + Defaults.RADIAL_HELD_THRESHOLD_TICKS)
+                .defineInRange("heldTicksRadialMenuThreshold", Defaults.RADIAL_HELD_THRESHOLD_TICKS, 10, 60);
         GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);
         GooInteractions.blobRegistry.forEach(this::registerBlobInteractions);
         serverBuilder.pop();
