@@ -11,6 +11,10 @@
     {
       "amount": 15.0,
       "type": "goo:fungal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }
