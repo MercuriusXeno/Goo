@@ -1,9 +1,7 @@
 package com.xeno.goo.datagen;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.items.ItemsRegistry;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
@@ -29,32 +27,32 @@ public class RecipesProvider extends RecipeProvider {
         registerMixerRecipe(consumer);
         registerCrucibleRecipe(consumer);
         registerGooBulbRecipe(consumer);
+//        registerLobberRecipe(consumer);
+//        registerDrainRecipe(consumer);
     }
-
 
     private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.Gauntlet.get())
-                .patternLine("ss ")
+                .patternLine("ii ")
                 .patternLine("sls")
-                .patternLine("sgs")
+                .patternLine("igi")
+                .key('i', Items.IRON_NUGGET)
                 .key('s', Items.NETHERITE_SCRAP)
                 .key('l', Items.LEATHER)
                 .key('g', ItemsRegistry.Gasket.get())
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
     private void registerBasinRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.Basin.get())
-                .patternLine("sgs")
+                .patternLine(" g ")
                 .patternLine("scs")
-                .patternLine("sbs")
+                .patternLine(" b ")
                 .key('s', Items.NETHERITE_SCRAP)
                 .key('g', ItemsRegistry.Gasket.get())
                 .key('b', Items.MAGMA_CREAM)
                 .key('c', Items.BUCKET)
-                .setGroup(GooMod.MOD_ID)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
@@ -108,19 +106,19 @@ public class RecipesProvider extends RecipeProvider {
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Gooifier.get())
                 .patternLine("non")
-                .patternLine("pfp")
                 .patternLine("obo")
+                .patternLine("sfs")
                 .key('n', Items.CRYING_OBSIDIAN)
                 .key('o', ItemsRegistry.Gasket.get())
                 .key('b', Items.BREWING_STAND)
-                .key('p', Items.PISTON)
                 .key('f', Items.BLAST_FURNACE)
+                .key('s', Items.POLISHED_BLACKSTONE)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }
 
     private void registerSolidifierRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Solidier.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Solidifier.get())
                 .patternLine("ro ")
                 .patternLine("nxp")
                 .patternLine("o#o")
@@ -141,23 +139,49 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("npn")
                 .key('b', BlocksRegistry.GooBulb.get())
                 .key('c', Items.CAULDRON)
-                .key('n', Items.NETHERITE_INGOT)
+                .key('n', Items.NETHERITE_SCRAP)
                 .key('p', BlocksRegistry.GooPump.get())
-                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
+                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
                 .build(consumer);
     }
 
     private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Crucible.get())
-                .patternLine("xix")
-                .patternLine("ici")
+                .patternLine("xsx")
+                .patternLine("scs")
                 .patternLine("fbf")
                 .key('x', Items.IRON_BARS)
-                .key('i', Items.NETHERITE_INGOT)
+                .key('s', Items.NETHERITE_SCRAP)
                 .key('c', Items.CAULDRON)
                 .key('f', Items.BLAST_FURNACE)
                 .key('b', BlocksRegistry.GooBulb.get())
-                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_INGOT))
+                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
                 .build(consumer);
     }
+
+//    private void registerDrainRecipe(Consumer<IFinishedRecipe> consumer) {
+//        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Drain.get())
+//                .patternLine("ibi")
+//                .patternLine("bgb")
+//                .patternLine("ibi")
+//                .key('b', Items.IRON_BARS)
+//                .key('i', Items.IRON_INGOT)
+//                .key('g', ItemsRegistry.Gasket.get())
+//                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
+//                .build(consumer);
+//    }
+//
+//    private void registerLobberRecipe(Consumer<IFinishedRecipe> consumer) {
+//        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Lobber.get())
+//                .patternLine("sgs")
+//                .patternLine("gdg")
+//                .patternLine("grg")
+//                .key('d', Items.DISPENSER)
+//                .key('s', Items.NETHERITE_SCRAP)
+//                .key('g', ItemsRegistry.Gasket.get())
+//                .key('r', Items.REDSTONE)
+//                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
+//                .build(consumer);
+//    }
+
 }

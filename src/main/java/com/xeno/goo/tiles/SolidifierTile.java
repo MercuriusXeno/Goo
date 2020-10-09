@@ -25,7 +25,6 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -35,7 +34,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
-import java.text.NumberFormat;
 import java.util.*;
 
 import static net.minecraft.item.ItemStack.EMPTY;
@@ -488,7 +486,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     public ItemStack getSolidifierStack()
     {
-        ItemStack stack = new ItemStack(BlocksRegistry.Solidier.get());
+        ItemStack stack = new ItemStack(BlocksRegistry.Solidifier.get());
 
         CompoundNBT solidifierTag = new CompoundNBT();
         write(solidifierTag);

@@ -24,7 +24,50 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerSolidifier();
         registerMixer();
         registerCrucible();
+//        registerLobber();
+//        registerDrain();
     }
+
+//    private void registerDrain() {
+//        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain_top");
+//        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain_side");
+//        BlockModelBuilder model = models()
+//                .withExistingParent("drain", "block/block")
+//                .texture("particle", side)
+//                .element()
+//                .from(0, 12, 0)
+//                .to(16, 16, 16)
+//                .allFaces((t, u) ->
+//                        u.texture(t == Direction.UP || t == Direction.DOWN ? "#top" : "#side")
+//                                .uvs(0f,
+//                                        t.getAxis() == Direction.Axis.Y ? 0f : 6f,
+//                                        16f,
+//                                        t.getAxis() == Direction.Axis.Y ? 16f : 10f))
+//                .end();
+//
+//        model.texture("top", top);
+//        model.texture("side", side);
+//        simpleBlock(BlocksRegistry.Drain.get(), model);
+//        simpleBlockItem(BlocksRegistry.Drain.get(), model);
+//    }
+//
+//    private void registerLobber() {
+//        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber_front");
+//        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber_side");
+//        BlockModelBuilder model = models()
+//                .withExistingParent("lobber", "block/block")
+//                .element()
+//                .from(0f, 0, 0f).to(16f, 16, 16f)
+//                .allFaces((t, u) ->
+//                        u.texture(t ==  Direction.UP ? "#front" :
+//                                "#side"))
+//                .end();
+//        model.texture("particle", front);
+//        model.texture("front", front);
+//        model.texture("side", side);
+//        directionalBlock(BlocksRegistry.Lobber.get(), model);
+//        simpleBlockItem(BlocksRegistry.Lobber.get(), model);
+//    }
 
     private void registerCrucible()
     {
@@ -75,11 +118,11 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .texture("crucible_side_lit", crucible_side_lit);
 
         getVariantBuilder(BlocksRegistry.Crucible.get())
-            .forAllStates(
-                    (s) -> ConfiguredModel.builder()
-                            .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
-                            .build()
-            );
+                .forAllStates(
+                        (s) -> ConfiguredModel.builder()
+                                .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
+                                .build()
+                );
     }
 
     private void registerMixer()
@@ -102,11 +145,11 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .allFaces((t, u) ->
                         u.texture(t == Direction.UP || t.getAxis() == Direction.Axis.Z ? "#chamber_end" :
                                 (t == Direction.DOWN ? "#chamber_bottom" :
-                                (t == Direction.WEST ? "#chamber_side" : "#chamber_inner")))
-                        .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
-                                0f,
-                                t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
-                                12f))
+                                        (t == Direction.WEST ? "#chamber_side" : "#chamber_inner")))
+                                .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
+                                        0f,
+                                        t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
+                                        12f))
                 .end()
                 // right chamber innards
                 .element()
@@ -174,12 +217,12 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .from(5, 0, 5)
                 .to(11, 4, 11)
                 .allFaces((t, u) -> u.texture(t == Direction.UP ? "#merger_top" :(t == Direction.DOWN ? "#merger_bottom" : "#merger_side"))
-                    .uvs(
-                            5f,
-                            t.getAxis().isVertical() ? 5f : 6f,
-                            11f,
-                            t.getAxis().isVertical() ? 11f : 10f
-                    ))
+                        .uvs(
+                                5f,
+                                t.getAxis().isVertical() ? 5f : 6f,
+                                11f,
+                                t.getAxis().isVertical() ? 11f : 10f
+                        ))
                 .end()
                 .texture("chamber_end", chamber_end)
                 .texture("chamber_bottom", chamber_bottom)
@@ -335,7 +378,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     private void registerGooifier() {
         ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/obsidian");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/polished_blackstone");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
         ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
@@ -395,7 +438,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         modelActive.texture("side_on", side_on);
         modelActive.texture("front_on", front_on);
         modelActive.texture("back_on", back_on);
-        horizontalBlock(BlocksRegistry.Solidier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.Solidier.get(), modelInactive);
+        horizontalBlock(BlocksRegistry.Solidifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
     }
 }
