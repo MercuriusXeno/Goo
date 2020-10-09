@@ -39,9 +39,10 @@ public class DrainTile extends TileEntity implements ITickableTileEntity
         }
         this.proxySender = proxySender;
         if (goo.isEmpty()) {
-            goo = s;
+            goo = s.copy();
         } else {
             goo.setAmount(goo.getAmount() + s.getAmount());
+            this.markDirty();
         }
     }
 
@@ -67,17 +68,17 @@ public class DrainTile extends TileEntity implements ITickableTileEntity
         }
 
         // track how much goo we had at the end of this tick for next tick
-        // if this doesn't change for 5 ticks
+        // if this doesn't change for 5 ticks, drop it
         lastGooAmount = goo.getAmount();
     }
 
     private void tryPushingFluid()
     {
-        if (this.world instanceof ServerWorld) {
-            GooBlob newBlob = new GooBlob(Registry.GOO_BLOB.get(), this.world, proxySender, goo, this.pos);
-            this.world.addEntity(newBlob);
-            this.goo = FluidStack.EMPTY;
+        if (this.world == null) {
+            return;
         }
+        this.world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), this.world, proxySender, goo.copy(), this.pos));
+        this.goo = FluidStack.EMPTY;
     }
 
     public Direction facing()
@@ -88,18 +89,36 @@ public class DrainTile extends TileEntity implements ITickableTileEntity
     @Override
     public CompoundNBT write(CompoundNBT tag)
     {
-        return super.write(tag);
+        super.write(tag);
+        CompoundNBT gooTag = goo.writeToNBT(new CompoundNBT());
+        tag.put("goo", gooTag);
+        tag.putInt("lastAmount", lastGooAmount);
+        tag.putInt("delay", delay);
+        if (proxySender != null) {
+            tag.putUniqueId("sender", proxySender.getUniqueID());
+        }
+        return tag;
     }
 
     @Override
     public void read(BlockState state, CompoundNBT tag)
     {
         super.read(state, tag);
+        this.goo = FluidStack.loadFluidStackFromNBT(tag.getCompound("goo"));
+        this.lastGooAmount = tag.getInt("lastAmount");
+        this.delay = tag.getInt("delay");
+        if (tag.contains("sender") && world != null) {
+            this.proxySender = world.getPlayerByUuid(tag.getUniqueId("sender"));
+        }
     }
 
     @Override
     public CompoundNBT getUpdateTag()
     {
         return this.write(new CompoundNBT());
+    }
+
+    public FluidStack goo() {
+        return goo;
     }
 }

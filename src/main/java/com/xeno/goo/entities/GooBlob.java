@@ -32,12 +32,14 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.Collection;
@@ -52,12 +54,14 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private int quiverTimer;
     private FluidStack goo;
     private Entity owner;
-    private float cubicSize;
-    private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
     private GooSplat attachedSplat = null;
     private boolean isAttachedToBlock;
+
+//    public GooBlob(FMLPlayMessages.SpawnEntity packet, World world) {
+//        super(Registry.GOO_BLOB.get(), world);
+//    }
 
     public GooBlob(EntityType<GooBlob> type, World worldIn) {
         super(type, worldIn);
@@ -83,6 +87,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
         goo = stack;
+        isAttachedToBlock = false;
         this.setPositionAndRotation(pos.x, pos.y, pos.z, sender.rotationYaw, sender.rotationPitch);
         this.owner = sender;
         this.setSize();
@@ -92,6 +97,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity proxySender, FluidStack stack, BlockPos blockPos) {
         super(type, worldIn);
         goo = stack;
+        isAttachedToBlock = false;
         float offset = cubicSize() / 2f;
         // neutral offset "below" the drain
         Vector3d pos = Vector3d.copy(blockPos)
@@ -125,8 +131,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     @Override
     public void recalculateSize() {
-        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
-        this.size = new EntitySize(cubicSize, cubicSize, false);
         realignBoundingBox(this.getPositionVec());
     }
 
@@ -293,6 +297,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
         GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
         world.addEntity(splatToAdd);
+        for(ServerPlayerEntity player : ((ServerWorld)world).getPlayers((p) -> p.getDistance(this) <= 32f)) {
+            splatToAdd.addTrackingPlayer(player);
+        }
         attachToBlock(pos, face, splatToAdd);
     }
 
@@ -331,7 +338,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     private void realignBoundingBox(Vector3d projection)
     {
-        Vector3d halfSize = new Vector3d(cubicSize / 2d, cubicSize / 2d, cubicSize / 2d);
+        Vector3d halfSize = new Vector3d(cubicSize() / 2d,
+                cubicSize() / 2d, cubicSize() / 2d);
         this.setBoundingBox(new AxisAlignedBB(projection.subtract(halfSize), projection.add(halfSize)));
     }
 
@@ -382,7 +390,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     {
         super.read(tag);
         goo = FluidStack.loadFluidStackFromNBT(tag);
-        cubicSize = tag.getFloat("cubicSize");
         deserializeAttachment(tag);
         setSize();
         if (tag.hasUniqueId("owner")) {
@@ -409,7 +416,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         CompoundNBT tag = super.serializeNBT();
         goo.writeToNBT(tag);
         serializeAttachment(tag);
-        tag.putFloat("cubicSize", cubicSize);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
         if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
         return tag;
@@ -653,7 +659,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     public float cubicSize()
     {
-        return this.cubicSize;
+        return  (float)Math.cbrt(goo.getAmount()) / 10f;
     }
 
     public int quiverTimer()

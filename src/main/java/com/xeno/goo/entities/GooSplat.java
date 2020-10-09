@@ -1,5 +1,6 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
@@ -36,6 +37,7 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -61,8 +63,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private Entity owner;
     private Vector3d shape;
     private AxisAlignedBB box;
-    private float cubicSize;
-    private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
     private int cooldown = 0;
@@ -76,6 +76,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public Direction.Axis depthAxis() {
         return sideWeLiveOn.getAxis();
     }
+
+//    public GooSplat(FMLPlayMessages.SpawnEntity packet, World world) {
+//        super(Registry.GOO_SPLAT.get(), world);
+//    }
 
     public GooSplat(EntityType<GooSplat> type, World world) {
         super(type, world);
@@ -164,9 +168,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return null;
     }
 
+    @Override
     public void recalculateSize() {
-        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
-        this.size = new EntitySize(cubicSize, cubicSize, false);
         this.updateSplatState();
     }
 
@@ -201,11 +204,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
             goo.setAmount(this.dataManager.get(GOO_AMOUNT));
+            GooMod.debug("I am client side and I am ticking. Goo: " + goo.getAmount());
             return;
         }
 
         handleMaterialCollisionChecks();
-        this.isCollidingEntity = this.checkForEntityCollision();
+        this.checkForEntityCollision();
         approachAttachmentPoint();
         doFreeMovement();
 
@@ -307,39 +311,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
     }
 
-    /**
-     * Gets the EntityRayTraceResult representing the entity hit
-     */
-    protected EntityRayTraceResult rayTraceEntities(Vector3d startVec, Vector3d endVec) {
-        return ProjectileHelper.rayTraceEntities(this.world, this, startVec, endVec,
-                this.getBoundingBox().expand(this.getMotion()).grow(1.0D), this::canHitEntityAndNotAlready);
-    }
-
-    protected boolean canHitEntityAndNotAlready(Entity hitEntity) {
-        return canHitEntity(hitEntity);
-    }
-
-    protected boolean canHitEntity(Entity hitEntity) {
-        if (!hitEntity.isSpectator() && hitEntity.isAlive() && hitEntity.canBeCollidedWith()) {
-            return owner == null || this.isCollidingEntity || !owner.isRidingSameEntity(hitEntity);
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public void read(CompoundNBT tag)
     {
         super.read(tag);
         goo = FluidStack.loadFluidStackFromNBT(tag);
-        cubicSize = tag.getFloat("cubicSize");
         deserializeAttachment(tag);
-        setSize();
-        deserializeShape(tag);
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
         }
-        this.isCollidingEntity = tag.getBoolean("LeftOwner");
+        updateSplatState();
     }
 
     private void deserializeAttachment(CompoundNBT tag)
@@ -350,25 +331,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = Direction.byIndex(at.getInt("side"));
     }
 
-    private void deserializeShape(CompoundNBT tag)
-    {
-        this.shape = new Vector3d(
-                tag.getDouble("shape_x"),
-                tag.getDouble("shape_y"),
-                tag.getDouble("shape_z")
-        );
-        reshapeBoundingBox();
-    }
-
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
         goo.writeToNBT(tag);
         serializeAttachment(tag);
-        tag.putFloat("cubicSize", cubicSize);
-        serializeShape(tag);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
-        if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
         return tag;
     }
 
@@ -380,13 +348,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         at.putInt("z", blockAttached.getZ());
         at.putInt("side", sideWeLiveOn.getIndex());
         tag.put("attachment", at);
-    }
-
-    private void serializeShape(CompoundNBT tag)
-    {
-        tag.putDouble("shape_x", shape.x);
-        tag.putDouble("shape_y", shape.y);
-        tag.putDouble("shape_z", shape.z);
     }
 
     @Override
@@ -448,6 +409,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         CompoundNBT tag = additionalData.readCompoundTag();
         deserializeNBT(tag);
         readAdditional(tag);
+        GooMod.debug("Fuck this splat and its spawning, I'm so done right now.");
     }
 
     public void tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)
@@ -469,8 +431,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
         fh.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
     }
-
-    private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
         if (!this.isAlive()) {

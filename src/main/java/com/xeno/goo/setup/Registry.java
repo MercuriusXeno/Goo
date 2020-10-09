@@ -64,18 +64,18 @@ public class Registry {
     public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
             () -> EntityType.Builder.<GooBlob>create(GooBlob::new, EntityClassification.MISC)
                 .size(0.2f, 0.2f)
-            .setTrackingRange(512)
-            .setUpdateInterval(1)
-            .setShouldReceiveVelocityUpdates(false)
+            // .setCustomClientFactory(GooBlob::new)
+            .setTrackingRange(64)
+            .setShouldReceiveVelocityUpdates(true)
             .build("goo_blob")
     );
 
     public static final RegistryObject<EntityType<GooSplat>> GOO_SPLAT = ENTITIES.register("goo_splat",
             () -> EntityType.Builder.<GooSplat>create(GooSplat::new, EntityClassification.MISC)
                 .size(0.2f, 0.2f)
-            .setTrackingRange(512)
-            .setUpdateInterval(1)
-            .setShouldReceiveVelocityUpdates(false)
+            // .setCustomClientFactory(GooSplat::new)
+            .setTrackingRange(64)
+            .setShouldReceiveVelocityUpdates(true)
             .build("goo_splat")
     );
 

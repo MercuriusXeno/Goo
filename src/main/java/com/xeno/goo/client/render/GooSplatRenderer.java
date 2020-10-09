@@ -38,6 +38,8 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         return surfaces;
     }
 
+
+
     private static Vector3f[] createQuadForDirection(Direction d)
     {
         Vector3f up = Direction.UP.toVector3f();
