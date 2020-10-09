@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "minecraft:block/obsidian",
+    "down": "minecraft:block/polished_blackstone",
     "up": "goo:block/gooifier_top",
     "north": "goo:block/gooifier_front_off",
     "south": "goo:block/gooifier_back",

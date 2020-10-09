@@ -2,8 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "non",
-    "pfp",
-    "obo"
+    "obo",
+    "sfs"
   ],
   "key": {
     "n": {
@@ -15,11 +15,11 @@
     "b": {
       "item": "minecraft:brewing_stand"
     },
-    "p": {
-      "item": "minecraft:piston"
-    },
     "f": {
       "item": "minecraft:blast_furnace"
+    },
+    "s": {
+      "item": "minecraft:polished_blackstone"
     }
   },
   "result": {
