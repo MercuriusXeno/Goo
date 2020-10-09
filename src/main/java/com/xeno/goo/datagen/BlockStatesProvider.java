@@ -60,7 +60,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .element()
                 .from(0f, 0, 0f).to(16f, 16, 16f)
                 .allFaces((t, u) ->
-                        u.texture(t ==  Direction.NORTH ? "#front" :
+                        u.texture(t ==  Direction.UP ? "#front" :
                                 "#side"))
                 .end();
         model.texture("particle", front);

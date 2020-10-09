@@ -11,10 +11,4 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.DEDICATED_SERVER, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeServerEvents
 {
-    @SubscribeEvent
-    public static void onJoinWorldEvent(EntityJoinWorldEvent e) {
-        if (e.getEntity() instanceof ServerPlayerEntity) {
-            Networking.syncGooValuesForPlayer((ServerPlayerEntity)e.getEntity());
-        }
-    }
 }

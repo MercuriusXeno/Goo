@@ -322,21 +322,16 @@ public class TargetingHandler
 
     private static void tryFetchingGooContentsAsGooContainerAbstraction()
     {
-        CompoundNBT stackTag = currentStack.getTag();
-        if (stackTag == null) {
-            return;
+        String id = "";
+        Item item = currentStack.getItem();
+        if (item.equals(ItemsRegistry.Mixer.get())) {
+            id = Objects.requireNonNull(Registry.MIXER_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.Crucible.get())) {
+            id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.GooBulb.get())) {
+            id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
         }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return;
-        }
-
+        CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(currentStack, id);
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
         lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
@@ -577,26 +572,20 @@ public class TargetingHandler
 
     private static boolean tryFetchingGooContentsAsDoubleMap()
     {
-        if (!currentStack.getItem().equals(ItemsRegistry.Gooifier.get())
-        && !currentStack.getItem().equals(ItemsRegistry.Solidifier.get())) {
+        String id = "";
+        if (currentStack.getItem().equals(ItemsRegistry.Gooifier.get())) {
+            id = Objects.requireNonNull(Registry.GOOIFIER_TILE.get().getRegistryName()).toString();
+        }
+
+        if (currentStack.getItem().equals(ItemsRegistry.Solidifier.get())) {
+            id = Objects.requireNonNull(Registry.SOLIDIFIER_TILE.get().getRegistryName()).toString();
+        }
+
+        if (id.equals("")) {
             return false;
         }
 
-        CompoundNBT stackTag = currentStack.getTag();
-        if (stackTag == null) {
-            return false;
-        }
-
-        if (!stackTag.contains("BlockEntityTag")) {
-            return false;
-        }
-
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
-
-        if (!bulbTag.contains("goo")) {
-            return false;
-        }
-
+        CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(currentStack, id);
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
 

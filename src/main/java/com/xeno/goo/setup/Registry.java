@@ -63,19 +63,19 @@ public class Registry {
 
     public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
             () -> EntityType.Builder.<GooBlob>create(GooBlob::new, EntityClassification.MISC)
-                .size(0.1f, 0.1f)
-            .setTrackingRange(64)
+                .size(0.2f, 0.2f)
+            .setTrackingRange(512)
             .setUpdateInterval(1)
-            .setShouldReceiveVelocityUpdates(true)
+            .setShouldReceiveVelocityUpdates(false)
             .build("goo_blob")
     );
 
     public static final RegistryObject<EntityType<GooSplat>> GOO_SPLAT = ENTITIES.register("goo_splat",
             () -> EntityType.Builder.<GooSplat>create(GooSplat::new, EntityClassification.MISC)
-                .size(0.1f, 0.1f)
-            .setTrackingRange(64)
+                .size(0.2f, 0.2f)
+            .setTrackingRange(512)
             .setUpdateInterval(1)
-            .setShouldReceiveVelocityUpdates(true)
+            .setShouldReceiveVelocityUpdates(false)
             .build("goo_splat")
     );
 
@@ -102,7 +102,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<GooifierTile>> GOOIFIER_TILE = TILES.register("gooifier", () -> TileEntityType.Builder.create(GooifierTile::new, BlocksRegistry.Gooifier.get()).build(null));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidifier.get()).build(null));
     public static final RegistryObject<TileEntityType<LobberTile>> LOBBER_TILE = TILES.register("lobber", () -> TileEntityType.Builder.create(LobberTile::new, BlocksRegistry.Lobber.get()).build(null));
-//    public static final RegistryObject<TileEntityType<DrainTile>> DRAIN_TILE = TILES.register("drain", () -> TileEntityType.Builder.create(DrainTile::new, BlocksRegistry.Drain.get()).build(null));
+    public static final RegistryObject<TileEntityType<DrainTile>> DRAIN_TILE = TILES.register("drain", () -> TileEntityType.Builder.create(DrainTile::new, BlocksRegistry.Drain.get()).build(null));
 
     // Goo!
     public static final RegistryObject<GooFluid> AQUATIC_GOO = FLUIDS.register("aquatic_goo", () -> new GooFluid(Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO));

@@ -1,12 +1,15 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.DrainTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -18,6 +21,7 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
@@ -62,6 +66,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
     private int cooldown = 0;
+    private int lastGooAmount = 0;
 
     public Vector3d shape()
     {
@@ -179,10 +184,17 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        if (cooldown == 0) {
-            GooInteractions.tryResolving(this);
-        } else {
-            cooldown--;
+        if (lastGooAmount == goo.getAmount()) {
+            // first we try to drain into a drain if we're vertical and it's below
+            if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
+                drainIntoDrain();
+            } else {
+                if (cooldown == 0) {
+                    GooInteractions.tryResolving(this);
+                } else {
+                    cooldown--;
+                }
+            }
         }
 
         // let the server handle motion and updates
@@ -202,7 +214,29 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, this.owner, this.goo, this.getPositionVec()));
             this.remove();
         }
+
+        lastGooAmount = goo.getAmount();
     }
+
+    private void drainIntoDrain() {
+        BlockPos below = this.getPosition().offset(Direction.DOWN);
+        TileEntity e = world.getTileEntity(below);
+        if (e instanceof DrainTile) {
+            if (((DrainTile) e).canFill(this.goo)) {
+                ((DrainTile)e).fill(this.drain(1, FluidAction.EXECUTE), this.owner);
+            }
+        }
+    }
+
+    private boolean isDrainBelow() {
+        BlockPos below = this.getPosition().offset(Direction.DOWN);
+        BlockState state = world.getBlockState(below);
+        if (state.getBlock() instanceof Drain) {
+            return true;
+        }
+        return false;
+    }
+
     private void approachAttachmentPoint()
     {
         Vector3d attachmentPoint = attachmentPoint();

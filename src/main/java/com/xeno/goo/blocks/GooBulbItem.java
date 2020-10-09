@@ -11,6 +11,8 @@ import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -25,18 +27,29 @@ public class GooBulbItem extends BlockItem
         super(blockIn, builder);
     }
 
-    public static boolean hasValidTags(ItemStack i) {
-        if (!(i.getItem() instanceof GooBulbItem)) {
-            return false;
-        }
+    public static CompoundNBT getOrCreateTileTag(ItemStack i, String tileEntityId) {
+        CompoundNBT itemTag = new CompoundNBT();
         if (!i.hasTag() || i.getTag() == null) {
-            return false;
+            i.setTag(itemTag);
+        } else {
+            itemTag = i.getTag();
         }
 
-        if (!i.getTag().contains("BlockEntityTag")) {
-            return false;
+        if (!itemTag.contains("BlockEntityTag")) {
+            itemTag.put("BlockEntityTag", new CompoundNBT());
         }
-        return true;
+
+        CompoundNBT bulbTag = itemTag.getCompound("BlockEntityTag");
+        bulbTag.putString("id", tileEntityId);
+        if (!bulbTag.contains("goo")) {
+            CompoundNBT gooTag = new CompoundNBT();
+            gooTag.putInt("count", 0);
+            bulbTag.put("goo", gooTag);
+        }
+        itemTag.put("BlockEntityTag", bulbTag);
+        i.setTag(itemTag);
+
+        return bulbTag;
     }
 
     @Override

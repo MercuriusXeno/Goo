@@ -23,11 +23,4 @@ public class ForgeCommonEvents {
             }
         }
     }
-//
-//    @SubscribeEvent
-//    public static void onConfigsRefreshed(final ModConfig.Loading event) {
-//        if (!event.getConfig().getModId().equals(GooMod.MOD_ID)) {
-//            return;
-//        }
-//    }
 }

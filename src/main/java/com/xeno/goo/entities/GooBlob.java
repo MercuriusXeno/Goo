@@ -88,6 +88,19 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         this.setSize();
     }
 
+    // special constructor for goo blobs created by a drain.
+    public GooBlob(EntityType<GooBlob> type, World worldIn, Entity proxySender, FluidStack stack, BlockPos blockPos) {
+        super(type, worldIn);
+        goo = stack;
+        float offset = cubicSize() / 2f;
+        // neutral offset "below" the drain
+        Vector3d pos = Vector3d.copy(blockPos)
+                .add(0.5d, 0.74d - offset, 0.5d);
+        this.setPositionAndRotation(pos.x, pos.y, pos.z, 0f, 0f);
+        this.owner = proxySender;
+        this.setSize();
+    }
+
     private Vector3d initialPosition(Entity sender)
     {
         return sender.getPositionVec().add(0d, sender.getEyeHeight(), 0d).add(sender.getLookVec());

@@ -22,10 +22,10 @@
           "texture": "#side"
         },
         "up": {
-          "texture": "#side"
+          "texture": "#front"
         },
         "north": {
-          "texture": "#front"
+          "texture": "#side"
         },
         "south": {
           "texture": "#side"

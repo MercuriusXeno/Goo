@@ -1,16 +1,16 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "xix",
-    "ici",
+    "xsx",
+    "scs",
     "fbf"
   ],
   "key": {
     "x": {
       "item": "minecraft:iron_bars"
     },
-    "i": {
-      "item": "minecraft:netherite_ingot"
+    "s": {
+      "item": "minecraft:netherite_scrap"
     },
     "c": {
       "item": "minecraft:cauldron"

@@ -1,25 +1,25 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " g ",
-    "scs",
-    " b "
+    "sgs",
+    "gdg",
+    "grg"
   ],
   "key": {
+    "d": {
+      "item": "minecraft:dispenser"
+    },
     "s": {
       "item": "minecraft:netherite_scrap"
     },
     "g": {
       "item": "goo:gasket"
     },
-    "b": {
-      "item": "minecraft:magma_cream"
-    },
-    "c": {
-      "item": "minecraft:bucket"
+    "r": {
+      "item": "minecraft:redstone"
     }
   },
   "result": {
-    "item": "goo:basin"
+    "item": "goo:lobber"
   }
 }
