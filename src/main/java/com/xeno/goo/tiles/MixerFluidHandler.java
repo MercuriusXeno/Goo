@@ -39,6 +39,9 @@ public class MixerFluidHandler implements IFluidHandler
 
     @Override
     public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
+        if (!isFluidValid(0, resource)) {
+            return 0;
+        }
         int spaceRemaining = parent.getSpaceRemaining(this.side, resource);
         int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
         if (action == FluidAction.EXECUTE && transferAmount > 0) {

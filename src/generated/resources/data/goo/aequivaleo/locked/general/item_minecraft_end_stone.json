@@ -13,12 +13,12 @@
       "type": "goo:weird"
     },
     {
-      "amount": 120.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 1.0,
       "type": "goo:vital"
+    },
+    {
+      "amount": 120.0,
+      "type": "goo:earthen"
     }
   ]
 }

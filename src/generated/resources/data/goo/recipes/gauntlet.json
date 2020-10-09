@@ -1,12 +1,14 @@
 {
   "type": "minecraft:crafting_shaped",
-  "group": "goo",
   "pattern": [
-    "ss ",
+    "ii ",
     "sls",
-    "sgs"
+    "igi"
   ],
   "key": {
+    "i": {
+      "item": "minecraft:iron_nugget"
+    },
     "s": {
       "item": "minecraft:netherite_scrap"
     },
