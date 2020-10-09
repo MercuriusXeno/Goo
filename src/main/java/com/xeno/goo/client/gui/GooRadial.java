@@ -175,7 +175,6 @@ public class GooRadial extends Screen {
             }
 
             if (i == selectedItem) {
-                GooMod.debug(hovering + " hovered over, corresponds to " + s.getFluid().getRegistryName());
                 lastFluidStackTarget = s;
             }
         }
