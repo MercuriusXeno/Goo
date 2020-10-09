@@ -168,8 +168,12 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         onContentsChanged();
     }
 
+
     @Override
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+        if (side == Direction.UP) {
+            return LazyOptional.empty();
+        }
         if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             return lazyHandler.cast();
         }

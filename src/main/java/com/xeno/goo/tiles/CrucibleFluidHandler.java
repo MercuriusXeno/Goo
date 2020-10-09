@@ -34,6 +34,9 @@ public class CrucibleFluidHandler implements IFluidHandler
 
     @Override
     public int fill(FluidStack resource, FluidAction action) {
+        if (!isFluidValid(0, resource)) {
+            return 0;
+        }
         int spaceRemaining = parent.getSpaceRemaining(resource);
         int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
         if (action == FluidAction.EXECUTE && transferAmount > 0) {
