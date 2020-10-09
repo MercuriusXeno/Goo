@@ -29,7 +29,7 @@ issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues" #optional
 [[dependencies.goo]]
     modId="aequivaleo"
     mandatory=true
-    versionRange="[0.0.99-ALPHA]"
+    versionRange="[0.0.101-ALPHA]"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]

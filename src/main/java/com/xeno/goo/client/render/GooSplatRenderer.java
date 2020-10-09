@@ -2,12 +2,14 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.culling.ClippingHelper;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -228,5 +230,11 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
             j++;
         }
         return scaledQuads;
+    }
+
+    @Override
+    public boolean shouldRender(GooSplat livingEntityIn, ClippingHelper camera, double camX, double camY, double camZ) {
+        // boolean isExpected =
+        return super.shouldRender(livingEntityIn, camera, camX, camY, camZ);
     }
 }

@@ -379,7 +379,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     private void registerGooifier() {
         ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/obsidian");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/polished_blackstone");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
         ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
         ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");

@@ -77,10 +77,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return sideWeLiveOn.getAxis();
     }
 
-//    public GooSplat(FMLPlayMessages.SpawnEntity packet, World world) {
-//        super(Registry.GOO_SPLAT.get(), world);
-//    }
-
     public GooSplat(EntityType<GooSplat> type, World world) {
         super(type, world);
     }
@@ -93,7 +89,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.blockAttached = pos;
         updateSplatState();
         Vector3d findCenter = findCenter(hitVec);
-        this.setSize();
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
                 1.0f, AudioHelper.PitchFormulas.HalfToOne);
@@ -121,11 +116,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 break;
         }
 
-        reshapeBoundingBox();
-    }
-
-    private void reshapeBoundingBox()
-    {
         this.box = new AxisAlignedBB(shape.scale(-0.5d), shape.scale(0.5d));
     }
 
@@ -148,15 +138,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         switch(sideWeLiveOn) {
             case NORTH:
-                return new Vector3d(hitVec.x + (0.01d + box.minX), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
             case SOUTH:
                 return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
             case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.minY), hitVec.z);
+                return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
             case UP:
                 return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
             case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + box.minZ));
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
             case EAST:
                 return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
         }
@@ -203,8 +193,13 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
-            goo.setAmount(this.dataManager.get(GOO_AMOUNT));
-            GooMod.debug("I am client side and I am ticking. Goo: " + goo.getAmount());
+            int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
+            if (dataManagerGooSize != goo.getAmount()) {
+                goo.setAmount(dataManagerGooSize);
+                updateSplatState();
+            }
+
+            // GooMod.debug("I am client side and I am ticking. Goo: " + goo.getAmount());
             return;
         }
 
@@ -369,6 +364,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.recalculateSize();
     }
 
+    @Override
     public void notifyDataManagerChange(DataParameter<?> key) {
         if (GOO_AMOUNT.equals(key)) {
             this.recalculateSize();
@@ -381,6 +377,14 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public boolean onLivingFall(float distance, float damageMultiplier)
     {
         return super.onLivingFall(distance, damageMultiplier);
+    }
+
+    // 32 blocks.
+    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
+    @Override
+    public boolean isInRangeToRenderDist(double distance)
+    {
+        return distance < A_REASONABLE_RENDER_DISTANCE_SQUARED;
     }
 
     @Override
@@ -409,7 +413,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         CompoundNBT tag = additionalData.readCompoundTag();
         deserializeNBT(tag);
         readAdditional(tag);
-        GooMod.debug("Fuck this splat and its spawning, I'm so done right now.");
+    }
+
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {
+        GooMod.debug("My bounding box is xyz " + this.getBoundingBox().minX + ","
+        + this.getBoundingBox().minY + "," + this.getBoundingBox().minZ + " to " +
+                        this.getBoundingBox().maxX + ","
+                        + this.getBoundingBox().maxY + "," + this.getBoundingBox().maxZ
+                );
+        return this.getBoundingBox();
     }
 
     public void tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)

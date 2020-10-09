@@ -108,13 +108,13 @@ public class RecipesProvider extends RecipeProvider {
     private void registerGooifierRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Gooifier.get())
                 .patternLine("non")
-                .patternLine("pfp")
                 .patternLine("obo")
+                .patternLine("sfs")
                 .key('n', Items.CRYING_OBSIDIAN)
                 .key('o', ItemsRegistry.Gasket.get())
                 .key('b', Items.BREWING_STAND)
-                .key('p', Items.PISTON)
                 .key('f', Items.BLAST_FURNACE)
+                .key('s', Items.POLISHED_BLACKSTONE)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
     }

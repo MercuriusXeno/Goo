@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
@@ -516,6 +517,7 @@ public class TargetingHandler
         EntityRayTraceResult target = RayTracing.INSTANCE.entityTarget();
 
         if (target == null) {
+            GooMod.debug("You are not looking at goo");
             return false;
         }
 
