@@ -13,12 +13,12 @@
       "type": "goo:vital"
     },
     {
-      "amount": 5.0,
-      "type": "goo:floral"
-    },
-    {
       "amount": 240.0,
       "type": "goo:chromatic"
+    },
+    {
+      "amount": 5.0,
+      "type": "goo:floral"
     }
   ]
 }
