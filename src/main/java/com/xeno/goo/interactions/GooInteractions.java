@@ -63,6 +63,38 @@ public class GooInteractions
                 offX, e.cubicSize(), offZ, 0.2d);
     }
 
+    public static void spawnParticles(GooSplat e) {
+        if (!(e.getEntityWorld() instanceof ServerWorld)) {
+            return;
+        }
+        // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
+        if (e.goo().getFluid() instanceof GooFluid) {
+            spawnParticles(e, (GooFluid) e.goo().getFluid());
+        }
+    }
+
+    // the difference here is that we can call this one during events where
+    // the blob is being "emptied" and hang onto its fluid type.
+    public static void spawnParticles(GooSplat e, GooFluid f)
+    {
+        if (!(e.getEntityWorld() instanceof ServerWorld)) {
+            return;
+        }
+        // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
+        BasicParticleType type = particleTypeFromGoo(f);
+        if (type == null) {
+            return;
+        }
+        Vector3d spawnVec = e.getPositionVec();
+        // give it a bit of randomness around the hit location
+        double offX = (e.shape().x / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
+        double offZ = (e.shape().z / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
+        double offY = (e.shape().y / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
+
+        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
+                offX, offY, offZ, 0.2d);
+    }
+
     public static final Map<Fluid, Map<Tuple<Integer, String>, ISplatInteraction>> splatRegistry = new HashMap<>();
     public static void registerSplat(Fluid fluid, String key, ISplatInteraction interaction) {
         ensureSplatMapContainsFluid(fluid);

@@ -182,6 +182,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
+        if (sideWeLiveOn != Direction.UP) {
+            // the state we're interested in observing is the state of the hit block, not the offset.
+            GooInteractions.spawnParticles(this);
+        }
+
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
