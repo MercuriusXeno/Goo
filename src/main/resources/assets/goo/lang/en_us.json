@@ -75,9 +75,9 @@
   "patchouli.goo.crucible.summary": "Crucibles take goo from any side and \"burn\" it.$(br2)The deteriorated goo is ejected downward.$(br2)Crucibles will $(thing)deactivate when powered by redstone.$()",
   "patchouli.goo.crucible.restrictions": "Crucibles can only take goo that can $(thing)deteriorate.$()",
   "patchouli.goo.drain.description": "A simple block that lets goo pass through it.",
-  "patchouli.goo.drain.summary": "Goo blobs which strike the very top will splatter, and shortly after fall through the drain, straight down. This can be used to translate horizontal movement from multiple directions into downward movement in a single direction, whatever that might accomplish.",
+  "patchouli.goo.drain.summary": "Blobs that hit the top will splat and fall through the drain, straight down. This translates horizontal movement from one or more directions into downward movement, whatever that might accomplish.",
   "patchouli.goo.lobber.description": "A dispenser capable of handling goo.",
-  "patchouli.lobber.summary": "Lobbers are simple devices that take goo from a nearby source (like a bulb) and throw it into the world, the same way a player would with a gauntlet. This can be used to automate in-world goo interactions.",
+  "patchouli.goo.lobber.summary": "Lobbers are simple devices that take goo from a nearby source (like a bulb) and throw it into the world, the same way a player would with a gauntlet. This can be used to automate in-world goo interactions.",
 
   "goo.description.aquatic": "Water",
   "goo.description.chromatic": "Color",
