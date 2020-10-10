@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.gui.GooRadial;
+import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.network.GooCollectPacket;
 import com.xeno.goo.network.GooGrabPacket;
@@ -13,6 +14,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraftforge.event.TickEvent;
 import org.lwjgl.glfw.GLFW;
+
+import java.lang.annotation.Target;
 
 public class InputHandler {
     private static int radialTicksHeld = 0;
@@ -59,7 +62,7 @@ public class InputHandler {
     }
 
     private static void tryUsingGauntlet(ClientPlayerEntity player) {
-        if (TargetingHandler.lastTargetedEntity != null) {
+        if (TargetingHandler.lastTargetedEntity instanceof GooSplat && ((GooSplat) TargetingHandler.lastTargetedEntity).isAtRest()) {
             // refer to the targeting handler to figure out if we are looking at a goo entity
             Networking.sendToServer(new GooGrabPacket(TargetingHandler.lastTargetedEntity), player);
         } else if (TargetingHandler.lastTargetedBlock != null) {

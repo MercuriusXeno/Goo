@@ -1,12 +1,16 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.GooMod;
+//import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
+//import com.xeno.goo.tiles.DrainTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -18,6 +22,7 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
@@ -32,6 +37,7 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -57,11 +63,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private Entity owner;
     private Vector3d shape;
     private AxisAlignedBB box;
-    private float cubicSize;
-    private EntitySize size;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
     private int cooldown = 0;
+    private int lastGooAmount = 0;
+    private boolean isAtRest;
 
     public Vector3d shape()
     {
@@ -82,9 +88,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.owner = sender;
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
+        this.isAtRest = false;
         updateSplatState();
         Vector3d findCenter = findCenter(hitVec);
-        this.setSize();
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
                 1.0f, AudioHelper.PitchFormulas.HalfToOne);
@@ -112,12 +118,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 break;
         }
 
-        reshapeBoundingBox();
-    }
-
-    private void reshapeBoundingBox()
-    {
         this.box = new AxisAlignedBB(shape.scale(-0.5d), shape.scale(0.5d));
+        resetBox();
     }
 
     /**
@@ -128,6 +130,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.setRawPosition(x, y, z);
         if (this.isAddedToWorld() && !this.world.isRemote && world instanceof ServerWorld)
             ((ServerWorld)this.world).chunkCheck(this); // Forge - Process chunk registration after moving.
+        resetBox();
+    }
+
+    private void resetBox() {
         // on initialization this box doesn't exist
         // but almost immediately afterwards we should always have a shape
         if (box != null && this.goo.getAmount() > 0) {
@@ -139,15 +145,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         switch(sideWeLiveOn) {
             case NORTH:
-                return new Vector3d(hitVec.x + (0.01d + box.minX), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
             case SOUTH:
                 return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
             case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.minY), hitVec.z);
+                return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
             case UP:
                 return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
             case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z - (0.01d + box.minZ));
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
             case EAST:
                 return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
         }
@@ -159,9 +165,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return null;
     }
 
+    @Override
     public void recalculateSize() {
-        this.cubicSize = (float)Math.cbrt(goo.getAmount() / 1000f);
-        this.size = new EntitySize(cubicSize, cubicSize, false);
         this.updateSplatState();
     }
 
@@ -179,21 +184,37 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        if (cooldown == 0) {
-            GooInteractions.tryResolving(this);
+        if (lastGooAmount == goo.getAmount()) {
+            this.isAtRest = true;
         } else {
-            cooldown--;
+            this.isAtRest = false;
+        }
+        if (this.isAtRest) {
+//            // first we try to drain into a drain if we're vertical and it's below
+//            if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
+//                drainIntoDrain();
+//            } else {
+//                if (cooldown == 0) {
+//                    GooInteractions.tryResolving(this);
+//                } else {
+//                    cooldown--;
+//                }
+//            }
         }
 
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
-            goo.setAmount(this.dataManager.get(GOO_AMOUNT));
+            int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
+            if (dataManagerGooSize != goo.getAmount()) {
+                goo.setAmount(dataManagerGooSize);
+                updateSplatState();
+            }
             return;
         }
 
         handleMaterialCollisionChecks();
-        this.isCollidingEntity = this.checkForEntityCollision();
+        this.checkForEntityCollision();
         approachAttachmentPoint();
         doFreeMovement();
 
@@ -202,7 +223,29 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, this.owner, this.goo, this.getPositionVec()));
             this.remove();
         }
+
+        lastGooAmount = goo.getAmount();
     }
+
+//    private void drainIntoDrain() {
+//        BlockPos below = this.getPosition().offset(Direction.DOWN);
+//        TileEntity e = world.getTileEntity(below);
+//        if (e instanceof DrainTile) {
+//            if (((DrainTile) e).canFill(this.goo)) {
+//                ((DrainTile)e).fill(this.drain(1, FluidAction.EXECUTE), this.owner);
+//            }
+//        }
+//    }
+
+//    private boolean isDrainBelow() {
+//        BlockPos below = this.getPosition().offset(Direction.DOWN);
+//        BlockState state = world.getBlockState(below);
+//        if (state.getBlock() instanceof Drain) {
+//            return true;
+//        }
+//        return false;
+//    }
+
     private void approachAttachmentPoint()
     {
         Vector3d attachmentPoint = attachmentPoint();
@@ -273,39 +316,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
     }
 
-    /**
-     * Gets the EntityRayTraceResult representing the entity hit
-     */
-    protected EntityRayTraceResult rayTraceEntities(Vector3d startVec, Vector3d endVec) {
-        return ProjectileHelper.rayTraceEntities(this.world, this, startVec, endVec,
-                this.getBoundingBox().expand(this.getMotion()).grow(1.0D), this::canHitEntityAndNotAlready);
-    }
-
-    protected boolean canHitEntityAndNotAlready(Entity hitEntity) {
-        return canHitEntity(hitEntity);
-    }
-
-    protected boolean canHitEntity(Entity hitEntity) {
-        if (!hitEntity.isSpectator() && hitEntity.isAlive() && hitEntity.canBeCollidedWith()) {
-            return owner == null || this.isCollidingEntity || !owner.isRidingSameEntity(hitEntity);
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public void read(CompoundNBT tag)
     {
         super.read(tag);
         goo = FluidStack.loadFluidStackFromNBT(tag);
-        cubicSize = tag.getFloat("cubicSize");
         deserializeAttachment(tag);
-        setSize();
-        deserializeShape(tag);
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
         }
-        this.isCollidingEntity = tag.getBoolean("LeftOwner");
+        updateSplatState();
     }
 
     private void deserializeAttachment(CompoundNBT tag)
@@ -316,25 +336,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = Direction.byIndex(at.getInt("side"));
     }
 
-    private void deserializeShape(CompoundNBT tag)
-    {
-        this.shape = new Vector3d(
-                tag.getDouble("shape_x"),
-                tag.getDouble("shape_y"),
-                tag.getDouble("shape_z")
-        );
-        reshapeBoundingBox();
-    }
-
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
         goo.writeToNBT(tag);
         serializeAttachment(tag);
-        tag.putFloat("cubicSize", cubicSize);
-        serializeShape(tag);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
-        if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
         return tag;
     }
 
@@ -346,13 +353,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         at.putInt("z", blockAttached.getZ());
         at.putInt("side", sideWeLiveOn.getIndex());
         tag.put("attachment", at);
-    }
-
-    private void serializeShape(CompoundNBT tag)
-    {
-        tag.putDouble("shape_x", shape.x);
-        tag.putDouble("shape_y", shape.y);
-        tag.putDouble("shape_z", shape.z);
     }
 
     @Override
@@ -374,6 +374,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.recalculateSize();
     }
 
+    @Override
     public void notifyDataManagerChange(DataParameter<?> key) {
         if (GOO_AMOUNT.equals(key)) {
             this.recalculateSize();
@@ -388,6 +389,14 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return super.onLivingFall(distance, damageMultiplier);
     }
 
+    // 32 blocks.
+    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
+    @Override
+    public boolean isInRangeToRenderDist(double distance)
+    {
+        return distance < A_REASONABLE_RENDER_DISTANCE_SQUARED;
+    }
+
     @Override
     public boolean canRenderOnFire()
     {
@@ -398,13 +407,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public boolean canBeCollidedWith()
     {
         return true;
-    }
-
-    @Nullable
-    @Override
-    public AxisAlignedBB getCollisionBox(Entity entityIn)
-    {
-        return null;
     }
 
     @Override
@@ -421,6 +423,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         CompoundNBT tag = additionalData.readCompoundTag();
         deserializeNBT(tag);
         readAdditional(tag);
+    }
+
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {
+        return this.getBoundingBox();
     }
 
     public void tryFluidHandlerInteraction(BlockPos blockPos, Direction sideHit)
@@ -443,8 +450,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         fh.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
     }
 
-    private boolean isCollidingEntity;
-
     private boolean checkForEntityCollision() {
         if (!this.isAlive()) {
             return false;
@@ -454,13 +459,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                         // grow bb
                         this.getBoundingBox(),
                         // filter
-                        (eInBB) -> eInBB.equals(owner) || isGooThing(eInBB) || isValidCollisionEntity(eInBB));
+                        (eInBB) -> eInBB.equals(owner) || eInBB instanceof GooSplat || isValidCollisionEntity(eInBB));
         for(Entity e : collidedEntities) {
-            if (e instanceof GooBlob && ((GooBlob) e).goo().isFluidEqual(this.goo)) {
-                this.fill(((GooBlob) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
-            } else if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
+            if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
                 // must be dominant
                 if (this.goo.getAmount() < ((GooSplat)e).goo().getAmount()) {
+                    return false;
+                }
+                // must be resting
+                if (!((GooSplat)e).isAtRest()) {
                     return false;
                 }
                 this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
@@ -496,6 +503,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return false;
     }
 
+    public boolean isAtRest() {
+        return this.isAtRest;
+    }
+
     private boolean isAutoGrabbedGoo() {
         return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
                 || goo.getFluid().equals(Registry.METAL_GOO.get())
@@ -505,11 +516,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private boolean isValidCollisionEntity(Entity eInBB)
     {
         return !eInBB.isSpectator() && eInBB.canBeCollidedWith();
-    }
-
-    private boolean isGooThing(Entity eInBB)
-    {
-        return eInBB instanceof GooSplat || eInBB instanceof GooBlob;
     }
 
     protected void collideBlockMaybe(BlockRayTraceResult rayTraceResult) {

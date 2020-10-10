@@ -5,6 +5,7 @@ import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
@@ -22,6 +23,7 @@ import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class GooGauntletSwapPacket implements IGooModPacket
@@ -82,21 +84,17 @@ public class GooGauntletSwapPacket implements IGooModPacket
         if (!cap.getFluidInTank(0).isEmpty()) {
             return;
         }
-        for (ItemStack i : player.inventory.mainInventory) {
+        for (int index = 0; index < player.inventory.getSizeInventory(); index++) {
             FluidStack heldGoo = cap.getFluidInTank(0);
             if (heldGoo.getAmount() >= cap.getTankCapacity(0)) {
                 return;
             }
-
-            if (!GooBulbItem.hasValidTags(i)) {
+            ItemStack i = player.inventory.getStackInSlot(index);
+            if (!(i.getItem() instanceof GooBulbItem)) {
                 continue;
             }
 
-            CompoundNBT bulbTag = i.getTag().getCompound("BlockEntityTag");
-
-            if (!bulbTag.contains("goo")) {
-                continue;
-            }
+            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
             int amountToDrain = cap.getTankCapacity(0) - heldGoo.getAmount();
             CompoundNBT tag = bulbTag.getCompound("goo");
             List<FluidStack> heldStacks = GooBulbTile.deserializeGooForDisplay(tag);
@@ -129,22 +127,17 @@ public class GooGauntletSwapPacket implements IGooModPacket
     }
 
     private void tryEmptyingGauntletIntoInventoryContainer(PlayerEntity player, IFluidHandlerItem cap) {
-        for (ItemStack i : player.inventory.mainInventory) {
+        for (int index = 0; index < player.inventory.getSizeInventory(); index++) {
             FluidStack heldGoo = cap.getFluidInTank(0);
             if (heldGoo.isEmpty()) {
                 return;
             }
-
-            if (!GooBulbItem.hasValidTags(i)) {
+            ItemStack i = player.inventory.getStackInSlot(index);
+            if (!(i.getItem() instanceof GooBulbItem)) {
                 continue;
             }
 
-            CompoundNBT bulbTag = i.getTag().getCompound("BlockEntityTag");
-
-            if (!bulbTag.contains("goo")) {
-                continue;
-            }
-
+            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
             CompoundNBT tag = bulbTag.getCompound("goo");
             int size = tag.getInt("count");
             int containment = EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), i);

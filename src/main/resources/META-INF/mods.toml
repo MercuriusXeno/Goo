@@ -27,7 +27,7 @@ displayName="Goo" #mandatory
 # logoFile="" #optional
 # A text field displayed in the mod UI
 # A text field displayed in the mod UI
-authors="Xeno, OrionOnline" #optional
+authors="Xeno [Goo!], OrionOnline [Aequivaleo], Kat [Textures], Webmilio [Backend]" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.

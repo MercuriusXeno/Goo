@@ -52,7 +52,7 @@ public class GooGrabPacket implements IGooModPacket {
                     return;
                 }
                 Entity e = player.world.getEntityByID(this.gooEntityId);
-                if (e instanceof GooSplat || e instanceof GooBlob) {
+                if (e instanceof GooSplat) {
                     tryPlayerInteraction(player, (IFluidHandler)e);
                 }
             }

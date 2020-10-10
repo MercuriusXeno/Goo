@@ -10,6 +10,7 @@ import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.client.Minecraft;
@@ -187,20 +188,7 @@ public class GooRadial extends Screen {
         }
         for (ItemStack i : player.inventory.mainInventory) {
             if (i.getItem() instanceof GooBulbItem) {
-                if (!i.hasTag() || i.getTag() == null) {
-                    continue;
-                }
-
-                if (!i.getTag().contains("BlockEntityTag")) {
-                    continue;
-                }
-
-                CompoundNBT bulbTag = i.getTag().getCompound("BlockEntityTag");
-
-                if (!bulbTag.contains("goo")) {
-                    continue;
-                }
-
+                CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
                 CompoundNBT gooTag = bulbTag.getCompound("goo");
                 List<FluidStack> bulbStacks = GooBulbTile.deserializeGooForDisplay(gooTag);
                 bulbStacks.forEach((s) -> pushToMap(result, s));
