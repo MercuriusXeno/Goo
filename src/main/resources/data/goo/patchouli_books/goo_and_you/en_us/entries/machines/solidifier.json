@@ -8,6 +8,10 @@
       "text": "patchouli.goo.solidifier.summary"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:solidifier"
+    },
+    {
       "type": "multiblock",
       "text": "patchouli.goo.solidifier.power",
       "enable_visualize": false,
@@ -22,10 +26,6 @@
           ["0C"]
         ]
       }
-    },
-    {
-      "type": "crafting",
-      "recipe": "goo:solidifier"
     }
   ]
 }

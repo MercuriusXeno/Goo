@@ -8,6 +8,10 @@
       "text": "patchouli.goo.mixer.summary"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:mixer"
+    },
+    {
       "type": "multiblock",
       "text": "patchouli.goo.mixer.restrictions",
       "enable_visualize": false,
@@ -24,10 +28,6 @@
           ["  B  "]
         ]
       }
-    },
-    {
-      "type": "crafting",
-      "recipe": "goo:mixer"
     },
     {
       "type": "goo:mixer_recipes",
