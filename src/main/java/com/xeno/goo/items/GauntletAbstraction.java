@@ -85,9 +85,4 @@ public class GauntletAbstraction extends ItemFluidContainer
         }
         return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
     }
-
-    @Override
-    public ActionResultType onItemUse(ItemUseContext context) {
-        return ActionResultType.SUCCESS;
-    }
 }

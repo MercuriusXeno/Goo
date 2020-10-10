@@ -1,11 +1,9 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.GooBulbItem;
-import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
@@ -94,7 +92,7 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 continue;
             }
 
-            CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
+            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
             int amountToDrain = cap.getTankCapacity(0) - heldGoo.getAmount();
             CompoundNBT tag = bulbTag.getCompound("goo");
             List<FluidStack> heldStacks = GooBulbTile.deserializeGooForDisplay(tag);
@@ -138,7 +136,7 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 continue;
             }
 
-            CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
+            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
             CompoundNBT tag = bulbTag.getCompound("goo");
             int size = tag.getInt("count");
             int containment = EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), i);

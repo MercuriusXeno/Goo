@@ -67,6 +67,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private BlockPos blockAttached = null;
     private int cooldown = 0;
     private int lastGooAmount = 0;
+    private boolean isAtRest;
 
     public Vector3d shape()
     {
@@ -87,6 +88,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.owner = sender;
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
+        this.isAtRest = false;
         updateSplatState();
         Vector3d findCenter = findCenter(hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
@@ -117,6 +119,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
 
         this.box = new AxisAlignedBB(shape.scale(-0.5d), shape.scale(0.5d));
+        resetBox();
     }
 
     /**
@@ -127,6 +130,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.setRawPosition(x, y, z);
         if (this.isAddedToWorld() && !this.world.isRemote && world instanceof ServerWorld)
             ((ServerWorld)this.world).chunkCheck(this); // Forge - Process chunk registration after moving.
+        resetBox();
+    }
+
+    private void resetBox() {
         // on initialization this box doesn't exist
         // but almost immediately afterwards we should always have a shape
         if (box != null && this.goo.getAmount() > 0) {
@@ -178,6 +185,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
 
         if (lastGooAmount == goo.getAmount()) {
+            this.isAtRest = true;
+        } else {
+            this.isAtRest = false;
+        }
+        if (this.isAtRest) {
             // first we try to drain into a drain if we're vertical and it's below
             if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
                 drainIntoDrain();
@@ -198,8 +210,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 goo.setAmount(dataManagerGooSize);
                 updateSplatState();
             }
-
-            // GooMod.debug("I am client side and I am ticking. Goo: " + goo.getAmount());
             return;
         }
 
@@ -417,11 +427,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        GooMod.debug("My bounding box is xyz " + this.getBoundingBox().minX + ","
-        + this.getBoundingBox().minY + "," + this.getBoundingBox().minZ + " to " +
-                        this.getBoundingBox().maxX + ","
-                        + this.getBoundingBox().maxY + "," + this.getBoundingBox().maxZ
-                );
         return this.getBoundingBox();
     }
 
@@ -454,13 +459,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                         // grow bb
                         this.getBoundingBox(),
                         // filter
-                        (eInBB) -> eInBB.equals(owner) || isGooThing(eInBB) || isValidCollisionEntity(eInBB));
+                        (eInBB) -> eInBB.equals(owner) || eInBB instanceof GooSplat || isValidCollisionEntity(eInBB));
         for(Entity e : collidedEntities) {
-            if (e instanceof GooBlob && ((GooBlob) e).goo().isFluidEqual(this.goo)) {
-                this.fill(((GooBlob) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
-            } else if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
+            if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
                 // must be dominant
                 if (this.goo.getAmount() < ((GooSplat)e).goo().getAmount()) {
+                    return false;
+                }
+                // must be resting
+                if (!((GooSplat)e).isAtRest()) {
                     return false;
                 }
                 this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
@@ -496,6 +503,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         return false;
     }
 
+    public boolean isAtRest() {
+        return this.isAtRest;
+    }
+
     private boolean isAutoGrabbedGoo() {
         return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
                 || goo.getFluid().equals(Registry.METAL_GOO.get())
@@ -505,11 +516,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private boolean isValidCollisionEntity(Entity eInBB)
     {
         return !eInBB.isSpectator() && eInBB.canBeCollidedWith();
-    }
-
-    private boolean isGooThing(Entity eInBB)
-    {
-        return eInBB instanceof GooSplat || eInBB instanceof GooBlob;
     }
 
     protected void collideBlockMaybe(BlockRayTraceResult rayTraceResult) {

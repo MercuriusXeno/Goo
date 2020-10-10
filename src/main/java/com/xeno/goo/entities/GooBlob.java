@@ -43,6 +43,7 @@ import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.Collection;
+import java.util.List;
 
 public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -293,14 +294,19 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
         // nerf motion on impact.
         this.setMotion(this.getMotion().scale(0.02d));
-        // create a goo splat
-        FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
-        GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
-        world.addEntity(splatToAdd);
-        for(ServerPlayerEntity player : ((ServerWorld)world).getPlayers((p) -> p.getDistance(this) <= 32f)) {
-            splatToAdd.addTrackingPlayer(player);
+
+        // check if there isn't already a splat we can glom onto, if there is, attach to it instead of a new one
+
+        List<GooSplat> splats = world.getEntitiesWithinAABB(Registry.GOO_SPLAT.get(), this.getBoundingBox(), (s) -> s.goo().getFluid().equals(this.goo().getFluid()));
+        if (splats.size() > 0) {
+            attachToBlock(pos, face, splats.get(0));
+        } else {
+            // create a goo splat
+            FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
+            GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
+            attachToBlock(pos, face, splatToAdd);
+            world.addEntity(splatToAdd);
         }
-        attachToBlock(pos, face, splatToAdd);
     }
 
     private static final double BOUNCE_DECAY = 0.65d;

@@ -2,13 +2,11 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.HighlightingHelper;
-import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
@@ -17,11 +15,8 @@ import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import com.xeno.goo.tiles.GooifierTile;
-import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.recipebook.GhostRecipe;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -332,7 +327,7 @@ public class TargetingHandler
         } else if (item.equals(ItemsRegistry.GooBulb.get())) {
             id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
         }
-        CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(currentStack, id);
+        CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
         lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
@@ -517,7 +512,6 @@ public class TargetingHandler
         EntityRayTraceResult target = RayTracing.INSTANCE.entityTarget();
 
         if (target == null) {
-            GooMod.debug("You are not looking at goo");
             return false;
         }
 
@@ -587,7 +581,7 @@ public class TargetingHandler
             return false;
         }
 
-        CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(currentStack, id);
+        CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
 
@@ -649,10 +643,6 @@ public class TargetingHandler
 
     private static FluidStack gooInEntity(EntityRayTraceResult e)
     {
-        if (e.getEntity() instanceof GooBlob) {
-            return ((GooBlob) e.getEntity()).goo();
-        }
-
         if (e.getEntity() instanceof GooSplat) {
             return ((GooSplat) e.getEntity()).goo();
         }
@@ -671,8 +661,7 @@ public class TargetingHandler
 
     private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)
     {
-        return target.getEntity() instanceof GooBlob ||
-                target.getEntity() instanceof GooSplat;
+        return target.getEntity() instanceof GooSplat;
     }
 
     public static ResourceLocation iconFromFluidStack(FluidStack s) {

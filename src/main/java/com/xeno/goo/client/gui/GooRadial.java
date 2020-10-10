@@ -3,10 +3,8 @@ package com.xeno.goo.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.events.TargetingHandler;
-import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
@@ -186,7 +184,7 @@ public class GooRadial extends Screen {
         }
         for (ItemStack i : player.inventory.mainInventory) {
             if (i.getItem() instanceof GooBulbItem) {
-                CompoundNBT bulbTag = GooBulbItem.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
+                CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
                 CompoundNBT gooTag = bulbTag.getCompound("goo");
                 List<FluidStack> bulbStacks = GooBulbTile.deserializeGooForDisplay(gooTag);
                 bulbStacks.forEach((s) -> pushToMap(result, s));

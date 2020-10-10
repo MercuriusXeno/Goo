@@ -27,31 +27,6 @@ public class GooBulbItem extends BlockItem
         super(blockIn, builder);
     }
 
-    public static CompoundNBT getOrCreateTileTag(ItemStack i, String tileEntityId) {
-        CompoundNBT itemTag = new CompoundNBT();
-        if (!i.hasTag() || i.getTag() == null) {
-            i.setTag(itemTag);
-        } else {
-            itemTag = i.getTag();
-        }
-
-        if (!itemTag.contains("BlockEntityTag")) {
-            itemTag.put("BlockEntityTag", new CompoundNBT());
-        }
-
-        CompoundNBT bulbTag = itemTag.getCompound("BlockEntityTag");
-        bulbTag.putString("id", tileEntityId);
-        if (!bulbTag.contains("goo")) {
-            CompoundNBT gooTag = new CompoundNBT();
-            gooTag.putInt("count", 0);
-            bulbTag.put("goo", gooTag);
-        }
-        itemTag.put("BlockEntityTag", bulbTag);
-        i.setTag(itemTag);
-
-        return bulbTag;
-    }
-
     @Override
     public boolean isEnchantable(ItemStack stack)
     {
