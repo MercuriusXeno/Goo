@@ -13,12 +13,12 @@
       "type": "goo:fungal"
     },
     {
-      "amount": 16.0,
-      "type": "goo:vital"
-    },
-    {
       "amount": 128.0,
       "type": "goo:chromatic"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:vital"
     }
   ]
 }

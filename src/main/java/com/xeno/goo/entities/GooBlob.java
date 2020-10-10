@@ -277,7 +277,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     protected void splat(BlockPos pos, Direction face, Vector3d hitVec) {
         // don't spawn particles unless we're moving kinda fast. blobs just kinda sit there
         // if they don't have a surface to splat on.
-        if (this.getMotion().lengthSquared() >= 1d) {
+        if (this.getMotion().lengthSquared() >= 0.2d) {
             // the state we're interested in observing is the state of the hit block, not the offset.
             GooInteractions.spawnParticles(this);
         }
@@ -305,6 +305,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     public void bounceBlob(Direction face)
     {
+        // the state we're interested in observing is the state of the hit block, not the offset.
+        GooInteractions.spawnParticles(this);
         switch(face.getAxis()) {
             case Y:
                 setMotion(getMotion().mul(BOUNCE_DECAY, -BOUNCE_DECAY, BOUNCE_DECAY));

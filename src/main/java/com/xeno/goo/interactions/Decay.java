@@ -93,9 +93,7 @@ public class Decay
         if (blobContext.block() instanceof FlowerBlock || blobContext.block() instanceof TallFlowerBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -104,13 +102,17 @@ public class Decay
         return false;
     }
 
+    private static void smoke(BlobContext blobContext) {
+        ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
+                blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
+                0d, 0d, 0d, 0d);
+    }
+
     private static boolean destroyCactus(BlobContext blobContext) {
         if (blobContext.block() instanceof CactusBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -123,9 +125,7 @@ public class Decay
         if (blobContext.block() instanceof LilyPadBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -138,9 +138,7 @@ public class Decay
         if (blobContext.block() instanceof BambooSaplingBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -153,9 +151,7 @@ public class Decay
         if (blobContext.block() instanceof SaplingBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -168,9 +164,7 @@ public class Decay
         if (blobContext.block() instanceof BambooBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -183,9 +177,7 @@ public class Decay
         if (blobContext.block() instanceof SugarCaneBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -198,9 +190,7 @@ public class Decay
         if (blobContext.block() instanceof CropsBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -213,9 +203,7 @@ public class Decay
         if (blobContext.block() instanceof TallGrassBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -228,9 +216,7 @@ public class Decay
         if (blobContext.block() instanceof VineBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -243,9 +229,7 @@ public class Decay
         if (blobContext.block() instanceof LeavesBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);
@@ -258,9 +242,7 @@ public class Decay
         if (blobContext.block() instanceof BushBlock) {
             blobContext.world().removeBlock(blobContext.blockPos(), false);
             if (blobContext.world() instanceof ServerWorld) {
-                ((ServerWorld) blobContext.world()).spawnParticle(ParticleTypes.SMOKE, blobContext.blob().getPositionVec().x,
-                        blobContext.blob().getPositionVec().y, blobContext.blob().getPositionVec().z, 1,
-                        0d, 0d, 0d, 0d);
+                smoke(blobContext);
             }
             AudioHelper.entityAudioEvent(blobContext.blob(), Registry.DETERIORATE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
             blobContext.fluidHandler().drain(1, IFluidHandler.FluidAction.EXECUTE);

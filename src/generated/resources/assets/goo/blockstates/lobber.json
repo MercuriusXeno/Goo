@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=down,triggered=false": {
+      "model": "goo:block/lobber",
+      "x": 180
+    },
+    "facing=up,triggered=false": {
+      "model": "goo:block/lobber"
+    },
+    "facing=north,triggered=false": {
+      "model": "goo:block/lobber",
+      "x": 90
+    },
+    "facing=south,triggered=false": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,triggered=false": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,triggered=false": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 90
+    },
+    "facing=down,triggered=true": {
+      "model": "goo:block/lobber",
+      "x": 180
+    },
+    "facing=up,triggered=true": {
+      "model": "goo:block/lobber"
+    },
+    "facing=north,triggered=true": {
+      "model": "goo:block/lobber",
+      "x": 90
+    },
+    "facing=south,triggered=true": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,triggered=true": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,triggered=true": {
+      "model": "goo:block/lobber",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

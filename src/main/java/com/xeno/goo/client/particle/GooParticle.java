@@ -64,9 +64,7 @@ public class GooParticle extends SpriteTexturedParticle
     private void updateChromatic() {
         int chromaticInt = FluidCuboidHelper.colorizeChromaticGoo();
         this.setColor(red(chromaticInt), green(chromaticInt), blue(chromaticInt));
-
     }
-
 
     private float red(int tempColor)
     {

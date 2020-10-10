@@ -27,7 +27,6 @@ public class Molten
     {
         GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian);
         GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock);
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "ignite_block", Molten::igniteBlock);
     }
 
     private static boolean igniteBlock(SplatContext context) {
