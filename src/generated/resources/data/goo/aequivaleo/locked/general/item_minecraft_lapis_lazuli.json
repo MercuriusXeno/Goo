@@ -10,11 +10,11 @@
   "compounds": [
     {
       "amount": 4.0,
-      "type": "goo:crystal"
+      "type": "goo:weird"
     },
     {
       "amount": 4.0,
-      "type": "goo:weird"
+      "type": "goo:crystal"
     },
     {
       "amount": 240.0,

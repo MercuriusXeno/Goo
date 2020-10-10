@@ -28,4 +28,8 @@ public class GooBulb extends GooBulbAbstraction
     {
         return new GooBulbTile();
     }
+
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
+    }
 }

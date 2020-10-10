@@ -42,7 +42,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     public static void render(BlockPos pos, int bulbCapacity, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
         gooList.removeIf(FluidStack::isEmpty);
-        IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
+        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_BLOCK);
 
         float yOffset = 0;
 

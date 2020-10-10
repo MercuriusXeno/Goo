@@ -6,6 +6,14 @@ import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipe;
 import com.ldtteam.aequivaleo.vanilla.api.recipe.equivalency.ITagEquivalencyRecipe;
+import net.minecraft.block.OreBlock;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +23,6 @@ import java.util.Set;
 
 public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup> implements ICompoundTypeGroup
 {
-
     @Override
     public Set<CompoundInstance> handleIngredient(
       final Map<? extends ICompoundContainer<?>, Set<CompoundInstance>> map, final boolean b)
@@ -48,7 +55,23 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     @Override
     public boolean isValidFor(final ICompoundContainer<?> iCompoundContainer, final CompoundInstance compoundInstance)
     {
+        if  (iCompoundContainer.getContents() instanceof ItemStack && isInvalidStack((ItemStack) iCompoundContainer.getContents())) {
+            return false;
+        }
+        if  (iCompoundContainer.getContents() instanceof Item && isInvalidStack((Item) iCompoundContainer.getContents())) {
+            return false;
+        }
         return true;
+    }
+
+    private boolean isInvalidStack(Item contents) {
+        return
+                // ore block invalidation
+                contents instanceof BlockItem && ((BlockItem) contents).getBlock() instanceof OreBlock;
+    }
+
+    private boolean isInvalidStack(ItemStack stack) {
+        return isInvalidStack(stack.getItem());
     }
 
     @Override

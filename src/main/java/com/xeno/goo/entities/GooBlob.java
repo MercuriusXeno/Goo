@@ -495,24 +495,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return true;
     }
 
-    @Override
-    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand)
-    {
-        ItemStack stack = player.getHeldItem(hand);
-        if (!isValidInteractionStack(stack)) {
-            return ActionResultType.PASS;
-        }
-        boolean[] didStuff = {false};
-
-        LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
-        if (didStuff[0]) {
-            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
-            return ActionResultType.SUCCESS;
-        }
-        return ActionResultType.CONSUME;
-    }
-
     private boolean isValidInteractionStack(ItemStack stack)
     {
         return stack.getItem() instanceof GauntletAbstraction || stack.getItem() instanceof BasinAbstraction;

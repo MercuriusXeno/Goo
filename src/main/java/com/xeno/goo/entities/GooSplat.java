@@ -28,8 +28,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
-
-import javax.annotation.Nullable;
 import java.util.Collection;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
