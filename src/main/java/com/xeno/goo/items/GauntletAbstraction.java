@@ -7,6 +7,8 @@ import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -46,7 +48,11 @@ public class GauntletAbstraction extends ItemFluidContainer
             return;
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(player.getHeldItem(Hand.MAIN_HAND));
+        ItemStack stack = player.getHeldItem(Hand.MAIN_HAND);
+        if (!(stack.getItem() instanceof GauntletAbstraction)) {
+            return;
+        }
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
         if (cap == null) {
             return;
         }
@@ -59,11 +65,23 @@ public class GauntletAbstraction extends ItemFluidContainer
             return;
         }
 
+        if (drainAmountThrown == 0) {
+            drainAmountThrown = 1;
+        }
+
         FluidStack thrownStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
         player.getEntityWorld().addEntity(new GooBlob(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
+        player.swing(Hand.MAIN_HAND, true);
+    }
 
-        player.swing(Hand.MAIN_HAND, false);
+    @Override
+    public boolean isDamageable(ItemStack stack) {
+        IFluidHandlerItem fh = FluidHandlerHelper.capability(stack);
+        if (fh == null || fh.getFluidInTank(0).isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -36,6 +36,7 @@ import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Optional;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -220,7 +221,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
         // check if we're floating lol
         if (world.getBlockState(blockAttached).isAir(world, blockAttached)) {
-            world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, this.owner, this.goo, this.getPositionVec()));
+            world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, Optional.of(this.owner), this.goo, this.getPositionVec()));
             this.remove();
         }
 

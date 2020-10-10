@@ -3,15 +3,12 @@ package com.xeno.goo.entities;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IPassThroughPredicate;
-import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.*;
 import net.minecraft.entity.*;
-import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -24,7 +21,6 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
@@ -32,18 +28,17 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
-import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -59,10 +54,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private BlockPos blockAttached = null;
     private GooSplat attachedSplat = null;
     private boolean isAttachedToBlock;
-
-//    public GooBlob(FMLPlayMessages.SpawnEntity packet, World world) {
-//        super(Registry.GOO_BLOB.get(), world);
-//    }
 
     public GooBlob(EntityType<GooBlob> type, World worldIn) {
         super(type, worldIn);
@@ -85,12 +76,18 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     }
 
     // special constructor for goo blobs that doesn't shoot; this is important.
-    public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
+    public GooBlob(EntityType<GooBlob> type, World worldIn, Optional<Entity> sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
         goo = stack;
         isAttachedToBlock = false;
-        this.setPositionAndRotation(pos.x, pos.y, pos.z, sender.rotationYaw, sender.rotationPitch);
-        this.owner = sender;
+        float yaw = 0f;
+        float pitch = 0f;
+        if (sender.isPresent()) {
+            yaw = sender.get().rotationYaw;
+            pitch = sender.get().rotationPitch;
+            this.owner = sender.get();
+        }
+        this.setPositionAndRotation(pos.x, pos.y, pos.z, yaw, pitch);
         this.setSize();
     }
 
@@ -136,7 +133,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     }
 
     // 32 blocks.
-    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
+    private static final double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
     @Override
     public boolean isInRangeToRenderDist(double distance)
     {
@@ -290,7 +287,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         // nerf motion on impact.
         this.setMotion(this.getMotion().scale(0.02d));
 
-        // check if there isn't already a splat we can glom onto, if there is, attach to it instead of a new one
+        // check if there isn't already a splat we can stick onto, if there is, attach to it instead of a new one
 
         List<GooSplat> splats = world.getEntitiesWithinAABB(Registry.GOO_SPLAT.get(), this.getBoundingBox(), (s) -> s.goo().getFluid().equals(this.goo().getFluid()));
         if (splats.size() > 0) {
@@ -523,11 +520,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
             goo.setAmount(goo.getAmount() - attemptTransfer);
         }
 
-        if (goo.getAmount() > 0) {
-            return false;
-        }
-
-        return true;
+        return goo.getAmount() <= 0;
     }
 
 
@@ -580,7 +573,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     protected void collideWithEntity(Entity entityHit)
     {
         if (entityHit == owner) {
-            // only try catching the goos flagged to bounce/return goo
+            // only try catching the goo flagged to bounce/return goo
             // at the time of writing, hard coded.
             if (!isAutoGrabbedGoo()) {
                 return;
@@ -618,7 +611,11 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     public float cubicSize()
     {
-        return  (float)Math.cbrt(goo.getAmount()) / 10f;
+        return cubicSize(goo.getAmount());
+    }
+
+    public static float cubicSize(int amount) {
+        return  (float)Math.cbrt(amount) / 10f;
     }
 
     public int quiverTimer()
