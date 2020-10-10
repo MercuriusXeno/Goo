@@ -9,20 +9,20 @@
   },
   "compounds": [
     {
-      "amount": 6.0,
-      "type": "goo:weird"
-    },
-    {
-      "amount": 36.0,
-      "type": "goo:aquatic"
+      "amount": 2.0,
+      "type": "goo:crystal"
     },
     {
       "amount": 72.0,
       "type": "goo:energetic"
     },
     {
-      "amount": 2.0,
-      "type": "goo:crystal"
+      "amount": 36.0,
+      "type": "goo:aquatic"
+    },
+    {
+      "amount": 6.0,
+      "type": "goo:weird"
     }
   ]
 }

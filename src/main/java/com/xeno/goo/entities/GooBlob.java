@@ -323,6 +323,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         this.sideWeLiveOn = face;
         this.isAttachedToBlock = true;
         this.attachedSplat = splat;
+        AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
+                1.0f, AudioHelper.PitchFormulas.HalfToOne);
     }
 
     protected void doFreeMovement() {

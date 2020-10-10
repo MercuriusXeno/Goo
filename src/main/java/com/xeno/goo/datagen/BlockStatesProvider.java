@@ -5,6 +5,7 @@ import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.GooBulbAbstraction;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.PumpRenderMode;
+import net.minecraft.block.DropperBlock;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;

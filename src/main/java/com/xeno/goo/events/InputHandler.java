@@ -62,6 +62,9 @@ public class InputHandler {
     }
 
     private static void tryUsingGauntlet(ClientPlayerEntity player) {
+        if (player.isSwingInProgress) {
+            return;
+        }
         if (TargetingHandler.lastTargetedEntity instanceof GooSplat && ((GooSplat) TargetingHandler.lastTargetedEntity).isAtRest()) {
                 // refer to the targeting handler to figure out if we are looking at a goo entity
                 Networking.sendToServer(new GooGrabPacket(TargetingHandler.lastTargetedEntity), player);
@@ -69,10 +72,10 @@ public class InputHandler {
             // refer to the targeting handler to figure out if we are looking at a goo container
             Networking.sendToServer(new GooCollectPacket(TargetingHandler.lastTargetedBlock, TargetingHandler.lastHitVector, TargetingHandler.lastHitSide), player);
         } else {
-            GooMod.debug("Throwing goo!");
             // packet to server to request a throw event in lieu of grabbing anything
             Networking.sendToServer(new GooLobPacket(), player);
         }
+        return;
     }
 
     public static void handleEventTicking(TickEvent.ClientTickEvent event) {

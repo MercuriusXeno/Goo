@@ -4,6 +4,7 @@ import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.LobberTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.DispenserBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.item.ItemEntity;
@@ -17,7 +18,10 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Random;
 
 public class Lobber extends BlockWithConnections
 {
@@ -28,7 +32,7 @@ public class Lobber extends BlockWithConnections
                 .hardnessAndResistance(1.0f)
         );
         setDefaultState(this.stateContainer.getBaseState()
-                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.TRIGGERED, false)
                 .with(BlockStateProperties.FACING, Direction.UP)
         );
     }
@@ -39,17 +43,26 @@ public class Lobber extends BlockWithConnections
     }
 
     public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
-        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
-        if (!worldIn.isRemote) {
-            boolean flag = state.get(BlockStateProperties.POWERED);
-            if (flag != worldIn.isBlockPowered(pos)) {
-                if (flag) {
-                    worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
-                } else {
-                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
-                }
-            }
+        boolean isPoweredOrUnderSomethingPowered = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.up());
+        boolean isAlreadyTriggered = state.get(BlockStateProperties.TRIGGERED);
+        if (isPoweredOrUnderSomethingPowered && !isAlreadyTriggered) {
+            worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
+            worldIn.setBlockState(pos, state.with(BlockStateProperties.TRIGGERED, Boolean.TRUE), 4);
+        } else if (!isPoweredOrUnderSomethingPowered && isAlreadyTriggered) {
+            worldIn.setBlockState(pos, state.with(BlockStateProperties.TRIGGERED, Boolean.FALSE), 4);
         }
+    }
+
+    public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
+        this.dispense(worldIn, pos);
+    }
+
+    private void dispense(ServerWorld worldIn, BlockPos pos) {
+        TileEntity te = worldIn.getTileEntity(pos);
+        if (!(te instanceof LobberTile)) {
+            return;
+        }
+        ((LobberTile) te).cycleInputsForLob();
     }
 
     @Override
@@ -67,13 +80,13 @@ public class Lobber extends BlockWithConnections
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.POWERED, false)
+                .with(BlockStateProperties.TRIGGERED, false)
                 .with(BlockStateProperties.FACING, context.getNearestLookingDirection().getOpposite());
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.POWERED, BlockStateProperties.FACING);
+        builder.add(BlockStateProperties.TRIGGERED, BlockStateProperties.FACING);
     }
 
     @Override

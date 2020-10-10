@@ -11,13 +11,12 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.Optional;
 
-public class LobberTile extends TileEntity implements ITickableTileEntity
+public class LobberTile extends TileEntity
 {
     private int lastFiredDirection = -1;
     public LobberTile()
@@ -25,64 +24,70 @@ public class LobberTile extends TileEntity implements ITickableTileEntity
         super(Registry.LOBBER_TILE.get());
     }
 
-
-
-    @Override
-    public void tick() {
-        if (world == null) {
-            return;
+    public void cycleInputsForLob() {
+        // figure out where our last fire input came from and attempt to fire from the next input
+        int tryFireDirection = lastFiredDirection + 1;
+        // reset to 0 if we're "fresh" or we're at the end of the array
+        if (tryFireDirection > 4) {
+            tryFireDirection = 0;
         }
-
-        if (world.isRemote) {
-            return;
-        }
-
-        if (world.getGameTime() % 4 > 0) {
-            return;
-        }
-
-
-        for (int i = 0; i < directionsWeAreNotFacing().length; i++) {
-            if ((world.getGameTime() % 20) / 4 == i) {
-                Direction d = directionsWeAreNotFacing()[i];
-                tryPushingFluid(d);
+        Direction[] tryDirections = directionsWeAreNotFacing(tryFireDirection);
+        for(Direction d : tryDirections) {
+            if (tryPushingFluid(d)) {
+                lastFiredDirection = tryFireDirection;
+                return;
             }
         }
     }
 
     private Direction[] cachedPullDirections;
-    private Direction[] directionsWeAreNotFacing() {
+    private Direction[] directionsWeAreNotFacing(int tryFireDirection) {
         if (cachedPullDirections == null) {
             int index = 0;
-            Direction[] result = new Direction[5];
+            Direction[] directionsToCache = new Direction[5];
             for (Direction d : Direction.values()) {
                 if (d == facing()) {
                     continue;
                 }
-                result[index] = d;
+                directionsToCache[index] = d;
                 index++;
             }
-            cachedPullDirections = result;
+            cachedPullDirections = directionsToCache;
         }
-        return cachedPullDirections;
+
+        // sort our directions to prefer the one we're trying first, so that it has a deterministic order.
+        Direction[] result = new Direction[5];
+        int resultIndex = 0;
+        for (int i = tryFireDirection; i < cachedPullDirections.length; i++) {
+            result[resultIndex] = cachedPullDirections[i];
+            resultIndex++;
+        }
+        if (tryFireDirection > 0) {
+            for (int i = 0; i < tryFireDirection; i++) {
+                result[resultIndex] = cachedPullDirections[i];
+                resultIndex++;
+            }
+        }
+
+        return result;
     }
 
-    private void tryPushingFluid(Direction d)
+    private boolean tryPushingFluid(Direction d)
     {
         TileEntity source = tileAtSource(d);
 
         if (source == null) {
-            return;
+            return false;
         }
 
-        LazyOptional<IFluidHandler> sourceHandler = FluidHandlerHelper.capabilityOfNeighbor(this, d);
-        sourceHandler.ifPresent(this::lobFluid);
+        Optional<IFluidHandler> sourceHandler = FluidHandlerHelper.capabilityOfNeighbor(this, d).resolve();
+        if (sourceHandler.isPresent()) {
+            return lobFluid(sourceHandler.get());
+        }
+        return false;
     }
 
-    private void lobFluid(IFluidHandler cap) {
-        if (world == null || world.isRemote) {
-            return;
-        }
+    private boolean lobFluid(IFluidHandler cap) {
         // iterate over all tanks and try a simulated drain until something sticks.
         for (int i = 0; i < cap.getTanks(); i++) {
             FluidStack simulatedDrain = cap.getFluidInTank(i).copy();
@@ -100,7 +105,7 @@ public class LobberTile extends TileEntity implements ITickableTileEntity
 
             // -1 is disabled, 0 is just about to crash the server.
             if (drainAmountThrown <= -1) {
-                return;
+                return false;
             }
 
             if (drainAmountThrown == 0) {
@@ -129,8 +134,9 @@ public class LobberTile extends TileEntity implements ITickableTileEntity
 
             blob.setMotion(offsetVec);
             world.addEntity(blob);
-            break;
+            return true;
         }
+        return false;
     }
 
     private TileEntity tileAtSource(Direction d)
@@ -138,10 +144,9 @@ public class LobberTile extends TileEntity implements ITickableTileEntity
         return FluidHandlerHelper.tileAtDirection(this, d);
     }
 
-    public Direction facing()
-    {
-        return this.getBlockState().get(BlockStateProperties.FACING);
-    }
+    public Direction facing() { return this.getBlockState().get(BlockStateProperties.FACING); }
+
+    private boolean triggered() { return this.getBlockState().get(BlockStateProperties.TRIGGERED); }
 
     @Override
     public CompoundNBT write(CompoundNBT tag)
@@ -160,5 +165,4 @@ public class LobberTile extends TileEntity implements ITickableTileEntity
     {
         return this.write(new CompoundNBT());
     }
-
 }

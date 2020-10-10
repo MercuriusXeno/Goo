@@ -67,9 +67,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         }
 
         boolean didStuff = tryVerticalDrain() || tryLateralShare();
+        pruneEmptyGoo();
 
         if (didStuff) {
-            pruneEmptyGoo();
             onContentsChanged();
         }
     }
@@ -370,6 +370,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     public ItemStack getBulbStack(Block block) {
+        pruneEmptyGoo();
         ItemStack stack = new ItemStack(block);
         CompoundNBT bulbTag = new CompoundNBT();
         write(bulbTag);
