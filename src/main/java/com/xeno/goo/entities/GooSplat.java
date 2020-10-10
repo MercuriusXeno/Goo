@@ -1,9 +1,13 @@
 package com.xeno.goo.entities;
 
+import com.xeno.goo.blocks.Drain;
+import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.DrainTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -14,6 +18,7 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
@@ -28,7 +33,10 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
+
+import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Optional;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
@@ -193,18 +201,18 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             this.dataManager.set(IS_AT_REST, this.isAtRest);
         }
 
-//        if (this.isAtRest) {
-//            // first we try to drain into a drain if we're vertical and it's below
-//            if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
-//                drainIntoDrain();
-//            } else {
-//                if (cooldown == 0) {
-//                    GooInteractions.tryResolving(this);
-//                } else {
-//                    cooldown--;
-//                }
-//            }
-//        }
+        if (this.isAtRest) {
+            // first we try to drain into a drain if we're vertical and it's below
+            if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
+                drainIntoDrain();
+            } else {
+                if (cooldown == 0) {
+                    GooInteractions.tryResolving(this);
+                } else {
+                    cooldown--;
+                }
+            }
+        }
 
         handleMaterialCollisionChecks();
         this.checkForEntityCollision();
@@ -213,31 +221,31 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
 
         // check if we're floating lol
         if (world.getBlockState(blockAttached).isAir(world, blockAttached)) {
-            world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, this.owner, this.goo, this.getPositionVec()));
+            world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), world, Optional.of(this.owner), this.goo, this.getPositionVec()));
             this.remove();
         }
 
         lastGooAmount = goo.getAmount();
     }
 
-//    private void drainIntoDrain() {
-//        BlockPos below = this.getPosition().offset(Direction.DOWN);
-//        TileEntity e = world.getTileEntity(below);
-//        if (e instanceof DrainTile) {
-//            if (((DrainTile) e).canFill(this.goo)) {
-//                ((DrainTile)e).fill(this.drain(1, FluidAction.EXECUTE), this.owner);
-//            }
-//        }
-//    }
-//
-//    private boolean isDrainBelow() {
-//        BlockPos below = this.getPosition().offset(Direction.DOWN);
-//        BlockState state = world.getBlockState(below);
-//        if (state.getBlock() instanceof Drain) {
-//            return true;
-//        }
-//        return false;
-//    }
+    private void drainIntoDrain() {
+        BlockPos below = this.getPosition().offset(Direction.DOWN);
+        TileEntity e = world.getTileEntity(below);
+        if (e instanceof DrainTile) {
+            if (((DrainTile) e).canFill(this.goo)) {
+                ((DrainTile)e).fill(this.drain(1, FluidAction.EXECUTE), this.owner);
+            }
+        }
+    }
+
+    private boolean isDrainBelow() {
+        BlockPos below = this.getPosition().offset(Direction.DOWN);
+        BlockState state = world.getBlockState(below);
+        if (state.getBlock() instanceof Drain) {
+            return true;
+        }
+        return false;
+    }
 
     private void approachAttachmentPoint()
     {

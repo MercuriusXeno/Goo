@@ -27,8 +27,8 @@ public class RecipesProvider extends RecipeProvider {
         registerMixerRecipe(consumer);
         registerCrucibleRecipe(consumer);
         registerGooBulbRecipe(consumer);
-//        registerLobberRecipe(consumer);
-//        registerDrainRecipe(consumer);
+        registerLobberRecipe(consumer);
+        registerDrainRecipe(consumer);
     }
 
     private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -159,29 +159,29 @@ public class RecipesProvider extends RecipeProvider {
                 .build(consumer);
     }
 
-//    private void registerDrainRecipe(Consumer<IFinishedRecipe> consumer) {
-//        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Drain.get())
-//                .patternLine("ibi")
-//                .patternLine("bgb")
-//                .patternLine("ibi")
-//                .key('b', Items.IRON_BARS)
-//                .key('i', Items.IRON_INGOT)
-//                .key('g', ItemsRegistry.Gasket.get())
-//                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
-//                .build(consumer);
-//    }
-//
-//    private void registerLobberRecipe(Consumer<IFinishedRecipe> consumer) {
-//        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Lobber.get())
-//                .patternLine("sgs")
-//                .patternLine("gdg")
-//                .patternLine("grg")
-//                .key('d', Items.DISPENSER)
-//                .key('s', Items.NETHERITE_SCRAP)
-//                .key('g', ItemsRegistry.Gasket.get())
-//                .key('r', Items.REDSTONE)
-//                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
-//                .build(consumer);
-//    }
+    private void registerDrainRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Drain.get())
+                .patternLine("ibi")
+                .patternLine("bgb")
+                .patternLine("ibi")
+                .key('b', Items.IRON_BARS)
+                .key('i', Items.IRON_INGOT)
+                .key('g', ItemsRegistry.Gasket.get())
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
+                .build(consumer);
+    }
+
+    private void registerLobberRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Lobber.get())
+                .patternLine("sgs")
+                .patternLine("gdg")
+                .patternLine("grg")
+                .key('d', Items.DISPENSER)
+                .key('s', Items.NETHERITE_SCRAP)
+                .key('g', ItemsRegistry.Gasket.get())
+                .key('r', Items.REDSTONE)
+                .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
+                .build(consumer);
+    }
 
 }

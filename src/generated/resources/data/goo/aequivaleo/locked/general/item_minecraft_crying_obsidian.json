@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:weird"
-    },
-    {
       "amount": 960.0,
       "type": "goo:obsidian"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:weird"
     }
   ]
 }
