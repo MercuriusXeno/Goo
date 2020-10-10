@@ -8,6 +8,7 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.util.*;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
@@ -59,7 +60,7 @@ public class GooInteractions
         double offX = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
         double offZ = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
 
-        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
+        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, (int)Math.sqrt(e.goo().getAmount()),
                 offX, e.cubicSize(), offZ, 0.2d);
     }
 
@@ -77,6 +78,9 @@ public class GooInteractions
     // the blob is being "emptied" and hang onto its fluid type.
     public static void spawnParticles(GooSplat e, GooFluid f)
     {
+        if (e.world.rand.nextFloat() > 0.04f) {
+            return;
+        }
         if (!(e.getEntityWorld() instanceof ServerWorld)) {
             return;
         }
@@ -85,14 +89,16 @@ public class GooInteractions
         if (type == null) {
             return;
         }
-        Vector3d spawnVec = e.getPositionVec();
-        // give it a bit of randomness around the hit location
-        double offX = (e.shape().x / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
-        double offZ = (e.shape().z / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
-        double offY = (e.shape().y / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
 
-        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, e.goo().getAmount(),
-                offX, offY, offZ, 0.2d);
+        AxisAlignedBB box = e.getBoundingBox();
+        Vector3d lowerBounds = new Vector3d(box.minX, box.minY, box.minZ);
+        Vector3d threshHoldMax = new Vector3d(box.maxX - box.minX, box.maxY - box.minY, box.maxZ - box.minZ);
+        Vector3d spawnVec = lowerBounds.add(threshHoldMax.mul(e.world.rand.nextFloat(), e.world.rand.nextFloat(), e.world.rand.nextFloat()));
+        // make sure the spawn area is offset in a way that puts the particle outside of the block side we live on
+        Vector3d offsetVec = Vector3d.copy(e.sideWeLiveOn().getDirectionVec()).mul(threshHoldMax.x, threshHoldMax.y, threshHoldMax.z);
+
+        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, 1,
+                offsetVec.x, offsetVec.y, offsetVec.z, 0.2d);
     }
 
     public static final Map<Fluid, Map<Tuple<Integer, String>, ISplatInteraction>> splatRegistry = new HashMap<>();
