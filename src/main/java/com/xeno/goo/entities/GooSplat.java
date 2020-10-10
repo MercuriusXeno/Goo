@@ -202,6 +202,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             }
         }
 
+
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
         if (world.isRemote()) {
@@ -210,6 +211,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 goo.setAmount(dataManagerGooSize);
                 updateSplatState();
             }
+            lastGooAmount = goo.getAmount();
             return;
         }
 
@@ -321,6 +323,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         super.read(tag);
         goo = FluidStack.loadFluidStackFromNBT(tag);
+        lastGooAmount = tag.getInt("lastGooAmount");
+        isAtRest = tag.getBoolean("isAtRest");
         deserializeAttachment(tag);
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
@@ -340,6 +344,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
         goo.writeToNBT(tag);
+        tag.putInt("lastGooAmount", lastGooAmount);
+        tag.putBoolean("isAtRest", isAtRest);
         serializeAttachment(tag);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
         return tag;
