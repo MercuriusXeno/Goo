@@ -267,11 +267,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return !state.getFluidState().getFluid().equals(Fluids.EMPTY) && state.getFluidState().isSource();
     }
 
-    private boolean isGlass(BlockState state)
-    {
-        return state.getBlock() instanceof StainedGlassBlock || state.getBlock() instanceof GlassBlock;
-    }
-
     private void handleFriction()
     {
         this.setMotion(this.getMotion().scale(GENERAL_FRICTION));
@@ -492,48 +487,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     @Override
     public boolean canBeCollidedWith()
     {
-        return true;
-    }
-
-    @Override
-    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand)
-    {
-        ItemStack stack = player.getHeldItem(hand);
-        if (!isValidInteractionStack(stack)) {
-            return ActionResultType.PASS;
-        }
-        boolean[] didStuff = {false};
-
-        LazyOptional<IFluidHandlerItem> cap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, this));
-        if (didStuff[0]) {
-            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
-            return ActionResultType.SUCCESS;
-        }
-        return ActionResultType.CONSUME;
-    }
-
-    private boolean isValidInteractionStack(ItemStack stack)
-    {
-        return stack.getItem() instanceof GauntletAbstraction || stack.getItem() instanceof BasinAbstraction;
-    }
-
-    private static boolean tryExtractingGooFromEntity(IFluidHandlerItem item, GooBlob entity)
-    {
-        FluidStack heldGoo = item.getFluidInTank(0);
-        if (!item.getFluidInTank(0).isEmpty()) {
-            if (!heldGoo.isFluidEqual(entity.getFluidInTank(0)) || entity.getFluidInTank(0).isEmpty()) {
-                return false;
-            }
-        }
-
-        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
-        FluidStack tryDrain = entity.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
-        if (tryDrain.isEmpty()) {
-            return false;
-        }
-        item.fill(entity.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
-
         return true;
     }
 

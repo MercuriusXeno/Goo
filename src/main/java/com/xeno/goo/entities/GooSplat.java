@@ -1,11 +1,8 @@
 package com.xeno.goo.entities;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.interactions.GooInteractions;
-import com.xeno.goo.items.BasinAbstraction;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.DrainTile;
@@ -13,7 +10,6 @@ import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -23,7 +19,6 @@ import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
@@ -37,7 +32,6 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
-import net.minecraftforge.fml.network.FMLPlayMessages;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -46,6 +40,7 @@ import java.util.Collection;
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
 {
     private static final DataParameter<Integer> GOO_AMOUNT = EntityDataManager.createKey(GooSplat.class, DataSerializers.VARINT);
+    private static final DataParameter<Boolean> IS_AT_REST = EntityDataManager.createKey(GooSplat.class, DataSerializers.BOOLEAN);
 
     // vars that help determine the dimensions of the splat
     // the first Single-Tile-Liquid-Covering amount is what it takes to get
@@ -57,6 +52,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private static final double LIQUID_CUBIC_TILE_COVERAGE_VOLUME = SINGLE_TILE_LIQUID_COVERING_RATIO / LIQUID_CUBIC_RATIO;
     private static final double LIQUID_CUBIC_SIDE_LENGTH_DERIVED = Math.sqrt(LIQUID_CUBIC_TILE_COVERAGE_VOLUME / PUDDLE_DEPTH);
     private static final double PUDDLE_EXPANSION_RATIO = 1d / LIQUID_CUBIC_SIDE_LENGTH_DERIVED;
+
 
     // actual properties of the splat
     private FluidStack goo;
@@ -100,7 +96,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         double cubicArea = goo.getAmount() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / PUDDLE_DEPTH;
-        double sideLength = Math.min(1d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
+        double sideLength = Math.min(0.98d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
         // this will be puddle depth const until sidelength gets throttled.
         double actualDepth = cubicArea / (sideLength * sideLength);
         switch (depthAxis()) {
@@ -173,6 +169,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     @Override
     protected void registerData() {
         this.dataManager.register(GOO_AMOUNT, 1);
+        this.dataManager.register(IS_AT_REST, false);
     }
 
     @Override
@@ -184,11 +181,25 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        if (lastGooAmount == goo.getAmount()) {
-            this.isAtRest = true;
-        } else {
-            this.isAtRest = false;
+        // let the server handle motion and updates
+        // also don't tell the server what the goo amount is, it knows.
+        if (world.isRemote()) {
+            int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
+            isAtRest = this.dataManager.get(IS_AT_REST);
+            if (dataManagerGooSize != goo.getAmount()) {
+                goo.setAmount(dataManagerGooSize);
+                updateSplatState();
+            }
+            return;
         }
+
+        boolean wasAtRest = this.isAtRest;
+        this.isAtRest = lastGooAmount == goo.getAmount();
+
+        if (wasAtRest != isAtRest) {
+            this.dataManager.set(IS_AT_REST, this.isAtRest);
+        }
+
         if (this.isAtRest) {
             // first we try to drain into a drain if we're vertical and it's below
             if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
@@ -200,19 +211,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                     cooldown--;
                 }
             }
-        }
-
-
-        // let the server handle motion and updates
-        // also don't tell the server what the goo amount is, it knows.
-        if (world.isRemote()) {
-            int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
-            if (dataManagerGooSize != goo.getAmount()) {
-                goo.setAmount(dataManagerGooSize);
-                updateSplatState();
-            }
-            lastGooAmount = goo.getAmount();
-            return;
         }
 
         handleMaterialCollisionChecks();

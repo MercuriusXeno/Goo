@@ -1,0 +1,16 @@
+{
+  "name": "block.goo.lobber",
+  "icon": "goo:lobber",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.lobber.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:lobber",
+      "text": "patchouli.goo.lobber.summary"
+    }
+  ]
+}

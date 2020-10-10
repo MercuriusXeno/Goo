@@ -1,0 +1,16 @@
+{
+  "name": "block.goo.drain",
+  "icon": "goo:drain",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.drain.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:drain",
+      "text": "patchouli.goo.drain.summary"
+    }
+  ]
+}
