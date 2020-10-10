@@ -8,6 +8,10 @@
       "text": "patchouli.goo.goo_pump.summary"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:goo_pump"
+    },
+    {
       "type": "multiblock",
       "enable_visualize": false,
       "multiblock": {
@@ -22,10 +26,6 @@
           ["B B"]
         ]
       }
-    },
-    {
-      "type": "crafting",
-      "recipe": "goo:goo_pump"
     }
   ]
 }

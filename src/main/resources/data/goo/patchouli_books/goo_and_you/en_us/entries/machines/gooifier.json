@@ -8,6 +8,10 @@
       "text": "patchouli.goo.gooifier.summary"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:gooifier"
+    },
+    {
       "type": "multiblock",
       "text": "patchouli.goo.gooifier.power",
       "enable_visualize": false,
@@ -23,10 +27,6 @@
           ["H0"]
         ]
       }
-    },
-    {
-      "type": "crafting",
-      "recipe": "goo:gooifier"
     }
   ]
 }

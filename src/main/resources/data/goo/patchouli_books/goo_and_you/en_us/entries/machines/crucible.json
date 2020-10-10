@@ -8,6 +8,10 @@
       "text": "patchouli.goo.crucible.summary"
     },
     {
+      "type": "crafting",
+      "recipe": "goo:crucible"
+    },
+    {
       "type": "multiblock",
       "text": "patchouli.goo.crucible.restrictions",
       "enable_visualize": false,
@@ -24,10 +28,6 @@
           ["  B  "]
         ]
       }
-    },
-    {
-      "type": "crafting",
-      "recipe": "goo:crucible"
     },
     {
       "type": "goo:crucible_recipes",
