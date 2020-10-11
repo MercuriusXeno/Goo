@@ -62,6 +62,9 @@ public class InputHandler {
     }
 
     private static void tryUsingGauntlet(ClientPlayerEntity player) {
+        if (player.isSwingInProgress) {
+            return;
+        }
         if (TargetingHandler.lastTargetedEntity instanceof GooSplat && ((GooSplat) TargetingHandler.lastTargetedEntity).isAtRest()) {
             // refer to the targeting handler to figure out if we are looking at a goo entity
             Networking.sendToServer(new GooGrabPacket(TargetingHandler.lastTargetedEntity), player);
