@@ -9,7 +9,7 @@
   },
   "compounds": [
     {
-      "amount": 6.0,
+      "amount": 4.0,
       "type": "goo:weird"
     },
     {
@@ -17,7 +17,7 @@
       "type": "goo:vital"
     },
     {
-      "amount": 30.0,
+      "amount": 15.0,
       "type": "goo:floral"
     }
   ]

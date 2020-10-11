@@ -4,17 +4,25 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:podzol"
+      "item": "minecraft:magma_block"
     }
   },
   "compounds": [
+    {
+      "amount": 30.0,
+      "type": "goo:decay"
+    },
+    {
+      "amount": 10.0,
+      "type": "goo:slime"
+    },
     {
       "amount": 180.0,
       "type": "goo:earthen"
     },
     {
-      "amount": 15.0,
-      "type": "goo:fungal"
+      "amount": 10.0,
+      "type": "goo:molten"
     }
   ]
 }

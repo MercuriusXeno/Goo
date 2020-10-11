@@ -4,20 +4,24 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:coal"
+      "item": "minecraft:bell"
     }
   },
   "compounds": [
     {
-      "amount": 32.0,
-      "type": "goo:energetic"
+      "amount": 180.0,
+      "type": "goo:metal"
     },
     {
       "amount": 128.0,
-      "type": "goo:molten"
+      "type": "goo:floral"
     },
     {
-      "amount": 16.0,
+      "amount": 216.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 360.0,
       "type": "goo:earthen"
     }
   ]

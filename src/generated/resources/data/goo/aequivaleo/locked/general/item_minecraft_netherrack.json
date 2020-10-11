@@ -9,12 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 15.0,
+      "amount": 5.0,
       "type": "goo:molten"
     },
     {
       "amount": 180.0,
       "type": "goo:earthen"
+    },
+    {
+      "amount": 5.0,
+      "type": "goo:decay"
     }
   ]
 }
