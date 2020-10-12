@@ -17,8 +17,8 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = "${project.modVersion}"
-group = modGroup // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+version = "${goo_version}"
+group = mod_group
 
 sourceSets.main {
     resources {
@@ -34,7 +34,7 @@ minecraft {
     // stable_#            Stables are built at the discretion of the MCP team.
     // Use non-default mappings at your own risk. they may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: "${project.mcpChannel}", version: "${project.mcpVersion}"
+    mappings channel: "${mcp_channel}", version: "${mcp_version}"
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
     
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -119,32 +119,42 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft "net.minecraftforge:forge:${project.exactMinecraftVersion}-${project.forgeVersion}"
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation 'org.jetbrains:annotations:15.0'
 
-    compileOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:${project.jeiVersion}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${project.exactMinecraftVersion}:${project.jeiVersion}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
-    runtimeOnly fg.deobf("${project.aequivaleoVersion}:universal")
-    compileOnly fg.deobf("${project.aequivaleoVersion}:api")
-    compileOnly fg.deobf("${project.aequivaleoVersion}:vanilla-api")
+    runtimeOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:universal")
+    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
+    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
 
-    compileOnly fg.deobf("${project.patchouliVersion}:api")
-    runtimeOnly fg.deobf("${project.patchouliVersion}")
+    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
+    runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
 jar {
     manifest {
         attributes([
-                "Specification-Title": project.name.toLowerCase(),
+                "Specification-Title": mod_name.toLowerCase(),
                 "Specification-Vendor": "xeno",
                 "Specification-Version": "1", // We are version 1 of ourselves
-                "Implementation-Title": project.name,
-                "Implementation-Version": "${project.version}",
+                "Implementation-Title": mod_name,
+                "Implementation-Version": "${goo_version}",
                 "Implementation-Vendor" :"xeno",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
+    }
+}
+
+processResources {
+    outputs.upToDateWhen { false }
+    filesMatching('META-INF/mods.toml') {
+        //Replace some keys from the mods.toml with values from the gradle.properties file
+        expand "goo_version": goo_version, "minecraft_version": minecraft_version,
+                "forge_version": min_forge_version, "loader_version": loader_version,
+                "aequivaleo_version": aequivaleo_version, "patchouli_version": patchouli_version
     }
 }
 

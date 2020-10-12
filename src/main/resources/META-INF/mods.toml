@@ -1,40 +1,37 @@
-modLoader="javafml" #mandatory
-loaderVersion="[32,)" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
+modLoader="javafml"
+loaderVersion="[${loader_version},)"
 license="MIT License"
-issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues" #optional
+issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues"
 
-[[mods]] #mandatory
-    modId="goo" #mandatory
-    version="${file.jarVersion}" #mandatory
-    displayName="Goo" #mandatory
-    # updateJSONURL="" #optional
-    # displayURL="" #optional
-    # logoFile="" #optional
-    authors="Xeno, OrionOnline" #optional
+[[mods]]
+    modId="goo"
+    version="${goo_version}"
+    displayName="Goo"
+    displayURL="https://github.com/MercuriusXeno/Goo"
+    authors="Xeno"
     description='''Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.'''
-[[dependencies.goo]] #optional
-    modId="forge" #mandatory
-    mandatory=true #mandatory
-    versionRange="[${forge_version},)" #mandatory
-    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
+    credits="OrionOnline (Aequivaleo), Bluberry Kat (Textures, Testing), Webmilio"
+[[dependencies.goo]]
+    modId="forge"
+    mandatory=true
+    versionRange="[${forge_version},)"
     ordering="NONE"
-    # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
 [[dependencies.goo]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.3]"
+    versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]
     modId="aequivaleo"
     mandatory=true
-    versionRange="[0.0.101-ALPHA]"
+    versionRange="[${aequivaleo_version}]"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]
     modId="patchouli"
     mandatory=true
-    versionRange="[1.16.2-44]"
+    versionRange="[${patchouli_version}]"
     ordering="NONE"
     side="BOTH"
