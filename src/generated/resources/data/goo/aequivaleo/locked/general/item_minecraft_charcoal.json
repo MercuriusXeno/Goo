@@ -10,7 +10,7 @@
   "compounds": [
     {
       "amount": 32.0,
-      "type": "goo:energetic"
+      "type": "goo:floral"
     },
     {
       "amount": 128.0,
@@ -18,7 +18,7 @@
     },
     {
       "amount": 32.0,
-      "type": "goo:floral"
+      "type": "goo:energetic"
     }
   ]
 }
