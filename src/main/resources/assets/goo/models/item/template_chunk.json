@@ -1,0 +1,11 @@
+{
+  "parent": "forge:item/default",
+  "loader": "goo:chunk",
+  "fluid": "goo:item/mask/chunk_fluid",
+  "base": "goo:item/chunk",
+  "textures": {
+    "layer0": "goo:item/chunk",
+    "fluid": "goo:item/mask/chunk_fluid",
+    "base": "goo:item/chunk"
+  }
+}

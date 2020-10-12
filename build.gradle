@@ -142,14 +142,21 @@ jar {
     }
 }
 
-processResources {
+task replaceResources(type: Copy) {
     outputs.upToDateWhen { false }
-    filesMatching('META-INF/mods.toml') {
-        //Replace some keys from the mods.toml with values from the gradle.properties file
+    from(sourceSets.main.resources) {
+        include "META-INF/mods.toml"
         expand "goo_version": goo_version, "minecraft_version": minecraft_version,
                 "forge_version": min_forge_version, "loader_version": loader_version,
                 "aequivaleo_version": aequivaleo_version, "patchouli_version": patchouli_version
     }
+    into "$buildDir/resources/main/"
+}
+
+processResources {
+    //Exclude the mods.toml file as we manually handle that and don't want it to invalidate our cache
+    exclude 'META-INF/mods.toml'
+    finalizedBy replaceResources
 }
 
 // Example configuration to allow publishing using the maven-publish task

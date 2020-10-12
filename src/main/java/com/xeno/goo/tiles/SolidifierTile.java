@@ -13,6 +13,7 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -88,6 +89,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
 
         if (getBlockState().get(BlockStateProperties.POWERED)) {
+            tryExpellingGoo();
             return;
         }
 
@@ -251,6 +253,37 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
                     }
             );
         }
+    }
+
+    private void tryExpellingGoo() {
+        if (world == null) {
+            return;
+        }
+        for(Direction d : getValidDirections()) {
+            int[] workLeftThisGasket = {GooMod.config.gooProcessingRate()};
+            LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfNeighbor(this, d);
+            cap.ifPresent((c) ->
+                    fluidBuffer.forEach((k, v) -> workLeftThisGasket[0] = tryExpellingGoo(workLeftThisGasket[0], c, k, v))
+            );
+        }
+    }
+
+    private int tryExpellingGoo(int workLeft, IFluidHandler cap, String fluidKey, Double gooAmount) {
+        if (Math.floor(gooAmount) == 0d) {
+            return workLeft;
+        }
+        Fluid fluid = Registry.getFluid(fluidKey);
+        if (fluid == null || fluid.equals(Fluids.EMPTY)) {
+            return workLeft;
+        }
+        FluidStack stackToPush = new FluidStack(fluid, (int)Math.floor(gooAmount));
+        int workDone = cap.fill(stackToPush, IFluidHandler.FluidAction.SIMULATE);
+        if (workDone > 0) {
+            fluidBuffer.put(fluidKey, fluidBuffer.get(fluidKey) - workDone);
+        }
+        cap.fill(stackToPush, IFluidHandler.FluidAction.EXECUTE);
+
+        return workLeft;
     }
 
     private int tryDrainingFluid(int workLeftThisGasket, IFluidHandler cap, GooValue v)
