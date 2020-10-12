@@ -2,8 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.client.models.BasinModel;
-import com.xeno.goo.client.models.GauntletModel;
+import com.xeno.goo.client.models.*;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.render.*;
 import com.xeno.goo.setup.Registry;
@@ -72,6 +71,11 @@ public class ModClientEvents
     {
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "basin"), BasinModel.Loader.INSTANCE);
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "sliver"), SliverModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "shard"), ShardModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crystal"), CrystalModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "chunk"), ChunkModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "slab"), SlabModel.Loader.INSTANCE);
     }
 
     @SubscribeEvent
