@@ -36,6 +36,14 @@ public class InputHandler {
             return;
         }
 
+        // cancel the held state if the player arm starts swinging for any reason
+        // an arm swing is heuristically indicating the player interacted with some block
+        // and is relatively reliable as a client side indicator not to do things.
+        if (instance.player.isSwingInProgress) {
+            radialHeld = false;
+            return;
+        }
+
         ItemStack mainHand = instance.player.getHeldItem(Hand.MAIN_HAND);
         if (!(mainHand.getItem() instanceof Gauntlet)) {
             radialHeld = false;
