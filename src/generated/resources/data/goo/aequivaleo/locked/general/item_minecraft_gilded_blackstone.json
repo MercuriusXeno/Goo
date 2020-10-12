@@ -14,7 +14,7 @@
     },
     {
       "amount": 240.0,
-      "type": "goo:earthen"
+      "type": "goo:metal"
     },
     {
       "amount": 60.0,
@@ -22,11 +22,11 @@
     },
     {
       "amount": 240.0,
-      "type": "goo:obsidian"
+      "type": "goo:earthen"
     },
     {
       "amount": 240.0,
-      "type": "goo:metal"
+      "type": "goo:obsidian"
     }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "parent": "forge:item/default",
+  "loader": "goo:shard",
+  "fluid": "goo:item/mask/shard_fluid",
+  "base": "goo:item/shard",
+  "textures": {
+    "layer0": "goo:item/shard",
+    "fluid": "goo:item/mask/shard_fluid",
+    "base": "goo:item/shard"
+  }
+}

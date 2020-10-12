@@ -1,12 +1,14 @@
 package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.items.*;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.*;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.fml.RegistryObject;
 
 public class ItemsProvider extends ItemModelProvider {
     public ItemsProvider(DataGenerator generator, ExistingFileHelper existingFileHelper) {
@@ -22,6 +24,27 @@ public class ItemsProvider extends ItemModelProvider {
         registerCrucible();
         registerMixer();
         registerBulbs();
+        registerGooCrystals();
+    }
+
+    private void registerGooCrystals() {
+        ItemsRegistry.CrystallizedGoo.forEach(this::generateModelForCrystallizedGoo);
+    }
+
+    private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<Item> itemRegistryObject) {
+        String template = "";
+        if (itemRegistryObject.get() instanceof GooSliver) {
+            template = "template_sliver";
+        } else if (itemRegistryObject.get() instanceof GooShard) {
+            template = "template_shard";
+        } else if (itemRegistryObject.get() instanceof GooCrystal) {
+            template = "template_crystal";
+        } else if (itemRegistryObject.get() instanceof GooChunk) {
+            template = "template_chunk";
+        } else if (itemRegistryObject.get() instanceof GooSlab) {
+            template = "template_slab";
+        }
+        withExistingParent(resourceLocation.getPath(), new ResourceLocation(GooMod.MOD_ID, template));
     }
 
     private void registerBulbs()
