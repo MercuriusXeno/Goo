@@ -46,7 +46,7 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         if (goo.isEmpty()) {
             return;
         }
-        IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
+        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_CUBE);
         float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
 
         // this is the total fill percentage of the container
