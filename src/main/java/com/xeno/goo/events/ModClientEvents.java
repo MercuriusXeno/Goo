@@ -52,10 +52,10 @@ public class ModClientEvents
 
     private static void setRenderLayers()
     {
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooBulb.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooPump.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutout());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutout());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooBulb.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.GooPump.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getSolid());
     }
 

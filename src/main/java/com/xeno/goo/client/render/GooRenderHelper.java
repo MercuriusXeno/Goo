@@ -20,15 +20,12 @@ public class GooRenderHelper extends RenderState
     public static final int FULL_BRIGHT = 15728880;
 
     static {
-        // GOO
-        // todo 1.16 update to match vanilla where necessary (alternate render targets, etc.)
         RenderState.DiffuseLightingState enableDiffuse = new RenderState.DiffuseLightingState(true);
         RenderState.DiffuseLightingState disableDiffuse = new RenderState.DiffuseLightingState(false);
         RenderState.OverlayState enableOverlay = new RenderState.OverlayState(true);
-        RenderState.CullState disableCull = new RenderState.CullState(false);
         RenderType.ShadeModelState notSmoothShade = new RenderState.ShadeModelState(false);
         RenderType.State brightCubeState = RenderType.State.getBuilder()
-                .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                .texture(RenderType.BLOCK_SHEET_MIPPED)
                 .diffuseLighting(disableDiffuse)
                 .overlay(enableOverlay)
                 .shadeModel(RenderType.SHADE_DISABLED)
@@ -46,20 +43,20 @@ public class GooRenderHelper extends RenderState
                 GooMod.MOD_ID + ":goo_block",
                 DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP, GL11.GL_QUADS, 256, true, true,
                 RenderType.State.getBuilder()
-                        .texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                        .texture(RenderType.BLOCK_SHEET_MIPPED)
                         .diffuseLighting(enableDiffuse)
-                        .shadeModel(RenderType.SHADE_ENABLED)
-                        .lightmap(RenderType.LIGHTMAP_ENABLED)
+                        .shadeModel(notSmoothShade)
+                        .lightmap(RenderType.LIGHTMAP_DISABLED)
                         .transparency(RenderType.TRANSLUCENT_TRANSPARENCY)
                         .build(true));
 
         GOO_OVERLAY = RenderType.makeType(
                 GooMod.MOD_ID + ":goo_overlay",
                 DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_QUADS, 256, true, false,
-                RenderType.State.getBuilder().texture(new RenderState.TextureState(PlayerContainer.LOCATION_BLOCKS_TEXTURE, false, false))
+                RenderType.State.getBuilder()
+                    .texture(RenderType.BLOCK_SHEET_MIPPED)
                     .shadeModel(RenderType.SHADE_DISABLED)
                     .lightmap(RenderType.LIGHTMAP_DISABLED)
-                    .texture(RenderType.BLOCK_SHEET)
                     .transparency(RenderType.NO_TRANSPARENCY)
                     .build(false));
     }
