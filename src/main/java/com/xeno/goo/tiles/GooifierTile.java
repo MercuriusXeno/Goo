@@ -126,7 +126,7 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
     }
     private void tryDistributingFluid()
     {
-        for(Direction d : getValidGasketDirections()) {
+        for(Direction d : getValidDirections()) {
             DistributionState[] state = {new DistributionState(true, GooMod.config.gooProcessingRate(), 0)};
             LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(d);
             cap.ifPresent((c) -> state[0] = doDistribution(c, state[0]));
@@ -161,10 +161,20 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         return state;
     }
 
-    private final Direction[] VALID_GASKET_DIRECTIONS = new Direction[] { Direction.EAST, Direction.WEST, Direction.UP };
-    private Direction[] getValidGasketDirections()
+    public static final Map<Direction, Direction[]> CACHED_DIRECTIONS = new HashMap<>();
+    private Direction[] getValidDirections()
     {
-        return VALID_GASKET_DIRECTIONS;
+        if (!CACHED_DIRECTIONS.containsKey(facing())) {
+            CACHED_DIRECTIONS.put(facing(), new Direction[]{ Direction.UP,
+                    (this.facing().getAxis() == Direction.Axis.Z ? Direction.EAST : Direction.SOUTH),
+                    (this.facing().getAxis() == Direction.Axis.Z ? Direction.WEST : Direction.NORTH)
+            });
+        }
+        return CACHED_DIRECTIONS.get(facing());
+    }
+
+    private Direction facing() {
+        return getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     private void bufferOutput(GooEntry mapping)

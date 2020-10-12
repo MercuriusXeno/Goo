@@ -29,7 +29,8 @@ public class CrucibleFluidHandler implements IFluidHandler
 
     @Override
     public boolean isFluidValid(int tank, FluidStack stack) {
-        return tank == 0 && stack.getFluid() instanceof GooFluid && parent.onlyGoo().isFluidEqual(stack);
+        return tank == 0 && stack.getFluid() instanceof GooFluid
+                && (parent.onlyGoo().isEmpty() || parent.onlyGoo().isFluidEqual(stack));
     }
 
     @Override

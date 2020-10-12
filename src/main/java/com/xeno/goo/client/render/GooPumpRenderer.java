@@ -52,7 +52,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             FluidCuboid cuboid = new FluidCuboid(fillFromVector(intensity, face), fillToVector(intensity, face),
                     flowingFacesByDirection(face));
             if (tile.isVerticallyFilled()) {
-                FluidCuboidHelper.renderCuboid(matrixStack, buffer.getBuffer(GooRenderHelper.GOO_BLOCK), cuboid, still, flowing,
+                FluidCuboidHelper.renderCuboid(matrixStack, buffer.getBuffer(GooRenderHelper.GOO_CUBE), cuboid, still, flowing,
                         fillFromVector(intensity, face), fillToVector(intensity, face),
                         0xffffffff, combinedLightIn, false);
             }

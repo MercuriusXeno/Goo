@@ -75,7 +75,6 @@ public class InputHandler {
             // packet to server to request a throw event in lieu of grabbing anything
             Networking.sendToServer(new GooLobPacket(), player);
         }
-        return;
     }
 
     public static void handleEventTicking(TickEvent.ClientTickEvent event) {

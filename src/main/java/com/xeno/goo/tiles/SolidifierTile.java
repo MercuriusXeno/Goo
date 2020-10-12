@@ -304,10 +304,20 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         return fluidAmount - fluidBuffer.get(fluidResourceLocation);
     }
 
-    private static final Direction[] VALID_DIRECTIONS = new Direction[] { Direction.UP, Direction.EAST, Direction.WEST };
+    public static final Map<Direction, Direction[]> CACHED_DIRECTIONS = new HashMap<>();
     private Direction[] getValidDirections()
     {
-        return VALID_DIRECTIONS;
+        if (!CACHED_DIRECTIONS.containsKey(facing())) {
+            CACHED_DIRECTIONS.put(facing(), new Direction[]{ Direction.UP,
+                    (this.facing().getAxis() == Direction.Axis.Z ? Direction.EAST : Direction.SOUTH),
+                    (this.facing().getAxis() == Direction.Axis.Z ? Direction.WEST : Direction.NORTH)
+            });
+        }
+        return CACHED_DIRECTIONS.get(facing());
+    }
+
+    private Direction facing() {
+        return getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     private boolean needsToDrainSources(GooEntry mapping)

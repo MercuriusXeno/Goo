@@ -67,6 +67,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         }
 
         boolean didStuff = tryVerticalDrain() || tryLateralShare();
+
         pruneEmptyGoo();
 
         if (didStuff) {
@@ -308,7 +309,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     public void onContentsChanged() {
-         if (world == null) {
+        if (world == null) {
             return;
         }
         if (!world.isRemote) {
@@ -399,7 +400,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     // offset logic (and also renderer is client code, not the same in reverse)
     public static final float FLUID_VERTICAL_OFFSET = 0.0005f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     public static final float FLUID_VERTICAL_MAX = 0.0005f;
-    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.02f;
+    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.04f; // percentile
     @Override
     public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side, RayTraceTargetSource targetSource)
     {
@@ -421,10 +422,15 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
             heightScale = rescaleHeightForMinimumLevels(heightScale, goo, fluidHandler.getTankCapacity(0));
             float yOffset = 0f;
+            // create a small spacer between each goo to stop weird z fighting issues?
+            // this may look megadumb.
+
             for(FluidStack stack : goo) {
                 // this is the total fill of the goo in the tank of this particular goo, as a percentage
                 float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, stack.getAmount() / (float)fluidHandler.getTankCapacity(0));
                 float fromY, toY;
+                // here is where the spacer height is actually applied, not in the render height, but in the starting vec
+                // to render each goo type.
                 fromY = minY + yOffset;
                 toY = fromY + (gooHeight * heightScale);
                 if (hitVec.getY() <= toY && hitVec.getY() >= fromY) {
@@ -436,21 +442,26 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         }
     }
 
-    private static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
+    public static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
     {
         // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
         // render very small amounts of fluid so that we can still target really small amounts
         // the space in the tank has to be recouped by reducing the overall virtual capacity.
         // we measure it as a percentage because it's close enough.
         float lostCap = 0f;
-
         // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
         for(FluidStack goo : gooList) {
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
-            lostCap += gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
-                    GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity)
-                    : 0f;
+            float gooHeight =
+                    // the minimum height the goo has. If it's lower than the minimum, use the minimum, otherwise use the real value.
+                    Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
+            lostCap +=
+                    // if we're "losing cap" by being at the mandatory minimum, figure out how much space we "lost"
+                    // this space gets reserved by the routine so it doesn't allow the rendering to go out of bounds.
+                    gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
+                            // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
+                            (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity))
+                            : 0f;
         }
         return heightScale - (heightScale * lostCap);
     }
