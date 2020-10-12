@@ -71,7 +71,7 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
             // divide by zeros are bad :|
             return;
         }
-        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_BLOCK);
+        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_CUBE);
         renderTankFluid(tile.getPos(), false, facing, leftCap, leftGoo, matrixStack, builder, combinedLightIn);
         renderTankFluid(tile.getPos(), true, facing, rightCap, rightGoo, matrixStack, builder, combinedLightIn);
         renderChannelFluid(tile.getPos(), false, facing, leftGoo, matrixStack, builder, combinedLightIn);

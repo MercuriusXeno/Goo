@@ -7,7 +7,6 @@ import com.xeno.goo.tiles.*;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
@@ -42,7 +41,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     public static void render(BlockPos pos, int bulbCapacity, List<FluidStack> gooList, boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
         gooList.removeIf(FluidStack::isEmpty);
-        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.GOO_BLOCK);
+        IVertexBuilder normalBrightness = buffer.getBuffer(GooRenderHelper.GOO_CUBE);
 
         float yOffset = 0;
 
@@ -55,7 +54,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         float heightScale = maxY - minY;
         float highestToY = minY;
 
-        heightScale = rescaleHeightForMinimumLevels(heightScale, gooList, bulbCapacity);
+        heightScale = GooBulbTile.rescaleHeightForMinimumLevels(heightScale, gooList, bulbCapacity);
 
         // then we can render
         for(FluidStack goo : gooList) {
@@ -65,34 +64,15 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
             fromY = minY + yOffset;
             toY = fromY + (gooHeight * heightScale);
             highestToY = toY;
-            HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
-            FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
+            HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, normalBrightness, combinedLightIn, from, fromY, to, toY);
+            FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, normalBrightness, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
             yOffset += (gooHeight * heightScale);
         }
 
         if (isVerticallyFilled) {
             Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
-            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, builder, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
+            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, normalBrightness, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
         }
-    }
-
-    private static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
-    {
-        // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
-        // render very small amounts of fluid so that we can still target really small amounts
-        // the space in the tank has to be recouped by reducing the overall virtual capacity.
-        // we measure it as a percentage because it's close enough.
-        float lostCap = 0f;
-
-        // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
-        for(FluidStack goo : gooList) {
-            // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
-            lostCap += gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
-                    GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity)
-                    : 0f;
-        }
-        return heightScale - (heightScale * lostCap);
     }
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
