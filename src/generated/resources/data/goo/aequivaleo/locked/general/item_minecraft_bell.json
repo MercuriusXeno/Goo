@@ -4,17 +4,25 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:mycelium"
+      "item": "minecraft:bell"
     }
   },
   "compounds": [
     {
       "amount": 180.0,
+      "type": "goo:metal"
+    },
+    {
+      "amount": 360.0,
       "type": "goo:earthen"
     },
     {
-      "amount": 30.0,
-      "type": "goo:fungal"
+      "amount": 216.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 128.0,
+      "type": "goo:floral"
     }
   ]
 }

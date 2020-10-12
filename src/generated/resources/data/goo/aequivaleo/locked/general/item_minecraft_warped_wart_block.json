@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 27.0,
-      "type": "goo:weird"
-    },
-    {
       "amount": 45.0,
       "type": "goo:fungal"
+    },
+    {
+      "amount": 9.0,
+      "type": "goo:weird"
     }
   ]
 }

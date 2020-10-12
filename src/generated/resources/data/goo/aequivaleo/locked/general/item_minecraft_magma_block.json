@@ -4,24 +4,24 @@
     "type": "aequivaleo:item",
     "data": {
       "count": 1.0,
-      "item": "minecraft:bone"
+      "item": "minecraft:magma_block"
     }
   },
   "compounds": [
     {
-      "amount": 360.0,
-      "type": "goo:chromatic"
+      "amount": 10.0,
+      "type": "goo:slime"
     },
     {
-      "amount": 3.0,
-      "type": "goo:vital"
+      "amount": 180.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 10.0,
+      "type": "goo:molten"
     },
     {
       "amount": 30.0,
-      "type": "goo:faunal"
-    },
-    {
-      "amount": 60.0,
       "type": "goo:decay"
     }
   ]
