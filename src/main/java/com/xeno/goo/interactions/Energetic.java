@@ -40,8 +40,9 @@ public class Energetic
         // in a radius centered around the block with a spherical distance of [configurable] or less
         // and a harvest level of wood (stone type blocks only) only
         // destroy blocks in the radius and yield full drops.
-        double radius = GooMod.config.energeticMiningBlastRadius();
-        List<BlockPos> blockPosList = blockPositionsByRadius(context.blockCenterVec(), context.blockPos(), radius);
+        // double radius = GooMod.config.energeticMiningBlastRadius();
+        int radius = GooMod.config.energeticMiningBlastDistance();
+        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockCenterVec(), context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context));
         // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
@@ -130,25 +131,41 @@ public class Energetic
         return false;
     }
 
-    private static List<BlockPos> blockPositionsByRadius(Vector3d center, BlockPos blockPos, double radius)
+    private static List<BlockPos> blockPositionsByCuboid(Vector3d center, BlockPos blockPos, int radius)
     {
-        int ceilingRadius = (int)Math.ceil(radius);
         List<BlockPos> result = new ArrayList<>();
-        for(int x = -ceilingRadius; x <= ceilingRadius; x++) {
-            for(int y = -ceilingRadius; y <= ceilingRadius; y++) {
-                for(int z = -ceilingRadius; z <= ceilingRadius; z++) {
-                    BlockPos match = blockPos.add(x, y, z);
-                    Vector3d matchCenter = Vector3d.copy(match).add(0.5d, 0.5d, 0.5d);
-                    if (center.distanceTo(matchCenter) <= radius) {
-                        result.add(match);
-                    }
+        for(int x = -radius; x <= radius; x++) {
+            for(int y = -radius; y <= radius; y++) {
+                for(int z = -radius; z <= radius; z++) {
+                    result.add(blockPos.add(x, y, z));
                 }
             }
         }
 
+        // distance sort is still fine
         result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
         return result;
     }
+
+//    private static List<BlockPos> blockPositionsByRadius(Vector3d center, BlockPos blockPos, double radius)
+//    {
+//        int ceilingRadius = (int)Math.ceil(radius);
+//        List<BlockPos> result = new ArrayList<>();
+//        for(int x = -ceilingRadius; x <= ceilingRadius; x++) {
+//            for(int y = -ceilingRadius; y <= ceilingRadius; y++) {
+//                for(int z = -ceilingRadius; z <= ceilingRadius; z++) {
+//                    BlockPos match = blockPos.add(x, y, z);
+//                    Vector3d matchCenter = Vector3d.copy(match).add(0.5d, 0.5d, 0.5d);
+//                    if (center.distanceTo(matchCenter) <= radius) {
+//                        result.add(match);
+//                    }
+//                }
+//            }
+//        }
+//
+//        result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
+//        return result;
+//    }
 
     private static int vector3dComparator(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {

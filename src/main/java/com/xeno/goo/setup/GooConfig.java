@@ -74,8 +74,10 @@ public class GooConfig
     private ForgeConfigSpec.IntValue GAUNTLET_HOLDING_MULTIPLIER;
     public int gauntletHoldingMultiplier() { return GAUNTLET_HOLDING_MULTIPLIER.get(); }
 
-    private ForgeConfigSpec.DoubleValue ENERGETIC_MINING_BLAST_RADIUS;
-    public double energeticMiningBlastRadius() { return ENERGETIC_MINING_BLAST_RADIUS.get(); }
+    // private ForgeConfigSpec.DoubleValue ENERGETIC_MINING_BLAST_RADIUS;
+    private ForgeConfigSpec.IntValue ENERGETIC_MINING_BLAST_DISTANCE;
+    // public double energeticMiningBlastRadius() { return ENERGETIC_MINING_BLAST_RADIUS.get(); }
+    public int energeticMiningBlastDistance() { return ENERGETIC_MINING_BLAST_DISTANCE.get(); }
 
     private ForgeConfigSpec.IntValue RADIAL_MENU_HELD_TICKS_THRESHOLD;
     public int radialMenuThreshold() { return RADIAL_MENU_HELD_TICKS_THRESHOLD.get(); }
@@ -378,7 +380,8 @@ public class GooConfig
         private static final int BASIN_HOLDING_MULTIPLIER = 4;
         private static final int GAUNTLET_CAPACITY = 400;
         private static final int GAUNTLET_HOLDING_MULTIPLIER = 4;
-        private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
+        // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
+        private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
     }
 
@@ -406,8 +409,8 @@ public class GooConfig
                 .defineInRange("gauntletCapacity", Defaults.GAUNTLET_CAPACITY, 0, 1000000);
         GAUNTLET_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanted holding capacity of gauntlets is multiplied by this, per level, default: " + Defaults.GAUNTLET_HOLDING_MULTIPLIER)
                 .defineInRange("gauntletHoldingMultiplier", Defaults.GAUNTLET_HOLDING_MULTIPLIER, 0, 10);
-        ENERGETIC_MINING_BLAST_RADIUS = serverBuilder.comment("Mining blast radius of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_RADIUS)
-                .defineInRange("energeticMiningBlastRadius", Defaults.ENERGETIC_MINING_BLAST_RADIUS, 1d, 10d);
+        ENERGETIC_MINING_BLAST_DISTANCE = serverBuilder.comment("Mining blast reach of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_DISTANCE)
+                .defineInRange("energeticMiningBlastDistance", Defaults.ENERGETIC_MINING_BLAST_DISTANCE, 1, 10);
         RADIAL_MENU_HELD_TICKS_THRESHOLD = serverBuilder.comment("Held ticks threshold for radial menu to open, default: " + Defaults.RADIAL_HELD_THRESHOLD_TICKS)
                 .defineInRange("heldTicksRadialMenuThreshold", Defaults.RADIAL_HELD_THRESHOLD_TICKS, 10, 60);
         GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);

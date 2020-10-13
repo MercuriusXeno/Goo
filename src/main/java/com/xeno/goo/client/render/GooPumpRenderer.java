@@ -83,7 +83,6 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             Direction flow = tile.facing();
 
             Map<Direction, Vector3f> offsets = offsetVectors.get(flow);
-            // Map<Direction, Vector3i> rotations = rotationVectors.get(flow);
             for (Direction d : offsets.keySet()) {
                 matrices.push();
 
@@ -91,10 +90,6 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.translate(vecOffset.getX(), vecOffset.getY(), vecOffset.getZ());
 
                 matrices.translate(0.5f, 0.5f, 0.5f);
-                // Vector3i vecRotate = rotations.get(d);
-//                matrices.rotate(Vector3f.YP.rotationDegrees(vecRotate.getY()));
-//                matrices.rotate(Vector3f.XP.rotationDegrees(vecRotate.getX()));
-//                matrices.rotate(Vector3f.ZP.rotationDegrees(vecRotate.getZ()));
 
                 // try a different rotation strat
                 // the only exception here is down flow direction is special, invert it. (Make all vertical up)

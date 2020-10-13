@@ -62,8 +62,8 @@ public class Regal
                 // int costToResolve = GooMod.config.costOfInteraction(context.fluid(), context.interactionKey());
                 int amountReturned = GooMod.config.returnOfInteraction(context.fluid(), context.interactionKey());
 
-                GooBlob returnBlob = new GooBlob(Registry.GOO_BLOB.get(), context.world(), Optional.of(context.splat().owner()),
-                        new FluidStack(context.fluid(), amountReturned), dropPos);
+                GooBlob returnBlob = new GooBlob(Registry.GOO_BLOB.get(), context.world(),
+                        Optional.ofNullable(context.splat().owner()), new FluidStack(context.fluid(), amountReturned), dropPos);
                 Vector3d motionVec = Vector3d.copy(context.splat().sideWeLiveOn().getDirectionVec())
                         .scale(0.5d); // unit vector is a little too forceful, dial it back a lot
                 returnBlob.setMotion(motionVec);
