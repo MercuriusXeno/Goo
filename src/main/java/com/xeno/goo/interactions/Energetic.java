@@ -97,9 +97,9 @@ public class Energetic
 
     private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, SplatContext context) {
         // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
-        // the force is blocked. True center here is because the block we're attached to is obviously solid.
-        Vector3d trueCenter = context.blockCenterVec().add(Vector3d.copy(context.sideHit().getDirectionVec()));
-        RayTraceContext rtc = new RayTraceContext(trueCenter, dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
+        // context center in this case is the block we're touching, not the block we exist in.
+        // if this changes, the block sorting function needs to match whatever this is doing.
+        RayTraceContext rtc = new RayTraceContext(context.blockCenterVec(), dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
         BlockRayTraceResult result = context.world().rayTraceBlocks(rtc);
         if (result.getType() != RayTraceResult.Type.MISS) {
             // we intersected with a block that isn't the one we're trying to break
@@ -143,7 +143,7 @@ public class Energetic
         }
 
         // distance sort is still fine
-        result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
+        result.sort((bp1, bp2) -> compareManhattanDistance(blockPos, bp1, bp2));
         return result;
     }
 
@@ -167,8 +167,8 @@ public class Energetic
 //        return result;
 //    }
 
-    private static int vector3dComparator(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
+    private static int compareManhattanDistance(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {
-        return Double.compare(blockPos.manhattanDistance(bp1), blockPos.manhattanDistance(bp2));
+        return Integer.compare(blockPos.manhattanDistance(bp1), blockPos.manhattanDistance(bp2));
     }
 }
