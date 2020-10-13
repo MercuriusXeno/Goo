@@ -43,6 +43,6 @@ public class GooBulbItemRenderer extends ItemStackTileEntityRenderer
             return;
         }
 
-        TileEntityRendererDispatcher.instance.renderItem(tileEntity, matrixStack, buffer, combinedLight, combinedOverlay);
+        TileEntityRendererDispatcher.instance.renderItem(tileEntity, matrixStack, buffer, GooRenderHelper.FULL_BRIGHT, combinedOverlay);
     }
 }

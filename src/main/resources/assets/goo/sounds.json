@@ -108,5 +108,11 @@
     "sounds": [
       "minecraft:random/fizz"
     ]
+  },
+  "crystallize_sound": {
+    "subtitle": "sound_event.goo.crystallize",
+    "sounds": [
+      "minecraft:random/orb"
+    ]
   }
 }

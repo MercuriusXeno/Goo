@@ -73,6 +73,12 @@ public class Networking {
                 .decoder(GooGauntletSwapPacket::new)
                 .consumer(GooGauntletSwapPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(UpdateBulbCrystalProgressPacket.class, nextID())
+                .encoder(UpdateBulbCrystalProgressPacket::toBytes)
+                .decoder(UpdateBulbCrystalProgressPacket::new)
+                .consumer(UpdateBulbCrystalProgressPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {

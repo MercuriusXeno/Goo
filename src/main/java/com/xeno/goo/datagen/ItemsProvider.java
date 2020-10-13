@@ -30,7 +30,7 @@ public class ItemsProvider extends ItemModelProvider {
         ItemsRegistry.CrystallizedGoo.forEach(this::generateModelForCrystallizedGoo);
     }
 
-    private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<Item> itemRegistryObject) {
+    private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> itemRegistryObject) {
         String template = "";
         if (itemRegistryObject.get() instanceof GooSliver) {
             template = "template_sliver";
