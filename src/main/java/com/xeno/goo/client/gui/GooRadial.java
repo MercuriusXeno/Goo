@@ -3,10 +3,8 @@ package com.xeno.goo.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.events.TargetingHandler;
-import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
@@ -41,6 +39,7 @@ import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
+import java.util.function.Function;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class GooRadial extends Screen {
@@ -181,8 +180,13 @@ public class GooRadial extends Screen {
         }
     }
 
+    Function<Fluid, ResourceLocation> lexicographicalFunction = ForgeRegistryEntry::getRegistryName;
+    Function<Fluid, Boolean> putEmptyFirstFunction = (f) -> !f.equals(Fluids.EMPTY);
+
     private List<FluidStack> availableGooTypes(ClientPlayerEntity player) {
-        Map<Fluid, FluidStack> result = new TreeMap<>(Comparator.comparing(ForgeRegistryEntry::getRegistryName));
+        Map<Fluid, FluidStack> result = new TreeMap<>(Comparator
+                .comparing(putEmptyFirstFunction)
+                .thenComparing(lexicographicalFunction));
         if (!isGauntletEmpty(player)) {
             result.put(Fluids.EMPTY, FluidStack.EMPTY);
         }
