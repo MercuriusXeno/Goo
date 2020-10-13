@@ -12,6 +12,12 @@
       "recipe": "goo:goo_bulb"
     },
     {
+      "type": "spotlight",
+      "item": "minecraft:quartz",
+      "title": "patchouli.goo.crystallization_title",
+      "text": "patchouli.goo.crystallization_description"
+    },
+    {
       "type": "multiblock",
       "text": "patchouli.goo.goo_bulb.upgrades",
       "enable_visualize": false,

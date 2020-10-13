@@ -44,7 +44,7 @@ public class GooRenderHelper extends RenderState
                 DefaultVertexFormats.POSITION_COLOR_TEX_LIGHTMAP, GL11.GL_QUADS, 256, true, true,
                 RenderType.State.getBuilder()
                         .texture(RenderType.BLOCK_SHEET_MIPPED)
-                        .diffuseLighting(enableDiffuse)
+                        .diffuseLighting(disableDiffuse)
                         .shadeModel(notSmoothShade)
                         .lightmap(RenderType.LIGHTMAP_DISABLED)
                         .transparency(RenderType.TRANSLUCENT_TRANSPARENCY)
@@ -56,7 +56,7 @@ public class GooRenderHelper extends RenderState
                 RenderType.State.getBuilder()
                     .texture(RenderType.BLOCK_SHEET_MIPPED)
                     .shadeModel(RenderType.SHADE_DISABLED)
-                    .lightmap(RenderType.LIGHTMAP_DISABLED)
+                    .lightmap(RenderType.LIGHTMAP_ENABLED)
                     .transparency(RenderType.NO_TRANSPARENCY)
                     .build(false));
     }
