@@ -169,6 +169,6 @@ public class Energetic
 
     private static int vector3dComparator(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {
-        return Double.compare(blockPos.distanceSq(bp1), blockPos.distanceSq(bp2));
+        return Double.compare(blockPos.manhattanDistance(bp1), blockPos.manhattanDistance(bp2));
     }
 }
