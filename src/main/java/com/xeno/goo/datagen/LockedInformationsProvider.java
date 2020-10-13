@@ -3,9 +3,14 @@ package com.xeno.goo.datagen;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.locked.LockedInformationProvider;
 import com.xeno.goo.GooMod;
+import com.xeno.goo.items.CrystallizedGooAbstract;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Items;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.RegistryObject;
 
 public class LockedInformationsProvider extends LockedInformationProvider
 {
@@ -224,6 +229,17 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.LAVA_BUCKET, metal(216), molten(1080));
         saveData(Items.MILK_BUCKET, metal(216), faunal(120));
         saveData(Items.WATER_BUCKET, metal(216), aquatic(960));
+
+        ItemsRegistry.CrystallizedGoo.forEach(this::registerLockedInfoForCrystallizedGoo);
+    }
+
+    private void registerLockedInfoForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> crystallizedGooAbstractRegistryObject) {
+        Fluid f = crystallizedGooAbstractRegistryObject.get().gooType();
+        saveData(crystallizedGooAbstractRegistryObject.get(), compoundsFromFluid(f, crystallizedGooAbstractRegistryObject.get().amount()));
+    }
+
+    private CompoundInstance compoundsFromFluid(Fluid f, int amount) {
+        return new CompoundInstance(Registry.compoundFromFluid(f), amount);
     }
 
     private static CompoundInstance aquatic(double d) { return new CompoundInstance(Registry.AQUATIC.get(), d); }

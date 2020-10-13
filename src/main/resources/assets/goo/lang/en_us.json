@@ -19,6 +19,120 @@
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Basin",
 
+  "item.goo.aquatic_goo_sliver": "Aquatic Sliver",
+  "item.goo.aquatic_goo_shard": "Aquatic Shard",
+  "item.goo.aquatic_goo_crystal": "Aquatic Crystal",
+  "item.goo.aquatic_goo_chunk": "Aquatic Chunk",
+  "item.goo.aquatic_goo_slab": "Aquatic Slab",
+
+  "item.goo.chromatic_goo_sliver": "Chromatic Sliver",
+  "item.goo.chromatic_goo_shard": "Chromatic Shard",
+  "item.goo.chromatic_goo_crystal": "Chromatic Crystal",
+  "item.goo.chromatic_goo_chunk": "Chromatic Chunk",
+  "item.goo.chromatic_goo_slab": "Chromatic Slab",
+
+  "item.goo.crystal_goo_sliver": "Crystal Sliver",
+  "item.goo.crystal_goo_shard": "Crystal Shard",
+  "item.goo.crystal_goo_crystal": "Crystal, uh, Crystal",
+  "item.goo.crystal_goo_chunk": "Crystal Chunk",
+  "item.goo.crystal_goo_slab": "Crystal Slab",
+
+  "item.goo.decay_goo_sliver": "Decay Sliver",
+  "item.goo.decay_goo_shard": "Decay Shard",
+  "item.goo.decay_goo_crystal": "Decay Crystal",
+  "item.goo.decay_goo_chunk": "Decay Chunk",
+  "item.goo.decay_goo_slab": "Decay Slab",
+
+  "item.goo.earthen_goo_sliver": "Earthen Sliver",
+  "item.goo.earthen_goo_shard": "Earthen Shard",
+  "item.goo.earthen_goo_crystal": "Earthen Crystal",
+  "item.goo.earthen_goo_chunk": "Earthen Chunk",
+  "item.goo.earthen_goo_slab": "Earthen Slab",
+
+  "item.goo.energetic_goo_sliver": "Energetic Sliver",
+  "item.goo.energetic_goo_shard": "Energetic Shard",
+  "item.goo.energetic_goo_crystal": "Energetic Crystal",
+  "item.goo.energetic_goo_chunk": "Energetic Chunk",
+  "item.goo.energetic_goo_slab": "Energetic Slab",
+
+  "item.goo.faunal_goo_sliver": "Faunal Sliver",
+  "item.goo.faunal_goo_shard": "Faunal Shard",
+  "item.goo.faunal_goo_crystal": "Faunal Crystal",
+  "item.goo.faunal_goo_chunk": "Faunal Chunk",
+  "item.goo.faunal_goo_slab": "Faunal Slab",
+
+  "item.goo.floral_goo_sliver": "Floral Sliver",
+  "item.goo.floral_goo_shard": "Floral Shard",
+  "item.goo.floral_goo_crystal": "Floral Crystal",
+  "item.goo.floral_goo_chunk": "Floral Chunk",
+  "item.goo.floral_goo_slab": "Floral Slab",
+
+  "item.goo.fungal_goo_sliver": "Fungal Sliver",
+  "item.goo.fungal_goo_shard": "Fungal Shard",
+  "item.goo.fungal_goo_crystal": "Fungal Crystal",
+  "item.goo.fungal_goo_chunk": "Fungal Chunk",
+  "item.goo.fungal_goo_slab": "Fungal Slab",
+
+  "item.goo.honey_goo_sliver": "Honey Sliver",
+  "item.goo.honey_goo_shard": "Honey Shard",
+  "item.goo.honey_goo_crystal": "Honey Crystal",
+  "item.goo.honey_goo_chunk": "Honey Chunk",
+  "item.goo.honey_goo_slab": "Honey Slab",
+
+  "item.goo.logic_goo_sliver": "Logic Sliver",
+  "item.goo.logic_goo_shard": "Logic Shard",
+  "item.goo.logic_goo_crystal": "Logic Crystal",
+  "item.goo.logic_goo_chunk": "Logic Chunk",
+  "item.goo.logic_goo_slab": "Logic Slab",
+
+  "item.goo.metal_goo_sliver": "Metal Sliver",
+  "item.goo.metal_goo_shard": "Metal Shard",
+  "item.goo.metal_goo_crystal": "Metal Crystal",
+  "item.goo.metal_goo_chunk": "Metal Chunk",
+  "item.goo.metal_goo_slab": "Metal Slab",
+
+  "item.goo.molten_goo_sliver": "Molten Sliver",
+  "item.goo.molten_goo_shard": "Molten Shard",
+  "item.goo.molten_goo_crystal": "Molten Crystal",
+  "item.goo.molten_goo_chunk": "Molten Chunk",
+  "item.goo.molten_goo_slab": "Molten Slab",
+
+  "item.goo.obsidian_goo_sliver": "Obsidian Sliver",
+  "item.goo.obsidian_goo_shard": "Obsidian Shard",
+  "item.goo.obsidian_goo_crystal": "Obsidian Crystal",
+  "item.goo.obsidian_goo_chunk": "Obsidian Chunk",
+  "item.goo.obsidian_goo_slab": "Obsidian Slab",
+
+  "item.goo.regal_goo_sliver": "Regal Sliver",
+  "item.goo.regal_goo_shard": "Regal Shard",
+  "item.goo.regal_goo_crystal": "Regal Crystal",
+  "item.goo.regal_goo_chunk": "Regal Chunk",
+  "item.goo.regal_goo_slab": "Regal Slab",
+
+  "item.goo.slime_goo_sliver": "Slime Sliver",
+  "item.goo.slime_goo_shard": "Slime Shard",
+  "item.goo.slime_goo_crystal": "Slime Crystal",
+  "item.goo.slime_goo_chunk": "Slime Chunk",
+  "item.goo.slime_goo_slab": "Slime Slab",
+
+  "item.goo.snow_goo_sliver": "Snow Sliver",
+  "item.goo.snow_goo_shard": "Snow Shard",
+  "item.goo.snow_goo_crystal": "Snow Crystal",
+  "item.goo.snow_goo_chunk": "Snow Chunk",
+  "item.goo.snow_goo_slab": "Snow Slab",
+
+  "item.goo.vital_goo_sliver": "Vital Sliver",
+  "item.goo.vital_goo_shard": "Vital Shard",
+  "item.goo.vital_goo_crystal": "Vital Crystal",
+  "item.goo.vital_goo_chunk": "Vital Chunk",
+  "item.goo.vital_goo_slab": "Vital Slab",
+
+  "item.goo.weird_goo_sliver": "Weird Sliver",
+  "item.goo.weird_goo_shard": "Weird Shard",
+  "item.goo.weird_goo_crystal": "Weird Crystal",
+  "item.goo.weird_goo_chunk": "Weird Chunk",
+  "item.goo.weird_goo_slab": "Weird Slab",
+
   "enchantment.goo.containment": "Containment",
 
   "fluid.goo.aquatic_goo": "Aquatic",
@@ -110,5 +224,6 @@
   "sound_event.goo.freeze": "Goo froze water",
   "sound_event.goo.twitterpate_animal_sound": "Fauna infatuated",
   "sound_event.goo.weird_teleport_sound": "Weird teleportation",
-  "sound_event.goo.molten_sizzle_sound": "Goo sizzles"
+  "sound_event.goo.molten_sizzle_sound": "Goo sizzles",
+  "sound_event.goo.crystallize": "Goo crystallizes"
 }

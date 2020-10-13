@@ -1,23 +1,35 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.items.CrystallizedGooAbstract;
+import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
+import com.xeno.goo.network.UpdateBulbCrystalProgressPacket;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -25,15 +37,25 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class GooBulbTileAbstraction extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
+    // it only takes 9 ticks to tier up because of the goo already in the object.
+    // at level 1 this is also negligible
+    public static final int PROGRESS_TICKS_PER_TIER_UP = 9;
+    public static final int TICKS_PER_PROGRESS_TICK = 5;
     private final BulbFluidHandler fluidHandler = createHandler();
     private final LazyOptional<BulbFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
     private int enchantHolding = 0;
+    private int crystalProgressTicks = 0;
+    private int lastIncrement = 0;
+    private ItemStack crystal = ItemStack.EMPTY;
+    private Fluid crystalFluid = Fluids.EMPTY;
+    private FluidStack crystalProgress = FluidStack.EMPTY;
 
     public GooBulbTileAbstraction(TileEntityType t) {
         super(t);
@@ -53,10 +75,19 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return this.enchantHolding;
     }
 
+    public int progress() { return this.crystalProgressTicks; }
+
     @Override
     public void tick() {
         if (world == null) {
             return;
+        }
+        // let clientside increment progress ticks, this is harmless and for visuals.
+        // server occasionally "corrects" it if it's wrong.
+        if (!crystal.isEmpty()) {
+            crystalProgressTicks++;
+        } else {
+            crystalProgressTicks = 0;
         }
 
         if (world.isRemote) {
@@ -66,13 +97,122 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             return;
         }
 
-        boolean didStuff = tryVerticalDrain() || tryLateralShare();
+        boolean isAnyCrystalProgress = false;
+        if (crystalProgressTicks >= TICKS_PER_PROGRESS_TICK) {
+            isAnyCrystalProgress = tryCrystalProgress();
+            crystalProgressTicks = 0;
+        }
+        boolean verticalDrained = tryVerticalDrain();
+        boolean lateralShared = tryLateralShare();
+        boolean didStuff = isAnyCrystalProgress || verticalDrained || lateralShared;
 
         pruneEmptyGoo();
 
         if (didStuff) {
             onContentsChanged();
         }
+    }
+
+    private static final Map<Fluid, Map<Item, CrystallizedGooAbstract>> crystalTransformations = new HashMap<>();
+
+    private boolean tryCrystalProgress() {
+        // crystal is empty so we're not working and if we WERE working, we undo progress.
+        if (crystal.isEmpty()) {
+            reverseAnyUnfinishedCrystalProgress(true);
+            return false;
+        }
+
+        // crystal isn't empty, check if we're making progress already
+        if (crystalFluid.equals(Fluids.EMPTY)) {
+            // there's no progress so we're about to start some.
+            crystalFluid = getMostQuantityGoo().getFluid();
+
+            // there's no progress so we're about to start some.
+            FluidStack target = new FluidStack(crystalFluid, nextStepInCrystallization(crystalFluid).amount());
+            
+            // you can't crystallize zero goo fool.
+            if (target.isEmpty() || !(target.getFluid() instanceof GooFluid)) {
+                reverseAnyUnfinishedCrystalProgress(true);
+                return false;
+            }
+
+            // not enough, we fail.
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+                reverseAnyUnfinishedCrystalProgress(true);
+                return false;
+            }
+            // set our increment
+            lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+            if (world instanceof ServerWorld) {
+                Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+            }
+        } else {
+            // there's no progress so we're about to start some.
+            FluidStack target = new FluidStack(crystalFluid, nextStepInCrystallization(crystalFluid).amount());
+
+            // you can't crystallize zero goo fool.
+            if (target.isEmpty() || !(target.getFluid() instanceof GooFluid)) {
+                reverseAnyUnfinishedCrystalProgress(true);
+                return false;
+            }
+
+            // not enough, we fail.
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+                reverseAnyUnfinishedCrystalProgress(true);
+                return false;
+            }
+
+            int amountPerProgressTick = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+            lastIncrement = amountPerProgressTick;
+            FluidStack actualDrain = target.copy();
+            actualDrain.setAmount(amountPerProgressTick);
+            // start us off or tick us up
+            if (crystalProgress.isEmpty()) {
+                crystalProgress = new FluidStack(crystalFluid, actualDrain.getAmount());
+            } else {
+                crystalProgress.setAmount(crystalProgress.getAmount() + actualDrain.getAmount());
+            }
+
+            // note here we only need 9 progress ticks to convert, because the tier below us contained 1/10th of the value
+            // this is even true of quartz just because the difference is negligible and quartz is worth way more than 1.
+            if (crystalProgress.getAmount() >= target.getAmount() - lastIncrement) {
+                this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
+                crystal = new ItemStack(nextStepInCrystallization(target.getFluid()));
+                crystalProgress = FluidStack.EMPTY;
+                lastIncrement = 0;
+                if (world instanceof ServerWorld) {
+                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+                    AudioHelper.headlessAudioEvent(world, pos, Registry.CRYSTALLIZE_SOUND.get(), SoundCategory.BLOCKS, 1f, AudioHelper.PitchFormulas.HalfToOne);
+                }
+            } else {
+                if (world instanceof ServerWorld) {
+                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+                }
+            }
+        }
+        return true;
+    }
+
+    private CrystallizedGooAbstract nextStepInCrystallization(Fluid fluid) {
+        if (crystalTransformations.size() == 0) {
+            initializeTransformations();
+        }
+         return crystalTransformations.get(fluid).get(crystal.getItem());
+    }
+
+    private static void initializeTransformations() {
+        Registry.FluidSuppliers.forEach(GooBulbTileAbstraction::buildAndPushTransformationMapping);
+    }
+
+    private static void buildAndPushTransformationMapping(ResourceLocation k, Supplier<GooFluid> v) {
+        Fluid f = v.get();
+        Map<Item, CrystallizedGooAbstract> result = new HashMap<>();
+        ItemsRegistry.CrystallizedGoo.values().stream()
+                .filter((crystal) -> crystal.get().gooType().equals(f))
+                .forEach((crystal) -> result.put(crystal.get().source(), crystal.get()));
+
+
+        crystalTransformations.put(f, result);
     }
 
     public List<FluidStack> goo()
@@ -297,6 +437,10 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0).min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
     }
 
+    public FluidStack getMostQuantityGoo() {
+        return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0 && f.getFluid() instanceof GooFluid).max(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
+    }
+
     public FluidStack getSpecificGooType(Fluid fluid) {
         if (fluid == null) {
             return FluidStack.EMPTY;
@@ -309,7 +453,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     public void onContentsChanged() {
-        if (world == null) {
+         if (world == null) {
             return;
         }
         if (!world.isRemote) {
@@ -330,6 +474,10 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     public CompoundNBT write(CompoundNBT tag) {
         tag.put("goo", serializeGoo());
         tag.putInt("holding", enchantHolding);
+        CompoundNBT crystalTag = crystal.write(new CompoundNBT());
+        CompoundNBT crystalProgressTag = crystalProgress.writeToNBT(new CompoundNBT());
+        tag.put("crystal_tag", crystalTag);
+        tag.put("crystal_progress", crystalProgressTag);
         return super.write(tag);
     }
 
@@ -339,6 +487,12 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         deserializeGoo(gooTag);
         if (tag.contains("holding")) {
             enchantHolding(tag.getInt("holding"));
+        }
+        if (tag.contains("crystal_tag")) {
+            crystal = ItemStack.read(tag.getCompound("crystal_tag"));
+        }
+        if (tag.contains("crystal_progress")) {
+            crystalProgress = FluidStack.loadFluidStackFromNBT(tag.getCompound("crystal_progress"));
         }
         super.read(state, tag);
         onContentsChanged();
@@ -420,14 +574,22 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             float maxY = getPos().getY() + 1f - FLUID_VERTICAL_MAX;
             float heightScale = maxY - minY;
 
-            heightScale = rescaleHeightForMinimumLevels(heightScale, goo, fluidHandler.getTankCapacity(0));
+            heightScale = rescaleHeightForMinimumLevels(heightScale, lastIncrement, crystalProgressTicks,
+                    0f, crystalFluid, crystalProgress, goo, fluidHandler.getTankCapacity(0));
             float yOffset = 0f;
             // create a small spacer between each goo to stop weird z fighting issues?
             // this may look megadumb.
 
             for(FluidStack stack : goo) {
+                int gooAmount = stack.getAmount();
+                if (stack.getFluid().equals(crystalFluid)) {
+                    gooAmount -= crystalProgress.getAmount();
+                    if (gooAmount < 0) {
+                        gooAmount = 0;
+                    }
+                }
                 // this is the total fill of the goo in the tank of this particular goo, as a percentage
-                float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, stack.getAmount() / (float)fluidHandler.getTankCapacity(0));
+                float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, gooAmount / (float)fluidHandler.getTankCapacity(0));
                 float fromY, toY;
                 // here is where the spacer height is actually applied, not in the render height, but in the starting vec
                 // to render each goo type.
@@ -442,7 +604,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         }
     }
 
-    public static float rescaleHeightForMinimumLevels(float heightScale, List<FluidStack> gooList, int bulbCapacity)
+    public static float rescaleHeightForMinimumLevels(float heightScale, int lastIncrement, int progressTicks, float partialTicks, Fluid crystalFluid, FluidStack crystalProgress, List<FluidStack> gooList, int bulbCapacity)
     {
         // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
         // render very small amounts of fluid so that we can still target really small amounts
@@ -451,17 +613,25 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         float lostCap = 0f;
         // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
         for(FluidStack goo : gooList) {
+            int gooAmount = goo.getAmount();
+            if (goo.getFluid().equals(crystalFluid)) {
+                int increment = (int)Math.floor(lastIncrement * ((progressTicks + partialTicks) / (float)GooBulbTileAbstraction.TICKS_PER_PROGRESS_TICK));
+                gooAmount -= (crystalProgress.getAmount() + increment);
+                if (gooAmount < 0) {
+                    gooAmount = 0;
+                }
+            }
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float gooHeight =
                     // the minimum height the goo has. If it's lower than the minimum, use the minimum, otherwise use the real value.
-                    Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, goo.getAmount() / (float)bulbCapacity);
+                    Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, gooAmount / (float)bulbCapacity);
             lostCap +=
                     // if we're "losing cap" by being at the mandatory minimum, figure out how much space we "lost"
                     // this space gets reserved by the routine so it doesn't allow the rendering to go out of bounds.
                     gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
-                            // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
-                            (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (goo.getAmount() / (float)bulbCapacity))
-                            : 0f;
+                        // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
+                        (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (gooAmount / (float)bulbCapacity))
+                        : 0f;
         }
         return heightScale - (heightScale * lostCap);
     }
@@ -485,5 +655,80 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     public static int storageForDisplay(int enchantHolding)
     {
         return storageMultiplier(enchantHolding) * GooMod.config.bulbCapacity();
+    }
+
+    public boolean hasCrystal() {
+        return !crystal.isEmpty();
+    }
+
+    public void spitOutCrystal(PlayerEntity player, Direction face) {
+        reverseAnyUnfinishedCrystalProgress(false);
+        ejectCrystal(face, player);
+    }
+
+    private void ejectCrystal(Direction face, PlayerEntity player) {
+        if (world == null || world.isRemote || crystal.isEmpty()) {
+            return;
+        }
+
+        Vector3d spawnPos = Vector3d.copy(this.getPos())
+                .add(Vector3d.copy(face.getDirectionVec()).scale(0.5d))
+                .add(0.5d, 0.5d, 0.5d);
+
+        ItemEntity e = new ItemEntity(world, spawnPos.x, spawnPos.y, spawnPos.z, crystal);
+        world.addEntity(e);
+        e.setMotion(player.getPositionVec().subtract(spawnPos).normalize().scale(0.3d));
+        crystal = ItemStack.EMPTY;
+        if (world instanceof ServerWorld) {
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+        }
+    }
+
+    private void reverseAnyUnfinishedCrystalProgress(boolean sendUpdate) {
+        // fluidstack "spent" on the crystal isn't really gone until the item is done.
+        // if anything causes the amount in the tank to drop lower than the progress, the progress is reversed.
+        // goo in the tank is "reserved" to avoid reversals causing a weird overflow or goo having nowhere to go.
+        crystalProgress = FluidStack.EMPTY;
+        lastIncrement = 0;
+        if (sendUpdate && world instanceof ServerWorld) {
+            float heightScale = (getPos().getY() + 1f - FLUID_VERTICAL_MAX) - (getPos().getY() + FLUID_VERTICAL_OFFSET);
+            float gooHeight = rescaleHeightForMinimumLevels(heightScale, lastIncrement, crystalProgressTicks,
+                    0f, crystalFluid, crystalProgress, goo, fluidHandler.getTankCapacity(0));
+            ((ServerWorld)world).spawnParticle(ParticleTypes.SMOKE, pos.getX() + 0.5d, pos.getY() + gooHeight, pos.getZ() + 0.5d, 1, 0d, 0d, 0d, 0d);
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+        }
+    }
+
+    public void addCrystal(Item item) {
+        crystal = new ItemStack(item);
+        if (world instanceof ServerWorld) {
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+        }
+    }
+
+    public FluidStack crystalProgress() {
+        return crystalProgress;
+    }
+
+    public ItemStack crystal() {
+        return crystal;
+    }
+
+    public void updateCrystalProgress(ItemStack crystal, int lastIncrement, ResourceLocation crystalFluid, FluidStack crystalProgress, int progressTicks) {
+        this.crystal = crystal;
+        this.lastIncrement = lastIncrement;
+        Fluid f = Registry.getFluid(crystalFluid.toString());
+        this.crystalFluid = f == null ? Fluids.EMPTY : f;
+        this.crystalProgress = crystalProgress;
+        this.crystalProgressTicks = progressTicks;
+
+    }
+
+    public int Increment() {
+        return lastIncrement;
+    }
+
+    public Fluid crystalFluid() {
+        return crystalFluid;
     }
 }

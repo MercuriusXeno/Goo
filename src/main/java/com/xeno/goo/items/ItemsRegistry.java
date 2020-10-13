@@ -16,7 +16,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 public class ItemsRegistry {
@@ -52,7 +51,7 @@ public class ItemsRegistry {
         crystallizedGooVariants.put("slab", 100000);
     }
 
-    public static final Map<ResourceLocation, RegistryObject<Item>> CrystallizedGoo = new HashMap<>();
+    public static final Map<ResourceLocation, RegistryObject<CrystallizedGooAbstract>> CrystallizedGoo = new HashMap<>();
     // crystallized goo
     static {
         crystallizedGooVariants.forEach(ItemsRegistry::registerCrystalGooForType);
@@ -61,7 +60,7 @@ public class ItemsRegistry {
     private static void registerCrystalGooForType(String crystalType, Integer gooAmount) {
         Registry.FluidSuppliers.forEach((k, v) ->
                 CrystallizedGoo.put(gooCrystalRegistryKey(crystalType, k),
-                        registerCrystalGooForType(gooCrystalRegistryKey(crystalType, k), crystalType, v, gooAmount))
+                        registerCrystalGooForType(gooCrystalRegistryKey(crystalType, k), k,  crystalType, v, gooAmount))
         );
     }
 
@@ -69,26 +68,34 @@ public class ItemsRegistry {
         return new ResourceLocation(GooMod.MOD_ID, k.getPath() + "_" + crystalType);
     }
 
-    private static RegistryObject<Item> registerCrystalGooForType(ResourceLocation crystalAndGooType, String crystalType, Supplier<GooFluid> v, Integer gooAmount) {
+    private static RegistryObject<CrystallizedGooAbstract> registerCrystalGooForType(ResourceLocation crystalAndGooType, ResourceLocation fluidKey, String crystalType, Supplier<GooFluid> v, Integer gooAmount) {
         Supplier<CrystallizedGooAbstract> result;
+        Supplier<Item> source;
+        String sourceName = fluidKey.getPath();
         switch (crystalType) {
             case "sliver":
-                result = () -> new GooSliver(v);
+                source = () -> net.minecraft.item.Items.QUARTZ;
+                result = () -> new GooSliver(v, source);
                 break;
             case "shard":
-                result = () -> new GooShard(v);
+                source = () -> CrystallizedGoo.get(new ResourceLocation(GooMod.MOD_ID, sourceName + "_sliver")).get();
+                result = () -> new GooShard(v, source);
                 break;
             case "crystal":
-                result = () -> new GooCrystal(v);
+                source = () -> CrystallizedGoo.get(new ResourceLocation(GooMod.MOD_ID, sourceName + "_shard")).get();
+                result = () -> new GooCrystal(v, source);
                 break;
             case "chunk":
-                result = () -> new GooChunk(v);
+                source = () -> CrystallizedGoo.get(new ResourceLocation(GooMod.MOD_ID, sourceName + "_crystal")).get();
+                result = () -> new GooChunk(v, source);
                 break;
             case "slab":
-                result = () -> new GooSlab(v);
+                source = () -> CrystallizedGoo.get(new ResourceLocation(GooMod.MOD_ID, sourceName + "_chunk")).get();
+                result = () -> new GooSlab(v, source);
                 break;
             default:
-                result = () -> new CrystallizedGooAbstract(v, 1);
+                source = () -> net.minecraft.item.Items.AIR;
+                result = () -> new CrystallizedGooAbstract(v, source, 1);
         }
         return Items.register(crystalAndGooType.getPath(), result);
     }

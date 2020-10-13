@@ -2,11 +2,9 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.items.*;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.generators.*;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.fml.RegistryObject;
 
@@ -31,7 +29,7 @@ public class ItemsProvider extends ItemModelProvider {
         ItemsRegistry.CrystallizedGoo.forEach(this::generateModelForCrystallizedGoo);
     }
 
-    private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<Item> itemRegistryObject) {
+    private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> itemRegistryObject) {
         String template = "";
         if (itemRegistryObject.get() instanceof GooSliver) {
             template = "template_sliver";

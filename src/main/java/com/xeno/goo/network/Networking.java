@@ -23,8 +23,8 @@ public class Networking {
     public static void registerNetworkMessages() {
         INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GooMod.MOD_ID, "goo"),
                 () -> "1.0",
-                clientAcceptedVersions -> true,
-                serverAcceptedVersions -> true);
+                s -> true,
+                s -> true);
 
         INSTANCE.messageBuilder(FluidUpdatePacket.class, nextID())
                 .encoder(FluidUpdatePacket::toBytes)
@@ -73,6 +73,12 @@ public class Networking {
                 .decoder(GooGauntletSwapPacket::new)
                 .consumer(GooGauntletSwapPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(UpdateBulbCrystalProgressPacket.class, nextID())
+                .encoder(UpdateBulbCrystalProgressPacket::toBytes)
+                .decoder(UpdateBulbCrystalProgressPacket::new)
+                .consumer(UpdateBulbCrystalProgressPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
@@ -92,5 +98,11 @@ public class Networking {
         if (player.world.isRemote()) {
             INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
         }
+    }
+
+    public static void syncGooValuesForPlayer(ServerPlayerEntity player)
+    {
+        // GooValueSyncPacket packet = GooMod.handler.createPacketData();
+        // sendRemotePacket(packet, player);
     }
 }
