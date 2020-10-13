@@ -133,13 +133,15 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
                 return false;
             }
 
+            // set our increment
+            lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
-            // set our increment
-            lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+
             if (world instanceof ServerWorld) {
                 Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.func_234923_W_(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
             }
@@ -154,7 +156,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
 
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
@@ -176,6 +178,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
                 this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
                 crystal = new ItemStack(nextStepInCrystallization(target.getFluid()));
                 crystalProgress = FluidStack.EMPTY;
+                crystalFluid = Fluids.EMPTY;
                 lastIncrement = 0;
                 if (world instanceof ServerWorld) {
                     Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.func_234923_W_(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
@@ -686,6 +689,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         // if anything causes the amount in the tank to drop lower than the progress, the progress is reversed.
         // goo in the tank is "reserved" to avoid reversals causing a weird overflow or goo having nowhere to go.
         crystalProgress = FluidStack.EMPTY;
+        crystalFluid = Fluids.EMPTY;
         lastIncrement = 0;
         if (sendUpdate && world instanceof ServerWorld) {
             float heightScale = (getPos().getY() + 1f - FLUID_VERTICAL_MAX) - (getPos().getY() + FLUID_VERTICAL_OFFSET);
