@@ -131,7 +131,7 @@ public class LobberTile extends TileEntity
             Vector3d spawnPos = Vector3d.copy(this.getPos()).add(0.5d, 0.5d, 0.5d) // move to center of block
                     .add(offsetVec.scale(0.52d)) // move to edge of block in facing
                     .add(sizeOffset); // move out based on half the edge length expected so it's pretty much out of the block
-            GooBlob blob = new GooBlob(Registry.GOO_BLOB.get(), world, Optional.empty(), result, spawnPos);
+            GooBlob blob = GooBlob.createLobbedBlob(world, result, spawnPos);
 
             blob.setMotion(offsetVec);
             world.addEntity(blob);
