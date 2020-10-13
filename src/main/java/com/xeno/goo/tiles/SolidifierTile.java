@@ -530,10 +530,6 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             return true;
         }
 
-        if (newTargetStack.isEmpty()) {
-            return false;
-        }
-
         if (world == null) {
             return false;
         }

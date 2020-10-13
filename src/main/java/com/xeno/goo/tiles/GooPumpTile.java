@@ -398,10 +398,6 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             return true;
         }
 
-        if (newTargetStack.isEmpty()) {
-            return false;
-        }
-
         if (world == null) {
             return false;
         }
