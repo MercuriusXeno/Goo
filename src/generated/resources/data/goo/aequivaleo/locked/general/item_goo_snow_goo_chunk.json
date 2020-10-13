@@ -1,0 +1,16 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "goo:snow_goo_chunk"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 10000.0,
+      "type": "goo:snow"
+    }
+  ]
+}

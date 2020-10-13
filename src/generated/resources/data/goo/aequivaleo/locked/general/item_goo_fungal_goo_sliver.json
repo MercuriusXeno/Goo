@@ -1,0 +1,16 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "goo:fungal_goo_sliver"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 10.0,
+      "type": "goo:fungal"
+    }
+  ]
+}
