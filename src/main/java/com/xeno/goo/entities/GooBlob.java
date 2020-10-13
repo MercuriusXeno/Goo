@@ -3,6 +3,7 @@ package com.xeno.goo.entities;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IPassThroughPredicate;
+import com.xeno.goo.interactions.SplatContext;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -75,8 +76,31 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
     }
 
-    // special constructor for goo blobs that doesn't shoot; this is important.
-    public GooBlob(EntityType<GooBlob> type, World worldIn, Optional<Entity> sender, FluidStack stack, Vector3d pos) {
+
+    public static GooBlob createLobbedBlob(GooSplat splat) {
+        return new GooBlob(splat, splat.getPositionVec(), splat.goo());
+    }
+
+    public static GooBlob createLobbedBlob(SplatContext context, Vector3d dropPosition, FluidStack stackReturned) {
+        return new GooBlob(context, dropPosition, stackReturned);
+    }
+
+    public static GooBlob createLobbedBlob(World world, FluidStack result, Vector3d spawnPos) {
+        return new GooBlob(Registry.GOO_BLOB.get(), world, Optional.empty(), result, spawnPos);
+    }
+
+    // constructor for splats that no longer have a block to sit on and convert back to blobs.
+    private GooBlob(GooSplat splat, Vector3d dropPosition, FluidStack stackReturned) {
+        this(Registry.GOO_BLOB.get(), splat.world, Optional.ofNullable(splat.owner()), stackReturned, dropPosition);
+    }
+
+    // constructor for blobs that break blocks and return some amount of themselves.
+    private GooBlob(SplatContext context, Vector3d dropPosition, FluidStack stackReturned) {
+        this(Registry.GOO_BLOB.get(), context.world(), Optional.ofNullable(context.splat().owner()), stackReturned, dropPosition);
+    }
+
+    // special constructor for goo blobs that don't shoot; this is important.
+    private GooBlob(EntityType<GooBlob> type, World worldIn, Optional<Entity> sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
         goo = stack;
         isAttachedToBlock = false;
