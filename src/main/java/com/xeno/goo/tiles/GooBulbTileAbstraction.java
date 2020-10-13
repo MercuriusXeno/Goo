@@ -5,10 +5,7 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.library.AudioHelper;
-import com.xeno.goo.network.FluidUpdatePacket;
-import com.xeno.goo.network.GooFlowPacket;
-import com.xeno.goo.network.Networking;
-import com.xeno.goo.network.UpdateBulbCrystalProgressPacket;
+import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
@@ -129,20 +126,22 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
             // there's no progress so we're about to start some.
             FluidStack target = new FluidStack(crystalFluid, nextStepInCrystallization(crystalFluid).amount());
-            
+
             // you can't crystallize zero goo fool.
             if (target.isEmpty() || !(target.getFluid() instanceof GooFluid)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
 
+            // set our increment
+            lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
-            // set our increment
-            lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
+
             if (world instanceof ServerWorld) {
                 Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
             }
@@ -157,7 +156,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
 
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < target.getAmount()) {
+            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
@@ -179,6 +178,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
                 this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
                 crystal = new ItemStack(nextStepInCrystallization(target.getFluid()));
                 crystalProgress = FluidStack.EMPTY;
+                crystalFluid = Fluids.EMPTY;
                 lastIncrement = 0;
                 if (world instanceof ServerWorld) {
                     Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
@@ -197,7 +197,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         if (crystalTransformations.size() == 0) {
             initializeTransformations();
         }
-         return crystalTransformations.get(fluid).get(crystal.getItem());
+        return crystalTransformations.get(fluid).get(crystal.getItem());
     }
 
     private static void initializeTransformations() {
@@ -453,7 +453,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
     }
 
     public void onContentsChanged() {
-         if (world == null) {
+        if (world == null) {
             return;
         }
         if (!world.isRemote) {
@@ -629,9 +629,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
                     // if we're "losing cap" by being at the mandatory minimum, figure out how much space we "lost"
                     // this space gets reserved by the routine so it doesn't allow the rendering to go out of bounds.
                     gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
-                        // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
-                        (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (gooAmount / (float)bulbCapacity))
-                        : 0f;
+                            // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
+                            (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (gooAmount / (float)bulbCapacity))
+                            : 0f;
         }
         return heightScale - (heightScale * lostCap);
     }
@@ -689,6 +689,7 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         // if anything causes the amount in the tank to drop lower than the progress, the progress is reversed.
         // goo in the tank is "reserved" to avoid reversals causing a weird overflow or goo having nowhere to go.
         crystalProgress = FluidStack.EMPTY;
+        crystalFluid = Fluids.EMPTY;
         lastIncrement = 0;
         if (sendUpdate && world instanceof ServerWorld) {
             float heightScale = (getPos().getY() + 1f - FLUID_VERTICAL_MAX) - (getPos().getY() + FLUID_VERTICAL_OFFSET);
