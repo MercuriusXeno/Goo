@@ -42,7 +42,7 @@ public class Energetic
         // destroy blocks in the radius and yield full drops.
         // double radius = GooMod.config.energeticMiningBlastRadius();
         int radius = GooMod.config.energeticMiningBlastDistance();
-        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockCenterVec(), context.blockPos(), radius);
+        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context));
         // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
@@ -131,7 +131,7 @@ public class Energetic
         return false;
     }
 
-    private static List<BlockPos> blockPositionsByCuboid(Vector3d center, BlockPos blockPos, int radius)
+    private static List<BlockPos> blockPositionsByCuboid(BlockPos blockPos, int radius)
     {
         List<BlockPos> result = new ArrayList<>();
         for(int x = -radius; x <= radius; x++) {
@@ -142,7 +142,7 @@ public class Energetic
             }
         }
 
-        // distance sort is still fine
+        // manhattan distance sort to avoid doing a biased center check
         result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
         return result;
     }
@@ -169,6 +169,6 @@ public class Energetic
 
     private static int vector3dComparator(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {
-        return Double.compare(blockPos.distanceSq(bp1), blockPos.distanceSq(bp2));
+        return Double.compare(blockPos.manhattanDistance(bp1), blockPos.manhattanDistance(bp2));
     }
 }
