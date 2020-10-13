@@ -13,16 +13,16 @@
       "type": "goo:regal"
     },
     {
-      "amount": 128.0,
-      "type": "goo:floral"
+      "amount": 180.0,
+      "type": "goo:metal"
     },
     {
       "amount": 360.0,
       "type": "goo:earthen"
     },
     {
-      "amount": 180.0,
-      "type": "goo:metal"
+      "amount": 128.0,
+      "type": "goo:floral"
     }
   ]
 }
