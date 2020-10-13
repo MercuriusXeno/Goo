@@ -10,7 +10,7 @@
   "compounds": [
     {
       "amount": 5.0,
-      "type": "goo:decay"
+      "type": "goo:molten"
     },
     {
       "amount": 180.0,
@@ -18,7 +18,7 @@
     },
     {
       "amount": 5.0,
-      "type": "goo:molten"
+      "type": "goo:decay"
     }
   ]
 }

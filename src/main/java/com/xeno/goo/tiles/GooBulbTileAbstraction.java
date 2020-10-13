@@ -125,7 +125,11 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             crystalFluid = getMostQuantityGoo().getFluid();
 
             // there's no progress so we're about to start some.
-            FluidStack target = new FluidStack(crystalFluid, nextStepInCrystallization(crystalFluid).amount());
+            CrystallizedGooAbstract crystalTarget = nextStepInCrystallization(crystalFluid);
+            if (crystalTarget == null) {
+                return false;
+            }
+            FluidStack target = new FluidStack(crystalFluid, crystalTarget.amount());
             
             // you can't crystallize zero goo fool.
             if (target.isEmpty() || !(target.getFluid() instanceof GooFluid)) {
@@ -147,7 +151,11 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
             }
         } else {
             // there's no progress so we're about to start some.
-            FluidStack target = new FluidStack(crystalFluid, nextStepInCrystallization(crystalFluid).amount());
+            CrystallizedGooAbstract crystalTarget = nextStepInCrystallization(crystalFluid);
+            if (crystalTarget == null) {
+                return false;
+            }
+            FluidStack target = new FluidStack(crystalFluid, crystalTarget.amount());
 
             // you can't crystallize zero goo fool.
             if (target.isEmpty() || !(target.getFluid() instanceof GooFluid)) {
