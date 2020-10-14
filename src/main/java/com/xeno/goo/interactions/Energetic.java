@@ -73,7 +73,7 @@ public class Energetic
                 // figure out drops for this block
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
                 List<ItemStack> drops = state.getDrops(lootBuilder
-                        .withParameter(LootParameters.POSITION, blockPos)
+                        .withParameter(LootParameters.field_237457_g_, context.blockCenterVec())
                         .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
                 );
                 // if the drops don't resemble the block, we presume there's some fortune potential and refuse to break it
