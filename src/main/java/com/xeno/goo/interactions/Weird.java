@@ -25,8 +25,7 @@ public class Weird
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.WEIRD_GOO.get(), "weird_transport", Weird::weirdTransport);
-
+        GooInteractions.registerSplat(Registry.WEIRD_GOO.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
     }
 
     private static boolean weirdTransport(SplatContext splatContext) {

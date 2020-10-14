@@ -32,7 +32,7 @@ public class Energetic
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast);
+        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
     }
 
     private static boolean miningBlast(SplatContext context)

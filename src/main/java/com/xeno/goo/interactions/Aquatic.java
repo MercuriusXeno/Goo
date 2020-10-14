@@ -10,7 +10,7 @@ public class Aquatic
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "cool_lava", Aquatic::waterCoolLava);
+        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "cool_lava", Aquatic::waterCoolLava, Aquatic::isHittingSourceLava);
 
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
@@ -35,24 +35,26 @@ public class Aquatic
         return false;
     }
 
+    public static boolean isHittingSourceLava(SplatContext context) {
+        return context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA) && context.fluidState().isSource();
+    }
+
     public static boolean waterCoolLava(SplatContext context)
     {
         // cool lava
-        if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
-            // spawn some sizzly smoke and sounds
-            if (!context.isRemote()) {
-                if (context.fluidState().isSource()) {
-                    context.setBlockState(net.minecraftforge.event.ForgeEventFactory
-                            .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
-                }
+        if (!context.isRemote()) {
+            boolean hasChanges = context.setBlockState(net.minecraftforge.event.ForgeEventFactory
+                    .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
+            if (!hasChanges) {
+                return false;
             }
-            context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
-            return true;
         }
-        return false;
+        // spawn some sizzly smoke and sounds
+        context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
+        return true;
     }
 
-    private static boolean waterCoolFlowingLava(BlobContext context) {
+    public static boolean waterCoolFlowingLava(BlobContext context) {
         // cool lava
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds

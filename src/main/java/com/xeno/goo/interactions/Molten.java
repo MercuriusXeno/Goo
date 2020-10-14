@@ -25,28 +25,15 @@ public class Molten
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian);
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock);
+        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
+        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
     }
 
-    private static boolean igniteBlock(SplatContext context) {
-        if (CampfireBlock.canBeLit(context.blockState())) {
-            if (!context.isRemote()) {
-                context.world().setBlockState(context.blockPos(), context.blockState().with(BlockStateProperties.LIT, Boolean.TRUE), 11);
-            }
-            return true;
-        } else {
-            BlockPos offPos = context.blockPos().offset(context.sideHit());
-            if (AbstractFireBlock.canLightBlock(context.world(), offPos)) {
-                if (!context.isRemote()) {
-                    BlockState offState = AbstractFireBlock.getFireForPlacement(context.world(), offPos);
-                    context.world().setBlockState(offPos, offState, 11);
-                }
-                return true;
-            }
-        }
-
-        return false;
+    private static boolean isCookable(SplatContext context) {
+        Optional<IRecipe<?>> matchRecipe = Equivalencies.furnaceRecipes(context.world()).stream()
+                .filter((r) -> soleIngredient(r, context.block()))
+                .findFirst();
+        return matchRecipe.isPresent();
     }
 
     private static boolean cookBlock(SplatContext context)
@@ -66,11 +53,14 @@ public class Molten
             doEffects(context);
             if (output instanceof BlockItem) {
                 Block block = ((BlockItem) output).getBlock();
-                context.setBlockState(block.getDefaultState());
+                boolean hasChanges = context.setBlockState(block.getDefaultState());
             } else {
                 ItemStack result = c.getRecipeOutput().copy();
                 Vector3d spawnLoc = Vector3d.copy(context.blockPos()).add(0.5d, 0.5d, 0.5d);
-                context.world().removeBlock(context.blockPos(), false);
+                boolean hasChanges = context.world().removeBlock(context.blockPos(), false);
+                if (!hasChanges) {
+                    return false;
+                }
                 context.world().addEntity(new ItemEntity(context.world(), spawnLoc.x,
                         spawnLoc.y, spawnLoc.z, result));
             }
@@ -132,15 +122,15 @@ public class Molten
         return false;
     }
 
+    private static boolean isObsidian(SplatContext context) {
+        return context.block().equals(Blocks.OBSIDIAN);
+    }
+
     private static boolean meltObsidian(SplatContext context)
     {
-        if (context.block().equals(Blocks.OBSIDIAN)) {
-            if (!context.isRemote()) {
-                context.setBlockState(Blocks.LAVA.getDefaultState());
-            }
-            return true;
+        if (!context.isRemote()) {
+            return context.setBlockState(Blocks.LAVA.getDefaultState());
         }
-
-        return false;
+        return true;
     }
 }

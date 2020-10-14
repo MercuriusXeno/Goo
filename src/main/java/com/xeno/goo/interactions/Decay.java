@@ -6,7 +6,6 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
-import net.minecraft.state.properties.BambooLeaves;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Direction;
@@ -16,28 +15,30 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Decay
 {
+    private static final int HALF_SECOND_INTERVAL = 10;
+
     public static void registerInteractions()
     {
         // splat interactions
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "decay_shrooms", Decay::decayShrooms);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "strip_bark", Decay::stripBark);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_grass", Decay::eatGrass);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_moss", Decay::eatMoss);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_stone", Decay::deteriorateStone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_cobblestone", Decay::deteriorateCobblestone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_sand_stone", Decay::deteriorateSandStone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_gravel", Decay::deteriorateGravel);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_dirt", Decay::deteriorateDirt);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "death_pulse", Decay::deathPulse);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "decay_shrooms", Decay::decayShrooms, Decay::isShroom);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "strip_log", Decay::stripLog, Decay::isLogWithBark);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "strip_stem", Decay::stripStem, Decay::isStemWithBark);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_grass", Decay::eatGrass, Decay::isGrassBlock);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_moss", Decay::eatMoss, Decay::hasMoss);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_stone", Decay::deteriorateStone, Decay::isStone);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_cobblestone", Decay::deteriorateCobblestone, Decay::isCobblestone);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_sand_stone", Decay::deteriorateSandStone, Decay::isSandstone);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_gravel", Decay::deteriorateGravel, Decay::isGravel);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt, Decay::isCoarseDirt);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_dirt", Decay::deteriorateDirt, Decay::isDirt);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium, Decay::isNylium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium, Decay::isMycelium);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol, Decay::isPodzol);
+        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "death_pulse", Decay::deathPulse, Decay::isLivingNearbyAndHalfSecondInterval);
 
         GooInteractions.registerPassThroughPredicate(Registry.DECAY_GOO.get(), Decay::blobPassThroughPredicate);
 
@@ -56,10 +57,38 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
     }
 
-    private static boolean deathPulse(SplatContext splatContext) {
-        if (splatContext.world().getGameTime() % 10 > 0) {
+    private static boolean isMycelium(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.MYCELIUM);
+    }
+
+    private static boolean isDirt(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.DIRT);
+    }
+
+    private static boolean isCoarseDirt(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.COARSE_DIRT);
+    }
+
+    private static boolean isGravel(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.GRAVEL);
+    }
+
+    private static boolean isSandstone(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.SANDSTONE, Blocks.SMOOTH_SANDSTONE, Blocks.CHISELED_SANDSTONE);
+    }
+
+    private static boolean isCobblestone(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.COBBLESTONE);
+    }
+
+    private static boolean isLivingNearbyAndHalfSecondInterval(SplatContext splatContext) {
+        if (splatContext.world().getGameTime() % HALF_SECOND_INTERVAL > 0) {
             return false;
         }
+        return splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d), null).size() > 0;
+    }
+
+    private static boolean deathPulse(SplatContext splatContext) {
         List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d), null);
         for(LivingEntity entity : nearbyEntities) {
             if (!entity.isEntityUndead()) {
@@ -76,12 +105,20 @@ public class Decay
         return false;
     }
 
+    private static boolean isPodzol(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.PODZOL);
+    }
+
     private static boolean deterioratePodzol(SplatContext splatContext) {
         return exchangeBlock(splatContext, Blocks.DIRT, Blocks.PODZOL);
     }
 
     private static boolean deteriorateMycelium(SplatContext splatContext) {
         return exchangeBlock(splatContext, Blocks.PODZOL, Blocks.MYCELIUM);
+    }
+
+    private static boolean isNylium(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.CRIMSON_NYLIUM, Blocks.WARPED_NYLIUM);
     }
 
     private static boolean deteriorateNylium(SplatContext splatContext) {
@@ -260,9 +297,9 @@ public class Decay
                 state.getBlock() instanceof LeavesBlock
                 || state.getBlock() instanceof VineBlock
                 || state.getBlock() instanceof BushBlock
+                || state.getBlock() instanceof TallGrassBlock
                 || state.getBlock() instanceof CropsBlock
                 || state.getBlock() instanceof LilyPadBlock
-                || state.getBlock() instanceof GrassBlock
                 || state.getBlock() instanceof SugarCaneBlock
                 || state.getBlock() instanceof BambooBlock
                 || state.getBlock() instanceof BambooSaplingBlock
@@ -338,8 +375,16 @@ public class Decay
         return exchangeBlock(context, Blocks.GRAVEL, Blocks.COBBLESTONE);
     }
 
+    private static boolean isStone(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.STONE, Blocks.SMOOTH_STONE, Blocks.CHISELED_STONE_BRICKS, Blocks.STONE_BRICKS);
+    }
+
     private static boolean deteriorateStone(SplatContext context) {
         return exchangeBlock(context, Blocks.COBBLESTONE, Blocks.STONE, Blocks.SMOOTH_STONE, Blocks.CHISELED_STONE_BRICKS, Blocks.STONE_BRICKS);
+    }
+
+    private static boolean hasMoss(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.MOSSY_COBBLESTONE, Blocks.MOSSY_STONE_BRICKS);
     }
 
     private static boolean eatMoss(SplatContext context) {
@@ -347,22 +392,33 @@ public class Decay
                 || exchangeBlock(context, Blocks.STONE_BRICKS, Blocks.MOSSY_STONE_BRICKS);
     }
 
+    private static boolean isGrassBlock(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.GRASS_BLOCK);
+    }
+
     private static boolean eatGrass(SplatContext context) {
         return exchangeBlock(context, Blocks.DIRT, Blocks.GRASS_BLOCK);
     }
 
-    private static boolean stripBark(SplatContext context) {
-        for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
-            if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
-                return true;
-            }
-        }
-        for(Tuple<Block, Block> blockPair : Fungal.stemPairs) {
-            if (exchangeLog(context, blockPair.getA(), blockPair.getB())) {
-                return true;
-            }
-        }
-        return false;
+    private static boolean isLogWithBark(SplatContext splatContext) {
+        return Floral.logBarkPairs.containsKey(splatContext.block());
+    }
+
+
+    private static boolean isStemWithBark(SplatContext splatContext) {
+        return Fungal.stemPairs.containsKey(splatContext.block());
+    }
+
+    private static boolean stripLog(SplatContext context) {
+        return exchangeLog(context, context.block(), Floral.logBarkPairs.get(context.block()));
+    }
+
+    private static boolean stripStem(SplatContext context) {
+        return exchangeLog(context, context.block(), Fungal.stemPairs.get(context.block()));
+    }
+
+    private static boolean isShroom(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.MUSHROOM_STEM, Blocks.BROWN_MUSHROOM_BLOCK, Blocks.RED_MUSHROOM_BLOCK);
     }
 
     private static boolean decayShrooms(SplatContext context) {

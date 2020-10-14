@@ -41,41 +41,42 @@ public class Slime
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.SLIME_GOO.get(), "bounce_living", Slime::bounceLiving);
+        GooInteractions.registerSplat(Registry.SLIME_GOO.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
+    }
+
+    // TODO FIX ME - test with fixed filter and see if it works
+    private static boolean isLivingInBounceArea(SplatContext splatContext) {
+        return splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
+                splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround()).size() > 0;
     }
 
     private static boolean bounceLiving(SplatContext splatContext) {
-        List<Entity> nearbyEntities = splatContext.world().getEntitiesWithinAABBExcludingEntity(splatContext.splat(),
-                splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d));
+        List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
+                splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround());
         boolean didThings = false;
-        for(Entity entity : nearbyEntities) {
-            if (entity.isOnGround()) {
-                continue;
-            }
-            if (entity instanceof LivingEntity) {
-                if (splatContext.sideHit() == Direction.UP) {
-                    if (entity.getMotion().y > HEURISTIC_JUMP_DETECTION_SPEED) {
-                        // we don't apply to airborne because it effects bouncing annoyingly.
-                        if (!entity.isSneaking() && !entity.isAirBorne) {
-                            if (entity.getMotion().y < JUMP_BOOST_POWER) {
-                                entity.setMotion(entity.getMotion().x, JUMP_BOOST_POWER, entity.getMotion().z);
-                                entity.velocityChanged = true;
-                                didThings = true;
-                            }
+        for(LivingEntity entity : nearbyEntities) {
+            if (splatContext.sideHit() == Direction.UP) {
+                if (entity.getMotion().y > HEURISTIC_JUMP_DETECTION_SPEED) {
+                    // we don't apply to airborne because it effects bouncing annoyingly.
+                    if (!entity.isSneaking() && !entity.isAirBorne) {
+                        if (entity.getMotion().y < JUMP_BOOST_POWER) {
+                            entity.setMotion(entity.getMotion().x, JUMP_BOOST_POWER, entity.getMotion().z);
+                            entity.velocityChanged = true;
+                            didThings = true;
                         }
-                    } else if (entity.getMotion().y < -DOWNWARD_MOTION_THRESHOLD && entity.fallDistance > FALL_HEIGHT_THRESHOLD){
-                        // fall breaker
-                        entity.fallDistance = 0;
-                        if (!entity.isSneaking()) {
-                            bounceEntity(entity, splatContext.sideHit());
-                        }
-                        didThings = true;
                     }
-                } else {
+                } else if (entity.getMotion().y < -DOWNWARD_MOTION_THRESHOLD && entity.fallDistance > FALL_HEIGHT_THRESHOLD){
+                    // fall breaker
+                    entity.fallDistance = 0;
                     if (!entity.isSneaking()) {
                         bounceEntity(entity, splatContext.sideHit());
-                        didThings = true;
                     }
+                    didThings = true;
+                }
+            } else {
+                if (!entity.isSneaking()) {
+                    bounceEntity(entity, splatContext.sideHit());
+                    didThings = true;
                 }
             }
         }

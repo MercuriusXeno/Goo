@@ -33,45 +33,50 @@ public class Regal
     }
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.REGAL_GOO.get(), "regal_breaker", Regal::breaker);
+        GooInteractions.registerSplat(Registry.REGAL_GOO.get(), "regal_breaker", Regal::breaker, Regal::isValidForHarvest);
+    }
+
+    private static boolean isValidForHarvest(SplatContext context) {
+        BlockPos blockPos = context.blockPos();
+        BlockState state = context.world().getBlockState(blockPos);
+        return state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
     }
 
     private static boolean breaker(SplatContext context)
     {
-        BlockPos blockPos = context.blockPos();
-        BlockState state = context.world().getBlockState(blockPos);
-        Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
-
-        if (state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness) {
-            if ((context.world() instanceof ServerWorld)) {
-                SoundType breakAudio = state.getBlock().getSoundType(state, context.world(), blockPos, null);
-                AudioHelper.headlessAudioEvent(context.world(), blockPos, breakAudio.getBreakSound(), SoundCategory.BLOCKS,
-                    breakAudio.volume, () -> breakAudio.pitch);
-                ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
-                LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
-                List<ItemStack> drops = state.getDrops(lootBuilder
-                        .withParameter(LootParameters.POSITION, blockPos)
-                        .withParameter(LootParameters.TOOL, mockPick)
-                );
-                drops.forEach((d) -> context.world().addEntity(
-                        new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
-                ));
-                context.world().removeBlock(blockPos, false);
-
-                // now bounce back a bit of goo, but less than what was spent
-                // int costToResolve = GooMod.config.costOfInteraction(context.fluid(), context.interactionKey());
-                int amountReturned = GooMod.config.returnOfInteraction(context.fluid(), context.interactionKey());
-
-                GooBlob returnBlob = GooBlob.createLobbedBlob(context, dropPos, new FluidStack(context.fluid(), amountReturned));
-                Vector3d motionVec = Vector3d.copy(context.splat().sideWeLiveOn().getDirectionVec())
-                        .scale(0.5d); // unit vector is a little too forceful, dial it back a lot
-                returnBlob.setMotion(motionVec);
-                context.world().addEntity(returnBlob);
+        if ((context.world() instanceof ServerWorld)) {
+            BlockPos blockPos = context.blockPos();
+            BlockState state = context.world().getBlockState(blockPos);
+            Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
+            SoundType breakAudio = state.getBlock().getSoundType(state, context.world(), blockPos, null);
+            AudioHelper.headlessAudioEvent(context.world(), blockPos, breakAudio.getBreakSound(), SoundCategory.BLOCKS,
+                breakAudio.volume, () -> breakAudio.pitch);
+            ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
+            LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
+            List<ItemStack> drops = state.getDrops(lootBuilder
+                    .withParameter(LootParameters.POSITION, blockPos)
+                    .withParameter(LootParameters.TOOL, mockPick)
+            );
+            boolean hasChanges = context.world().removeBlock(blockPos, false);
+            if (!hasChanges) {
+                return false;
             }
 
+            drops.forEach((d) -> context.world().addEntity(
+                    new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
+            ));
 
-            return true;
+            // now bounce back a bit of goo, but less than what was spent
+            // int costToResolve = GooMod.config.costOfInteraction(context.fluid(), context.interactionKey());
+            int amountReturned = GooMod.config.returnOfInteraction(context.fluid(), context.interactionKey());
+
+            GooBlob returnBlob = GooBlob.createLobbedBlob(context, dropPos, new FluidStack(context.fluid(), amountReturned));
+            Vector3d motionVec = Vector3d.copy(context.splat().sideWeLiveOn().getDirectionVec())
+                    .scale(0.5d); // unit vector is a little too forceful, dial it back a lot
+            returnBlob.setMotion(motionVec);
+            context.world().addEntity(returnBlob);
         }
-        return false;
+
+        return true;
     }
 }

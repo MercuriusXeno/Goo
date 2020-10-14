@@ -12,26 +12,29 @@ public class Vital
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.VITAL_GOO.get(), "vital_pulse", Vital::vitalPulse);
+        GooInteractions.registerSplat(Registry.VITAL_GOO.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
+    }
+
+    private static boolean isLivingInRangeAndHalfSecondPulse(SplatContext splatContext) {
+        return (splatContext.world().getGameTime() % 10 == 0)
+                && splatContext.world()
+                .getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d),
+                        (e) -> e.isEntityUndead() || e.getHealth() < e.getMaxHealth()).size() > 0;
     }
 
     private static boolean vitalPulse(SplatContext splatContext) {
-        if (splatContext.world().getGameTime() % 10 > 0) {
-            return false;
-        }
-        List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d), null);
+        List<LivingEntity> nearbyEntities = splatContext.world()
+                .getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d),
+                        (e) -> e.isEntityUndead() || e.getHealth() < e.getMaxHealth());
         for(LivingEntity entity : nearbyEntities) {
             if (entity.isEntityUndead()) {
                 entity.attackEntityFrom(DamageSource.causeIndirectDamage(splatContext.splat(), entity), 1f);
             } else {
-                if (entity.getHealth() < entity.getMaxHealth()) {
-                    entity.heal(1f);
-                    doEffects(entity);
-                    return true;
-                }
+                entity.heal(1f);
+                doEffects(entity);
             }
         }
-        return false;
+        return true;
     }
 
     private static void doEffects(LivingEntity entity) {
