@@ -1,5 +1,7 @@
 package com.xeno.goo.interactions;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
@@ -8,24 +10,20 @@ import net.minecraft.item.BoneMealItem;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Floral
 {
     public static void registerInteractions()
     {
         // splat interactions
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_grass", Floral::growGrass);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_moss", Floral::growMoss);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_lilypad", Floral::growLilypad);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_bark", Floral::growBark);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "flourish", Floral::flourish);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_grass", Floral::growGrass, Floral::isDirt);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
+        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "flourish", Floral::flourish, Floral::isGrassBlock);
 
         GooInteractions.registerPassThroughPredicate(Registry.FLORAL_GOO.get(), Floral::blobPassThroughPredicate);
 
@@ -70,7 +68,7 @@ public class Floral
         return false;
     }
 
-    private static net.minecraft.state.BooleanProperty vinePlacementPropertyFromDirection(Direction d) {
+    private static BooleanProperty vinePlacementPropertyFromDirection(Direction d) {
         switch (d) {
             case UP:
                 return VineBlock.UP;
@@ -101,30 +99,35 @@ public class Floral
         return false;
     }
 
+    private static boolean isGrassBlock(SplatContext context) {
+        return context.block() instanceof GrassBlock;
+    }
+
     private static boolean flourish(SplatContext context) {
-        if (context.block() instanceof GrassBlock) {
-            if (context.world() instanceof ServerWorld) {
-                ((GrassBlock) context.block()).grow((ServerWorld)context.world(),
-                        context.world().rand, context.blockPos(), context.blockState());
-            }
-            doEffects(context);
-            return true;
+        // grow needs a server world in scope, this one is weird.
+        if (context.world() instanceof ServerWorld) {
+            ((GrassBlock) context.block()).grow((ServerWorld)context.world(),
+                    context.world().rand, context.blockPos(), context.blockState());
         }
-        return false;
+        doEffects(context);
+        return true;
+    }
+
+    private static boolean canSupportLilypad(SplatContext context) {
+        return context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)
+                && context.fluidState().isSource() && context.isBlockAboveAir();
     }
 
     private static boolean growLilypad(SplatContext context) {
         // spawn lilypad
-        if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
-            if (!context.isRemote()) {
-                if (context.fluidState().isSource() && context.isBlockAboveAir()) {
-                    context.setBlockStateAbove(Blocks.LILY_PAD.getDefaultState());
-                }
+        if (!context.isRemote()) {
+            boolean hasChanges = context.setBlockStateAbove(Blocks.LILY_PAD.getDefaultState());
+            if (!hasChanges) {
+                return false;
             }
-            doEffects(context);
-            return true;
         }
-        return false;
+        doEffects(context);
+        return true;
     }
 
     private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {
@@ -132,7 +135,10 @@ public class Floral
         for(Block source : sources) {
             if (context.block().equals(source)) {
                 if (!context.isRemote()) {
-                    context.setBlockState(target.getDefaultState());
+                    boolean hasChanges = context.setBlockState(target.getDefaultState());
+                    if (!hasChanges) {
+                        return false;
+                    }
                 }
                 // spawn particles and stuff
                 doEffects(context);
@@ -150,9 +156,17 @@ public class Floral
         BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
     }
 
+    private static boolean canSupportMoss(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.COBBLESTONE, Blocks.STONE_BRICKS);
+    }
+
     private static boolean growMoss(SplatContext context) {
         return exchangeBlock(context, Blocks.MOSSY_COBBLESTONE, Blocks.COBBLESTONE)
                 || exchangeBlock(context, Blocks.MOSSY_STONE_BRICKS, Blocks.STONE_BRICKS);
+    }
+
+    private static boolean isDirt(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.DIRT);
     }
 
     private static boolean growGrass(SplatContext context) {
@@ -170,21 +184,24 @@ public class Floral
 
     // similar to exchange block but respect the state of the original log
     private static boolean exchangeLog(SplatContext context, Block source, Block target) {
-        if (context.block().equals(source)) {
-            Direction.Axis preservedAxis = context.blockState().get(BlockStateProperties.AXIS);
-            if (!context.isRemote()) {
-                context.setBlockState(target.getDefaultState().with(BlockStateProperties.AXIS, preservedAxis));
-            }
-            // spawn particles and stuff
-            doEffects(context);
-            return true;
+        if (!context.block().equals(source)) {
+            return false;
         }
-        return false;
+        if (!context.isRemote()) {
+            Direction.Axis preservedAxis = context.blockState().get(BlockStateProperties.AXIS);
+            boolean hasChanges = context.setBlockState(target.getDefaultState().with(BlockStateProperties.AXIS, preservedAxis));
+            if (!hasChanges) {
+                return false;
+            }
+        }
+        // spawn particles and stuff
+        doEffects(context);
+        return true;
     }
 
-    public static final List<Tuple<Block, Block>> logBarkPairs = new ArrayList<>();
-    public static void registerLogBarkPair(Block source, Block target) {
-        logBarkPairs.add(new Tuple<>(source, target));
+    public static final BiMap<Block, Block> logBarkPairs = HashBiMap.create();
+    public static void registerLogBarkPair(Block target, Block source) {
+        logBarkPairs.put(target, source);
     }
 
     static {
@@ -202,12 +219,12 @@ public class Floral
         registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
     }
 
+    private static boolean isStrippedLog(SplatContext splatContext) {
+        // inverse of logBarkPairs is strippedBarkPairs, essentially, where stripped bark is the key.
+        return logBarkPairs.containsValue(splatContext.block());
+    }
+
     private static boolean growBark(SplatContext context) {
-        for(Tuple<Block, Block> blockPair : Floral.logBarkPairs) {
-            if (exchangeLog(context, blockPair.getB(), blockPair.getA())) {
-                return true;
-            }
-        }
-        return false;
+        return exchangeLog(context, logBarkPairs.inverse().get(context.block()), context.block());
     }
 }

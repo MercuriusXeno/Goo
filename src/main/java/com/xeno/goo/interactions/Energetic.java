@@ -32,7 +32,7 @@ public class Energetic
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast);
+        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
     }
 
     private static boolean miningBlast(SplatContext context)
@@ -42,7 +42,7 @@ public class Energetic
         // destroy blocks in the radius and yield full drops.
         // double radius = GooMod.config.energeticMiningBlastRadius();
         int radius = GooMod.config.energeticMiningBlastDistance();
-        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockCenterVec(), context.blockPos(), radius);
+        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockPos(), radius);
 
         blockPosList.forEach((p) -> tryMiningBlast(p, context));
         // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
@@ -73,7 +73,7 @@ public class Energetic
                 // figure out drops for this block
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
                 List<ItemStack> drops = state.getDrops(lootBuilder
-                        .withParameter(LootParameters.field_237457_g_, context.blockCenterVec())
+                        .withParameter(LootParameters.POSITION, blockPos)
                         .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
                 );
                 // if the drops don't resemble the block, we presume there's some fortune potential and refuse to break it
@@ -131,7 +131,7 @@ public class Energetic
         return false;
     }
 
-    private static List<BlockPos> blockPositionsByCuboid(Vector3d center, BlockPos blockPos, int radius)
+    private static List<BlockPos> blockPositionsByCuboid(BlockPos blockPos, int radius)
     {
         List<BlockPos> result = new ArrayList<>();
         for(int x = -radius; x <= radius; x++) {
@@ -142,7 +142,7 @@ public class Energetic
             }
         }
 
-        // distance sort is still fine
+        // manhattan distance sort to avoid doing a biased center check
         result.sort((bp1, bp2) -> compareManhattanDistance(blockPos, bp1, bp2));
         return result;
     }

@@ -6,7 +6,6 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
-import net.minecraft.entity.monster.EndermanEntity;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.Tuple;
@@ -25,8 +24,7 @@ public class Weird
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.WEIRD_GOO.get(), "weird_transport", Weird::weirdTransport);
-
+        GooInteractions.registerSplat(Registry.WEIRD_GOO.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
     }
 
     private static boolean weirdTransport(SplatContext splatContext) {

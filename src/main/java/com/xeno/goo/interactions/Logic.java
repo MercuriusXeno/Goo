@@ -4,7 +4,6 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
-import net.minecraft.particles.ParticleTypes;
 import net.minecraft.particles.RedstoneParticleData;
 import net.minecraft.state.properties.AttachFace;
 import net.minecraft.state.properties.BlockStateProperties;
@@ -24,17 +23,29 @@ public class Logic
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.LOGIC_GOO.get(), "logic_pulse", Logic::logicPulse);
+        GooInteractions.registerSplat(Registry.LOGIC_GOO.get(), "logic_pulse", Logic::logicPulse, Logic::isValidForLogicPulse);
 
         GooInteractions.registerPassThroughPredicate(Registry.LOGIC_GOO.get(), Logic::blobPassThroughPredicate);
+    }
+
+    private static boolean isValidForLogicPulse(SplatContext context) {
+        BlockPos pos = context.splat().getPosition();
+        BlockState state = context.world().getBlockState(pos);
+        // once per second on game time
+        return (context.world().getGameTime() % 20 == 0)
+                && isValidLogicBlock(state)
+                && isLegalStateAndSideHitCombo(state, context)
+                && !isButtonOrPressurePlateWithPowerAlready(state);
+    }
+
+    private static boolean isButtonOrPressurePlateWithPowerAlready(BlockState state) {
+        return !(state.getBlock() instanceof LeverBlock) && state.get(BlockStateProperties.POWERED);
     }
 
     private static boolean logicPulse(SplatContext context) {
         BlockPos pos = context.splat().getPosition();
         BlockState state = context.world().getBlockState(pos);
-        if (context.world().getGameTime() % 20 != 0) {
-            return false;
-        }
+        // this is just particles lol
         if (context.world() instanceof ServerWorld) {
             Vector3d particlePos = context.splat().getPositionVec();
             AxisAlignedBB bounds = context.splat().getBoundingBox();
@@ -53,27 +64,17 @@ public class Logic
                         finalPos.x, finalPos.y, finalPos.z, 1, 0d, 0d, 0d, 0d);
             }
         }
-        if (isValidLogicBlock(state)) {
-            if (!isLegalStateAndSideHitCombo(state, context)) {
-                return false;
-            }
-            // if it's a button or plate we bypass it if powered
-            if (!(state.getBlock() instanceof LeverBlock) && state.get(BlockStateProperties.POWERED)) {
-                return false;
-            }
-            // toggle the powered states based on what kind of powered state it needs/behaviors
-            // specific to each block. Right now only basic mechanisms capable of sending
-            // manual signals are supported.
-            if (state.getBlock() instanceof LeverBlock) {
-                toggleLever(state, context.world(), pos);
-            } else if (state.getBlock() instanceof AbstractPressurePlateBlock) {
-                togglePressurePlate(state, context.world(), pos, context);
-            } else if (state.getBlock() instanceof AbstractButtonBlock) {
-                toggleButton(state, context.world(), pos);
-            }
-            return true;
+        // toggle the powered states based on what kind of powered state it needs/behaviors
+        // specific to each block. Right now only basic mechanisms capable of sending
+        // manual signals are supported.
+        if (state.getBlock() instanceof LeverBlock) {
+            toggleLever(state, context.world(), pos);
+        } else if (state.getBlock() instanceof AbstractPressurePlateBlock) {
+            togglePressurePlate(state, context.world(), pos, context);
+        } else if (state.getBlock() instanceof AbstractButtonBlock) {
+            toggleButton(state, context.world(), pos);
         }
-        return false;
+        return true;
     }
 
     private static boolean isLegalStateAndSideHitCombo(BlockState state, SplatContext context) {
@@ -112,7 +113,7 @@ public class Logic
                 doLeverParticles(newState, world, pos, 1.0F);
             }
         } else {
-            button.powerBlock(state, world, pos);
+            button.func_226910_d_(state, world, pos);
             SoundEvent stoneOrWood = button instanceof StoneButtonBlock ? SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON
                     : SoundEvents.BLOCK_WOODEN_BUTTON_CLICK_ON;
             AudioHelper.headlessAudioEvent(world, pos, stoneOrWood, SoundCategory.BLOCKS, 0.3F,

@@ -10,56 +10,48 @@ public class Snow
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "freeze_water", Snow::freezeWater);
-        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "cool_lava", Snow::iceCoolLava);
-        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "extinguish_fire", Snow::extinguishFire);
+        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "freeze_water", Snow::freezeWater, Snow::isWaterSource);
+        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "cool_lava", Snow::coolLava, Snow::isLavaSource);
+
+        // outrageously, this is allowed
+        GooInteractions.registerBlob(Registry.SNOW_GOO.get(), "extinguish_fire", Aquatic::extinguishFire); // aquatic lolol
+        GooInteractions.registerBlob(Registry.SNOW_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+    }
+
+    private static boolean isWaterSource(SplatContext context) {
+        return context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)
+                && context.fluidState().isSource() && context.isBlockAboveAir();
     }
 
     public static boolean freezeWater(SplatContext context)
     {
         // freeze water
-        if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
-            if (!context.isRemote()) {
-                if (context.fluidState().isSource() && context.isBlockAboveAir()) {
-                    context.setBlockState(Blocks.ICE.getDefaultState());
-                }
-                AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), Registry.FREEZE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, () -> 1.5f);
+        if (!context.isRemote()) {
+            boolean hasChanges = context.setBlockState(Blocks.ICE.getDefaultState());
+            if (!hasChanges) {
+                return false;
             }
-            return true;
+            AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), Registry.FREEZE_SOUND.get(), SoundCategory.BLOCKS, 1.0f, () -> 1.5f);
         }
-        return false;
+        return true;
     }
 
-    public static boolean iceCoolLava(SplatContext context)
-    {
-        // cool lava
-        if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
-            // spawn some sizzly smoke and sounds
-            if (!context.isRemote()) {
-                if (context.fluidState().isSource()) {
-                    context.setBlockState(net.minecraftforge.event.ForgeEventFactory
-                            .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
-                } else {
-                    context.setBlockState(net.minecraftforge.event.ForgeEventFactory
-                            .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.COBBLESTONE.getDefaultState()));
-                }
-            }
-            context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
-            return true;
-        }
-        return false;
+    private static boolean isLavaSource(SplatContext context) {
+        return context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)
+                && context.fluidState().isSource();
     }
 
-    public static boolean extinguishFire(SplatContext context)
+    public static boolean coolLava(SplatContext context)
     {
-        // extinguish fires
-        if (context.blockState().getBlock().equals(Blocks.FIRE)) {
-            context.world().playEvent(null, 1009, context.blockPos(), 0);
-            if (!context.isRemote()) {
-                context.world().removeBlock(context.blockPos(), false);
-            }
-            return true;
+        // spawn some sizzly smoke and sounds
+        if (!context.isRemote()) {
+                boolean hasChanges = context.setBlockState(net.minecraftforge.event.ForgeEventFactory
+                        .fireFluidPlaceBlockEvent(context.world(), context.blockPos(), context.blockPos(), Blocks.OBSIDIAN.getDefaultState()));
+                if (!hasChanges) {
+                    return false;
+                }
         }
-        return false;
+        context.world().playEvent(1501, context.blockPos(), 0); // sizzly bits
+        return true;
     }
 }

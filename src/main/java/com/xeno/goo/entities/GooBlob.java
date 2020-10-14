@@ -201,7 +201,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         // feed the splat we belong to
         if (attachedSplat != null) {
             approachSplatOffset();
-            attachedSplat.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+            int amountToDrain = (int)Math.ceil(Math.sqrt(this.goo().getAmount()) / 2d);
+            attachedSplat.fill(this.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
         }
     }
 

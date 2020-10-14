@@ -1,12 +1,13 @@
 package com.xeno.goo.interactions;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.MaterialColor;
 import net.minecraft.item.DyeColor;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -16,13 +17,13 @@ public class Chromatic
 {
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_wool", Chromatic::dyeWool);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete", Chromatic::dyeConcrete);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_terracotta", Chromatic::dyeTerracotta);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glass", Chromatic::dyeGlass);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "sand_color", Chromatic::colorSand);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_wool", Chromatic::dyeWool,Chromatic::isWool);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder, Chromatic::isConcretePowder);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete", Chromatic::dyeConcrete, Chromatic::isConcrete);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_terracotta", Chromatic::dyeTerracotta, Chromatic::isTerracotta);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
+        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
     }
 
     private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();
@@ -36,6 +37,7 @@ public class Chromatic
     private final static Map<MaterialColor, Block> glazedTerracottaMap = new HashMap<>();
     private final static Map<MaterialColor, Block> glassMap = new HashMap<>();
 
+    // hard coded satan
     private final static int minTerracottaColorIndex = 36;
     private final static int maxTerracottaColorIndex = 51;
     static {
@@ -191,146 +193,136 @@ public class Chromatic
         return terracottaCycleMap.get(originalColor);
     }
 
-    private static boolean dyeTerracotta(SplatContext ic)
+    private static boolean dyeTerracotta(SplatContext context)
     {
-        if (!isTerracotta(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor;
-        if (ic.block().equals(Blocks.TERRACOTTA)) {
-            newColor = MaterialColor.ORANGE_TERRACOTTA;
-        } else {
-            newColor = cycleTerracottaColor(ic.world(), ic.blockState(), ic.blockPos());
-        }
-        Block dyedBlock = terracottaMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean isTerracotta(SplatContext ic)
-    {
-        // in the colored map or the uncolored variant
-        return terracottaMap.containsValue(ic.block()) || ic.block().equals(Blocks.TERRACOTTA);
-    }
-
-    private static boolean dyeGlass(SplatContext ic)
-    {
-        if (!isGlass(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor;
-        if (ic.block().equals(Blocks.GLASS)) {
-            newColor = MaterialColor.SNOW;
-        } else {
-            newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        }
-        Block dyedBlock = glassMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean isGlass(SplatContext ic)
-    {
-        // in the colored map or the uncolored variant
-        return glassMap.containsValue(ic.block()) || ic.block().equals(Blocks.GLASS);
-    }
-
-    private static boolean dyeConcrete(SplatContext ic)
-    {
-        if (!isConcrete(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = concreteMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean dyeGlazedTerracotta(SplatContext ic)
-    {
-        if (!isGlazedTerracotta(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = glazedTerracottaMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean isGlazedTerracotta(SplatContext ic)
-    {
-        return glazedTerracottaMap.containsValue(ic.block());
-    }
-
-    private static boolean isConcrete(SplatContext ic)
-    {
-        return concreteMap.containsValue(ic.block());
-    }
-
-    private static boolean dyeConcretePowder(SplatContext ic)
-    {
-        if (!isConcretePowder(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = concretePowderMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean isConcretePowder(SplatContext ic)
-    {
-        return concretePowderMap.containsValue(ic.block());
-    }
-
-    private static boolean dyeWool(SplatContext ic)
-    {
-        if (!isWool(ic)) {
-            return false;
-        }
-
-        MaterialColor newColor = cycleDyeColor(ic.world(), ic.blockState(), ic.blockPos());
-        Block dyedBlock = woolMap.get(newColor);
-        ic.setBlockState(dyedBlock.getDefaultState());
-        return true;
-    }
-
-    private static boolean isWool(SplatContext ic)
-    {
-        return woolMap.containsValue(ic.block());
-    }
-
-    private static final List<Tuple<Block, Block>> sandEquivalents = new ArrayList<>();
-    static {
-        sandEquivalents.add(new Tuple<>(Blocks.SAND, Blocks.RED_SAND));
-        sandEquivalents.add(new Tuple<>(Blocks.SANDSTONE, Blocks.RED_SANDSTONE));
-        sandEquivalents.add(new Tuple<>(Blocks.CUT_SANDSTONE, Blocks.CUT_RED_SANDSTONE));
-        sandEquivalents.add(new Tuple<>(Blocks.CHISELED_SANDSTONE, Blocks.CHISELED_RED_SANDSTONE));
-        sandEquivalents.add(new Tuple<>(Blocks.SMOOTH_SANDSTONE, Blocks.SMOOTH_RED_SANDSTONE));
-    }
-    private static boolean colorSand(SplatContext context) {
-        for (Tuple<Block, Block> sandPair : sandEquivalents) {
-            if (isMatch(context.block(), sandPair)) {
-                if (!context.isRemote()) {
-                    context.setBlockState(otherBlock(context.block(), sandPair).getDefaultState());
-                }
-
-                return true;
+        if (!context.isRemote()) {
+            MaterialColor newColor;
+            if (context.block().equals(Blocks.TERRACOTTA)) {
+                newColor = MaterialColor.ORANGE_TERRACOTTA;
+            } else {
+                newColor = cycleTerracottaColor(context.world(), context.blockState(), context.blockPos());
             }
+            Block dyedBlock = terracottaMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
         }
-        return false;
+        return true;
     }
 
-    private static Block otherBlock(Block block, Tuple<Block, Block> sandPair) {
-        return block.equals(sandPair.getA()) ? sandPair.getB() : sandPair.getA();
+    private static boolean isTerracotta(SplatContext context)
+    {
+        // in the colored map or the uncolored variant
+        return terracottaMap.containsValue(context.block()) || context.block().equals(Blocks.TERRACOTTA);
     }
 
-    private static boolean isMatch(Block block, Tuple<Block, Block> sandPair) {
-        return block.equals(sandPair.getA()) || block.equals(sandPair.getB());
+    private static boolean dyeGlass(SplatContext context)
+    {
+        if (!context.isRemote()) {
+            MaterialColor newColor;
+            if (context.block().equals(Blocks.GLASS)) {
+                newColor = MaterialColor.SNOW;
+            } else {
+                newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
+            }
+            Block dyedBlock = glassMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
+        }
+        return true;
+    }
+
+    private static boolean isGlass(SplatContext context)
+    {
+        // in the colored map or the uncolored variant
+        return glassMap.containsValue(context.block()) || context.block().equals(Blocks.GLASS);
+    }
+
+    private static boolean dyeConcrete(SplatContext context)
+    {
+        if (!context.isRemote()) {
+            MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
+            Block dyedBlock = concreteMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
+        }
+        return true;
+    }
+
+    private static boolean dyeGlazedTerracotta(SplatContext context)
+    {
+        if (!context.isRemote()) {
+            MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
+            Block dyedBlock = glazedTerracottaMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
+        }
+        return true;
+    }
+
+    private static boolean isGlazedTerracotta(SplatContext context)
+    {
+        return glazedTerracottaMap.containsValue(context.block());
+    }
+
+    private static boolean isConcrete(SplatContext context)
+    {
+        return concreteMap.containsValue(context.block());
+    }
+
+    private static boolean dyeConcretePowder(SplatContext context)
+    {
+        if (!context.isRemote()) {
+            MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
+            Block dyedBlock = concretePowderMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
+        }
+        return true;
+    }
+
+    private static boolean isConcretePowder(SplatContext context)
+    {
+        return concretePowderMap.containsValue(context.block());
+    }
+
+    private static boolean dyeWool(SplatContext context)
+    {
+        if (!context.isRemote()) {
+            MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
+            Block dyedBlock = woolMap.get(newColor);
+            context.setBlockState(dyedBlock.getDefaultState());
+        }
+        return true;
+    }
+
+    private static boolean isWool(SplatContext context)
+    {
+        return woolMap.containsValue(context.block());
+    }
+
+    private static boolean isSand(SplatContext splatContext) {
+        return sandEquivalents.containsKey(splatContext.block()) || sandEquivalents.containsValue(splatContext.block());
+    }
+
+    private static final BiMap<Block, Block> sandEquivalents = HashBiMap.create();
+    static {        
+        registerSandEquivalent(Blocks.SAND, Blocks.RED_SAND);
+        registerSandEquivalent(Blocks.SANDSTONE, Blocks.RED_SANDSTONE);
+        registerSandEquivalent(Blocks.CUT_SANDSTONE, Blocks.CUT_RED_SANDSTONE);
+        registerSandEquivalent(Blocks.CHISELED_SANDSTONE, Blocks.CHISELED_RED_SANDSTONE);
+        registerSandEquivalent(Blocks.SMOOTH_SANDSTONE, Blocks.SMOOTH_RED_SANDSTONE);
+    }
+
+    private static void registerSandEquivalent(Block sand, Block otherSand) {
+        sandEquivalents.put(sand, otherSand);
+    }
+
+    private static boolean colorSand(SplatContext context) {
+        if (!context.isRemote()) {
+            Block changeToSand;
+            if (sandEquivalents.containsKey(context.block())) {
+                changeToSand = sandEquivalents.get(context.block());
+            } else {
+                changeToSand = sandEquivalents.inverse().get(context.block());
+            }
+            context.setBlockState(changeToSand.getDefaultState());
+        }
+        return true;
+
     }
 }

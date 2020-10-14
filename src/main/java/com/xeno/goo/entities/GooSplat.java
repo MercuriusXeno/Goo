@@ -480,7 +480,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                 if (!((GooSplat)e).isAtRest()) {
                     return false;
                 }
-                this.fill(((GooSplat) e).drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+                // must be living on the same side as us or it's just annoying
+                if (((GooSplat)e).sideWeLiveOn() != this.sideWeLiveOn) {
+                    return false;
+                }
+                int amountToDrain = (int)Math.ceil(Math.sqrt(((GooSplat)e).goo().getAmount()) / 2d);
+                this.fill(((GooSplat) e).drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e.equals(owner)) {
                 if (e == owner) {
                     // only try catching the goos flagged to bounce/return goo
