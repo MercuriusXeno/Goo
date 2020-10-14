@@ -25,6 +25,7 @@ public class SplatContext
     private final Fluid fluid;
     private final GooSplat splat;
     private String interactionKey;
+    private boolean isFailing;
 
     public SplatContext(BlockRayTraceResult trace, World world, GooSplat entity,
                         Fluid fluid) {
@@ -85,9 +86,9 @@ public class SplatContext
         return this.world.isRemote();
     }
 
-    public void setBlockState(BlockState newState)
+    public boolean setBlockState(BlockState newState)
     {
-        this.world.setBlockState(this.blockPos, newState);
+        return this.world.setBlockState(this.blockPos, newState);
     }
 
     public FluidState fluidState()
@@ -123,15 +124,32 @@ public class SplatContext
         return world.getBlockState(blockPos().offset(Direction.UP)).isAir(world(), blockPos());
     }
 
-    public void setBlockStateAbove(BlockState newState) {
-        this.world.setBlockState(this.blockPos.offset(Direction.UP), newState);
+    public boolean setBlockStateAbove(BlockState newState) {
+        return this.world.setBlockState(this.blockPos.offset(Direction.UP), newState);
     }
 
     public boolean isBlockBelowAir() {
         return world.getBlockState(blockPos().offset(Direction.DOWN)).isAir(world(), blockPos());
     }
 
-    public void setBlockStateBelow(BlockState newState) {
-        this.world.setBlockState(this.blockPos.offset(Direction.DOWN), newState);
+    public boolean setBlockStateBelow(BlockState newState) {
+        return this.world.setBlockState(this.blockPos.offset(Direction.DOWN), newState);
+    }
+
+    public void fail(boolean isFailure) {
+        isFailing = isFailure;
+    }
+
+    public boolean isFailing() {
+        return isFailing;
+    }
+
+    public boolean isBlock(Block... blocks) {
+        for(Block block : blocks) {
+            if (block().equals(block)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

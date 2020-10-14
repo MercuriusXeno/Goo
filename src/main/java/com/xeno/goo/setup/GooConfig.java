@@ -164,7 +164,6 @@ public class GooConfig
             }
             if (fluid.equals(Registry.METAL_GOO.get())) {
                 actualCost = 8;
-                actualChance = 0.1d;
                 int returnedAmount = actualCost - 1;
                 ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
@@ -172,7 +171,6 @@ public class GooConfig
             }
             if (fluid.equals(Registry.OBSIDIAN_GOO.get())) {
                 actualCost = 8;
-                actualChance = 0.2d;
                 int returnedAmount = actualCost - 2;
                 ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
@@ -180,14 +178,13 @@ public class GooConfig
             }
             if (fluid.equals(Registry.REGAL_GOO.get())) {
                 actualCost = 16;
-                actualChance = 0.1d;
                 int returnedAmount = actualCost - 8;
                 ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
                 returnMap.put(k.getB() + "_returned", returnOfInteraction);
             }
             if (fluid.equals(Registry.FAUNAL_GOO.get())) {
-                actualCost = 1;
+                actualCost = 8;
             }
             if (fluid.equals(Registry.FLORAL_GOO.get()) && k.getB().equals("flourish")) {
                 actualFailChance = 0.8d;
@@ -237,6 +234,7 @@ public class GooConfig
                     || fluid.equals(Registry.LOGIC_GOO.get())
                     || fluid.equals(Registry.SLIME_GOO.get())
                     || fluid.equals(Registry.VITAL_GOO.get())
+                    || fluid.equals(Registry.FAUNAL_GOO.get())
                 ) {
                 lowestCost[0] = defaultCostForInteractions;
             }

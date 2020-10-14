@@ -75,11 +75,6 @@ public class TargetingHandler
         return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
     }
 
-    private static boolean cantSolidify(World entityWorld)
-    {
-        return Equivalencies.getEntry(entityWorld, currentStack.getItem()).isUnattainable();
-    }
-
     private static boolean hasEntry(World entityWorld)
     {
         return Equivalencies.getEntry(entityWorld, currentStack.getItem()).values().size() > 0;
@@ -122,10 +117,6 @@ public class TargetingHandler
 
         // these always show up
         boolean hasEntry = hasEntry(event.getPlayer().getEntityWorld());
-        boolean cantSolidify = hasEntry && cantSolidify(event.getPlayer().getEntityWorld());
-        if (cantSolidify) {
-            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
-        }
         if (!hasEntry) {
             event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
         }

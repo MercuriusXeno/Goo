@@ -102,13 +102,13 @@ public class GooInteractions
     }
 
     public static final Map<Fluid, Map<Tuple<Integer, String>, ISplatInteraction>> splatRegistry = new HashMap<>();
-    public static void registerSplat(Fluid fluid, String key, ISplatInteraction interaction) {
+    public static void registerSplat(Fluid fluid, String key, ISplatInteraction interaction, ISplatInteraction condition) {
         ensureSplatMapContainsFluid(fluid);
-        registerSplat(fluid, key, splatRegistry.get(fluid).size(), interaction);
+        registerSplat(fluid, key, splatRegistry.get(fluid).size(), interaction, condition);
     }
 
-    private static void registerSplat(Fluid fluid, String key, int rank, ISplatInteraction interaction) {
-        splatRegistry.get(fluid).put(new Tuple<>(rank, key), interaction);
+    private static void registerSplat(Fluid fluid, String key, int rank, ISplatInteraction interaction, ISplatInteraction condition) {
+        splatRegistry.get(fluid).put(new Tuple<>(rank, key), (context) -> condition.resolve(context) && (context.isFailing() || interaction.resolve(context)));
     }
 
     private static void ensureSplatMapContainsFluid(Fluid fluid) {
@@ -232,7 +232,8 @@ public class GooInteractions
         }
 
         boolean failureShortCircuit = GooMod.config.chanceOfSplatInteractionFailure(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
-        if (failureShortCircuit || iSplatInteraction.resolve(context)) {
+        context.fail(failureShortCircuit);
+        if (iSplatInteraction.resolve(context)) {
             boolean shouldDrain = GooMod.config.chanceOfSplatInteractionCost(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
             if (shouldDrain) {
                 context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
