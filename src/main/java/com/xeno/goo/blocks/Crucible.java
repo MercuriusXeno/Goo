@@ -123,22 +123,22 @@ public class Crucible extends BlockWithConnections {
         }
     }
 
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        TileEntity te = world.getTileEntity(pos);
-        if (te instanceof CrucibleTile) {
-            CrucibleTile crucible = (CrucibleTile)te;
-            if (!world.isRemote) {
-                if (player.isCreative() && ((CrucibleTile) te).getTotalGoo() == 0) {
-                    return;
-                }
-                ItemStack stack = crucible.getCrucibleStack(this);
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-                itemEntity.setDefaultPickupDelay();
-                world.addEntity(itemEntity);
-            }
-        }
-
-        super.onBlockHarvested(world, pos, state, player);
-    }
+//    @Override
+//    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+//        TileEntity te = world.getTileEntity(pos);
+//        if (te instanceof CrucibleTile) {
+//            CrucibleTile crucible = (CrucibleTile)te;
+//            if (!world.isRemote) {
+//                if (player.isCreative() && ((CrucibleTile) te).getTotalGoo() == 0) {
+//                    return;
+//                }
+//                ItemStack stack = crucible.getCrucibleStack(this);
+//                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
+//                itemEntity.setDefaultPickupDelay();
+//                world.addEntity(itemEntity);
+//            }
+//        }
+//
+//        super.onBlockHarvested(world, pos, state, player);
+//    }
 }
