@@ -205,6 +205,9 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
         if (crystalTransformations.size() == 0) {
             initializeTransformations();
         }
+        if (fluid.equals(Fluids.EMPTY)) {
+            return null;
+        }
          return crystalTransformations.get(fluid).get(crystal.getItem());
     }
 
@@ -547,6 +550,16 @@ public class GooBulbTileAbstraction extends GooContainerAbstraction implements I
 
         EnchantmentHelper.setEnchantments(stackEnchantmentFactory(), stack);
         return stack;
+    }
+
+    public void spewItems()
+    {
+        if (crystal.isEmpty()) {
+            return;
+        }
+        ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), crystal);
+        itemEntity.setDefaultPickupDelay();
+        world.addEntity(itemEntity);
     }
 
     public boolean hasSpace() {
