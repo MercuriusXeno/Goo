@@ -208,8 +208,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     private void approachSplatOffset() {
         Vector3d splatPosition = attachedSplat.getPositionVec();
-        Vector3f offsetPosition = attachedSplat.sideWeLiveOn().toVector3f();
-        offsetPosition.mul(cubicSize() / 2f);
+        Vector3d offsetPosition = Vector3d.copy(attachedSplat.sideWeLiveOn().getDirectionVec()).scale(cubicSize() / 2f);
         Vector3d trueOffset = splatPosition.add(offsetPosition.getX(), offsetPosition.getY(), offsetPosition.getZ());
         setPositionAndRotation(trueOffset.x, trueOffset.y, trueOffset.z, this.rotationYaw, this.rotationPitch);
     }
