@@ -36,6 +36,10 @@ public class InputHandler {
             return;
         }
 
+        if (instance.currentScreen != null) {
+            return;
+        }
+
         // cancel the held state if the player arm starts swinging for any reason
         // an arm swing is heuristically indicating the player interacted with some block
         // and is relatively reliable as a client side indicator not to do things.

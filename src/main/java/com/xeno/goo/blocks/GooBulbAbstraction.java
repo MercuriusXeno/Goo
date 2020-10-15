@@ -60,6 +60,7 @@ public abstract class GooBulbAbstraction extends BlockWithConnections
         if (te instanceof GooBulbTileAbstraction) {
             GooBulbTileAbstraction gooBulb = (GooBulbTileAbstraction) te;
             if (!world.isRemote) {
+                gooBulb.spewItems();
                 if (player.isCreative() && ((GooBulbTileAbstraction) te).getTotalGoo() == 0) {
                     return;
                 }
