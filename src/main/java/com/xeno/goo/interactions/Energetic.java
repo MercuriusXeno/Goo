@@ -73,6 +73,7 @@ public class Energetic
                 // figure out drops for this block
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
                 List<ItemStack> drops = state.getDrops(lootBuilder
+                        .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
                         .withParameter(LootParameters.POSITION, blockPos)
                         .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
                 );

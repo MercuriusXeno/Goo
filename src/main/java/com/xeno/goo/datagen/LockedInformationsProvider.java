@@ -216,6 +216,23 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.SOUL_SOIL, earthen(180), vital(15), decay(60));
         saveData(Items.SPIDER_EYE, faunal(15), weird(5));
         saveData(Items.STRING, faunal(15));
+        // wool is too dang strong
+        saveData(Items.WHITE_WOOL, faunal(15));
+        saveData(Items.RED_WOOL, faunal(15), chromatic(15));
+        saveData(Items.ORANGE_WOOL, faunal(15), chromatic(15));
+        saveData(Items.YELLOW_WOOL, faunal(15), chromatic(15));
+        saveData(Items.GREEN_WOOL, faunal(15), chromatic(15));
+        saveData(Items.BLUE_WOOL, faunal(15), chromatic(15));
+        saveData(Items.PURPLE_WOOL, faunal(15), chromatic(15));
+        saveData(Items.PINK_WOOL, faunal(15), chromatic(15));
+        saveData(Items.LIME_WOOL, faunal(15), chromatic(15));
+        saveData(Items.CYAN_WOOL, faunal(15), chromatic(15));
+        saveData(Items.GRAY_WOOL, faunal(15), chromatic(15));
+        saveData(Items.LIGHT_GRAY_WOOL, faunal(15), chromatic(15));
+        saveData(Items.BLACK_WOOL, faunal(15), chromatic(15));
+        saveData(Items.BROWN_WOOL, faunal(15), chromatic(15));
+        saveData(Items.LIGHT_BLUE_WOOL, faunal(15), chromatic(15));
+        saveData(Items.MAGENTA_WOOL, faunal(15), chromatic(15));
         saveData(Items.SUGAR_CANE, floral(15));
         saveData(Items.SWEET_BERRIES, floral(5), vital(1));
         saveData(Items.TROPICAL_FISH, faunal(15), vital(15));

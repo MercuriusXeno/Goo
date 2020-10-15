@@ -54,6 +54,9 @@ public class Molten
             if (output instanceof BlockItem) {
                 Block block = ((BlockItem) output).getBlock();
                 boolean hasChanges = context.setBlockState(block.getDefaultState());
+                if (!hasChanges) {
+                    return false;
+                }
             } else {
                 ItemStack result = c.getRecipeOutput().copy();
                 Vector3d spawnLoc = Vector3d.copy(context.blockPos()).add(0.5d, 0.5d, 0.5d);

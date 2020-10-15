@@ -11,6 +11,7 @@ import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.loot.LootContext;
+import net.minecraft.loot.LootParameter;
 import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.BlockParticleData;
 import net.minecraft.particles.ParticleTypes;
@@ -52,6 +53,7 @@ public class Crystal
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder
+                    .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
                     .withParameter(LootParameters.POSITION, blockPos)
                     .withParameter(LootParameters.TOOL, mockPick)
             );
