@@ -49,6 +49,7 @@ public class Metal
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder
+                    .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
                     .withParameter(LootParameters.field_237457_g_, context.blockCenterVec())
                     .withParameter(LootParameters.TOOL, mockPick)
             );
