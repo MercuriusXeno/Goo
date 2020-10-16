@@ -1,0 +1,17 @@
+{
+  "name": "patchouli.goo.crystallization_title",
+  "icon": "minecraft:quartz",
+  "category": "goo:gateway_to_goo",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.crystallization_description"
+    },
+    {
+      "type": "spotlight",
+      "item": "minecraft:quartz",
+      "title": "patchouli.goo.crystallization_title",
+      "text": "patchouli.goo.crystallization_description2"
+    }
+  ]
+}

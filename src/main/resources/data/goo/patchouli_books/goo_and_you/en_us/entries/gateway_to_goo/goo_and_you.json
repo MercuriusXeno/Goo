@@ -1,0 +1,15 @@
+{
+  "name": "item.goo.goo_and_you",
+  "icon": "goo:goo_and_you",
+  "category": "goo:gateway_to_goo",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.goo_and_you.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:goo_and_you"
+    }
+  ]
+}
