@@ -3,34 +3,23 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
-import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
-import java.util.List;
 import java.util.Random;
-
-import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 
 public class Crucible extends BlockWithConnections {
     public Crucible() {
@@ -121,24 +110,5 @@ public class Crucible extends BlockWithConnections {
         if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
             worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
         }
-    }
-
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        TileEntity te = world.getTileEntity(pos);
-        if (te instanceof CrucibleTile) {
-            CrucibleTile crucible = (CrucibleTile)te;
-            if (!world.isRemote) {
-                if (player.isCreative() && ((CrucibleTile) te).getTotalGoo() == 0) {
-                    return;
-                }
-                ItemStack stack = crucible.getCrucibleStack(this);
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-                itemEntity.setDefaultPickupDelay();
-                world.addEntity(itemEntity);
-            }
-        }
-
-        super.onBlockHarvested(world, pos, state, player);
     }
 }
