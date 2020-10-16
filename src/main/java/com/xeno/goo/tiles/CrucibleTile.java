@@ -64,7 +64,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     @Override
     public void updateFluidsTo(List<FluidStack> fluids)
     {
-        this.setGoo(fluids.get(0));
+        if (fluids.size() == 0) {
+            this.setGoo(FluidStack.EMPTY);
+        } else {
+            this.setGoo(fluids.get(0));
+        }
     }
 
     @Override
