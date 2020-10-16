@@ -9,12 +9,12 @@
   },
   "compounds": [
     {
-      "amount": 216.0,
-      "type": "goo:regal"
-    },
-    {
       "amount": 180.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 216.0,
+      "type": "goo:regal"
     },
     {
       "amount": 360.0,

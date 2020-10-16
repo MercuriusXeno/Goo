@@ -10,11 +10,11 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:faunal"
+      "type": "goo:chromatic"
     },
     {
       "amount": 15.0,
-      "type": "goo:chromatic"
+      "type": "goo:faunal"
     }
   ]
 }

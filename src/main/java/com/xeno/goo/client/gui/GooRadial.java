@@ -10,6 +10,7 @@ import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
