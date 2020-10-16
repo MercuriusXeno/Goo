@@ -381,24 +381,4 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
             world.addEntity(itemEntity);
         }
     }
-
-    public ItemStack getGooifierStack()
-    {
-        ItemStack stack = new ItemStack(BlocksRegistry.Gooifier.get());
-
-        CompoundNBT gooifierTag = new CompoundNBT();
-        write(gooifierTag);
-        gooifierTag.remove("x");
-        gooifierTag.remove("y");
-        gooifierTag.remove("z");
-        // the gooifier doesn't retain items when broken, it spews them out.
-        // it does, however, remember its buffer.
-        gooifierTag.remove("items");
-
-        CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", gooifierTag);
-        stack.setTag(stackTag);
-
-        return stack;
-    }
 }

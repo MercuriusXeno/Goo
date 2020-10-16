@@ -496,23 +496,6 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
         }
     }
 
-    public ItemStack getSolidifierStack()
-    {
-        ItemStack stack = new ItemStack(BlocksRegistry.Solidifier.get());
-
-        CompoundNBT solidifierTag = new CompoundNBT();
-        write(solidifierTag);
-        solidifierTag.remove("x");
-        solidifierTag.remove("y");
-        solidifierTag.remove("z");
-
-        CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", solidifierTag);
-        stack.setTag(stackTag);
-
-        return stack;
-    }
-
     @Override
     public void updateItemTarget(ItemStack target, ItemStack newTarget, int changeTargetTimer)
     {

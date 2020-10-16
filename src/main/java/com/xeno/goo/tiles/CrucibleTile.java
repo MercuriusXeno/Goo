@@ -188,22 +188,6 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         return new CrucibleFluidHandler(this);
     }
 
-    public ItemStack getCrucibleStack(Block block) {
-        ItemStack stack = new ItemStack(block);
-
-        CompoundNBT crucibleTag = new CompoundNBT();
-        write(crucibleTag);
-        crucibleTag.remove("x");
-        crucibleTag.remove("y");
-        crucibleTag.remove("z");
-
-        CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", crucibleTag);
-        stack.setTag(stackTag);
-
-        return stack;
-    }
-
     public int getSpaceRemaining(FluidStack stack)
     {
         if (!onlyGoo().isEmpty() && !onlyGoo().getFluid().equals(stack.getFluid())) {

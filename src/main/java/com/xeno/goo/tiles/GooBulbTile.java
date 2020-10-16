@@ -534,23 +534,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return result;
     }
 
-    public ItemStack getBulbStack(Block block) {
-        pruneEmptyGoo();
-        ItemStack stack = new ItemStack(block);
-        CompoundNBT bulbTag = new CompoundNBT();
-        write(bulbTag);
-        bulbTag.remove("x");
-        bulbTag.remove("y");
-        bulbTag.remove("z");
-
-        CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", bulbTag);
-        stack.setTag(stackTag);
-
-        EnchantmentHelper.setEnchantments(stackEnchantmentFactory(), stack);
-        return stack;
-    }
-
     public void spewItems()
     {
         if (crystal.isEmpty()) {
