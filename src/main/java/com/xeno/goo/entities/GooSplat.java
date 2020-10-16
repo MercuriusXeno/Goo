@@ -66,6 +66,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private int lastGooAmount = 0;
     private boolean isAtRest;
 
+    public static GooSplat createPlacedSplat(PlayerEntity player, BlockPos pos, Direction side, Vector3d hit, FluidStack thrownStack) {
+        return new GooSplat(Registry.GOO_SPLAT.get(), player,  player.world, thrownStack, hit, pos, side);
+    }
+
     public Vector3d shape()
     {
         return this.shape;
@@ -86,7 +90,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
         this.isAtRest = false;
-        updateSplatState();
+        // send clients the updated size, it defaults to 1
+        setSize();
         Vector3d findCenter = findCenter(hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
@@ -142,17 +147,17 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         switch(sideWeLiveOn) {
             case NORTH:
-                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
             case SOUTH:
-                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
             case DOWN:
                 return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
             case UP:
                 return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
             case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
+                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
             case EAST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
+                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
         }
         // something weird happened that wasn't supposed to.
         return hitVec;

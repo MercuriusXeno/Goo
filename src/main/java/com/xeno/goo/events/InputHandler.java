@@ -4,10 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.client.gui.GooRadial;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.network.GooCollectPacket;
-import com.xeno.goo.network.GooGrabPacket;
-import com.xeno.goo.network.GooLobPacket;
-import com.xeno.goo.network.Networking;
+import com.xeno.goo.network.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -37,14 +34,6 @@ public class InputHandler {
         }
 
         if (instance.currentScreen != null) {
-            return;
-        }
-
-        // cancel the held state if the player arm starts swinging for any reason
-        // an arm swing is heuristically indicating the player interacted with some block
-        // and is relatively reliable as a client side indicator not to do things.
-        if (instance.player.isSwingInProgress) {
-            radialHeld = false;
             return;
         }
 
@@ -81,8 +70,13 @@ public class InputHandler {
                 // refer to the targeting handler to figure out if we are looking at a goo entity
                 Networking.sendToServer(new GooGrabPacket(TargetingHandler.lastTargetedEntity), player);
         } else if (TargetingHandler.lastTargetedBlock != null) {
-            // refer to the targeting handler to figure out if we are looking at a goo container
-            Networking.sendToServer(new GooCollectPacket(TargetingHandler.lastTargetedBlock, TargetingHandler.lastHitVector, TargetingHandler.lastHitSide), player);
+            if (TargetingHandler.lastHitIsGooContainer) {
+                // refer to the targeting handler to figure out if we are looking at a goo container
+                Networking.sendToServer(new GooCollectPacket(TargetingHandler.lastTargetedBlock, TargetingHandler.lastHitVector, TargetingHandler.lastHitSide), player);
+            } else {
+                // try placing a splat at the block if it's a valid location. Let the server handle the check.
+                Networking.sendToServer(new GooPlaceSplatPacket(TargetingHandler.lastTargetedBlock, TargetingHandler.lastHitVector, TargetingHandler.lastHitSide), player);
+            }
         } else {
             // packet to server to request a throw event in lieu of grabbing anything
             Networking.sendToServer(new GooLobPacket(), player);

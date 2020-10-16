@@ -89,6 +89,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         return new GooBlob(Registry.GOO_BLOB.get(), world, Optional.empty(), result, spawnPos);
     }
 
+    public static GooBlob createSplattedBlob(PlayerEntity player, GooSplat splat, FluidStack blobStack) {
+        GooBlob blob = new GooBlob(Registry.GOO_BLOB.get(), player.world, player, blobStack);
+        blob.setPositionAndRotation(splat.getPosX(), splat.getPosY(), splat.getPosZ(), splat.rotationYaw, splat.rotationPitch);
+        blob.attachToBlock(splat.blockAttached(), splat.sideWeLiveOn(), splat);
+        return blob;
+    }
+
     // constructor for splats that no longer have a block to sit on and convert back to blobs.
     private GooBlob(GooSplat splat, Vector3d dropPosition, FluidStack stackReturned) {
         this(Registry.GOO_BLOB.get(), splat.world, Optional.ofNullable(splat.owner()), stackReturned, dropPosition);

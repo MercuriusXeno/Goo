@@ -63,6 +63,8 @@ public class TargetingHandler
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
+    public static boolean lastHitIsGooContainer = false;
+
     private static boolean hasGooAndYou(PlayerEntity player)
     {
         if (PATCHOULI_BOOK.isEmpty()) {
@@ -493,6 +495,7 @@ public class TargetingHandler
         lastTargetedEntity = null;
         lastHitSide = null;
         lastHitVector = null;
+        lastHitIsGooContainer = false;
         if (!tryBlockRayTrace(e, event)) {
             tryEntityRayTrace(e, event);
         }
@@ -525,13 +528,17 @@ public class TargetingHandler
         ClientWorld world = (ClientWorld)e.getEntityWorld();
 
         BlockState state = world.getBlockState(target.getPos());
+        if (state.getBlock().isAir(state, world, target.getPos())) {
+            return false;
+        }
+        lastTargetedBlock = target.getPos();
+        lastHitSide = target.getFace();
+        lastHitVector = target.getHitVec();
         if (hasGooContents(state)) {
             TileEntity t = world.getTileEntity(target.getPos());
             if (t instanceof GooContainerAbstraction) {
+                lastHitIsGooContainer = true;
                 renderGooContents(event, target, (GooContainerAbstraction)t);
-                lastTargetedBlock = target.getPos();
-                lastHitSide = target.getFace();
-                lastHitVector = target.getHitVec();
                 return true;
             }
             return false;
