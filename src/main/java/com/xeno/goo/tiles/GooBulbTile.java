@@ -207,6 +207,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         if (fluid.equals(Fluids.EMPTY)) {
             return null;
         }
+
+        // if the crystal exists, we want to use its fluid type instead of the type the tank has the most of.
+        if (crystal.getItem() instanceof CrystallizedGooAbstract) {
+            fluid = ((CrystallizedGooAbstract) crystal.getItem()).gooType();
+        }
          return crystalTransformations.get(fluid).get(crystal.getItem());
     }
 
