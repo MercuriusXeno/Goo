@@ -52,18 +52,4 @@ public class Drain extends Block
     {
         return new DrainTile();
     }
-
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isRemote) {
-            if (player.isCreative()) {
-                return;
-            }
-            ItemStack stack = new ItemStack(ItemsRegistry.Drain.get());
-            ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-            itemEntity.setDefaultPickupDelay();
-            world.addEntity(itemEntity);
-        }
-        super.onBlockHarvested(world, pos, state, player);
-    }
 }

@@ -128,27 +128,6 @@ public class Mixer extends BlockWithConnections
         builder.add(BlockStateProperties.HORIZONTAL_FACING);
     }
 
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player)
-    {
-        TileEntity te = world.getTileEntity(pos);
-        if (te instanceof MixerTile) {
-            MixerTile mixer = (MixerTile) te;
-            if (!world.isRemote) {
-                if (player.isCreative() && ((MixerTile) te).getTotalGoo() == 0) {
-                    return;
-                }
-                ItemStack stack = mixer.mixerStack(this);
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-                itemEntity.setDefaultPickupDelay();
-                world.addEntity(itemEntity);
-            }
-        }
-
-        super.onBlockHarvested(world, pos, state, player);
-    }
-
-
     public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
     static {
         for(Direction.Axis a : Direction.Axis.values()) {

@@ -89,20 +89,6 @@ public class Lobber extends BlockWithConnections
     }
 
     @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isRemote) {
-            if (player.isCreative()) {
-                return;
-            }
-            ItemStack stack = new ItemStack(ItemsRegistry.Lobber.get());
-            ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-            itemEntity.setDefaultPickupDelay();
-            world.addEntity(itemEntity);
-        }
-        super.onBlockHarvested(world, pos, state, player);
-    }
-
-    @Override
     protected Direction[] relevantConnectionDirections(BlockState state) {
         Direction[] result = new Direction[5];
         int i = 0;

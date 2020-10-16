@@ -125,22 +125,6 @@ public class Solidifier extends BlockWithConnections {
         builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED);
     }
 
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        TileEntity te = world.getTileEntity(pos);
-        if (te instanceof SolidifierTile) {
-            SolidifierTile solidifier = (SolidifierTile)te;
-            if (!world.isRemote) {
-                ItemStack stack = solidifier.getSolidifierStack();
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-                itemEntity.setDefaultPickupDelay();
-                world.addEntity(itemEntity);
-            }
-        }
-
-        super.onBlockHarvested(world, pos, state, player);
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)

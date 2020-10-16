@@ -3,14 +3,13 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -23,20 +22,6 @@ public class GooBulbItem extends BlockItem
     public GooBulbItem(Block blockIn, Properties builder)
     {
         super(blockIn, builder);
-    }
-
-    public static boolean hasValidTags(ItemStack i) {
-        if (!(i.getItem() instanceof GooBulbItem)) {
-            return false;
-        }
-        if (!i.hasTag() || i.getTag() == null) {
-            return false;
-        }
-
-        if (!i.getTag().contains("BlockEntityTag")) {
-            return false;
-        }
-        return true;
     }
 
     @Override
@@ -69,7 +54,7 @@ public class GooBulbItem extends BlockItem
         if (worldIn == null) {
             return;
         }
-        int holdsAmount = GooBulbTileAbstraction.storageForDisplay(holding(stack));
+        int holdsAmount = GooBulbTile.storageForDisplay(holding(stack));
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(new TranslationTextComponent("goo.common.holds")
                 .append(TargetingHandler.getGooAmountForDisplay(holdsAmount))

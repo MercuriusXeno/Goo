@@ -2,34 +2,24 @@ package com.xeno.goo.blocks;
 
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.BrewingStandBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tileentity.BrewingStandTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -138,22 +128,15 @@ public class Gooifier extends BlockWithConnections {
         }
     }
 
-    @Override
-    public void onBlockHarvested(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        TileEntity te = world.getTileEntity(pos);
-        if (te instanceof GooifierTile) {
-            GooifierTile gooifier = (GooifierTile)te;
-            if (!world.isRemote) {
-                if (player.isCreative() && ((GooifierTile) te).getTotalGoo() == 0d) {
-                    return;
-                }
-                gooifier.spewItems();
-                ItemStack stack = gooifier.getGooifierStack();
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), stack);
-                itemEntity.setDefaultPickupDelay();
-                world.addEntity(itemEntity);
+    public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.isIn(newState.getBlock())) {
+            TileEntity tileentity = worldIn.getTileEntity(pos);
+            if (tileentity instanceof GooifierTile) {
+                ((GooifierTile) tileentity).spewItems();
+                worldIn.updateComparatorOutputLevel(pos, this);
             }
+
+            super.onReplaced(state, worldIn, pos, newState, isMoving);
         }
-        super.onBlockHarvested(world, pos, state, player);
     }
 }
