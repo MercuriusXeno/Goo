@@ -11,6 +11,7 @@ import net.minecraft.data.LootTableProvider;
 import net.minecraft.loot.*;
 import net.minecraft.loot.functions.CopyName;
 import net.minecraft.loot.functions.CopyNbt;
+import net.minecraft.loot.functions.SetContents;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
@@ -35,8 +36,20 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
     // Subclasses can override this to fill the 'lootTables' map.
     protected abstract void addTables();
 
-    // Subclasses can call this if they want a standard loot table. Modify this for your own needs
-    protected LootTable.Builder createCrucibleTable(String name, Block block) {
+    // absolutely bog standard loot table for things with no nbt requirements
+    // used for drain, lobber, pump
+    protected LootTable.Builder createMundaneTable(String name, Block block) {
+        LootPool.Builder builder = LootPool.builder()
+                .name(name)
+                .rolls(ConstantRange.of(1))
+                .addEntry(ItemLootEntry.builder(block)
+                        .acceptFunction(CopyName.builder(CopyName.Source.BLOCK_ENTITY))
+                );
+        return LootTable.builder().addLootPool(builder);
+    }
+
+    // crucible, solidifier, gooifier and mixer: needs some nbt (goo) and its id
+    protected LootTable.Builder createGooContainerLootTable(String name, Block block) {
         LootPool.Builder builder = LootPool.builder()
                 .name(name)
                 .rolls(ConstantRange.of(1))
@@ -45,8 +58,22 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
                         .acceptFunction(CopyNbt.builder(CopyNbt.Source.BLOCK_ENTITY)
                                 .replaceOperation("goo", "BlockEntityTag.goo")
                                 .replaceOperation("id", "BlockEntityTag.id"))
-//                        .acceptFunction(SetContents.builderIn()
-//                                .addLootEntry(DynamicLootEntry.func_216162_a(new ResourceLocation("minecraft", "contents"))))
+                );
+        return LootTable.builder().addLootPool(builder);
+    }
+
+    // only bulbs have holding at the moment
+    protected LootTable.Builder createGooContainerWithHoldingLootTable(String name, Block block) {
+        LootPool.Builder builder = LootPool.builder()
+                .name(name)
+                .rolls(ConstantRange.of(1))
+                .addEntry(ItemLootEntry.builder(block)
+                        .acceptFunction(CopyName.builder(CopyName.Source.BLOCK_ENTITY))
+                        .acceptFunction(CopyNbt.builder(CopyNbt.Source.BLOCK_ENTITY)
+                                .replaceOperation("goo", "BlockEntityTag.goo")
+                                .replaceOperation("holding", "BlockEntityTag.holding")
+                                .replaceOperation("id", "BlockEntityTag.id")
+                        )
                 );
         return LootTable.builder().addLootPool(builder);
     }
