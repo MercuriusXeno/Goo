@@ -2,7 +2,7 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.blocks.GooBulbAbstraction;
+import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.PumpRenderMode;
 import net.minecraft.data.DataGenerator;
@@ -236,7 +236,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         horizontalBlock(BlocksRegistry.Mixer.get(), model);
     }
 
-    private void registerGooBulbGeneric(GooBulbAbstraction base) {
+    private void registerGooBulbGeneric(GooBulb base) {
         ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
         BlockModelBuilder model = models()

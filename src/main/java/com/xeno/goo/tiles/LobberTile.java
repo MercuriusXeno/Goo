@@ -147,8 +147,6 @@ public class LobberTile extends TileEntity
 
     public Direction facing() { return this.getBlockState().get(BlockStateProperties.FACING); }
 
-    private boolean triggered() { return this.getBlockState().get(BlockStateProperties.TRIGGERED); }
-
     @Override
     public CompoundNBT write(CompoundNBT tag)
     {

@@ -187,22 +187,6 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
         return new CrucibleFluidHandler(this);
     }
 
-    public ItemStack getCrucibleStack(Block block) {
-        ItemStack stack = new ItemStack(block);
-
-        CompoundNBT crucibleTag = new CompoundNBT();
-        write(crucibleTag);
-        crucibleTag.remove("x");
-        crucibleTag.remove("y");
-        crucibleTag.remove("z");
-
-        CompoundNBT stackTag = new CompoundNBT();
-        stackTag.put("BlockEntityTag", crucibleTag);
-        stack.setTag(stackTag);
-
-        return stack;
-    }
-
     public int getSpaceRemaining(FluidStack stack)
     {
         if (!onlyGoo().isEmpty() && !onlyGoo().getFluid().equals(stack.getFluid())) {
@@ -241,11 +225,5 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
     public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
         return fluidHandler;
-    }
-
-    public int getTotalGoo() {
-        int[] total = {0};
-        goo().forEach((g) -> total[0] += g.getAmount());
-        return total[0];
     }
 }

@@ -7,7 +7,6 @@ import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.HighlightingHelper;
-import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
@@ -16,11 +15,8 @@ import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import com.xeno.goo.tiles.GooifierTile;
-import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.recipebook.GhostRecipe;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
@@ -647,7 +643,7 @@ public class TargetingHandler
 
     private static boolean hasGooContents(BlockState state)
     {
-        return state.getBlock() instanceof GooBulbAbstraction
+        return state.getBlock() instanceof GooBulb
                 || state.getBlock() instanceof Mixer
                 || state.getBlock() instanceof Crucible
                 || state.getBlock() instanceof Solidifier
