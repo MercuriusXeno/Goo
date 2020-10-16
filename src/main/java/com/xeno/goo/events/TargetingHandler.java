@@ -643,7 +643,7 @@ public class TargetingHandler
 
     private static boolean hasGooContents(BlockState state)
     {
-        return state.getBlock() instanceof GooBulbAbstraction
+        return state.getBlock() instanceof GooBulb
                 || state.getBlock() instanceof Mixer
                 || state.getBlock() instanceof Crucible
                 || state.getBlock() instanceof Solidifier

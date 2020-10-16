@@ -4,7 +4,6 @@ import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;

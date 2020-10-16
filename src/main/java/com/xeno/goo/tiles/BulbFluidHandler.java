@@ -11,8 +11,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class BulbFluidHandler implements IFluidHandler
 {
-    private final GooBulbTileAbstraction parent;
-    public BulbFluidHandler(GooBulbTileAbstraction t) {
+    private final GooBulbTile parent;
+    public BulbFluidHandler(GooBulbTile t) {
         parent = t;
     }
 
@@ -39,7 +39,7 @@ public class BulbFluidHandler implements IFluidHandler
         return GooMod.config.bulbCapacity() * parent.storageMultiplier();
     }
 
-    public static GooBulbTileAbstraction getBulbInDirection(TileEntity tile, Direction d)
+    public static GooBulbTile getBulbInDirection(TileEntity tile, Direction d)
     {
         if (tile.getWorld() == null) {
             return null;
@@ -49,10 +49,10 @@ public class BulbFluidHandler implements IFluidHandler
         if (result == null) {
             return null;
         }
-        if (!(result instanceof GooBulbTileAbstraction)) {
+        if (!(result instanceof GooBulbTile)) {
             return null;
         }
-        return (GooBulbTileAbstraction)result;
+        return (GooBulbTile)result;
     }
 
     @Override

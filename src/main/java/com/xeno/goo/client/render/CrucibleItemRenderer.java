@@ -1,7 +1,7 @@
 package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.tiles.GooBulbTileAbstraction;
+import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -38,7 +38,7 @@ public class CrucibleItemRenderer extends ItemStackTileEntityRenderer
 
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
 
-        TileEntity tileEntity = GooBulbTileAbstraction.readTileEntity(block.getDefaultState(), bulbTag);
+        TileEntity tileEntity = GooBulbTile.readTileEntity(block.getDefaultState(), bulbTag);
         if (tileEntity == null) {
             return;
         }

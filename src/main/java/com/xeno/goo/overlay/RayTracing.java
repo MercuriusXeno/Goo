@@ -1,20 +1,8 @@
 package com.xeno.goo.overlay;
-import com.google.common.collect.Lists;
-import com.xeno.goo.tiles.GooBulbTile;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.World;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class RayTracing {
 
