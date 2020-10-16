@@ -18,7 +18,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        registerGooBulbGeneric(BlocksRegistry.GooBulb.get());
+        registerGooBulbGeneric(BlocksRegistry.Bulb.get());
         registerGooPump();
         registerGooifier();
         registerSolidifier();
@@ -328,7 +328,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         actuator.texture("actuator_inner", actuatorInner);
         actuator.texture("empty", empty);
 
-        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.GooPump.get());
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Pump.get());
         for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
             int rotationX = getRotationXFromDirection(d);
             int rotationY = getRotationYFromDirection(d);
@@ -345,7 +345,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);;
         }
 
-        simpleBlockItem(BlocksRegistry.GooPump.get(), base);
+        simpleBlockItem(BlocksRegistry.Pump.get(), base);
     }
 
     private int getRotationYFromDirection(Direction d)

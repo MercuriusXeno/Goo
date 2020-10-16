@@ -77,7 +77,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GooBulb.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Bulb.get())
                 .patternLine("oeo")
                 .patternLine("o#o")
                 .patternLine("oeo")
@@ -89,7 +89,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.GooPump.get())
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Pump.get())
                 .patternLine("so ")
                 .patternLine("pg ")
                 .patternLine("bof")
@@ -137,10 +137,10 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("n n")
                 .patternLine("bcb")
                 .patternLine("npn")
-                .key('b', BlocksRegistry.GooBulb.get())
+                .key('b', BlocksRegistry.Bulb.get())
                 .key('c', Items.CAULDRON)
                 .key('n', Items.NETHERITE_SCRAP)
-                .key('p', BlocksRegistry.GooPump.get())
+                .key('p', BlocksRegistry.Pump.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
                 .build(consumer);
     }
@@ -154,7 +154,7 @@ public class RecipesProvider extends RecipeProvider {
                 .key('s', Items.NETHERITE_SCRAP)
                 .key('c', Items.CAULDRON)
                 .key('f', Items.BLAST_FURNACE)
-                .key('b', BlocksRegistry.GooBulb.get())
+                .key('b', BlocksRegistry.Bulb.get())
                 .addCriterion("netherite", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))
                 .build(consumer);
     }

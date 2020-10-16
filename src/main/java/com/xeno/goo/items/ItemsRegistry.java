@@ -6,10 +6,8 @@ import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -18,7 +16,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 public class ItemsRegistry {
@@ -36,8 +33,8 @@ public class ItemsRegistry {
     public static final RegistryObject<Gauntlet> Gauntlet = Items.register("gauntlet", Gauntlet::new);
 
     // block items
-    public static final RegistryObject<Item> GooBulb = Items.register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.GooBulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
-    public static final RegistryObject<Item> GooPump = Items.register("goo_pump", () -> new BlockItem(BlocksRegistry.GooPump.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
+    public static final RegistryObject<Item> GooBulb = Items.register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.Bulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::gooBulb)));
+    public static final RegistryObject<Item> GooPump = Items.register("goo_pump", () -> new BlockItem(BlocksRegistry.Pump.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> Gooifier = Items.register("gooifier", () -> new BlockItem(BlocksRegistry.Gooifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
     public static final RegistryObject<Item> Crucible = Items.register("crucible", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::crucible)));
     public static final RegistryObject<Item> Mixer = Items.register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).setISTER(ISTERProvider::mixer)));
