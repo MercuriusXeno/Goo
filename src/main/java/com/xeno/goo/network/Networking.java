@@ -68,6 +68,12 @@ public class Networking {
                 .consumer(GooCollectPacket::handle)
                 .add();
 
+        INSTANCE.messageBuilder(GooPlaceSplatPacket.class, nextID())
+                .encoder(GooPlaceSplatPacket::toBytes)
+                .decoder(GooPlaceSplatPacket::new)
+                .consumer(GooPlaceSplatPacket::handle)
+                .add();
+
         INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
                 .encoder(GooGauntletSwapPacket::toBytes)
                 .decoder(GooGauntletSwapPacket::new)

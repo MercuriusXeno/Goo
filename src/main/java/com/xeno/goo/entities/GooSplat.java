@@ -86,11 +86,16 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
         this.isAtRest = false;
-        updateSplatState();
+        // send clients the updated size, it defaults to 1
+        setSize();
         Vector3d findCenter = findCenter(hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
                 1.0f, AudioHelper.PitchFormulas.HalfToOne);
+    }
+
+    public static GooSplat createPlacedSplat(PlayerEntity player, BlockPos pos, Direction side, Vector3d hit, FluidStack thrownStack) {
+        return new GooSplat(Registry.GOO_SPLAT.get(), player,  player.world, thrownStack, hit, pos, side);
     }
 
     private void updateSplatState()
@@ -119,6 +124,26 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         resetBox();
     }
 
+    private Vector3d findCenter(Vector3d hitVec)
+    {
+        switch(sideWeLiveOn) {
+            case NORTH:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
+            case SOUTH:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
+            case DOWN:
+                return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
+            case UP:
+                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
+            case WEST:
+                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
+            case EAST:
+                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
+        }
+        // something weird happened that wasn't supposed to.
+        return hitVec;
+    }
+
     /**
      * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
      */
@@ -136,26 +161,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         if (box != null && this.goo.getAmount() > 0) {
             this.setBoundingBox(box.offset(this.getPositionVec()));
         }
-    }
-
-    private Vector3d findCenter(Vector3d hitVec)
-    {
-        switch(sideWeLiveOn) {
-            case NORTH:
-                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
-            case SOUTH:
-                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
-            case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
-            case UP:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
-            case WEST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
-            case EAST:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
-        }
-        // something weird happened that wasn't supposed to.
-        return hitVec;
     }
 
     public AxisAlignedBB getCollisionBoundingBox() {
