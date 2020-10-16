@@ -21,7 +21,7 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.List;
 
-public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> {
+public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final float FLUID_HORIZONTAL_OFFSET = 0.01f;
     private static final float FROM_SCALED_VERTICAL = GooBulbTile.FLUID_VERTICAL_OFFSET * 16;
     private static final float TO_SCALED_VERTICAL = 16 - (GooBulbTile.FLUID_VERTICAL_MAX * 16);
@@ -35,7 +35,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
     }
 
     @Override
-    public void render(GooBulbTileAbstraction tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+    public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
         cap.ifPresent((c) -> render(tile.getPos(), tile.Increment(), tile.progress(), partialTicks, tile.crystal(),
                 tile.crystalFluid(), tile.crystalProgress(), c.getTankCapacity(0), tile.goo(),
@@ -71,7 +71,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTileAbstraction> 
         for(FluidStack goo : gooList) {
             int gooAmount = goo.getAmount();
             if (goo.getFluid().equals(crystalFluid)) {
-                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float)GooBulbTileAbstraction.TICKS_PER_PROGRESS_TICK));
+                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
                 gooAmount -= (crystalProgress.getAmount() + increment);
                 if (gooAmount < 0) {
                     gooAmount = 0;
