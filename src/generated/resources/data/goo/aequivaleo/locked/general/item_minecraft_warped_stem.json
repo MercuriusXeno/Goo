@@ -14,11 +14,11 @@
     },
     {
       "amount": 16.0,
-      "type": "goo:vital"
+      "type": "goo:fungal"
     },
     {
       "amount": 16.0,
-      "type": "goo:fungal"
+      "type": "goo:vital"
     }
   ]
 }

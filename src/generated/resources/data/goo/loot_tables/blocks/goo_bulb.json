@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "name": "goo_bulb",
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_name",
+              "source": "block_entity"
+            },
+            {
+              "function": "minecraft:copy_nbt",
+              "source": "block_entity",
+              "ops": [
+                {
+                  "source": "goo",
+                  "target": "BlockEntityTag.goo",
+                  "op": "replace"
+                },
+                {
+                  "source": "holding",
+                  "target": "BlockEntityTag.holding",
+                  "op": "replace"
+                },
+                {
+                  "source": "id",
+                  "target": "BlockEntityTag.id",
+                  "op": "replace"
+                }
+              ]
+            }
+          ],
+          "name": "goo:goo_bulb"
+        }
+      ]
+    }
+  ]
+}

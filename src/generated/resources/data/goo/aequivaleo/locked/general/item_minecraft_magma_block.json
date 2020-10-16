@@ -9,16 +9,16 @@
   },
   "compounds": [
     {
-      "amount": 30.0,
-      "type": "goo:decay"
-    },
-    {
       "amount": 10.0,
       "type": "goo:slime"
     },
     {
       "amount": 180.0,
       "type": "goo:earthen"
+    },
+    {
+      "amount": 30.0,
+      "type": "goo:decay"
     },
     {
       "amount": 10.0,
