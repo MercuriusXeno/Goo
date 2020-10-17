@@ -62,10 +62,16 @@ public class Networking {
                 .consumer(GooGrabPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooCollectPacket.class, nextID())
-                .encoder(GooCollectPacket::toBytes)
-                .decoder(GooCollectPacket::new)
-                .consumer(GooCollectPacket::handle)
+        INSTANCE.messageBuilder(GooGauntletCollectPacket.class, nextID())
+                .encoder(GooGauntletCollectPacket::toBytes)
+                .decoder(GooGauntletCollectPacket::new)
+                .consumer(GooGauntletCollectPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooBasinCollectPacket.class, nextID())
+                .encoder(GooBasinCollectPacket::toBytes)
+                .decoder(GooBasinCollectPacket::new)
+                .consumer(GooBasinCollectPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(GooPlaceSplatPacket.class, nextID())
@@ -74,10 +80,22 @@ public class Networking {
                 .consumer(GooPlaceSplatPacket::handle)
                 .add();
 
+        INSTANCE.messageBuilder(GooPlaceSplatAreaPacket.class, nextID())
+                .encoder(GooPlaceSplatAreaPacket::toBytes)
+                .decoder(GooPlaceSplatAreaPacket::new)
+                .consumer(GooPlaceSplatAreaPacket::handle)
+                .add();
+
         INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
                 .encoder(GooGauntletSwapPacket::toBytes)
                 .decoder(GooGauntletSwapPacket::new)
                 .consumer(GooGauntletSwapPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(GooBasinSwapPacket.class, nextID())
+                .encoder(GooBasinSwapPacket::toBytes)
+                .decoder(GooBasinSwapPacket::new)
+                .consumer(GooBasinSwapPacket::handle)
                 .add();
 
         INSTANCE.messageBuilder(UpdateBulbCrystalProgressPacket.class, nextID())

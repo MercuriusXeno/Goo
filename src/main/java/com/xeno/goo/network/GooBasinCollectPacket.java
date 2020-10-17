@@ -1,17 +1,13 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
@@ -30,18 +26,18 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class GooCollectPacket implements IGooModPacket {
+public class GooBasinCollectPacket implements IGooModPacket {
     private BlockPos pos;
     private Vector3d hit;
     private Direction side;
 
-    public GooCollectPacket(BlockPos pos, Vector3d hit, Direction side) {
+    public GooBasinCollectPacket(BlockPos pos, Vector3d hit, Direction side) {
         this.pos = pos;
         this.hit = hit;
         this.side = side;
     }
 
-    public GooCollectPacket(PacketBuffer buf) {
+    public GooBasinCollectPacket(PacketBuffer buf) {
         read(buf);
     }
 
@@ -76,14 +72,16 @@ public class GooCollectPacket implements IGooModPacket {
 
                 ItemStack heldItem = player.getHeldItem(Hand.MAIN_HAND);
                 LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-                lazyCap.ifPresent((c) -> tryBlockInteraction(player, c));
+                if (lazyCap.isPresent()) {
+                    lazyCap.ifPresent((c) -> tryBlockInteraction(player, (BasinAbstractionCapability)c));
+                }
             }
         });
 
         supplier.get().setPacketHandled(true);
     }
 
-    private boolean tryBlockInteraction(PlayerEntity player, IFluidHandlerItem cap)
+    private boolean tryBlockInteraction(PlayerEntity player, BasinAbstractionCapability cap)
     {
         TileEntity t = player.world.getTileEntity(this.pos);
         if (!(t instanceof GooContainerAbstraction)) {
@@ -91,26 +89,28 @@ public class GooCollectPacket implements IGooModPacket {
         }
 
         // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
-        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(this.hit, this.side, RayTraceTargetSource.GAUNTLET);
+        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(this.hit, this.side, RayTraceTargetSource.BASIN);
 
-        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(this.hit, this.side, RayTraceTargetSource.GAUNTLET);
+        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(this.hit, this.side, RayTraceTargetSource.BASIN);
         // if cap is empty try a drain.
         if (cap.getFluidInTank(0).isEmpty()) {
-            return tryCoatingBareGauntlet(player.world, this.hit, player, cap, tileCap, hitFluid);
+            return tryFillingEmptyBasin(player.world, this.hit, player, cap, tileCap, hitFluid);
         }
 
         boolean isAltBehavior = player.isSneaking();
 
+        // ordinarily the basin just empties and fills exclusively in a toggle state.
+        // holding [sneak] changes the behavior to try to fill the basin first.
         // the fluid we contain isn't the type hit or it is, but our receptacle is full so the intent is inverted.
-        if (!isAltBehavior || !cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.getFluidInTank(0).getAmount() == cap.getTankCapacity(0)) {
-            return tryFillingGooContainer(player.world, player, cap, tileCap, hitFluid);
+        if (!isAltBehavior || !cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.totalFluid() == cap.capacity()) {
+            return tryFillingGooContainer(player.world, player, cap, tileCap);
         }
 
-        return tryCoatingGauntletWithSameFluid(player.world, player, cap, tileCap, hitFluid);
+        return tryFillingBasinWithSameFluid(player.world, player, cap, tileCap, hitFluid);
     }
 
     private boolean tryFillingGooContainer(World world, PlayerEntity player,
-                                                    IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
+                                           BasinAbstractionCapability cap, IFluidHandler tileCap)
     {
         FluidStack sendingFluid = cap.getFluidInTank(0).copy();
         int amountSent = tileCap.fill(sendingFluid, IFluidHandler.FluidAction.SIMULATE);
@@ -124,7 +124,6 @@ public class GooCollectPacket implements IGooModPacket {
         if (drainResult.isEmpty()) {
             return false;
         }
-
         if (!world.isRemote()) {
             tileCap.fill(cap.drain(sendingFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
@@ -132,10 +131,10 @@ public class GooCollectPacket implements IGooModPacket {
         return true;
     }
 
-    private boolean tryCoatingGauntletWithSameFluid(World world, PlayerEntity player,
-                                                             IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private boolean tryFillingBasinWithSameFluid(World world, PlayerEntity player,
+                                                 BasinAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
-        int amountRequested = cap.getTankCapacity(0) - cap.getFluidInTank(0).getAmount();
+        int amountRequested = cap.capacity() - cap.totalFluid();
         FluidStack requestFluid = hitFluid.copy();
         requestFluid.setAmount(Math.min(requestFluid.getAmount(), amountRequested));
         FluidStack drainResult = tileCap.drain(requestFluid, IFluidHandler.FluidAction.SIMULATE);
@@ -146,7 +145,6 @@ public class GooCollectPacket implements IGooModPacket {
         if (fillResult == 0) {
             return false;
         }
-
         if (!world.isRemote()) {
             cap.fill(tileCap.drain(requestFluid, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         }
@@ -154,12 +152,12 @@ public class GooCollectPacket implements IGooModPacket {
         return true;
     }
 
-    private boolean tryCoatingBareGauntlet(World world, Vector3d pos,  PlayerEntity player,
-                                                    IFluidHandlerItem cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private boolean tryFillingEmptyBasin(World world, Vector3d pos, PlayerEntity player,
+                                         BasinAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
         FluidStack requestFluid = hitFluid.copy();
-        if (requestFluid.getAmount() > cap.getTankCapacity(0)) {
-            requestFluid.setAmount(cap.getTankCapacity(0));
+        if (requestFluid.getAmount() > cap.capacity() - cap.totalFluid()) {
+            requestFluid.setAmount(cap.capacity() - cap.totalFluid());
         }
         FluidStack result = tileCap.drain(requestFluid, IFluidHandler.FluidAction.SIMULATE);
         if (result.isEmpty()) {

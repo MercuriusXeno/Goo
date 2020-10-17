@@ -325,7 +325,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         } else {
             // create a goo splat
             FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
-            GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
+            GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face, true, 0f);
             attachToBlock(pos, face, splatToAdd);
             world.addEntity(splatToAdd);
         }

@@ -5,7 +5,10 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.events.TargetingHandler;
+import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.network.GooBasinSwapPacket;
 import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.setup.Registry;
@@ -187,15 +190,18 @@ public class GooRadial extends Screen {
         Map<Fluid, FluidStack> result = new TreeMap<>(Comparator
                 .comparing(putEmptyFirstFunction)
                 .thenComparing(lexicographicalFunction));
-        if (!isGauntletEmpty(player)) {
+        if (!isGauntletOrBasinEmpty(player)) {
             result.put(Fluids.EMPTY, FluidStack.EMPTY);
         }
         for (ItemStack i : player.inventory.mainInventory) {
-            if (i.getItem() instanceof GooBulbItem) {
-                CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
-                CompoundNBT gooTag = bulbTag.getCompound("goo");
-                List<FluidStack> bulbStacks = GooBulbTile.deserializeGooForDisplay(gooTag);
-                bulbStacks.forEach((s) -> pushToMap(result, s));
+            if (i.getItem() instanceof Basin) {
+                List<FluidStack> basinStacks = new ArrayList<>();
+                LazyOptional<IFluidHandlerItem> lazyHandler = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+                if (lazyHandler.isPresent()) {
+                    lazyHandler.ifPresent((c) -> basinStacks.addAll(((BasinAbstractionCapability)c).getFluids()));
+                }
+
+                basinStacks.forEach((s) -> pushToMap(result, s));
             }
         }
         List<FluidStack> listResult = new ArrayList<>();
@@ -203,9 +209,14 @@ public class GooRadial extends Screen {
         return listResult;
     }
 
-    private boolean isGauntletEmpty(ClientPlayerEntity player) {
+    private boolean isGauntletOrBasinEmpty(ClientPlayerEntity player) {
         ItemStack stack = player.getHeldItem(Hand.MAIN_HAND);
         if (stack.getItem() instanceof Gauntlet) {
+            LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+            boolean[] isEmpty = {false};
+            lazyCap.ifPresent(c -> isEmpty[0] = c.getFluidInTank(0).isEmpty());
+            return isEmpty[0];
+        } else if (stack.getItem() instanceof Basin) {
             LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
             boolean[] isEmpty = {false};
             lazyCap.ifPresent(c -> isEmpty[0] = c.getFluidInTank(0).isEmpty());
@@ -239,7 +250,11 @@ public class GooRadial extends Screen {
     }
 
     private void trySwitchingGooTypes(ClientPlayerEntity player, FluidStack target) {
-        Networking.sendToServer(new GooGauntletSwapPacket(target), player);
+        if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Gauntlet) {
+            Networking.sendToServer(new GooGauntletSwapPacket(target), player);
+        } else if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Basin) {
+            Networking.sendToServer(new GooBasinSwapPacket(target), player);
+        }
     }
 
     @Override

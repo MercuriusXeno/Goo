@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.items.ItemsRegistry;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
@@ -83,6 +84,11 @@ public abstract class FluidHandlerHelper
     }
 
     public static CompoundNBT getOrCreateTileTag(ItemStack i, String tileEntityId) {
+        // many things don't need tile tags. Abort if we don't.
+        if (!isTileTagWorthy(i)) {
+            return i.getTag();
+        }
+
         CompoundNBT itemTag = new CompoundNBT();
         if (!i.hasTag() || i.getTag() == null) {
             i.setTag(itemTag);
@@ -105,5 +111,14 @@ public abstract class FluidHandlerHelper
         i.setTag(itemTag);
 
         return bulbTag;
+    }
+
+    private static boolean isTileTagWorthy(ItemStack i) {
+        return i.getItem().equals(ItemsRegistry.Solidifier.get())
+                || i.getItem().equals(ItemsRegistry.Gooifier.get())
+                || i.getItem().equals(ItemsRegistry.GooBulb.get())
+                || i.getItem().equals(ItemsRegistry.Crucible.get())
+                || i.getItem().equals(ItemsRegistry.Mixer.get());
+
     }
 }

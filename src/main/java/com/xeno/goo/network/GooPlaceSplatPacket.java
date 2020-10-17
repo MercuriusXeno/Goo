@@ -103,7 +103,7 @@ public class GooPlaceSplatPacket implements IGooModPacket {
         FluidStack splatStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
         int originalAmount = splatStack.getAmount();
         splatStack.setAmount(1);
-        GooSplat splat = GooSplat.createPlacedSplat(player, this.pos, this.side, this.hit, splatStack);
+        GooSplat splat = GooSplat.createPlacedSplat(player, this.pos, this.side, this.hit, splatStack, true, 0f);
         if (originalAmount > 1) {
             FluidStack blobStack = splatStack.copy();
             blobStack.setAmount(originalAmount - 1);

@@ -9,6 +9,7 @@ import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
@@ -70,7 +71,7 @@ public class TargetingHandler
         if (PATCHOULI_BOOK.isEmpty()) {
             PATCHOULI_BOOK = new ItemStack(ItemsRegistry.GooAndYou.get());
         }
-        return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
+        return player.inventory.mainInventory.stream().anyMatch(i -> i.getItem().equals(PATCHOULI_BOOK.getItem()));
     }
 
     private static boolean hasEntry(World entityWorld)
@@ -301,12 +302,24 @@ public class TargetingHandler
             return false;
         }
 
-        if (cap.getFluidInTank(0).isEmpty()) {
-            return false;
-        }
+        // basins have a more elaborate contents list than gauntlets
+        if (cap instanceof BasinAbstractionCapability) {
+            List<FluidStack> fluids = new ArrayList<>();
+            fluids.addAll(((BasinAbstractionCapability) cap).getFluids());
+            fluids.removeIf(FluidStack::isEmpty);
+            if (fluids.size() == 0) {
+                return false;
+            }
+            lastGooEntry.addAll(fluids);
+            return true;
+        } else {
+            if (cap.getFluidInTank(0).isEmpty()) {
+                return false;
+            }
 
-        lastGooEntry.add(cap.getFluidInTank(0));
-        return true;
+            lastGooEntry.add(cap.getFluidInTank(0));
+            return true;
+        }
     }
 
     private static void tryFetchingGooContentsAsGooContainerAbstraction()
@@ -320,7 +333,13 @@ public class TargetingHandler
         } else if (item.equals(ItemsRegistry.GooBulb.get())) {
             id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
         }
+        if (id.equals("")) {
+            return;
+        }
         CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
+        if (bulbTag == null) {
+            return;
+        }
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
         lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
@@ -418,7 +437,7 @@ public class TargetingHandler
         if (count >= 100) {
             truncate = 10;
         }
-        r = (int)Math.ceil(r * truncate) / (float)truncate;
+        r = Math.round(r * truncate) / (float)truncate;
         TranslationTextComponent notationMarker = new TranslationTextComponent(getOrderOfMagnitudeNotation(oom));
         String result = NumberFormat.getNumberInstance(Locale.ROOT).format((float)count + r);
 
@@ -580,6 +599,9 @@ public class TargetingHandler
         }
 
         CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
+        if (bulbTag == null) {
+            return false;
+        }
         CompoundNBT gooTag = bulbTag.getCompound("goo");
         Map<String, Double> sortedValues = deserializeGooForDisplay(gooTag);
 
