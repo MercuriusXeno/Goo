@@ -3,7 +3,8 @@ package com.xeno.goo.client.render;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.*;
+import com.xeno.goo.tiles.FluidHandlerHelper;
+import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
@@ -82,16 +83,16 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
     {
         Vector3f to = fluidTankDimensionsTo(isRight, facing, goo.getAmount(), capacity);
         Vector3f from = fluidTankDimensionsFrom(isRight, facing);
-        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
-        HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, from.getY(), to, to.getY());
+        FluidCuboidHelper.renderScaledFluidCuboid(goo.getFluid(), matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
+        HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, combinedLightIn, from, from.getY(), to, to.getY());
     }
 
     private void renderChannelFluid(BlockPos pos, boolean isRight, Direction facing, FluidStack goo, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn)
     {
         Vector3f to = fluidChannelDimensionsTo(isRight, facing);
         Vector3f from = fluidChannelDimensionsFrom(isRight, facing);
-        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
-        HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, from.getY(), to, to.getY());
+        FluidCuboidHelper.renderScaledFluidCuboid(goo.getFluid(), matrixStack, builder, combinedLightIn, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
+        HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, combinedLightIn, from, from.getY(), to, to.getY());
     }
 
     private Vector3f fluidChannelDimensionsTo(boolean isRight, Direction facing)

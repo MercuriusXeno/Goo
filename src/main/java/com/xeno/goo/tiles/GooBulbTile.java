@@ -5,9 +5,12 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.Compare;
 import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
+import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.Enchantment;
@@ -34,6 +37,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class GooBulbTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
@@ -531,14 +535,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return new BulbFluidHandler(this);
     }
 
-    private Map<Enchantment, Integer> stackEnchantmentFactory() {
-        Map<Enchantment, Integer> result = new HashMap<>();
-        if (enchantHolding > 0) {
-            result.put(Registry.CONTAINMENT.get(), enchantHolding);
-        }
-        return result;
-    }
-
     public void spewItems()
     {
         if (crystal.isEmpty()) {
@@ -547,10 +543,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), crystal);
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
-    }
-
-    public boolean hasSpace() {
-        return getSpaceRemaining() > 0;
     }
 
     public int getSpaceRemaining()
@@ -562,7 +554,71 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     // offset logic (and also renderer is client code, not the same in reverse)
     public static final float FLUID_VERTICAL_OFFSET = 0.0005f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     public static final float FLUID_VERTICAL_MAX = 0.0005f;
-    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.04f; // percentile
+    public static final float HEIGHT_SCALE = (1f - FLUID_VERTICAL_MAX) - FLUID_VERTICAL_OFFSET;
+    public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 1f / Registry.FluidSuppliers.size(); // percentile is a representation of all the fluid types in existence.
+
+    public static final Map<Integer, Double> CAPACITY_LOGS = new HashMap<>();
+
+    public static Object2FloatMap<Fluid> calculateFluidHeights(int capacity, List<FluidStack> unsortedGoo, FluidStack crystalProgress, int lastAmount, int progressTicks, float partialTicks) {
+        if (!CAPACITY_LOGS.containsKey(capacity)) {
+            CAPACITY_LOGS.put(capacity, calculateCapacityLog(capacity));
+        }
+        // start with the smallest stacks because those will influence the "minimum heights" first
+        // and result in the larger stacks being diminished to compensate for their relative smallness.
+        // shallow copy to avoid concurrent mods
+        List<FluidStack> gooStacks = new ArrayList<>(unsortedGoo);
+        gooStacks.sort(Compare.fluidAmountComparator);
+        float total = gooStacks.stream().mapToInt(FluidStack::getAmount).sum();
+        total -= crystalProgress.getAmount();
+        if (total < 0) {
+            return new Object2FloatOpenHashMap<>();
+        }
+
+        // how high the fluid is in the bulb, as a fraction of 1d
+        // 1d is never really achievable since the bulb viewport is technically smaller than that
+        float totalFluidHeight = (float)Math.pow(total, 1f / CAPACITY_LOGS.get(capacity)) / 16f; // scaled
+
+        // when something achieves a mandatory minimum in this way, we have to deflate the value
+        // proportionally to compensate, and this is also logarithmic.
+        Object2FloatMap<Fluid> results = new Object2FloatOpenHashMap<>();
+        for (FluidStack g : gooStacks) {
+            int totalGooInThisStack = g.getAmount();
+            totalGooInThisStack -= crystalProgress.isFluidEqual(g) ? crystalProgress.getAmount() : 0;
+            if (g.isFluidEqual(crystalProgress)) {
+                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
+                totalGooInThisStack -= (crystalProgress.getAmount() + increment);
+                if (totalGooInThisStack < 0) {
+                    totalGooInThisStack = 0;
+                }
+            }
+            results.put(g.getFluid(), totalGooInThisStack * totalFluidHeight / total);
+        }
+
+        float remainder = 1f;
+        for (FluidStack g : gooStacks) {
+            float v = results.getFloat(g.getFluid());
+            v *= remainder;
+            if (v < ARBITRARY_GOO_STACK_HEIGHT_MINIMUM) {
+                v = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
+            }
+            remainder -= v;
+            results.put(g.getFluid(), v);
+        }
+        return results;
+    }
+
+    private static Double calculateCapacityLog(int capacity) {
+        return Math.log(capacity) / Math.log(16d);
+    }
+
+    public Object2FloatMap<Fluid> calculateFluidHeights(float partialTicks) {
+        return calculateFluidHeights(fluidHandler.getTankCapacity(0), goo, crystalProgress, lastIncrement, crystalProgressTicks, partialTicks);
+    }
+
+    public Object2FloatMap<Fluid> calculateFluidHeights() {
+        return calculateFluidHeights(0f);
+    }
+
     @Override
     public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side, RayTraceTargetSource targetSource)
     {
@@ -570,78 +626,24 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         if (goo.size() == 0) {
             return FluidStack.EMPTY;
         }
-        if (side == Direction.UP) {
-            return goo.get(goo.size() - 1); // return last;
-        } else if (side == Direction.DOWN) {
-            return goo.get(0);
-        } else {
-            float minY = getPos().getY() + FLUID_VERTICAL_OFFSET;
-            if (hitVec.getY() < minY) {
-                return goo.get(0);
-            }
-            float maxY = getPos().getY() + 1f - FLUID_VERTICAL_MAX;
-            float heightScale = maxY - minY;
 
-            heightScale = rescaleHeightForMinimumLevels(heightScale, lastIncrement, crystalProgressTicks,
-                    0f, crystalFluid, crystalProgress, goo, fluidHandler.getTankCapacity(0));
-            float yOffset = 0f;
-            // create a small spacer between each goo to stop weird z fighting issues?
-            // this may look megadumb.
-
-            for(FluidStack stack : goo) {
-                int gooAmount = stack.getAmount();
-                if (stack.getFluid().equals(crystalFluid)) {
-                    gooAmount -= crystalProgress.getAmount();
-                    if (gooAmount < 0) {
-                        gooAmount = 0;
-                    }
-                }
-                // this is the total fill of the goo in the tank of this particular goo, as a percentage
-                float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, gooAmount / (float)fluidHandler.getTankCapacity(0));
-                float fromY, toY;
-                // here is where the spacer height is actually applied, not in the render height, but in the starting vec
-                // to render each goo type.
-                fromY = minY + yOffset;
-                toY = fromY + (gooHeight * heightScale);
-                if (hitVec.getY() <= toY && hitVec.getY() >= fromY) {
-                    return stack;
-                }
-                yOffset += (gooHeight * heightScale);
+        Object2FloatMap<Fluid> fluidStacksHeights = calculateFluidHeights();
+        float height = this.pos.getY() + FLUID_VERTICAL_OFFSET;
+        float hitY = (float)hitVec.y;
+        for(FluidStack g : goo) {
+            if (!fluidStacksHeights.containsKey(g.getFluid())) {
+                // something is wrong...
+                continue;
             }
-            return goo.get(goo.size() - 1);
+            float gooHeight = fluidStacksHeights.getFloat(g.getFluid());
+            if (hitY >= height && hitY < height + gooHeight) {
+                return g;
+            }
+            height += gooHeight;
         }
-    }
 
-    public static float rescaleHeightForMinimumLevels(float heightScale, int lastIncrement, int progressTicks, float partialTicks, Fluid crystalFluid, FluidStack crystalProgress, List<FluidStack> gooList, int bulbCapacity)
-    {
-        // "lost cap" is the amount of space in the bulb lost to the mandatory minimum we
-        // render very small amounts of fluid so that we can still target really small amounts
-        // the space in the tank has to be recouped by reducing the overall virtual capacity.
-        // we measure it as a percentage because it's close enough.
-        float lostCap = 0f;
-        // first we have to "rescale" the heightscale so that the fluid levels come out looking correct
-        for(FluidStack goo : gooList) {
-            int gooAmount = goo.getAmount();
-            if (goo.getFluid().equals(crystalFluid)) {
-                int increment = (int)Math.floor(lastIncrement * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
-                gooAmount -= (crystalProgress.getAmount() + increment);
-                if (gooAmount < 0) {
-                    gooAmount = 0;
-                }
-            }
-            // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float gooHeight =
-                    // the minimum height the goo has. If it's lower than the minimum, use the minimum, otherwise use the real value.
-                    Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, gooAmount / (float)bulbCapacity);
-            lostCap +=
-                    // if we're "losing cap" by being at the mandatory minimum, figure out how much space we "lost"
-                    // this space gets reserved by the routine so it doesn't allow the rendering to go out of bounds.
-                    gooHeight == GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM ?
-                            // the amount of space lost is equal to the minimum height minus the value we would have if we weren't being "padded"
-                            (GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM - (gooAmount / (float)bulbCapacity))
-                            : 0f;
-        }
-        return heightScale - (heightScale * lostCap);
+        // we couldn't find the stack which means we're *above* any stack. Return the last one.
+        return goo.get(goo.size() - 1);
     }
 
     @Override
@@ -700,12 +702,15 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         crystalFluid = Fluids.EMPTY;
         lastIncrement = 0;
         if (sendUpdate && world instanceof ServerWorld) {
-            float heightScale = (getPos().getY() + 1f - FLUID_VERTICAL_MAX) - (getPos().getY() + FLUID_VERTICAL_OFFSET);
-            float gooHeight = rescaleHeightForMinimumLevels(heightScale, lastIncrement, crystalProgressTicks,
-                    0f, crystalFluid, crystalProgress, goo, fluidHandler.getTankCapacity(0));
+            float gooHeight = calculateFluidHeight();
             ((ServerWorld)world).spawnParticle(ParticleTypes.SMOKE, pos.getX() + 0.5d, pos.getY() + gooHeight, pos.getZ() + 0.5d, 1, 0d, 0d, 0d, 0d);
             Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
         }
+    }
+
+    public float calculateFluidHeight() {
+        Map<Fluid, Float> fluidStackHeights = calculateFluidHeights();
+        return (float)fluidStackHeights.values().stream().mapToDouble(v -> v).sum() * HEIGHT_SCALE;
     }
 
     public void addCrystal(Item item) {
@@ -740,4 +745,5 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     public Fluid crystalFluid() {
         return crystalFluid;
     }
+
 }

@@ -6,10 +6,8 @@ import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
@@ -65,8 +63,8 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         float fromY, toY;
         fromY = minY + yOffset;
         toY = fromY + height;
-        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
-        HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
+        FluidCuboidHelper.renderScaledFluidCuboid(goo.getFluid(), matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
+        HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
     }
 
     public static void register() {

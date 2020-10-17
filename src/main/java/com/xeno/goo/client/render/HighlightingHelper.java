@@ -13,6 +13,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -50,7 +52,7 @@ public class HighlightingHelper
         return c << 16 | c << 8 | c;
     }
 
-    public static boolean isTargeted(FluidStack goo, BlockPos pos)
+    public static boolean isTargeted(Fluid goo, BlockPos pos)
     {
         if (Minecraft.getInstance().getRenderViewEntity() == null) {
             return false;
@@ -81,7 +83,7 @@ public class HighlightingHelper
             return false;
         }
         FluidStack targetGoo = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(target, RayTraceTargetSource.JUST_LOOKING);
-        if (targetGoo.isFluidEqual(goo)) {
+        if (targetGoo.getFluid().equals(goo)) {
             return true;
         }
         return false;
@@ -108,8 +110,8 @@ public class HighlightingHelper
         return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet;
     }
 
-    public static void renderHighlightAsNeeded(FluidStack goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn, Vector3f from, float fromY, Vector3f to, float toY) {
-        if (goo.isEmpty()) {
+    public static void renderHighlightAsNeeded(Fluid goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn, Vector3f from, float fromY, Vector3f to, float toY) {
+        if (goo.equals(Fluids.EMPTY)) {
             return;
         }
         if (HighlightingHelper.isTargeted(goo, pos)) {

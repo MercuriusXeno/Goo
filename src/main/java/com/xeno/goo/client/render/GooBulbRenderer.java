@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
@@ -13,7 +14,6 @@ import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -38,8 +38,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     @Override
     public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
-        cap.ifPresent((c) -> render(tile.getPos(), tile.Increment(), tile.progress(), partialTicks, tile.crystal(),
-                tile.crystalFluid(), tile.crystalProgress(), c.getTankCapacity(0), tile.goo(),
+        cap.ifPresent((c) -> render(tile, partialTicks, tile.crystal(), tile.goo(),
                 tile.isVerticallyFilled(), tile.verticalFillFluid(),
                 tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn));
@@ -47,8 +46,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
 
-    public static void render(BlockPos pos, int lastAmount, int progressTicks, float partialTicks, ItemStack crystal,
-                              Fluid crystalFluid, FluidStack crystalProgress, int bulbCapacity, List<FluidStack> gooList,
+    public static void render(GooBulbTile tile, float partialTicks, ItemStack crystal, List<FluidStack> gooList,
                               boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
                               MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
         gooList.removeIf(FluidStack::isEmpty);
@@ -59,39 +57,27 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         // determine where to draw the fluid based on the model
         Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
 
-
         float minY = from.getY();
         float maxY = to.getY();
         float heightScale = maxY - minY;
         float highestToY = minY;
 
-        heightScale = GooBulbTile.rescaleHeightForMinimumLevels(heightScale, lastAmount, progressTicks, partialTicks,
-                crystalFluid, crystalProgress, gooList, bulbCapacity);
-
+        Object2FloatMap<Fluid> entries = tile.calculateFluidHeights(partialTicks);
         // then we can render
-        for(FluidStack goo : gooList) {
-            int gooAmount = goo.getAmount();
-            if (goo.getFluid().equals(crystalFluid)) {
-                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
-                gooAmount -= (crystalProgress.getAmount() + increment);
-                if (gooAmount < 0) {
-                    gooAmount = 0;
-                }
-            }
-            // this is the total fill of the goo in the tank of this particular goo, as a percentage
-            float gooHeight = Math.max(GooBulbTile.ARBITRARY_GOO_STACK_HEIGHT_MINIMUM, gooAmount / (float)bulbCapacity);
+        for(FluidStack goo : tile.goo()) {
+            float entry = entries.getFloat(goo.getFluid());
             float fromY, toY;
             fromY = minY + yOffset;
-            toY = fromY + (gooHeight * heightScale);
+            toY = fromY + (entry * heightScale);
             highestToY = toY;
-            HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, normalBrightness, combinedLightIn, from, fromY, to, toY);
-            FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, normalBrightness, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
-            yOffset += (gooHeight * heightScale);
+            HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), tile.getPos(), matrixStack, normalBrightness, combinedLightIn, from, fromY, to, toY);
+            FluidCuboidHelper.renderScaledFluidCuboid(goo.getFluid(), matrixStack, normalBrightness, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
+            yOffset += (entry * heightScale);
         }
 
         if (isVerticallyFilled) {
             Vector3f verticalFillFrom = verticalFillFromVector(verticalFillIntensity), verticalFillTo = verticalFillToVector(verticalFillIntensity);
-            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid, matrixStack, normalBrightness, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
+            FluidCuboidHelper.renderScaledFluidCuboid(verticalFillFluid.getFluid(), matrixStack, normalBrightness, combinedLightIn, verticalFillFrom.getX(), highestToY, verticalFillFrom.getZ(), verticalFillTo.getX(), maxY, verticalFillTo.getZ());
         }
 
         if (crystal.isEmpty()) {
