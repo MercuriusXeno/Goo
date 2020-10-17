@@ -19,13 +19,10 @@ import java.util.Set;
 
 public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup> implements ICompoundTypeGroup
 {
-
     @Override
-    public Set<CompoundInstance> handleIngredient(
-      final Map<? extends ICompoundContainer<?>, Set<CompoundInstance>> map, final boolean b)
+    public Set<CompoundInstance> determineResult(final Set<Set<CompoundInstance>> set, final Boolean aBoolean)
     {
-        return map
-                 .values()
+        return set
                  .stream().min((compoundInstances, t1) -> (int) (compoundInstances
                                                                    .stream()
                                                                    .mapToDouble(CompoundInstance::getAmount)
@@ -33,7 +30,13 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
                                                                               .stream()
                                                                               .mapToDouble(CompoundInstance::getAmount)
                                                                               .sum()))
-          .orElse(new HashSet<>());
+                 .orElse(new HashSet<>());
+    }
+
+    @Override
+    public boolean shouldIncompleteRecipeBeProcessed(@NotNull final IEquivalencyRecipe iEquivalencyRecipe)
+    {
+        return true;
     }
 
     @Override

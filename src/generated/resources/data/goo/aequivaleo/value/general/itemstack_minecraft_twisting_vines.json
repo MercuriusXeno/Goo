@@ -1,0 +1,25 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:twisting_vines\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:twisting_vines"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 5.0,
+      "type": "goo:fungal"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class Equivalencies
 {
     public static Map<ICompoundContainer<?>, ImmutableSet<CompoundInstance>> locked(World world) {
-        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.getDimensionKey()).get();
+        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.getDimensionKey()).getLockingInformation();
     }
 
     public static IResultsInformationCache cache(World world) {
