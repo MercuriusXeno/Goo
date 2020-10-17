@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 60.0,
-      "type": "goo:regal"
+      "type": "goo:crystal"
     },
     {
       "amount": 60.0,
-      "type": "goo:crystal"
+      "type": "goo:regal"
     }
   ]
 }
