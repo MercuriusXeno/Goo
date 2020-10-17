@@ -65,8 +65,8 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         float fromY, toY;
         fromY = minY + yOffset;
         toY = fromY + height;
-        FluidCuboidHelper.renderScaledFluidCuboid(goo, matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
-        HighlightingHelper.renderHighlightAsNeeded(goo, pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
+        FluidCuboidHelper.renderScaledFluidCuboid(goo.getFluid(), matrixStack, builder, combinedLightIn, from.getX(), fromY, from.getZ(), to.getX(), toY, to.getZ());
+        HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, combinedLightIn, from, fromY, to, toY);
     }
 
     public static void register() {
