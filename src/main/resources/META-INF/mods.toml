@@ -26,12 +26,12 @@ issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues"
 [[dependencies.goo]]
     modId="aequivaleo"
     mandatory=true
-    versionRange="[${aequivaleo_version}]"
+    versionRange="[${aequivaleo_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]
     modId="patchouli"
     mandatory=true
-    versionRange="[${patchouli_version}]"
+    versionRange="[${patchouli_version},)"
     ordering="NONE"
     side="BOTH"
