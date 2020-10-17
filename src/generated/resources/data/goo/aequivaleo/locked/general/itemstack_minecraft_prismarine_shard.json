@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:prismarine_shard\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:prismarine_shard"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 12.0,
+      "type": "goo:aquatic"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:crystal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:weird"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:oak_sapling\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:oak_sapling"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 16.0,
+      "type": "goo:vital"
+    },
+    {
+      "amount": 394.0,
+      "type": "goo:floral"
+    }
+  ]
+}
