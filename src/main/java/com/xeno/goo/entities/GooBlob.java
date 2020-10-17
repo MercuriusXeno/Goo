@@ -76,7 +76,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         }
     }
 
-
     public static GooBlob createLobbedBlob(GooSplat splat) {
         return new GooBlob(splat, splat.getPositionVec(), splat.goo());
     }
@@ -326,7 +325,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         } else {
             // create a goo splat
             FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
-            GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face);
+            GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face, true, 0f);
             attachToBlock(pos, face, splatToAdd);
             world.addEntity(splatToAdd);
         }
@@ -336,6 +335,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     public void bounceBlob(Direction face)
     {
+        // the state we're interested in observing is the state of the hit block, not the offset.
         GooInteractions.spawnParticles(this);
         switch(face.getAxis()) {
             case Y:

@@ -1,20 +1,14 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooContainerAbstraction;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
@@ -30,18 +24,18 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class GooCollectPacket implements IGooModPacket {
+public class GooGauntletCollectPacket implements IGooModPacket {
     private BlockPos pos;
     private Vector3d hit;
     private Direction side;
 
-    public GooCollectPacket(BlockPos pos, Vector3d hit, Direction side) {
+    public GooGauntletCollectPacket(BlockPos pos, Vector3d hit, Direction side) {
         this.pos = pos;
         this.hit = hit;
         this.side = side;
     }
 
-    public GooCollectPacket(PacketBuffer buf) {
+    public GooGauntletCollectPacket(PacketBuffer buf) {
         read(buf);
     }
 

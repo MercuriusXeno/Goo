@@ -4,13 +4,18 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
 public class BasinAbstractionCapability extends FluidHandlerItemStack
 {
-    public BasinAbstractionCapability(ItemStack container, int capacity)
+    public BasinAbstractionCapability(ItemStack container)
     {
         super(container, 0);
     }
@@ -36,7 +41,86 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTanks()
     {
-        return 1;
+        return getFluids().size();
+    }
+
+    public List<FluidStack> getFluids()
+    {
+        CompoundNBT tagCompound = container.getTag();
+        if (tagCompound == null || !tagCompound.contains(FLUID_NBT_KEY))
+        {
+            return newListWithEmptyFluidStack();
+        }
+
+        return deserializeGoo(tagCompound.getCompound(FLUID_NBT_KEY));
+    }
+
+    private List<FluidStack> newListWithEmptyFluidStack() {
+        List<FluidStack> result = new ArrayList<>();
+        result.add(FluidStack.EMPTY);
+        return result;
+    }
+
+    @Override
+    @Nonnull
+    public FluidStack getFluid()
+    {
+        return getFluids().get(0);
+    }
+
+    protected void setFluid(FluidStack fluid)
+    {
+        List<FluidStack> fluids = getFluids();
+
+        for(FluidStack f : fluids) {
+            if (f.isFluidEqual(fluid)) {
+                f.setAmount(fluid.getAmount());
+            }
+        }
+
+        setFluids(fluids);
+    }
+
+    private void removeFluid(FluidStack fluid, boolean isRemovingPrimary) {
+        List<FluidStack> fluids = getFluids();
+
+        fluids.removeIf(f -> f.isFluidEqual(fluid));
+
+        setFluids(fluids);
+
+        if (isRemovingPrimary) {
+            shuffleEmptyToPrimary();
+        }
+    }
+
+    private void shuffleEmptyToPrimary() {
+        List<FluidStack> fluids = getFluids();
+        if (fluids.size() <= 1 || fluids.get(0).isEmpty()) {
+            return;
+        }
+        int indexOfEmpty = -1;
+        for(int i = 1; i < fluids.size(); i++) {
+            if (fluids.get(i).isEmpty()) {
+                indexOfEmpty = i;
+            }
+        }
+
+        fluids.add(fluids.get(0).copy());
+        fluids.remove(indexOfEmpty);
+        fluids.set(0, FluidStack.EMPTY);
+        setFluids(fluids);
+    }
+
+    protected void setFluids(List<FluidStack> fluids) {
+        if (!container.hasTag())
+        {
+            container.setTag(new CompoundNBT());
+        }
+
+        CompoundNBT tag = container.getTag();
+
+        tag.put(FLUID_NBT_KEY, serializeGoo(fluids));
+        container.setTag(tag);
     }
 
     @Override
@@ -45,10 +129,57 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
         return getFluid();
     }
 
+    protected CompoundNBT serializeGoo(List<FluidStack> goo)  {
+        CompoundNBT tag = new CompoundNBT();
+        tag.putInt("count", goo.size());
+        int index = 0;
+        for(FluidStack s : goo) {
+            CompoundNBT gooTag = new CompoundNBT();
+            s.writeToNBT(gooTag);
+            tag.put("goo" + index, gooTag);
+            index++;
+        }
+        return tag;
+    }
+
+    protected List<FluidStack> deserializeGoo(CompoundNBT tag) {
+        if (!tag.contains(("count"))) {
+            return newListWithEmptyFluidStack();
+        }
+        List<FluidStack> tagGooList = new ArrayList<>();
+        int size = tag.getInt("count");
+        boolean hasEmpty = false;
+        for(int i = 0; i < size; i++) {
+            CompoundNBT gooTag = tag.getCompound("goo" + i);
+            FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
+            if (stack.isEmpty()) {
+                if (hasEmpty) {
+                    continue;
+                }
+                hasEmpty = true;
+            }
+            tagGooList.add(stack);
+        }
+
+        if (tagGooList.size() == 0) {
+            tagGooList.add(FluidStack.EMPTY);
+        }
+
+        return tagGooList;
+    }
+
     @Override
     public int getTankCapacity(int tank)
     {
+        return capacity();
+    }
+
+    public int capacity() {
         return GooMod.config.basinCapacity() * holdingMultiplier(Basin.holding(this.container));
+    }
+
+    public int totalFluid() {
+        return getFluids().stream().mapToInt(FluidStack::getAmount).sum();
     }
 
     public static int storageForDisplay(ItemStack stack)
@@ -77,13 +208,12 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int fill(FluidStack resource, FluidAction action)
     {
-        // can't hold it, already holding something else.
-        if (!getFluid().isEmpty() && !getFluid().isFluidEqual(resource)) {
-            return 0;
-        }
+        // track our "primary". If our primary is empty and we added a fluid, switch to the new fluid
+        FluidStack primary = getFluid();
+        List<FluidStack> fluids = getFluids();
 
         // probably we can hold it, assuming we have space.
-        int possibleFill = this.getTankCapacity(0) - getFluid().getAmount();
+        int possibleFill = this.capacity() - totalFluid();
         if (possibleFill <= 0) {
             return 0;
         }
@@ -93,10 +223,18 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
             if (result.getAmount() > possibleFill) {
                 result.setAmount(possibleFill);
             }
-            if (!getFluid().isEmpty()) {
-                result.setAmount(result.getAmount() + getFluid().getAmount());
+            for(FluidStack f : fluids) {
+                if (f.isFluidEqual(result)) {
+                    f.setAmount(f.getAmount() + result.getAmount());
+                    setFluids(fluids);
+                    return possibleFill;
+                }
             }
-            setFluid(result);
+            fluids.add(result);
+            setFluids(fluids);
+            if (primary.isEmpty()) {
+                swapToFluid(result);
+            }
         }
         return possibleFill;
     }
@@ -104,20 +242,32 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action)
     {
-        // can't hold it, already holding something else.
-        if (getFluid().isEmpty() || !getFluid().isFluidEqual(resource)) {
-            return FluidStack.EMPTY;
-        }
+        // track our "primary". If our primary gets removed, shuffle empty to it instead of the next one.
+        FluidStack primary = getFluid();
+        List<FluidStack> fluids = getFluids();
+        for(FluidStack f : fluids) {
+            if (!f.isFluidEqual(resource)) {
+                continue;
+            }
 
-        int maxDrain = Math.min(getFluid().getAmount(), resource.getAmount());
-        FluidStack result = resource.copy();
-        result.setAmount(maxDrain);
-        if (action == FluidAction.EXECUTE) {
-            FluidStack drainedRemainder = result.copy();
-            drainedRemainder.setAmount(getFluid().getAmount() - maxDrain);
-            setFluid(drainedRemainder);
+            int maxDrain = Math.min(f.getAmount(), resource.getAmount());
+            FluidStack result = resource.copy();
+            result.setAmount(maxDrain);
+            if (action == FluidAction.EXECUTE) {
+                FluidStack drainedRemainder = result.copy();
+                // if this was all of it, remove it.
+                if (f.getAmount() == maxDrain) {
+                    boolean isRemovingPrimary = f.isFluidEqual(primary);
+                    removeFluid(f, isRemovingPrimary);
+                } else {
+                    // otherwise, just change the amount to the amount remaining
+                    drainedRemainder.setAmount(f.getAmount() - maxDrain);
+                    setFluid(drainedRemainder);
+                }
+            }
+            return result;
         }
-        return result;
+        return FluidStack.EMPTY;
     }
 
     @Override
@@ -133,9 +283,38 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
         result.setAmount(maxDrain);
         if (action == FluidAction.EXECUTE) {
             FluidStack drainedRemainder = result.copy();
-            drainedRemainder.setAmount(getFluid().getAmount() - maxDrain);
-            setFluid(drainedRemainder);
+            if (getFluid().getAmount() == maxDrain) {
+                removeFluid(result, true);
+            } else {
+                drainedRemainder.setAmount(getFluid().getAmount() - maxDrain);
+                setFluid(drainedRemainder);
+            }
         }
         return result;
+    }
+
+    public void swapToFluid(FluidStack target) {
+        List<FluidStack> fluids = getFluids();
+        // switch to empty from a fluid
+        if (!getFluid().isEmpty() && target.isEmpty()) {
+            fluids.add(getFluid().copy());
+            fluids.set(0, FluidStack.EMPTY);
+        } else if(getFluid().isEmpty() && !target.isEmpty()){
+            int index = -1;
+            for(int i = 0; i < fluids.size(); i++) {
+                if (fluids.get(i).isFluidEqual(target)) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index == -1) {
+                return;
+            }
+
+            fluids.set(0, fluids.get(index).copy());
+            fluids.set(index, FluidStack.EMPTY);
+        }
+        setFluids(fluids);
     }
 }

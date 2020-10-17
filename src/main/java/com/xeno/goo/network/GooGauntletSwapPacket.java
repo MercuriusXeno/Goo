@@ -1,15 +1,11 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.blocks.GooBulbItem;
+import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.Gauntlet;
-import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTile;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.Hand;
 import net.minecraftforge.common.util.LazyOptional;
@@ -20,8 +16,6 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public class GooGauntletSwapPacket implements IGooModPacket
@@ -88,41 +82,36 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 return;
             }
             ItemStack i = player.inventory.getStackInSlot(index);
-            if (!(i.getItem() instanceof GooBulbItem)) {
+            if (!(i.getItem() instanceof Basin)) {
                 continue;
             }
 
-            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
-            int amountToDrain = cap.getTankCapacity(0) - heldGoo.getAmount();
-            CompoundNBT tag = bulbTag.getCompound("goo");
-            List<FluidStack> heldStacks = GooBulbTile.deserializeGooForDisplay(tag);
-            for(FluidStack stack : heldStacks) {
-                if (!stack.getFluid().equals(target.getFluid())) {
-                    continue;
+            LazyOptional<IFluidHandlerItem> lazyCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+            if (lazyCap.isPresent()) {
+                boolean[] hadResult = {false};
+                lazyCap.ifPresent((c) -> hadResult[0] = raidBasinForGoo((BasinAbstractionCapability) c, cap));
+                if (hadResult[0]) {
+                    return;
                 }
-
-                int availableToDrain = Math.min(amountToDrain, stack.getAmount());
-                stack.setAmount(stack.getAmount() - availableToDrain);
-                FluidStack fillStack = target.copy();
-                fillStack.setAmount(availableToDrain);
-                cap.fill(fillStack, IFluidHandler.FluidAction.EXECUTE);
             }
-            heldStacks.removeIf(FluidStack::isEmpty);
-
-            // rewrite the goo tag.
-            tag = new CompoundNBT();
-            for(int g = 0; g < heldStacks.size(); g++) {
-                FluidStack stack = heldStacks.get(g);
-                tag.put("goo" + g, stack.writeToNBT(new CompoundNBT()));
-            }
-            tag.putInt("count", heldStacks.size());
-            bulbTag.put("goo", tag);
-            CompoundNBT itemTag = i.getTag();
-            itemTag.put("BlockEntityTag", bulbTag);
-            i.setTag(itemTag);
-            player.inventory.setInventorySlotContents(index, i);
-            player.inventory.markDirty();
         }
+    }
+
+    private boolean raidBasinForGoo(BasinAbstractionCapability c, IFluidHandlerItem cap) {
+        FluidStack result = c.drain(target, IFluidHandler.FluidAction.SIMULATE);
+        if (result.isEmpty()) {
+            return false;
+        }
+        int amountCanFill = cap.fill(result, IFluidHandler.FluidAction.SIMULATE);
+        if (amountCanFill == 0) {
+            return false;
+        }
+
+        if (amountCanFill < target.getAmount()) {
+            target.setAmount(amountCanFill);
+        }
+        cap.fill(c.drain(target, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     private void tryEmptyingGauntletIntoInventoryContainer(PlayerEntity player, IFluidHandlerItem cap) {
@@ -132,59 +121,34 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 return;
             }
             ItemStack i = player.inventory.getStackInSlot(index);
-            if (!(i.getItem() instanceof GooBulbItem)) {
+            if (!(i.getItem() instanceof Basin)) {
                 continue;
             }
 
-            CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(i, Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString());
-            CompoundNBT tag = bulbTag.getCompound("goo");
-            int size = tag.getInt("count");
-            int containment = EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), i);
-            int storageMax = GooBulbTile.storageForDisplay(containment);
-            int stored = 0;
-            int foundHeldGoo = -1;
-            for(int g = 0; g < size; g++) {
-                CompoundNBT gooTag = tag.getCompound("goo" + g);
-                FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-                stored += stack.getAmount();
-                if (stack.getFluid().equals(heldGoo.getFluid())) {
-                    foundHeldGoo = g;
+            LazyOptional<IFluidHandlerItem> lazyCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+            if (lazyCap.isPresent()) {
+                boolean[] hadResult = {false};
+                lazyCap.ifPresent((c) -> hadResult[0] = dumpGooInBasin((BasinAbstractionCapability) c, cap));
+                if (hadResult[0]) {
+                    return;
                 }
             }
-            int maxCanStore = storageMax - stored;
-            if (maxCanStore <= 0) {
-                continue;
-            }
-
-            // figure out if we're holding more than this bulb can hold, and reduce the stack
-            FluidStack stackToDrain = heldGoo.copy();
-            if (stackToDrain.getAmount() > maxCanStore) {
-                stackToDrain.setAmount(maxCanStore);
-            }
-
-            // while we were iterating over the goo to count it, we never found our goo type
-            // add a stack to the nbt tag and we'll write over it at the end.
-            if (foundHeldGoo == -1) {
-                cap.drain(stackToDrain, IFluidHandler.FluidAction.EXECUTE);
-                tag.putInt("count", size + 1);
-                CompoundNBT gooTag = new CompoundNBT();
-                stackToDrain.writeToNBT(gooTag);
-                tag.put("goo" + size, gooTag);
-            } else {
-                cap.drain(stackToDrain, IFluidHandler.FluidAction.EXECUTE);
-                CompoundNBT gooTag = tag.getCompound("goo" + foundHeldGoo);
-                FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-                stack.setAmount(stack.getAmount() + stackToDrain.getAmount());
-                stack.writeToNBT(gooTag);
-                tag.put("goo" + foundHeldGoo, gooTag);
-            }
-
-            bulbTag.put("goo", tag);
-            CompoundNBT itemTag = i.getTag();
-            itemTag.put("BlockEntityTag", bulbTag);
-            i.setTag(itemTag);
-            player.inventory.setInventorySlotContents(index, i);
-            player.inventory.markDirty();
         }
+    }
+
+    private boolean dumpGooInBasin(BasinAbstractionCapability c, IFluidHandlerItem cap) {
+        FluidStack dumpAll = cap.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        if (dumpAll.isEmpty()) {
+            return false;
+        }
+
+        int amountCanDump = c.fill(dumpAll, IFluidHandler.FluidAction.SIMULATE);
+        if (amountCanDump == 0) {
+            return false;
+        }
+
+        dumpAll.setAmount(amountCanDump);
+        c.fill(cap.drain(dumpAll, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 }

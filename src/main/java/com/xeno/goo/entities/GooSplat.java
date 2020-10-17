@@ -65,10 +65,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     private int cooldown = 0;
     private int lastGooAmount = 0;
     private boolean isAtRest;
-
-    public static GooSplat createPlacedSplat(PlayerEntity player, BlockPos pos, Direction side, Vector3d hit, FluidStack thrownStack) {
-        return new GooSplat(Registry.GOO_SPLAT.get(), player,  player.world, thrownStack, hit, pos, side);
-    }
+    private float imperceptibleOffset = 0f;
 
     public Vector3d shape()
     {
@@ -83,26 +80,35 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         super(type, world);
     }
 
-    public GooSplat(EntityType<GooSplat> type, Entity sender, World world, FluidStack traceGoo, Vector3d hitVec, BlockPos pos, Direction face) {
+    public GooSplat(EntityType<GooSplat> type, Entity sender, World world, FluidStack traceGoo, Vector3d hitVec,
+                    BlockPos pos, Direction face, boolean playSound, float imperceptibleOffset) {
         super(type, world);
         this.goo = traceGoo;
         this.owner = sender;
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
         this.isAtRest = false;
+        this.imperceptibleOffset = imperceptibleOffset;
         // send clients the updated size, it defaults to 1
         setSize();
         Vector3d findCenter = findCenter(hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
-        AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
-                1.0f, AudioHelper.PitchFormulas.HalfToOne);
+        if (playSound) {
+            AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
+                    1.0f, AudioHelper.PitchFormulas.HalfToOne);
+        }
+    }
+
+    public static GooSplat createPlacedSplat(PlayerEntity player, BlockPos pos, Direction side, Vector3d hit,
+                                             FluidStack thrownStack, boolean playSound, float imperceptibleOffset) {
+        return new GooSplat(Registry.GOO_SPLAT.get(), player,  player.world, thrownStack, hit, pos, side, playSound, imperceptibleOffset);
     }
 
     private void updateSplatState()
     {
         double cubicArea = goo.getAmount() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / PUDDLE_DEPTH;
-        double sideLength = Math.min(0.98d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
+        double sideLength = Math.min(0.999d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
         // this will be puddle depth const until sidelength gets throttled.
         double actualDepth = cubicArea / (sideLength * sideLength);
         switch (depthAxis()) {
@@ -124,6 +130,26 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         resetBox();
     }
 
+    private Vector3d findCenter(Vector3d hitVec)
+    {
+        switch(sideWeLiveOn) {
+            case NORTH:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - (0.01d + imperceptibleOffset)));
+            case SOUTH:
+                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + ((0.01d + imperceptibleOffset) + box.maxZ));
+            case DOWN:
+                return new Vector3d(hitVec.x, hitVec.y + (box.minY - (0.01d + imperceptibleOffset)), hitVec.z);
+            case UP:
+                return new Vector3d(hitVec.x, hitVec.y + ((0.01d + imperceptibleOffset) + box.maxY), hitVec.z);
+            case WEST:
+                return new Vector3d(hitVec.x + (box.minX - (0.01d + imperceptibleOffset)), hitVec.y, hitVec.z);
+            case EAST:
+                return new Vector3d(hitVec.x + ((0.01d + imperceptibleOffset) + box.maxX), hitVec.y, hitVec.z);
+        }
+        // something weird happened that wasn't supposed to.
+        return hitVec;
+    }
+
     /**
      * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
      */
@@ -141,26 +167,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         if (box != null && this.goo.getAmount() > 0) {
             this.setBoundingBox(box.offset(this.getPositionVec()));
         }
-    }
-
-    private Vector3d findCenter(Vector3d hitVec)
-    {
-        switch(sideWeLiveOn) {
-            case NORTH:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (box.minZ - 0.01d));
-            case SOUTH:
-                return new Vector3d(hitVec.x, hitVec.y, hitVec.z + (0.01d + box.maxZ));
-            case DOWN:
-                return new Vector3d(hitVec.x, hitVec.y + (box.minY - 0.01d), hitVec.z);
-            case UP:
-                return new Vector3d(hitVec.x, hitVec.y + (0.01d + box.maxY), hitVec.z);
-            case WEST:
-                return new Vector3d(hitVec.x + (box.minX - 0.01d), hitVec.y, hitVec.z);
-            case EAST:
-                return new Vector3d(hitVec.x + (0.01d + box.maxX), hitVec.y, hitVec.z);
-        }
-        // something weird happened that wasn't supposed to.
-        return hitVec;
     }
 
     public AxisAlignedBB getCollisionBoundingBox() {
@@ -272,9 +278,10 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
     {
         Vector3d attachmentPoint = Vector3d.copy(blockAttached)
                 .add(0.5d, 0.5d, 0.5d)
-                .add(0.51d * sideWeLiveOn.getXOffset(),
-                        0.51d * sideWeLiveOn.getYOffset(),
-                        0.51d * sideWeLiveOn.getZOffset())
+
+                .add((0.51d + imperceptibleOffset) * sideWeLiveOn.getXOffset(),
+                        (0.51d + imperceptibleOffset) * sideWeLiveOn.getYOffset(),
+                        (0.51d + imperceptibleOffset) * sideWeLiveOn.getZOffset())
                 .add((box.maxX) * sideWeLiveOn.getXOffset(),
                         (box.maxY) * sideWeLiveOn.getYOffset(),
                         (box.maxZ) * sideWeLiveOn.getZOffset());
@@ -479,15 +486,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             if (e instanceof GooSplat && ((GooSplat) e).goo().isFluidEqual(this.goo)) {
                 // must be dominant
                 if (this.goo.getAmount() < ((GooSplat)e).goo().getAmount()) {
-                    return false;
+                    continue;
                 }
                 // must be resting
-                if (!((GooSplat)e).isAtRest()) {
-                    return false;
+                if (!((GooSplat)e).isAtRest() && this.isAtRest()) {
+                    continue;
                 }
                 // must be living on the same side as us or it's just annoying
-                if (((GooSplat)e).sideWeLiveOn() != this.sideWeLiveOn) {
-                    return false;
+                if (((GooSplat)e).sideWeLiveOn() != this.sideWeLiveOn || !((GooSplat)e).blockAttached().equals(this.blockAttached)) {
+                    continue;
                 }
                 int amountToDrain = (int)Math.ceil(Math.sqrt(((GooSplat)e).goo().getAmount()) / 2d);
                 this.fill(((GooSplat) e).drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
@@ -496,7 +503,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                     // only try catching the goos flagged to bounce/return goo
                     // at the time of writing, hard coded.
                     if (!isAutoGrabbedGoo()) {
-                        return false;
+                        continue;
                     }
                     // try catching  it!
                     if (owner instanceof PlayerEntity) {
