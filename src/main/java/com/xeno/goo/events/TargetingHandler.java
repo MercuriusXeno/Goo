@@ -70,7 +70,7 @@ public class TargetingHandler
         if (PATCHOULI_BOOK.isEmpty()) {
             PATCHOULI_BOOK = new ItemStack(ItemsRegistry.GooAndYou.get());
         }
-        return player.inventory.mainInventory.stream().anyMatch(i -> i.equals(PATCHOULI_BOOK, false));
+        return player.inventory.mainInventory.stream().anyMatch(i -> i.getItem().equals(PATCHOULI_BOOK.getItem()));
     }
 
     private static boolean hasEntry(World entityWorld)
