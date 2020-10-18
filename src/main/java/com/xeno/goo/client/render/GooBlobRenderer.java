@@ -68,17 +68,17 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
 
         switch (d) {
             case UP:
-                return new Vector3f[] { une, use, usw, unw };
+                return new Vector3f[] { unw, usw, use, une};
             case DOWN:
-                return new Vector3f[] { dse, dne, dnw, dsw };
+                return new Vector3f[] { dsw, dnw, dne, dse };
             case NORTH:
-                return new Vector3f[] { unw, dnw, dne, une };
+                return new Vector3f[] { une, dne, dnw, unw };
             case SOUTH:
-                return new Vector3f[] { use, dse, dsw, usw };
+                return new Vector3f[] { usw, dsw, dse, use };
             case WEST:
-                return new Vector3f[] { usw, dsw, dnw, unw };
+                return new Vector3f[] { unw, dnw, dsw, usw };
             case EAST:
-                return new Vector3f[] { une, dne, dse, use };
+                return new Vector3f[] { use, dse, dne, une };
         }
 
         // failure state;
@@ -187,7 +187,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         buffer.getVertexBuilder()
                 .pos(matrix, v[0].getX(), v[0].getY(), v[0].getZ())
                 .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
-                .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(0f))
+                .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal(ns[0].getX(), ns[0].getY(), ns[0].getZ())
@@ -195,7 +195,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         buffer.getVertexBuilder()
                 .pos(matrix, v[1].getX(), v[1].getY(), v[1].getZ())
                 .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
-                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f))
+                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal(ns[1].getX(), ns[1].getY(), ns[1].getZ())
@@ -203,7 +203,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         buffer.getVertexBuilder()
                 .pos(matrix, v[2].getX(), v[2].getY(), v[2].getZ())
                 .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
-                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(16f))
+                .tex(sprite.getInterpolatedU(0f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal(ns[2].getX(), ns[2].getY(), ns[2].getZ())
@@ -211,7 +211,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         buffer.getVertexBuilder()
                 .pos(matrix, v[3].getX(), v[3].getY(), v[3].getZ())
                 .color(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF, color >> 24 & 0xFF)
-                .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(16f))
+                .tex(sprite.getInterpolatedU(16f), sprite.getInterpolatedV(0f))
                 .overlay(NO_OVERLAY)
                 .lightmap(light)
                 .normal(ns[3].getX(), ns[3].getY(), ns[3].getZ())

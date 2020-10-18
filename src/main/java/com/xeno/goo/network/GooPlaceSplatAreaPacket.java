@@ -166,7 +166,9 @@ public class GooPlaceSplatAreaPacket implements IGooModPacket {
             // basins have slightly more strict placement guidelines than gauntlets because they will
             // try to place splats in places the player can't see by design. Don't allow non-air block placements
             BlockState splatZoneState = player.world.getBlockState(actualPos.offset(side));
-            if (!splatZoneState.isAir(player.world, actualPos.offset(side))) {
+            boolean isAir = splatZoneState.isAir(player.world, actualPos.offset(side));
+            boolean isReplaceable = splatZoneState.getMaterial().isReplaceable();
+            if (!isAir && !isReplaceable) {
                 continue;
             }
 

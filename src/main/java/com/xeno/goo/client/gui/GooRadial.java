@@ -3,7 +3,6 @@ package com.xeno.goo.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.BasinAbstractionCapability;
@@ -11,9 +10,6 @@ import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.network.GooBasinSwapPacket;
 import com.xeno.goo.network.GooGauntletSwapPacket;
 import com.xeno.goo.network.Networking;
-import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
@@ -25,7 +21,6 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
@@ -42,6 +37,7 @@ import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 @Mod.EventBusSubscriber(Dist.CLIENT)
@@ -190,9 +186,12 @@ public class GooRadial extends Screen {
         Map<Fluid, FluidStack> result = new TreeMap<>(Comparator
                 .comparing(putEmptyFirstFunction)
                 .thenComparing(lexicographicalFunction));
-        if (!isGauntletOrBasinEmpty(player)) {
+
+        FluidStack heldStack = heldGooStack(player);
+        if (!heldStack.isEmpty()) {
             result.put(Fluids.EMPTY, FluidStack.EMPTY);
         }
+
         for (ItemStack i : player.inventory.mainInventory) {
             if (i.getItem() instanceof Basin) {
                 List<FluidStack> basinStacks = new ArrayList<>();
@@ -201,6 +200,8 @@ public class GooRadial extends Screen {
                     lazyHandler.ifPresent((c) -> basinStacks.addAll(((BasinAbstractionCapability)c).getFluids()));
                 }
 
+                basinStacks.removeIf(heldStack::isFluidEqual);
+
                 basinStacks.forEach((s) -> pushToMap(result, s));
             }
         }
@@ -208,21 +209,24 @@ public class GooRadial extends Screen {
         result.forEach((k, v) -> listResult.add(v));
         return listResult;
     }
+//
+//    private boolean isGauntletOrBasinEmpty(ClientPlayerEntity player) {
+//        return heldGooStack(player).isEmpty();
+//    }
 
-    private boolean isGauntletOrBasinEmpty(ClientPlayerEntity player) {
+    private FluidStack heldGooStack(ClientPlayerEntity player) {
         ItemStack stack = player.getHeldItem(Hand.MAIN_HAND);
+        AtomicReference<FluidStack> result = new AtomicReference<>();
         if (stack.getItem() instanceof Gauntlet) {
             LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-            boolean[] isEmpty = {false};
-            lazyCap.ifPresent(c -> isEmpty[0] = c.getFluidInTank(0).isEmpty());
-            return isEmpty[0];
+            lazyCap.ifPresent(c -> result.set(c.getFluidInTank(0)));
+            return result.get();
         } else if (stack.getItem() instanceof Basin) {
             LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-            boolean[] isEmpty = {false};
-            lazyCap.ifPresent(c -> isEmpty[0] = c.getFluidInTank(0).isEmpty());
-            return isEmpty[0];
+            lazyCap.ifPresent(c -> result.set(c.getFluidInTank(0)));
+            return result.get();
         }
-        return false;
+        return FluidStack.EMPTY;
     }
 
     private void pushToMap(Map<Fluid, FluidStack> result, FluidStack s) {

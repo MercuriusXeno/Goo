@@ -15,7 +15,6 @@ public class Radiant
 
     private static boolean radiantLight(SplatContext context) {
         BlockPos blockPos = context.blockPos().offset(context.sideHit());
-        BlockState state = context.world().getBlockState(blockPos);
         return context.world().setBlockState(blockPos, BlocksRegistry.RadiantLight.get().getDefaultState()
             .with(BlockStateProperties.FACING, context.sideHit()));
     }

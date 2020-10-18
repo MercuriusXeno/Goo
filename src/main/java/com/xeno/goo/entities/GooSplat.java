@@ -489,7 +489,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                     continue;
                 }
                 // must be resting
-                if (!((GooSplat)e).isAtRest() && this.isAtRest()) {
+                if (!((GooSplat)e).isAtRest() || !this.isAtRest()) {
                     continue;
                 }
                 // must be living on the same side as us or it's just annoying

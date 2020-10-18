@@ -1,8 +1,6 @@
 package com.xeno.goo.blocks;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.SoundType;
+import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.state.StateContainer;
@@ -13,6 +11,8 @@ import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IWorld;
+import net.minecraft.world.IWorldReader;
 
 import static net.minecraft.state.properties.BlockStateProperties.FACING;
 
@@ -102,6 +102,22 @@ public class RadiantLight extends Block {
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(FACING, context.getFace());
+    }
+
+    @Override
+    public void onNeighborChange(BlockState state, IWorldReader world, BlockPos pos, BlockPos neighbor) {
+        // NO OP
+    }
+
+    public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
+        return !stateIn.isValidPosition(worldIn, currentPos) ? Blocks.AIR.getDefaultState() : stateIn;
+    }
+
+    public boolean isValidPosition(BlockState state, IWorldReader worldIn, BlockPos pos) {
+        Direction direction = state.get(FACING);
+        BlockPos blockpos = pos.offset(direction.getOpposite());
+        BlockState blockstate = worldIn.getBlockState(blockpos);
+        return blockstate.isSolidSide(worldIn, blockpos, direction);
     }
 
     @Override
