@@ -38,13 +38,13 @@
       "5.text": "goo.description.logic",
       "6.image": "goo:textures/icons/metal_short.png",
       "6.text": "goo.description.metal",
-      "7.image": "goo:textures/block/empty.png",
-      "7.text": ""
+      "7.image": "goo:textures/icons/obsidian_short.png",
+      "7.text": "goo.description.obsidian"
     },
     {
       "type": "goo:goo_items",
-      "1.image": "goo:textures/icons/obsidian_short.png",
-      "1.text": "goo.description.obsidian",
+      "1.image": "goo:textures/icons/radiant_short.png",
+      "1.text": "goo.description.radiant",
       "2.image": "goo:textures/icons/regal_short.png",
       "2.text": "goo.description.regal",
       "3.image": "goo:textures/icons/slime_short.png",
