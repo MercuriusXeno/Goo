@@ -35,7 +35,7 @@ public class MixerRecipes
         recipes.clear();
         addRecipe(new MixerRecipe(fluid(Registry.CRYSTAL_GOO, 1), fluid(Registry.OBSIDIAN_GOO, 8), fluid(Registry.WEIRD_GOO)));
         addRecipe(new MixerRecipe(fluid(Registry.EARTHEN_GOO, 1), fluid(Registry.AQUATIC_GOO, 1), fluid(Registry.DECAY_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.ENERGETIC_GOO, 1), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.DECAY_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.ENERGETIC_GOO, 1), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.RADIANT_GOO)));
         addRecipe(new MixerRecipe(fluid(Registry.METAL_GOO, 1), fluid(Registry.REGAL_GOO), fluid(Registry.DECAY_GOO)));
         addRecipe(new MixerRecipe(fluid(Registry.OBSIDIAN_GOO, 1), fluid(Registry.AQUATIC_GOO), fluid(Registry.MOLTEN_GOO, 8)));
         addRecipe(new MixerRecipe(fluid(Registry.REGAL_GOO, 1), fluid(Registry.CRYSTAL_GOO), fluid(Registry.DECAY_GOO)));

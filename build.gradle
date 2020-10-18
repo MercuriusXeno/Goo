@@ -19,6 +19,7 @@ apply plugin: 'maven-publish'
 
 version = "${goo_version}"
 group = mod_group
+archivesBaseName = mod_name + "-" + minecraft_version
 
 sourceSets.main {
     resources {
