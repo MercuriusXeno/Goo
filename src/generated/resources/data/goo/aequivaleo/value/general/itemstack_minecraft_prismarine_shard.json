@@ -18,12 +18,16 @@
   ],
   "compounds": [
     {
+      "amount": 12.0,
+      "type": "goo:aquatic"
+    },
+    {
       "amount": 1.0,
       "type": "goo:crystal"
     },
     {
-      "amount": 12.0,
-      "type": "goo:aquatic"
+      "amount": 10.0,
+      "type": "goo:radiant"
     },
     {
       "amount": 1.0,

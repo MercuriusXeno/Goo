@@ -1,0 +1,25 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"goo:radiant_goo_chunk\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "goo:radiant_goo_chunk"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 10000.0,
+      "type": "goo:radiant"
+    }
+  ]
+}

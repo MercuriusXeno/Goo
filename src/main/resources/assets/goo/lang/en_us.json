@@ -7,6 +7,7 @@
   "block.goo.crucible": "Crucible",
   "block.goo.drain": "Drain",
   "block.goo.lobber": "Lobber",
+  "block.goo.radiant_light": "Radiant Light",
 
   "numbers.notation.thousand": "k",
   "numbers.notation.million": "m",
@@ -103,6 +104,12 @@
   "item.goo.obsidian_goo_chunk": "Obsidian Chunk",
   "item.goo.obsidian_goo_slab": "Obsidian Slab",
 
+  "item.goo.radiant_goo_sliver": "Radiant Sliver",
+  "item.goo.radiant_goo_shard": "Radiant Shard",
+  "item.goo.radiant_goo_crystal": "Radiant Crystal",
+  "item.goo.radiant_goo_chunk": "Radiant Chunk",
+  "item.goo.radiant_goo_slab": "Radiant Slab",
+
   "item.goo.regal_goo_sliver": "Regal Sliver",
   "item.goo.regal_goo_shard": "Regal Shard",
   "item.goo.regal_goo_crystal": "Regal Crystal",
@@ -149,6 +156,7 @@
   "fluid.goo.metal_goo": "Metal",
   "fluid.goo.molten_goo": "Molten",
   "fluid.goo.obsidian_goo": "Obsidian",
+  "fluid.goo.radiant_goo": "Regal",
   "fluid.goo.regal_goo": "Regal",
   "fluid.goo.slime_goo": "Slime",
   "fluid.goo.snow_goo": "Snow",
@@ -211,6 +219,7 @@
   "goo.description.metal": "Refined minerals",
   "goo.description.molten": "Lava and heat",
   "goo.description.obsidian": "Igneous rock",
+  "goo.description.radiant": "Glow and light",
   "goo.description.regal": "Luster and royalty",
   "goo.description.slime": "True goo",
   "goo.description.snow": "Ice and cold",

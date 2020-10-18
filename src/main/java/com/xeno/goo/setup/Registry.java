@@ -119,6 +119,7 @@ public class Registry {
     public static final RegistryObject<GooFluid> METAL_GOO = registerGooFluid("metal_goo", Resources.Still.METAL_GOO, Resources.Flowing.METAL_GOO, Resources.Icon.METAL_GOO);
     public static final RegistryObject<GooFluid> MOLTEN_GOO = registerGooFluid("molten_goo", Resources.Still.MOLTEN_GOO, Resources.Flowing.MOLTEN_GOO, Resources.Icon.MOLTEN_GOO);
     public static final RegistryObject<GooFluid> OBSIDIAN_GOO = registerGooFluid("obsidian_goo", Resources.Still.OBSIDIAN_GOO, Resources.Flowing.OBSIDIAN_GOO, Resources.Icon.OBSIDIAN_GOO);
+    public static final RegistryObject<GooFluid> RADIANT_GOO = registerGooFluid("radiant_goo", Resources.Still.RADIANT_GOO, Resources.Flowing.RADIANT_GOO, Resources.Icon.RADIANT_GOO);
     public static final RegistryObject<GooFluid> REGAL_GOO = registerGooFluid("regal_goo", Resources.Still.REGAL_GOO, Resources.Flowing.REGAL_GOO, Resources.Icon.REGAL_GOO);
     public static final RegistryObject<GooFluid> SLIME_GOO = registerGooFluid("slime_goo", Resources.Still.SLIME_GOO, Resources.Flowing.SLIME_GOO, Resources.Icon.SLIME_GOO);
     public static final RegistryObject<GooFluid> SNOW_GOO = registerGooFluid("snow_goo", Resources.Still.SNOW_GOO, Resources.Flowing.SNOW_GOO, Resources.Icon.SNOW_GOO);
@@ -150,6 +151,7 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> METAL = registerCompound("metal", METAL_GOO);
     public static final RegistryObject<GooCompoundType> MOLTEN = registerCompound("molten", MOLTEN_GOO);
     public static final RegistryObject<GooCompoundType> OBSIDIAN = registerCompound("obsidian", OBSIDIAN_GOO);
+    public static final RegistryObject<GooCompoundType> RADIANT = registerCompound("radiant", RADIANT_GOO);
     public static final RegistryObject<GooCompoundType> REGAL = registerCompound("regal", REGAL_GOO);
     public static final RegistryObject<GooCompoundType> SLIME = registerCompound("slime", SLIME_GOO);
     public static final RegistryObject<GooCompoundType> SNOW = registerCompound("snow", SNOW_GOO);
@@ -194,6 +196,8 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> MOLTEN_LANDING_GOO_PARTICLE = PARTICLES.register("molten_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> OBSIDIAN_FALLING_GOO_PARTICLE = PARTICLES.register("obsidian_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> OBSIDIAN_LANDING_GOO_PARTICLE = PARTICLES.register("obsidian_landing_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> RADIANT_FALLING_GOO_PARTICLE = PARTICLES.register("radiant_falling_goo", () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> RADIANT_LANDING_GOO_PARTICLE = PARTICLES.register("radiant_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> REGAL_FALLING_GOO_PARTICLE = PARTICLES.register("regal_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> REGAL_LANDING_GOO_PARTICLE = PARTICLES.register("regal_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> SLIME_FALLING_GOO_PARTICLE = PARTICLES.register("slime_falling_goo", () -> new BasicParticleType(false));
@@ -222,6 +226,7 @@ public class Registry {
         fallingParticleLookupCache.put(METAL_GOO.get(), METAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_FALLING_GOO_PARTICLE.get());
+        fallingParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(REGAL_GOO.get(), REGAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(SLIME_GOO.get(), SLIME_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(SNOW_GOO.get(), SNOW_FALLING_GOO_PARTICLE.get());

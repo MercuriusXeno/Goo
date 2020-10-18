@@ -23,11 +23,15 @@
     },
     {
       "amount": 2.0,
-      "type": "goo:weird"
+      "type": "goo:crystal"
+    },
+    {
+      "amount": 20.0,
+      "type": "goo:radiant"
     },
     {
       "amount": 2.0,
-      "type": "goo:crystal"
+      "type": "goo:weird"
     }
   ]
 }
