@@ -142,21 +142,25 @@ jar {
     }
 }
 
-task replaceResources(type: Copy) {
-    outputs.upToDateWhen { false }
-    from(sourceSets.main.resources) {
-        include "META-INF/mods.toml"
+processResources {
+    inputs.property "goo_version", goo_version
+    inputs.property "minecraft_version", minecraft_version
+    inputs.property "forge_version", min_forge_version
+    inputs.property "loader_version", loader_version
+    inputs.property "aequivaleo_version", aequivaleo_version
+    inputs.property "patchouli_version", patchouli_version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'META-INF/mods.toml'
+
         expand "goo_version": goo_version, "minecraft_version": minecraft_version,
                 "forge_version": min_forge_version, "loader_version": loader_version,
                 "aequivaleo_version": aequivaleo_version, "patchouli_version": patchouli_version
     }
-    into "$buildDir/resources/main/"
-}
 
-processResources {
-    //Exclude the mods.toml file as we manually handle that and don't want it to invalidate our cache
-    exclude 'META-INF/mods.toml'
-    finalizedBy replaceResources
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'META-INF/mods.toml'
+    }
 }
 
 // Example configuration to allow publishing using the maven-publish task
