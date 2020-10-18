@@ -3,8 +3,6 @@ package com.xeno.goo.datagen;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.locked.LockedInformationProvider;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.aequivaleo.compound.GooCompoundType;
-import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
@@ -13,8 +11,6 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
-
-import java.util.function.Supplier;
 
 public class LockedInformationsProvider extends LockedInformationProvider
 {
@@ -139,19 +135,19 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.BEEF, faunal(15), vital(1));
         saveData(Items.BEETROOT, floral(15), vital(1), chromatic(240));
         saveData(Items.BEETROOT_SEEDS, floral(15));
-        saveData(Items.BLAZE_ROD, molten(120));
+        saveData(Items.BLAZE_ROD, molten(192));
         saveData(Items.BONE, faunal(30), chromatic(360), vital(3), decay(60));
         saveData(Items.BROWN_MUSHROOM, fungal(15), vital(1));
         saveData(Items.BROWN_MUSHROOM_BLOCK, fungal(5));
         saveData(Items.CACTUS, floral(120), chromatic(240), vital (1));
         saveData(Items.CARROT, floral(60), vital(1));
         saveData(Items.CARVED_PUMPKIN, floral(5), weird(1));
-        saveData(Items.CHARCOAL, molten(128), floral(32), energetic(32));
+        saveData(Items.CHARCOAL, molten(128), floral(32));
         saveData(Items.CHICKEN, faunal(15), vital(1));
         saveData(Items.CHORUS_FLOWER, floral(30), weird(6), vital(1));
         saveData(Items.CHORUS_FRUIT, floral(15), weird(4), vital(1));
         saveData(Items.CLAY_BALL, earthen(60));
-        saveData(Items.COAL, molten(128), earthen(16), energetic(32));
+        saveData(Items.COAL, molten(128), earthen(16));
         saveData(Items.COBWEB, faunal(15));
         saveData(Items.COD, faunal(15), vital(1));
         saveData(Items.CRIMSON_NYLIUM, earthen(120), fungal(15), chromatic(60));
@@ -161,11 +157,12 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.EGG, faunal(15), vital(15));
         saveData(Items.EMERALD, regal(60), crystal(60));
         saveData(Items.END_STONE, earthen(120), weird(5), vital(1));
+        saveData(Items.END_ROD, radiant(20));
         saveData(Items.ENDER_PEARL, weird(30));
         saveData(Items.FEATHER, faunal(15));
         saveData(Items.GHAST_TEAR, weird(30), crystal(24));
         saveData(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), obsidian(240));
-        saveData(Items.GLOWSTONE_DUST, weird(5), energetic(30));
+        saveData(Items.GLOWSTONE_DUST, radiant(10));
         saveData(Items.GOLD_INGOT, metal(36), regal(72));
         saveData(Items.BELL, earthen(360), regal(216), metal(180), floral(128));
         saveData(Items.GRASS_BLOCK, earthen(180), floral(15));
@@ -192,8 +189,8 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.POISONOUS_POTATO, floral(15), weird(3));
         saveData(Items.PORKCHOP, faunal(15), vital(1));
         saveData(Items.POTATO, floral(15), vital(1));
-        saveData(Items.PRISMARINE_CRYSTALS, aquatic(12), crystal(2), weird(2));
-        saveData(Items.PRISMARINE_SHARD, aquatic(12), crystal(1), weird(1));
+        saveData(Items.PRISMARINE_CRYSTALS, aquatic(12), crystal(2), weird(2), radiant(20));
+        saveData(Items.PRISMARINE_SHARD, aquatic(12), crystal(1), weird(1), radiant(10));
         saveData(Items.PUFFERFISH, faunal(15), weird(6));
         saveData(Items.PUMPKIN, floral(60));
         saveData(Items.QUARTZ, earthen(60), crystal (1));
@@ -202,20 +199,24 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.RABBIT_HIDE, faunal(15));
         saveData(Items.RED_MUSHROOM, fungal(15), vital(1));
         saveData(Items.RED_MUSHROOM_BLOCK, fungal(5));
-        saveData(Items.REDSTONE, logic(15));
+        saveData(Items.REDSTONE, logic(15), radiant(5));
         saveData(Items.ROTTEN_FLESH, faunal(5), decay(60));
         saveData(Items.SALMON, faunal(15), vital(1));
         saveData(Items.SCUTE, faunal(60), weird(6), vital(1));
         saveData(Items.SEA_PICKLE, faunal(30), aquatic(60), chromatic(240));
         saveData(Items.SEAGRASS, floral(15), vital(1));
         saveData(Items.SHULKER_SHELL, faunal(60), weird(180));
-        saveData(Items.SHROOMLIGHT, weird(30), fungal(60));
+        saveData(Items.SHROOMLIGHT, radiant(40), fungal(60));
         saveData(Items.SLIME_BALL, slime(60));
         saveData(Items.SNOWBALL, snow(15), aquatic(15));
         saveData(Items.SOUL_SAND, earthen(180), vital(15), decay(60));
         saveData(Items.SOUL_SOIL, earthen(180), vital(15), decay(60));
+        saveData(Items.SOUL_CAMPFIRE, radiant(80), decay(60));
+        saveData(Items.SOUL_TORCH, radiant(5), decay(15));
         saveData(Items.SPIDER_EYE, faunal(15), weird(5));
         saveData(Items.STRING, faunal(15));
+        saveData(Items.CAMPFIRE, radiant(80));
+        saveData(Items.TORCH, radiant(5));
         // wool is too dang strong
         saveData(Items.WHITE_WOOL, faunal(15));
         saveData(Items.RED_WOOL, faunal(15), chromatic(15));
@@ -247,8 +248,8 @@ public class LockedInformationsProvider extends LockedInformationProvider
         saveData(Items.WHEAT_SEEDS, floral(15), vital(1));
 
         // containers
-        saveData(Items.LAVA_BUCKET, metal(216), molten(1080));
-        saveData(Items.MILK_BUCKET, metal(216), faunal(120));
+        saveData(Items.LAVA_BUCKET, metal(216), molten(1600));
+        saveData(Items.MILK_BUCKET, metal(216), faunal(15));
         saveData(Items.WATER_BUCKET, metal(216), aquatic(960));
 
         ItemsRegistry.CrystallizedGoo.forEach(this::registerLockedInfoForCrystallizedGoo);
@@ -277,6 +278,7 @@ public class LockedInformationsProvider extends LockedInformationProvider
     private static CompoundInstance metal(double d) { return new CompoundInstance(Registry.METAL.get(), d); }
     private static CompoundInstance molten(double d) { return new CompoundInstance(Registry.MOLTEN.get(), d); }
     private static CompoundInstance obsidian(double d) { return new CompoundInstance(Registry.OBSIDIAN.get(), d); }
+    private static CompoundInstance radiant(double d) { return new CompoundInstance(Registry.RADIANT.get(), d); }
     private static CompoundInstance regal(double d) { return new CompoundInstance(Registry.REGAL.get(), d); }
     private static CompoundInstance slime(double d) { return new CompoundInstance(Registry.SLIME.get(), d); }
     private static CompoundInstance snow(double d) { return new CompoundInstance(Registry.SNOW.get(), d); }

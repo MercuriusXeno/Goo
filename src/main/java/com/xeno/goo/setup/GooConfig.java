@@ -176,6 +176,9 @@ public class GooConfig
                         .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
                 returnMap.put(k.getB() + "_returned", returnOfInteraction);
             }
+            if (fluid.equals(Registry.RADIANT_GOO.get())) {
+                actualCost = 4;
+            }
             if (fluid.equals(Registry.REGAL_GOO.get())) {
                 actualCost = 16;
                 int returnedAmount = actualCost - 8;

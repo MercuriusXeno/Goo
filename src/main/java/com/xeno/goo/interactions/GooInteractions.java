@@ -154,6 +154,7 @@ public class GooInteractions
         Metal.registerInteractions();
         Molten.registerInteractions();
         Obsidian.registerInteractions();
+        Radiant.registerInteractions();
         Regal.registerInteractions();
         Slime.registerInteractions();
         Snow.registerInteractions();

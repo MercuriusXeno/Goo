@@ -26,8 +26,8 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerCrucible();
         registerLobber();
         registerDrain();
+        registerRadiantLight();
     }
-
     private void registerDrain() {
         ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain_top");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain_side");
@@ -50,6 +50,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         simpleBlock(BlocksRegistry.Drain.get(), model);
         simpleBlockItem(BlocksRegistry.Drain.get(), model);
     }
+
 
     private void registerLobber() {
         ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber_front");
@@ -256,6 +257,40 @@ public class BlockStatesProvider extends BlockStateProvider {
         model.texture("end", end);
         model.texture("side", side);
         simpleBlock(base, model);
+    }
+
+
+    private void registerRadiantLight() {
+        ResourceLocation lightTop = new ResourceLocation(GooMod.MOD_ID, "block/radiant_top");
+        ResourceLocation lightSide = new ResourceLocation(GooMod.MOD_ID, "block/radiant_side");
+        BlockModelBuilder light = models()
+                .withExistingParent("radiant_light", "block/block")
+                .texture("particle", lightTop)
+                .element()
+                .from(3, 0, 3)
+                .to(13, 2, 13)
+                .allFaces((t, u) -> u.texture(t == Direction.DOWN ? "#light_top" :
+                        (t == Direction.UP ? "#light_top" : "#light_side"))
+                    .uvs(
+                            3f,
+                            t.getAxis().isVertical() ? 3f : 7f,
+                            13f,
+                            t.getAxis().isVertical() ? 13f : 9f
+                    ))
+                .end();
+        light.texture("light_top", lightTop);
+        light.texture("light_side", lightSide);
+
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.RadiantLight.get());
+        for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
+            int rotationX = getRotationXFromDirection(d);
+            int rotationY = getRotationYFromDirection(d);
+            bld.part().modelFile(light)
+                    .rotationX(rotationX).rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.FACING, d);
+        }
+        simpleBlockItem(BlocksRegistry.RadiantLight.get(), light);
     }
 
     private void registerGooPump() {
