@@ -14,11 +14,11 @@
     },
     {
       "amount": 60.0,
-      "type": "goo:decay"
+      "type": "goo:weird"
     },
     {
       "amount": 60.0,
-      "type": "goo:weird"
+      "type": "goo:decay"
     }
   ]
 }

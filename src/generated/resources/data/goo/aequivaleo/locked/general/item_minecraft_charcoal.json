@@ -14,10 +14,6 @@
     },
     {
       "amount": 32.0,
-      "type": "goo:energetic"
-    },
-    {
-      "amount": 32.0,
       "type": "goo:floral"
     }
   ]

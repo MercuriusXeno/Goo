@@ -1,0 +1,20 @@
+{
+  "mode": "ADDITIVE",
+  "target": {
+    "type": "aequivaleo:item",
+    "data": {
+      "count": 1.0,
+      "item": "minecraft:soul_torch"
+    }
+  },
+  "compounds": [
+    {
+      "amount": 5.0,
+      "type": "goo:radiant"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:decay"
+    }
+  ]
+}

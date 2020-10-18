@@ -9,6 +9,10 @@
   },
   "compounds": [
     {
+      "amount": 5.0,
+      "type": "goo:radiant"
+    },
+    {
       "amount": 15.0,
       "type": "goo:logic"
     }

@@ -9,12 +9,8 @@
   },
   "compounds": [
     {
-      "amount": 30.0,
-      "type": "goo:energetic"
-    },
-    {
-      "amount": 5.0,
-      "type": "goo:weird"
+      "amount": 10.0,
+      "type": "goo:radiant"
     }
   ]
 }
