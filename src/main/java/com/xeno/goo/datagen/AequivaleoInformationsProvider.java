@@ -135,7 +135,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.RED_SAND, new ItemStack(Items.RED_SAND)), earthen(180));
         saveData(newLinkedHashSet(Items.SAND, new ItemStack(Items.SAND)), earthen(180));
         saveData(newLinkedHashSet(Items.APPLE, new ItemStack(Items.APPLE)), floral(15), vital(1));
-        saveData(newLinkedHashSet(Items.BAMBOO, new ItemStack(Items.BAMBOO)), floral(8), vital(1));
+        saveData(newLinkedHashSet(Items.BAMBOO, new ItemStack(Items.BAMBOO)), floral(8));
         saveData(newLinkedHashSet(Items.BASALT, new ItemStack(Items.BASALT)), earthen(180), obsidian(6));
         saveData(newLinkedHashSet(Items.BEEF, new ItemStack(Items.BEEF)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.BEETROOT, new ItemStack(Items.BEETROOT)), floral(15), vital(1), chromatic(240));
@@ -219,6 +219,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.SOUL_CAMPFIRE, new ItemStack(Items.SOUL_CAMPFIRE)), radiant(80), decay(60));
         saveData(newLinkedHashSet(Items.SOUL_TORCH, new ItemStack(Items.SOUL_TORCH)), radiant(5), decay(15));
         saveData(newLinkedHashSet(Items.SPIDER_EYE, new ItemStack(Items.SPIDER_EYE)), faunal(15), weird(5));
+        saveData(newLinkedHashSet(Items.STICK, new ItemStack(Items.STICK)), floral(16));
         saveData(newLinkedHashSet(Items.STRING, new ItemStack(Items.STRING)), faunal(15));
         saveData(newLinkedHashSet(Items.CAMPFIRE, new ItemStack(Items.CAMPFIRE)), radiant(80));
         saveData(newLinkedHashSet(Items.TORCH, new ItemStack(Items.TORCH)), radiant(5));

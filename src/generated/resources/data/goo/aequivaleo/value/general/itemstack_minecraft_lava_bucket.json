@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 1600.0,
-      "type": "goo:molten"
-    },
-    {
       "amount": 216.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 1600.0,
+      "type": "goo:molten"
     }
   ]
 }

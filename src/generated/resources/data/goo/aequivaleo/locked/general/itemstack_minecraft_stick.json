@@ -5,25 +5,21 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:brain_coral_block\",Count:1b}"
+        "stack": "{id:\"minecraft:stick\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:brain_coral_block"
+        "item": "minecraft:stick"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 4.0,
-      "type": "goo:vital"
-    },
-    {
-      "amount": 20.0,
-      "type": "goo:faunal"
+      "amount": 16.0,
+      "type": "goo:floral"
     }
   ]
 }
