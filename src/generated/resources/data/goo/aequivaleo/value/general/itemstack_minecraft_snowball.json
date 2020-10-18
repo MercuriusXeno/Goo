@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:aquatic"
+      "type": "goo:snow"
     },
     {
       "amount": 15.0,
-      "type": "goo:snow"
+      "type": "goo:aquatic"
     }
   ]
 }

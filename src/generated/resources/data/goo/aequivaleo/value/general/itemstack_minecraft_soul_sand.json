@@ -22,12 +22,12 @@
       "type": "goo:earthen"
     },
     {
-      "amount": 15.0,
-      "type": "goo:vital"
-    },
-    {
       "amount": 60.0,
       "type": "goo:decay"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:vital"
     }
   ]
 }
