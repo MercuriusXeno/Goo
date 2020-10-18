@@ -294,11 +294,11 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     }
 
     public void swapToFluid(FluidStack target) {
-        List<FluidStack> fluids = getFluids();
         // switch to empty from a fluid
         if (!getFluid().isEmpty()) {
             shuffleEmptyToPrimary();
-        } 
+        }
+        List<FluidStack> fluids = getFluids();
         if(!target.isEmpty()){
             int index = -1;
             for(int i = 0; i < fluids.size(); i++) {
