@@ -19,6 +19,9 @@ public class Earthen
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_gravel", Earthen::edifyGravel, Earthen::isGravel);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_coarse_dirt", Earthen::edifyCoarseDirt, Earthen::isCoarseDirt);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_dirt", Earthen::edifyDirt, Earthen::isDirt);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_andesite", Earthen::edifyDirt, Earthen::isDirt);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_granite", Earthen::edifyDirt, Earthen::isDirt);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_diorite", Earthen::edifyDirt, Earthen::isDirt);
     }
 
     private static boolean isDirt(SplatContext splatContext) {

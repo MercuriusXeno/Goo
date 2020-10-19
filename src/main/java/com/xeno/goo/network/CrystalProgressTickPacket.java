@@ -17,44 +17,31 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class UpdateBulbCrystalProgressPacket implements IGooModPacket {
+public class CrystalProgressTickPacket implements IGooModPacket {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos pos;
-    private ItemStack crystal;
-    private FluidStack crystalProgress;
-    private int lastIncrement;
-    private ResourceLocation crystalFluid;
+    private int progressTicks;
 
-    public UpdateBulbCrystalProgressPacket(PacketBuffer buf) {
+    public CrystalProgressTickPacket(PacketBuffer buf) {
         read(buf);
     }
 
     public void read(PacketBuffer buf) {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.pos = buf.readBlockPos();
-        this.crystal = buf.readItemStack();
-        this.crystalProgress = buf.readFluidStack();
-        this.lastIncrement = buf.readInt();
-        this.crystalFluid = buf.readResourceLocation();
+        this.progressTicks = buf.readVarInt();
     }
 
-    public UpdateBulbCrystalProgressPacket(RegistryKey<World> registryKey, BlockPos pos, ItemStack stack, Fluid crystalFluid, FluidStack fluidStack,
-                                           int lastIncrement) {
+    public CrystalProgressTickPacket(RegistryKey<World> registryKey, BlockPos pos, int ticks) {
         this.worldRegistryKey = registryKey;
         this.pos = pos;
-        this.crystal = stack;
-        this.crystalProgress = fluidStack;
-        this.lastIncrement = lastIncrement;
-        this.crystalFluid = crystalFluid.getRegistryName();
+        this.progressTicks = ticks;
     }
 
     public void toBytes(PacketBuffer buf) {
         buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeBlockPos(pos);
-        buf.writeItemStack(crystal);
-        buf.writeFluidStack(crystalProgress);
-        buf.writeInt(lastIncrement);
-        buf.writeResourceLocation(crystalFluid);
+        buf.writeVarInt(progressTicks);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -68,8 +55,7 @@ public class UpdateBulbCrystalProgressPacket implements IGooModPacket {
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
                 if (te instanceof GooBulbTile) {
-                    ((GooBulbTile) te).updateCrystalProgress(this.crystal, this.lastIncrement,
-                            this.crystalFluid, this.crystalProgress);
+                    ((GooBulbTile) te).updateCrystalTicks(this.progressTicks);
                 }
             }
         });

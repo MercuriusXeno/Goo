@@ -22,7 +22,9 @@ public class Radiant
     private static boolean isValidForLightLocation(SplatContext context) {
         BlockPos blockPos = context.blockPos().offset(context.sideHit());
         BlockState state = context.world().getBlockState(blockPos);
-        return state.isAir(context.world(), blockPos) && context.blockState().isSolidSide(context.world(), context.blockPos(), context.sideHit());
+        boolean isAir = state.isAir(context.world(), blockPos);
+        boolean isReplaceable = state.getMaterial().isReplaceable();
+        return (isAir || isReplaceable) && context.blockState().isSolidSide(context.world(), context.blockPos(), context.sideHit());
     }
 
 }

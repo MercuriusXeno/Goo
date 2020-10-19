@@ -45,6 +45,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     // at level 1 this is also negligible
     public static final int PROGRESS_TICKS_PER_TIER_UP = 9;
     public static final int TICKS_PER_PROGRESS_TICK = 5;
+    private static final int RADIUS_BEFORE_WHO_CARES_HOW_STUTTERY_IT_LOOKS = 12;
     private final BulbFluidHandler fluidHandler = createHandler();
     private final LazyOptional<BulbFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
     private float verticalFillIntensity = 0f;
@@ -82,13 +83,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         if (world == null) {
             return;
         }
-        // let clientside increment progress ticks, this is harmless and for visuals.
-        // server occasionally "corrects" it if it's wrong.
-        if (!crystal.isEmpty()) {
-            crystalProgressTicks++;
-        } else {
-            crystalProgressTicks = 0;
-        }
 
         if (world.isRemote) {
             // vertical fill visuals are client-sided, for a reason. We get sent activity from server but
@@ -98,10 +92,21 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         }
 
         boolean isAnyCrystalProgress = false;
-        if (crystalProgressTicks >= TICKS_PER_PROGRESS_TICK) {
-            isAnyCrystalProgress = tryCrystalProgress();
+
+        // moving this to after the client side return so that clients can't get ahead of the server ticking for
+        // visuals. This is experimental.
+        if (!crystal.isEmpty()) {
+            crystalProgressTicks++;
+            if (crystalProgressTicks >= TICKS_PER_PROGRESS_TICK) {
+                crystalProgressTicks = 0;
+                isAnyCrystalProgress = tryCrystalProgress();
+            }
+            Networking.sendToClientsNearTarget(new CrystalProgressTickPacket(world.getDimensionKey(),
+                    this.pos, crystalProgressTicks), (ServerWorld)world, pos, RADIUS_BEFORE_WHO_CARES_HOW_STUTTERY_IT_LOOKS);
+        } else {
             crystalProgressTicks = 0;
         }
+
         boolean verticalDrained = tryVerticalDrain();
         boolean lateralShared = tryLateralShare();
         boolean didStuff = isAnyCrystalProgress || verticalDrained || lateralShared;
@@ -150,7 +155,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             }
 
             if (world instanceof ServerWorld) {
-                Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+                Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos,
+                        crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
             }
         } else {
             // there's no progress so we're about to start some.
@@ -192,12 +198,14 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
                 crystalFluid = Fluids.EMPTY;
                 lastIncrement = 0;
                 if (world instanceof ServerWorld) {
-                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(),
+                            this.pos, crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
                     AudioHelper.headlessAudioEvent(world, pos, Registry.CRYSTALLIZE_SOUND.get(), SoundCategory.BLOCKS, 1f, AudioHelper.PitchFormulas.HalfToOne);
                 }
             } else {
                 if (world instanceof ServerWorld) {
-                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+                    Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(),
+                            this.pos, crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
                 }
             }
         }
@@ -570,6 +578,9 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         gooStacks.sort(Compare.fluidAmountComparator);
         float total = gooStacks.stream().mapToInt(FluidStack::getAmount).sum();
         total -= crystalProgress.getAmount();
+        if (crystalProgress.getAmount() > 0 && progressTicks < TICKS_PER_PROGRESS_TICK) {
+            total -= (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
+        }
         if (total < 0) {
             return new Object2FloatOpenHashMap<>();
         }
@@ -584,9 +595,9 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         for (FluidStack g : gooStacks) {
             int totalGooInThisStack = g.getAmount();
             totalGooInThisStack -= crystalProgress.isFluidEqual(g) ? crystalProgress.getAmount() : 0;
-            if (g.isFluidEqual(crystalProgress)) {
+            if (g.isFluidEqual(crystalProgress) && progressTicks < GooBulbTile.TICKS_PER_PROGRESS_TICK) {
                 int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
-                totalGooInThisStack -= (crystalProgress.getAmount() + increment);
+                totalGooInThisStack -= increment;
                 if (totalGooInThisStack < 0) {
                     totalGooInThisStack = 0;
                 }
@@ -690,7 +701,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         e.setMotion(player.getPositionVec().subtract(spawnPos).normalize().scale(0.3d));
         crystal = ItemStack.EMPTY;
         if (world instanceof ServerWorld) {
-            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos,
+                    crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
         }
     }
 
@@ -704,7 +716,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         if (sendUpdate && world instanceof ServerWorld) {
             float gooHeight = calculateFluidHeight();
             ((ServerWorld)world).spawnParticle(ParticleTypes.SMOKE, pos.getX() + 0.5d, pos.getY() + gooHeight, pos.getZ() + 0.5d, 1, 0d, 0d, 0d, 0d);
-            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos,
+                    crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
         }
     }
 
@@ -716,7 +729,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     public void addCrystal(Item item) {
         crystal = new ItemStack(item);
         if (world instanceof ServerWorld) {
-            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos, crystal, crystalFluid, crystalProgress, crystalProgressTicks, lastIncrement), (ServerWorld)world, pos);
+            Networking.sendToClientsAround(new UpdateBulbCrystalProgressPacket(world.getDimensionKey(), this.pos,
+                    crystal, crystalFluid, crystalProgress, lastIncrement), (ServerWorld)world, pos);
         }
     }
 
@@ -728,14 +742,16 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return crystal;
     }
 
-    public void updateCrystalProgress(ItemStack crystal, int lastIncrement, ResourceLocation crystalFluid, FluidStack crystalProgress, int progressTicks) {
+    public void updateCrystalProgress(ItemStack crystal, int lastIncrement, ResourceLocation crystalFluid, FluidStack crystalProgress) {
         this.crystal = crystal;
         this.lastIncrement = lastIncrement;
         Fluid f = Registry.getFluid(crystalFluid.toString());
         this.crystalFluid = f == null ? Fluids.EMPTY : f;
         this.crystalProgress = crystalProgress;
-        this.crystalProgressTicks = progressTicks;
+    }
 
+    public void updateCrystalTicks(int progressTicks) {
+        this.crystalProgressTicks = progressTicks;
     }
 
     public int Increment() {
@@ -745,5 +761,4 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     public Fluid crystalFluid() {
         return crystalFluid;
     }
-
 }

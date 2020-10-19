@@ -5,6 +5,7 @@ import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.network.NetworkDirection;
@@ -103,12 +104,25 @@ public class Networking {
                 .decoder(UpdateBulbCrystalProgressPacket::new)
                 .consumer(UpdateBulbCrystalProgressPacket::handle)
                 .add();
+
+        INSTANCE.messageBuilder(CrystalProgressTickPacket.class, nextID())
+                .encoder(CrystalProgressTickPacket::toBytes)
+                .decoder(CrystalProgressTickPacket::new)
+                .consumer(CrystalProgressTickPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
         Chunk chunk = serverWorld.getChunkAt(position);
 
         INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), msg);
+    }
+
+    public static void sendToClientsNearTarget(Object msg, ServerWorld world, BlockPos pos, int radius) {
+        INSTANCE.send(PacketDistributor.NEAR
+                .with(PacketDistributor.TargetPoint.p(pos.getX() + 0.5d, pos.getY() + 0.5d,
+                        pos.getZ() + 0.5d, radius, world.getDimensionKey()))
+                , msg);
     }
 
     public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {

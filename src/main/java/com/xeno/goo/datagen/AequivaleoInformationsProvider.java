@@ -158,7 +158,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.CRIMSON_NYLIUM, new ItemStack(Items.CRIMSON_NYLIUM)), earthen(120), fungal(15), chromatic(60));
         saveData(newLinkedHashSet(Items.CRIMSON_FUNGUS, new ItemStack(Items.CRIMSON_FUNGUS)), fungal(15));
         saveData(newLinkedHashSet(Items.CRYING_OBSIDIAN, new ItemStack(Items.CRYING_OBSIDIAN)), weird(30), obsidian(960));
-        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(120));
+        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(240));
         saveData(newLinkedHashSet(Items.EGG, new ItemStack(Items.EGG)), faunal(15), vital(15));
         saveData(newLinkedHashSet(Items.EMERALD, new ItemStack(Items.EMERALD)), regal(60), crystal(60));
         saveData(newLinkedHashSet(Items.END_ROD, new ItemStack(Items.END_ROD)), radiant(20));
@@ -174,11 +174,11 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.GUNPOWDER, new ItemStack(Items.GUNPOWDER)), energetic(120));
         saveData(newLinkedHashSet(Items.HONEYCOMB, new ItemStack(Items.HONEYCOMB)), honey(40), regal(32));
         saveData(newLinkedHashSet(Items.HONEY_BLOCK, new ItemStack(Items.HONEY_BLOCK)), honey(120), regal(96));
-        saveData(newLinkedHashSet(Items.ICE, new ItemStack(Items.ICE)), snow(60), aquatic(60));
+        saveData(newLinkedHashSet(Items.ICE, new ItemStack(Items.ICE)), snow(60));
         saveData(newLinkedHashSet(Items.INK_SAC, new ItemStack(Items.INK_SAC)), faunal(15), chromatic(240));
         saveData(newLinkedHashSet(Items.IRON_INGOT, new ItemStack(Items.IRON_INGOT)), metal(72));
         saveData(newLinkedHashSet(Items.KELP, new ItemStack(Items.KELP)), floral(15), vital(1));
-        saveData(newLinkedHashSet(Items.LAPIS_LAZULI, new ItemStack(Items.LAPIS_LAZULI)), weird(4), chromatic(240), crystal(4));
+        saveData(newLinkedHashSet(Items.LAPIS_LAZULI, new ItemStack(Items.LAPIS_LAZULI)), weird(4), chromatic(240), crystal(6));
         saveData(newLinkedHashSet(Items.LILY_PAD, new ItemStack(Items.LILY_PAD)), floral(15), vital(1));
         saveData(newLinkedHashSet(Items.MAGMA_BLOCK, new ItemStack(Items.MAGMA_BLOCK)), slime(10), molten(10), earthen(180), decay(30));
         saveData(newLinkedHashSet(Items.MELON_SLICE, new ItemStack(Items.MELON_SLICE)), floral(15), vital(1));
@@ -194,11 +194,11 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.POISONOUS_POTATO, new ItemStack(Items.POISONOUS_POTATO)), floral(15), weird(3));
         saveData(newLinkedHashSet(Items.PORKCHOP, new ItemStack(Items.PORKCHOP)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.POTATO, new ItemStack(Items.POTATO)), floral(15), vital(1));
-        saveData(newLinkedHashSet(Items.PRISMARINE_CRYSTALS, new ItemStack(Items.PRISMARINE_CRYSTALS)), aquatic(12), crystal(2), weird(2), radiant(20));
-        saveData(newLinkedHashSet(Items.PRISMARINE_SHARD, new ItemStack(Items.PRISMARINE_SHARD)), aquatic(12), crystal(1), weird(1), radiant(10));
+        saveData(newLinkedHashSet(Items.PRISMARINE_CRYSTALS, new ItemStack(Items.PRISMARINE_CRYSTALS)), aquatic(120), crystal(3), weird(3), radiant(20));
+        saveData(newLinkedHashSet(Items.PRISMARINE_SHARD, new ItemStack(Items.PRISMARINE_SHARD)), aquatic(120), crystal(2), weird(2), radiant(10));
         saveData(newLinkedHashSet(Items.PUFFERFISH, new ItemStack(Items.PUFFERFISH)), faunal(15), weird(6));
         saveData(newLinkedHashSet(Items.PUMPKIN, new ItemStack(Items.PUMPKIN)), floral(60));
-        saveData(newLinkedHashSet(Items.QUARTZ, new ItemStack(Items.QUARTZ)), earthen(60), crystal (1));
+        saveData(newLinkedHashSet(Items.QUARTZ, new ItemStack(Items.QUARTZ)), earthen(60), crystal (2));
         saveData(newLinkedHashSet(Items.RABBIT, new ItemStack(Items.RABBIT)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.RABBIT_FOOT, new ItemStack(Items.RABBIT_FOOT)), faunal(30), weird(30));
         saveData(newLinkedHashSet(Items.RABBIT_HIDE, new ItemStack(Items.RABBIT_HIDE)), faunal(15));
@@ -213,7 +213,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.SHULKER_SHELL, new ItemStack(Items.SHULKER_SHELL)), faunal(60), weird(180));
         saveData(newLinkedHashSet(Items.SHROOMLIGHT, new ItemStack(Items.SHROOMLIGHT)), radiant(40), fungal(60));
         saveData(newLinkedHashSet(Items.SLIME_BALL, new ItemStack(Items.SLIME_BALL)), slime(60));
-        saveData(newLinkedHashSet(Items.SNOWBALL, new ItemStack(Items.SNOWBALL)), snow(15), aquatic(15));
+        saveData(newLinkedHashSet(Items.SNOWBALL, new ItemStack(Items.SNOWBALL)), snow(15));
         saveData(newLinkedHashSet(Items.SOUL_SAND, new ItemStack(Items.SOUL_SAND)), earthen(180), vital(15), decay(60));
         saveData(newLinkedHashSet(Items.SOUL_SOIL, new ItemStack(Items.SOUL_SOIL)), earthen(180), vital(15), decay(60));
         saveData(newLinkedHashSet(Items.SOUL_CAMPFIRE, new ItemStack(Items.SOUL_CAMPFIRE)), radiant(80), decay(60));

@@ -25,7 +25,7 @@ public class ForgeClientEvents
     }
 
     @SubscribeEvent
-    public static void postDrawTooltip(RenderTooltipEvent.PostText event) {
+    public static void postDrawTooltip(RenderTooltipEvent.PostBackground event) {
         TargetingHandler.postDraw(event);
     }
 

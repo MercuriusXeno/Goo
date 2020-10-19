@@ -62,6 +62,8 @@ public class TargetingHandler
     private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
+    private static final float Z_LEVEL_OF_MODAL = 500f;
+    private static final float Z_LEVEL_OF_GOO_INDICATORS = 600f;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;
@@ -91,6 +93,7 @@ public class TargetingHandler
 
     public static void onDraw(ItemTooltipEvent event)
     {
+        int blitMaybe = mc.currentScreen.getBlitOffset();
 
         //This method will make space for goo icons in the tooltip
         currentStack = event.getItemStack();
@@ -163,7 +166,7 @@ public class TargetingHandler
         addPlaceholderSpaceForTooltipGooIcons(gooEntry.values().size(), event);
     }
 
-    public static void postDraw(RenderTooltipEvent.PostText event)
+    public static void postDraw(RenderTooltipEvent.PostBackground event)
     {
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
@@ -232,7 +235,7 @@ public class TargetingHandler
     private static ItemStack currentStack = ItemStack.EMPTY;
     private static ItemStack lastStack = ItemStack.EMPTY;
     private static List<FluidStack> lastGooEntry = new ArrayList<>();
-    private static void tryDrawingGooContents(RenderTooltipEvent.PostText event)
+    private static void tryDrawingGooContents(RenderTooltipEvent.PostBackground event)
     {
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
@@ -357,7 +360,7 @@ public class TargetingHandler
         }
     }
 
-    private static void tryDrawingGooComposition(RenderTooltipEvent.PostText event)
+    private static void tryDrawingGooComposition(RenderTooltipEvent.PostBackground event)
     {
         Minecraft mc = Minecraft.getInstance();
         int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
@@ -404,14 +407,14 @@ public class TargetingHandler
 
         mc.getTextureManager().bindTexture(icon);
         matrices.push();
-        drawTexturedModalRect(x, y, 0, 0, ICON_WIDTH, ICON_HEIGHT, 500f);
+        drawTexturedModalRect(x, y, 0, 0, ICON_WIDTH, ICON_HEIGHT, Z_LEVEL_OF_MODAL);
 
         IFormattableTextComponent t1 = getGooAmountForDisplay(count);
         String s1 = t1.getString();
         int w1 = mc.fontRenderer.getStringWidth(s1);
         int color = 0xFFFFFFFF;
         //translating on the z axis here works like above. If too low, it'll draw the text behind items in the GUI. Items are drawn around zlevel 200 btw
-        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, 600);
+        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, Z_LEVEL_OF_GOO_INDICATORS);
         matrices.scale(TEXT_SCALE, TEXT_SCALE, TEXT_SCALE);
         mc.fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
         matrices.pop();

@@ -2,6 +2,7 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
@@ -63,6 +64,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         float highestToY = minY;
 
         Object2FloatMap<Fluid> entries = tile.calculateFluidHeights(partialTicks);
+
         // then we can render
         for(FluidStack goo : tile.goo()) {
             float entry = entries.getFloat(goo.getFluid());
@@ -84,6 +86,9 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
             return;
         }
 
+        if (highestToY > debugLastHighestToY) {
+            GooMod.debug("What the poo is this.");
+        }
         matrixStack.push();
         // translate to center
 
@@ -93,7 +98,12 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         matrixStack.rotate(Vector3f.XP.rotationDegrees(90));
         Minecraft.getInstance().getItemRenderer().renderItem(crystal, ItemCameraTransforms.TransformType.GROUND, combinedLightIn, OverlayTexture.NO_OVERLAY, matrixStack, buffer);
         matrixStack.pop();
+
+        debugLastHighestToY = highestToY;
+
     }
+
+    public static float debugLastHighestToY = 0f;
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
     private static final float FROM_VERTICAL_FILL_PORT_WIDTH_BASE = 0.125f;

@@ -6,6 +6,7 @@ import com.xeno.goo.entities.GooSplat;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.Direction;
@@ -82,7 +83,9 @@ public class GooPlaceSplatPacket implements IGooModPacket {
             return;
         }
 
-        if (!state.isSolidSide(player.world, this.pos, this.side)) {
+        boolean solidSideHit = state.isSolidSide(player.world, this.pos, this.side);
+        boolean sourceLiquidHit = !state.getFluidState().getFluid().isEquivalentTo(Fluids.EMPTY) && state.getFluidState().isSource();
+        if (!solidSideHit && !sourceLiquidHit) {
             return;
         }
 
