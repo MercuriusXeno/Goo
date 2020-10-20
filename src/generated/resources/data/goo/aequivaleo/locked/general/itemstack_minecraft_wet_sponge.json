@@ -18,6 +18,10 @@
   ],
   "compounds": [
     {
+      "amount": 6.0,
+      "type": "goo:weird"
+    },
+    {
       "amount": 15.0,
       "type": "goo:vital"
     },
@@ -28,10 +32,6 @@
     {
       "amount": 30.0,
       "type": "goo:faunal"
-    },
-    {
-      "amount": 6.0,
-      "type": "goo:weird"
     }
   ]
 }

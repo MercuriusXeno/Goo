@@ -20,10 +20,6 @@
     {
       "amount": 15.0,
       "type": "goo:snow"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:aquatic"
     }
   ]
 }
