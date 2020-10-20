@@ -19,9 +19,33 @@ public class Earthen
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_gravel", Earthen::edifyGravel, Earthen::isGravel);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_coarse_dirt", Earthen::edifyCoarseDirt, Earthen::isCoarseDirt);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_dirt", Earthen::edifyDirt, Earthen::isDirt);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_andesite", Earthen::edifyDirt, Earthen::isDirt);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_granite", Earthen::edifyDirt, Earthen::isDirt);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_diorite", Earthen::edifyDirt, Earthen::isDirt);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_andesite", Earthen::edifyAndesite, Earthen::isAndesite);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_granite", Earthen::edifyGranite, Earthen::isGranite);
+        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_diorite", Earthen::edifyDiorite, Earthen::isDiorite);
+    }
+
+    private static boolean edifyAndesite(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.POLISHED_ANDESITE, Blocks.ANDESITE);
+    }
+
+    private static boolean edifyGranite(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.POLISHED_GRANITE, Blocks.GRANITE);
+    }
+
+    private static boolean edifyDiorite(SplatContext splatContext) {
+        return exchangeBlock(splatContext, Blocks.POLISHED_DIORITE, Blocks.DIORITE);
+    }
+
+    private static boolean isAndesite(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.ANDESITE);
+    }
+
+    private static boolean isGranite(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.GRANITE);
+    }
+
+    private static boolean isDiorite(SplatContext splatContext) {
+        return splatContext.isBlock(Blocks.DIORITE);
     }
 
     private static boolean isDirt(SplatContext splatContext) {
