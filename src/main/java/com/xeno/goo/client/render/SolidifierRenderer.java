@@ -74,7 +74,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.GUI, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
                 matrices.pop();
             }
         }

@@ -54,7 +54,6 @@ import java.util.*;
 
 public class TargetingHandler
 {
-    private static final Minecraft mc = Minecraft.getInstance();
     private static final String PLACE_HOLDER = "\u00a76\u00a7r\u00a7r\u00a7r\u00a7r\u00a7r";
     private static final int ICON_WIDTH = 18;
     private static final int ICON_HEIGHT = 27;
@@ -83,7 +82,7 @@ public class TargetingHandler
 
     private static void prepGooContentsRealEstate(ItemTooltipEvent event)
     {
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
         List<FluidStack> gooEntry = getThisOrLastGooEntry();
@@ -93,8 +92,6 @@ public class TargetingHandler
 
     public static void onDraw(ItemTooltipEvent event)
     {
-        int blitMaybe = mc.currentScreen.getBlitOffset();
-
         //This method will make space for goo icons in the tooltip
         currentStack = event.getItemStack();
 
@@ -136,8 +133,8 @@ public class TargetingHandler
         if (size == 0) {
             return;
         }
-        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
-        if (mc.world == null || mc.player == null) //populateSearchTreeManager...
+        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
+        if (Minecraft.getInstance().world == null || Minecraft.getInstance().player == null) //populateSearchTreeManager...
             return;
 
         int stacksPerLine = getArrangementStacksPerLine(size);
@@ -145,7 +142,7 @@ public class TargetingHandler
         int lines = (int)Math.ceil((rows * ICON_HEIGHT) / (float)fontHeight + 1);
         int width = (stacksPerLine * (ICON_WIDTH - 1) + 1);
         String spaces = PLACE_HOLDER;
-        while(mc.fontRenderer.getStringWidth(spaces) < width) {
+        while(Minecraft.getInstance().fontRenderer.getStringWidth(spaces) < width) {
             spaces += " ";
         }
         for (int j = 0; j < lines; j++) {
@@ -155,10 +152,10 @@ public class TargetingHandler
 
     private static void prepGooCompositionRealEstate(ItemTooltipEvent event)
     {
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
-        GooEntry gooEntry = Equivalencies.getEntry(mc.world, currentStack.getItem());
+        GooEntry gooEntry = Equivalencies.getEntry(Minecraft.getInstance().world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
         }
@@ -173,11 +170,11 @@ public class TargetingHandler
             tryDrawingGooContents(event);
         }
 
-        if(mc.player == null) {
+        if(Minecraft.getInstance().player == null) {
             return;
         }
 
-        if (!hasGooAndYou(mc.player)) {
+        if (!hasGooAndYou(Minecraft.getInstance().player)) {
             return;
         }
 
@@ -237,10 +234,10 @@ public class TargetingHandler
     private static List<FluidStack> lastGooEntry = new ArrayList<>();
     private static void tryDrawingGooContents(RenderTooltipEvent.PostBackground event)
     {
-        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
+        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
 
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
         List<FluidStack> gooEntry = getThisOrLastGooEntry();
@@ -362,14 +359,13 @@ public class TargetingHandler
 
     private static void tryDrawingGooComposition(RenderTooltipEvent.PostBackground event)
     {
-        Minecraft mc = Minecraft.getInstance();
-        int fontHeight = mc.fontRenderer.FONT_HEIGHT + 1;
+        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
         MatrixStack matrices = event.getMatrixStack();
 
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
-        GooEntry gooEntry = Equivalencies.getEntry(mc.world, currentStack.getItem());
+        GooEntry gooEntry = Equivalencies.getEntry(Minecraft.getInstance().world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
         }
@@ -403,20 +399,18 @@ public class TargetingHandler
     }
 
     public static void renderGooIcon(MatrixStack matrices, ResourceLocation icon, int x, int y, int count) {
-        Minecraft mc = Minecraft.getInstance();
-
-        mc.getTextureManager().bindTexture(icon);
+        Minecraft.getInstance().getTextureManager().bindTexture(icon);
         matrices.push();
         drawTexturedModalRect(x, y, 0, 0, ICON_WIDTH, ICON_HEIGHT, Z_LEVEL_OF_MODAL);
 
         IFormattableTextComponent t1 = getGooAmountForDisplay(count);
         String s1 = t1.getString();
-        int w1 = mc.fontRenderer.getStringWidth(s1);
+        int w1 = Minecraft.getInstance().fontRenderer.getStringWidth(s1);
         int color = 0xFFFFFFFF;
         //translating on the z axis here works like above. If too low, it'll draw the text behind items in the GUI. Items are drawn around zlevel 200 btw
         matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, Z_LEVEL_OF_GOO_INDICATORS);
         matrices.scale(TEXT_SCALE, TEXT_SCALE, TEXT_SCALE);
-        mc.fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
+        Minecraft.getInstance().fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
         matrices.pop();
     }
 
@@ -632,7 +626,7 @@ public class TargetingHandler
     {
         MatrixStack matrices = event.getMatrixStack();
 
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
         FluidStack entry = e.getGooFromTargetRayTraceResult(target, RayTraceTargetSource.JUST_LOOKING);
@@ -650,7 +644,7 @@ public class TargetingHandler
     {
         MatrixStack matrices = event.getMatrixStack();
 
-        if( mc.world == null || mc.player == null )
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
         FluidStack entry = gooInEntity(e);

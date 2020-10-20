@@ -16,28 +16,27 @@ import org.lwjgl.glfw.GLFW;
 public class InputHandler {
     private static int radialTicksHeld = 0;
     private static boolean radialHeld = false;
-    public static final Minecraft instance = Minecraft.getInstance();
 
     public static void handleRadialInvocation(int action) {
-        if (instance.world == null) {
+        if (Minecraft.getInstance().world == null) {
             return;
         }
-        if (instance.player == null) {
+        if (Minecraft.getInstance().player == null) {
             return;
         }
 
         // experimental
-        if (instance.currentScreen instanceof GooRadial) {
-            instance.currentScreen.closeScreen();
+        if (Minecraft.getInstance().currentScreen instanceof GooRadial) {
+            Minecraft.getInstance().currentScreen.closeScreen();
             return;
         }
 
-        if (instance.currentScreen != null) {
+        if (Minecraft.getInstance().currentScreen != null) {
             radialHeld = false;
             return;
         }
 
-        ItemStack mainHand = instance.player.getHeldItem(Hand.MAIN_HAND);
+        ItemStack mainHand = Minecraft.getInstance().player.getHeldItem(Hand.MAIN_HAND);
         if (!(mainHand.getItem() instanceof Gauntlet) && !(mainHand.getItem() instanceof Basin)) {
             radialHeld = false;
             return;
@@ -52,14 +51,14 @@ public class InputHandler {
         if (action == GLFW.GLFW_RELEASE && radialHeld) {
             radialHeld = false;
             if (radialTicksHeld < GooMod.config.radialMenuThreshold()) {
-                tryUsingGauntletOrBasin(instance.player);
+                tryUsingGauntletOrBasin(Minecraft.getInstance().player);
             }
         }
     }
 
     private static void tryOpeningGauntletRadial(ClientPlayerEntity player, ItemStack mainHand) {
         // open the radial locally
-        instance.displayGuiScreen(new GooRadial(ForgeClientEvents.USE_ITEM_BINDING.get()));
+        Minecraft.getInstance().displayGuiScreen(new GooRadial(ForgeClientEvents.USE_ITEM_BINDING.get()));
     }
 
     private static void tryUsingGauntletOrBasin(ClientPlayerEntity player) {
@@ -99,11 +98,11 @@ public class InputHandler {
     }
 
     public static void handleEventTicking(TickEvent.ClientTickEvent event) {
-        if (instance.world == null) {
+        if (Minecraft.getInstance().world == null) {
             return;
         }
 
-        if (instance.player == null) {
+        if (Minecraft.getInstance().player == null) {
             return;
         }
 
@@ -113,10 +112,10 @@ public class InputHandler {
             radialTicksHeld = 0;
         }
 
-        ItemStack mainHand = instance.player.getHeldItem(Hand.MAIN_HAND);
+        ItemStack mainHand = Minecraft.getInstance().player.getHeldItem(Hand.MAIN_HAND);
 
         if (radialTicksHeld >= GooMod.config.radialMenuThreshold()) {
-            tryOpeningGauntletRadial(instance.player, mainHand);
+            tryOpeningGauntletRadial(Minecraft.getInstance().player, mainHand);
             radialHeld = false;
         }
     }
