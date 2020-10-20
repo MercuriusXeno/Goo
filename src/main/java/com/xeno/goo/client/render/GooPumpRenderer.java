@@ -102,7 +102,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.rotate(Vector3f.YP.rotationDegrees(180f - (float)(d.getHorizontalIndex() * 90)));
 
                 // scale
-                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.0001f);
+                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.001f);
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 

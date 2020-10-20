@@ -69,12 +69,12 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
                 matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(d.getHorizontalIndex() * 90)));
                 // scale
-                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.0001f);
+                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.001f);
                 // special scaling that doesn't scale the normals, prevents weird lighting issues.
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.GUI, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
                 matrices.pop();
             }
         }
