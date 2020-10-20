@@ -70,7 +70,7 @@ public class GooEntry
         this.isUnknown = compounds.size() == 0;
         this.isFixed = Equivalencies.isLocked(world, item);
         if (isValid) {
-            this.values = compounds.stream().map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
+            this.values = compounds.stream().filter(c -> c.getType() instanceof GooCompoundType).map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
         } else {
             this.values = new ArrayList<>();
         }
