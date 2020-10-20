@@ -47,9 +47,6 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
             return;
         }
 
-        // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
-        int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(tile.getHorizontalFacing()));
-
         // ItemFrameRenderer
         ItemStack item = tile.getDisplayedItem();
         if (!item.isEmpty()) {
@@ -61,6 +58,9 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 if (d == Direction.UP || d == Direction.DOWN) {
                     continue;
                 }
+
+                // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
+                int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(d));
                 matrices.push();
                 // translate to center
                 matrices.translate(0.5D, 0.15625D, 0.5D);

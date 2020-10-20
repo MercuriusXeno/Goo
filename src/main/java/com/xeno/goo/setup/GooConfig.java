@@ -87,7 +87,6 @@ public class GooConfig
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_FAILURE_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_DRAIN_CHANCE = new HashMap<>();
-    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_RETURNS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> BLOB_RESOLVER_COSTS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> BLOB_TRIGGER_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> BLOB_FAILURE_CHANCE = new HashMap<>();
@@ -144,7 +143,6 @@ public class GooConfig
         HashMap<String, ForgeConfigSpec.DoubleValue> triggerMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.DoubleValue> drainMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.DoubleValue> failMap = new HashMap<>();
-        HashMap<String, ForgeConfigSpec.IntValue> returnMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.IntValue> cooldownMap = new HashMap<>();
         serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
         int[] lowestCost = {Integer.MAX_VALUE};
@@ -156,35 +154,19 @@ public class GooConfig
             int actualCooldown = defaultTickCooldown;
             // specific overrides for map defaults for goos that need it.
             if (fluid.equals(Registry.CRYSTAL_GOO.get())) {
-                actualCost = 4;
-                int returnedAmount = actualCost - 1;
-                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
-                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
-                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+                actualCost = 1;
             }
             if (fluid.equals(Registry.METAL_GOO.get())) {
-                actualCost = 8;
-                int returnedAmount = actualCost - 1;
-                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
-                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
-                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+                actualCost = 1;
             }
             if (fluid.equals(Registry.OBSIDIAN_GOO.get())) {
-                actualCost = 8;
-                int returnedAmount = actualCost - 2;
-                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
-                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
-                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+                actualCost = 2;
             }
             if (fluid.equals(Registry.RADIANT_GOO.get())) {
                 actualCost = 4;
             }
             if (fluid.equals(Registry.REGAL_GOO.get())) {
-                actualCost = 16;
-                int returnedAmount = actualCost - 8;
-                ForgeConfigSpec.IntValue returnOfInteraction = serverBuilder.comment("Returned on splat interaction " + k.getB() + ", -1 to disable, default:" + (actualCost - 1))
-                        .defineInRange(k.getB() + "_returned", returnedAmount, -1, 1000);
-                returnMap.put(k.getB() + "_returned", returnOfInteraction);
+                actualCost = 8;
             }
             if (fluid.equals(Registry.FAUNAL_GOO.get())) {
                 actualCost = 8;
@@ -246,7 +228,6 @@ public class GooConfig
                 .defineInRange("thrown_amount", lowestCost[0], -1, 1000);
         serverBuilder.pop();
         SPLAT_RESOLVER_COSTS.put(fluid, costMap);
-        SPLAT_RESOLVER_RETURNS.put(fluid, returnMap);
         SPLAT_TRIGGER_CHANCE.put(fluid, triggerMap);
         SPLAT_DRAIN_CHANCE.put(fluid, drainMap);
         SPLAT_FAILURE_CHANCE.put(fluid, failMap);
@@ -349,17 +330,6 @@ public class GooConfig
             return 0d;
         }
         return BLOB_DRAIN_CHANCE.get(fluid).get(key).get();
-    }
-
-    public int returnOfInteraction(Fluid fluid, String key) {
-        key = key + "_returned";
-        if (!SPLAT_RESOLVER_RETURNS.containsKey(fluid)) {
-            return -1;
-        }
-        if (!SPLAT_RESOLVER_RETURNS.get(fluid).containsKey(key)) {
-            return -1;
-        }
-        return SPLAT_RESOLVER_RETURNS.get(fluid).get(key).get();
     }
 
     public int thrownGooAmount(Fluid fluid) {

@@ -33,7 +33,8 @@ public class CrucibleRecipes
     public static void init() {
         isInitialized = true;
         recipes.clear();
-        recipes.add(new CrucibleRecipe(fluid(Registry.AQUATIC_GOO, 1), fluid(Registry.SNOW_GOO)));
+        recipes.add(new CrucibleRecipe(fluid(Registry.AQUATIC_GOO, 8), fluid(Registry.SNOW_GOO)));
+        recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.CHROMATIC_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FAUNAL_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FUNGAL_GOO)));
         recipes.add(new CrucibleRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FLORAL_GOO)));

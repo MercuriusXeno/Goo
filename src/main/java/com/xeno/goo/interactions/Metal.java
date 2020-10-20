@@ -61,15 +61,6 @@ public class Metal
             drops.forEach((d) -> context.world().addEntity(
                     new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
             ));
-
-            // now bounce back a bit of goo, but less than what was spent
-            int amountReturned = GooMod.config.returnOfInteraction(context.fluid(), context.interactionKey());
-
-            GooBlob returnBlob = GooBlob.createLobbedBlob(context, dropPos, new FluidStack(context.fluid(), amountReturned));
-            Vector3d motionVec = Vector3d.copy(context.splat().sideWeLiveOn().getDirectionVec())
-                    .scale(0.5d); // unit vector is a little too forceful, dial it back a lot
-            returnBlob.setMotion(motionVec);
-            context.world().addEntity(returnBlob);
         }
 
         return true;

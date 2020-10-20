@@ -192,6 +192,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             // note here we only need 9 progress ticks to convert, because the tier below us contained 1/10th of the value
             // this is even true of quartz just because the difference is negligible and quartz is worth way more than 1.
             if (crystalProgress.getAmount() >= target.getAmount() - lastIncrement) {
+                // reduce the target by the 10th we don't need or we'll decrease the fluid amount by more than we intended.
+                target.setAmount(target.getAmount() - lastIncrement);
                 this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
                 crystal = new ItemStack(nextStepInCrystallization(target.getFluid()));
                 crystalProgress = FluidStack.EMPTY;

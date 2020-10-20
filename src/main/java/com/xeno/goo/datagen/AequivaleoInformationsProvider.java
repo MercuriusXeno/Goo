@@ -140,19 +140,19 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.BEEF, new ItemStack(Items.BEEF)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.BEETROOT, new ItemStack(Items.BEETROOT)), floral(15), vital(1), chromatic(240));
         saveData(newLinkedHashSet(Items.BEETROOT_SEEDS, new ItemStack(Items.BEETROOT_SEEDS)), floral(15));
-        saveData(newLinkedHashSet(Items.BLAZE_ROD, new ItemStack(Items.BLAZE_ROD)), molten(192));
-        saveData(newLinkedHashSet(Items.BONE, new ItemStack(Items.BONE)), faunal(30), chromatic(360), vital(3), decay(60));
+        saveData(newLinkedHashSet(Items.BLAZE_ROD, new ItemStack(Items.BLAZE_ROD)), molten(120));
+        saveData(newLinkedHashSet(Items.BONE, new ItemStack(Items.BONE)), faunal(30), chromatic(720), vital(3), decay(60));
         saveData(newLinkedHashSet(Items.BROWN_MUSHROOM, new ItemStack(Items.BROWN_MUSHROOM)), fungal(15), vital(1));
         saveData(newLinkedHashSet(Items.BROWN_MUSHROOM_BLOCK, new ItemStack(Items.BROWN_MUSHROOM_BLOCK)), fungal(5));
         saveData(newLinkedHashSet(Items.CACTUS, new ItemStack(Items.CACTUS)), floral(120), chromatic(240), vital (1));
         saveData(newLinkedHashSet(Items.CARROT, new ItemStack(Items.CARROT)), floral(60), vital(1));
         saveData(newLinkedHashSet(Items.CARVED_PUMPKIN, new ItemStack(Items.CARVED_PUMPKIN)), floral(5), weird(1));
-        saveData(newLinkedHashSet(Items.CHARCOAL, new ItemStack(Items.CHARCOAL)), molten(128), floral(32));
+        saveData(newLinkedHashSet(Items.CHARCOAL, new ItemStack(Items.CHARCOAL)), molten(80), floral(32));
         saveData(newLinkedHashSet(Items.CHICKEN, new ItemStack(Items.CHICKEN)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.CHORUS_FLOWER, new ItemStack(Items.CHORUS_FLOWER)), floral(30), weird(6), vital(1));
         saveData(newLinkedHashSet(Items.CHORUS_FRUIT, new ItemStack(Items.CHORUS_FRUIT)), floral(15), weird(4), vital(1));
         saveData(newLinkedHashSet(Items.CLAY_BALL, new ItemStack(Items.CLAY_BALL)), earthen(60));
-        saveData(newLinkedHashSet(Items.COAL, new ItemStack(Items.COAL)), molten(128), earthen(16));
+        saveData(newLinkedHashSet(Items.COAL, new ItemStack(Items.COAL)), molten(80), earthen(16));
         saveData(newLinkedHashSet(Items.COBWEB, new ItemStack(Items.COBWEB)), faunal(15));
         saveData(newLinkedHashSet(Items.COD, new ItemStack(Items.COD)), faunal(15), vital(1));
         saveData(newLinkedHashSet(Items.CRIMSON_NYLIUM, new ItemStack(Items.CRIMSON_NYLIUM)), earthen(120), fungal(15), chromatic(60));
@@ -254,9 +254,9 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.WHEAT_SEEDS, new ItemStack(Items.WHEAT_SEEDS)), floral(15), vital(1));
 
         // containers
-        saveData(newLinkedHashSet(Items.LAVA_BUCKET, new ItemStack(Items.LAVA_BUCKET)), metal(216), molten(1600));
+        saveData(newLinkedHashSet(Items.LAVA_BUCKET, new ItemStack(Items.LAVA_BUCKET)), metal(216), molten(1000));
         saveData(newLinkedHashSet(Items.MILK_BUCKET, new ItemStack(Items.MILK_BUCKET)), metal(216), faunal(15));
-        saveData(newLinkedHashSet(Items.WATER_BUCKET, new ItemStack(Items.WATER_BUCKET)), metal(216), aquatic(960));
+        saveData(newLinkedHashSet(Items.WATER_BUCKET, new ItemStack(Items.WATER_BUCKET)), metal(216), aquatic(60));
 
         ItemsRegistry.CrystallizedGoo.forEach(this::registerLockedInfoForCrystallizedGoo);
     }

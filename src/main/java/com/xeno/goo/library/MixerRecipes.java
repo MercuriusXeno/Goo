@@ -33,15 +33,18 @@ public class MixerRecipes
     public static void init() {
         isInitialized = true;
         recipes.clear();
-        addRecipe(new MixerRecipe(fluid(Registry.CRYSTAL_GOO, 1), fluid(Registry.OBSIDIAN_GOO, 8), fluid(Registry.WEIRD_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.EARTHEN_GOO, 1), fluid(Registry.AQUATIC_GOO, 1), fluid(Registry.DECAY_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.ENERGETIC_GOO, 1), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.RADIANT_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.METAL_GOO, 1), fluid(Registry.REGAL_GOO), fluid(Registry.DECAY_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.OBSIDIAN_GOO, 1), fluid(Registry.AQUATIC_GOO), fluid(Registry.MOLTEN_GOO, 8)));
-        addRecipe(new MixerRecipe(fluid(Registry.REGAL_GOO, 1), fluid(Registry.CRYSTAL_GOO), fluid(Registry.DECAY_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.SNOW_GOO, 1), fluid(Registry.AQUATIC_GOO), fluid(Registry.LOGIC_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.SLIME_GOO, 1), fluid(Registry.VITAL_GOO, 8), fluid(Registry.DECAY_GOO)));
-        addRecipe(new MixerRecipe(fluid(Registry.WEIRD_GOO, 1), fluid(Registry.SLIME_GOO, 8), fluid(Registry.DECAY_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.CHROMATIC_GOO), fluid(Registry.FLORAL_GOO), fluid(Registry.RADIANT_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.CRYSTAL_GOO), fluid(Registry.OBSIDIAN_GOO, 8), fluid(Registry.ENERGETIC_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.ENERGETIC_GOO), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.RADIANT_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.FAUNAL_GOO), fluid(Registry.LOGIC_GOO), fluid(Registry.VITAL_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.METAL_GOO), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.CRYSTAL_GOO, 1)));
+        addRecipe(new MixerRecipe(fluid(Registry.METAL_GOO), fluid(Registry.REGAL_GOO), fluid(Registry.DECAY_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.OBSIDIAN_GOO), fluid(Registry.MOLTEN_GOO, 8), fluid(Registry.SNOW_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.REGAL_GOO), fluid(Registry.METAL_GOO), fluid(Registry.RADIANT_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.RADIANT_GOO), fluid(Registry.LOGIC_GOO), fluid(Registry.DECAY_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.SLIME_GOO), fluid(Registry.FLORAL_GOO, 8), fluid(Registry.DECAY_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.VITAL_GOO), fluid(Registry.RADIANT_GOO), fluid(Registry.LOGIC_GOO)));
+        addRecipe(new MixerRecipe(fluid(Registry.WEIRD_GOO), fluid(Registry.SLIME_GOO, 8), fluid(Registry.ENERGETIC_GOO)));
     }
 
     private static void addRecipe(MixerRecipe mixerRecipe)

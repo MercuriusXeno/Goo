@@ -34,6 +34,13 @@
       "using": {},
       "x": 0,
       "y": 90
+    },
+    {
+      "template": "goo:mixer_recipe",
+      "as": "6",
+      "using": {},
+      "x": 0,
+      "y": 108
     }
   ]
 }

@@ -2,8 +2,12 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
 
 import java.util.function.Supplier;
 
@@ -26,5 +30,10 @@ public class CrystallizedGooAbstract extends Item {
 
     public int amount() {
         return gooValue;
+    }
+
+    @Override
+    public int getBurnTime(ItemStack itemStack) {
+        return this.gooType.equals(Registry.MOLTEN_GOO) ? gooValue * 20 : 0;
     }
 }
