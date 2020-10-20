@@ -37,8 +37,8 @@ import java.util.function.Predicate;
 
 public class SliverModel implements IModelGeometry<SliverModel> {
     // minimal Z offset to prevent depth-fighting
-    private static final float NORTH_Z_FLUID = 7.498f / 16f;
-    private static final float SOUTH_Z_FLUID = 8.502f / 16f;
+    private static final float NORTH_Z_FLUID = 6.5f / 16f;
+    private static final float SOUTH_Z_FLUID = 8.75f / 16f;
 
     private final Fluid fluid;
     private final boolean applyFluidLuminosity;

@@ -2,7 +2,9 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHelper;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -11,7 +13,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
 import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -25,8 +26,13 @@ public class ForgeClientEvents
     }
 
     @SubscribeEvent
-    public static void postDrawTooltip(RenderTooltipEvent.PostBackground event) {
-        TargetingHandler.postDraw(event);
+    public static void onPostTextTooltip(RenderTooltipEvent.PostText event) {
+        TargetingHandler.tryDraw(event);
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        TargetingHandler.clearStacks();
     }
 
     @SubscribeEvent
@@ -35,11 +41,6 @@ public class ForgeClientEvents
             return;
         }
         TargetingHandler.onGameOverlay(event);
-    }
-
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        InputHandler.handleEventTicking(event);
     }
 
     public static final Supplier<KeyBinding> USE_ITEM_BINDING = () -> Minecraft.getInstance().gameSettings.keyBindUseItem;

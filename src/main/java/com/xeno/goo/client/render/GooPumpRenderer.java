@@ -106,7 +106,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, light, overlay, matrices, buffer);
+                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.GUI, light, overlay, matrices, buffer);
                 matrices.pop();
             }
         }

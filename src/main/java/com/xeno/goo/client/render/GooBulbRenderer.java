@@ -86,9 +86,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
             return;
         }
 
-        if (highestToY > debugLastHighestToY) {
-            GooMod.debug("What the poo is this.");
-        }
         matrixStack.push();
         // translate to center
 

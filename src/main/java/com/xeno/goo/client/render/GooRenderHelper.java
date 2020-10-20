@@ -6,11 +6,15 @@ import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import org.lwjgl.opengl.GL11;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class GooRenderHelper extends RenderState
 {
@@ -64,6 +68,25 @@ public class GooRenderHelper extends RenderState
     public GooRenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)
     {
         super(nameIn, setupTaskIn, clearTaskIn);
+    }
+
+
+    private static Map<ResourceLocation, RenderType> GUI_RENDER_TYPES = new HashMap<>();
+    public static RenderType getGui(ResourceLocation texture)
+    {
+        if (!GUI_RENDER_TYPES.containsKey(texture)) {
+            GUI_RENDER_TYPES.put(texture, RenderType.makeType(
+                    "gui_" + texture,
+                    DefaultVertexFormats.POSITION_COLOR_TEX,
+                    GL11.GL_QUADS,
+                    256,
+                    RenderType.State.getBuilder()
+                            .texture(new TextureState(texture, false, false))
+                            .alpha(new AlphaState(0.5F))
+                            .build(false)));
+        }
+
+        return GUI_RENDER_TYPES.get(texture);
     }
 
     public static Vector3d lerpEntityPosition(float partialTicks, GooBlob entity)

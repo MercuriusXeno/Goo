@@ -2,10 +2,14 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.blocks.*;
+import com.xeno.goo.client.ClientUtils;
+import com.xeno.goo.client.render.GooRenderHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
@@ -19,9 +23,8 @@ import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -37,20 +40,18 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.EntityRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextProperties;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.text.*;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.List;
 
 public class TargetingHandler
 {
@@ -62,7 +63,6 @@ public class TargetingHandler
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
     private static final float Z_LEVEL_OF_MODAL = 500f;
-    private static final float Z_LEVEL_OF_GOO_INDICATORS = 600f;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;
@@ -92,10 +92,11 @@ public class TargetingHandler
 
     public static void onDraw(ItemTooltipEvent event)
     {
+        lastStack = currentStack;
         //This method will make space for goo icons in the tooltip
         currentStack = event.getItemStack();
 
-        handleDisplayingGooValuesOfThings(event);
+        prepHandlingOfGooValuesOfThings(event);
 
         // special handler for goo bulbs and basins, which show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
@@ -103,7 +104,7 @@ public class TargetingHandler
         }
     }
 
-    private static void handleDisplayingGooValuesOfThings(ItemTooltipEvent event)
+    private static void prepHandlingOfGooValuesOfThings(ItemTooltipEvent event)
     {
         if (event.getPlayer() == null) {
             return;
@@ -163,7 +164,7 @@ public class TargetingHandler
         addPlaceholderSpaceForTooltipGooIcons(gooEntry.values().size(), event);
     }
 
-    public static void postDraw(RenderTooltipEvent.PostBackground event)
+    public static void tryDraw(RenderTooltipEvent.PostText event)
     {
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
@@ -232,63 +233,27 @@ public class TargetingHandler
     private static ItemStack currentStack = ItemStack.EMPTY;
     private static ItemStack lastStack = ItemStack.EMPTY;
     private static List<FluidStack> lastGooEntry = new ArrayList<>();
-    private static void tryDrawingGooContents(RenderTooltipEvent.PostBackground event)
+    private static void tryDrawingGooContents(RenderTooltipEvent.PostText event)
     {
-        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
-        MatrixStack matrices = event.getMatrixStack();
-
         if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
         List<FluidStack> gooEntry = getThisOrLastGooEntry();
-
-        int bx = event.getX();
-        int by = event.getY();
-        int j = 0;
-
-        int size = gooEntry.size();
-        int stacksPerLine = getArrangementStacksPerLine(size);
-        if (stacksPerLine == 0) {
-            return;
-        }
-        int rows = (int)Math.ceil(size / (float)stacksPerLine);
-        int neededHeight = rows * ICON_HEIGHT;
-        int allocatedHeight = (int)Math.ceil(neededHeight / (float)fontHeight) * fontHeight;
-        int wastedSpace = allocatedHeight - neededHeight;
-        int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(fontHeight / 2f);
-
-        List<? extends ITextProperties> tooltip = event.getLines();
-        for (ITextProperties s : tooltip) {
-            if (s.getString().trim().equals(PLACE_HOLDER))
-                break;
-            by += fontHeight;
-        }
-        by += centeringVerticalOffset;
-        for (FluidStack entry : gooEntry) {
-            if (!(entry.getFluid() instanceof GooFluid)) {
-                continue;
-            }
-            int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
-            int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
-            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
-            j++;
-        }
+        
+        drawGooForEvent(event, gooEntry);
     }
 
     private static List<FluidStack> getThisOrLastGooEntry()
     {
-        if (currentStack.equals(lastStack, false)) {
-            return lastGooEntry;
-        } else {
-            lastStack = currentStack;
+        if (currentStack != lastStack) {
             lastGooEntry = new ArrayList<>();
             if (!tryFetchingGooContentsAsItem()) {
                 if (!tryFetchingGooContentsAsDoubleMap()) {
                     tryFetchingGooContentsAsGooContainerAbstraction();
                 }
             }
-            return lastGooEntry;
         }
+        return lastGooEntry;
     }
 
     private static boolean tryFetchingGooContentsAsItem()
@@ -357,10 +322,8 @@ public class TargetingHandler
         }
     }
 
-    private static void tryDrawingGooComposition(RenderTooltipEvent.PostBackground event)
+    private static void tryDrawingGooComposition(RenderTooltipEvent.PostText event)
     {
-        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
-        MatrixStack matrices = event.getMatrixStack();
 
         if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
@@ -369,19 +332,26 @@ public class TargetingHandler
         if (gooEntry.isUnusable()) {
             return;
         }
+        
+        drawGooForEvent(event, gooEntry);
+    }
 
-        int bx = event.getX();
-        int by = event.getY();
+    private static void drawGooForEvent(RenderTooltipEvent.PostText event, List<FluidStack> gooEntry) {
         int j = 0;
-
-        int size = gooEntry.values().size();
+        int size = gooEntry.size();
         int stacksPerLine = getArrangementStacksPerLine(size);
+        if (stacksPerLine == 0) {
+            return;
+        }
         int rows = (int)Math.ceil(size / (float)stacksPerLine);
         int neededHeight = rows * ICON_HEIGHT;
+        int fontHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT + 1;
         int allocatedHeight = (int)Math.ceil(neededHeight / (float)fontHeight) * fontHeight;
         int wastedSpace = allocatedHeight - neededHeight;
         int centeringVerticalOffset = (int)Math.ceil(wastedSpace / 2f) + (int)Math.floor(fontHeight / 2f);
 
+        int bx = event.getX();
+        int by = event.getY();
         List<? extends ITextProperties> tooltip = event.getLines();
         for (ITextProperties s : tooltip) {
             if (s.getString().trim().equals(PLACE_HOLDER))
@@ -389,29 +359,55 @@ public class TargetingHandler
             by += fontHeight;
         }
         by += centeringVerticalOffset;
-        gooEntry.values().sort((v, v2) -> (int)v2.amount() - (int)v.amount());
-        for (GooValue entry : gooEntry.values()) {
-            int x = bx + (j % stacksPerLine) * (ICON_WIDTH - 1);
-            int y = by + (j / stacksPerLine) * (ICON_HEIGHT - 1);
-            renderGooIcon(matrices, fluid(entry).getIcon(), x, y, (int)Math.floor(entry.amount()));
+        MatrixStack matrices = event.getMatrixStack();
+        matrices.push();
+        matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
+        for (FluidStack entry : gooEntry) {
+            if (!(entry.getFluid() instanceof GooFluid)) {
+                continue;
+            }
+            int x = (j % stacksPerLine) * (ICON_WIDTH - 1);
+            int y = (j / stacksPerLine) * (ICON_HEIGHT - 1);
+            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
         }
+        matrices.pop();
+    }
+
+    private static void drawGooForEvent(RenderTooltipEvent.PostText event, GooEntry gooEntry) {
+        List<FluidStack> stacks = convertToFluidStacks(gooEntry);
+        drawGooForEvent(event, stacks);
+    }
+
+    private static List<FluidStack> convertToFluidStacks(GooEntry gooEntry) {
+        List<FluidStack> result = new ArrayList<>();
+        gooEntry.values().forEach((v) -> result.add(
+                new FluidStack(Objects.requireNonNull(Registry.getFluid(v.getFluidResourceLocation())), (int)Math.ceil(v.amount())))
+        );
+        return result;
     }
 
     public static void renderGooIcon(MatrixStack matrices, ResourceLocation icon, int x, int y, int count) {
-        Minecraft.getInstance().getTextureManager().bindTexture(icon);
         matrices.push();
-        drawTexturedModalRect(x, y, 0, 0, ICON_WIDTH, ICON_HEIGHT, Z_LEVEL_OF_MODAL);
+        matrices.translate(0, 0, 1);
+        drawModalIcons(matrices, x, y, icon);
 
         IFormattableTextComponent t1 = getGooAmountForDisplay(count);
         String s1 = t1.getString();
         int w1 = Minecraft.getInstance().fontRenderer.getStringWidth(s1);
         int color = 0xFFFFFFFF;
-        //translating on the z axis here works like above. If too low, it'll draw the text behind items in the GUI. Items are drawn around zlevel 200 btw
-        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, Z_LEVEL_OF_GOO_INDICATORS);
+        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, 1);
         matrices.scale(TEXT_SCALE, TEXT_SCALE, TEXT_SCALE);
         Minecraft.getInstance().fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
         matrices.pop();
+    }
+
+    private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon) {
+
+        IRenderTypeBuffer.Impl buffer = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
+        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.getGui(icon));
+        ClientUtils.drawTexturedRect(builder, transform, x, y, ICON_WIDTH, ICON_HEIGHT, 1f, 1f, 1f, 1f, 0f, 1f, 0f, 1f);
+        buffer.finish();
     }
 
     public static IFormattableTextComponent getGooAmountForDisplay(int count)
@@ -452,21 +448,6 @@ public class TargetingHandler
                 return "numbers.notation.billion";
         }
         return "";
-    }
-
-    public static void drawTexturedModalRect(int x, int y, int u, int v, int width, int height, float zLevel)
-    {
-        final float uScale = 1f / ICON_WIDTH;
-        final float vScale = 1f / ICON_HEIGHT;
-
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder wr = tessellator.getBuffer();
-        wr.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        wr.pos(x        , y + height, zLevel).tex( u          * uScale, ((v + height) * vScale)).endVertex();
-        wr.pos(x + width, y + height, zLevel).tex((u + width) * uScale, ((v + height) * vScale)).endVertex();
-        wr.pos(x + width, y         , zLevel).tex((u + width) * uScale, ( v           * vScale)).endVertex();
-        wr.pos(x        , y         , zLevel).tex( u          * uScale, ( v           * vScale)).endVertex();
-        tessellator.draw();
     }
 
     private static GooFluid fluid(GooValue entry)
@@ -686,5 +667,11 @@ public class TargetingHandler
             return ((GooFluid) s.getFluid()).getIcon();
         }
         return null;
+    }
+
+    public static void clearStacks() {
+        currentStack = ItemStack.EMPTY;
+        lastStack = ItemStack.EMPTY;
+        lastGooEntry = new ArrayList<>();
     }
 }
