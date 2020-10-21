@@ -46,11 +46,11 @@ public class GooRadial extends Screen {
     private static final int ICON_HEIGHT = 27;
     private static final float PRECISION = 2.5f / 360.0f;
 
-    private KeyBinding keybinding;
-
     private boolean closing;
 
     private double startAnimation;
+
+    private Hand hand;
 
     private int selectedItem;
 
@@ -60,13 +60,11 @@ public class GooRadial extends Screen {
         return lastFluidStackTarget;
     }
 
-    public GooRadial(KeyBinding keybinding) {
+    public GooRadial(Hand hand) {
         super(new StringTextComponent(""));
-        this.keybinding = keybinding;
         this.closing = false;
-
-        Minecraft mc = Minecraft.getInstance();
-        this.startAnimation = mc.world.getGameTime() + (double) mc.getRenderPartialTicks();
+        this.hand = hand;
+        this.startAnimation = System.currentTimeMillis();
 
         this.selectedItem = -1;
         this.lastFluidStackTarget = FluidStack.EMPTY;
@@ -93,16 +91,14 @@ public class GooRadial extends Screen {
         }
         super.render(matrices, mouseX, mouseY, partialTicks);
 
-        final float OPEN_ANIMATION_LENGTH = 2.5f;
-        long worldTime = Minecraft.getInstance().world.getGameTime();
-        float animationTime = (float) (worldTime + partialTicks - startAnimation);
+        final float OPEN_ANIMATION_LENGTH = 300f;
+        float animationTime = (float)(System.currentTimeMillis() - startAnimation);
         float openAnimation = closing ? 1.0f - animationTime / OPEN_ANIMATION_LENGTH : animationTime / OPEN_ANIMATION_LENGTH;
 
-        float animProgress = MathHelper.clamp(openAnimation, 0, 1);
+        float animProgress = (float)Math.cbrt(MathHelper.clamp(openAnimation, 0d, 1d));
         float radiusIn = Math.max(0.1f, 45 * animProgress);
         float radiusOut = radiusIn * 2;
         float itemRadius = (radiusIn + radiusOut) * 0.5f;
-        float animTop = (1 - animProgress) * height / 2.0f;
         int x = width / 2;
         int y = height / 2;
 
@@ -122,20 +118,16 @@ public class GooRadial extends Screen {
         RenderSystem.disableTexture();
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-        RenderSystem.translated(0, animTop, 0);
-
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        String hovering = "";
         if (!closing) {
             selectedItem = -1;
             for (int i = 0; i < numberOfSlices; i++) {
                 float s = (((i - 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
                 float e = (((i + 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
                 if (a >= s && a < e && d >= radiusIn && d < radiusOut) {
-                    hovering = "" + i;
                     selectedItem = i;
                     break;
                 }
@@ -152,12 +144,11 @@ public class GooRadial extends Screen {
                 drawSlice(buffer, x, y, 10, radiusIn, radiusOut, s, e, 0, 0, 0, 64);
             }
         }
-
         tessellator.draw();
         RenderSystem.enableTexture();
-
         RenderHelper.enableStandardItemLighting();
         RenderSystem.popMatrix();
+
         for(int i = 0; i < numberOfSlices; i++){
             FluidStack s = availableGooTypes.get(i);
             float angle1 = (((i / (float) numberOfSlices) - 0.25f) * 2 * (float) Math.PI) + (float)Math.PI;
@@ -215,7 +206,7 @@ public class GooRadial extends Screen {
 //    }
 
     private FluidStack heldGooStack(ClientPlayerEntity player) {
-        ItemStack stack = player.getHeldItem(Hand.MAIN_HAND);
+        ItemStack stack = player.getHeldItem(hand);
         AtomicReference<FluidStack> result = new AtomicReference<>();
         if (stack.getItem() instanceof Gauntlet) {
             LazyOptional<IFluidHandlerItem> lazyCap = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
@@ -242,7 +233,6 @@ public class GooRadial extends Screen {
         }
     }
 
-    @Override
     public void closeScreen() {
         if (minecraft == null || minecraft.player == null) {
             return;
@@ -254,22 +244,22 @@ public class GooRadial extends Screen {
     }
 
     private void trySwitchingGooTypes(ClientPlayerEntity player, FluidStack target) {
-        if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Gauntlet) {
-            Networking.sendToServer(new GooGauntletSwapPacket(target), player);
-        } else if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Basin) {
-            Networking.sendToServer(new GooBasinSwapPacket(target), player);
+        if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+            Networking.sendToServer(new GooGauntletSwapPacket(target, hand), player);
+        } else if (player.getHeldItem(hand).getItem() instanceof Basin) {
+            Networking.sendToServer(new GooBasinSwapPacket(target, hand), player);
         }
     }
 
     @Override
-    public boolean mouseClicked(double p_mouseClicked_1_, double p_mouseClicked_3_, int p_mouseClicked_5_) {
-        if (minecraft == null || minecraft.player == null) {
-            return true;
-        }
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        this.closeScreen();
+        return true;
+    }
 
-        if(this.selectedItem != -1){
-            minecraft.player.closeScreen();
-        }
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        this.closeScreen();
         return true;
     }
 

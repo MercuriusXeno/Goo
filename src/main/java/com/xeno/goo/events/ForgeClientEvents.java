@@ -27,12 +27,8 @@ public class ForgeClientEvents
 
     @SubscribeEvent
     public static void onPostTextTooltip(RenderTooltipEvent.PostText event) {
-        TargetingHandler.tryDraw(event);
-    }
 
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        TargetingHandler.clearStacks();
+        TargetingHandler.tryDraw(event);
     }
 
     @SubscribeEvent
@@ -41,29 +37,5 @@ public class ForgeClientEvents
             return;
         }
         TargetingHandler.onGameOverlay(event);
-    }
-
-    public static final Supplier<KeyBinding> USE_ITEM_BINDING = () -> Minecraft.getInstance().gameSettings.keyBindUseItem;
-    @SubscribeEvent
-    public static void onInput(InputEvent event) {
-        if (event instanceof InputEvent.MouseInputEvent) {
-            onMouseInput((InputEvent.MouseInputEvent) event);
-        }
-        if (event instanceof InputEvent.KeyInputEvent) {
-            onKeyInput((InputEvent.KeyInputEvent) event);
-        }
-    }
-
-    private static void onKeyInput(InputEvent.KeyInputEvent event) {
-        if (event.getKey() == USE_ITEM_BINDING.get().getKey().getKeyCode()) {
-            InputHandler.handleRadialInvocation(event.getAction());
-        }
-
-    }
-
-    private static void onMouseInput(InputEvent.MouseInputEvent event) {
-        if (event.getButton() == USE_ITEM_BINDING.get().getKey().getKeyCode()) {
-            InputHandler.handleRadialInvocation(event.getAction());
-        }
     }
 }

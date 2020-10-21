@@ -43,12 +43,12 @@ public class GauntletAbstraction extends ItemFluidContainer
         return new GauntletAbstractionCapability(stack);
     }
 
-    public static void tryLobbingGoo(PlayerEntity player) {
+    public static void tryLobbingGoo(PlayerEntity player, Hand hand) {
         if (player.getEntityWorld().isRemote()) {
             return;
         }
 
-        ItemStack stack = player.getHeldItem(Hand.MAIN_HAND);
+        ItemStack stack = player.getHeldItem(hand);
         if (!(stack.getItem() instanceof GauntletAbstraction)) {
             return;
         }
@@ -72,7 +72,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         FluidStack thrownStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
         player.getEntityWorld().addEntity(new GooBlob(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
-        player.swing(Hand.MAIN_HAND, true);
+        player.swing(hand, true);
     }
 
     @Override

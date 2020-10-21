@@ -1,12 +1,20 @@
 package com.xeno.goo.items;
 
+import com.xeno.goo.client.gui.GooRadial;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.UseAction;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -16,6 +24,8 @@ import java.util.List;
 
 public class Basin extends BasinAbstraction
 {
+    private static final int RADIAL_MENU_DELAY = 10;
+
     public Basin()
     {
         super();
@@ -66,5 +76,60 @@ public class Basin extends BasinAbstraction
                 .append(TargetingHandler.getGooAmountForDisplay(holdsAmount))
                 .append(new TranslationTextComponent("goo.common.mb"))
         );
+    }
+
+    @Override
+    public void onUsingTick(ItemStack stack, LivingEntity player, int count) {
+        if (!(player instanceof ClientPlayerEntity)) {
+            return;
+        }
+        if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
+            return;
+        }
+        if (ticksHeld(count) >= RADIAL_MENU_DELAY && Minecraft.getInstance().currentScreen == null) {
+            Minecraft.getInstance().displayGuiScreen(new GooRadial(player.getActiveHand()));
+        }
+    }
+
+    private int ticksHeld(int count) {
+        return Integer.MAX_VALUE - count;
+    }
+
+    @Override
+    public void onPlayerStoppedUsing(ItemStack stack, World worldIn, LivingEntity player, int timeLeft) {
+        if (!(player instanceof ClientPlayerEntity)) {
+            return;
+        }
+        if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
+            return;
+        }
+        if (ticksHeld(timeLeft) >= RADIAL_MENU_DELAY) {
+            return;
+        }
+        GooHandlingHelper.tryUsingGauntletOrBasin((ClientPlayerEntity)player, player.getActiveHand());
+        super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged;
+    }
+
+    @Override
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, PlayerEntity playerIn, Hand handIn) {
+        ItemStack itemstack = playerIn.getHeldItem(handIn);
+
+        playerIn.setActiveHand(handIn);
+        return ActionResult.resultFail(itemstack);
+    }
+
+    @Override
+    public int getUseDuration(ItemStack stack) {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public UseAction getUseAction(ItemStack stack) {
+        return UseAction.NONE;
     }
 }

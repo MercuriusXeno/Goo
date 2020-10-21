@@ -3,6 +3,7 @@ package com.xeno.goo.network;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.items.GauntletAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -27,11 +28,13 @@ public class GooPlaceSplatPacket implements IGooModPacket {
     private BlockPos pos;
     private Vector3d hit;
     private Direction side;
+    private Hand hand;
 
-    public GooPlaceSplatPacket(BlockPos pos, Vector3d hit, Direction side) {
+    public GooPlaceSplatPacket(BlockPos pos, Vector3d hit, Direction side, Hand hand) {
         this.pos = pos;
         this.hit = hit;
         this.side = side;
+        this.hand = hand;
     }
 
     public GooPlaceSplatPacket(PacketBuffer buf) {
@@ -45,6 +48,7 @@ public class GooPlaceSplatPacket implements IGooModPacket {
         buf.writeDouble(hit.y);
         buf.writeDouble(hit.z);
         buf.writeInt(side.getIndex());
+        buf.writeEnumValue(hand);
     }
 
     @Override
@@ -56,6 +60,7 @@ public class GooPlaceSplatPacket implements IGooModPacket {
         double z = buf.readDouble();
         this.hit =  new Vector3d(x, y, z);
         this.side = Direction.byIndex(buf.readInt());
+        this.hand = buf.readEnumValue(Hand.class);
     }
 
     @Override
@@ -67,26 +72,31 @@ public class GooPlaceSplatPacket implements IGooModPacket {
                     return;
                 }
 
-                ItemStack heldItem = player.getHeldItem(Hand.MAIN_HAND);
+                ItemStack heldItem = player.getHeldItem(hand);
                 LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-                lazyCap.ifPresent((c) -> tryBlockInteraction(player, c));
+                // if we can't place a single splat, we throw one instead.
+                boolean[] tryThrowingInstead = {false};
+                lazyCap.ifPresent((c) -> tryThrowingInstead[0] = tryBlockInteraction(player, c));
+                if (tryThrowingInstead[0]) {
+                    GauntletAbstraction.tryLobbingGoo(player, hand);
+                }
             }
         });
 
         supplier.get().setPacketHandled(true);
     }
 
-    private void tryBlockInteraction(PlayerEntity player, IFluidHandlerItem cap)
+    private boolean tryBlockInteraction(PlayerEntity player, IFluidHandlerItem cap)
     {
         BlockState state = player.world.getBlockState(this.pos);
         if (state.hasTileEntity()) {
-            return;
+            return true;
         }
 
         boolean solidSideHit = state.isSolidSide(player.world, this.pos, this.side);
         boolean sourceLiquidHit = !state.getFluidState().getFluid().isEquivalentTo(Fluids.EMPTY) && state.getFluidState().isSource();
         if (!solidSideHit && !sourceLiquidHit) {
-            return;
+            return true;
         }
 
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
@@ -94,7 +104,7 @@ public class GooPlaceSplatPacket implements IGooModPacket {
 
         // -1 is disabled
         if (drainAmountThrown == -1) {
-            return;
+            return false;
         }
 
         FluidStack splatStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
@@ -108,6 +118,7 @@ public class GooPlaceSplatPacket implements IGooModPacket {
             player.world.addEntity(blob);
         }
         player.world.addEntity(splat);
-        player.swing(Hand.MAIN_HAND, false);
+        player.swing(hand, true);
+        return false;
     }
 }

@@ -18,7 +18,9 @@ import java.util.function.Supplier;
 
 public class GooLobPacket implements IGooModPacket
 {
-    public GooLobPacket() {
+    private Hand hand;
+    public GooLobPacket(Hand hand) {
+        this.hand = hand;
     }
 
     public GooLobPacket(PacketBuffer buf) {
@@ -28,11 +30,13 @@ public class GooLobPacket implements IGooModPacket
     @Override
     public void read(PacketBuffer buf)
     {
+        this.hand = buf.readEnumValue(Hand.class);
     }
 
     @Override
     public void toBytes(PacketBuffer buf)
     {
+        buf.writeEnumValue(hand);
     }
 
     @Override
@@ -44,8 +48,8 @@ public class GooLobPacket implements IGooModPacket
                 if (player == null) {
                     return;
                 }
-                if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Gauntlet) {
-                    GauntletAbstraction.tryLobbingGoo(player);
+                if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+                    GauntletAbstraction.tryLobbingGoo(player, hand);
                 }
             }
         });

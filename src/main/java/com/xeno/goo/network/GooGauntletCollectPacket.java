@@ -28,11 +28,13 @@ public class GooGauntletCollectPacket implements IGooModPacket {
     private BlockPos pos;
     private Vector3d hit;
     private Direction side;
+    private Hand hand;
 
-    public GooGauntletCollectPacket(BlockPos pos, Vector3d hit, Direction side) {
+    public GooGauntletCollectPacket(BlockPos pos, Vector3d hit, Direction side, Hand hand) {
         this.pos = pos;
         this.hit = hit;
         this.side = side;
+        this.hand = hand;
     }
 
     public GooGauntletCollectPacket(PacketBuffer buf) {
@@ -46,6 +48,7 @@ public class GooGauntletCollectPacket implements IGooModPacket {
         buf.writeDouble(hit.y);
         buf.writeDouble(hit.z);
         buf.writeInt(side.getIndex());
+        buf.writeEnumValue(hand);
     }
 
     @Override
@@ -57,6 +60,7 @@ public class GooGauntletCollectPacket implements IGooModPacket {
         double z = buf.readDouble();
         this.hit =  new Vector3d(x, y, z);
         this.side = Direction.byIndex(buf.readInt());
+        this.hand = buf.readEnumValue(Hand.class);
     }
 
     @Override
@@ -68,9 +72,10 @@ public class GooGauntletCollectPacket implements IGooModPacket {
                     return;
                 }
 
-                ItemStack heldItem = player.getHeldItem(Hand.MAIN_HAND);
+                ItemStack heldItem = player.getHeldItem(hand);
                 LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
                 lazyCap.ifPresent((c) -> tryBlockInteraction(player, c));
+                player.swing(hand, true);
             }
         });
 

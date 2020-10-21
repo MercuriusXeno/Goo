@@ -505,23 +505,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
                     if (!isAutoGrabbedGoo()) {
                         continue;
                     }
-                    // try catching  it!
-                    if (owner instanceof PlayerEntity) {
-                        // check if the player has a gauntlet either empty or with the same goo as me
-                        ItemStack heldItem = ((PlayerEntity) owner).getHeldItem(Hand.MAIN_HAND);
-                        if (heldItem.getItem() instanceof Gauntlet) {
-                            LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-                            lazyCap.ifPresent((c) -> {
-                                int drain = c.fill(this.goo(), FluidAction.SIMULATE);
-                                if (drain > 0) {
-                                    c.fill(this.drain(drain, FluidAction.EXECUTE), FluidAction.EXECUTE);
-                                }
-                                if (this.goo.isEmpty()) {
-                                    this.remove();
-                                }
-                            });
-                        }
-                    }
                     return true;
                 }
             }

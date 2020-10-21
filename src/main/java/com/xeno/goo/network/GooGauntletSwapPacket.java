@@ -21,8 +21,10 @@ import java.util.function.Supplier;
 public class GooGauntletSwapPacket implements IGooModPacket
 {
     private FluidStack target;
-    public GooGauntletSwapPacket(FluidStack stack) {
+    private Hand hand;
+    public GooGauntletSwapPacket(FluidStack stack, Hand hand) {
         this.target = stack;
+        this.hand = hand;
     }
 
     public GooGauntletSwapPacket(PacketBuffer buf) {
@@ -33,12 +35,14 @@ public class GooGauntletSwapPacket implements IGooModPacket
     public void read(PacketBuffer buf)
     {
         this.target = buf.readFluidStack();
+        this.hand = buf.readEnumValue(Hand.class);
     }
 
     @Override
     public void toBytes(PacketBuffer buf)
     {
         buf.writeFluidStack(this.target);
+        buf.writeEnumValue(hand);
     }
 
     @Override
@@ -50,9 +54,11 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 if (player == null) {
                     return;
                 }
-                if (player.getHeldItem(Hand.MAIN_HAND).getItem() instanceof Gauntlet) {
-                    LazyOptional<IFluidHandlerItem> lazyCap = player.getHeldItem(Hand.MAIN_HAND).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+                if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+                    LazyOptional<IFluidHandlerItem> lazyCap = player.getHeldItem(hand)
+                            .getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
                     lazyCap.ifPresent(c -> tryRaidingInventoryForGoo(player, c));
+                    player.swing(hand, true);
                 }
             }
         });

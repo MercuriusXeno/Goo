@@ -607,40 +607,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     protected void collideWithEntity(Entity entityHit)
     {
         if (entityHit == owner) {
-            // only try catching the goo flagged to bounce/return goo
-            // at the time of writing, hard coded.
-            if (!isAutoGrabbedGoo()) {
-                return;
-            }
-            // try catching  it!
-            if (owner instanceof PlayerEntity) {
-                // check if the player has a gauntlet either empty or with the same goo as me
-                ItemStack heldItem = ((PlayerEntity) owner).getHeldItem(Hand.MAIN_HAND);
-                if (heldItem.getItem() instanceof Gauntlet) {
-                    LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-                    lazyCap.ifPresent((c) -> {
-                        int drain = c.fill(this.goo(), FluidAction.SIMULATE);
-                        if (drain > 0) {
-                            c.fill(this.drain(drain, FluidAction.EXECUTE), FluidAction.EXECUTE);
-                        }
-                        if (this.goo.isEmpty()) {
-                            this.remove();
-                        }
-                    });
-                }
-            }
             return;
         }
         // collisions with entities cause a dead drop but nothing else
         if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {
             this.setMotion(this.getMotion().mul(0d, -GOO_GRAVITY, 0d));
         }
-    }
-
-    private boolean isAutoGrabbedGoo() {
-        return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
-                || goo.getFluid().equals(Registry.METAL_GOO.get())
-                || goo.getFluid().equals(Registry.REGAL_GOO.get());
     }
 
     public float cubicSize()

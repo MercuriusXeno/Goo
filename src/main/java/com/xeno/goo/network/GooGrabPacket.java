@@ -24,9 +24,11 @@ import java.util.function.Supplier;
 
 public class GooGrabPacket implements IGooModPacket {
     private int gooEntityId;
+    private Hand hand;
 
-    public GooGrabPacket (Entity entity) {
+    public GooGrabPacket (Entity entity, Hand hand) {
         this.gooEntityId = entity.getEntityId();
+        this.hand = hand;
     }
 
     public GooGrabPacket(PacketBuffer buf) {
@@ -36,11 +38,13 @@ public class GooGrabPacket implements IGooModPacket {
     @Override
     public void toBytes(PacketBuffer buf) {
         buf.writeInt(gooEntityId);
+        buf.writeEnumValue(hand);
     }
 
     @Override
     public void read(PacketBuffer buf) {
         this.gooEntityId = buf.readInt();
+        this.hand = buf.readEnumValue(Hand.class);
     }
 
     @Override
@@ -53,7 +57,7 @@ public class GooGrabPacket implements IGooModPacket {
                 }
                 Entity e = player.world.getEntityByID(this.gooEntityId);
                 if (e instanceof GooSplat && ((GooSplat)e).isAtRest()) {
-                    tryPlayerInteraction(player, (IFluidHandler)e);
+                    tryPlayerInteraction(player, (IFluidHandler)e, hand);
                 }
             }
         });
@@ -61,10 +65,10 @@ public class GooGrabPacket implements IGooModPacket {
         supplier.get().setPacketHandled(true);
     }
 
-    private boolean tryPlayerInteraction(PlayerEntity player, IFluidHandler handler)
+    private boolean tryPlayerInteraction(PlayerEntity player, IFluidHandler handler, Hand hand)
     {
         boolean[] didStuff = {false};
-        LazyOptional<IFluidHandlerItem> cap = player.getHeldItem(Hand.MAIN_HAND).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+        LazyOptional<IFluidHandlerItem> cap = player.getHeldItem(hand).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c, handler));
         if (didStuff[0]) {
             AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
