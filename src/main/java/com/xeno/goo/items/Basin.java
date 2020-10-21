@@ -133,7 +133,7 @@ public class Basin extends BasinAbstraction
     }
 
     @Override
-    public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context) {
+    public ActionResultType onItemUse(ItemUseContext context) {
         return GooHandlingHelper.tryBlockInteraction(context);
     }
 

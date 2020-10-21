@@ -92,7 +92,7 @@ public class GooHandlingHelper {
 
         PlayerEntity player = context.getPlayer();
         if (context.getWorld().isRemote()) {
-            return ActionResultType.CONSUME;
+            return ActionResultType.PASS;
         }
         Hand hand = context.getHand();
         BlockState state = context.getWorld().getBlockState(context.getPos());
@@ -125,7 +125,7 @@ public class GooHandlingHelper {
         if (didStuff) {
             return ActionResultType.SUCCESS;
         }
-        return ActionResultType.CONSUME;
+        return ActionResultType.PASS;
     }
 
     private static boolean tryTakingFluidFromContainerWithGauntlet(ItemUseContext context, PlayerEntity player, Hand hand) {
