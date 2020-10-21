@@ -43,18 +43,18 @@ public class GauntletAbstraction extends ItemFluidContainer
         return new GauntletAbstractionCapability(stack);
     }
 
-    public static void tryLobbingGoo(PlayerEntity player, Hand hand) {
+    public static boolean tryLobbingGoo(PlayerEntity player, Hand hand) {
         if (player.getEntityWorld().isRemote()) {
-            return;
+            return false;
         }
 
         ItemStack stack = player.getHeldItem(hand);
         if (!(stack.getItem() instanceof GauntletAbstraction)) {
-            return;
+            return false;
         }
         IFluidHandlerItem cap = FluidHandlerHelper.capability(stack);
         if (cap == null) {
-            return;
+            return false;
         }
 
         // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
@@ -62,7 +62,7 @@ public class GauntletAbstraction extends ItemFluidContainer
 
         // -1 is disabled
         if (drainAmountThrown == -1) {
-            return;
+            return false;
         }
 
         if (drainAmountThrown == 0) {
@@ -73,6 +73,8 @@ public class GauntletAbstraction extends ItemFluidContainer
         player.getEntityWorld().addEntity(new GooBlob(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
         player.swing(hand, true);
+
+        return true;
     }
 
     @Override

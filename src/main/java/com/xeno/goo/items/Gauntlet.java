@@ -132,6 +132,11 @@ public class Gauntlet extends GauntletAbstraction
     }
 
     @Override
+    public ActionResultType onItemUseFirst(ItemStack stack, ItemUseContext context) {
+        return GooHandlingHelper.tryBlockInteraction(context);
+    }
+
+    @Override
     public int getUseDuration(ItemStack stack) {
         return Integer.MAX_VALUE;
     }

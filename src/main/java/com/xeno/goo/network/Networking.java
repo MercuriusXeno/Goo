@@ -63,30 +63,6 @@ public class Networking {
                 .consumer(GooGrabPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooGauntletCollectPacket.class, nextID())
-                .encoder(GooGauntletCollectPacket::toBytes)
-                .decoder(GooGauntletCollectPacket::new)
-                .consumer(GooGauntletCollectPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooBasinCollectPacket.class, nextID())
-                .encoder(GooBasinCollectPacket::toBytes)
-                .decoder(GooBasinCollectPacket::new)
-                .consumer(GooBasinCollectPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooPlaceSplatPacket.class, nextID())
-                .encoder(GooPlaceSplatPacket::toBytes)
-                .decoder(GooPlaceSplatPacket::new)
-                .consumer(GooPlaceSplatPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooPlaceSplatAreaPacket.class, nextID())
-                .encoder(GooPlaceSplatAreaPacket::toBytes)
-                .decoder(GooPlaceSplatAreaPacket::new)
-                .consumer(GooPlaceSplatAreaPacket::handle)
-                .add();
-
         INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
                 .encoder(GooGauntletSwapPacket::toBytes)
                 .decoder(GooGauntletSwapPacket::new)
