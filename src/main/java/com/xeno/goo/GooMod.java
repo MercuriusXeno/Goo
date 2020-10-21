@@ -4,6 +4,7 @@ import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
@@ -13,10 +14,10 @@ import java.util.logging.Logger;
 public class GooMod
 {
     public static final String MOD_ID = "goo";
-
     public static final Logger logger = Logger.getLogger(MOD_ID);
-
     public static GooConfig config;
+    public static CommonProxy proxy = DistExecutor.runForDist(() -> () -> new ClientProxy(),
+            () -> () -> new CommonProxy());
 
     public GooMod() {
         Registry.init();

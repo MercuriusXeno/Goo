@@ -1,16 +1,11 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.gui.GooRadial;
 import com.xeno.goo.enchantments.Containment;
-import com.xeno.goo.entities.GooSplat;
-import com.xeno.goo.events.ForgeClientEvents;
 import com.xeno.goo.events.TargetingHandler;
-import com.xeno.goo.network.*;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -23,12 +18,9 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.event.TickEvent;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Supplier;
 
 public class Gauntlet extends GauntletAbstraction
 {
@@ -95,7 +87,7 @@ public class Gauntlet extends GauntletAbstraction
             return;
         }
         if (ticksHeld(count) >= RADIAL_MENU_DELAY && Minecraft.getInstance().currentScreen == null) {
-            Minecraft.getInstance().displayGuiScreen(new GooRadial(player.getActiveHand()));
+            GooMod.proxy.openRadialMenu(player);
         }
     }
 

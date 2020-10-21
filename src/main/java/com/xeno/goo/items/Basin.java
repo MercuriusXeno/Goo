@@ -1,11 +1,9 @@
 package com.xeno.goo.items;
 
-import com.xeno.goo.client.gui.GooRadial;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TargetingHandler;
-import com.xeno.goo.network.*;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.util.ITooltipFlag;
@@ -16,19 +14,14 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.item.UseAction;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
-import javax.swing.*;
 import java.util.List;
 
 public class Basin extends BasinAbstraction
@@ -96,7 +89,7 @@ public class Basin extends BasinAbstraction
             return;
         }
         if (ticksHeld(count) >= RADIAL_MENU_DELAY && Minecraft.getInstance().currentScreen == null) {
-            Minecraft.getInstance().displayGuiScreen(new GooRadial(player.getActiveHand()));
+            GooMod.proxy.openRadialMenu(player);
         }
     }
 
