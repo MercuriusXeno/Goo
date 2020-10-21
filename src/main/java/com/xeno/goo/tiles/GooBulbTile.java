@@ -22,11 +22,13 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
@@ -97,6 +99,9 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         // visuals. This is experimental.
         if (!crystal.isEmpty()) {
             crystalProgressTicks++;
+            if (!crystalProgress.isEmpty()) {
+                spawnParticles(crystalProgress, 1);
+            }
             if (crystalProgressTicks >= TICKS_PER_PROGRESS_TICK) {
                 crystalProgressTicks = 0;
                 isAnyCrystalProgress = tryCrystalProgress();
@@ -115,6 +120,33 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
         if (didStuff) {
             onContentsChanged();
+        }
+    }
+
+    private void spawnParticles(FluidStack crystalProgress, int particles) {
+        if (world instanceof ServerWorld) {
+            BasicParticleType type = Registry.vaporParticleFromFluid(crystalProgress.getFluid());
+            if (type == null) {
+                return;
+            }
+            AxisAlignedBB box = getSpaceInBox();
+            for (int i = 0; i < particles; i++) {
+                float scale = world.rand.nextFloat() / 6f + 0.25f;
+                Vector3d lowerBounds = new Vector3d(box.minX, box.minY, box.minZ);
+                Vector3d upperBounds = new Vector3d(box.maxX, box.maxY, box.maxZ);
+                Vector3d threshHoldMax = upperBounds.subtract(lowerBounds);
+                Vector3d centeredBounds = threshHoldMax.scale(0.5f);
+                Vector3d center = lowerBounds.add(centeredBounds);
+                Vector3d randomOffset = threshHoldMax.mul(world.rand.nextFloat() - 0.5f,
+                        world.rand.nextFloat() - 0.5f,
+                        world.rand.nextFloat() - 0.5f).scale(scale * 2f);
+                Vector3d spawnVec = center.add(randomOffset);
+                // make sure the spawn area is offset in a way that puts the particle outside of the block side we live on
+                // Vector3d offsetVec = Vector3d.copy(sideWeLiveOn().getDirectionVec()).mul(threshHoldMax.x, threshHoldMax.y, threshHoldMax.z);
+
+                ((ServerWorld) world).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z,
+                        1, 0d, 0d, 0d, scale);
+            }
         }
     }
 
@@ -192,6 +224,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             // note here we only need 9 progress ticks to convert, because the tier below us contained 1/10th of the value
             // this is even true of quartz just because the difference is negligible and quartz is worth way more than 1.
             if (crystalProgress.getAmount() >= target.getAmount() - lastIncrement) {
+                spawnParticles(crystalProgress, 4);
                 // reduce the target by the 10th we don't need or we'll decrease the fluid amount by more than we intended.
                 target.setAmount(target.getAmount() - lastIncrement);
                 this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
@@ -630,6 +663,12 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public Object2FloatMap<Fluid> calculateFluidHeights() {
         return calculateFluidHeights(0f);
+    }
+
+    private AxisAlignedBB getSpaceInBox() {
+        float fluidLevels = calculateFluidHeight();
+        return new AxisAlignedBB(this.pos.getX(), this.pos.getY() + fluidLevels, this.pos.getZ(),
+                this.pos.getX() + 1d, this.pos.getY() + 1d, this.pos.getZ() + 1d);
     }
 
     @Override

@@ -11,10 +11,15 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.*;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.RayTraceContext;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -97,7 +102,7 @@ public class Gauntlet extends GauntletAbstraction
 
     @Override
     public void onPlayerStoppedUsing(ItemStack stack, World worldIn, LivingEntity player, int timeLeft) {
-        if (!(player instanceof ClientPlayerEntity)) {
+        if ((player instanceof ClientPlayerEntity)) {
             return;
         }
         if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
@@ -105,6 +110,13 @@ public class Gauntlet extends GauntletAbstraction
         }
         if (ticksHeld(timeLeft) >= RADIAL_MENU_DELAY) {
             return;
+        }
+        if (player instanceof ServerPlayerEntity) {
+            BlockRayTraceResult trace = rayTrace(worldIn, (ServerPlayerEntity) player, RayTraceContext.FluidMode.ANY);
+            if (GooHandlingHelper.tryBlockInteraction(new ItemUseContext((ServerPlayerEntity)player,
+                    player.getActiveHand(), trace))) {
+                return;
+            }
         }
         GooHandlingHelper.tryUsingGauntletOrBasin((ClientPlayerEntity)player, player.getActiveHand());
         super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
@@ -121,11 +133,6 @@ public class Gauntlet extends GauntletAbstraction
 
         playerIn.setActiveHand(handIn);
         return ActionResult.resultFail(itemstack);
-    }
-
-    @Override
-    public ActionResultType onItemUse(ItemUseContext context) {
-        return GooHandlingHelper.tryBlockInteraction(context);
     }
 
     @Override

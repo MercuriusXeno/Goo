@@ -2,6 +2,7 @@ package com.xeno.goo.entities;
 
 import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.interactions.GooInteractions;
+import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -17,8 +18,10 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
+import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
@@ -193,10 +196,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
             return;
         }
 
-        if (sideWeLiveOn != Direction.UP) {
+        if (sideWeLiveOn == Direction.DOWN) {
             // the state we're interested in observing is the state of the hit block, not the offset.
             GooInteractions.spawnParticles(this);
         }
+        spawnParticles();
 
         // let the server handle motion and updates
         // also don't tell the server what the goo amount is, it knows.
@@ -242,6 +246,77 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFlu
         }
 
         lastGooAmount = goo.getAmount();
+    }
+
+    private void spawnParticles() {
+        if (world instanceof ServerWorld) {
+            BasicParticleType type = Registry.vaporParticleFromFluid(goo.getFluid());
+            if (type == null) {
+                return;
+            }
+            AxisAlignedBB box = getBoundingBox();
+            for (int i = 0; i < 4; i++) {
+                float scale = world.rand.nextFloat() / 6f + 0.25f;
+                Vector3d lowerBounds = new Vector3d(box.minX, box.minY, box.minZ);
+                Vector3d upperBounds = new Vector3d(box.maxX, box.maxY, box.maxZ);
+                Vector3d threshHoldMax = upperBounds.subtract(lowerBounds);
+                Vector3d centeredBounds = threshHoldMax.scale(0.5f);
+                Vector3d center = lowerBounds.add(centeredBounds);
+                Vector3d randomOffset = threshHoldMax.mul(world.rand.nextFloat() - 0.5f,
+                        world.rand.nextFloat() - 0.5f,
+                        world.rand.nextFloat() - 0.5f).scale(scale * 2f);
+                Vector3d spawnVec = center.add(randomOffset);
+                // make sure the spawn area is offset in a way that puts the particle outside of the block side we live on
+                // Vector3d offsetVec = Vector3d.copy(sideWeLiveOn().getDirectionVec()).mul(threshHoldMax.x, threshHoldMax.y, threshHoldMax.z);
+
+                Vector3d spawnOutwardVec = Vector3d.copy(sideWeLiveOn().getDirectionVec()).scale(scale / 2f);
+                spawnVec = spawnVec.add(spawnOutwardVec);
+                ((ServerWorld) world).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z,
+                        1, 0d, 0d, 0d, scale);
+            }
+        }
+    }
+
+    @Override
+    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
+        if (player.getHeldItem(hand).getItem() instanceof Basin ||
+                player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+            if (isAtRest()) {
+                tryPlayerInteraction(player, hand);
+                return ActionResultType.CONSUME;
+            }
+        }
+        return super.applyPlayerInteraction(player, vec, hand);
+    }
+
+    private boolean tryPlayerInteraction(PlayerEntity player, Hand hand)
+    {
+        boolean[] didStuff = {false};
+        LazyOptional<IFluidHandlerItem> cap = player.getHeldItem(hand).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c));
+        if (didStuff[0]) {
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
+        }
+        return didStuff[0];
+    }
+
+    private boolean tryExtractingGooFromEntity(IFluidHandlerItem item)
+    {
+        FluidStack heldGoo = item.getFluidInTank(0);
+        if (!item.getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(getFluidInTank(0)) || getFluidInTank(0).isEmpty()) {
+                return false;
+            }
+        }
+
+        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
+        FluidStack tryDrain = drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        if (tryDrain.isEmpty()) {
+            return false;
+        }
+
+        item.fill(drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     private void drainIntoDrain() {

@@ -51,18 +51,6 @@ public class Networking {
                 .consumer(SolidifierPoppedPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooLobPacket.class, nextID())
-                .encoder(GooLobPacket::toBytes)
-                .decoder(GooLobPacket::new)
-                .consumer(GooLobPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooGrabPacket.class, nextID())
-                .encoder(GooGrabPacket::toBytes)
-                .decoder(GooGrabPacket::new)
-                .consumer(GooGrabPacket::handle)
-                .add();
-
         INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
                 .encoder(GooGauntletSwapPacket::toBytes)
                 .decoder(GooGauntletSwapPacket::new)

@@ -1,9 +1,16 @@
 package com.xeno.goo.client.render;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
+import net.minecraft.client.particle.IParticleRenderType;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.RenderState;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.ResourceLocation;
@@ -64,6 +71,38 @@ public class GooRenderHelper extends RenderState
                         .transparency(RenderType.NO_TRANSPARENCY)
                         .build(false));
     }
+
+    // stolen from elucent and baileyH, with love [EMBER_RENDER]
+    public static final IParticleRenderType VAPOR_RENDER = new IParticleRenderType() {
+        @Override
+        public void beginRender(BufferBuilder buffer, TextureManager textureManager) {
+            RenderSystem.disableAlphaTest();
+            RenderSystem.enableDepthTest();
+            RenderSystem.enableBlend();
+            RenderSystem.alphaFunc(516, 1f);
+            RenderSystem.enableCull();
+            textureManager.bindTexture(AtlasTexture.LOCATION_PARTICLES_TEXTURE);
+            RenderSystem.depthMask(false);
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA_SATURATE.param, GlStateManager.DestFactor.ONE.param);
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
+        }
+
+        @Override
+        public void finishRender(Tessellator tessellator) {
+            tessellator.draw();
+            RenderSystem.enableDepthTest();
+            RenderSystem.enableAlphaTest();
+            RenderSystem.depthMask(false);
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA.param, GlStateManager.DestFactor.ONE.param);
+            RenderSystem.enableCull();
+            RenderSystem.alphaFunc(516, 0.1F);
+        }
+
+        @Override
+        public String toString() {
+            return "goo:cloud_render";
+        }
+    };
 
     public GooRenderHelper(String nameIn, Runnable setupTaskIn, Runnable clearTaskIn)
     {

@@ -1,29 +1,17 @@
 package com.xeno.goo.client.particle;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.GooRenderHelper;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.*;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.particles.*;
-import net.minecraft.util.ResourceLocation;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 public class GooParticle extends SpriteTexturedParticle
 {
-    private static final Map<Fluid, Integer> fluidColorAverages = new HashMap<>();
 
     private final Fluid fluid;
     private final boolean isChromatic;
@@ -53,95 +41,19 @@ public class GooParticle extends SpriteTexturedParticle
 
     private void setColor()
     {
-        if (!fluidColorAverages.containsKey(this.fluid)) {
-            cacheFluidColor(this.fluid);
-        }
-        int tempColor = fluidColor(this.fluid);
-        this.setColor(red(tempColor), green(tempColor), blue(tempColor));
+        int tempColor = ParticleColorHelper.getColor(this.fluid, this.isChromatic);
+        this.setColor(ParticleColorHelper.red(tempColor),
+                ParticleColorHelper.green(tempColor),
+                ParticleColorHelper.blue(tempColor));
         this.setAlphaF(0.8f);
     }
 
     private void updateChromatic() {
         int chromaticInt = FluidCuboidHelper.colorizeChromaticGoo();
-        this.setColor(red(chromaticInt), green(chromaticInt), blue(chromaticInt));
-
-    }
-
-
-    private float red(int tempColor)
-    {
-        return colorFloat(tempColor, 16);
-    }
-
-    private float green(int tempColor)
-    {
-        return colorFloat(tempColor, 8);
-    }
-
-    private float blue(int tempColor)
-    {
-        return colorFloat(tempColor, 0);
-    }
-
-    private float colorFloat(int tempColor, int i)
-    {
-        return (float)Math.floor(tempColor >> i & 0xff) / 255f;
-    }
-
-    private int fluidColor(Fluid f)
-    {
-        if (isChromatic) {
-            return FluidCuboidHelper.colorizeChromaticGoo();
-        }
-        return fluidColorAverages.getOrDefault(f, 0x00ffffff);
-    }
-
-    private void cacheFluidColor(Fluid f)
-    {
-        InputStream is;
-        BufferedImage image = null;
-        int[] pixel;
-        try {
-            String fluidResLoc;
-
-            String fluidStillTexturePath = f.getAttributes().getStillTexture().getPath();
-            fluidResLoc = GooMod.MOD_ID + ":textures/" + fluidStillTexturePath + ".png";
-            is = Minecraft.getInstance().getResourceManager().getResource((new ResourceLocation(fluidResLoc))).getInputStream();
-            image = ImageIO.read(is);
-        } catch(IOException e) {
-            GooMod.debug("Error loading a texture for rasterization/averaging for particle colors.");
-            // eat this
-        }
-        int w = image.getWidth();
-        int h = image.getHeight();
-        int[] res = new int[w * h];
-        for (int i = 0; i < w; i++) {
-            for (int j = 0; j < h; j++) {
-                pixel = image.getRaster().getPixel(i, j, new int[4]);
-                res[j * w + i] = new Color(pixel[0], pixel[1], pixel[2]).getRGB();
-            }
-        }
-
-        int avg = interpolateColor(res);;
-        fluidColorAverages.put(f, avg);
-    }
-
-    private int interpolateColor(int[] res)
-    {
-        double divisor = res.length;
-        int r = 0;
-        int g = 0;
-        int b = 0;
-        for (int c : res) {
-            r += c >> 16 & 0xff;
-            g += c >> 8 & 0xff;
-            b += c & 0xff;
-        }
-        r = (int)Math.ceil((double)r / divisor);
-        g = (int)Math.ceil((double)g / divisor);
-        b = (int)Math.ceil((double)b / divisor);
-
-        return r << 16 | g << 8 | b;
+        this.setColor(
+                ParticleColorHelper.red(chromaticInt),
+                ParticleColorHelper.green(chromaticInt),
+                ParticleColorHelper.blue(chromaticInt));
     }
 
     @Override

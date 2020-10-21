@@ -36,7 +36,7 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     @Override
     public boolean shouldIncompleteRecipeBeProcessed(@NotNull final IEquivalencyRecipe iEquivalencyRecipe)
     {
-        return true;
+        return false;
     }
 
     @Override
@@ -51,6 +51,7 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     {
         return !(iEquivalencyRecipe instanceof ITagEquivalencyRecipe);
     }
+
     public boolean isValidFor(final ICompoundContainer<?> iCompoundContainer, final CompoundInstance compoundInstance)
     {
         if  (iCompoundContainer.getContents() instanceof ItemStack && isInvalidStack((ItemStack) iCompoundContainer.getContents())) {

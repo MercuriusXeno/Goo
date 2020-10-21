@@ -7,12 +7,14 @@ import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.tileentity.TileEntity;
@@ -20,6 +22,9 @@ import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.RayTraceContext;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.World;
@@ -39,60 +44,18 @@ public class GooHandlingHelper {
         if (player.isSwingInProgress) {
             return;
         }
-        if (TargetingHandler.lastTargetedEntity instanceof GooSplat && ((GooSplat) TargetingHandler.lastTargetedEntity).isAtRest()) {
-            // refer to the targeting handler to figure out if we are looking at a goo entity
-            Networking.sendToServer(new GooGrabPacket(TargetingHandler.lastTargetedEntity, hand), player);
-        } else {
-            // lobbing is something only gauntlets can do
-            if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
-                // packet to server to request a throw event in lieu of grabbing anything
-                Networking.sendToServer(new GooLobPacket(hand), player);
-            }
+
+        // lobbing is something only gauntlets can do
+        if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+            GauntletAbstraction.tryLobbingGoo(player, hand);
         }
     }
 
-    private boolean tryPlacingSingleSplat(PlayerEntity player, IFluidHandlerItem cap, BlockPos pos, Direction side,
-                                          Vector3d hit, Hand hand)
-    {
-        BlockState state = player.world.getBlockState(pos);
-        if (state.hasTileEntity()) {
-            return true;
-        }
-
-        boolean solidSideHit = state.isSolidSide(player.world, pos, side);
-        boolean sourceLiquidHit = !state.getFluidState().getFluid().isEquivalentTo(Fluids.EMPTY) && state.getFluidState().isSource();
-        if (!solidSideHit && !sourceLiquidHit) {
-            return true;
-        }
-
-        // we try to get the full amount of drain but a smaller fluidstack just means a smaller, weaker projectile
-        int drainAmountThrown = GooMod.config.thrownGooAmount(cap.getFluidInTank(0).getFluid());
-
-        // -1 is disabled
-        if (drainAmountThrown == -1) {
-            return false;
-        }
-
-        FluidStack splatStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
-        int originalAmount = splatStack.getAmount();
-        splatStack.setAmount(1);
-        GooSplat splat = GooSplat.createPlacedSplat(player, pos, side, hit, splatStack, true, 0f);
-        if (originalAmount > 1) {
-            FluidStack blobStack = splatStack.copy();
-            blobStack.setAmount(originalAmount - 1);
-            GooBlob blob = GooBlob.createSplattedBlob(player, splat, blobStack);
-            player.world.addEntity(blob);
-        }
-        player.world.addEntity(splat);
-        player.swing(hand, true);
-        return false;
-    }
-
-    public static ActionResultType tryBlockInteraction(ItemUseContext context) {
+    public static boolean tryBlockInteraction(ItemUseContext context) {
 
         PlayerEntity player = context.getPlayer();
         if (context.getWorld().isRemote()) {
-            return ActionResultType.PASS;
+            return false;
         }
         Hand hand = context.getHand();
         BlockState state = context.getWorld().getBlockState(context.getPos());
@@ -111,7 +74,7 @@ public class GooHandlingHelper {
         }
 
         if (didStuff) {
-            return ActionResultType.SUCCESS;
+            return true;
         }
 
         // placing a single splat is a gauntlet function
@@ -123,9 +86,9 @@ public class GooHandlingHelper {
             didStuff = tryPlacingSplatAreaWithBasin(context.getPlayer(), hand, context.getFace(), context.getPos(), context.getHitVec());
         }
         if (didStuff) {
-            return ActionResultType.SUCCESS;
+            return true;
         }
-        return ActionResultType.PASS;
+        return false;
     }
 
     private static boolean tryTakingFluidFromContainerWithGauntlet(ItemUseContext context, PlayerEntity player, Hand hand) {

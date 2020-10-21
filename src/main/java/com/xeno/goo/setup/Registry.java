@@ -209,9 +209,30 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> WEIRD_FALLING_GOO_PARTICLE = PARTICLES.register("weird_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> WEIRD_LANDING_GOO_PARTICLE = PARTICLES.register("weird_landing_goo", () -> new BasicParticleType(false));
 
+    // vapor particles
+    public static final RegistryObject<BasicParticleType> AQUATIC_VAPOR_PARTICLE = PARTICLES.register("aquatic_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CHROMATIC_VAPOR_PARTICLE = PARTICLES.register("chromatic_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CRYSTAL_VAPOR_PARTICLE = PARTICLES.register("crystal_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> DECAY_VAPOR_PARTICLE = PARTICLES.register("decay_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> EARTHEN_VAPOR_PARTICLE = PARTICLES.register("earthen_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> ENERGETIC_VAPOR_PARTICLE = PARTICLES.register("energetic_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FAUNAL_VAPOR_PARTICLE = PARTICLES.register("faunal_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FLORAL_VAPOR_PARTICLE = PARTICLES.register("floral_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FUNGAL_VAPOR_PARTICLE = PARTICLES.register("fungal_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> HONEY_VAPOR_PARTICLE = PARTICLES.register("honey_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> LOGIC_VAPOR_PARTICLE = PARTICLES.register("logic_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> METAL_VAPOR_PARTICLE = PARTICLES.register("metal_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> MOLTEN_VAPOR_PARTICLE = PARTICLES.register("molten_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> OBSIDIAN_VAPOR_PARTICLE = PARTICLES.register("obsidian_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> RADIANT_VAPOR_PARTICLE = PARTICLES.register("radiant_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> REGAL_VAPOR_PARTICLE = PARTICLES.register("regal_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SLIME_VAPOR_PARTICLE = PARTICLES.register("slime_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SNOW_VAPOR_PARTICLE = PARTICLES.register("snow_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> VITAL_VAPOR_PARTICLE = PARTICLES.register("vital_vapor",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> WEIRD_VAPOR_PARTICLE = PARTICLES.register("weird_vapor",  () -> new BasicParticleType(false));
 
     private static final Map<Fluid, BasicParticleType> fallingParticleLookupCache = new HashMap<>();
-    private static void initializeParticleLookupCache() {
+    private static void initializeFallingParticleLookupCache() {
         fallingParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(CHROMATIC_GOO.get(), CHROMATIC_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(CRYSTAL_GOO.get(), CRYSTAL_FALLING_GOO_PARTICLE.get());
@@ -234,16 +255,52 @@ public class Registry {
         fallingParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_FALLING_GOO_PARTICLE.get());
     }
 
+    private static final Map<Fluid, BasicParticleType> vaporParticleLookupCache = new HashMap<>();
+    private static void initializeVaporParticleLookupCache() {
+        vaporParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(CHROMATIC_GOO.get(), CHROMATIC_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(CRYSTAL_GOO.get(), CRYSTAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(DECAY_GOO.get(), DECAY_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(EARTHEN_GOO.get(), EARTHEN_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(ENERGETIC_GOO.get(), ENERGETIC_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(FAUNAL_GOO.get(), FAUNAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(FLORAL_GOO.get(), FLORAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(FUNGAL_GOO.get(), FUNGAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(HONEY_GOO.get(), HONEY_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(METAL_GOO.get(), METAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(REGAL_GOO.get(), REGAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(SLIME_GOO.get(), SLIME_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(SNOW_GOO.get(), SNOW_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(VITAL_GOO.get(), VITAL_VAPOR_PARTICLE.get());
+        vaporParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_VAPOR_PARTICLE.get());
+    }
+    
     public static BasicParticleType fallingParticleFromFluid(Fluid fluid)
     {
         if (fallingParticleLookupCache.size() == 0) {
-            initializeParticleLookupCache();
+            initializeFallingParticleLookupCache();
         }
         if (!fallingParticleLookupCache.containsKey(fluid)) {
             return null;
         }
 
         return fallingParticleLookupCache.get(fluid);
+    }
+
+    public static BasicParticleType vaporParticleFromFluid(Fluid fluid)
+    {
+        if (vaporParticleLookupCache.size() == 0) {
+            initializeVaporParticleLookupCache();
+        }
+        if (!vaporParticleLookupCache.containsKey(fluid)) {
+            return null;
+        }
+
+        return vaporParticleLookupCache.get(fluid);
     }
 
     public static String getFluidTranslationKey(String key)
