@@ -32,6 +32,11 @@ public class ForgeClientEvents
     }
 
     @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        TargetingHandler.clearStacks();
+    }
+
+    @SubscribeEvent
     public static void onGameOverlay(RenderGameOverlayEvent.Post event) {
         if (!event.getType().name().equals(EVENT_PHASE_FOR_OVERLAY_INJECTION)) {
             return;
