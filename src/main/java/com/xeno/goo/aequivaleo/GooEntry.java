@@ -19,16 +19,17 @@ public class GooEntry
 {
     // these goo mappings are special and have important functions. I'm defining them here as static,
     // almost implicit, properties of the GooEntry class as a whole.
-    public static final GooEntry EMPTY = new GooEntry(false, false);
-    public static final GooEntry DENIED = new GooEntry(true, false);
+    public static final GooEntry EMPTY   = new GooEntry(false, false);
+    public static final GooEntry DENIED  = new GooEntry(true, false);
     public static final GooEntry UNKNOWN = new GooEntry(false, true);
 
     private List<GooValue> values;
-    private boolean isDenied;
-    private boolean isUnknown;
-    private boolean isFixed;
+    private boolean        isDenied;
+    private boolean        isUnknown;
+    private boolean        isFixed;
 
-    public GooEntry(List<GooValue> gooValues) {
+    public GooEntry(List<GooValue> gooValues)
+    {
         this.values = gooValues;
         this.isDenied = false;
         this.isUnknown = false;
@@ -37,7 +38,8 @@ public class GooEntry
         sortValues();
     }
 
-    public GooEntry(GooValue... adding) {
+    public GooEntry(GooValue... adding)
+    {
         this.values = Arrays.asList(adding);
         this.isDenied = false;
         this.isUnknown = false;
@@ -46,7 +48,8 @@ public class GooEntry
         sortValues();
     }
 
-    public GooEntry(boolean isDenied, boolean isUnknown) {
+    public GooEntry(boolean isDenied, boolean isUnknown)
+    {
         this.values = new ArrayList<>();
         this.isDenied = isDenied;
         this.isUnknown = isUnknown;
@@ -69,14 +72,23 @@ public class GooEntry
         this.isDenied = !isValid;
         this.isUnknown = compounds.size() == 0;
         this.isFixed = Equivalencies.isLocked(world, item);
-        if (isValid) {
-            this.values = compounds.stream().filter(c -> c.getType() instanceof GooCompoundType).map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(), c.getAmount())).collect(Collectors.toList());
-        } else {
+        if (isValid)
+        {
+            this.values = compounds.stream()
+                            .filter(c -> c.getType() instanceof GooCompoundType)
+                            .filter(c -> Math.floor(c.getAmount()) > 0)
+                            .map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(),
+                              Math.floor(c.getAmount())))
+                            .collect(Collectors.toList());
+        }
+        else
+        {
             this.values = new ArrayList<>();
         }
     }
 
-    private void pruneEmptyValues() {
+    private void pruneEmptyValues()
+    {
         values.removeIf(v -> v.amount() == 0);
     }
 
@@ -97,11 +109,13 @@ public class GooEntry
 
     public double weight() { return values.stream().map(GooValue::amount).reduce(0d, Double::sum); }
 
-    public boolean isUnusable() {
+    public boolean isUnusable()
+    {
         return isUnknown() || isDenied();
     }
 
-    public String toString() {
+    public String toString()
+    {
         return this.values.stream().map(v -> v.getFluidResourceLocation() + " " + v.amount() + "mB").collect(Collectors.joining(", "));
     }
 

@@ -40,14 +40,13 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     }
 
     @Override
-    public boolean canContributeToRecipeAsInput(final CompoundInstance compoundInstance, final IEquivalencyRecipe iEquivalencyRecipe)
+    public boolean canContributeToRecipeAsInput(final IEquivalencyRecipe iEquivalencyRecipe, final CompoundInstance compoundInstance)
     {
         return !(iEquivalencyRecipe instanceof ITagEquivalencyRecipe);
     }
 
     @Override
-    public boolean canContributeToRecipeAsOutput(
-      final ICompoundContainer<?> iCompoundContainer, final IEquivalencyRecipe iEquivalencyRecipe, final CompoundInstance compoundInstance)
+    public boolean canContributeToRecipeAsOutput(final IEquivalencyRecipe iEquivalencyRecipe, final CompoundInstance compoundInstance)
     {
         return !(iEquivalencyRecipe instanceof ITagEquivalencyRecipe);
     }
