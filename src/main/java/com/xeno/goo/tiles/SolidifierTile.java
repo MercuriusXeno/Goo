@@ -360,7 +360,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
 
     private boolean isValidTarget(Item item)
     {
-        return !getItemEntry(item).isUnusable();
+        return !getItemEntry(item).deniesSolidification();
     }
 
     private void enterTargetSwapMode(Item item)

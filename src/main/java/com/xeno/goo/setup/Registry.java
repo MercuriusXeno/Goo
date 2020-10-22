@@ -158,6 +158,8 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> VITAL = registerCompound("vital", VITAL_GOO);
     public static final RegistryObject<GooCompoundType> WEIRD = registerCompound("weird", WEIRD_GOO);
 
+    public static final RegistryObject<GooCompoundType> FORBIDDEN = registerCompound("logic_forbidden", () -> null);
+
     private static RegistryObject<GooCompoundType> registerCompound(String name, Supplier<GooFluid> f) {
         RegistryObject<GooCompoundType> type = COMPOUNDS.register(name, () -> new GooCompoundType(f, GOO_GROUP));
         FluidToCompoundMap.put(f, type);
@@ -331,6 +333,12 @@ public class Registry {
         if (result[0] != null) {
             return result[0];
         }
+
+        final GooFluid g = k.get();
+        if (g == null && f == null)
+            return v.get();
+        if (g == null)
+            return result[0];
 
         if (k.get().equals(f)) {
             return v.get();

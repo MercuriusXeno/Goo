@@ -3,6 +3,7 @@ package com.xeno.goo.datagen;
 import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.datagen.ForcedInformationProvider;
+import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
@@ -13,6 +14,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -158,7 +160,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.CRIMSON_NYLIUM, new ItemStack(Items.CRIMSON_NYLIUM)), earthen(120), fungal(15), chromatic(60));
         saveData(newLinkedHashSet(Items.CRIMSON_FUNGUS, new ItemStack(Items.CRIMSON_FUNGUS)), fungal(15));
         saveData(newLinkedHashSet(Items.CRYING_OBSIDIAN, new ItemStack(Items.CRYING_OBSIDIAN)), weird(30), obsidian(960));
-        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(240));
+        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(240), forbidden(1));
         saveData(newLinkedHashSet(Items.EGG, new ItemStack(Items.EGG)), faunal(15), vital(15));
         saveData(newLinkedHashSet(Items.EMERALD, new ItemStack(Items.EMERALD)), regal(60), crystal(60));
         saveData(newLinkedHashSet(Items.END_ROD, new ItemStack(Items.END_ROD)), radiant(20));
@@ -187,7 +189,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.MYCELIUM, new ItemStack(Items.MYCELIUM)), earthen(180), fungal(30));
         saveData(newLinkedHashSet(Items.NETHER_WART, new ItemStack(Items.NETHER_WART)), weird(1), fungal(5));
         saveData(newLinkedHashSet(Items.WARPED_WART_BLOCK, new ItemStack(Items.WARPED_WART_BLOCK)), weird(9), fungal(45));
-        saveData(newLinkedHashSet(Items.NETHERITE_SCRAP, new ItemStack(Items.NETHERITE_SCRAP)), metal(960), obsidian(120));
+        saveData(newLinkedHashSet(Items.NETHERITE_SCRAP, new ItemStack(Items.NETHERITE_SCRAP)), metal(960), obsidian(120), forbidden(1));
         saveData(newLinkedHashSet(Items.NETHERRACK, new ItemStack(Items.NETHERRACK)), earthen(180), molten(5), decay(5));
         saveData(newLinkedHashSet(Items.OBSIDIAN, new ItemStack(Items.OBSIDIAN)), obsidian(120), molten(60), earthen(180));
         saveData(newLinkedHashSet(Items.PHANTOM_MEMBRANE, new ItemStack(Items.PHANTOM_MEMBRANE)), decay(60), vital(1), weird(60));
@@ -263,14 +265,24 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
 
     private void registerLockedInfoForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> crystallizedGooAbstractRegistryObject) {
         Fluid f = crystallizedGooAbstractRegistryObject.get().gooType();
-        saveData(newLinkedHashSet(crystallizedGooAbstractRegistryObject.get(), new ItemStack(crystallizedGooAbstractRegistryObject.get())), compoundsFromFluid(f, crystallizedGooAbstractRegistryObject.get().amount()));
+
+        final CompoundInstance instance = compoundsFromFluid(f, crystallizedGooAbstractRegistryObject.get().amount());
+        if (instance == null)
+            return;
+
+        saveData(newLinkedHashSet(crystallizedGooAbstractRegistryObject.get(), new ItemStack(crystallizedGooAbstractRegistryObject.get())), instance);
     }
 
     private LinkedHashSet<Object> newLinkedHashSet(final Object... internal) {
         return new LinkedHashSet<>(Arrays.asList(internal));
     }
-    
+
+    @Nullable
     private CompoundInstance compoundsFromFluid(Fluid f, int amount) {
+        final ICompoundType type = Registry.compoundFromFluid(f);
+        if (type == null)
+            return null;
+
         return new CompoundInstance(Registry.compoundFromFluid(f), amount);
     }
 
@@ -294,4 +306,6 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
     private static CompoundInstance snow(double d) { return new CompoundInstance(Registry.SNOW.get(), d); }
     private static CompoundInstance vital(double d) { return new CompoundInstance(Registry.VITAL.get(), d); }
     private static CompoundInstance weird(double d) { return new CompoundInstance(Registry.WEIRD.get(), d); }
+
+    private static CompoundInstance forbidden(double d) { return new CompoundInstance(Registry.FORBIDDEN.get(), d); }
 }

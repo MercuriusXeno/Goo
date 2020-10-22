@@ -27,6 +27,7 @@ public class GooEntry
     private boolean        isDenied;
     private boolean        isUnknown;
     private boolean        isFixed;
+    private boolean        deniesSolidification;
 
     public GooEntry(List<GooValue> gooValues)
     {
@@ -34,6 +35,7 @@ public class GooEntry
         this.isDenied = false;
         this.isUnknown = false;
         this.isFixed = false;
+        this.deniesSolidification = false;
         pruneEmptyValues();
         sortValues();
     }
@@ -44,6 +46,7 @@ public class GooEntry
         this.isDenied = false;
         this.isUnknown = false;
         this.isFixed = false;
+        this.deniesSolidification = false;
         pruneEmptyValues();
         sortValues();
     }
@@ -54,6 +57,7 @@ public class GooEntry
         this.isDenied = isDenied;
         this.isUnknown = isUnknown;
         this.isFixed = false;
+        this.deniesSolidification = false;
         pruneEmptyValues();
     }
 
@@ -63,6 +67,7 @@ public class GooEntry
         this.isDenied = gooEntry.isDenied;
         this.isUnknown = gooEntry.isUnknown;
         this.isFixed = gooEntry.isFixed;
+        this.deniesSolidification = gooEntry.deniesSolidification;
     }
 
     public GooEntry(World world, Item item, Set<CompoundInstance> compounds)
@@ -72,10 +77,12 @@ public class GooEntry
         this.isDenied = !isValid;
         this.isUnknown = compounds.size() == 0;
         this.isFixed = Equivalencies.isLocked(world, item);
+        this.deniesSolidification = compounds.stream().anyMatch(compoundInstance -> compoundInstance.getType() == Registry.FORBIDDEN.get());
         if (isValid)
         {
             this.values = compounds.stream()
                             .filter(c -> c.getType() instanceof GooCompoundType)
+                            .filter(c -> ((GooCompoundType) c.getType()).fluidSupplier.get() != null) //Ensure that only goos which are none logical are used.
                             .filter(c -> Math.floor(c.getAmount()) > 0)
                             .map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(),
                               Math.floor(c.getAmount())))
@@ -112,6 +119,10 @@ public class GooEntry
     public boolean isUnusable()
     {
         return isUnknown() || isDenied();
+    }
+
+    public boolean deniesSolidification() {
+        return isUnusable() || this.deniesSolidification;
     }
 
     public String toString()

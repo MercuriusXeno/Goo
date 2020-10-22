@@ -33,4 +33,10 @@ public class GooCompoundType extends ForgeRegistryEntry<ICompoundType> implement
     {
         return groupSupplier.get();
     }
+
+    @Override
+    public String toString()
+    {
+        return "Goo: " + Objects.requireNonNull(getRegistryName()).toString();
+    }
 }
