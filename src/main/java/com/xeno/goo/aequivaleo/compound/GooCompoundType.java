@@ -3,7 +3,6 @@ package com.xeno.goo.aequivaleo.compound;
 import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.xeno.goo.fluids.GooFluid;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 
 import java.util.Objects;
@@ -13,8 +12,6 @@ public class GooCompoundType extends ForgeRegistryEntry<ICompoundType> implement
 {
     public Supplier<GooFluid> fluidSupplier;
     public Supplier<GooCompoundTypeGroup> groupSupplier;
-    public boolean isForbidden;
-    public boolean isSmelted;
     public GooCompoundType(
       final Supplier<GooFluid> fluidSupplier,
       final Supplier<GooCompoundTypeGroup> groupSupplier)
