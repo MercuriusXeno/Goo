@@ -160,7 +160,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.CRIMSON_NYLIUM, new ItemStack(Items.CRIMSON_NYLIUM)), earthen(120), fungal(15), chromatic(60));
         saveData(newLinkedHashSet(Items.CRIMSON_FUNGUS, new ItemStack(Items.CRIMSON_FUNGUS)), fungal(15));
         saveData(newLinkedHashSet(Items.CRYING_OBSIDIAN, new ItemStack(Items.CRYING_OBSIDIAN)), weird(30), obsidian(960));
-        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(240), forbidden(1));
+        saveData(newLinkedHashSet(Items.DIAMOND, new ItemStack(Items.DIAMOND)), crystal(240));
         saveData(newLinkedHashSet(Items.EGG, new ItemStack(Items.EGG)), faunal(15), vital(15));
         saveData(newLinkedHashSet(Items.EMERALD, new ItemStack(Items.EMERALD)), regal(60), crystal(60));
         saveData(newLinkedHashSet(Items.END_ROD, new ItemStack(Items.END_ROD)), radiant(20));
@@ -189,7 +189,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(Items.MYCELIUM, new ItemStack(Items.MYCELIUM)), earthen(180), fungal(30));
         saveData(newLinkedHashSet(Items.NETHER_WART, new ItemStack(Items.NETHER_WART)), weird(1), fungal(5));
         saveData(newLinkedHashSet(Items.WARPED_WART_BLOCK, new ItemStack(Items.WARPED_WART_BLOCK)), weird(9), fungal(45));
-        saveData(newLinkedHashSet(Items.NETHERITE_SCRAP, new ItemStack(Items.NETHERITE_SCRAP)), metal(960), obsidian(120), forbidden(1));
+        saveData(newLinkedHashSet(Items.NETHERITE_SCRAP, new ItemStack(Items.NETHERITE_SCRAP)), metal(960), obsidian(120));
         saveData(newLinkedHashSet(Items.NETHERRACK, new ItemStack(Items.NETHERRACK)), earthen(180), molten(5), decay(5));
         saveData(newLinkedHashSet(Items.OBSIDIAN, new ItemStack(Items.OBSIDIAN)), obsidian(120), molten(60), earthen(180));
         saveData(newLinkedHashSet(Items.PHANTOM_MEMBRANE, new ItemStack(Items.PHANTOM_MEMBRANE)), decay(60), vital(1), weird(60));
