@@ -119,7 +119,7 @@ public class Basin extends BasinAbstraction
                 return;
             }
         }
-        GooHandlingHelper.tryUsingGauntletOrBasin((ClientPlayerEntity)player, player.getActiveHand());
+        GooHandlingHelper.tryUsingGauntletOrBasin((ServerPlayerEntity)player, player.getActiveHand());
         super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
     }
 

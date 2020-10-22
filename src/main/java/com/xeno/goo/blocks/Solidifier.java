@@ -136,11 +136,11 @@ public class Solidifier extends BlockWithConnections {
 
         if (worldIn != null) {
             if (!isInItemFrameBounds(hit)) {
-                return ActionResultType.SUCCESS;
+                return ActionResultType.func_233537_a_(worldIn.isRemote);
             }
             TileEntity tile = worldIn.getTileEntity(pos);
             if (!(tile instanceof SolidifierTile)) {
-                return ActionResultType.SUCCESS;
+                return ActionResultType.func_233537_a_(worldIn.isRemote);
             }
 
             Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
@@ -148,12 +148,12 @@ public class Solidifier extends BlockWithConnections {
                 ((SolidifierTile) tile).changeTargetItem(itemToSwap);
             }
 
-            return ActionResultType.SUCCESS;
+            return ActionResultType.func_233537_a_(worldIn.isRemote);
         }
         if (!player.isSneaking()) {
             return ActionResultType.PASS;
         }
-        return ActionResultType.SUCCESS;
+        return ActionResultType.func_233537_a_(worldIn.isRemote);
     }
 
     private static final float horizontalStart = 0.3125f;

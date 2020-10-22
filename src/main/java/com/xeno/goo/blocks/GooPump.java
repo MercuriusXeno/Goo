@@ -191,7 +191,7 @@ public class GooPump extends BlockWithConnections
         if (worldIn != null) {
             TileEntity tile = worldIn.getTileEntity(pos);
             if (!(tile instanceof GooPumpTile)) {
-                return ActionResultType.SUCCESS;
+                return ActionResultType.func_233537_a_(worldIn.isRemote);
             }
 
             Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
@@ -199,12 +199,12 @@ public class GooPump extends BlockWithConnections
                 ((GooPumpTile) tile).changeTargetItem(itemToSwap);
             }
 
-            return ActionResultType.SUCCESS;
+            return ActionResultType.func_233537_a_(worldIn.isRemote);
         }
         if (!player.isSneaking()) {
             return ActionResultType.PASS;
         }
-        return ActionResultType.SUCCESS;
+        return ActionResultType.func_233537_a_(worldIn.isRemote);
     }
 
     public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
