@@ -77,33 +77,28 @@ public class GooBulb extends BlockWithConnections
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
-        boolean isClient = false;
-        if (worldIn.isRemote()) {
-            isClient = true;
-        }
-
         TileEntity tile = worldIn.getTileEntity(pos);
         if (!(tile instanceof GooBulbTile)) {
-            return ActionResultType.CONSUME;
+            return ActionResultType.FAIL;
         }
 
-        if (!isClient) {
-            GooBulbTile bulb = ((GooBulbTile) tile);
-            if (bulb.hasCrystal()) {
+        GooBulbTile bulb = ((GooBulbTile) tile);
+        if (bulb.hasCrystal()) {
+            if (!worldIn.isRemote) {
                 bulb.spitOutCrystal(player, hit.getFace());
-                return ActionResultType.SUCCESS;
-            } else {
-                // bulb is empty so it can take a crystal if you're holding one.
-                Item item = player.getHeldItem(handIn).getItem();
-                if (!item.equals(Items.QUARTZ) && !(item instanceof CrystallizedGooAbstract)) {
-                    return ActionResultType.FAIL;
-                }
-
+            }
+            return ActionResultType.func_233537_a_(worldIn.isRemote);
+        } else {
+            // bulb is empty so it can take a crystal if you're holding one.
+            Item item = player.getHeldItem(handIn).getItem();
+            if (!item.equals(Items.QUARTZ) && !(item instanceof CrystallizedGooAbstract)) {
+                return ActionResultType.FAIL;
+            }
+            if (!worldIn.isRemote) {
                 player.getHeldItem(handIn).shrink(1);
                 ((GooBulbTile) tile).addCrystal(item);
-                return ActionResultType.SUCCESS;
             }
+            return ActionResultType.func_233537_a_(worldIn.isRemote);
         }
-        return ActionResultType.CONSUME;
     }
 }

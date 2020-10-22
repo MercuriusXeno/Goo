@@ -13,7 +13,8 @@ public class GooCompoundType extends ForgeRegistryEntry<ICompoundType> implement
 {
     public Supplier<GooFluid> fluidSupplier;
     public Supplier<GooCompoundTypeGroup> groupSupplier;
-
+    public boolean isForbidden;
+    public boolean isSmelted;
     public GooCompoundType(
       final Supplier<GooFluid> fluidSupplier,
       final Supplier<GooCompoundTypeGroup> groupSupplier)

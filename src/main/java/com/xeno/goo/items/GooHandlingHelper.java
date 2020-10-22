@@ -13,6 +13,7 @@ import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 public class GooHandlingHelper {
-    public static void tryUsingGauntletOrBasin(ClientPlayerEntity player, Hand hand) {
+    public static void tryUsingGauntletOrBasin(ServerPlayerEntity player, Hand hand) {
         if (player.isSwingInProgress) {
             return;
         }
@@ -54,22 +55,23 @@ public class GooHandlingHelper {
     public static boolean tryBlockInteraction(ItemUseContext context) {
 
         PlayerEntity player = context.getPlayer();
-        if (context.getWorld().isRemote()) {
+        if (player == null || context.getWorld().isRemote()) {
             return false;
         }
+
         Hand hand = context.getHand();
         BlockState state = context.getWorld().getBlockState(context.getPos());
         boolean didStuff = false;
         if (state.getBlock().hasTileEntity(state)) {
             TileEntity e = context.getWorld().getTileEntity(context.getPos());
-            LazyOptional<IFluidHandler> lazyFluidHandler = e.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
-            if (lazyFluidHandler.isPresent()) {
-                if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
-                    // refer to the targeting handler to figure out if we are looking at a goo container
-                    didStuff = tryTakingFluidFromContainerWithGauntlet(context, player, hand);
-                } else if (player.getHeldItem(hand).getItem() instanceof Basin) {
-                    didStuff = tryTakingFluidFromContainerWithBasin(context, player, hand);
-                }
+            if (!(e instanceof GooContainerAbstraction)) {
+                return false;
+            }
+            if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+                // refer to the targeting handler to figure out if we are looking at a goo container
+                didStuff = tryTakingFluidFromContainerWithGauntlet(context, player, hand);
+            } else if (player.getHeldItem(hand).getItem() instanceof Basin) {
+                didStuff = tryTakingFluidFromContainerWithBasin(context, player, hand);
             }
         }
 
