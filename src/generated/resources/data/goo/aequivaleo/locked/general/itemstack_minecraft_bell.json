@@ -18,10 +18,6 @@
   ],
   "compounds": [
     {
-      "amount": 128.0,
-      "type": "goo:floral"
-    },
-    {
       "amount": 360.0,
       "type": "goo:earthen"
     },
@@ -32,6 +28,10 @@
     {
       "amount": 216.0,
       "type": "goo:regal"
+    },
+    {
+      "amount": 128.0,
+      "type": "goo:floral"
     }
   ]
 }

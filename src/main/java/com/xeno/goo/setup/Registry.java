@@ -7,6 +7,7 @@ import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.enchantments.Containment;
+import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
@@ -15,6 +16,8 @@ import com.xeno.goo.tiles.*;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.particles.BasicParticleType;
@@ -76,6 +79,15 @@ public class Registry {
             .setUpdateInterval(1)
             .setShouldReceiveVelocityUpdates(true)
             .build("goo_splat")
+    );
+
+    public static final RegistryObject<EntityType<GooBee>> GOO_BEE = ENTITIES.register("goo_bee",
+            () -> EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
+                    .size(0.7f, 0.6f)
+                    .setTrackingRange(64)
+                    .setUpdateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("goo_bee")
     );
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions

@@ -19,7 +19,7 @@
   "compounds": [
     {
       "amount": 60.0,
-      "type": "goo:weird"
+      "type": "goo:decay"
     },
     {
       "amount": 1.0,
@@ -27,7 +27,7 @@
     },
     {
       "amount": 60.0,
-      "type": "goo:decay"
+      "type": "goo:weird"
     }
   ]
 }

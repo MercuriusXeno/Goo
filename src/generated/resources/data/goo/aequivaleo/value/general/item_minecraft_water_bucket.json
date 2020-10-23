@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:aquatic"
-    },
-    {
       "amount": 216.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:aquatic"
     }
   ]
 }

@@ -41,6 +41,7 @@ public class GooMod
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::loadComplete);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::deferredWork);
     }
 
     public static final ItemGroup ITEM_GROUP = new GooCreativeTab(MOD_ID)

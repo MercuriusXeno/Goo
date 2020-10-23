@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:floral"
-    },
-    {
       "amount": 5.0,
       "type": "goo:decay"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:floral"
     }
   ]
 }

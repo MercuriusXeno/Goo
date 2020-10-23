@@ -6,14 +6,17 @@ import com.xeno.goo.client.models.*;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.VaporParticle;
 import com.xeno.goo.client.render.*;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
+import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
@@ -48,6 +51,7 @@ public class ModClientEvents
     {
         GooBlobRenderer.register();
         GooSplatRenderer.register();
+        GooBeeRenderer.register();
     }
 
     private static void setRenderLayers()
@@ -104,6 +108,11 @@ public class ModClientEvents
     {
         // event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/basin"));
         event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/basin_fluid"));
+    }
+
+    @SubscribeEvent
+    public static void onItemColor(ColorHandlerEvent.Item event) {
+        event.getItemColors().register((stack, color) -> 0x00a0f0, ItemsRegistry.GooBeeSpawnEgg.get());
     }
 
     @SubscribeEvent

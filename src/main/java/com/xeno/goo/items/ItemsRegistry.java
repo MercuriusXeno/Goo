@@ -43,6 +43,9 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> Drain = Items.register("drain", () -> new BlockItem(BlocksRegistry.Drain.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> RadiantLight = Items.register("radiant_light", () -> new BlockItem(BlocksRegistry.RadiantLight.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
 
+    // spawn eggs
+    public static final RegistryObject<GooBeeSpawnEgg> GooBeeSpawnEgg = Items.register("goo_bee_spawn_egg", GooBeeSpawnEgg::new);
+
     private final static Map<String, Integer> crystallizedGooVariants = new HashMap<>();
     static {
         crystallizedGooVariants.put("sliver", 10);

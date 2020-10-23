@@ -23,6 +23,7 @@ public class ItemsProvider extends ItemModelProvider {
         registerMixer();
         registerBulbs();
         registerGooCrystals();
+        registerSpawnEggs();
     }
 
     private void registerGooCrystals() {
@@ -80,5 +81,9 @@ public class ItemsProvider extends ItemModelProvider {
     {
         singleTexture(ItemsRegistry.GooAndYou.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/goo_and_you"));
+    }
+
+    private void registerSpawnEggs() {
+        withExistingParent(ItemsRegistry.GooBeeSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
     }
 }

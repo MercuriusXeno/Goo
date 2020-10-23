@@ -76,14 +76,14 @@ public class GooRenderHelper extends RenderState
     public static final IParticleRenderType VAPOR_RENDER = new IParticleRenderType() {
         @Override
         public void beginRender(BufferBuilder buffer, TextureManager textureManager) {
-            RenderSystem.disableAlphaTest();
-            RenderSystem.enableDepthTest();
             RenderSystem.enableBlend();
-            RenderSystem.alphaFunc(516, 1f);
-            RenderSystem.enableCull();
+            RenderSystem.enableDepthTest();
+            RenderSystem.alphaFunc(GL11.GL_GREATER, 0.0f);
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            // RenderSystem.enableCull();
             textureManager.bindTexture(AtlasTexture.LOCATION_PARTICLES_TEXTURE);
             RenderSystem.depthMask(false);
-            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA_SATURATE.param, GlStateManager.DestFactor.ONE.param);
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA.param, GlStateManager.DestFactor.ONE.param);
             buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
         }
 
@@ -91,11 +91,10 @@ public class GooRenderHelper extends RenderState
         public void finishRender(Tessellator tessellator) {
             tessellator.draw();
             RenderSystem.enableDepthTest();
-            RenderSystem.enableAlphaTest();
             RenderSystem.depthMask(false);
             RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA.param, GlStateManager.DestFactor.ONE.param);
             RenderSystem.enableCull();
-            RenderSystem.alphaFunc(516, 0.1F);
+            RenderSystem.alphaFunc(GL11.GL_GREATER, 0.1F);
         }
 
         @Override
