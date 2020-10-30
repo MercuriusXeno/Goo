@@ -193,7 +193,8 @@ public class TargetingHandler
                 Sets.newHashSet(
                         ItemsRegistry.Crucible.get(),
                         ItemsRegistry.Mixer.get(),
-                        ItemsRegistry.GooBulb.get()
+                        ItemsRegistry.GooBulb.get(),
+                        ItemsRegistry.Trough.get()
                 )
         );
     }
@@ -297,6 +298,8 @@ public class TargetingHandler
             id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
         } else if (item.equals(ItemsRegistry.GooBulb.get())) {
             id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.Trough.get())) {
+            id = Objects.requireNonNull(Registry.TROUGH_TILE.get().getRegistryName()).toString();
         }
         if (id.equals("")) {
             return;
@@ -654,7 +657,8 @@ public class TargetingHandler
                 || state.getBlock() instanceof Mixer
                 || state.getBlock() instanceof Crucible
                 || state.getBlock() instanceof Solidifier
-                || state.getBlock() instanceof Gooifier;
+                || state.getBlock() instanceof Gooifier
+                || state.getBlock() instanceof GooTrough;
     }
 
     private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)

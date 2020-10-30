@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  w",
+    "w g",
+    "ddd"
+  ],
+  "key": {
+    "w": {
+      "item": "minecraft:diorite_wall"
+    },
+    "d": {
+      "item": "minecraft:diorite_slab"
+    },
+    "g": {
+      "item": "goo:gasket"
+    }
+  },
+  "result": {
+    "item": "goo:goo_trough"
+  }
+}

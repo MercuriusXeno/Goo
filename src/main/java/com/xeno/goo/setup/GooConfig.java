@@ -56,6 +56,11 @@ public class GooConfig
         return CRUCIBLE_INPUT_CAPACITY.get();
     }
 
+    private ForgeConfigSpec.IntValue TROUGH_CAPACITY;
+    public int troughCapacity() {
+        return TROUGH_CAPACITY.get();
+    }
+
     private ForgeConfigSpec.IntValue GOO_PUMP_TRANSFER_RATE;
     public int pumpAmountPerCycle() { return GOO_PUMP_TRANSFER_RATE.get(); }
 
@@ -351,6 +356,7 @@ public class GooConfig
         private static final int BASIN_HOLDING_MULTIPLIER = 4;
         private static final int GAUNTLET_CAPACITY = 400;
         private static final int GAUNTLET_HOLDING_MULTIPLIER = 4;
+        private static final int TROUGH_CAPACITY = 1000;
         // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
@@ -370,6 +376,8 @@ public class GooConfig
                 .defineInRange("maxMixerInputCapacity", Defaults.MIXER_INPUT_CAPACITY, 0, 100000);
         CRUCIBLE_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a crucible tank, default: " + Defaults.CRUCIBLE_INPUT_CAPACITY)
                 .defineInRange("maxCrucibleInputCapacity", Defaults.CRUCIBLE_INPUT_CAPACITY, 0, 100000);
+        TROUGH_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a trough, default: " + Defaults.TROUGH_CAPACITY)
+                .defineInRange("maxTroughCapacity", Defaults.TROUGH_CAPACITY, 0, 100000);
         GOO_PUMP_TRANSFER_RATE = serverBuilder.comment("Max quantity of fluid pumped per tick, default: " + Defaults.PUMP_TRANSFER_RATE)
                 .defineInRange("pumpTransferRate", Defaults.PUMP_TRANSFER_RATE, 0, 10000);
         BASIN_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a basin, default: " + Defaults.BASIN_CAPACITY)

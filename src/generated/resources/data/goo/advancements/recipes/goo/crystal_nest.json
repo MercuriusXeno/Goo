@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:crystal_nest"
+    ]
+  },
+  "criteria": {
+    "bee_nest": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "minecraft:bee_nest"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:crystal_nest"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "bee_nest",
+      "has_the_recipe"
+    ]
+  ]
+}

@@ -78,10 +78,7 @@ public class Basin extends BasinAbstraction
     {
         int holdsAmount = BasinAbstractionCapability.storageForDisplay(stack);
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        tooltip.add(new TranslationTextComponent("goo.common.holds")
-                .append(TargetingHandler.getGooAmountForDisplay(holdsAmount))
-                .append(new TranslationTextComponent("goo.common.mb"))
-        );
+        tooltip.add(new TranslationTextComponent("goo.common.holds_amount", TargetingHandler.getGooAmountForDisplay(holdsAmount)));
     }
 
     @Override

@@ -34,13 +34,13 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     private final MixerFluidHandler leftHandler = createHandler(1);
     private final LazyOptional<MixerFluidHandler> leftLazy = LazyOptional.of(() -> leftHandler);
 
-
     @Override
     protected void invalidateCaps() {
         super.invalidateCaps();
         leftLazy.invalidate();
         rightLazy.invalidate();
     }
+
     public MixerTile()
     {
         super(Registry.MIXER_TILE.get());

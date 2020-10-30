@@ -2,6 +2,7 @@ package com.xeno.goo.setup;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBee;
+import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
@@ -37,6 +38,9 @@ public class CommonSetup
     public static void deferredWork(final ParallelDispatchEvent event) {
         event.enqueueWork(
                 () -> GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create())
+        );
+        event.enqueueWork(
+                () -> GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create())
         );
     }
 }

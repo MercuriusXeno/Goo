@@ -52,6 +52,7 @@ public class ModClientEvents
         GooBlobRenderer.register();
         GooSplatRenderer.register();
         GooBeeRenderer.register();
+        MutantBeeRendeerer.register();
     }
 
     private static void setRenderLayers()
@@ -61,6 +62,7 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getSolid());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Trough.get(), RenderType.getCutoutMipped());
     }
 
     private static void setTileEntityRenderers()
@@ -70,6 +72,7 @@ public class ModClientEvents
         MixerRenderer.register();
         CrucibleRenderer.register();
         SolidifierRenderer.register();
+        TroughRenderer.register();
     }
 
     private static void setModelLoaders()

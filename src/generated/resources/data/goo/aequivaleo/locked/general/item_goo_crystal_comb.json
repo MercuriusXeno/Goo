@@ -1,0 +1,25 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "goo:crystal_comb"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"goo:crystal_comb\",Count:1b}"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 32.0,
+      "type": "goo:crystal"
+    }
+  ]
+}

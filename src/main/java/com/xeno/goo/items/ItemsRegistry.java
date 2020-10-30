@@ -29,6 +29,7 @@ public class ItemsRegistry {
     // major items
     public static final RegistryObject<GooAndYou> GooAndYou = Items.register("goo_and_you", GooAndYou::new);
     public static final RegistryObject<Gasket> Gasket = Items.register("gasket", Gasket::new);
+    public static final RegistryObject<CrystalComb> CrystalComb = Items.register("crystal_comb", CrystalComb::new);
     public static final RegistryObject<Basin> Basin = Items.register("basin", Basin::new);
     public static final RegistryObject<Gauntlet> Gauntlet = Items.register("gauntlet", Gauntlet::new);
 
@@ -42,6 +43,8 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> Lobber = Items.register("lobber", () -> new BlockItem(BlocksRegistry.Lobber.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> Drain = Items.register("drain", () -> new BlockItem(BlocksRegistry.Drain.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> RadiantLight = Items.register("radiant_light", () -> new BlockItem(BlocksRegistry.RadiantLight.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
+    public static final RegistryObject<Item> CrystalNest = Items.register("crystal_nest", () -> new BlockItem(BlocksRegistry.CrystalNest.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
+    public static final RegistryObject<Item> Trough = Items.register("goo_trough", () -> new BlockItem(BlocksRegistry.Trough.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::trough)));
 
     // spawn eggs
     public static final RegistryObject<GooBeeSpawnEgg> GooBeeSpawnEgg = Items.register("goo_bee_spawn_egg", GooBeeSpawnEgg::new);

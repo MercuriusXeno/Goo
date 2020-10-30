@@ -41,7 +41,8 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class GooBulbTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
+public class GooBulbTile extends GooContainerAbstraction implements ITickableTileEntity,
+        FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
     // it only takes 9 ticks to tier up because of the goo already in the object.
     // at level 1 this is also negligible

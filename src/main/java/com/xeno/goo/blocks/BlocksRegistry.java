@@ -24,4 +24,6 @@ public class BlocksRegistry {
     public static final RegistryObject<Drain> Drain = Blocks.register("drain", Drain::new);
     public static final RegistryObject<Lobber> Lobber = Blocks.register("lobber", Lobber::new);
     public static final RegistryObject<RadiantLight> RadiantLight = Blocks.register("radiant_light", RadiantLight::new);
+    public static final RegistryObject<CrystalNest> CrystalNest = Blocks.register("crystal_nest", CrystalNest::new);
+    public static final RegistryObject<GooTrough> Trough = Blocks.register("goo_trough", GooTrough::new);
 }

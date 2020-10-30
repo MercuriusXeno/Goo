@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "goo:block/goo_trough"
+    },
+    "facing=south": {
+      "model": "goo:block/goo_trough",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "goo:block/goo_trough",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "goo:block/goo_trough",
+      "y": 90
+    }
+  }
+}

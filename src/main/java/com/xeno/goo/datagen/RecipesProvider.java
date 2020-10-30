@@ -1,10 +1,13 @@
 package com.xeno.goo.datagen;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.items.ItemsRegistry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.datafix.fixes.FurnaceRecipes;
 import net.minecraftforge.common.Tags;
 
 import java.util.function.Consumer;
@@ -29,6 +32,8 @@ public class RecipesProvider extends RecipeProvider {
         registerGooBulbRecipe(consumer);
         registerLobberRecipe(consumer);
         registerDrainRecipe(consumer);
+        registerCrystalNestRecipe(consumer);
+        registerTroughRecipe(consumer);
     }
 
     private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -184,4 +189,27 @@ public class RecipesProvider extends RecipeProvider {
                 .build(consumer);
     }
 
+    private void registerCrystalNestRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.CrystalNest.get())
+                .patternLine("ccc")
+                .patternLine("cnc")
+                .patternLine("ccc")
+                .key('c', ItemsRegistry.CrystallizedGoo
+                        .get(new ResourceLocation(GooMod.MOD_ID, "crystal_goo_shard")).get())
+                .key('n', Items.BEE_NEST)
+                .addCriterion("bee_nest", InventoryChangeTrigger.Instance.forItems(Items.BEE_NEST))
+                .build(consumer);
+    }
+
+    private void registerTroughRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Trough.get())
+                .patternLine("  w")
+                .patternLine("w g")
+                .patternLine("ddd")
+                .key('w', Items.DIORITE_WALL)
+                .key('d', Items.DIORITE_SLAB)
+                .key('g', ItemsRegistry.Gasket.get())
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
+                .build(consumer);
+    }
 }

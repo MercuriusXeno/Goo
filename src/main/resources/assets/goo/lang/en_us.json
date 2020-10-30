@@ -8,17 +8,19 @@
   "block.goo.drain": "Drain",
   "block.goo.lobber": "Lobber",
   "block.goo.radiant_light": "Radiant Light",
+  "block.goo.goo_trough": "Goo Trough",
+  "block.goo.crystal_nest": "Crystal Nest",
 
   "numbers.notation.thousand": "k",
   "numbers.notation.million": "m",
   "numbers.notation.billion": "b",
 
-  "goo.common.holds": "Holds: ",
-  "goo.common.mb": " mB",
+  "goo.common.holds_amount": "Holds: %s mB",
 
   "item.goo.gasket": "Gasket",
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Basin",
+  "item.goo.crystal_comb": "Crystal Comb",
 
   "item.goo.aquatic_goo_sliver": "Aquatic Sliver",
   "item.goo.aquatic_goo_shard": "Aquatic Shard",
@@ -140,6 +142,12 @@
   "item.goo.weird_goo_chunk": "Weird Chunk",
   "item.goo.weird_goo_slab": "Weird Slab",
 
+  "item.goo.primordial_goo_sliver": "Primordial Sliver",
+  "item.goo.primordial_goo_shard": "Primordial Shard",
+  "item.goo.primordial_goo_crystal": "Primordial Crystal",
+  "item.goo.primordial_goo_chunk": "Primordial Chunk",
+  "item.goo.primordial_goo_slab": "Primordial Slab",
+
   "enchantment.goo.containment": "Containment",
 
   "fluid.goo.aquatic_goo": "Aquatic",
@@ -162,6 +170,7 @@
   "fluid.goo.snow_goo": "Snow",
   "fluid.goo.vital_goo": "Vital",
   "fluid.goo.weird_goo": "Weird",
+  "fluid.goo.primordial_goo": "Primordial",
 
   "tooltip.goo.composition.hold_key": "\u00A7a[SHIFT to see goo]\u00A7r",
   "tooltip.goo.composition.cant_solidify": "\u00A77[Can't Solidify!]\u00A7r",
@@ -202,6 +211,8 @@
   "patchouli.goo.drain.summary": "Blobs that hit the top will splat and fall through the drain, straight down. This translates horizontal movement from one or more directions into downward movement, whatever that might accomplish.",
   "patchouli.goo.lobber.description": "A dispenser capable of handling goo.",
   "patchouli.goo.lobber.summary": "Lobbers are simple devices that take goo from a nearby source (like a bulb) and throw it into the world, the same way a player would with a gauntlet. This can be used to automate in-world goo interactions.",
+  "patchouli.goo.goo_trough.description": "A reservoir where goo pools, for feeding creatures who eat goo.",
+  "patchouli.goo.goo_trough.summary": "Troughs are a way to supply creatures with the type of goo they want to eat. Simply attach it to a bulb and the bottom-most goo will pour out.",
   "patchouli.goo.crystallization_title": "Goo Crystallization",
   "patchouli.goo.crystallization_description": "Placing quartz in a bulb converts it rapidly into a goo crystal. The first tier holds 10 Goo, and subsequent tiers hold 10 times as much as the last. These can be used to filter goo or store large amounts.",
   "patchouli.goo.crystallization_description2": "Placing a crystallized goo in a bulb can only grow the crystal if the right kind of goo is in the bulb. If you interrupt the process, don't worry. The goo is not lost.",
@@ -226,6 +237,7 @@
   "goo.description.snow": "Ice and cold",
   "goo.description.vital": "Life",
   "goo.description.weird": "Strange and unknown",
+  "goo.description.primordial": "Ancient and timeless",
 
   "sound_event.goo.goo_splat_sound": "Goo splats",
   "sound_event.goo.goo_lob_sound": "Goo lobbed",
@@ -234,11 +246,12 @@
   "sound_event.goo.goo_withdraw_sound": "Goo withdrawn",
   "sound_event.goo.goo_crucible_sound": "Crucible crackles",
   "sound_event.goo.gooifier_sound": "Gooifier crackles",
-  "sound_event.goo.deteriorate": "Block deteriorates",
-  "sound_event.goo.edify": "Block hardens",
-  "sound_event.goo.freeze": "Goo froze water",
+  "sound_event.goo.deteriorate_sound": "Block deteriorates",
+  "sound_event.goo.edify_sound": "Block hardens",
+  "sound_event.goo.freeze_sound": "Goo froze water",
   "sound_event.goo.twitterpate_animal_sound": "Fauna infatuated",
   "sound_event.goo.weird_teleport_sound": "Weird teleportation",
   "sound_event.goo.molten_sizzle_sound": "Goo sizzles",
-  "sound_event.goo.crystallize": "Goo crystallizes"
+  "sound_event.goo.crystallize_sound": "Goo crystallizes",
+  "sound_event.goo.goo_bee_shatter_sound": "Crystal bee shatters"
 }

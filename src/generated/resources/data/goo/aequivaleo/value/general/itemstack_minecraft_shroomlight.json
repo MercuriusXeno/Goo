@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 40.0,
-      "type": "goo:radiant"
-    },
-    {
       "amount": 60.0,
       "type": "goo:fungal"
+    },
+    {
+      "amount": 40.0,
+      "type": "goo:radiant"
     }
   ]
 }

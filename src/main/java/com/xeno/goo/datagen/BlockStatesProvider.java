@@ -28,7 +28,10 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerLobber();
         registerDrain();
         registerRadiantLight();
+        registerTrough();
+        registerCrystalNest();
     }
+
     private void registerDrain() {
         ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain_top");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain_side");
@@ -427,6 +430,86 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .texture("particle", front_on);
         horizontalBlock(BlocksRegistry.Gooifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
         simpleBlockItem(BlocksRegistry.Gooifier.get(), modelInactive);
+    }
+
+    private void registerCrystalNest() {
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_top");
+        ResourceLocation bottom = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_bottom");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_side");
+        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_front");
+        ResourceLocation frontFull = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_front_honey");
+        BlockModelBuilder model = models()
+                .cube("crystal_nest", bottom, top, front, side, side, side)
+                .texture("particle", side);
+        BlockModelBuilder modelFull = models()
+                .cube("crystal_nest_full", bottom, top, frontFull, side, side, side)
+                .texture("particle", side);
+        horizontalBlock(BlocksRegistry.CrystalNest.get(), state -> state.get(BlockStateProperties.HONEY_LEVEL) < 5 ? model : modelFull);
+        simpleBlockItem(BlocksRegistry.CrystalNest.get(), model);
+    }
+
+    private void registerTrough() {
+        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/trough_side_outer");
+        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/trough_top");
+        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough_bottom_outer");
+        ResourceLocation baseSideInner = new ResourceLocation(GooMod.MOD_ID, "block/trough_side_inner");
+        ResourceLocation baseBottomInner = new ResourceLocation(GooMod.MOD_ID, "block/trough_bottom_inner");
+        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        ResourceLocation fixtureBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_bottom");
+        ResourceLocation fixtureTop = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_top");
+        ResourceLocation fixtureSide = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_side");
+        ResourceLocation fixtureFace = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_face");
+        BlockModelBuilder model = models()
+                .withExistingParent("goo_trough", "block/block")
+                .element()
+                .from(1f, 0f, 1f).to(15f, 4f, 15f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#bottom" :
+                                (t == Direction.UP ? "#top" :
+                                        "#side_outer"))
+//                        .uvs(1f,
+//                            t.getAxis() == Direction.Axis.Y ? 1f : 0f,
+//                            15f,
+//                            t.getAxis() == Direction.Axis.Y ? 15f : 4f)
+                ).end()
+                .element()
+                .from(14f, 4f, 14f).to(2f, 1f, 2f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#empty" :
+                                (t == Direction.UP ? "#bottom_inner" :
+                                        "#side_inner"))
+//                                .uvs(2f,
+//                                        t.getAxis() == Direction.Axis.Y ? 2f : 1f,
+//                                        14f,
+//                                        t.getAxis() == Direction.Axis.Y ? 14f : 4f)
+                ).end()
+                .element()
+                .from(4f, 0.01f, 0f).to(12f, 12f, 4f)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#fixture_bottom" :
+                                (t == Direction.UP ? "#fixture_top" :
+                                        t.getAxis() == Direction.Axis.X ? "#fixture_side" :
+                                        "#fixture_face"))
+                        .uvs(
+                                t.getAxis() == Direction.Axis.X ? 6f : 4f,
+                                t.getAxis() == Direction.Axis.Y ? 6f : 2f,
+                                t.getAxis() == Direction.Axis.X ? 10f : 12f,
+                                t.getAxis() == Direction.Axis.Y ? 10f : 14f
+                        )
+                ).end();
+        model.texture("bottom", baseBottom);
+        model.texture("top", baseTop);
+        model.texture("side_outer", baseSide);
+        model.texture("empty", empty);
+        model.texture("bottom_inner", baseBottomInner);
+        model.texture("side_inner", baseSideInner);
+        model.texture("fixture_bottom", fixtureBottom);
+        model.texture("fixture_top", fixtureTop);
+        model.texture("fixture_side", fixtureSide);
+        model.texture("fixture_face", fixtureFace);
+        model.texture("particle", baseBottom);
+        horizontalBlock(BlocksRegistry.Trough.get(), state -> model);
+
     }
 
     private void registerSolidifier() {

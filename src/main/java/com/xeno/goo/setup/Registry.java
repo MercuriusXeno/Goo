@@ -10,6 +10,7 @@ import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.*;
@@ -25,11 +26,14 @@ import net.minecraft.particles.ParticleType;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
+import net.minecraft.village.PointOfInterestType;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.lwjgl.system.windows.POINT;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -45,6 +49,7 @@ public class Registry {
     private static final DeferredRegister<Enchantment> ENCHANTMENTS = DeferredRegister.create(ForgeRegistries.ENCHANTMENTS, GooMod.MOD_ID);
     private static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, GooMod.MOD_ID);
     private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, GooMod.MOD_ID);
+    private static final DeferredRegister<PointOfInterestType> POINTS_OF_INTEREST = DeferredRegister.create(ForgeRegistries.POI_TYPES, GooMod.MOD_ID);
 
     public static void init () {
         // fluids needs to be before items
@@ -61,6 +66,7 @@ public class Registry {
         ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
         PARTICLES.register(FMLJavaModLoadingContext.get().getModEventBus());
         SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        POINTS_OF_INTEREST.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
@@ -83,11 +89,20 @@ public class Registry {
 
     public static final RegistryObject<EntityType<GooBee>> GOO_BEE = ENTITIES.register("goo_bee",
             () -> EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
-                    .size(0.7f, 0.6f)
+                    .size(0.35f, 0.3f)
                     .setTrackingRange(64)
                     .setUpdateInterval(1)
                     .setShouldReceiveVelocityUpdates(true)
                     .build("goo_bee")
+    );
+
+    public static final RegistryObject<EntityType<MutantBee>> MUTANT_BEE = ENTITIES.register("mutant_bee",
+            () -> EntityType.Builder.<MutantBee>create(MutantBee::new, EntityClassification.CREATURE)
+                    .size(0.7f, 0.6f)
+                    .setTrackingRange(64)
+                    .setUpdateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("mutant_bee")
     );
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions
@@ -105,6 +120,7 @@ public class Registry {
     public static final RegistryObject<SoundEvent> WEIRD_TELEPORT_SOUND = SOUNDS.register("weird_teleport_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "weird_teleport_sound")));
     public static final RegistryObject<SoundEvent> MOLTEN_SIZZLE_SOUND = SOUNDS.register("molten_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "molten_sizzle_sound")));
     public static final RegistryObject<SoundEvent> CRYSTALLIZE_SOUND = SOUNDS.register("crystallize_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "crystallize_sound")));
+    public static final RegistryObject<SoundEvent> GOO_BEE_SHATTER_SOUND = SOUNDS.register("goo_bee_shatter_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_bee_shatter_sound")));
 
     // Tile registrations
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
@@ -115,6 +131,11 @@ public class Registry {
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidifier.get()).build(null));
     public static final RegistryObject<TileEntityType<LobberTile>> LOBBER_TILE = TILES.register("lobber", () -> TileEntityType.Builder.create(LobberTile::new, BlocksRegistry.Lobber.get()).build(null));
     public static final RegistryObject<TileEntityType<DrainTile>> DRAIN_TILE = TILES.register("drain", () -> TileEntityType.Builder.create(DrainTile::new, BlocksRegistry.Drain.get()).build(null));
+    public static final RegistryObject<TileEntityType<CrystalNestTile>> CRYSTAL_NEST_TILE = TILES.register("crystal_nest", () -> TileEntityType.Builder.create(CrystalNestTile::new, BlocksRegistry.CrystalNest.get()).build(null));
+    public static final RegistryObject<TileEntityType<TroughTile>> TROUGH_TILE = TILES.register("goo_trough", () -> TileEntityType.Builder.create(TroughTile::new, BlocksRegistry.Trough.get()).build(null));
+
+    // Points of interest
+    public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest", () -> new PointOfInterestType("crystal_nest", PointOfInterestType.getAllStates(BlocksRegistry.CrystalNest.get()), 0, 1));
 
     // Goo!
     public static final RegistryObject<GooFluid> AQUATIC_GOO = registerGooFluid("aquatic_goo", Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO);

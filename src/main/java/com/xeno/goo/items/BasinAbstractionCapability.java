@@ -175,6 +175,9 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
     }
 
     public int capacity() {
+        if (GooMod.config == null) {
+            return 8000;
+        }
         return GooMod.config.basinCapacity() * holdingMultiplier(Basin.holding(this.container));
     }
 

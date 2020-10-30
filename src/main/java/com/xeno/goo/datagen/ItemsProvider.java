@@ -19,11 +19,13 @@ public class ItemsProvider extends ItemModelProvider {
         registerGauntlet();
         registerBasin();
         registerGooAndYou();
+        registerCrystalComb();
         registerCrucible();
         registerMixer();
         registerBulbs();
         registerGooCrystals();
         registerSpawnEggs();
+        registerTrough();
     }
 
     private void registerGooCrystals() {
@@ -44,6 +46,11 @@ public class ItemsProvider extends ItemModelProvider {
             template = "template_slab";
         }
         withExistingParent(resourceLocation.getPath(), new ResourceLocation(GooMod.MOD_ID, template));
+    }
+
+    private void registerTrough()
+    {
+        withExistingParent(ItemsRegistry.Trough.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerBulbs()
@@ -75,6 +82,12 @@ public class ItemsProvider extends ItemModelProvider {
     {
         singleTexture(ItemsRegistry.Gasket.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/gasket"));
+    }
+
+    private void registerCrystalComb()
+    {
+        singleTexture(ItemsRegistry.CrystalComb.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/crystal_comb"));
     }
 
     private void registerGooAndYou()

@@ -95,12 +95,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         matrixStack.rotate(Vector3f.XP.rotationDegrees(90));
         Minecraft.getInstance().getItemRenderer().renderItem(crystal, ItemCameraTransforms.TransformType.GROUND, combinedLightIn, OverlayTexture.NO_OVERLAY, matrixStack, buffer);
         matrixStack.pop();
-
-        debugLastHighestToY = highestToY;
-
     }
-
-    public static float debugLastHighestToY = 0f;
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
     private static final float FROM_VERTICAL_FILL_PORT_WIDTH_BASE = 0.125f;

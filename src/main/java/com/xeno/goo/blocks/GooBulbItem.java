@@ -56,10 +56,7 @@ public class GooBulbItem extends BlockItem
         }
         int holdsAmount = GooBulbTile.storageForDisplay(holding(stack));
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        tooltip.add(new TranslationTextComponent("goo.common.holds")
-                .append(TargetingHandler.getGooAmountForDisplay(holdsAmount))
-                .append(new TranslationTextComponent("goo.common.mb"))
-        );
+        tooltip.add(new TranslationTextComponent("goo.common.holds_amount", TargetingHandler.getGooAmountForDisplay(holdsAmount)));
     }
 
     private int holding(ItemStack stack)
