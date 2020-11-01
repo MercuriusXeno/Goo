@@ -131,6 +131,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.TALL_GRASS, floral(30), vital(2));
         saveData(Items.BLACKSTONE, earthen(180));
         saveData(Items.COBBLESTONE, earthen(180));
+        saveData(Items.INFESTED_COBBLESTONE, earthen(180));
         saveData(Items.MOSSY_COBBLESTONE, earthen(180), floral(15));
         saveData(Items.DIRT, earthen(180));
         saveData(Items.FLINT, earthen(180));

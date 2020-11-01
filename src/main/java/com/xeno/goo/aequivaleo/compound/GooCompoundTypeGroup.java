@@ -2,7 +2,11 @@ package com.xeno.goo.aequivaleo.compound;
 
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
+import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
+import com.ldtteam.aequivaleo.api.mediation.IMediationCandidate;
+import com.ldtteam.aequivaleo.api.mediation.IMediationContext;
+import com.ldtteam.aequivaleo.api.mediation.IMediationEngine;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipe;
 import com.ldtteam.aequivaleo.vanilla.api.recipe.equivalency.ITagEquivalencyRecipe;
 import net.minecraft.block.OreBlock;
@@ -12,25 +16,40 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup> implements ICompoundTypeGroup
 {
+
     @Override
-    public Set<CompoundInstance> determineResult(final Set<Set<CompoundInstance>> set, final Boolean aBoolean)
+    public @NotNull IMediationEngine getMediationEngine()
     {
-        return set
-                 .stream().min((compoundInstances, t1) -> (int) (compoundInstances
-                                                                   .stream()
-                                                                   .mapToDouble(CompoundInstance::getAmount)
-                                                                   .sum() - t1
-                                                                              .stream()
-                                                                              .mapToDouble(CompoundInstance::getAmount)
-                                                                              .sum()))
-                 .orElse(new HashSet<>());
+        return context -> {
+            if (!context.areTargetParentsAnalyzed())
+                return Optional.of(Collections.emptySet());
+
+            return context
+                     .getCandidates()
+                     .stream()
+                     .min((o1, o2) -> {
+                         if (o1.isSourceIncomplete() && !o2.isSourceIncomplete())
+                             return 1;
+
+                         if (!o1.isSourceIncomplete() && o2.isSourceIncomplete())
+                             return -1;
+
+                         if (o1.getValues().isEmpty() && !o2.getValues().isEmpty())
+                             return 1;
+
+                         if (!o1.getValues().isEmpty() && o2.getValues().isEmpty())
+                             return -1;
+
+                         return (int) (o1.getValues().stream().mapToDouble(CompoundInstance::getAmount).sum() -
+                                         o2.getValues().stream().mapToDouble(CompoundInstance::getAmount).sum());
+                     })
+                     .map(IMediationCandidate::getValues);
+        };
     }
 
     @Override
@@ -54,10 +73,7 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
         if  (iCompoundContainer.getContents() instanceof ItemStack && isInvalidStack((ItemStack) iCompoundContainer.getContents())) {
             return false;
         }
-        if  (iCompoundContainer.getContents() instanceof Item && isInvalidStack((Item) iCompoundContainer.getContents())) {
-            return false;
-        }
-        return true;
+        return !(iCompoundContainer.getContents() instanceof Item) || !isInvalidStack((Item) iCompoundContainer.getContents());
     }
 
     private boolean isInvalidStack(Item contents) {

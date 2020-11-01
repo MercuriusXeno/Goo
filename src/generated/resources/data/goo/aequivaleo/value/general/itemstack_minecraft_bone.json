@@ -18,8 +18,8 @@
   ],
   "compounds": [
     {
-      "amount": 3.0,
-      "type": "goo:vital"
+      "amount": 60.0,
+      "type": "goo:decay"
     },
     {
       "amount": 720.0,
@@ -30,8 +30,8 @@
       "type": "goo:faunal"
     },
     {
-      "amount": 60.0,
-      "type": "goo:decay"
+      "amount": 3.0,
+      "type": "goo:vital"
     }
   ]
 }
