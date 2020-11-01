@@ -1,9 +1,6 @@
 package com.xeno.goo.blocks;
 
-import com.mojang.datafixers.types.Func;
-import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.items.ItemsRegistry;
-import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrystalNestTile;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
@@ -12,6 +9,7 @@ import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.IntegerProperty;
 import net.minecraft.state.properties.BlockStateProperties;
@@ -30,7 +28,7 @@ import java.util.Random;
 
 public class CrystalNest extends BeehiveBlock {
     public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
-    public static final IntegerProperty HONEY_LEVEL = BlockStateProperties.HONEY_LEVEL;
+    public static final BooleanProperty GOO_FULL = BooleanProperty.create("nest_goo_full");
     public CrystalNest() {
         super(Properties.create(Material.GLASS)
                 .sound(SoundType.GLASS)
@@ -57,8 +55,7 @@ public class CrystalNest extends BeehiveBlock {
 
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         ItemStack itemstack = player.getHeldItem(handIn);
-        int i = state.get(HONEY_LEVEL);
-        if (i >= 5) {
+        if (state.get(GOO_FULL)) {
             if (itemstack.getItem() == Items.SHEARS) {
                 worldIn.playSound(player, player.getPosX(), player.getPosY(), player.getPosZ(), SoundEvents.BLOCK_BEEHIVE_SHEAR, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                 dropHoneyComb(worldIn, pos);
@@ -71,13 +68,12 @@ public class CrystalNest extends BeehiveBlock {
         return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
     }
 
-    public void animateTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
-        if (stateIn.get(HONEY_LEVEL) >= 5) {
+    public void animateTick(BlockState state, World world, BlockPos pos, Random rand) {
+        if (state.get(GOO_FULL)) {
             for(int i = 0; i < rand.nextInt(1) + 1; ++i) {
-                this.addCrystalParticle(worldIn, pos, stateIn);
+                this.addCrystalParticle(world, pos, state);
             }
         }
-
     }
 
     private void addCrystalParticle(World worldIn, BlockPos pos, BlockState stateIn) {

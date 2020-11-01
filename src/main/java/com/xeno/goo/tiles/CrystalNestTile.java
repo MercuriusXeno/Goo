@@ -2,37 +2,35 @@ package com.xeno.goo.tiles;
 
 import com.google.common.collect.Lists;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.blocks.CrystalNest;
 import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.BeehiveBlock;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.CampfireBlock;
 import net.minecraft.block.FireBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.BeeEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.NBTUtil;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 
 public class CrystalNestTile  extends TileEntity implements ITickableTileEntity {
+    private static final int READY_FOR_HARVEST_GOO_AMOUNT = 960;
     private final List<CrystalNestTile.Bee> bees = Lists.newArrayList();
     @Nullable
     private BlockPos troughPos = null;
+    private FluidStack goo = FluidStack.EMPTY;
 
     public CrystalNestTile() {
         super(Registry.CRYSTAL_NEST_TILE.get());
@@ -64,26 +62,18 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
         }
     }
 
-    public boolean hasNoBees() {
-        return this.bees.isEmpty();
-    }
-
     public boolean isFullOfBees() {
         return this.bees.size() == 6;
     }
 
-    public void scareBees(@Nullable PlayerEntity p_226963_1_, BlockState p_226963_2_, CrystalNestTile.State p_226963_3_) {
-        List<Entity> list = this.tryReleaseBee(p_226963_2_, p_226963_3_);
-        if (p_226963_1_ != null) {
+    public void scareBees(@Nullable PlayerEntity player, BlockState state, CrystalNestTile.State nestState) {
+        List<Entity> list = this.tryReleaseBee(state, nestState);
+        if (player != null) {
             for(Entity entity : list) {
-                if (entity instanceof BeeEntity) {
-                    BeeEntity beeentity = (BeeEntity)entity;
-                    if (p_226963_1_.getPositionVec().squareDistanceTo(entity.getPositionVec()) <= 16.0D) {
-                        if (!this.isSmoked()) {
-                            beeentity.setAttackTarget(p_226963_1_);
-                        } else {
-                            beeentity.setStayOutOfHiveCountdown(400);
-                        }
+                if (entity instanceof GooBee) {
+                    GooBee bee = (GooBee)entity;
+                    if (player.getPositionVec().squareDistanceTo(entity.getPositionVec()) <= 16.0D) {
+                        bee.setStayOutOfHiveCountdown(400);
                     }
                 }
             }
@@ -91,42 +81,38 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
 
     }
 
-    private List<Entity> tryReleaseBee(BlockState p_226965_1_, CrystalNestTile.State p_226965_2_) {
+    private List<Entity> tryReleaseBee(BlockState state, CrystalNestTile.State nestState) {
         List<Entity> list = Lists.newArrayList();
-        this.bees.removeIf((p_226966_4_) -> {
-            return this.spawnBee(p_226965_1_, p_226966_4_, list, p_226965_2_);
+        this.bees.removeIf((e) -> {
+            return this.spawnBee(state, e, list, nestState);
         });
         return list;
     }
 
-    public void tryEnterHive(Entity e, boolean hasNectar) {
-        this.tryEnterHive(e, hasNectar, 0);
+    public void tryEnterHive(Entity e, boolean hasGoo) {
+        this.tryEnterHive(e, hasGoo, 0);
     }
 
     public int getBeeCount() {
         return this.bees.size();
     }
 
-    public static int getHoneyLevel(BlockState p_226964_0_) {
-        return p_226964_0_.get(BeehiveBlock.HONEY_LEVEL);
+    public int getGooLevel() {
+        return goo.getAmount();
     }
 
-    public boolean isSmoked() {
-        return CampfireBlock.isSmokingBlockAt(this.world, this.getPos());
-    }
-
-    public void tryEnterHive(Entity e, boolean hasNectar, int ticksInHive) {
-        if (this.bees.size() < 3) {
+    public void tryEnterHive(Entity e, boolean hasGoo, int ticksInHive) {
+        if (getBeeCount() < 6) {
             e.stopRiding();
             e.removePassengers();
             CompoundNBT compoundnbt = new CompoundNBT();
             e.writeUnlessPassenger(compoundnbt);
-            this.bees.add(new CrystalNestTile.Bee(compoundnbt, ticksInHive, hasNectar ? 2400 : 600));
+            this.bees.add(new CrystalNestTile.Bee(compoundnbt, ticksInHive, hasGoo ? 2400 : 600));
             if (this.world != null) {
-                if (e instanceof BeeEntity) {
-                    BeeEntity beeentity = (BeeEntity)e;
-                    if (beeentity.hasFlower() && (!this.hasTroughPos() || this.world.rand.nextBoolean())) {
-                        this.troughPos = beeentity.getFlowerPos();
+                if (e instanceof GooBee) {
+                    GooBee beeentity = (GooBee)e;
+                    if (beeentity.hasTrough() && (!this.hasTroughPos() || this.world.rand.nextBoolean())) {
+                        this.troughPos = beeentity.getTroughPos();
                     }
                 }
 
@@ -138,8 +124,8 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
         }
     }
 
-    private boolean spawnBee(BlockState state, CrystalNestTile.Bee bee, @Nullable List<Entity> p_235651_3_, CrystalNestTile.State p_235651_4_) {
-        if (this.world.isNightTime() && p_235651_4_ != CrystalNestTile.State.PANIC) {
+    private boolean spawnBee(BlockState state, CrystalNestTile.Bee bee, @Nullable List<Entity> bees, CrystalNestTile.State nestState) {
+        if (this.world.isNightTime() && nestState != CrystalNestTile.State.PANIC) {
             return false;
         } else {
             BlockPos blockpos = this.getPos();
@@ -147,15 +133,13 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
             compoundnbt.remove("Passengers");
             compoundnbt.remove("Leash");
             compoundnbt.remove("UUID");
-            Direction direction = state.get(BeehiveBlock.FACING);
+            Direction direction = state.get(CrystalNest.FACING);
             BlockPos blockpos1 = blockpos.offset(direction);
             boolean flag = !this.world.getBlockState(blockpos1).getCollisionShape(this.world, blockpos1).isEmpty();
-            if (flag && p_235651_4_ != CrystalNestTile.State.PANIC) {
+            if (flag && nestState != CrystalNestTile.State.PANIC) {
                 return false;
             } else {
-                Entity entity = EntityType.loadEntityAndExecute(compoundnbt, this.world, (p_226960_0_) -> {
-                    return p_226960_0_;
-                });
+                Entity entity = EntityType.loadEntityAndExecute(compoundnbt, this.world, (e) -> e);
                 if (entity != null) {
                     if (!entity.getType().equals(Registry.GOO_BEE.get())) {
                         return false;
@@ -166,19 +150,24 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
                                 beeEntity.setTroughPos(this.troughPos);
                             }
 
-                            if (p_235651_4_ == CrystalNestTile.State.GOO_DELIVERED) {
+                            if (nestState == CrystalNestTile.State.GOO_DELIVERED) {
                                 if (state.getBlock().equals(BlocksRegistry.CrystalNest.get())) {
-                                    int i = getHoneyLevel(state);
-                                    if (i < 5) {
+                                    if (goo.isEmpty()) {
+                                        goo = new FluidStack(Registry.CHROMATIC_GOO.get(), GooBee.GOO_DELIVERY_AMOUNT);
+                                    } else {
+                                        goo.setAmount(goo.getAmount() + GooBee.GOO_DELIVERY_AMOUNT);
+                                    }
+                                    if (goo.getAmount() < READY_FOR_HARVEST_GOO_AMOUNT) {
                                         beeEntity.onHoneyDelivered();
-                                        this.world.setBlockState(this.getPos(), state.with(BeehiveBlock.HONEY_LEVEL, i + 1));
+                                        if (goo.getAmount() >= READY_FOR_HARVEST_GOO_AMOUNT) {
+                                            this.world.setBlockState(this.getPos(), state.with(CrystalNest.GOO_FULL, true));
+                                        }
                                     }
                                 }
                             }
 
-                            this.func_235650_a_(bee.ticksInHive, beeEntity);
-                            if (p_235651_3_ != null) {
-                                p_235651_3_.add(beeEntity);
+                            if (bees != null) {
+                                bees.add(beeEntity);
                             }
 
                             float f = entity.getWidth();
@@ -199,18 +188,6 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
         }
     }
 
-    private void func_235650_a_(int p_235650_1_, GooBee bee) {
-        int i = bee.getGrowingAge();
-        if (i < 0) {
-            bee.setGrowingAge(Math.min(0, i + p_235650_1_));
-        } else if (i > 0) {
-            bee.setGrowingAge(Math.max(0, i - p_235650_1_));
-        }
-
-        bee.setInLove(Math.max(0, bee.func_234178_eO_() - p_235650_1_));
-        bee.resetTicksWithoutDrinkingGoo();
-    }
-
     private boolean hasTroughPos() {
         return this.troughPos != null;
     }
@@ -222,7 +199,7 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
         for(BlockState blockstate = this.getBlockState(); iterator.hasNext(); beehivetileentity$bee.ticksInHive++) {
             beehivetileentity$bee = iterator.next();
             if (beehivetileentity$bee.ticksInHive > beehivetileentity$bee.minOccupationTicks) {
-                CrystalNestTile.State beehivetileentity$state = beehivetileentity$bee.entityData.getBoolean("HasNectar") ? CrystalNestTile.State.GOO_DELIVERED : CrystalNestTile.State.BEE_RELEASED;
+                CrystalNestTile.State beehivetileentity$state = beehivetileentity$bee.entityData.getBoolean("HasGoo") ? CrystalNestTile.State.GOO_DELIVERED : CrystalNestTile.State.BEE_RELEASED;
                 if (this.spawnBee(blockstate, beehivetileentity$bee, (List<Entity>)null, beehivetileentity$state)) {
                     iterator.remove();
                 }
@@ -251,13 +228,13 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
 
         for(int i = 0; i < listnbt.size(); ++i) {
             CompoundNBT compoundnbt = listnbt.getCompound(i);
-            CrystalNestTile.Bee beehivetileentity$bee = new CrystalNestTile.Bee(compoundnbt.getCompound("EntityData"), compoundnbt.getInt("TicksInHive"), compoundnbt.getInt("MinOccupationTicks"));
-            this.bees.add(beehivetileentity$bee);
+            CrystalNestTile.Bee te$bee = new CrystalNestTile.Bee(compoundnbt.getCompound("EntityData"), compoundnbt.getInt("TicksInHive"), compoundnbt.getInt("MinOccupationTicks"));
+            this.bees.add(te$bee);
         }
 
         this.troughPos = null;
-        if (nbt.contains("FlowerPos")) {
-            this.troughPos = NBTUtil.readBlockPos(nbt.getCompound("FlowerPos"));
+        if (nbt.contains("TroughPos")) {
+            this.troughPos = NBTUtil.readBlockPos(nbt.getCompound("TroughPos"));
         }
 
     }
@@ -266,7 +243,7 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
         super.write(compound);
         compound.put("Bees", this.getBees());
         if (this.hasTroughPos()) {
-            compound.put("FlowerPos", NBTUtil.writeBlockPos(this.troughPos));
+            compound.put("TroughPos", NBTUtil.writeBlockPos(this.troughPos));
         }
 
         return compound;
