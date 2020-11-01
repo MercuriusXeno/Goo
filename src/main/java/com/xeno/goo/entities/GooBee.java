@@ -22,6 +22,7 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
+import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.IParticleData;
 import net.minecraft.pathfinding.FlyingPathNavigator;
 import net.minecraft.pathfinding.Path;
@@ -30,6 +31,7 @@ import net.minecraft.pathfinding.PathNodeType;
 import net.minecraft.tags.ITag;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
@@ -60,7 +62,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
     private BlockPos nestPos = null;
     private DrinkGooGoal drinkGooGoal;
     private FindCrystalNestGoal findCrystalNestGoal;
-    private int underWaterTicks;
 
     public GooBee(EntityType<GooBee> gooGooBeeType, World world) {
         super(gooGooBeeType, world);
@@ -71,6 +72,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
         this.setPathPriority(PathNodeType.WATER_BORDER, -1.0F);
         this.setPathPriority(PathNodeType.COCOA, -1.0F);
         this.setPathPriority(PathNodeType.FENCE, -1.0F);
+        setGrowingAge(-1);
     }
 
     public static AttributeModifierMap.MutableAttribute setCustomAttributes() {
@@ -150,20 +152,35 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
             setGrowingAge(-1);
         }
         if (this.hasGoo() && this.rand.nextFloat() < 0.05F) {
-            for (int i = 0; i < this.rand.nextInt(2) + 1; ++i) {
-                this.addParticle(this.world, this.getPosX() - (double) 0.3F, 
-                        this.getPosX() + (double) 0.3F, this.getPosZ() - (double) 0.3F, 
-                        this.getPosZ() + (double) 0.3F, this.getPosYHeight(0.5D), Registry.vaporParticleFromFluid(Registry.CHROMATIC_GOO.get()));
-            }
+            this.addParticle();
         }
 
         this.updateBodyPitch();
     }
 
-    private void addParticle(World worldIn, double p_226397_2_, double p_226397_4_, double p_226397_6_, 
-                             double p_226397_8_, double posY, IParticleData particleData) {
-        worldIn.addParticle(particleData, MathHelper.lerp(worldIn.rand.nextDouble(), p_226397_2_, p_226397_4_), posY, 
-                MathHelper.lerp(worldIn.rand.nextDouble(), p_226397_6_, p_226397_8_), 0.0D, 0.0D, 0.0D);
+    private void addParticle() {
+
+        BasicParticleType type = Registry.vaporParticleFromFluid(Registry.CHROMATIC_GOO.get());
+        if (type == null) {
+            return;
+        }
+        AxisAlignedBB box = getBoundingBox();
+        for (int i = 0; i < 4; i++) {
+            float scale = world.rand.nextFloat() / 6f + 0.25f;
+            Vector3d lowerBounds = new Vector3d(box.minX, box.minY, box.minZ);
+            Vector3d upperBounds = new Vector3d(box.maxX, box.maxY, box.maxZ);
+            Vector3d threshHoldMax = upperBounds.subtract(lowerBounds);
+            Vector3d centeredBounds = threshHoldMax.scale(0.5f);
+            Vector3d center = lowerBounds.add(centeredBounds);
+            Vector3d randomOffset = threshHoldMax.mul(world.rand.nextFloat() - 0.5f,
+                    world.rand.nextFloat() - 0.5f,
+                    world.rand.nextFloat() - 0.5f).scale(scale * 2f);
+            Vector3d spawnVec = center.add(randomOffset);
+            // make sure the spawn area is offset in a way that puts the particle outside of the block side we live on
+            // Vector3d offsetVec = Vector3d.copy(sideWeLiveOn().getDirectionVec()).mul(threshHoldMax.x, threshHoldMax.y, threshHoldMax.z);
+            ((ServerWorld) world).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z,
+                    1, 0d, 0d, 0d, scale);
+        }
     }
 
     private void startMovingTo(BlockPos pos) {
@@ -729,8 +746,8 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
                     }
                     GooBee.this.savedTroughPos = optional.get();
                     GooBee.this.navigator.tryMoveToXYZ((double) GooBee.this.savedTroughPos.getX() + 0.5D,
-                            (double) GooBee.this.savedTroughPos.getY() + 0.5D,
-                            (double) GooBee.this.savedTroughPos.getZ() + 0.5D, (double) 1.2F);
+                            (double) GooBee.this.savedTroughPos.getY() + 0.25D,
+                            (double) GooBee.this.savedTroughPos.getZ() + 0.5D, (double) 0.35F);
                     return true;
                 } else {
                     return false;
@@ -797,8 +814,8 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
             if (this.ticks > 600) {
                 GooBee.this.savedTroughPos = null;
             } else {
-                Vector3d vector3d = Vector3d.copyCenteredHorizontally(GooBee.this.savedTroughPos).add(0.0D, (double) 0.45F, 0.0D);
-                if (vector3d.distanceTo(GooBee.this.getPositionVec()) > 0.25D) {
+                Vector3d vector3d = Vector3d.copyCenteredHorizontally(GooBee.this.savedTroughPos).add(0.0D, (double) 0.25F, 0.0D);
+                if (vector3d.distanceTo(GooBee.this.getPositionVec()) > 1D) {
                     this.nextTarget = vector3d;
                     this.moveToNextTarget();
                 } else {
@@ -818,12 +835,17 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal {
 
                         IFluidHandler fh = GooBee.troughHandlerFromPosition(world, GooBee.this.savedTroughPos);
                         if (fh != null) {
-                            if (fh.getFluidInTank(0).getAmount() > 0 && !this.completedDrinkingGoo()) {
-                                ++this.drankGooTicks;
-                                fh.drain(DRAIN_AMOUNT, IFluidHandler.FluidAction.EXECUTE);
-                                if (GooBee.this.rand.nextFloat() < 0.05F && this.drankGooTicks > this.lastDrankGooTick + 60) {
-                                    this.lastDrankGooTick = this.drankGooTicks;
+                            if (fh.getFluidInTank(0).getAmount() > 0) {
+                                if (!this.completedDrinkingGoo()) {
+                                    ++this.drankGooTicks;
+                                    fh.drain(DRAIN_AMOUNT, IFluidHandler.FluidAction.EXECUTE);
+                                    if (GooBee.this.rand.nextFloat() < 0.05F && this.drankGooTicks > this.lastDrankGooTick + 60) {
+                                        this.lastDrankGooTick = this.drankGooTicks;
+                                    }
                                 }
+                            } else {
+                                // trough is empty, doesn't have the goo we want.
+                                GooBee.this.savedTroughPos = null;
                             }
                         }
                     }

@@ -26,8 +26,8 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     public @NotNull IMediationEngine getMediationEngine()
     {
         return context -> {
-            if (!context.areTargetParentsAnalyzed())
-                return Optional.of(Collections.emptySet());
+//            if (!context.areTargetParentsAnalyzed())
+//                return Optional.of(Collections.emptySet());
 
             return context
                      .getCandidates()

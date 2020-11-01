@@ -35,6 +35,7 @@ public class CrystalNest extends BeehiveBlock {
         super(Properties.create(Material.GLASS)
                 .sound(SoundType.GLASS)
                 .hardnessAndResistance(0.5f)
+                .notSolid()
         );
     }
 

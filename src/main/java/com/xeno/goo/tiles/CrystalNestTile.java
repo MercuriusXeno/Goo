@@ -1,6 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.google.common.collect.Lists;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BeehiveBlock;
@@ -138,7 +139,7 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
     }
 
     private boolean spawnBee(BlockState state, CrystalNestTile.Bee bee, @Nullable List<Entity> p_235651_3_, CrystalNestTile.State p_235651_4_) {
-        if ((this.world.isNightTime() || this.world.isRaining()) && p_235651_4_ != CrystalNestTile.State.PANIC) {
+        if (this.world.isNightTime() && p_235651_4_ != CrystalNestTile.State.PANIC) {
             return false;
         } else {
             BlockPos blockpos = this.getPos();
@@ -156,33 +157,28 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity 
                     return p_226960_0_;
                 });
                 if (entity != null) {
-                    if (!entity.getType().isContained(EntityTypeTags.BEEHIVE_INHABITORS)) {
+                    if (!entity.getType().equals(Registry.GOO_BEE.get())) {
                         return false;
                     } else {
                         if (entity instanceof GooBee) {
-                            GooBee beeentity = (GooBee)entity;
-                            if (this.hasTroughPos() && !beeentity.hasTrough() && this.world.rand.nextFloat() < 0.9F) {
-                                beeentity.setTroughPos(this.troughPos);
+                            GooBee beeEntity = (GooBee)entity;
+                            if (this.hasTroughPos() && !beeEntity.hasTrough() && this.world.rand.nextFloat() < 0.9F) {
+                                beeEntity.setTroughPos(this.troughPos);
                             }
 
                             if (p_235651_4_ == CrystalNestTile.State.GOO_DELIVERED) {
-                                beeentity.onHoneyDelivered();
-                                if (state.getBlock().isIn(BlockTags.BEEHIVES)) {
+                                if (state.getBlock().equals(BlocksRegistry.CrystalNest.get())) {
                                     int i = getHoneyLevel(state);
                                     if (i < 5) {
-                                        int j = this.world.rand.nextInt(100) == 0 ? 2 : 1;
-                                        if (i + j > 5) {
-                                            --j;
-                                        }
-
-                                        this.world.setBlockState(this.getPos(), state.with(BeehiveBlock.HONEY_LEVEL, Integer.valueOf(i + j)));
+                                        beeEntity.onHoneyDelivered();
+                                        this.world.setBlockState(this.getPos(), state.with(BeehiveBlock.HONEY_LEVEL, i + 1));
                                     }
                                 }
                             }
 
-                            this.func_235650_a_(bee.ticksInHive, beeentity);
+                            this.func_235650_a_(bee.ticksInHive, beeEntity);
                             if (p_235651_3_ != null) {
-                                p_235651_3_.add(beeentity);
+                                p_235651_3_.add(beeEntity);
                             }
 
                             float f = entity.getWidth();
