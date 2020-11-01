@@ -34,6 +34,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.lwjgl.system.windows.POINT;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -135,7 +137,9 @@ public class Registry {
     public static final RegistryObject<TileEntityType<TroughTile>> TROUGH_TILE = TILES.register("goo_trough", () -> TileEntityType.Builder.create(TroughTile::new, BlocksRegistry.Trough.get()).build(null));
 
     // Points of interest
-    public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest", () -> new PointOfInterestType("crystal_nest", PointOfInterestType.getAllStates(BlocksRegistry.CrystalNest.get()), 0, 1));
+    public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest",
+            () -> new PointOfInterestType("crystal_nest", PointOfInterestType.getAllStates(BlocksRegistry.CrystalNest.get()), 0, 1));
+
 
     // Goo!
     public static final RegistryObject<GooFluid> AQUATIC_GOO = registerGooFluid("aquatic_goo", Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO);

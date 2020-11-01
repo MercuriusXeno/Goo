@@ -6,6 +6,7 @@ import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
+import net.minecraft.village.PointOfInterestType;
 import net.minecraftforge.fml.DeferredWorkQueue;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
@@ -21,6 +22,13 @@ public class CommonSetup
         Networking.registerNetworkMessages();
 
         GooInteractions.initialize();
+
+        event.enqueueWork(() -> {
+            GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
+            GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
+            PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());
+            PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.CRYSTAL_NEST_POI.get().blockStates);
+        });
     }
 
     public static void loadComplete(final FMLLoadCompleteEvent event)
@@ -33,14 +41,5 @@ public class CommonSetup
         GooMod.config = new GooConfig();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, GooMod.config.server);
         GooMod.config.loadConfig(GooMod.config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
-    }
-
-    public static void deferredWork(final ParallelDispatchEvent event) {
-        event.enqueueWork(
-                () -> GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create())
-        );
-        event.enqueueWork(
-                () -> GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create())
-        );
     }
 }

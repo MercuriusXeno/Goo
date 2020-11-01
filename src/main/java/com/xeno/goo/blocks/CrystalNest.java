@@ -1,6 +1,7 @@
 package com.xeno.goo.blocks;
 
 import com.mojang.datafixers.types.Func;
+import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrystalNestTile;
@@ -21,8 +22,6 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.village.PointOfInterest;
-import net.minecraft.village.PointOfInterestType;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
