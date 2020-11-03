@@ -46,10 +46,12 @@ public class Containment extends Enchantment
         return canApply(stack);
     }
 
+    // I don't get why this should have to be true, but trying something
+    // TODO experimental
     @Override
     public boolean canGenerateInLoot()
     {
-        return  false;
+        return true;
     }
 
     @Override
@@ -58,7 +60,6 @@ public class Containment extends Enchantment
         return false;
     }
 
-    // legit there's only like one other thing at the time of writing this will jive with, just return true.
     @Override
     protected boolean canApplyTogether(Enchantment ench)
     {

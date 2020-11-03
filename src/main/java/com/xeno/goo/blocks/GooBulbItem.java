@@ -33,7 +33,7 @@ public class GooBulbItem extends BlockItem
     @Override
     public int getItemEnchantability()
     {
-        return 30;
+        return 15;
     }
 
     @Override

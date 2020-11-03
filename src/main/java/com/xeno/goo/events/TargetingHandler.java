@@ -47,6 +47,7 @@ import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import vazkii.patchouli.client.book.gui.GuiBook;
 
 import java.awt.*;
 import java.text.NumberFormat;
@@ -62,7 +63,8 @@ public class TargetingHandler
     private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
-    private static final float Z_LEVEL_OF_MODAL = 500f;
+    private static final float Z_LEVEL_OF_MODAL = 470f;
+    // private static final float PATCHOULI_Z_LEVEL = 270f;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;
@@ -92,6 +94,10 @@ public class TargetingHandler
 
     public static void onDraw(ItemTooltipEvent event)
     {
+        // avoid trying to draw for Patchouli book, it's full of sadness.
+        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
+            return;
+        }
         lastStack = currentStack;
         //This method will make space for goo icons in the tooltip
         currentStack = event.getItemStack();
@@ -166,6 +172,11 @@ public class TargetingHandler
 
     public static void tryDraw(RenderTooltipEvent.PostText event)
     {
+        // avoid trying to draw for Patchouli book, it's full of sadness.
+        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
+            return;
+        }
+
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
             tryDrawingGooContents(event);
@@ -364,7 +375,9 @@ public class TargetingHandler
         by += centeringVerticalOffset;
         MatrixStack matrices = event.getMatrixStack();
         matrices.push();
-        matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
+        // float zLevel = Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL : Z_LEVEL_OF_MODAL;
+        float zLevel = Z_LEVEL_OF_MODAL;
+        matrices.translate(bx, by, zLevel);
         for (FluidStack entry : gooEntry) {
             if (!(entry.getFluid() instanceof GooFluid)) {
                 continue;

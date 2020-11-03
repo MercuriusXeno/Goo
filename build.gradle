@@ -19,7 +19,7 @@ apply plugin: 'maven-publish'
 
 version = "${goo_version}"
 group = mod_group
-archivesBaseName = mod_name + "-" + minecraft_version
+archivesBaseName = mod_name + "-" + minecraft_target_version
 
 sourceSets.main {
     resources {
@@ -121,16 +121,17 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    minecraft "net.minecraftforge:forge:${minecraft_target_version}-${forge_version}"
     implementation 'org.jetbrains:annotations:15.0'
 
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}")
 
     runtimeOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:universal")
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
 
+    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}")
     compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
     runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
 }
@@ -152,8 +153,8 @@ jar {
 
 processResources {
     inputs.property "goo_version", goo_version
-    inputs.property "minecraft_version", minecraft_version
-    inputs.property "forge_version", min_forge_version
+    inputs.property "soft_deps_minecraft_version", soft_deps_minecraft_version
+    inputs.property "min_forge_version", min_forge_version
     inputs.property "loader_version", loader_version
     inputs.property "aequivaleo_version", aequivaleo_version
     inputs.property "patchouli_version", patchouli_version
@@ -161,8 +162,8 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'META-INF/mods.toml'
 
-        expand "goo_version": goo_version, "minecraft_version": minecraft_version,
-                "forge_version": min_forge_version, "loader_version": loader_version,
+        expand "goo_version": goo_version, "soft_deps_minecraft_version": soft_deps_minecraft_version,
+                "min_forge_version": min_forge_version, "loader_version": loader_version,
                 "aequivaleo_version": aequivaleo_version, "patchouli_version": patchouli_version
     }
 

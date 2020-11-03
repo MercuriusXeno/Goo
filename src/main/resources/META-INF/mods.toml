@@ -14,13 +14,13 @@ issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues"
 [[dependencies.goo]]
     modId="forge"
     mandatory=true
-    versionRange="[${forge_version},)"
+    versionRange="[${min_forge_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]
     modId="minecraft"
     mandatory=true
-    versionRange="[${minecraft_version}]"
+    versionRange="[${soft_deps_minecraft_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.goo]]

@@ -1,0 +1,16 @@
+{
+  "name": "block.goo.crystal_nest",
+  "icon": "goo:crystal_nest",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.crystal_nest.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:crystal_nest",
+      "text": "patchouli.goo.crystal_nest.summary"
+    }
+  ]
+}

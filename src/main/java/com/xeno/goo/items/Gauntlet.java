@@ -52,7 +52,7 @@ public class Gauntlet extends GauntletAbstraction
     @Override
     public int getItemEnchantability()
     {
-        return 30;
+        return 15;
     }
 
     @Override

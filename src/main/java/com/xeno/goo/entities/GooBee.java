@@ -61,7 +61,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     private float rollAmountO;
     private int ticksWithoutGooSinceExitingHive;
     private int stayOutOfHiveCountdown;
-    private int numCropsGrownSincePollination;
     private int remainingCooldownBeforeLocatingNewHive = 0;
     private int remainingCooldownBeforeLocatingTrough = 0;
     private BlockPos savedTroughPos = null;
@@ -132,7 +131,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         }
         compound.putInt("TicksSincePollination", this.ticksWithoutGooSinceExitingHive);
         compound.putInt("CannotEnterHiveTicks", this.stayOutOfHiveCountdown);
-        compound.putInt("CropsGrownSincePollination", this.numCropsGrownSincePollination);
         compound.put("goo", goo.writeToNBT(new CompoundNBT()));
     }
 
@@ -151,7 +149,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         }
         this.ticksWithoutGooSinceExitingHive = compound.getInt("TicksSincePollination");
         this.stayOutOfHiveCountdown = compound.getInt("CannotEnterHiveTicks");
-        this.numCropsGrownSincePollination = compound.getInt("CropsGrownSincePollination");
         if (compound.contains("goo")) {
             this.goo = FluidStack.loadFluidStackFromNBT(compound.getCompound("goo"));
         }
@@ -601,6 +598,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         public void startExecuting() {
             TileEntity tileentity = GooBee.this.world.getTileEntity(GooBee.this.nestPos);
             if (tileentity instanceof CrystalNestTile) {
+                GooBee.this.ticksWithoutGooSinceExitingHive = 0;
                 CrystalNestTile te = (CrystalNestTile) tileentity;
                 te.tryEnterHive(GooBee.this);
             }
