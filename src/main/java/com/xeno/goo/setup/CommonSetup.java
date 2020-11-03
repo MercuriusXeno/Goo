@@ -28,6 +28,8 @@ public class CommonSetup
             GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
             PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.CRYSTAL_NEST_POI.get().blockStates);
+            PointOfInterestType.registerBlockStates(Registry.GOO_TROUGH_POI.get());
+            PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.GOO_TROUGH_POI.get().blockStates);
         });
     }
 

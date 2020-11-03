@@ -22,8 +22,8 @@
       "type": "goo:metal"
     },
     {
-      "amount": 240.0,
-      "type": "goo:obsidian"
+      "amount": 60.0,
+      "type": "goo:weird"
     },
     {
       "amount": 240.0,
@@ -34,8 +34,8 @@
       "type": "goo:regal"
     },
     {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "amount": 240.0,
+      "type": "goo:obsidian"
     }
   ]
 }

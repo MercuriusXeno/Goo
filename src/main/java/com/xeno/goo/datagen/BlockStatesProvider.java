@@ -2,6 +2,7 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.blocks.CrystalNest;
 import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.PumpRenderMode;
@@ -444,7 +445,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelFull = models()
                 .cube("crystal_nest_full", bottom, top, frontFull, side, side, side)
                 .texture("particle", side);
-        horizontalBlock(BlocksRegistry.CrystalNest.get(), state -> state.get(BlockStateProperties.HONEY_LEVEL) < 5 ? model : modelFull);
+        horizontalBlock(BlocksRegistry.CrystalNest.get(), state -> state.get(CrystalNest.GOO_FULL) ? modelFull : model);
         simpleBlockItem(BlocksRegistry.CrystalNest.get(), model);
     }
 

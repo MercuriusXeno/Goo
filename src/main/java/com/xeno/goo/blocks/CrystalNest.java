@@ -7,17 +7,14 @@ import net.minecraft.block.material.Material;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.IntegerProperty;
-import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.state.StateContainer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
+import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.IBlockReader;
@@ -26,7 +23,7 @@ import net.minecraft.world.World;
 import javax.annotation.Nullable;
 import java.util.Random;
 
-public class CrystalNest extends BeehiveBlock {
+public class CrystalNest extends ContainerBlock {
     public static final DirectionProperty FACING = HorizontalBlock.HORIZONTAL_FACING;
     public static final BooleanProperty GOO_FULL = BooleanProperty.create("nest_goo_full");
     public CrystalNest() {
@@ -35,6 +32,27 @@ public class CrystalNest extends BeehiveBlock {
                 .hardnessAndResistance(0.5f)
                 .notSolid()
         );
+        this.setDefaultState(this.stateContainer.getBaseState().with(GOO_FULL, false).with(FACING, Direction.NORTH));
+    }
+
+    public boolean hasComparatorInputOverride(BlockState state) {
+        return true;
+    }
+
+    public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+        return blockState.get(GOO_FULL) ? 1 : 0;
+    }
+
+    public BlockState getStateForPlacement(BlockItemUseContext context) {
+        return this.getDefaultState().with(FACING, context.getPlacementHorizontalFacing().getOpposite());
+    }
+
+    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+        builder.add(GOO_FULL, FACING);
+    }
+
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
     }
 
     @Override
@@ -50,9 +68,14 @@ public class CrystalNest extends BeehiveBlock {
     }
 
     public static void dropHoneyComb(World world, BlockPos pos) {
-        spawnAsEntity(world, pos, new ItemStack(ItemsRegistry.CrystalComb.get(), 3));
+        TileEntity e = world.getTileEntity(pos);
+        if (e instanceof CrystalNestTile) {
+            ((CrystalNestTile) e).resetGooAmount();;
+            spawnAsEntity(world, pos, new ItemStack(ItemsRegistry.CrystalComb.get(), 3));
+        }
     }
 
+    @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         ItemStack itemstack = player.getHeldItem(handIn);
         if (state.get(GOO_FULL)) {
@@ -62,12 +85,14 @@ public class CrystalNest extends BeehiveBlock {
                 itemstack.damageItem(1, player, (playerEntity) -> {
                     playerEntity.sendBreakAnimation(handIn);
                 });
+
                 return ActionResultType.func_233537_a_(worldIn.isRemote);
             }
         }
         return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
     }
 
+    @Override
     public void animateTick(BlockState state, World world, BlockPos pos, Random rand) {
         if (state.get(GOO_FULL)) {
             for(int i = 0; i < rand.nextInt(1) + 1; ++i) {
@@ -81,13 +106,13 @@ public class CrystalNest extends BeehiveBlock {
     }
 
     @Override
-    public boolean hasTileEntity(BlockState state) {
-        return true;
-    }
+    public boolean hasTileEntity(BlockState state) { return true; }
 
-    @org.jetbrains.annotations.Nullable
     @Override
-    public TileEntity createTileEntity(BlockState state, IBlockReader world) {
+    public TileEntity createTileEntity(BlockState state, IBlockReader world) { return new CrystalNestTile(); }
+
+    @Nullable
+    public TileEntity createNewTileEntity(IBlockReader worldIn) {
         return new CrystalNestTile();
     }
 }

@@ -22,12 +22,12 @@
       "type": "goo:faunal"
     },
     {
-      "amount": 1.0,
-      "type": "goo:vital"
-    },
-    {
       "amount": 6.0,
       "type": "goo:weird"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }

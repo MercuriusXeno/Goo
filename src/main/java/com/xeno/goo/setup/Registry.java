@@ -91,7 +91,7 @@ public class Registry {
 
     public static final RegistryObject<EntityType<GooBee>> GOO_BEE = ENTITIES.register("goo_bee",
             () -> EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
-                    .size(0.35f, 0.3f)
+                    .size(0.7f, 0.6f) // actual size is halved by being dwarfism
                     .setTrackingRange(64)
                     .setUpdateInterval(1)
                     .setShouldReceiveVelocityUpdates(true)
@@ -139,6 +139,8 @@ public class Registry {
     // Points of interest
     public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest",
             () -> new PointOfInterestType("crystal_nest", PointOfInterestType.getAllStates(BlocksRegistry.CrystalNest.get()), 0, 1));
+    public static final RegistryObject<PointOfInterestType> GOO_TROUGH_POI = POINTS_OF_INTEREST.register("goo_trough",
+            () -> new PointOfInterestType("goo_trough", PointOfInterestType.getAllStates(BlocksRegistry.Trough.get()), 0, 1));
 
 
     // Goo!
