@@ -1,11 +1,15 @@
 {
   "name": "item.goo.crystal_comb",
   "icon": "goo:crystal_comb",
-  "category": "goo:gateway_to_goo",
+  "category": "goo:creatures",
   "pages": [
     {
       "type": "text",
       "text": "patchouli.goo.crystal_comb.description"
+    },
+    {
+      "type": "entity",
+      "entity": "goo:goo_bee"
     }
   ]
 }

@@ -110,6 +110,8 @@ public class Crucible extends BlockWithConnections {
         return RELEVANT_DIRECTIONS;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
         if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
             worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);

@@ -2,7 +2,6 @@ package com.xeno.goo.setup;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingMode;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IBlobInteraction;
 import com.xeno.goo.interactions.ISplatInteraction;
@@ -10,7 +9,6 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Tuple;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -22,17 +20,30 @@ public class GooConfig
 {
     // config types and builders
     public ForgeConfigSpec server;
-    private ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
+    public ForgeConfigSpec client;
+    private final ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
+    private final ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
 
     public GooConfig() {
         setupGeneralMachineConfig();
 
+        setupClientConfig();
+
         finalizeServerConfig();
+
+        finalizeClientConfig();
     }
 
     private void finalizeServerConfig() {
         server = serverBuilder.build();
     }
+
+    private void finalizeClientConfig() {
+        client = clientBuilder.build();
+    }
+
+    private ForgeConfigSpec.BooleanValue GOO_VALUES_VISIBLE_WITHOUT_BOOK;
+    public boolean gooValuesAlwaysVisible() { return GOO_VALUES_VISIBLE_WITHOUT_BOOK.get(); }
 
     // machine config values
     private ForgeConfigSpec.IntValue GOO_MAX_TRANSFER_RATE;
@@ -88,9 +99,9 @@ public class GooConfig
     public int radialMenuThreshold() { return RADIAL_MENU_HELD_TICKS_THRESHOLD.get(); }
 
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
-    private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
-    private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
-    private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_FAILURE_CHANCE = new HashMap<>();
+    private final Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
+    private final Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
+    private final Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_FAILURE_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_DRAIN_CHANCE = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> BLOB_RESOLVER_COSTS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> BLOB_TRIGGER_CHANCE = new HashMap<>();
@@ -198,15 +209,15 @@ public class GooConfig
             if (fluid.equals(Registry.WEIRD_GOO.get())) {
                 actualCooldown = 60;
             }
-            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default:" + actualCost)
+            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of splat interaction " + k.getB() + ", -1 to disable, default: " + actualCost)
                     .defineInRange(k.getB(), actualCost, -1, 1000);
-            ForgeConfigSpec.DoubleValue chanceOfInteraction = serverBuilder.comment("Chance of blob interaction " + k.getB() + ", 0 to disable, default:" + actualChance)
+            ForgeConfigSpec.DoubleValue chanceOfInteraction = serverBuilder.comment("Chance of blob interaction " + k.getB() + ", 0 to disable, default: " + actualChance)
                     .defineInRange(k.getB() + "_chance", actualChance, 0d, 1d);
-            ForgeConfigSpec.DoubleValue chanceOfDrain = serverBuilder.comment("Chance of blob cost deduction " + k.getB() + ", 0 is free, default:" + actualDrainChance)
+            ForgeConfigSpec.DoubleValue chanceOfDrain = serverBuilder.comment("Chance of blob cost deduction " + k.getB() + ", 0 is free, default: " + actualDrainChance)
                     .defineInRange(k.getB() + "_drain_chance", actualDrainChance, 0d, 1d);
-            ForgeConfigSpec.DoubleValue chanceOfFail = serverBuilder.comment("Chance of interaction failure " + k.getB() + ", 1 to disable, default:" + actualFailChance)
+            ForgeConfigSpec.DoubleValue chanceOfFail = serverBuilder.comment("Chance of interaction failure " + k.getB() + ", 1 to disable, default: " + actualFailChance)
                     .defineInRange(k.getB() + "_fail_chance", actualFailChance, 0d, 1d);
-            ForgeConfigSpec.IntValue cooldownOfInteraction = serverBuilder.comment("Cooldown of splat interaction " + k.getB() + ", default:" + actualCooldown)
+            ForgeConfigSpec.IntValue cooldownOfInteraction = serverBuilder.comment("Cooldown of splat interaction " + k.getB() + ", default: " + actualCooldown)
                     .defineInRange(k.getB() + "_cooldown", actualCooldown, 0, 1000);
             costMap.put(k.getB(), costOfInteraction);
             triggerMap.put(k.getB() + "_chance", chanceOfInteraction);
@@ -229,7 +240,7 @@ public class GooConfig
                 lowestCost[0] = defaultCostForInteractions;
             }
         });
-        ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + (lowestCost))
+        ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + (lowestCost[0]))
                 .defineInRange("thrown_amount", lowestCost[0], -1, 1000);
         serverBuilder.pop();
         SPLAT_RESOLVER_COSTS.put(fluid, costMap);
@@ -344,7 +355,13 @@ public class GooConfig
         return THROWN_GOO_AMOUNTS.get(fluid).get();
     }
 
+    public void setValuesVisibleWithoutBook(boolean f) {
+        this.GOO_VALUES_VISIBLE_WITHOUT_BOOK.set(f);
+        this.client.save();
+    }
+
     private static class Defaults {
+        public static final boolean GOO_VALUES_VISIBLE_ALWAYS = false;
         private static final int GOO_TRANSFER_RATE = 30;
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
@@ -360,6 +377,13 @@ public class GooConfig
         // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
+    }
+
+    private void setupClientConfig() {
+        clientBuilder.comment().push("client_options");
+        GOO_VALUES_VISIBLE_WITHOUT_BOOK = clientBuilder.comment("Make goo values visible without having the book in your inventory, default: " + Defaults.GOO_VALUES_VISIBLE_ALWAYS)
+                .define("gooValuesVisibleWithoutBook", false);
+        clientBuilder.pop();
     }
 
     private void setupGeneralMachineConfig() {

@@ -55,6 +55,8 @@ public class GooBulb extends BlockWithConnections
         return true;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.isIn(newState.getBlock())) {
             TileEntity tileentity = worldIn.getTileEntity(pos);

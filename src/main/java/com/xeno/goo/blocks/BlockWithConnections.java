@@ -15,6 +15,7 @@ public abstract class BlockWithConnections extends Block
         super(properties);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void neighborChanged(BlockState state, World world, BlockPos pos, Block block, BlockPos neighbor, boolean isMoving) {
         for (Direction d : relevantConnectionDirections(state)) {

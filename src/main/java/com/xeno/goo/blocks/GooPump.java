@@ -46,12 +46,14 @@ public class GooPump extends BlockWithConnections
     VoxelShape[] shapes;
     public static final EnumProperty<PumpRenderMode> RENDER = EnumProperty.create("render", PumpRenderMode.class);
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
         return getCollisionShape(state, worldIn, pos);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
     {

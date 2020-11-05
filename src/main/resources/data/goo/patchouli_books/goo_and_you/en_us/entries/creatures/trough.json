@@ -1,7 +1,7 @@
 {
   "name": "block.goo.goo_trough",
   "icon": "goo:goo_trough",
-  "category": "goo:machines",
+  "category": "goo:creatures",
   "pages": [
     {
       "type": "text",

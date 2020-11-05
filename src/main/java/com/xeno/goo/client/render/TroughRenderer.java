@@ -84,7 +84,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
     private static final float FROM_VERTICAL_FILL_PORT_WIDTH_BASE = 0.125f;
-    private static final float verticalFillHorizontalOffsetZ(float intensity, Direction d, boolean start) {
+    private static float verticalFillHorizontalOffsetZ(float intensity, Direction d, boolean start) {
         float streamWidth = FROM_VERTICAL_FILL_PORT_WIDTH_BASE * intensity;
         float offset = 0.251f;
         float streamOffset = start ? -streamWidth / 2f : streamWidth / 2f;
@@ -96,7 +96,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
         }
         return 0.5f + streamOffset;
     };
-    private static final float verticalFillHorizontalOffsetX(float intensity, Direction d, boolean start) {
+    private static float verticalFillHorizontalOffsetX(float intensity, Direction d, boolean start) {
         float streamWidth = FROM_VERTICAL_FILL_PORT_WIDTH_BASE * intensity;
         float offset = 0.251f;
         float streamOffset = start ? -streamWidth / 2f : streamWidth / 2f;
@@ -109,19 +109,19 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
         return 0.5f + streamOffset;
     };
 
-    private static final float verticalFillFromZ(float intensity, Direction direction) {
+    private static float verticalFillFromZ(float intensity, Direction direction) {
         return 16 * verticalFillHorizontalOffsetZ(intensity, direction, true); }
-    private static final float verticalFillToZ(float intensity, Direction direction) {
+    private static float verticalFillToZ(float intensity, Direction direction) {
         return  16 * verticalFillHorizontalOffsetZ(intensity, direction, false); }
 
-    private static final float verticalFillFromX(float intensity, Direction direction) {
+    private static float verticalFillFromX(float intensity, Direction direction) {
         return 16 * verticalFillHorizontalOffsetX(intensity, direction, true); }
-    private static final float verticalFillToX(float intensity, Direction direction) {
+    private static float verticalFillToX(float intensity, Direction direction) {
         return  16 * verticalFillHorizontalOffsetX(intensity, direction, false); }
 
-    private static final Vector3f verticalFillFromVector(float intensity, Direction direction) {
+    private static Vector3f verticalFillFromVector(float intensity, Direction direction) {
         return new Vector3f(verticalFillFromX(intensity, direction), FROM_SCALED_VERTICAL, verticalFillFromZ(intensity, direction)); }
-    private static final Vector3f verticalFillToVector(float intensity, Direction direction) {
+    private static Vector3f verticalFillToVector(float intensity, Direction direction) {
         return new Vector3f(verticalFillToX(intensity, direction), TO_SCALED_VERTICAL_FIXTURE, verticalFillToZ(intensity, direction)); }
 
 

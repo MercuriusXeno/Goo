@@ -66,6 +66,7 @@ public class Mixer extends BlockWithConnections
         return new VoxelShape[] {fabricateAlignedShape(xShapes), fabricateAlignedShape(zShapes)};
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
     {
@@ -102,6 +103,7 @@ public class Mixer extends BlockWithConnections
         return new VoxelShape[] {vs, vs1, vs2, vs3, vs4};
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {

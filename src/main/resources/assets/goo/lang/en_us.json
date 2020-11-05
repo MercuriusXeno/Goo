@@ -17,6 +17,8 @@
 
   "goo.common.holds_amount": "Holds: %s mB",
 
+  "entity.goo.goo_bee": "Crystal Bee",
+
   "item.goo.gasket": "Gasket",
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Basin",
@@ -187,6 +189,8 @@
   "patchouli.goo.types_of_goo.description": "Different kinds of goo and where they come from.$(br2)Most types of goo are pretty common, but some are very rare.$(br2)Sourcing sustainable goo isn't always easy, but these hints should help.",
   "patchouli.goo.general.name": "General Info",
   "patchouli.goo.general.description": "About this book, items, and different types of goo.",
+  "patchouli.goo.creatures.name": "Goo Creatures",
+  "patchouli.goo.creatures.description": "Learn more about creatures that thrive on goo.",
   "patchouli.goo.gateway_to_goo.name": "Gateway to Goo",
   "patchouli.goo.gateway_to_goo.description": "Learn more about the items and process of Goo, and how to craft them.",
   "patchouli.goo.gauntlet.description": "A gauntlet capable handling goo.$(br2)You can get a glob with $(thing)$(k:use) on a receptacle$() or hold $(thing)$(k:use) to open a radial wheel$(), and then pull from goo bulbs in your inventory (or empty your hand). $(thing)Fling goo with $(k:use)$() or unleash a $(thing)goo chop with $(k:attack)$().",
@@ -221,6 +225,9 @@
   "patchouli.goo.crystal_nest.summary": "Crystal bees are bred by feeding normal bees $(thing)Chromatic Crystals$(). With bright blue eyes, two mutated bees will produce a single Crystal Bee. These defenseless, fragile mutant bees cannot breed or age.",
   "patchouli.goo.crystal_comb.description": "A crystallized comb produced by crystal bees. When crystal bees drink $(thing)Chromatic Goo$() from a $(thing)Trough$(), they produce these combs in their nest. A bee can drink up to 64 mB of Chromatic Goo. It takes 960 mB of Chromatic Goo to produce 3 Crystal Combs.",
   "patchouli.goo.crystal_comb.summary": "Produced by Crystal Bees to convert Chromatic Goo into Crystal Goo.",
+  "patchouli.goo.config":  "User Preferences",
+  "patchouli.goo.config.description":  "Here you can modify some client-side preferences for how Goo behaves.",
+  "patchouli.goo.config.values_visible_without_book": "Allow Goo Values visibility without book on you",
 
   "goo.description.aquatic": "Water",
   "goo.description.chromatic": "Color",

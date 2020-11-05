@@ -10,7 +10,6 @@ import net.minecraft.util.math.MathHelper;
 
 public class GooBeeModel <T extends GooBee> extends AgeableModel<T> {
     private final ModelRenderer body;
-    private final ModelRenderer torso;
     private final ModelRenderer rightWing;
     private final ModelRenderer leftWing;
     private final ModelRenderer frontLegs;
@@ -26,18 +25,18 @@ public class GooBeeModel <T extends GooBee> extends AgeableModel<T> {
         this.textureHeight = 64;
         this.body = new ModelRenderer(this);
         this.body.setRotationPoint(0.0F, 19.0F, 0.0F);
-        this.torso = new ModelRenderer(this, 0, 0);
-        this.torso.setRotationPoint(0.0F, 0.0F, 0.0F);
-        this.body.addChild(this.torso);
-        this.torso.addBox(-3.5F, -4.0F, -5.0F, 7.0F, 7.0F, 10.0F, 0.0F);
+        ModelRenderer torso = new ModelRenderer(this, 0, 0);
+        torso.setRotationPoint(0.0F, 0.0F, 0.0F);
+        this.body.addChild(torso);
+        torso.addBox(-3.5F, -4.0F, -5.0F, 7.0F, 7.0F, 10.0F, 0.0F);
         this.leftAntenna = new ModelRenderer(this, 2, 0);
         this.leftAntenna.setRotationPoint(0.0F, -2.0F, -5.0F);
         this.leftAntenna.addBox(1.5F, -2.0F, -3.0F, 1.0F, 2.0F, 3.0F, 0.0F);
         this.rightAntenna = new ModelRenderer(this, 2, 3);
         this.rightAntenna.setRotationPoint(0.0F, -2.0F, -5.0F);
         this.rightAntenna.addBox(-2.5F, -2.0F, -3.0F, 1.0F, 2.0F, 3.0F, 0.0F);
-        this.torso.addChild(this.leftAntenna);
-        this.torso.addChild(this.rightAntenna);
+        torso.addChild(this.leftAntenna);
+        torso.addChild(this.rightAntenna);
         this.rightWing = new ModelRenderer(this, 0, 18);
         this.rightWing.setRotationPoint(-1.5F, -4.0F, -3.0F);
         this.rightWing.rotateAngleX = 0.0F;

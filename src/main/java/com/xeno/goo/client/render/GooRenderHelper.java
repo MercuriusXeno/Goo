@@ -72,6 +72,7 @@ public class GooRenderHelper extends RenderState
                         .build(false));
     }
 
+    @SuppressWarnings("deprecation")
     // stolen from elucent and baileyH, with love [EMBER_RENDER]
     public static final IParticleRenderType VAPOR_RENDER = new IParticleRenderType() {
         @Override

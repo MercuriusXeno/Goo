@@ -67,7 +67,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     private BlockPos nestPos = null;
     private DrinkGooGoal drinkGooGoal;
     private FindCrystalNestGoal findCrystalNestGoal;
-    private FindTroughGoal findTroughGoal;
     private FluidStack goo = FluidStack.EMPTY;
 
     public GooBee(EntityType<GooBee> gooGooBeeType, World world) {
@@ -104,7 +103,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     }
 
     public float getBlockPathWeight(BlockPos pos, IWorldReader worldIn) {
-        return worldIn.getBlockState(pos).isAir() ? 10.0F : 0.0F;
+        return worldIn.getBlockState(pos).isAir(worldIn, pos) ? 10.0F : 0.0F;
     }
 
     protected void registerGoals() {
@@ -114,8 +113,8 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         this.goalSelector.addGoal(2, new UpdateCrystalNestGoal());
         this.findCrystalNestGoal = new FindCrystalNestGoal();
         this.goalSelector.addGoal(2, this.findCrystalNestGoal);
-        this.findTroughGoal = new FindTroughGoal();
-        this.goalSelector.addGoal(3, this.findTroughGoal);
+        FindTroughGoal findTroughGoal = new FindTroughGoal();
+        this.goalSelector.addGoal(3, findTroughGoal);
         this.goalSelector.addGoal(4, new GooBee.WanderGoal());
         this.goalSelector.addGoal(5, new SwimGoal(this));
     }
@@ -357,7 +356,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     protected PathNavigator createNavigator(World worldIn) {
         FlyingPathNavigator flyingpathnavigator = new FlyingPathNavigator(this, worldIn) {
             public boolean canEntityStandOnPos(BlockPos pos) {
-                return !this.world.getBlockState(pos.down()).isAir();
+                return !worldIn.getBlockState(pos.down()).isAir(worldIn, pos);
             }
 
             public void tick() {
@@ -380,12 +379,12 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         return this.world.isBlockPresent(pos) && this.world.getBlockState(pos).getBlock().equals(BlocksRegistry.Trough.get());
     }
 
-    // 32 blocks.
-    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
     @Override
     public boolean isInRangeToRenderDist(double distance)
     {
-        return distance < A_REASONABLE_RENDER_DISTANCE_SQUARED;
+        // 32 blocks.
+        double reasonableRenderDistance = 1024;
+        return distance < reasonableRenderDistance;
     }
 
     protected void playStepSound(BlockPos pos, BlockState blockIn) {

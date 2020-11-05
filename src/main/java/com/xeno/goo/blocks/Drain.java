@@ -35,12 +35,14 @@ public class Drain extends Block
         );
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
         return getCollisionShape(state, worldIn, pos);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
     {

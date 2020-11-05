@@ -18,7 +18,7 @@ public class SplatContext
     private final World world;
     private final IFluidHandler fluidHandler;
     private final BlockPos blockPos;
-    private final Vector3d hitVec;
+    // private final Vector3d hitVec;
     private final BlockState blockState;
     private final Direction sideHit;
     private final Vector3d blockCenterVec;
@@ -35,7 +35,7 @@ public class SplatContext
         this.blockPos = trace.getPos();
         this.sideHit = trace.getFace();
         this.blockState = world.getBlockState(this.blockPos);
-        this.hitVec = trace.getHitVec();
+        // this.hitVec = trace.getHitVec();
         this.blockCenterVec = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
         this.fluid = fluid;
         this.splat = entity;

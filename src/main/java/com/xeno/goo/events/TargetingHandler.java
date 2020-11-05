@@ -2,11 +2,10 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
-import com.xeno.goo.aequivaleo.GooValue;
 import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.ClientUtils;
 import com.xeno.goo.client.render.GooRenderHelper;
@@ -49,7 +48,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import vazkii.patchouli.client.book.gui.GuiBook;
 
-import java.awt.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
@@ -59,6 +57,8 @@ public class TargetingHandler
     private static final String PLACE_HOLDER = "\u00a76\u00a7r\u00a7r\u00a7r\u00a7r\u00a7r";
     private static final int ICON_WIDTH = 18;
     private static final int ICON_HEIGHT = 27;
+    private static final int SHORT_ICON_WIDTH = 18;
+    private static final int SHORT_ICON_HEIGHT = 18;
     private static final int ICONS_BEFORE_TWO_LINES_LOOKS_LIKE_POO = 12;
     private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
@@ -117,7 +117,8 @@ public class TargetingHandler
         }
 
         // you can only see goo values while holding "Goo and You"
-        if (!hasGooAndYou(event.getPlayer())) {
+        // unless the client option specifies otherwise.
+        if (shouldHideGooValues(event.getPlayer())) {
             return;
         }
 
@@ -186,7 +187,7 @@ public class TargetingHandler
             return;
         }
 
-        if (!hasGooAndYou(Minecraft.getInstance().player)) {
+        if (shouldHideGooValues(Minecraft.getInstance().player)) {
             return;
         }
 
@@ -196,9 +197,13 @@ public class TargetingHandler
         }
     }
 
-    private static Set<Item> GOO_CONTAINERS = new HashSet<>();
-    private static Set<Item> GOO_ITEM_CONTAINERS = new HashSet<>();
-    private static Set<Item> GOO_DOUBLE_MAPS = new HashSet<>();
+    private static boolean shouldHideGooValues(PlayerEntity player) {
+        return !GooMod.config.gooValuesAlwaysVisible() && !hasGooAndYou(player);
+    }
+
+    private static final Set<Item> GOO_CONTAINERS = new HashSet<>();
+    private static final Set<Item> GOO_ITEM_CONTAINERS = new HashSet<>();
+    private static final Set<Item> GOO_DOUBLE_MAPS = new HashSet<>();
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
@@ -281,22 +286,20 @@ public class TargetingHandler
 
         // basins have a more elaborate contents list than gauntlets
         if (cap instanceof BasinAbstractionCapability) {
-            List<FluidStack> fluids = new ArrayList<>();
-            fluids.addAll(((BasinAbstractionCapability) cap).getFluids());
+            List<FluidStack> fluids = new ArrayList<>(((BasinAbstractionCapability) cap).getFluids());
             fluids.removeIf(FluidStack::isEmpty);
             if (fluids.size() == 0) {
                 return false;
             }
             lastGooEntry.addAll(fluids);
-            return true;
         } else {
             if (cap.getFluidInTank(0).isEmpty()) {
                 return false;
             }
 
             lastGooEntry.add(cap.getFluidInTank(0));
-            return true;
         }
+        return true;
     }
 
     private static void tryFetchingGooContentsAsGooContainerAbstraction()
@@ -376,15 +379,14 @@ public class TargetingHandler
         MatrixStack matrices = event.getMatrixStack();
         matrices.push();
         // float zLevel = Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL : Z_LEVEL_OF_MODAL;
-        float zLevel = Z_LEVEL_OF_MODAL;
-        matrices.translate(bx, by, zLevel);
+        matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
         for (FluidStack entry : gooEntry) {
             if (!(entry.getFluid() instanceof GooFluid)) {
                 continue;
             }
             int x = (j % stacksPerLine) * (ICON_WIDTH - 1);
             int y = (j / stacksPerLine) * (ICON_HEIGHT - 1);
-            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), x, y, (int)Math.floor(entry.getAmount()));
+            renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
         }
         matrices.pop();
@@ -418,12 +420,35 @@ public class TargetingHandler
         matrices.pop();
     }
 
-    private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon) {
+    public static void renderGooShortIcon(MatrixStack matrices, ResourceLocation icon, int x, int y,
+                                          int width, int height, boolean isToggled) {
+        matrices.push();
+        matrices.translate(0, 0, 1);
+        drawModalIcons(matrices, x, y, icon, width, height, isToggled);
+        matrices.pop();
+    }
 
+
+    public static void renderConfigName(MatrixStack matrixStack, ITextComponent message, int x, int y) {
+        if (Minecraft.getInstance().currentScreen == null) {
+            return;
+
+        }
+        Minecraft.getInstance().currentScreen.renderTooltip(matrixStack, message, x, y);
+    }
+
+    private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon,
+                                       int width, int height, boolean isToggled) {
         IRenderTypeBuffer.Impl buffer = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
         IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.getGui(icon));
-        ClientUtils.drawTexturedRect(builder, transform, x, y, ICON_WIDTH, ICON_HEIGHT, 1f, 1f, 1f, 1f, 0f, 1f, 0f, 1f);
+        float color = isToggled ? 1f : 0.2f;
+        ClientUtils.drawTexturedRect(builder, transform, x, y, width, height,
+                color, color, color, 1f, 0f, 1f, 0f, 1f);
         buffer.finish();
+    }
+
+    private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon) {
+        drawModalIcons(transform, x, y, icon, ICON_WIDTH, ICON_HEIGHT, true);
     }
 
     public static IFormattableTextComponent getGooAmountForDisplay(int count)
@@ -466,20 +491,6 @@ public class TargetingHandler
         return "";
     }
 
-    private static GooFluid fluid(GooValue entry)
-    {
-        return fluid(entry.getFluidResourceLocation());
-    }
-
-    private static Map<String, GooFluid> fluidCache = new HashMap<>();
-    private static GooFluid fluid(String gooFluidName)
-    {
-        if (!fluidCache.containsKey(gooFluidName)) {
-            fluidCache.put(gooFluidName,(GooFluid)Registry.getFluid(gooFluidName));
-        }
-        return fluidCache.get(gooFluidName);
-    }
-
     // cached player targets allow us to recall what the player is targeting when sending
     // goo grab requests to the server since our control scheme is unconventional.
     public static Entity lastTargetedEntity = null;
@@ -510,25 +521,22 @@ public class TargetingHandler
         lastHitVector = null;
         lastHitIsGooContainer = false;
         if (!tryBlockRayTrace(e, event)) {
-            tryEntityRayTrace(e, event);
+            tryEntityRayTrace(event);
         }
     }
 
-    private static boolean tryEntityRayTrace(Entity e, RenderGameOverlayEvent.Post event)
+    private static void tryEntityRayTrace(RenderGameOverlayEvent.Post event)
     {
         EntityRayTraceResult target = RayTracing.INSTANCE.entityTarget();
 
         if (target == null) {
-            return false;
+            return;
         }
 
         if (hasGooContentsAsEntity(target)) {
             renderGooContentsOfEntity(event, target);
             lastTargetedEntity = target.getEntity();
-            return true;
         }
-
-        return false;
     }
 
     private static boolean tryBlockRayTrace(Entity e, RenderGameOverlayEvent.Post event)
@@ -634,7 +642,7 @@ public class TargetingHandler
         if (!(entry.getFluid() instanceof GooFluid)) {
             return;
         }
-        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), bx, by, (int)Math.floor(entry.getAmount()));
+        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
     private static void renderGooContentsOfEntity(RenderGameOverlayEvent.Post event, EntityRayTraceResult e)
@@ -652,7 +660,7 @@ public class TargetingHandler
         if (!(entry.getFluid() instanceof GooFluid)) {
             return;
         }
-        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).getIcon(), bx, by, (int)Math.floor(entry.getAmount()));
+        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
     private static FluidStack gooInEntity(EntityRayTraceResult e)
@@ -681,7 +689,7 @@ public class TargetingHandler
 
     public static ResourceLocation iconFromFluidStack(FluidStack s) {
         if (s.getFluid() instanceof GooFluid) {
-            return ((GooFluid) s.getFluid()).getIcon();
+            return ((GooFluid) s.getFluid()).icon();
         }
         return null;
     }

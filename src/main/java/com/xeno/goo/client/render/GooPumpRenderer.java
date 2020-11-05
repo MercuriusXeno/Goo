@@ -303,13 +303,13 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
     }
 
     // vertical fill graphics scale width to the intensity of the fill which decays after a short time
-    private static final float lateralOffset(float intensity) {
+    private static float lateralOffset(float intensity) {
         return (1f / 2f) - (FLUID_HORIZONTAL_OFFSET * intensity / 2f);
     };
 
-    private static final float lateralFrom(float intensity) { return lateralOffset(intensity); }
-    private static final float lateralTo(float intensity) { return  1f - lateralFrom(intensity); }
-    private static final Vector3f fillFromVector(float intensity, Direction d) {
+    private static float lateralFrom(float intensity) { return lateralOffset(intensity); }
+    private static float lateralTo(float intensity) { return  1f - lateralFrom(intensity); }
+    private static Vector3f fillFromVector(float intensity, Direction d) {
         switch (d) {
             case EAST:
             case WEST:
@@ -325,7 +325,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
         return new Vector3f(lateralFrom(intensity), FROM_VERTICAL, lateralFrom(intensity));
     }
 
-    private static final Vector3f fillToVector(float intensity, Direction d) {
+    private static Vector3f fillToVector(float intensity, Direction d) {
         switch (d) {
             case EAST:
             case WEST:

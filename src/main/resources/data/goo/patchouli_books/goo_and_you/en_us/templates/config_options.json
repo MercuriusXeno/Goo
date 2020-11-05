@@ -1,0 +1,8 @@
+{
+  "components": [
+    {
+      "type": "custom",
+      "class": "com.xeno.goo.client.gui.PatchouliConfigs"
+    }
+  ]
+}

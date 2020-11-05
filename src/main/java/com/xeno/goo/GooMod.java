@@ -16,8 +16,8 @@ public class GooMod
     public static final String MOD_ID = "goo";
     public static final Logger logger = Logger.getLogger(MOD_ID);
     public static GooConfig config;
-    public static CommonProxy proxy = DistExecutor.runForDist(() -> () -> new ClientProxy(),
-            () -> () -> new CommonProxy());
+    public static CommonProxy proxy = DistExecutor.safeRunForDist(() -> ClientProxy::new,
+            () -> CommonProxy::new);
 
     public GooMod() {
         Registry.init();

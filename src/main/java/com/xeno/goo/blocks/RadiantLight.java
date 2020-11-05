@@ -18,12 +18,14 @@ import static net.minecraft.state.properties.BlockStateProperties.FACING;
 
 public class RadiantLight extends Block {
     VoxelShape[] shapes;
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
         return getCollisionShape(state, worldIn, pos);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
     {
@@ -109,10 +111,14 @@ public class RadiantLight extends Block {
         // NO OP
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public BlockState updatePostPlacement(BlockState stateIn, Direction facing, BlockState facingState, IWorld worldIn, BlockPos currentPos, BlockPos facingPos) {
         return !stateIn.isValidPosition(worldIn, currentPos) ? Blocks.AIR.getDefaultState() : stateIn;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public boolean isValidPosition(BlockState state, IWorldReader worldIn, BlockPos pos) {
         Direction direction = state.get(FACING);
         BlockPos blockpos = pos.offset(direction.getOpposite());

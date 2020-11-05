@@ -84,6 +84,7 @@ public class GooRadial extends Screen {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float partialTicks) {
         if (Minecraft.getInstance().player == null) {

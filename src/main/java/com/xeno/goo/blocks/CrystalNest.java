@@ -35,10 +35,14 @@ public class CrystalNest extends ContainerBlock {
         this.setDefaultState(this.stateContainer.getBaseState().with(GOO_FULL, false).with(FACING, Direction.NORTH));
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public boolean hasComparatorInputOverride(BlockState state) {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
         return blockState.get(GOO_FULL) ? 1 : 0;
     }
@@ -51,6 +55,8 @@ public class CrystalNest extends ContainerBlock {
         builder.add(GOO_FULL, FACING);
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public BlockRenderType getRenderType(BlockState state) {
         return BlockRenderType.MODEL;
     }
@@ -75,6 +81,7 @@ public class CrystalNest extends ContainerBlock {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         ItemStack itemstack = player.getHeldItem(handIn);

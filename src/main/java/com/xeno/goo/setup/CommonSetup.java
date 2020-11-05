@@ -7,12 +7,10 @@ import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.village.PointOfInterestType;
-import net.minecraftforge.fml.DeferredWorkQueue;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.minecraftforge.fml.event.lifecycle.ParallelDispatchEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 public class CommonSetup
@@ -42,6 +40,12 @@ public class CommonSetup
     {
         GooMod.config = new GooConfig();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, GooMod.config.server);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GooMod.config.client);
         GooMod.config.loadConfig(GooMod.config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
+        GooMod.config.loadConfig(GooMod.config.client, FMLPaths.CONFIGDIR.get().resolve("goo-client.toml"));
+    }
+
+    private static void toggleClientSideGooVisibilityPreference(boolean f) {
+        GooMod.config.setValuesVisibleWithoutBook(f);
     }
 }

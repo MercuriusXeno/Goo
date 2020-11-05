@@ -53,6 +53,8 @@ public class Lobber extends BlockWithConnections
         }
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
         this.dispense(worldIn, pos);
     }

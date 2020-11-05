@@ -25,6 +25,7 @@ public class GooFluid extends Fluid
             255 << 8 |
             255;
     private final ResourceLocation icon;
+    private final ResourceLocation shortIcon;
     private final FluidAttributes.Builder builder;
     public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon)
     {
@@ -34,6 +35,8 @@ public class GooFluid extends Fluid
                 .temperature(293)
                 .color(UNCOLORED_WITH_PARTIAL_TRANSPARENCY);
         this.icon = icon;
+        String subpathWithoutExtension = icon.getPath().substring(0, icon.getPath().lastIndexOf(".png"));
+        this.shortIcon = new ResourceLocation(icon.getNamespace(), subpathWithoutExtension + "_short.png");
     }
 
     @Override
@@ -104,8 +107,10 @@ public class GooFluid extends Fluid
         return VoxelShapes.fullCube();
     }
 
-    public ResourceLocation getIcon()
+    public ResourceLocation icon()
     {
         return this.icon;
     }
+
+    public ResourceLocation shortIcon() { return this.shortIcon; }
 }

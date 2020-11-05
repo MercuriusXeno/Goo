@@ -23,7 +23,7 @@ public class FluidCuboid {
     /** Fluid end, scaled for block models */
     private final Vector3f to;
     /** Block faces for the fluid */
-    private Map<Direction, FluidFace> faces;
+    private final Map<Direction, FluidFace> faces;
 
     /** Cache for scaled from */
     private Vector3f fromScaled;

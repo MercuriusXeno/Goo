@@ -85,7 +85,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     }
 
     public static GooBlob createLobbedBlob(World world, FluidStack result, Vector3d spawnPos) {
-        return new GooBlob(Registry.GOO_BLOB.get(), world, Optional.empty(), result, spawnPos);
+        return new GooBlob(Registry.GOO_BLOB.get(), world, null, result, spawnPos);
     }
 
     public static GooBlob createSplattedBlob(PlayerEntity player, GooSplat splat, FluidStack blobStack) {
@@ -97,25 +97,25 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     // constructor for splats that no longer have a block to sit on and convert back to blobs.
     private GooBlob(GooSplat splat, Vector3d dropPosition, FluidStack stackReturned) {
-        this(Registry.GOO_BLOB.get(), splat.world, Optional.ofNullable(splat.owner()), stackReturned, dropPosition);
+        this(Registry.GOO_BLOB.get(), splat.world, splat.owner(), stackReturned, dropPosition);
     }
 
     // constructor for blobs that break blocks and return some amount of themselves.
     private GooBlob(SplatContext context, Vector3d dropPosition, FluidStack stackReturned) {
-        this(Registry.GOO_BLOB.get(), context.world(), Optional.ofNullable(context.splat().owner()), stackReturned, dropPosition);
+        this(Registry.GOO_BLOB.get(), context.world(), context.splat().owner(), stackReturned, dropPosition);
     }
 
     // special constructor for goo blobs that don't shoot; this is important.
-    private GooBlob(EntityType<GooBlob> type, World worldIn, Optional<Entity> sender, FluidStack stack, Vector3d pos) {
+    private GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
         goo = stack;
         isAttachedToBlock = false;
         float yaw = 0f;
         float pitch = 0f;
-        if (sender.isPresent()) {
-            yaw = sender.get().rotationYaw;
-            pitch = sender.get().rotationPitch;
-            this.owner = sender.get();
+        if (sender != null) {
+            yaw = sender.rotationYaw;
+            pitch = sender.rotationPitch;
+            this.owner = sender;
         }
         this.setPositionAndRotation(pos.x, pos.y, pos.z, yaw, pitch);
         this.setSize();

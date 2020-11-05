@@ -43,11 +43,11 @@ public class MutantBee extends BeeEntity {
         }
     }
 
-    // 32 blocks.
-    private double A_REASONABLE_RENDER_DISTANCE_SQUARED = 1024;
     @Override
     public boolean isInRangeToRenderDist(double distance)
     {
-        return distance < A_REASONABLE_RENDER_DISTANCE_SQUARED;
+        // 32 blocks.
+        double reasonableRenderDistance = 1024;
+        return distance < reasonableRenderDistance;
     }
 }

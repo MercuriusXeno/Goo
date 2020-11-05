@@ -1,7 +1,7 @@
 {
   "name": "block.goo.crystal_nest",
   "icon": "goo:crystal_nest",
-  "category": "goo:machines",
+  "category": "goo:creatures",
   "pages": [
     {
       "type": "text",

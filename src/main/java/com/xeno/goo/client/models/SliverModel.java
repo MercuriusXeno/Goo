@@ -43,7 +43,6 @@ public class SliverModel implements IModelGeometry<SliverModel> {
     private final Fluid fluid;
     private final boolean applyFluidLuminosity;
 
-    @Deprecated
     public SliverModel(Fluid fluid)
     {
         this(fluid, true);
