@@ -24,7 +24,6 @@ public class CustomIconButton extends Button {
     public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         TargetingHandler.renderGooShortIcon(matrixStack, icon, this.x, this.y, this.width, this.height, toggled);
 
-        this.isHovered = isMouseOver(mouseX, mouseY);
         if (this.isHovered()) {
             this.renderToolTip(matrixStack, mouseX, mouseY);
         }

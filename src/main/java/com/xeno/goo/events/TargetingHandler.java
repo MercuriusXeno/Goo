@@ -422,10 +422,7 @@ public class TargetingHandler
 
     public static void renderGooShortIcon(MatrixStack matrices, ResourceLocation icon, int x, int y,
                                           int width, int height, boolean isToggled) {
-        matrices.push();
-        matrices.translate(0, 0, 1);
         drawModalIcons(matrices, x, y, icon, width, height, isToggled);
-        matrices.pop();
     }
 
 
