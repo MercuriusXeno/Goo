@@ -163,18 +163,6 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
 
             Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidName);
 
-            boolean tint = true;
-            if (modelContents.has("applyTint"))
-            {
-                tint = modelContents.get("applyTint").getAsBoolean();
-            }
-
-            boolean coverIsMask = true;
-            if (modelContents.has("coverIsMask"))
-            {
-                coverIsMask = modelContents.get("coverIsMask").getAsBoolean();
-            }
-
             boolean applyFluidLuminosity = true;
             if (modelContents.has("applyFluidLuminosity"))
             {
