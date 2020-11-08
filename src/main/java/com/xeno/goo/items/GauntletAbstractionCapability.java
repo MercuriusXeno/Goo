@@ -53,7 +53,7 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return GooMod.config.gauntletCapacity() * holdingMultiplier(Gauntlet.containment(this.container));
+        return GooMod.config.gauntletCapacity() * containmentMultiplier(Gauntlet.containment(this.container));
     }
 
     public static int storageForDisplay(ItemStack stack)
@@ -69,8 +69,8 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
         return 0;
     }
 
-    public static int holdingMultiplier(int holding) {
-        return (int)Math.pow(GooMod.config.gauntletHoldingMultiplier(), holding);
+    public static int containmentMultiplier(int containment) {
+        return (int)Math.pow(GooMod.config.gauntletContainmentMultiplier(), containment);
     }
 
     @Override

@@ -22,8 +22,8 @@
                   "op": "replace"
                 },
                 {
-                  "source": "holding",
-                  "target": "BlockEntityTag.holding",
+                  "source": "goo:containment",
+                  "target": "BlockEntityTag.goo:containment",
                   "op": "replace"
                 },
                 {

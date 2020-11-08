@@ -81,14 +81,14 @@ public class GooConfig
     private ForgeConfigSpec.IntValue GAUNTLET_CAPACITY;
     public int gauntletCapacity() { return GAUNTLET_CAPACITY.get(); }
 
-    private ForgeConfigSpec.IntValue BULB_HOLDING_MULTIPLIER;
-    public int bulbHoldingMultiplier() { return BULB_HOLDING_MULTIPLIER.get(); }
+    private ForgeConfigSpec.IntValue BULB_CONTAINMENT_MULTIPLIER;
+    public int bulbContainmentMultiplier() { return BULB_CONTAINMENT_MULTIPLIER.get(); }
 
-    private ForgeConfigSpec.IntValue BASIN_HOLDING_MULTIPLIER;
-    public int basinHoldingMultiplier() { return BASIN_HOLDING_MULTIPLIER.get(); }
+    private ForgeConfigSpec.IntValue BASIN_CONTAINMENT_MULTIPLIER;
+    public int basinContainmentMultiplier() { return BASIN_CONTAINMENT_MULTIPLIER.get(); }
 
-    private ForgeConfigSpec.IntValue GAUNTLET_HOLDING_MULTIPLIER;
-    public int gauntletHoldingMultiplier() { return GAUNTLET_HOLDING_MULTIPLIER.get(); }
+    private ForgeConfigSpec.IntValue GAUNTLET_CONTAINMENT_MULTIPLIER;
+    public int gauntletContainmentMultiplier() { return GAUNTLET_CONTAINMENT_MULTIPLIER.get(); }
 
     // private ForgeConfigSpec.DoubleValue ENERGETIC_MINING_BLAST_RADIUS;
     private ForgeConfigSpec.IntValue ENERGETIC_MINING_BLAST_DISTANCE;
@@ -365,14 +365,14 @@ public class GooConfig
         private static final int GOO_TRANSFER_RATE = 30;
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
-        private static final int BULB_HOLDING_MULTIPLIER = 4;
+        private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
         private static final int MIXER_INPUT_CAPACITY = 16000;
         private static final int CRUCIBLE_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
         private static final int BASIN_CAPACITY = 8000;
-        private static final int BASIN_HOLDING_MULTIPLIER = 4;
+        private static final int BASIN_CONTAINMENT_MULTIPLIER = 4;
         private static final int GAUNTLET_CAPACITY = 400;
-        private static final int GAUNTLET_HOLDING_MULTIPLIER = 4;
+        private static final int GAUNTLET_CONTAINMENT_MULTIPLIER = 4;
         private static final int TROUGH_CAPACITY = 1000;
         // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
@@ -394,8 +394,8 @@ public class GooConfig
                 .defineInRange("maxProcessingRate", Defaults.GOO_PROCESSING_RATE, 0, 10000);
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + Defaults.BULB_CAPACITY)
                 .defineInRange("maxBulbCapacity", Defaults.BULB_CAPACITY, 0, 100000);
-        BULB_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanted holding capacity of bulbs is multiplied by this, per level, default: " + Defaults.BULB_HOLDING_MULTIPLIER)
-                .defineInRange("bulbHoldingMultiplier", Defaults.BULB_HOLDING_MULTIPLIER, 0, 10);
+        BULB_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of bulbs is multiplied by this, per level, default: " + Defaults.BULB_CONTAINMENT_MULTIPLIER)
+                .defineInRange("bulbContainmentMultiplier", Defaults.BULB_CONTAINMENT_MULTIPLIER, 0, 10);
         MIXER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single mixer input tank, default: " + Defaults.MIXER_INPUT_CAPACITY)
                 .defineInRange("maxMixerInputCapacity", Defaults.MIXER_INPUT_CAPACITY, 0, 100000);
         CRUCIBLE_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a crucible tank, default: " + Defaults.CRUCIBLE_INPUT_CAPACITY)
@@ -406,12 +406,12 @@ public class GooConfig
                 .defineInRange("pumpTransferRate", Defaults.PUMP_TRANSFER_RATE, 0, 10000);
         BASIN_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a basin, default: " + Defaults.BASIN_CAPACITY)
                 .defineInRange("basinCapacity", Defaults.BASIN_CAPACITY, 0, 100000);
-        BASIN_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanted holding capacity of basins is multiplied by this, per level, default: " + Defaults.BASIN_HOLDING_MULTIPLIER)
-                .defineInRange("basinHoldingMultiplier", Defaults.BASIN_HOLDING_MULTIPLIER, 0, 10);
+        BASIN_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of basins is multiplied by this, per level, default: " + Defaults.BASIN_CONTAINMENT_MULTIPLIER)
+                .defineInRange("basinContainmentMultiplier", Defaults.BASIN_CONTAINMENT_MULTIPLIER, 0, 10);
         GAUNTLET_CAPACITY = serverBuilder.comment("Max quantity of fluid held on a gauntlet, default: " + Defaults.GAUNTLET_CAPACITY)
                 .defineInRange("gauntletCapacity", Defaults.GAUNTLET_CAPACITY, 0, 1000000);
-        GAUNTLET_HOLDING_MULTIPLIER = serverBuilder.comment("Enchanted holding capacity of gauntlets is multiplied by this, per level, default: " + Defaults.GAUNTLET_HOLDING_MULTIPLIER)
-                .defineInRange("gauntletHoldingMultiplier", Defaults.GAUNTLET_HOLDING_MULTIPLIER, 0, 10);
+        GAUNTLET_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of gauntlets is multiplied by this, per level, default: " + Defaults.GAUNTLET_CONTAINMENT_MULTIPLIER)
+                .defineInRange("gauntletContainmentMultiplier", Defaults.GAUNTLET_CONTAINMENT_MULTIPLIER, 0, 10);
         ENERGETIC_MINING_BLAST_DISTANCE = serverBuilder.comment("Mining blast reach of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_DISTANCE)
                 .defineInRange("energeticMiningBlastDistance", Defaults.ENERGETIC_MINING_BLAST_DISTANCE, 1, 10);
         RADIAL_MENU_HELD_TICKS_THRESHOLD = serverBuilder.comment("Held ticks threshold for radial menu to open, default: " + Defaults.RADIAL_HELD_THRESHOLD_TICKS)

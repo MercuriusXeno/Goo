@@ -10,7 +10,18 @@ import net.minecraft.item.ItemStack;
 
 public class Containment extends Enchantment
 {
+    private static String _id = null;
+    public static String id() {
+        if (!Registry.CONTAINMENT.isPresent()) {
+            throw new IllegalStateException("Tried to access Containment enchantment Id before Registry is populated.");
+        }
 
+        if (_id == null) {
+            _id = Registry.CONTAINMENT.getId().toString();
+        }
+
+        return _id;
+    }
     public Containment()
     {
         super(Rarity.COMMON, EnchantmentTypes.VALID_FOR_CONTAINMENT, new EquipmentSlotType[] {EquipmentSlotType.MAINHAND});

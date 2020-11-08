@@ -68,7 +68,7 @@ public class Basin extends BasinAbstraction
         return isEnchantable(stack) && enchantment instanceof Containment;
     }
 
-    public static int holding(ItemStack stack)
+    public static int containment(ItemStack stack)
     {
         return EnchantmentHelper.getEnchantmentLevel(Registry.CONTAINMENT.get(), stack);
     }

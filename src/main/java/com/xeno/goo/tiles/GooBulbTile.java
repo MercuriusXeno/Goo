@@ -1,6 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
@@ -11,10 +12,7 @@ import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -39,7 +37,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class GooBulbTile extends GooContainerAbstraction implements ITickableTileEntity,
         FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
@@ -54,7 +51,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
-    private int enchantHolding = 0;
+    private int enchantContainment = 0;
     private int crystalProgressTicks = 0;
     private int lastIncrement = 0;
     private ItemStack crystal = ItemStack.EMPTY;
@@ -71,12 +68,12 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         lazyHandler.invalidate();
     }
 
-    public void enchantHolding(int holding) {
-        this.enchantHolding = holding;
+    public void enchantContainment(int containment) {
+        this.enchantContainment = containment;
     }
 
-    public int holding() {
-        return this.enchantHolding;
+    public int containment() {
+        return this.enchantContainment;
     }
 
     public int progress() { return this.crystalProgressTicks; }
@@ -536,7 +533,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     @Override
     public CompoundNBT write(CompoundNBT tag) {
         tag.put("goo", serializeGoo());
-        tag.putInt("holding", enchantHolding);
+        tag.putInt(Containment.id(), enchantContainment);
         CompoundNBT crystalTag = crystal.write(new CompoundNBT());
         CompoundNBT crystalProgressTag = crystalProgress.writeToNBT(new CompoundNBT());
         tag.put("crystal_tag", crystalTag);
@@ -548,8 +545,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     {
         CompoundNBT gooTag = tag.getCompound("goo");
         deserializeGoo(gooTag);
+        // old holding data fixer
         if (tag.contains("holding")) {
-            enchantHolding(tag.getInt("holding"));
+            enchantContainment(tag.getInt("holding"));
+        } else if (tag.contains(Containment.id())) {
+            enchantContainment(tag.getInt(Containment.id()));
         }
         if (tag.contains("crystal_tag")) {
             crystal = ItemStack.read(tag.getCompound("crystal_tag"));
@@ -707,17 +707,17 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public int storageMultiplier()
     {
-        return storageMultiplier(enchantHolding);
+        return storageMultiplier(enchantContainment);
     }
 
-    public static int storageMultiplier(int enchantHolding)
+    public static int storageMultiplier(int enchantContainment)
     {
-        return (int)Math.pow(GooMod.config.bulbHoldingMultiplier(), enchantHolding);
+        return (int)Math.pow(GooMod.config.bulbContainmentMultiplier(), enchantContainment);
     }
 
-    public static int storageForDisplay(int enchantHolding)
+    public static int storageForDisplay(int containmentLevel)
     {
-        return storageMultiplier(enchantHolding) * GooMod.config.bulbCapacity();
+        return storageMultiplier(containmentLevel) * GooMod.config.bulbCapacity();
     }
 
     public boolean hasCrystal() {

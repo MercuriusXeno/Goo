@@ -11,7 +11,7 @@ public class LootTables extends BaseLootTableProvider {
     @Override
     protected void addTables() {
         lootTables.put(BlocksRegistry.Crucible.get(), createGooContainerLootTable("crucible", BlocksRegistry.Crucible.get()));
-        lootTables.put(BlocksRegistry.Bulb.get(), createGooContainerWithHoldingLootTable("goo_bulb", BlocksRegistry.Bulb.get()));
+        lootTables.put(BlocksRegistry.Bulb.get(), createGooContainerWithContainmentLootTable("goo_bulb", BlocksRegistry.Bulb.get()));
         lootTables.put(BlocksRegistry.Mixer.get(), createGooContainerLootTable("mixer", BlocksRegistry.Mixer.get()));
         lootTables.put(BlocksRegistry.Solidifier.get(), createGooContainerLootTable("solidifier", BlocksRegistry.Solidifier.get()));
         lootTables.put(BlocksRegistry.Gooifier.get(), createGooContainerLootTable("gooifier", BlocksRegistry.Gooifier.get()));

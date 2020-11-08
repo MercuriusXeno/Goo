@@ -3,6 +3,7 @@ package com.xeno.goo.datagen;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.xeno.goo.GooMod;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.DirectoryCache;
@@ -62,8 +63,7 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
         return LootTable.builder().addLootPool(builder);
     }
 
-    // only bulbs have holding at the moment
-    protected LootTable.Builder createGooContainerWithHoldingLootTable(String name, Block block) {
+    protected LootTable.Builder createGooContainerWithContainmentLootTable(String name, Block block) {
         LootPool.Builder builder = LootPool.builder()
                 .name(name)
                 .rolls(ConstantRange.of(1))
@@ -71,7 +71,7 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
                         .acceptFunction(CopyName.builder(CopyName.Source.BLOCK_ENTITY))
                         .acceptFunction(CopyNbt.builder(CopyNbt.Source.BLOCK_ENTITY)
                                 .replaceOperation("goo", "BlockEntityTag.goo")
-                                .replaceOperation("holding", "BlockEntityTag.holding")
+                                .replaceOperation(Registry.CONTAINMENT.getId().toString(), "BlockEntityTag." + Registry.CONTAINMENT.getId().toString())
                                 .replaceOperation("id", "BlockEntityTag.id")
                         )
                 );
