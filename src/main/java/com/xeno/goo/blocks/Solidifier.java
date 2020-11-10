@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -20,7 +21,10 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
@@ -35,6 +39,7 @@ import static net.minecraft.util.Direction.*;
 import static net.minecraft.util.Direction.UP;
 
 public class Solidifier extends BlockWithConnections {
+    VoxelShape[] shapes;
     public Solidifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -45,6 +50,56 @@ public class Solidifier extends BlockWithConnections {
                 .with(BlockStateProperties.POWERED, true)
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
         );
+        shapes = makeShapes();
+    }
+
+    private VoxelShape[] makeShapes()
+    {
+        Vector3d cs = new Vector3d(1d, 0d, 1d);
+        Vector3d ce = new Vector3d(15d, 15d, 15d);
+        Vector3d ts = new Vector3d (5d, 15d, 5d);
+        Vector3d te = new Vector3d (11d, 16d, 11d);
+        Vector3d es = new Vector3d(15d, 5d, 5d);
+        Vector3d ee = new Vector3d(16d, 11d, 11d);
+        Vector3d ws = new Vector3d(0d, 5d, 5d);
+        Vector3d we = new Vector3d(1d, 11d, 11d);
+        Vector3d ss = new Vector3d(5d, 5d, 15d);
+        Vector3d se = new Vector3d(11d, 11d, 16d);
+        Vector3d ns = new Vector3d(5d, 5d, 0d);
+        Vector3d ne = new Vector3d(11d, 11d, 1d);
+
+        VoxelShape central = VoxelHelper.cuboid(cs, ce);
+        VoxelShape top = VoxelHelper.cuboid(ts, te);
+        VoxelShape east = VoxelHelper.cuboid(es, ee);
+        VoxelShape west = VoxelHelper.cuboid(ws, we);
+        VoxelShape south = VoxelHelper.cuboid(ss, se);
+        VoxelShape north = VoxelHelper.cuboid(ns, ne);
+
+        return
+                new VoxelShape[] {
+                        // south
+                        VoxelHelper.mergeAll(central, top, east, west),
+                        // west
+                        VoxelHelper.mergeAll(central, top, south, north),
+                        // north
+                        VoxelHelper.mergeAll(central, top, east, west),
+                        // east
+                        VoxelHelper.mergeAll(central, top, south, north),
+                };
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
+    {
+        return shapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
+    {
+        return getCollisionShape(state, worldIn, pos);
     }
 
     @Override

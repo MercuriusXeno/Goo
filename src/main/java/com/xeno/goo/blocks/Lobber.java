@@ -1,6 +1,7 @@
 package com.xeno.goo.blocks;
 
 import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.tiles.LobberTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -16,6 +17,10 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -25,16 +30,76 @@ import java.util.Random;
 
 public class Lobber extends BlockWithConnections
 {
+    VoxelShape[] shapes;
+
     public Lobber()
     {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
                 .hardnessAndResistance(1.0f)
+                .notSolid()
         );
         setDefaultState(this.stateContainer.getBaseState()
                 .with(BlockStateProperties.TRIGGERED, false)
                 .with(BlockStateProperties.FACING, Direction.UP)
         );
+        shapes = makeShapes();
+    }
+
+    private VoxelShape[] makeShapes()
+    {
+        Vector3d cs = new Vector3d(1d, 1d, 1d);
+        Vector3d ce = new Vector3d(15d, 15d, 15d);
+        Vector3d bs = new Vector3d (5d, 0d, 5d);
+        Vector3d be = new Vector3d (11d, 1d, 11d);
+        Vector3d ts = new Vector3d (5d, 15d, 5d);
+        Vector3d te = new Vector3d (11d, 16d, 11d);
+        Vector3d es = new Vector3d(15d, 5d, 5d);
+        Vector3d ee = new Vector3d(16d, 11d, 11d);
+        Vector3d ws = new Vector3d(0d, 5d, 5d);
+        Vector3d we = new Vector3d(1d, 11d, 11d);
+        Vector3d ss = new Vector3d(5d, 5d, 15d);
+        Vector3d se = new Vector3d(11d, 11d, 16d);
+        Vector3d ns = new Vector3d(5d, 5d, 0d);
+        Vector3d ne = new Vector3d(11d, 11d, 1d);
+
+        VoxelShape central = VoxelHelper.cuboid(cs, ce);
+        VoxelShape bottom = VoxelHelper.cuboid(bs, be);
+        VoxelShape top = VoxelHelper.cuboid(ts, te);
+        VoxelShape east = VoxelHelper.cuboid(es, ee);
+        VoxelShape west = VoxelHelper.cuboid(ws, we);
+        VoxelShape south = VoxelHelper.cuboid(ss, se);
+        VoxelShape north = VoxelHelper.cuboid(ns, ne);
+
+        return
+                new VoxelShape[] {
+                        // down
+                        VoxelHelper.mergeAll(central, top, east, west, south, north),
+                        // up
+                        VoxelHelper.mergeAll(central, bottom, east, west, south, north),
+                        // north
+                        VoxelHelper.mergeAll(central, bottom, top, east, west, south),
+                        // south
+                        VoxelHelper.mergeAll(central, bottom, top, east, west, north),
+                        // east
+                        VoxelHelper.mergeAll(central, bottom, top, west, south, north),
+                        // west
+                        VoxelHelper.mergeAll(central, bottom, top, east, south, north),
+                };
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
+    {
+        return shapes[state.get(BlockStateProperties.FACING).getIndex()];
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
+    {
+        return getCollisionShape(state, worldIn, pos);
     }
 
     @Override

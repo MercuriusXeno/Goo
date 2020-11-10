@@ -16,9 +16,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
-    private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 0.0005f;
-    private static final float FLUID_HORIZONTAL_OFFSET = 0.0005f;
+    private static final float FLUID_VERTICAL_OFFSET = 0.0625f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+    private static final float FLUID_VERTICAL_MAX = 0.0625f;
+    private static final float FLUID_HORIZONTAL_OFFSET = 0.0625f;
     private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
     private static final float TO_SCALED_VERTICAL = 16 - (FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;

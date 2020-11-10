@@ -24,7 +24,7 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.List;
 
 public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
-    private static final float FLUID_HORIZONTAL_OFFSET = 0.01f;
+    private static final float FLUID_HORIZONTAL_OFFSET = 0.0725f;
     private static final float FROM_SCALED_VERTICAL = GooBulbTile.FLUID_VERTICAL_OFFSET * 16;
     private static final float TO_SCALED_VERTICAL = 16 - (GooBulbTile.FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;

@@ -1,6 +1,7 @@
 package com.xeno.goo.blocks;
 
 import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
@@ -15,6 +16,9 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.shapes.ISelectionContext;
+import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -27,6 +31,7 @@ import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FAC
 import static net.minecraft.util.Direction.*;
 
 public class Gooifier extends BlockWithConnections {
+    VoxelShape[] shapes;
     public Gooifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -35,6 +40,71 @@ public class Gooifier extends BlockWithConnections {
                 .with(BlockStateProperties.POWERED, true)
                 .with(BlockStateProperties.HORIZONTAL_FACING, NORTH)
         );
+        shapes = makeShapes();
+    }
+
+    private VoxelShape[] makeShapes()
+    {
+        Vector3d cs = new Vector3d(1d, 0d, 1d);
+        Vector3d ce = new Vector3d(15d, 15d, 15d);
+        Vector3d ts = new Vector3d (5d, 15d, 5d);
+        Vector3d te = new Vector3d (11d, 16d, 11d);
+        Vector3d es = new Vector3d(15d, 5d, 5d);
+        Vector3d ee = new Vector3d(16d, 11d, 11d);
+        Vector3d ws = new Vector3d(0d, 5d, 5d);
+        Vector3d we = new Vector3d(1d, 11d, 11d);
+        Vector3d ss = new Vector3d(5d, 5d, 15d);
+        Vector3d se = new Vector3d(11d, 11d, 16d);
+        Vector3d ns = new Vector3d(5d, 5d, 0d);
+        Vector3d ne = new Vector3d(11d, 11d, 1d);
+
+        Vector3d hns = new Vector3d(4f, 3f, 0f);
+        Vector3d hne = new Vector3d(12f, 9f, 1f);
+        Vector3d hss = new Vector3d(4f, 3f, 15f);
+        Vector3d hse = new Vector3d(12f, 9f, 16f);
+        Vector3d hws = new Vector3d(0f, 3f, 4f);
+        Vector3d hwe = new Vector3d(1f, 9f, 12f);
+        Vector3d hes = new Vector3d(15f, 3f, 4f);
+        Vector3d hee = new Vector3d(16f, 9f, 12f);
+
+        VoxelShape central = VoxelHelper.cuboid(cs, ce);
+        VoxelShape top = VoxelHelper.cuboid(ts, te);
+        VoxelShape east = VoxelHelper.cuboid(es, ee);
+        VoxelShape west = VoxelHelper.cuboid(ws, we);
+        VoxelShape south = VoxelHelper.cuboid(ss, se);
+        VoxelShape north = VoxelHelper.cuboid(ns, ne);
+
+        // hatches
+        VoxelShape northHatch = VoxelHelper.cuboid(hns, hne);
+        VoxelShape southHatch = VoxelHelper.cuboid(hss, hse);
+        VoxelShape westHatch = VoxelHelper.cuboid(hws, hwe);
+        VoxelShape eastHatch = VoxelHelper.cuboid(hes, hee);
+
+        return
+                new VoxelShape[] {
+                        // south
+                        VoxelHelper.mergeAll(central, top, east, west, northHatch),
+                        // west
+                        VoxelHelper.mergeAll(central, top, south, north, eastHatch),
+                        // north
+                        VoxelHelper.mergeAll(central, top, east, west, southHatch),
+                        // east
+                        VoxelHelper.mergeAll(central, top, south, north, westHatch),
+                };
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
+    {
+        return shapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
+    {
+        return getCollisionShape(state, worldIn, pos);
     }
 
     @Override

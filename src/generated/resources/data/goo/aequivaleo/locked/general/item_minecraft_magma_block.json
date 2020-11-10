@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 10.0,
-      "type": "goo:slime"
-    },
-    {
       "amount": 30.0,
       "type": "goo:decay"
+    },
+    {
+      "amount": 10.0,
+      "type": "goo:slime"
     },
     {
       "amount": 10.0,

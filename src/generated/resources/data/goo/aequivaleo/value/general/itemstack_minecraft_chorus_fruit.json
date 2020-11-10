@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 4.0,
-      "type": "goo:weird"
-    },
-    {
       "amount": 1.0,
       "type": "goo:vital"
+    },
+    {
+      "amount": 4.0,
+      "type": "goo:weird"
     },
     {
       "amount": 15.0,

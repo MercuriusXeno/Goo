@@ -82,9 +82,9 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.5001D));
-        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.5001D));
-        renderVec.put(Direction.EAST, new Vector3d(0.5001D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vector3d(-0.5001D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.4376D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.4376D));
+        renderVec.put(Direction.EAST, new Vector3d(0.4376D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.4376D, 0D, 0D));
     }
 }
