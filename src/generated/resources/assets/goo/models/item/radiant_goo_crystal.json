@@ -1,3 +1,6 @@
 {
-  "parent": "goo:item/template_crystal"
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "goo:item/crystals/radiant_goo_crystal"
+  }
 }

@@ -1,3 +1,7 @@
 {
-  "parent": "goo:item/template_chunk"
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "goo:item/crystals/chromatic_goo_chunk",
+    "layer1": "goo:item/crystals/chromatic_goo_chunk_overlay"
+  }
 }

@@ -79,11 +79,6 @@ public class ModClientEvents
     {
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "basin"), BasinModel.Loader.INSTANCE);
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "sliver"), SliverModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "shard"), ShardModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "crystal"), CrystalModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "chunk"), ChunkModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "slab"), SlabModel.Loader.INSTANCE);
     }
 
     @SubscribeEvent

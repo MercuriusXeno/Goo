@@ -1,3 +1,6 @@
 {
-  "parent": "goo:item/template_sliver"
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "goo:item/crystals/fungal_goo_sliver"
+  }
 }

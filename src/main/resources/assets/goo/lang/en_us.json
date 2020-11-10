@@ -177,7 +177,7 @@
 
   "tooltip.goo.composition.hold_key": "\u00A7a[SHIFT to see goo]\u00A7r",
   "tooltip.goo.composition.cant_solidify": "\u00A77[Can't Solidify!]\u00A7r",
-  "tooltip.goo.composition.not_goo": "\u00A77[Not goo!]\u00A7r",
+  "tooltip.goo.composition.not_goo": "\u00A77[Can't Gooify!]\u00A7r",
   "tooltip.goo.solidifying_target_preface": "Solidifying: ",
   "tooltip.goo.goo_in_buffer": "Goo in Buffer: ",
 

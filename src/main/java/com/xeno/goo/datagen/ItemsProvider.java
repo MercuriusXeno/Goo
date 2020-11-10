@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.items.*;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.fml.RegistryObject;
@@ -33,19 +34,12 @@ public class ItemsProvider extends ItemModelProvider {
     }
 
     private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> itemRegistryObject) {
-        String template = "";
-        if (itemRegistryObject.get() instanceof GooSliver) {
-            template = "template_sliver";
-        } else if (itemRegistryObject.get() instanceof GooShard) {
-            template = "template_shard";
-        } else if (itemRegistryObject.get() instanceof GooCrystal) {
-            template = "template_crystal";
-        } else if (itemRegistryObject.get() instanceof GooChunk) {
-            template = "template_chunk";
-        } else if (itemRegistryObject.get() instanceof GooSlab) {
-            template = "template_slab";
+
+        ItemModelBuilder model = withExistingParent(itemRegistryObject.get().getRegistryName().getPath(), mcLoc("item/handheld"))
+                .texture("layer0", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath()));
+        if (resourceLocation.getPath().startsWith("chromatic")) {
+            model.texture("layer1", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath() + "_overlay"));
         }
-        withExistingParent(resourceLocation.getPath(), new ResourceLocation(GooMod.MOD_ID, template));
     }
 
     private void registerTrough()

@@ -1,11 +1,4 @@
 {
-  "parent": "forge:item/default",
-  "loader": "goo:crystal",
-  "fluid": "goo:item/mask/crystal_fluid",
-  "base": "goo:item/crystal",
-  "textures": {
-    "layer0": "goo:item/crystal",
-    "fluid": "goo:item/mask/crystal_fluid",
-    "base": "goo:item/crystal"
-  }
+  "parent": "item/handheld",
+  "loader": "goo:crystallized_goo"
 }
