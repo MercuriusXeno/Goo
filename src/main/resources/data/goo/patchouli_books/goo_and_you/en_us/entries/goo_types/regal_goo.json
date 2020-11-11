@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.regal_goo",
+  "icon": "goo:textures/icons/regal_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.regal"
+    }
+  ]
+}

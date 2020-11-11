@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.energetic_goo",
+  "icon": "goo:textures/icons/energetic_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.energetic"
+    }
+  ]
+}

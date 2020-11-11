@@ -166,6 +166,10 @@ public class TargetingHandler
         GooEntry gooEntry = Equivalencies.getEntry(Minecraft.getInstance().world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
+        } else {
+            if (gooEntry.deniesSolidification()) {
+                event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.cant_solidify"));
+            }
         }
 
         addPlaceholderSpaceForTooltipGooIcons(gooEntry.values().size(), event);

@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.honey_goo",
+  "icon": "goo:textures/icons/honey_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.honey"
+    }
+  ]
+}

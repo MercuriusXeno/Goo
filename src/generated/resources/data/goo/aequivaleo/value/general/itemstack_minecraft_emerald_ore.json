@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:emerald_ore\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:emerald_ore"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 60.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:crystal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
+    }
+  ]
+}

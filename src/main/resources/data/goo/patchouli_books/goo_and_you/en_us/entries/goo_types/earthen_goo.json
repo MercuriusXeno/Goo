@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.earthen_goo",
+  "icon": "goo:textures/icons/earthen_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.earthen"
+    }
+  ]
+}

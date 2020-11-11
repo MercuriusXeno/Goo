@@ -1,6 +1,7 @@
 package com.xeno.goo.datagen;
 
 import com.google.common.collect.Sets;
+import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.information.datagen.ForcedInformationProvider;
 import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
@@ -157,15 +158,12 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.CHORUS_FLOWER, floral(30), weird(6), vital(1));
         saveData(Items.CHORUS_FRUIT, floral(15), weird(4), vital(1));
         saveData(Items.CLAY_BALL, earthen(60));
-        saveData(Items.COAL, molten(80), earthen(16));
         saveData(Items.COBWEB, faunal(15));
         saveData(Items.COD, faunal(15), vital(1));
         saveData(Items.CRIMSON_NYLIUM, earthen(120), fungal(15), chromatic(60));
         saveData(Items.CRIMSON_FUNGUS, fungal(15));
         saveData(Items.CRYING_OBSIDIAN, weird(30), obsidian(960));
-        saveData(Items.DIAMOND, crystal(240));
         saveData(Items.EGG, faunal(15), vital(15));
-        saveData(Items.EMERALD, regal(60), crystal(60));
         saveData(Items.END_ROD, radiant(20));
         saveData(Items.END_STONE, earthen(120), weird(5), vital(1));
         saveData(Items.ENDER_PEARL, weird(30));
@@ -173,7 +171,6 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.GHAST_TEAR, weird(30), crystal(24));
         saveData(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), obsidian(240));
         saveData(Items.GLOWSTONE_DUST, radiant(10));
-        saveData(Items.GOLD_INGOT, metal(36), regal(72));
         saveData(Items.BELL, earthen(360), regal(216), metal(180), floral(128));
         saveData(Items.GRASS_BLOCK, earthen(180), floral(15));
         saveData(Items.GUNPOWDER, energetic(120));
@@ -181,9 +178,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.HONEY_BLOCK, honey(120), regal(96));
         saveData(Items.ICE, snow(60));
         saveData(Items.INK_SAC, faunal(15), chromatic(240));
-        saveData(Items.IRON_INGOT, metal(72));
         saveData(Items.KELP, floral(15), vital(1));
-        saveData(Items.LAPIS_LAZULI, weird(4), chromatic(240), crystal(6));
         saveData(Items.LILY_PAD, floral(15), vital(1));
         saveData(Items.MAGMA_BLOCK, slime(10), molten(10), earthen(180), decay(30));
         saveData(Items.MELON_SLICE, floral(15), vital(1));
@@ -203,13 +198,11 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.PRISMARINE_SHARD, aquatic(120), crystal(2), weird(2), radiant(10));
         saveData(Items.PUFFERFISH, faunal(15), weird(6));
         saveData(Items.PUMPKIN, floral(60));
-        saveData(Items.QUARTZ, earthen(60), crystal (2));
         saveData(Items.RABBIT, faunal(15), vital(1));
         saveData(Items.RABBIT_FOOT, faunal(30), weird(30));
         saveData(Items.RABBIT_HIDE, faunal(15));
         saveData(Items.RED_MUSHROOM, fungal(15), vital(1));
         saveData(Items.RED_MUSHROOM_BLOCK, fungal(5));
-        saveData(Items.REDSTONE, logic(15));
         saveData(Items.ROTTEN_FLESH, faunal(5), decay(60));
         saveData(Items.SALMON, faunal(15), vital(1));
         saveData(Items.SCUTE, faunal(60), weird(6), vital(1));
@@ -224,11 +217,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.SOUL_CAMPFIRE, radiant(80), decay(60));
         saveData(Items.SOUL_TORCH, radiant(5), decay(15));
         saveData(Items.SPIDER_EYE, faunal(15), weird(5));
-        saveData(Items.STICK, floral(16));
+        saveData(Items.TRAPPED_CHEST, floral(256), logic(15));
         saveData(Items.STRING, faunal(15));
         saveData(Items.CAMPFIRE, radiant(80));
         saveData(Items.TORCH, radiant(5));
-        // wool is too dang strong
         saveData(Items.WHITE_WOOL, faunal(15));
         saveData(Items.RED_WOOL, faunal(15), chromatic(15));
         saveData(Items.ORANGE_WOOL, faunal(15), chromatic(15));
@@ -262,6 +254,30 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.LAVA_BUCKET, metal(216), molten(1000));
         saveData(Items.MILK_BUCKET, metal(216), faunal(15));
         saveData(Items.WATER_BUCKET, metal(216), aquatic(60));
+
+        // ore blocks
+        saveData(Items.COAL_ORE, molten(80), earthen(16), forbidden(1));
+        saveData(Items.COAL, molten(80), earthen(16));
+        saveData(Items.DIAMOND_ORE, crystal(240), forbidden(1));
+        saveData(Items.DIAMOND, crystal(240));
+        saveData(Items.EMERALD_ORE, regal(60), crystal(60), forbidden(1));
+        saveData(Items.EMERALD, regal(60), crystal(60));
+        saveData(Items.NETHER_GOLD_ORE, metal(36), regal(72), forbidden(1));
+        saveData(Items.GOLD_ORE, metal(36), regal(72), forbidden(1));
+        saveData(Items.GOLD_INGOT, metal(36), regal(72));
+        saveData(Items.IRON_ORE, metal(72), forbidden(1));
+        saveData(Items.IRON_INGOT, metal(72));
+        saveData(Items.REDSTONE_ORE, logic(15), forbidden(1));
+        saveData(Items.REDSTONE, logic(15));
+        saveData(Items.LAPIS_ORE, weird(4), chromatic(240), crystal(6), forbidden(1));
+        saveData(Items.LAPIS_LAZULI, weird(4), chromatic(240), crystal(6));
+        saveData(Items.NETHER_QUARTZ_ORE, earthen(60), crystal (2), forbidden(1));
+        saveData(Items.QUARTZ, earthen(60), crystal (2));
+
+        // controversial
+        saveData(Items.NETHER_STAR, weird(960), radiant(960), decay(960), crystal(960), forbidden(1));
+        saveData(Items.HEART_OF_THE_SEA, aquatic(960), weird(960), forbidden(1));
+        saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60));
 
         ItemsRegistry.CrystallizedGoo.forEach(this::registerLockedInfoForCrystallizedGoo);
         saveData(ItemsRegistry.CrystalComb.get(), crystal(32));

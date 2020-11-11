@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.decay_goo",
+  "icon": "goo:textures/icons/decay_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.decay"
+    }
+  ]
+}

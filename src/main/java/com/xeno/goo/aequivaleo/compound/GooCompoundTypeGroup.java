@@ -77,9 +77,9 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     }
 
     private boolean isInvalidStack(Item contents) {
-        return
-                // ore block invalidation
-                contents instanceof BlockItem && ((BlockItem) contents).getBlock() instanceof OreBlock;
+        return false;
+                // ore block invalidation, obviated by "forbidden" objects
+                // contents instanceof BlockItem && ((BlockItem) contents).getBlock() instanceof OreBlock;
     }
 
     private boolean isInvalidStack(ItemStack stack) {

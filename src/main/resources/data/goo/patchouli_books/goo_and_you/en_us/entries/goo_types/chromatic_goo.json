@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.chromatic_goo",
+  "icon": "goo:textures/icons/chromatic_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.chromatic"
+    }
+  ]
+}

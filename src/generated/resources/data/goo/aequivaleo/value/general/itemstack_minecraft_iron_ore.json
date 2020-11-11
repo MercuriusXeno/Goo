@@ -5,21 +5,25 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:stick\",Count:1b}"
+        "stack": "{id:\"minecraft:iron_ore\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:stick"
+        "item": "minecraft:iron_ore"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 16.0,
-      "type": "goo:floral"
+      "amount": 72.0,
+      "type": "goo:metal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

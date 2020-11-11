@@ -1,0 +1,11 @@
+{
+  "name": "fluid.goo.faunal_goo",
+  "icon": "goo:textures/icons/faunal_short.png",
+  "category": "goo:goo_types",
+  "pages": [
+    {
+      "type": "text",
+      "text": "goo.description.faunal"
+    }
+  ]
+}

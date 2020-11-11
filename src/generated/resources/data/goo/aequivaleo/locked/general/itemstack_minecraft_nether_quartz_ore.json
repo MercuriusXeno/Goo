@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:nether_quartz_ore\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:nether_quartz_ore"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 2.0,
+      "type": "goo:crystal"
+    }
+  ]
+}
