@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.weird"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:weird_goo_slab",
+      "text": "goo.description.weird2"
     }
   ]
 }

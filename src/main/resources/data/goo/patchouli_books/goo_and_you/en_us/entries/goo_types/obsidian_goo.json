@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.obsidian"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:obsidian_goo_slab",
+      "text": "goo.description.obsidian2"
     }
   ]
 }

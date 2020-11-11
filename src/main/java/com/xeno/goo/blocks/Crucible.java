@@ -50,8 +50,6 @@ public class Crucible extends BlockWithConnections {
         Vector3d ce = new Vector3d(15d, 15d, 15d);
         Vector3d bs = new Vector3d (5d, 0d, 5d);
         Vector3d be = new Vector3d (11d, 1d, 11d);
-        Vector3d ts = new Vector3d (5d, 15d, 5d);
-        Vector3d te = new Vector3d (11d, 16d, 11d);
         Vector3d es = new Vector3d(15d, 5d, 5d);
         Vector3d ee = new Vector3d(16d, 11d, 11d);
         Vector3d ws = new Vector3d(0d, 5d, 5d);
@@ -63,13 +61,12 @@ public class Crucible extends BlockWithConnections {
 
         VoxelShape central = VoxelHelper.cuboid(cs, ce);
         VoxelShape bottom = VoxelHelper.cuboid(bs, be);
-        VoxelShape top = VoxelHelper.cuboid(ts, te);
         VoxelShape east = VoxelHelper.cuboid(es, ee);
         VoxelShape west = VoxelHelper.cuboid(ws, we);
         VoxelShape south = VoxelHelper.cuboid(ss, se);
         VoxelShape north = VoxelHelper.cuboid(ns, ne);
 
-        return VoxelHelper.mergeAll(central, top, bottom, east, west, south, north);
+        return VoxelHelper.mergeAll(central, bottom, east, west, south, north);
     }
 
     @SuppressWarnings("deprecation")

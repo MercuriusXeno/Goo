@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.crystal"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:crystal_goo_slab",
+      "text": "goo.description.crystal2"
     }
   ]
 }

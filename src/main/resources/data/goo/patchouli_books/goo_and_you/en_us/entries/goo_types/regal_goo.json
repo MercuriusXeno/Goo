@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.regal"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:regal_goo_slab",
+      "text": "goo.description.regal2"
     }
   ]
 }

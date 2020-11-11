@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.aquatic"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:aquatic_goo_slab",
+      "text": "goo.description.aquatic2"
     }
   ]
 }

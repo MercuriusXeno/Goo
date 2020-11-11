@@ -6,6 +6,12 @@
     {
       "type": "text",
       "text": "goo.description.decay"
+    },
+    {
+      "type": "spotlight",
+      "title": "patchouli.spotlight_goo.interactions",
+      "item": "goo:decay_goo_slab",
+      "text": "goo.description.decay2"
     }
   ]
 }
