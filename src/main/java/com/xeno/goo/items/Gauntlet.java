@@ -29,6 +29,7 @@ import java.util.List;
 
 public class Gauntlet extends GauntletAbstraction
 {
+    public static final String HELD_LIQUID_TAG_NAME = "held_liquid";
     private static final int RADIAL_MENU_DELAY = 10;
 
     public Gauntlet()
@@ -82,13 +83,10 @@ public class Gauntlet extends GauntletAbstraction
 
     @Override
     public void onUsingTick(ItemStack stack, LivingEntity player, int count) {
-        if (!(player instanceof ClientPlayerEntity)) {
-            return;
-        }
         if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
             return;
         }
-        if (ticksHeld(count) >= RADIAL_MENU_DELAY && Minecraft.getInstance().currentScreen == null) {
+        if (ticksHeld(count) >= RADIAL_MENU_DELAY) {
             GooMod.proxy.openRadialMenu(player);
         }
     }

@@ -138,9 +138,9 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         stack.push();
         Matrix4f matrix = stack.getLast().getMatrix();
         int color = 0xCCFFFFFF;
-        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
-            color = FluidCuboidHelper.colorizeChromaticGoo();
-        }
+//        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
+//            color = FluidCuboidHelper.colorizeChromaticGoo();
+//        }
         renderCube(matrix, buffer, scaledQuads, color, light, sprite);
         stack.pop();
     }

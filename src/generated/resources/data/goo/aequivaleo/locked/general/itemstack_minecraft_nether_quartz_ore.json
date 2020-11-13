@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
-    },
-    {
       "amount": 60.0,
       "type": "goo:earthen"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     },
     {
       "amount": 2.0,

@@ -36,12 +36,14 @@ import org.lwjgl.system.windows.POINT;
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 public class Registry {
-    public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new HashMap<>();
+    public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new TreeMap<>(Comparator.comparing(ResourceLocation::getPath));
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
@@ -144,29 +146,29 @@ public class Registry {
 
 
     // Goo!
-    public static final RegistryObject<GooFluid> AQUATIC_GOO = registerGooFluid("aquatic_goo", Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO);
-    public static final RegistryObject<GooFluid> CHROMATIC_GOO = registerGooFluid("chromatic_goo", Resources.Still.CHROMATIC_GOO, Resources.Flowing.CHROMATIC_GOO, Resources.Icon.CHROMATIC_GOO);
-    public static final RegistryObject<GooFluid> CRYSTAL_GOO = registerGooFluid("crystal_goo", Resources.Still.CRYSTAL_GOO, Resources.Flowing.CRYSTAL_GOO, Resources.Icon.CRYSTAL_GOO);
-    public static final RegistryObject<GooFluid> DECAY_GOO = registerGooFluid("decay_goo", Resources.Still.DECAY_GOO, Resources.Flowing.DECAY_GOO, Resources.Icon.DECAY_GOO);
-    public static final RegistryObject<GooFluid> EARTHEN_GOO = registerGooFluid("earthen_goo", Resources.Still.EARTHEN_GOO, Resources.Flowing.EARTHEN_GOO, Resources.Icon.EARTHEN_GOO);
-    public static final RegistryObject<GooFluid> ENERGETIC_GOO = registerGooFluid("energetic_goo", Resources.Still.ENERGETIC_GOO, Resources.Flowing.ENERGETIC_GOO, Resources.Icon.ENERGETIC_GOO);
-    public static final RegistryObject<GooFluid> FAUNAL_GOO = registerGooFluid("faunal_goo", Resources.Still.FAUNAL_GOO, Resources.Flowing.FAUNAL_GOO, Resources.Icon.FAUNAL_GOO);
-    public static final RegistryObject<GooFluid> FLORAL_GOO = registerGooFluid("floral_goo", Resources.Still.FLORAL_GOO, Resources.Flowing.FLORAL_GOO, Resources.Icon.FLORAL_GOO);
-    public static final RegistryObject<GooFluid> FUNGAL_GOO = registerGooFluid("fungal_goo", Resources.Still.FUNGAL_GOO, Resources.Flowing.FUNGAL_GOO, Resources.Icon.FUNGAL_GOO);
-    public static final RegistryObject<GooFluid> HONEY_GOO = registerGooFluid("honey_goo", Resources.Still.HONEY_GOO, Resources.Flowing.HONEY_GOO, Resources.Icon.HONEY_GOO);
-    public static final RegistryObject<GooFluid> LOGIC_GOO = registerGooFluid("logic_goo", Resources.Still.LOGIC_GOO, Resources.Flowing.LOGIC_GOO, Resources.Icon.LOGIC_GOO);
-    public static final RegistryObject<GooFluid> METAL_GOO = registerGooFluid("metal_goo", Resources.Still.METAL_GOO, Resources.Flowing.METAL_GOO, Resources.Icon.METAL_GOO);
-    public static final RegistryObject<GooFluid> MOLTEN_GOO = registerGooFluid("molten_goo", Resources.Still.MOLTEN_GOO, Resources.Flowing.MOLTEN_GOO, Resources.Icon.MOLTEN_GOO);
-    public static final RegistryObject<GooFluid> OBSIDIAN_GOO = registerGooFluid("obsidian_goo", Resources.Still.OBSIDIAN_GOO, Resources.Flowing.OBSIDIAN_GOO, Resources.Icon.OBSIDIAN_GOO);
-    public static final RegistryObject<GooFluid> RADIANT_GOO = registerGooFluid("radiant_goo", Resources.Still.RADIANT_GOO, Resources.Flowing.RADIANT_GOO, Resources.Icon.RADIANT_GOO);
-    public static final RegistryObject<GooFluid> REGAL_GOO = registerGooFluid("regal_goo", Resources.Still.REGAL_GOO, Resources.Flowing.REGAL_GOO, Resources.Icon.REGAL_GOO);
-    public static final RegistryObject<GooFluid> SLIME_GOO = registerGooFluid("slime_goo", Resources.Still.SLIME_GOO, Resources.Flowing.SLIME_GOO, Resources.Icon.SLIME_GOO);
-    public static final RegistryObject<GooFluid> SNOW_GOO = registerGooFluid("snow_goo", Resources.Still.SNOW_GOO, Resources.Flowing.SNOW_GOO, Resources.Icon.SNOW_GOO);
-    public static final RegistryObject<GooFluid> VITAL_GOO = registerGooFluid("vital_goo", Resources.Still.VITAL_GOO, Resources.Flowing.VITAL_GOO, Resources.Icon.VITAL_GOO);
-    public static final RegistryObject<GooFluid> WEIRD_GOO = registerGooFluid("weird_goo", Resources.Still.WEIRD_GOO, Resources.Flowing.WEIRD_GOO, Resources.Icon.WEIRD_GOO);
+    public static final RegistryObject<GooFluid> AQUATIC_GOO = registerGooFluid("aquatic_goo", Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO, 0.001f);
+    public static final RegistryObject<GooFluid> CHROMATIC_GOO = registerGooFluid("chromatic_goo", Resources.Still.CHROMATIC_GOO, Resources.Flowing.CHROMATIC_GOO, Resources.Icon.CHROMATIC_GOO, 0.002f);
+    public static final RegistryObject<GooFluid> CRYSTAL_GOO = registerGooFluid("crystal_goo", Resources.Still.CRYSTAL_GOO, Resources.Flowing.CRYSTAL_GOO, Resources.Icon.CRYSTAL_GOO, 0.003f);
+    public static final RegistryObject<GooFluid> DECAY_GOO = registerGooFluid("decay_goo", Resources.Still.DECAY_GOO, Resources.Flowing.DECAY_GOO, Resources.Icon.DECAY_GOO, 0.004f);
+    public static final RegistryObject<GooFluid> EARTHEN_GOO = registerGooFluid("earthen_goo", Resources.Still.EARTHEN_GOO, Resources.Flowing.EARTHEN_GOO, Resources.Icon.EARTHEN_GOO, 0.005f);
+    public static final RegistryObject<GooFluid> ENERGETIC_GOO = registerGooFluid("energetic_goo", Resources.Still.ENERGETIC_GOO, Resources.Flowing.ENERGETIC_GOO, Resources.Icon.ENERGETIC_GOO, 0.006f);
+    public static final RegistryObject<GooFluid> FAUNAL_GOO = registerGooFluid("faunal_goo", Resources.Still.FAUNAL_GOO, Resources.Flowing.FAUNAL_GOO, Resources.Icon.FAUNAL_GOO, 0.007f);
+    public static final RegistryObject<GooFluid> FLORAL_GOO = registerGooFluid("floral_goo", Resources.Still.FLORAL_GOO, Resources.Flowing.FLORAL_GOO, Resources.Icon.FLORAL_GOO, 0.008f);
+    public static final RegistryObject<GooFluid> FUNGAL_GOO = registerGooFluid("fungal_goo", Resources.Still.FUNGAL_GOO, Resources.Flowing.FUNGAL_GOO, Resources.Icon.FUNGAL_GOO, 0.009f);
+    public static final RegistryObject<GooFluid> HONEY_GOO = registerGooFluid("honey_goo", Resources.Still.HONEY_GOO, Resources.Flowing.HONEY_GOO, Resources.Icon.HONEY_GOO, 0.010f);
+    public static final RegistryObject<GooFluid> LOGIC_GOO = registerGooFluid("logic_goo", Resources.Still.LOGIC_GOO, Resources.Flowing.LOGIC_GOO, Resources.Icon.LOGIC_GOO, 0.011f);
+    public static final RegistryObject<GooFluid> METAL_GOO = registerGooFluid("metal_goo", Resources.Still.METAL_GOO, Resources.Flowing.METAL_GOO, Resources.Icon.METAL_GOO, 0.012f);
+    public static final RegistryObject<GooFluid> MOLTEN_GOO = registerGooFluid("molten_goo", Resources.Still.MOLTEN_GOO, Resources.Flowing.MOLTEN_GOO, Resources.Icon.MOLTEN_GOO, 0.013f);
+    public static final RegistryObject<GooFluid> OBSIDIAN_GOO = registerGooFluid("obsidian_goo", Resources.Still.OBSIDIAN_GOO, Resources.Flowing.OBSIDIAN_GOO, Resources.Icon.OBSIDIAN_GOO, 0.014f);
+    public static final RegistryObject<GooFluid> RADIANT_GOO = registerGooFluid("radiant_goo", Resources.Still.RADIANT_GOO, Resources.Flowing.RADIANT_GOO, Resources.Icon.RADIANT_GOO, 0.015f);
+    public static final RegistryObject<GooFluid> REGAL_GOO = registerGooFluid("regal_goo", Resources.Still.REGAL_GOO, Resources.Flowing.REGAL_GOO, Resources.Icon.REGAL_GOO, 0.016f);
+    public static final RegistryObject<GooFluid> SLIME_GOO = registerGooFluid("slime_goo", Resources.Still.SLIME_GOO, Resources.Flowing.SLIME_GOO, Resources.Icon.SLIME_GOO, 0.017f);
+    public static final RegistryObject<GooFluid> SNOW_GOO = registerGooFluid("snow_goo", Resources.Still.SNOW_GOO, Resources.Flowing.SNOW_GOO, Resources.Icon.SNOW_GOO, 0.018f);
+    public static final RegistryObject<GooFluid> VITAL_GOO = registerGooFluid("vital_goo", Resources.Still.VITAL_GOO, Resources.Flowing.VITAL_GOO, Resources.Icon.VITAL_GOO, 0.019f);
+    public static final RegistryObject<GooFluid> WEIRD_GOO = registerGooFluid("weird_goo", Resources.Still.WEIRD_GOO, Resources.Flowing.WEIRD_GOO, Resources.Icon.WEIRD_GOO, 0.020f);
 
-    public static RegistryObject<GooFluid> registerGooFluid(String name, ResourceLocation still, ResourceLocation flowing, ResourceLocation icon) {
-        RegistryObject<GooFluid> registeredObject = FLUIDS.register(name, () -> new GooFluid(still, flowing, icon));
+    public static RegistryObject<GooFluid> registerGooFluid(String name, ResourceLocation still, ResourceLocation flowing, ResourceLocation icon, float overrideIndex) {
+        RegistryObject<GooFluid> registeredObject = FLUIDS.register(name, () -> new GooFluid(still, flowing, icon, overrideIndex));
         FluidSuppliers.put(new ResourceLocation(GooMod.MOD_ID, name), registeredObject);
         return registeredObject;
     }

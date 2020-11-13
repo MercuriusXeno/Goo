@@ -2,11 +2,10 @@
   "parent": "minecraft:block/block",
   "textures": {
     "hatch": "goo:block/hatch",
-    "gasket": "goo:block/gasket",
+    "gasket": "goo:block/gasket_filled",
     "empty": "goo:block/empty",
     "particle": "goo:block/gooifier_front_off",
     "front_off": "goo:block/gooifier_front_off",
-    "back": "goo:block/gooifier_back",
     "side": "goo:block/gooifier_side",
     "top": "goo:block/gooifier_top",
     "bottom": "minecraft:block/polished_blackstone"
@@ -14,434 +13,80 @@
   "elements": [
     {
       "from": [
-        1,
-        0,
-        1
+        0.25,
+        0.25,
+        0.25
       ],
       "to": [
-        15,
-        15,
-        15
+        15.75,
+        15.75,
+        15.75
       ],
       "faces": {
         "down": {
-          "texture": "#bottom"
+          "texture": "#bottom",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "up": {
-          "texture": "#top"
+          "texture": "#top",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "north": {
-          "texture": "#front_off"
+          "texture": "#front_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "south": {
-          "texture": "#back"
+          "texture": "#side",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "west": {
-          "texture": "#side"
+          "texture": "#side",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "east": {
-          "texture": "#side"
+          "texture": "#side",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         }
       }
     },
     {
       "from": [
         5,
-        15,
-        5
-      ],
-      "to": [
-        11,
-        16,
-        11
-      ],
-      "faces": {
-        "down": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#gasket"
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "east": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        }
-      }
-    },
-    {
-      "from": [
-        9,
-        16,
-        9
-      ],
-      "to": [
-        7,
-        15,
-        7
-      ],
-      "faces": {
-        "down": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            11.0
-          ]
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "east": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        }
-      }
-    },
-    {
-      "from": [
-        15,
-        5,
-        5
-      ],
-      "to": [
-        16,
-        11,
-        11
-      ],
-      "faces": {
-        "down": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "east": {
-          "texture": "#gasket"
-        }
-      }
-    },
-    {
-      "from": [
-        16,
-        9,
-        9
-      ],
-      "to": [
-        15,
-        7,
-        7
-      ],
-      "faces": {
-        "down": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "east": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            11.0
-          ]
-        }
-      }
-    },
-    {
-      "from": [
-        0,
-        5,
-        5
-      ],
-      "to": [
-        1,
-        11,
-        11
-      ],
-      "faces": {
-        "down": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#gasket"
-        },
-        "east": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
-          ]
-        }
-      }
-    },
-    {
-      "from": [
-        1,
-        9,
-        9
-      ],
-      "to": [
-        0,
-        7,
-        7
-      ],
-      "faces": {
-        "down": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "up": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "north": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "south": {
-          "texture": "#gasket",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        },
-        "west": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            11.0
-          ]
-        },
-        "east": {
-          "texture": "#empty",
-          "uv": [
-            5.0,
-            7.0,
-            6.0,
-            6.0
-          ]
-        }
-      }
-    },
-    {
-      "from": [
-        4,
         3,
-        15
+        15.75
       ],
       "to": [
-        12,
+        11,
         9,
         16
       ],
@@ -449,54 +94,462 @@
         "down": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
-            12.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
         "up": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
-            12.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
         "north": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
-            12.0,
-            6.0
+            5.0,
+            11.0,
+            11.0
           ]
         },
         "south": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
-            12.0,
+            5.0,
+            11.0,
             11.0
           ]
         },
         "west": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
-            12.0,
+            5.0,
+            6.0,
             6.0
           ]
         },
         "east": {
           "texture": "#hatch",
           "uv": [
-            4.0,
             5.0,
+            5.0,
+            6.0,
+            6.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        15.75,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
             12.0,
+            12.0
+          ]
+        },
+        "up": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "west": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "east": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        9,
+        16,
+        9
+      ],
+      "to": [
+        7,
+        15.75,
+        7
+      ],
+      "faces": {
+        "down": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "up": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "west": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        15.75,
+        6,
+        6
+      ],
+      "to": [
+        16,
+        10,
+        10
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "up": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "west": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
+        },
+        "east": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        16,
+        9,
+        9
+      ],
+      "to": [
+        15.75,
+        7,
+        7
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "up": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "west": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        6,
+        6
+      ],
+      "to": [
+        0.25,
+        10,
+        10
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "up": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            5.0
+          ]
+        },
+        "west": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
+        },
+        "east": {
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0.25,
+        9,
+        9
+      ],
+      "to": [
+        0,
+        7,
+        7
+      ],
+      "faces": {
+        "down": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "up": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "north": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "south": {
+          "texture": "#gasket",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "west": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
+            6.0
+          ]
+        },
+        "east": {
+          "texture": "#empty",
+          "uv": [
+            5.0,
+            5.0,
+            11.0,
             6.0
           ]
         }

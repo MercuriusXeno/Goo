@@ -16,6 +16,9 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorldReader;
 import net.minecraftforge.fluids.FluidAttributes;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class GooFluid extends Fluid
 {
     private static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
@@ -27,7 +30,8 @@ public class GooFluid extends Fluid
     private final ResourceLocation icon;
     private final ResourceLocation shortIcon;
     private final FluidAttributes.Builder builder;
-    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon)
+    private final float overrideIndex;
+    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon, float overrideIndex)
     {
         super();
         this.builder = FluidAttributes
@@ -37,6 +41,11 @@ public class GooFluid extends Fluid
         this.icon = icon;
         String subpathWithoutExtension = icon.getPath().substring(0, icon.getPath().lastIndexOf(".png"));
         this.shortIcon = new ResourceLocation(icon.getNamespace(), subpathWithoutExtension + "_short.png");
+        this.overrideIndex = overrideIndex;
+    }
+
+    public float overrideIndex() {
+        return this.overrideIndex;
     }
 
     @Override

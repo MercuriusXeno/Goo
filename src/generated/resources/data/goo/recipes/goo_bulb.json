@@ -1,16 +1,16 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "oeo",
+    "non",
     "o#o",
-    "oeo"
+    "non"
   ],
   "key": {
+    "n": {
+      "item": "minecraft:iron_nugget"
+    },
     "o": {
       "item": "goo:gasket"
-    },
-    "e": {
-      "item": "minecraft:ender_pearl"
     },
     "#": {
       "tag": "forge:glass"

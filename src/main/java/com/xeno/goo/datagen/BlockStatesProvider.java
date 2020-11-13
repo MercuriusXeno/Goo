@@ -10,10 +10,16 @@ import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.client.model.generators.*;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 public class BlockStatesProvider extends BlockStateProvider {
+    private static final float GASKET_U = 4f;
+    private static final float GASKET_V = 4f;
+    private static final float GASKET_U2 = 12f;
+    private static final float GASKET_V2 = 12f;
+
     public BlockStatesProvider(DataGenerator gen, ExistingFileHelper exFileHelper) {
         super(gen, GooMod.MOD_ID, exFileHelper);
     }
@@ -57,117 +63,91 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
 
+
+    private void addGasket(BlockModelBuilder builder, Direction d, float thickness) {
+        Vector3f from, to;
+        switch (d) {
+            case UP:
+                from = new Vector3f(6f, 16f - thickness, 6f);
+                to = new Vector3f(10f, 16f, 10f);
+                break;
+            case DOWN:
+                from = new Vector3f(6f, 0f, 6f);
+                to = new Vector3f(10f, thickness, 10f);
+                break;
+            case EAST:
+                from = new Vector3f(16f - thickness, 6f, 6f);
+                to = new Vector3f(16f, 10f, 10f);
+                break;
+            case WEST:
+                from = new Vector3f(0f, 6f, 6f);
+                to = new Vector3f(thickness, 10f, 10f);
+                break;
+            case SOUTH:
+                from = new Vector3f(6f, 6f, 16f - thickness);
+                to = new Vector3f(10f, 10f, 16f);
+                break;
+            case NORTH:
+                from = new Vector3f(6f, 6f, 0f);
+                to = new Vector3f(10f, 10f, thickness);
+                break;
+            default:
+                from = new Vector3f(0f, 0f, 0f);
+                to = new Vector3f(0f, 0f, 0f);
+                break;
+        }
+        addGasket(builder, from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ(), d,
+                GASKET_U, GASKET_V, GASKET_U2, GASKET_V2);
+    }
+
+    private void addGasket(BlockModelBuilder builder, float fromX, float fromY, float fromZ,
+                                        float toX, float toY, float toZ,
+                                        Direction d, float u1, float v1, float u2, float v2) {
+        // normal gasket
+        builder.element()
+                .from(fromX, fromY, fromZ)
+                .to(toX, toY, toZ)
+                .allFaces((t, u) -> u.texture("#gasket").uvs(u1, v1, u2, t.getAxis() == d.getAxis() ? v2 : v1 + 1f))
+                .end();
+        // inverse (inside of gasket)
+        builder.element()
+                .from(toX - (d.getAxis() == Direction.Axis.X ? 0f : 1f),
+                        toY - (d.getAxis() == Direction.Axis.Y ? 0f : 1f),
+                        toZ - (d.getAxis() == Direction.Axis.Z ? 0f : 1f))
+                .to(fromX + (d.getAxis() == Direction.Axis.X ? 0f : 1f),
+                        fromY + (d.getAxis() == Direction.Axis.Y ? 0f : 1f),
+                        fromZ + (d.getAxis() == Direction.Axis.Z ? 0f : 1f))
+                .allFaces((t, u) ->
+                        u.texture(t.getAxis() == d.getAxis() ? "#empty" : "#gasket")
+                                .uvs(u1 + 1f,
+                                        v1 + 1f,
+                                        u2 - 1f,
+                                        v1 + 2f))
+                .end();
+    }
+
+
     private void registerLobber() {
         ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber_front");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber_side");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        float gasketThickness = 0.25f;
         BlockModelBuilder model = models()
                 .withExistingParent("lobber", "block/block")
                 .element()
-                .from(1f, 1f, 1f).to(15f, 15, 15f)
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t ==  Direction.UP ? "#front" :
-                                "#side"))
-                .end()
-                // bottom, south, east, north and west gasket boxes
-                // bottom
-                .element()
-                .from(5f, 0f, 5f).to(11f, 1f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // bottom inverse
-                .element()
-                .from(9f, 1f, 9f).to(7f, 0f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                        .uvs(5f,
-                                7f,
-                                6f,
-                                t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                // south
-                .element()
-                .from(5f, 5f, 15f).to(11f, 11f, 16f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // south inverse
-                .element()
-                .from(9f, 9f, 16f).to(7f, 7f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // north
-                .element()
-                .from(5f, 5f, 0f).to(11f, 11f, 1f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.NORTH ? 11f : 6f))
-                .end()
-                // north inverse
-                .element()
-                .from(9f, 9f, 1f).to(7f, 7f, 0f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.NORTH ? 11f : 6f))
-                .end()
-        ;
-
+                                "#side")
+                        .uvs(1f, 1f, 15f, 15f))
+                .end();
+        addGasket(model, Direction.DOWN, gasketThickness);
+        addGasket(model, Direction.EAST, gasketThickness);
+        addGasket(model, Direction.WEST, gasketThickness);
+        addGasket(model, Direction.SOUTH, gasketThickness);
+        addGasket(model, Direction.NORTH, gasketThickness);
         model.texture("particle", front);
         model.texture("front", front);
         model.texture("side", side);
@@ -185,243 +165,66 @@ public class BlockStatesProvider extends BlockStateProvider {
         ResourceLocation crucible_bottom = new ResourceLocation(GooMod.MOD_ID, "block/crucible_bottom");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        float gasketThickness = 0.25f;
         BlockModelBuilder modelInactive = models()
                 .withExistingParent("crucible", "block/block")
                 .texture("particle", crucible_side)
                 .element()
-                .from(1, 1, 1)
-                .to(15, 15, 15)
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.UP ? "#crucible_top" :
-                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side")))
+                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side"))
+                        .uvs(0f, 0f, 16f, 16f))
                 .end()
                 .element()
-                .from(14.99f, 14.99f, 14.99f)
-                .to(1.01f, 1.01f, 1.01f)
+                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
+                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.DOWN ? "#crucible_top" :
-                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side")))
-                .end()
-                // bottom, south, east, north and west gasket boxes
-                // bottom
-                .element()
-                .from(5f, 0f, 5f).to(11f, 1f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // bottom inverse
-                .element()
-                .from(9f, 1f, 9f).to(7f, 0f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                // south
-                .element()
-                .from(5f, 5f, 15f).to(11f, 11f, 16f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // south inverse
-                .element()
-                .from(9f, 9f, 16f).to(7f, 7f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // north
-                .element()
-                .from(5f, 5f, 0f).to(11f, 11f, 1f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.NORTH ? 11f : 6f))
-                .end()
-                // north inverse
-                .element()
-                .from(9f, 9f, 1f).to(7f, 7f, 0f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.NORTH ? 11f : 6f))
+                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side"))
+                        .uvs(0f, 0f, 16f, 16f))
                 .end()
                 .texture("gasket", gasket)
                 .texture("empty", empty)
                 .texture("crucible_top", crucible_top)
                 .texture("crucible_bottom", crucible_bottom)
                 .texture("crucible_side", crucible_side);
+        addGasket(modelInactive, Direction.DOWN, gasketThickness);
+        addGasket(modelInactive, Direction.EAST, gasketThickness);
+        addGasket(modelInactive, Direction.WEST, gasketThickness);
+        addGasket(modelInactive, Direction.SOUTH, gasketThickness);
+        addGasket(modelInactive, Direction.NORTH, gasketThickness);
 
         BlockModelBuilder modelActive = models()
                 .withExistingParent("crucible_lit", "block/block")
                 .texture("particle", crucible_side)
                 .element()
-                .from(1, 1, 1)
-                .to(15, 15, 15)
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.UP ? "#crucible_top" :
-                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side_lit")))
+                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side_lit"))
+                        .uvs(0f, 0f, 16f, 16f))
                 .end()
                 .element()
-                .from(14.99f, 14.99f, 14.99f)
-                .to(1.01f, 1.01f, 1.01f)
+                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
+                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.DOWN ? "#crucible_top" :
-                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side_lit")))
-                .end()
-                // bottom, south, east, north and west gasket boxes
-                // bottom
-                .element()
-                .from(5f, 0f, 5f).to(11f, 1f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // bottom inverse
-                .element()
-                .from(9f, 1f, 9f).to(7f, 0f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.DOWN ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                // south
-                .element()
-                .from(5f, 5f, 15f).to(11f, 11f, 16f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // south inverse
-                .element()
-                .from(9f, 9f, 16f).to(7f, 7f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                // north
-                .element()
-                .from(5f, 5f, 0f).to(11f, 11f, 1f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.NORTH ? 11f : 6f))
-                .end()
-                // north inverse
-                .element()
-                .from(9f, 9f, 1f).to(7f, 7f, 0f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.NORTH ? 11f : 6f))
+                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side_lit"))
+                        .uvs(0f, 0f, 16f, 16f))
                 .end()
                 .texture("gasket", gasket)
                 .texture("empty", empty)
                 .texture("crucible_top", crucible_top)
                 .texture("crucible_bottom", crucible_bottom)
                 .texture("crucible_side_lit", crucible_side_lit);
+        addGasket(modelActive, Direction.DOWN, gasketThickness);
+        addGasket(modelActive, Direction.EAST, gasketThickness);
+        addGasket(modelActive, Direction.WEST, gasketThickness);
+        addGasket(modelActive, Direction.SOUTH, gasketThickness);
+        addGasket(modelActive, Direction.NORTH, gasketThickness);
 
         getVariantBuilder(BlocksRegistry.Crucible.get())
                 .forAllStates(
@@ -429,6 +232,182 @@ public class BlockStatesProvider extends BlockStateProvider {
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
                                 .build()
                 );
+    }
+
+    private void registerGooBulbGeneric(GooBulb base) {
+        ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
+        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
+        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        float gasketThickness = 0.25f;
+        BlockModelBuilder model = models()
+                .withExistingParent(base.getRegistryName().getPath(), "block/block")
+                .texture("particle", side)
+                .element()
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side")
+                        .uvs(0f, 0f, 16f, 16f))
+                .end()
+                .element()
+                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
+                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
+                .shade(false)
+                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side")
+                        .uvs(0f, 0f, 16f, 16f))
+                .end()
+                .texture("gasket", gasket)
+                .texture("empty", empty);
+        addGasket(model, Direction.UP, gasketThickness);
+        addGasket(model, Direction.DOWN, gasketThickness);
+        addGasket(model, Direction.EAST, gasketThickness);
+        addGasket(model, Direction.WEST, gasketThickness);
+        addGasket(model, Direction.SOUTH, gasketThickness);
+        addGasket(model, Direction.NORTH, gasketThickness);
+        model.texture("end", end);
+        model.texture("side", side);
+        simpleBlock(base, model);
+    }
+
+    private void registerGooifier() {
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/polished_blackstone");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
+        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
+        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_on");
+        ResourceLocation hatch = new ResourceLocation(GooMod.MOD_ID, "block/hatch");
+        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket_filled");
+        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        float gasketThickness = 0.25f;
+        BlockModelBuilder modelInactive = models()
+                .withExistingParent("gooifier", "block/block")
+                .element()
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .allFaces((t, u) -> u.texture(
+                        t == Direction.NORTH ? "#front_off" :
+                                (t == Direction.UP ? "#top" :
+                                        (t == Direction.DOWN ? "#bottom" : "#side")))
+                        .uvs(0f, 0f, 16f, 16f)
+                )
+                .end()
+                // south hatch
+                .element()
+                .from(5f, 3f, 15.75f).to(11f, 9f, 16f)
+                .allFaces((t, u) -> u.texture("#hatch")
+                        .uvs(5f,
+                                5f,
+                                t.getAxis() == Direction.Axis.X ? 6f : 11f,
+                                t.getAxis() == Direction.Axis.Z  ? 11f : 6f)
+                )
+                .end()
+                .texture("hatch", hatch)
+                .texture("gasket", gasket)
+                .texture("empty", empty)
+                .texture("particle", front_off)
+                .texture("front_off", front_off)
+                .texture("side", side)
+                .texture("top", top)
+                .texture("bottom", bottom);
+        addGasket(modelInactive, Direction.UP, gasketThickness);
+        addGasket(modelInactive, Direction.EAST, gasketThickness);
+        addGasket(modelInactive, Direction.WEST, gasketThickness);
+
+        BlockModelBuilder modelActive = models()
+                .withExistingParent("gooifier_powered", "block/block")
+                .element()
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .allFaces((t, u) -> u.texture(
+                        t == Direction.NORTH ? "#front_on" :
+                                    (t == Direction.UP ? "#top" :
+                                            (t == Direction.DOWN ? "#bottom" : "#side")))
+                        .uvs(0f, 0f, 16f, 16f)
+                )
+                .end()
+                // south hatch
+                .element()
+                .from(5f, 3f, 15.75f).to(11f, 9f, 16f)
+                .allFaces((t, u) -> u.texture("#hatch")
+                        .uvs(5f,
+                                5f,
+                                t.getAxis() == Direction.Axis.X ? 6f : 11f,
+                                t.getAxis() == Direction.Axis.Z  ? 11f : 6f)
+                )
+                .end()
+                .texture("hatch", hatch)
+                .texture("gasket", gasket)
+                .texture("empty", empty)
+                .texture("particle", front_on)
+                .texture("front_on", front_on)
+                .texture("side", side)
+                .texture("top", top)
+                .texture("bottom", bottom);
+        addGasket(modelActive, Direction.UP, gasketThickness);
+        addGasket(modelActive, Direction.EAST, gasketThickness);
+        addGasket(modelActive, Direction.WEST, gasketThickness);
+        horizontalBlock(BlocksRegistry.Gooifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Gooifier.get(), modelInactive);
+    }
+
+    private void registerSolidifier() {
+        ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_off");
+        ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_on");
+        ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
+        ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_off");
+        ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_on");
+        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_off");
+        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_on");
+        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket_filled");
+        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
+        float gasketThickness = 0.25f;
+        BlockModelBuilder modelInactive = models()
+                .withExistingParent("solidifier", "block/block")
+                .element()
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#bottom" :
+                                (t == Direction.UP ? "#top_off" :
+                                        (t == Direction.NORTH ? "#front_off" : "#side_off"
+                                                        )))
+                                .uvs(0f, 0f, 16f, 16f))
+                .end()
+                .texture("gasket", gasket)
+                .texture("empty", empty);
+        addGasket(modelInactive, Direction.UP, gasketThickness);
+        addGasket(modelInactive, Direction.EAST, gasketThickness);
+        addGasket(modelInactive, Direction.WEST, gasketThickness);
+        modelInactive.texture("particle", front_off);
+        modelInactive.texture("bottom", bottom);
+        modelInactive.texture("top_off", top_off);
+        modelInactive.texture("side_off", side_off);
+        modelInactive.texture("front_off", front_off);
+
+        BlockModelBuilder modelActive = models()
+                .withExistingParent("solidifier_powered", "block/block")
+                .element()
+                .from(gasketThickness, gasketThickness, gasketThickness)
+                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .allFaces((t, u) ->
+                        u.texture(t == Direction.DOWN ? "#bottom" :
+                                (t == Direction.UP ? "#top_on" :
+                                        (t == Direction.NORTH ? "#front_on" : "#side_on"
+                                        )))
+                                .uvs(0f, 0f, 16f, 16f))
+                .end()
+                .texture("gasket", gasket)
+                .texture("empty", empty);
+        modelActive.texture("particle", front_on);
+        modelActive.texture("bottom", bottom);
+        modelActive.texture("top_on", top_on);
+        modelActive.texture("side_on", side_on);
+        modelActive.texture("front_on", front_on);
+        addGasket(modelActive, Direction.UP, gasketThickness);
+        addGasket(modelActive, Direction.EAST, gasketThickness);
+        addGasket(modelActive, Direction.WEST, gasketThickness);
+        horizontalBlock(BlocksRegistry.Solidifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
+        simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
     }
 
     private void registerMixer()
@@ -540,147 +519,6 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .texture("merger_side", merger_side);
 
         horizontalBlock(BlocksRegistry.Mixer.get(), model);
-    }
-
-    private void registerGooBulbGeneric(GooBulb base) {
-        ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        BlockModelBuilder model = models()
-                .withExistingParent(base.getRegistryName().getPath(), "block/block")
-                .texture("particle", side)
-                .element()
-                .from(1, 1, 1)
-                .to(15, 15, 15)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
-                .end()
-                .element()
-                .from(14.9f, 14.9f, 14.9f)
-                .to(1.1f, 1.1f, 1.1f)
-                .shade(false)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side"))
-                .end()
-                // bottom, south, east, north and west gasket boxes
-                // bottom
-                .element()
-                .from(5f, 0f, 5f).to(11f, 1f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.Y ? 11f : 6f))
-                .end()
-                // bottom inverse
-                .element()
-                .from(9f, 1f, 9f).to(7f, 0f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.Y ? 11f : 6f))
-                .end()
-                // top
-                .element()
-                .from(5f, 15f, 5f).to(11f, 16f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.Y ? 11f : 6f))
-                .end()
-                // top inverse
-                .element()
-                .from(9f, 16f, 9f).to(7f, 15f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.Y ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // south
-                .element()
-                .from(5f, 5f, 15f).to(11f, 11f, 16f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.Z ? 11f : 6f))
-                .end()
-                // south inverse
-                .element()
-                .from(9f, 9f, 16f).to(7f, 7f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.Z ? 11f : 6f))
-                .end()
-                // north
-                .element()
-                .from(5f, 5f, 0f).to(11f, 11f, 1f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.Z ? 11f : 6f))
-                .end()
-                // north inverse
-                .element()
-                .from(9f, 9f, 1f).to(7f, 7f, 0f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Z ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.Z ? 11f : 6f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        model.texture("end", end);
-        model.texture("side", side);
-        simpleBlock(base, model);
     }
 
     private void registerRadiantLight() {
@@ -800,7 +638,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .rotationX(rotationX).rotationY(rotationY)
                     .addModel()
                     .condition(BlockStateProperties.FACING, d)
-                    .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);;
+                    .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);
         }
 
         simpleBlockItem(BlocksRegistry.Pump.get(), base);
@@ -903,364 +741,5 @@ public class BlockStatesProvider extends BlockStateProvider {
         model.texture("fixture_face", fixtureFace);
         model.texture("particle", baseBottom);
         horizontalBlock(BlocksRegistry.Trough.get(), state -> model);
-    }
-
-    private void registerGooifier() {
-        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/polished_blackstone");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
-        ResourceLocation back = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_back");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_on");
-        ResourceLocation hatch = new ResourceLocation(GooMod.MOD_ID, "block/hatch");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        BlockModelBuilder modelInactive = models()
-                .withExistingParent("gooifier", "block/block")
-                .element()
-                .from(1f, 0f, 1f).to(15f, 15f, 15f)
-                .allFaces((t, u) -> u.texture(
-                        t == Direction.NORTH ? "#front_off" :
-                                (t == Direction.SOUTH ? "#back" :
-                                        (t == Direction.UP ? "#top" :
-                                                (t == Direction.DOWN ? "#bottom" : "#side"))))
-                )
-                .end()
-                // top, east,and west gasket boxes
-                // top
-                .element()
-                .from(5f, 15f, 5f).to(11f, 16f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.UP ? 11f : 6f))
-                .end()
-                // top inverse
-                .element()
-                .from(9f, 16f, 9f).to(7f, 15f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.UP ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                // south hatch
-                .element()
-                .from(4f, 3f, 15f).to(12f, 9f, 16f)
-                .allFaces((t, u) -> u.texture("#hatch")
-                        .uvs(4f,
-                                5f,
-                                12f,
-                                t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                .texture("hatch", hatch)
-                .texture("gasket", gasket)
-                .texture("empty", empty)
-                .texture("particle", front_off)
-                .texture("front_off", front_off)
-                .texture("back", back)
-                .texture("side", side)
-                .texture("top", top)
-                .texture("bottom", bottom);
-        BlockModelBuilder modelActive = models()
-                .withExistingParent("gooifier_powered", "block/block")
-                .element()
-                .from(1f, 0f, 1f).to(15f, 15f, 15f)
-                .allFaces((t, u) -> u.texture(
-                        t == Direction.NORTH ? "#front_on" :
-                                (t == Direction.SOUTH ? "#back" :
-                                        (t == Direction.UP ? "#top" :
-                                                (t == Direction.DOWN ? "#bottom" : "#side"))))
-                )
-                .end()
-                // top, east,and west gasket boxes
-                // top
-                .element()
-                .from(5f, 15f, 5f).to(11f, 16f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.UP ? 11f : 6f))
-                .end()
-                // top inverse
-                .element()
-                .from(9f, 16f, 9f).to(7f, 15f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.UP ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                // south hatch
-                .element()
-                .from(4f, 3f, 15f).to(12f, 9f, 16f)
-                .allFaces((t, u) -> u.texture("#hatch")
-                        .uvs(4f,
-                                5f,
-                                12f,
-                                t == Direction.SOUTH ? 11f : 6f))
-                .end()
-                .texture("hatch", hatch)
-                .texture("gasket", gasket)
-                .texture("empty", empty)
-                .texture("particle", front_on)
-                .texture("front_on", front_on)
-                .texture("back", back)
-                .texture("side", side)
-                .texture("top", top)
-                .texture("bottom", bottom);;
-        horizontalBlock(BlocksRegistry.Gooifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.Gooifier.get(), modelInactive);
-    }
-
-    private void registerSolidifier() {
-        ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_off");
-        ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_on");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
-        ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_off");
-        ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_on");
-        ResourceLocation back_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_back_off");
-        ResourceLocation back_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_back_on");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_on");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        BlockModelBuilder modelInactive = models()
-                .withExistingParent("solidifier", "block/block")
-                .element()
-                .from(1f, 0, 1f).to(15f, 15f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#bottom" :
-                                (t == Direction.UP ? "#top_off" :
-                                        (t == Direction.EAST || t == Direction.WEST ? "#side_off" :
-                                                (t == Direction.SOUTH ? "#back_off" :
-                                                        "#front_off")))))
-                .end()
-                // top, east,and west gasket boxes
-                // top
-                .element()
-                .from(5f, 15f, 5f).to(11f, 16f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.UP ? 11f : 6f))
-                .end()
-                // top inverse
-                .element()
-                .from(9f, 16f, 9f).to(7f, 15f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.UP ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t.getAxis() == Direction.Axis.X ? 11f : 6f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        modelInactive.texture("particle", front_off);
-        modelInactive.texture("bottom", bottom);
-        modelInactive.texture("top_off", top_off);
-        modelInactive.texture("side_off", side_off);
-        modelInactive.texture("front_off", front_off);
-        modelInactive.texture("back_off", back_off);
-
-        BlockModelBuilder modelActive = models()
-                .withExistingParent("solidifier_powered", "block/block")
-                .element()
-                .from(1f, 0, 1f).to(15f, 15, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#bottom" :
-                                (t == Direction.UP ? "#top_on" :
-                                        (t == Direction.EAST || t == Direction.WEST ? "#side_on" :
-                                                (t == Direction.SOUTH ? "#back_on" :
-                                                        "#front_on")))))
-                .end()
-                // top, east,and west gasket boxes
-                // top
-                .element()
-                .from(5f, 15f, 5f).to(11f, 16f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.UP ? 11f : 6f))
-                .end()
-                // top inverse
-                .element()
-                .from(9f, 16f, 9f).to(7f, 15f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.Y ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.UP ? 11f : 6f))
-                .end()
-                // east
-                .element()
-                .from(15f, 5f, 5f).to(16f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.EAST ? 11f : 6f))
-                .end()
-                // east inverse
-                .element()
-                .from(16f, 9f, 9f).to(15f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.EAST ? 11f : 6f))
-                .end()
-                // west
-                .element()
-                .from(0f, 5f, 5f).to(1f, 11f, 11f)
-                .allFaces((t, u) -> u.texture("#gasket")
-                        .uvs(5f,
-                                5f,
-                                11f,
-                                t == Direction.WEST ? 11f : 6f))
-                .end()
-                // west inverse
-                .element()
-                .from(1f, 9f, 9f).to(0f, 7f, 7f)
-                .allFaces((t, u) ->
-                        u.texture(t.getAxis() == Direction.Axis.X ? "#empty" : "#gasket")
-                                .uvs(5f,
-                                        7f,
-                                        6f,
-                                        t == Direction.WEST ? 11f : 6f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        modelActive.texture("particle", front_on);
-        modelActive.texture("bottom", bottom);
-        modelActive.texture("top_on", top_on);
-        modelActive.texture("side_on", side_on);
-        modelActive.texture("front_on", front_on);
-        modelActive.texture("back_on", back_on);
-        horizontalBlock(BlocksRegistry.Solidifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
     }
 }

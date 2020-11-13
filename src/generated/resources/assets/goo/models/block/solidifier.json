@@ -1,106 +1,147 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "gasket": "goo:block/gasket",
+    "gasket": "goo:block/gasket_filled",
     "empty": "goo:block/empty",
     "particle": "goo:block/solidifier_front_off",
     "bottom": "minecraft:block/nether_bricks",
     "top_off": "goo:block/solidifier_top_off",
     "side_off": "goo:block/solidifier_side_off",
-    "front_off": "goo:block/solidifier_front_off",
-    "back_off": "goo:block/solidifier_back_off"
+    "front_off": "goo:block/solidifier_front_off"
   },
   "elements": [
     {
       "from": [
-        1,
-        0,
-        1
+        0.25,
+        0.25,
+        0.25
       ],
       "to": [
-        15,
-        15,
-        15
+        15.75,
+        15.75,
+        15.75
       ],
       "faces": {
         "down": {
-          "texture": "#bottom"
+          "texture": "#bottom",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "up": {
-          "texture": "#top_off"
+          "texture": "#top_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "north": {
-          "texture": "#front_off"
+          "texture": "#front_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "south": {
-          "texture": "#back_off"
+          "texture": "#side_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "west": {
-          "texture": "#side_off"
+          "texture": "#side_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         },
         "east": {
-          "texture": "#side_off"
+          "texture": "#side_off",
+          "uv": [
+            0.0,
+            0.0,
+            16.0,
+            16.0
+          ]
         }
       }
     },
     {
       "from": [
-        5,
-        15,
-        5
+        6,
+        15.75,
+        6
       ],
       "to": [
-        11,
+        10,
         16,
-        11
+        10
       ],
       "faces": {
         "down": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            12.0
           ]
         },
         "up": {
-          "texture": "#gasket"
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
         },
         "north": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "south": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "west": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "east": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         }
       }
@@ -113,7 +154,7 @@
       ],
       "to": [
         7,
-        15,
+        15.75,
         7
       ],
       "faces": {
@@ -121,8 +162,8 @@
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -130,17 +171,17 @@
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
-            11.0
+            5.0,
+            11.0,
+            6.0
           ]
         },
         "north": {
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -148,8 +189,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -157,8 +198,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -166,8 +207,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         }
@@ -175,57 +216,69 @@
     },
     {
       "from": [
-        15,
-        5,
-        5
+        15.75,
+        6,
+        6
       ],
       "to": [
         16,
-        11,
-        11
+        10,
+        10
       ],
       "faces": {
         "down": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "up": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "north": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "south": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "west": {
-          "texture": "#gasket"
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
         },
         "east": {
-          "texture": "#gasket"
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
         }
       }
     },
@@ -236,7 +289,7 @@
         9
       ],
       "to": [
-        15,
+        15.75,
         7,
         7
       ],
@@ -245,8 +298,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -254,8 +307,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -263,8 +316,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -272,8 +325,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -281,18 +334,18 @@
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
-            11.0
+            5.0,
+            11.0,
+            6.0
           ]
         },
         "east": {
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
-            11.0
+            5.0,
+            11.0,
+            6.0
           ]
         }
       }
@@ -300,62 +353,74 @@
     {
       "from": [
         0,
-        5,
-        5
+        6,
+        6
       ],
       "to": [
-        1,
-        11,
-        11
+        0.25,
+        10,
+        10
       ],
       "faces": {
         "down": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "up": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "north": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "south": {
           "texture": "#gasket",
           "uv": [
-            5.0,
-            5.0,
-            11.0,
-            6.0
+            4.0,
+            4.0,
+            12.0,
+            5.0
           ]
         },
         "west": {
-          "texture": "#gasket"
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
         },
         "east": {
-          "texture": "#gasket"
+          "texture": "#gasket",
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ]
         }
       }
     },
     {
       "from": [
-        1,
+        0.25,
         9,
         9
       ],
@@ -369,8 +434,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -378,8 +443,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -387,8 +452,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -396,8 +461,8 @@
           "texture": "#gasket",
           "uv": [
             5.0,
-            7.0,
-            6.0,
+            5.0,
+            11.0,
             6.0
           ]
         },
@@ -405,18 +470,18 @@
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
-            11.0
+            5.0,
+            11.0,
+            6.0
           ]
         },
         "east": {
           "texture": "#empty",
           "uv": [
             5.0,
-            7.0,
-            6.0,
-            11.0
+            5.0,
+            11.0,
+            6.0
           ]
         }
       }

@@ -7,6 +7,8 @@ import net.minecraft.entity.LivingEntity;
 public class ClientProxy extends CommonProxy {
     @Override
     public void openRadialMenu(LivingEntity player) {
-        Minecraft.getInstance().displayGuiScreen(new GooRadial(player.getActiveHand()));
+        if (Minecraft.getInstance().currentScreen == null) {
+            Minecraft.getInstance().displayGuiScreen(new GooRadial(player.getActiveHand()));
+        }
     }
 }

@@ -4,11 +4,13 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 public class GauntletAbstractionCapability extends FluidHandlerItemStack
 {
@@ -77,6 +79,21 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
     public boolean isFluidValid(int tank, FluidStack stack)
     {
         return !stack.isEmpty() && stack.getFluid() instanceof GooFluid;
+    }
+
+    @Override
+    protected void setFluid(FluidStack fluid) {
+        float heldLiquid = 0.000f;
+        if (fluid.getFluid() instanceof GooFluid) {
+            heldLiquid = ((GooFluid)fluid.getFluid()).overrideIndex() + 0.0001f;
+        }
+
+        if (!container.hasTag())
+        {
+            container.setTag(new CompoundNBT());
+        }
+        Objects.requireNonNull(container.getTag()).putFloat(Gauntlet.HELD_LIQUID_TAG_NAME, heldLiquid);
+        super.setFluid(fluid);
     }
 
     @Override

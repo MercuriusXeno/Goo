@@ -83,13 +83,10 @@ public class Basin extends BasinAbstraction
 
     @Override
     public void onUsingTick(ItemStack stack, LivingEntity player, int count) {
-        if (!(player instanceof ClientPlayerEntity)) {
-            return;
-        }
         if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
             return;
         }
-        if (ticksHeld(count) >= RADIAL_MENU_DELAY && Minecraft.getInstance().currentScreen == null) {
+        if (ticksHeld(count) >= RADIAL_MENU_DELAY) {
             GooMod.proxy.openRadialMenu(player);
         }
     }

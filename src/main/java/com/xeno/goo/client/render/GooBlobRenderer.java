@@ -142,9 +142,9 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         Vector3f[][] wiggledQuads = scaleAndWiggle(UNSCALED_QUADS, sgen, entity.quiverTimer(), scale);
         Matrix4f matrix = stack.getLast().getMatrix();
         int color = 0xCCFFFFFF;
-        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
-            color = FluidCuboidHelper.colorizeChromaticGoo();
-        }
+//        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
+//            color = FluidCuboidHelper.colorizeChromaticGoo();
+//        }
         renderCube(matrix, buffer, wiggledQuads, color, light, sprite);
 
         stack.pop();

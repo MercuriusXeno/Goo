@@ -43,29 +43,38 @@ public class Gooifier extends BlockWithConnections {
         shapes = makeShapes();
     }
 
+    double gasketThickness = 0.25d;
+    double borderLimit = 16f - gasketThickness;
+    double gasketStart = 6d;
+    double gasketEnd = 16d - gasketStart;
+
+    double hatchSide = 5d;
+    double hatchEnd = 11d;
+    double hatchBottom = 4d;
+    double hatchTop = 9d;
     private VoxelShape[] makeShapes()
     {
-        Vector3d cs = new Vector3d(1d, 0d, 1d);
-        Vector3d ce = new Vector3d(15d, 15d, 15d);
-        Vector3d ts = new Vector3d (5d, 15d, 5d);
-        Vector3d te = new Vector3d (11d, 16d, 11d);
-        Vector3d es = new Vector3d(15d, 5d, 5d);
-        Vector3d ee = new Vector3d(16d, 11d, 11d);
-        Vector3d ws = new Vector3d(0d, 5d, 5d);
-        Vector3d we = new Vector3d(1d, 11d, 11d);
-        Vector3d ss = new Vector3d(5d, 5d, 15d);
-        Vector3d se = new Vector3d(11d, 11d, 16d);
-        Vector3d ns = new Vector3d(5d, 5d, 0d);
-        Vector3d ne = new Vector3d(11d, 11d, 1d);
+        Vector3d cs = new Vector3d(gasketThickness, 0d, gasketThickness);
+        Vector3d ce = new Vector3d(borderLimit, borderLimit, borderLimit);
+        Vector3d ts = new Vector3d (gasketStart, borderLimit, gasketStart);
+        Vector3d te = new Vector3d (gasketEnd, 16d, gasketEnd);
+        Vector3d es = new Vector3d(borderLimit, gasketStart, gasketStart);
+        Vector3d ee = new Vector3d(16d, gasketEnd, gasketEnd);
+        Vector3d ws = new Vector3d(0d, gasketStart, gasketStart);
+        Vector3d we = new Vector3d(gasketThickness, gasketEnd, gasketEnd);
+        Vector3d ss = new Vector3d(gasketStart, gasketStart, borderLimit);
+        Vector3d se = new Vector3d(gasketEnd, gasketEnd, 16d);
+        Vector3d ns = new Vector3d(gasketStart, gasketStart, 0d);
+        Vector3d ne = new Vector3d(gasketEnd, gasketEnd, gasketThickness);
 
-        Vector3d hns = new Vector3d(4f, 3f, 0f);
-        Vector3d hne = new Vector3d(12f, 9f, 1f);
-        Vector3d hss = new Vector3d(4f, 3f, 15f);
-        Vector3d hse = new Vector3d(12f, 9f, 16f);
-        Vector3d hws = new Vector3d(0f, 3f, 4f);
-        Vector3d hwe = new Vector3d(1f, 9f, 12f);
-        Vector3d hes = new Vector3d(15f, 3f, 4f);
-        Vector3d hee = new Vector3d(16f, 9f, 12f);
+        Vector3d hns = new Vector3d(hatchSide, hatchBottom, 0f);
+        Vector3d hne = new Vector3d(hatchEnd, hatchTop, gasketThickness);
+        Vector3d hss = new Vector3d(hatchSide, hatchBottom, 16f - gasketThickness);
+        Vector3d hse = new Vector3d(hatchEnd, hatchTop, 16f);
+        Vector3d hws = new Vector3d(0f, hatchBottom, hatchSide);
+        Vector3d hwe = new Vector3d(gasketThickness, hatchTop, hatchEnd);
+        Vector3d hes = new Vector3d(16f - gasketThickness, hatchBottom, hatchSide);
+        Vector3d hee = new Vector3d(16f, hatchTop, hatchEnd);
 
         VoxelShape central = VoxelHelper.cuboid(cs, ce);
         VoxelShape top = VoxelHelper.cuboid(ts, te);

@@ -105,9 +105,9 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
                 // build liquid layer (inside)
                 int luminosity = applyFluidLuminosity ? fluid.getAttributes().getLuminosity() : 0;
                 int color = fluid.getAttributes().getColor();
-                if (fluid.isEquivalentTo(Registry.CHROMATIC_GOO.get())) {
-                    color = FluidCuboidHelper.colorizeChromaticGoo();
-                }
+//                if (fluid.isEquivalentTo(Registry.CHROMATIC_GOO.get())) {
+//                    color = FluidCuboidHelper.colorizeChromaticGoo();
+//                }
                 builder.addQuads(ItemLayerModel.getLayerRenderType(luminosity > 0), ItemTextureQuadConverter.convertTexture(transform, templateSprite, fluidSprite, NORTH_Z_FLUID, Direction.NORTH, color, 1, luminosity));
                 builder.addQuads(ItemLayerModel.getLayerRenderType(luminosity > 0), ItemTextureQuadConverter.convertTexture(transform, templateSprite, fluidSprite, SOUTH_Z_FLUID, Direction.SOUTH, color, 1, luminosity));
             }
@@ -199,10 +199,10 @@ public final class GauntletModel implements IModelGeometry<GauntletModel>
                     .map(fluidStack -> {
                         Fluid fluid = fluidStack.getFluid();
                         String name = fluid.getRegistryName().toString();
-                        if (fluid.isEquivalentTo(Registry.CHROMATIC_GOO.get())) {
-                            String color = String.valueOf(FluidCuboidHelper.colorizeChromaticGoo());
-                            name = name + color;
-                        }
+//                        if (fluid.isEquivalentTo(Registry.CHROMATIC_GOO.get())) {
+//                            String color = String.valueOf(FluidCuboidHelper.colorizeChromaticGoo());
+//                            name = name + color;
+//                        }
 
                         if (!cache.containsKey(name))
                         {

@@ -35,9 +35,9 @@ public class FluidCuboidHelper
      */
     public static void renderFluidCuboid(Fluid fluid, MatrixStack matrices, IVertexBuilder renderer, int combinedLight, float x1, float y1, float z1, float x2, float y2, float z2, int color)
     {
-        if ((fluid.getFluid().equals(Registry.CHROMATIC_GOO.get()))) {
-            color = colorizeChromaticGoo();
-        }
+//        if ((fluid.getFluid().equals(Registry.CHROMATIC_GOO.get()))) {
+//            color = colorizeChromaticGoo();
+//        }
         TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getStillTexture());
         TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getFlowingTexture());
 

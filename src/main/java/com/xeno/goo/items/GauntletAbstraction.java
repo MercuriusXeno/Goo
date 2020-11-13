@@ -2,14 +2,18 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
@@ -35,6 +39,8 @@ public class GauntletAbstraction extends ItemFluidContainer
                         .maxStackSize(1)
                         .isImmuneToFire()
                         .group(GooMod.ITEM_GROUP), 0);
+
+
     }
 
     @Override
@@ -104,5 +110,17 @@ public class GauntletAbstraction extends ItemFluidContainer
             return 0;
         }
         return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
+    }
+
+    public static float getHeldLiquidOverride(ItemStack stack, ClientWorld world, LivingEntity e) {
+        if (!stack.hasTag() || stack.getTag() == null) {
+            return 0f;
+        }
+
+        if (!stack.getTag().contains(Gauntlet.HELD_LIQUID_TAG_NAME)) {
+            return 0f;
+        }
+
+        return stack.getTag().getFloat(Gauntlet.HELD_LIQUID_TAG_NAME);
     }
 }

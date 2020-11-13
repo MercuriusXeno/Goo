@@ -6,6 +6,7 @@ import com.xeno.goo.client.models.*;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.VaporParticle;
 import com.xeno.goo.client.render.*;
+import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.item.ItemModelsProperties;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -32,6 +34,8 @@ public class ModClientEvents
     public static void onModelRegistration(final ModelRegistryEvent event) {
         // model loaders
         setModelLoaders();
+
+
     }
 
     @SubscribeEvent
@@ -45,6 +49,20 @@ public class ModClientEvents
 
         // entity renderers
         setEntityRenderers();
+
+        // wire up client side item properties
+        setItemProperties();
+
+        // set item transparencies
+        setItemTransparency();
+    }
+
+    private static void setItemTransparency() {
+
+    }
+
+    private static void setItemProperties() {
+        ItemModelsProperties.registerProperty(ItemsRegistry.Gauntlet.get(), new ResourceLocation(GooMod.MOD_ID, "held_liquid"), GauntletAbstraction::getHeldLiquidOverride);
     }
 
     private static void setEntityRenderers()
@@ -79,7 +97,8 @@ public class ModClientEvents
     private static void setModelLoaders()
     {
         ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "basin"), BasinModel.Loader.INSTANCE);
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
+        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
+        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet_held"), GauntletHeldModel.Loader.INSTANCE);
     }
 
     @SubscribeEvent

@@ -73,7 +73,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.Gasket.get(), 3)
+        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.Gasket.get(), 6)
                 .addIngredient(Items.HONEYCOMB)
                 .addIngredient(Items.GOLD_INGOT)
                 .addIngredient(Items.MAGMA_CREAM)
@@ -83,11 +83,11 @@ public class RecipesProvider extends RecipeProvider {
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Bulb.get())
-                .patternLine("oeo")
+                .patternLine("non")
                 .patternLine("o#o")
-                .patternLine("oeo")
+                .patternLine("non")
+                .key('n', Items.IRON_NUGGET)
                 .key('o', ItemsRegistry.Gasket.get())
-                .key('e', Items.ENDER_PEARL)
                 .key('#', Tags.Items.GLASS)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.Gasket.get()))
                 .build(consumer);
