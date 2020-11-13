@@ -3,6 +3,7 @@ package com.xeno.goo.client.gui;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.BasinAbstractionCapability;
@@ -68,6 +69,8 @@ public class GooRadial extends Screen {
 
         this.selectedItem = -1;
         this.lastFluidStackTarget = FluidStack.EMPTY;
+
+        // GooMod.debug("Radial opening...");
     }
 
     @SubscribeEvent

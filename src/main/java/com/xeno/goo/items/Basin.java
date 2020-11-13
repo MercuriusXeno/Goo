@@ -88,6 +88,7 @@ public class Basin extends BasinAbstraction
         }
         if (ticksHeld(count) >= RADIAL_MENU_DELAY) {
             GooMod.proxy.openRadialMenu(player);
+            player.stopActiveHand();
         }
     }
 
@@ -112,8 +113,8 @@ public class Basin extends BasinAbstraction
                     player.getActiveHand(), trace))) {
                 return;
             }
+            GooHandlingHelper.tryUsingGauntletOrBasin((ServerPlayerEntity)player, player.getActiveHand());
         }
-        GooHandlingHelper.tryUsingGauntletOrBasin((ServerPlayerEntity)player, player.getActiveHand());
         super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
     }
 

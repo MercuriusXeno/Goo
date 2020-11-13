@@ -282,7 +282,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelInactive = models()
                 .withExistingParent("gooifier", "block/block")
                 .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
+                .from(gasketThickness, 0, gasketThickness)
                 .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) -> u.texture(
                         t == Direction.NORTH ? "#front_off" :
@@ -316,7 +316,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelActive = models()
                 .withExistingParent("gooifier_powered", "block/block")
                 .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
+                .from(gasketThickness, 0, gasketThickness)
                 .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) -> u.texture(
                         t == Direction.NORTH ? "#front_on" :
@@ -364,7 +364,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelInactive = models()
                 .withExistingParent("solidifier", "block/block")
                 .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
+                .from(gasketThickness, 0, gasketThickness)
                 .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.DOWN ? "#bottom" :
@@ -387,7 +387,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         BlockModelBuilder modelActive = models()
                 .withExistingParent("solidifier_powered", "block/block")
                 .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
+                .from(gasketThickness, 0, gasketThickness)
                 .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
                 .allFaces((t, u) ->
                         u.texture(t == Direction.DOWN ? "#bottom" :

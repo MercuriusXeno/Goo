@@ -34,7 +34,7 @@ public class Crystal
     private static boolean canBreakBlock(SplatContext context) {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);
-        return state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
+        return !state.getMaterial().isLiquid() && state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
     }
 
     private static boolean breaker(SplatContext context)

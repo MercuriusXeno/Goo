@@ -69,7 +69,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
                 matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(d.getHorizontalIndex() * 90)));
                 // scale
-                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.0001f);
+                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.01f);
                 // special scaling that doesn't scale the normals, prevents weird lighting issues.
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
@@ -82,9 +82,9 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.4376D));
-        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.4376D));
-        renderVec.put(Direction.EAST, new Vector3d(0.4376D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vector3d(-0.4376D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.485D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.485D));
+        renderVec.put(Direction.EAST, new Vector3d(0.485D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.485D, 0D, 0D));
     }
 }

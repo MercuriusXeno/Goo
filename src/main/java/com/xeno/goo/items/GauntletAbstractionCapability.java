@@ -55,7 +55,7 @@ public class GauntletAbstractionCapability extends FluidHandlerItemStack
     @Override
     public int getTankCapacity(int tank)
     {
-        return GooMod.config.gauntletCapacity() * containmentMultiplier(Gauntlet.containment(this.container));
+        return Math.min(Integer.MAX_VALUE, GooMod.config.gauntletCapacity() * containmentMultiplier(Gauntlet.containment(this.container)));
     }
 
     public static int storageForDisplay(ItemStack stack)

@@ -178,7 +178,7 @@ public class BasinAbstractionCapability extends FluidHandlerItemStack
         if (GooMod.config == null) {
             return 8000;
         }
-        return GooMod.config.basinCapacity() * containmentMultiplier(Basin.containment(this.container));
+        return Math.min(Integer.MAX_VALUE, GooMod.config.basinCapacity() * containmentMultiplier(Basin.containment(this.container)));
     }
 
     public int totalFluid() {
