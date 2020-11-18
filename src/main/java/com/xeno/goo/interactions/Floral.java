@@ -86,6 +86,10 @@ public class Floral
 
     private static boolean growableTick(BlobContext blobContext) {
         if (blobContext.block() instanceof IGrowable) {
+            if (!((IGrowable)blobContext.block()).canGrow(blobContext.world(),
+                    blobContext.blockPos(), blobContext.blockState(), blobContext.isRemote())) {
+                return false;
+            }
             if (blobContext.block() instanceof MushroomBlock) {
                 return false;
             }

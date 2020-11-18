@@ -4,6 +4,7 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IPassThroughPredicate;
 import com.xeno.goo.interactions.SplatContext;
+import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -12,6 +13,7 @@ import net.minecraft.block.*;
 import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
@@ -22,6 +24,7 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
@@ -41,7 +44,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooContainingEntity
 {
     private static final DataParameter<Integer> GOO_AMOUNT = EntityDataManager.createKey(GooBlob.class, DataSerializers.VARINT);
     private static final double GENERAL_FRICTION = 0.98d;
@@ -55,6 +58,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private BlockPos blockAttached = null;
     private GooSplat attachedSplat = null;
     private boolean isAttachedToBlock;
+    private BlockState insideBlockState = Blocks.AIR.getDefaultState();
+    private int ticksInGround = 0;
 
     public GooBlob(EntityType<GooBlob> type, World worldIn) {
         super(type, worldIn);
@@ -193,7 +198,10 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         // let the server handle motion and updates
         if (world.isRemote()) {
             goo.setAmount(this.dataManager.get(GOO_AMOUNT));
-            return;
+        }
+
+        if (this.isOnGround()) {
+            this.ticksInGround++;
         }
 
         if (!isAttachedToBlock) {
@@ -207,8 +215,10 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         // feed the splat we belong to
         if (attachedSplat != null) {
             approachSplatOffset();
-            int amountToDrain = (int)Math.ceil(Math.sqrt(this.goo().getAmount()) / 2d);
-            attachedSplat.fill(this.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+            if (!world.isRemote()) {
+                int amountToDrain = (int) Math.ceil(Math.sqrt(this.goo().getAmount()) / 2d);
+                attachedSplat.fill(this.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+            }
         }
     }
 
@@ -232,7 +242,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
 
-        BlockRayTraceResult blockResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, this));
+        BlockRayTraceResult blockResult = this.world.rayTraceBlocks(new RayTraceContext(position, projection, RayTraceContext.BlockMode.OUTLINE, RayTraceContext.FluidMode.ANY, this));
         if (blockResult.getType() != RayTraceResult.Type.MISS) {
             // try colliding with the block for some tank interaction, this entity
             // wants to enter receptacles first if it can, but splat otherwise
@@ -247,16 +257,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
             // check to see if the block is a solid cube.
             // goo bounces off of anything that isn't.
-            if (!isValidForSplat(blockResult)) {
-                bounceBlob(blockResult.getFace());
-                return false;
-            }
-
-            if (goo.getAmount() > 0) {
+            if (isValidForSplat(blockResult) && goo.getAmount() > 0) {
                 splat(blockResult.getPos(), blockResult.getFace(), blockResult.getHitVec());
                 return true;
+            } else {
+                stickBlob(blockResult.getHitVec());
             }
-            return false;
         }
 
         EntityRayTraceResult entityResult = this.rayTraceEntities(position, projection);
@@ -268,7 +274,70 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
         handleLiquidCollisions(motion);
 
         this.doBlockCollisions();
+
         return false;
+    }
+
+    @Override
+    protected void onInsideBlock(BlockState state) {
+        super.onInsideBlock(state);
+        boolean wasOnGround = this.isOnGround();
+        this.setOnGround(true);
+        if (!wasOnGround) {
+            this.ticksInGround = 0;
+        }
+    }
+
+    private void stickBlob(Vector3d hitVec) {
+
+        this.setPositionAndRotation(hitVec.x, hitVec.y, hitVec.z, this.rotationYaw, this.rotationPitch);
+        this.setMotion(this.getMotion().scale(0.02d));
+        if (this.ticksInGround > 0) {
+             return;
+        }
+        GooInteractions.spawnParticles(this);
+    }
+
+    @Override
+    public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
+        if (player.getHeldItem(hand).getItem() instanceof Basin ||
+                player.getHeldItem(hand).getItem() instanceof Gauntlet) {
+            if (isOnGround()) {
+                tryPlayerInteraction(player, hand);
+                return ActionResultType.CONSUME;
+            }
+        }
+        return super.applyPlayerInteraction(player, vec, hand);
+    }
+
+    private boolean tryPlayerInteraction(PlayerEntity player, Hand hand)
+    {
+        boolean[] didStuff = {false};
+        LazyOptional<IFluidHandlerItem> cap = player.getHeldItem(hand).getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+        cap.ifPresent((c) -> didStuff[0] = tryExtractingGooFromEntity(c));
+        if (didStuff[0]) {
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), 1.0f);
+        }
+        return didStuff[0];
+    }
+
+    private boolean tryExtractingGooFromEntity(IFluidHandlerItem item)
+    {
+        FluidStack heldGoo = item.getFluidInTank(0);
+        if (!item.getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(getFluidInTank(0)) || getFluidInTank(0).isEmpty()) {
+                return false;
+            }
+        }
+
+        int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
+        FluidStack tryDrain = drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        if (tryDrain.isEmpty()) {
+            return false;
+        }
+
+        item.fill(drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
     private boolean isValidForPassThrough(BlockRayTraceResult blockResult) {
@@ -301,6 +370,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     private void handleGravity()
     {
+        if (this.isOnGround()) {
+            return;
+        }
         this.setMotion(this.getMotion().add(0d, -GOO_GRAVITY, 0d));
     }
 
@@ -333,21 +405,21 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
 
     private static final double BOUNCE_DECAY = 0.65d;
 
-    public void bounceBlob(Direction face)
-    {
-        // the state we're interested in observing is the state of the hit block, not the offset.
-        GooInteractions.spawnParticles(this);
-        switch(face.getAxis()) {
-            case Y:
-                setMotion(getMotion().mul(BOUNCE_DECAY, -BOUNCE_DECAY, BOUNCE_DECAY));
-                return;
-            case X:
-                setMotion(getMotion().mul(-BOUNCE_DECAY, BOUNCE_DECAY, BOUNCE_DECAY));
-                return;
-            case Z:
-                setMotion(getMotion().mul(BOUNCE_DECAY, BOUNCE_DECAY, -BOUNCE_DECAY));
-        }
-    }
+//    public void bounceBlob(Direction face)
+//    {
+//        // the state we're interested in observing is the state of the hit block, not the offset.
+//        GooInteractions.spawnParticles(this);
+//        switch(face.getAxis()) {
+//            case Y:
+//                setMotion(getMotion().mul(BOUNCE_DECAY, -BOUNCE_DECAY, BOUNCE_DECAY));
+//                return;
+//            case X:
+//                setMotion(getMotion().mul(-BOUNCE_DECAY, BOUNCE_DECAY, BOUNCE_DECAY));
+//                return;
+//            case Z:
+//                setMotion(getMotion().mul(BOUNCE_DECAY, BOUNCE_DECAY, -BOUNCE_DECAY));
+//        }
+//    }
 
     private void attachToBlock(BlockPos pos, Direction face, GooSplat splat)
     {
@@ -579,22 +651,41 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IFlui
     private boolean isCollidingEntity;
 
     private boolean checkForEntityCollision() {
-        if (owner != null) {
             Collection<Entity> collidedEntities =
                     this.world.getEntitiesInAABBexcluding(this,
                             // grow bb
                             this.getBoundingBox().expand(this.getMotion()),
                             // filter
-                            (eInBB) -> !eInBB.isSpectator() && eInBB.canBeCollidedWith());
-            for(Entity entity1 : collidedEntities) {
+                            (eInBB) -> isBlobToMergeWith(eInBB) || !eInBB.isSpectator() && eInBB.canBeCollidedWith());
+            for(Entity e : collidedEntities) {
+                if (isBlobToMergeWith(e)) {
+                    GooBlob target = (GooBlob)e;
+                    double mergeSigma = (double)goo.getAmount() + target.goo().getAmount();
+                    double sourceDominance = (double)goo.getAmount() / mergeSigma;
+                    Vector3d positionDelta = target.getPositionVec().subtract(this.getPositionVec()).scale(1d - sourceDominance);
+                    Vector3d motionDelta = target.getMotion().subtract(this.getMotion()).scale(1d - sourceDominance);
+                    Vector3d newPos = this.getPositionVec().add(positionDelta);
+                    Vector3d newMotion = this.getMotion().add(motionDelta);
+                    this.setPositionAndRotation(newPos.x, newPos.y, newPos.z, rotationYaw, rotationPitch);
+                    this.setMotion(newMotion.x, newMotion.y, newMotion.z);
+
+                    this.fill(((GooBlob)e).drain(this.getTankCapacity(0) - goo.getAmount(), FluidAction.EXECUTE), FluidAction.EXECUTE);
+                }
                 // skip riders unless we're hitting the lowest
-                if (entity1.getLowestRidingEntity() == owner.getLowestRidingEntity()) {
-                    return false;
+                if (owner != null) {
+                    if (e.getLowestRidingEntity() == owner.getLowestRidingEntity()) {
+                        return false;
+                    }
                 }
             }
-        }
 
         return true;
+    }
+
+    private boolean isBlobToMergeWith(Entity eInBB) {
+        return eInBB instanceof GooBlob && eInBB.isAlive()
+                && ((GooBlob)eInBB).goo().isFluidEqual(goo)
+                && ((GooBlob)eInBB).goo().getAmount() <= goo.getAmount();
     }
 
     protected void onImpact(RayTraceResult rayTraceResult) {

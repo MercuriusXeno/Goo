@@ -4,8 +4,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -16,11 +14,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
 import net.minecraft.item.UseAction;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceContext;
-import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
@@ -98,7 +94,7 @@ public class Basin extends BasinAbstraction
 
     @Override
     public void onPlayerStoppedUsing(ItemStack stack, World worldIn, LivingEntity player, int timeLeft) {
-        if ((player instanceof ClientPlayerEntity)) {
+        if (!(player instanceof ServerPlayerEntity)) {
             return;
         }
         if (!player.getHeldItem(player.getActiveHand()).getItem().equals(this)) {
@@ -107,14 +103,12 @@ public class Basin extends BasinAbstraction
         if (ticksHeld(timeLeft) >= RADIAL_MENU_DELAY) {
             return;
         }
-        if (player instanceof ServerPlayerEntity) {
-            BlockRayTraceResult trace = rayTrace(worldIn, (ServerPlayerEntity) player, RayTraceContext.FluidMode.ANY);
-            if (GooHandlingHelper.tryBlockInteraction(new ItemUseContext((ServerPlayerEntity)player,
-                    player.getActiveHand(), trace))) {
-                return;
-            }
-            GooHandlingHelper.tryUsingGauntletOrBasin((ServerPlayerEntity)player, player.getActiveHand());
+        BlockRayTraceResult trace = rayTrace(worldIn, (ServerPlayerEntity) player, RayTraceContext.FluidMode.ANY);
+        if (GooHandlingHelper.tryBlockInteraction(new ItemUseContext((ServerPlayerEntity)player,
+                player.getActiveHand(), trace))) {
+            return;
         }
+        GooHandlingHelper.tryUsingGauntletOrBasin((ServerPlayerEntity)player, player.getActiveHand());
         super.onPlayerStoppedUsing(stack, worldIn, player, timeLeft);
     }
 

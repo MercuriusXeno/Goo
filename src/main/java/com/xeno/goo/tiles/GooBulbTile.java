@@ -641,14 +641,23 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             results.put(g.getFluid(), totalGooInThisStack * totalFluidHeight / total);
         }
 
+        // The purpose here is to scale the contents of the bulb so that amounts
+        // less than a threshold are made larger than they should be, so you can see them and target
+        // them easily even though there's not a lot.
+        // It's currently busted and doing dumb stuff.
+        float scale = 1f;
         float remainder = 1f;
+        float diminished = 0f;
         for (FluidStack g : gooStacks) {
             float v = results.getFloat(g.getFluid());
-            v *= remainder;
             if (v < ARBITRARY_GOO_STACK_HEIGHT_MINIMUM) {
+                remainder -= ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
+                diminished += v;
+                scale = remainder / (1f - diminished);
                 v = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
+            } else {
+                v *= scale;
             }
-            remainder -= v;
             results.put(g.getFluid(), v);
         }
         return results;

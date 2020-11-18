@@ -2,6 +2,7 @@ package com.xeno.goo.events;
 
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
@@ -11,6 +12,7 @@ import com.xeno.goo.client.ClientUtils;
 import com.xeno.goo.client.render.GooRenderHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.entities.IGooContainingEntity;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
@@ -21,6 +23,7 @@ import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
@@ -51,6 +54,7 @@ import vazkii.patchouli.client.book.gui.GuiBook;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class TargetingHandler
 {
@@ -63,8 +67,8 @@ public class TargetingHandler
     private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
-    private static final float Z_LEVEL_OF_MODAL = 470f;
-    // private static final float PATCHOULI_Z_LEVEL = 270f;
+    private static final float Z_LEVEL_OF_MODAL = 500f;
+    // private static final Supplier<Float> PATCHOULI_Z_LEVEL = () -> (float)Minecraft.getInstance().world.getDayTime() % 1000;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;
@@ -381,9 +385,15 @@ public class TargetingHandler
         }
         by += centeringVerticalOffset;
         MatrixStack matrices = event.getMatrixStack();
-        matrices.push();
+        RenderSystem.pushMatrix();
+//        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
+//            GooMod.debug("Z level at " + PATCHOULI_Z_LEVEL.get());
+//        }
+//        RenderSystem.translatef(bx, by, Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL.get() : Z_LEVEL_OF_MODAL);
+        RenderSystem.translatef(bx, by, Z_LEVEL_OF_MODAL);
+        RenderSystem.translatef(0, 0, Minecraft.getInstance().getItemRenderer().zLevel);
         // float zLevel = Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL : Z_LEVEL_OF_MODAL;
-        matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
+        // matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
         for (FluidStack entry : gooEntry) {
             if (!(entry.getFluid() instanceof GooFluid)) {
                 continue;
@@ -393,7 +403,8 @@ public class TargetingHandler
             renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
         }
-        matrices.pop();
+        // matrices.pop();
+        RenderSystem.popMatrix();
     }
 
     private static void drawGooForEvent(RenderTooltipEvent.PostText event, GooEntry gooEntry) {
@@ -441,10 +452,12 @@ public class TargetingHandler
     private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon,
                                        int width, int height, boolean isToggled) {
         IRenderTypeBuffer.Impl buffer = IRenderTypeBuffer.getImpl(Tessellator.getInstance().getBuffer());
-        IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.getGui(icon));
+        // IVertexBuilder builder = buffer.getBuffer(GooRenderHelper.getGui(icon));
         float color = isToggled ? 1f : 0.2f;
-        ClientUtils.drawTexturedRect(builder, transform, x, y, width, height,
-                color, color, color, 1f, 0f, 1f, 0f, 1f);
+        RenderSystem.color3f(color, color, color);
+        Minecraft.getInstance().getTextureManager().bindTexture(icon);
+        AbstractGui.blit(transform, x, y, width, height, 0f, 0f, ICON_WIDTH, ICON_HEIGHT, ICON_WIDTH, ICON_HEIGHT);
+        // ClientUtils.drawTexturedRect(builder, transform, x, y, width, height, color, color, color, 1f, 0f, 1f, 0f, 1f);
         buffer.finish();
     }
 
@@ -666,10 +679,9 @@ public class TargetingHandler
 
     private static FluidStack gooInEntity(EntityRayTraceResult e)
     {
-        if (e.getEntity() instanceof GooSplat) {
-            return ((GooSplat) e.getEntity()).goo();
+        if (e.getEntity() instanceof IGooContainingEntity) {
+            return ((IGooContainingEntity) e.getEntity()).goo();
         }
-
         return FluidStack.EMPTY;
     }
 
@@ -685,7 +697,7 @@ public class TargetingHandler
 
     private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)
     {
-        return target.getEntity() instanceof GooSplat;
+        return target.getEntity() instanceof IGooContainingEntity;
     }
 
     public static ResourceLocation iconFromFluidStack(FluidStack s) {

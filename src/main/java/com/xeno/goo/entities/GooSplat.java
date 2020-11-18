@@ -37,7 +37,7 @@ import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 import java.util.Collection;
 
-public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IFluidHandler
+public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGooContainingEntity
 {
     private static final DataParameter<Integer> GOO_AMOUNT = EntityDataManager.createKey(GooSplat.class, DataSerializers.VARINT);
     private static final DataParameter<Boolean> IS_AT_REST = EntityDataManager.createKey(GooSplat.class, DataSerializers.BOOLEAN);
