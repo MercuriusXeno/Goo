@@ -113,5 +113,6 @@ public class ItemsProvider extends ItemModelProvider {
 
     private void registerSpawnEggs() {
         withExistingParent(ItemsRegistry.GooBeeSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        withExistingParent(ItemsRegistry.GooSnailSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
     }
 }

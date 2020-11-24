@@ -23,7 +23,7 @@ public class Honey
                 splatContext.splat().getBoundingBox());
         // affect every living entity in BB on the same dime, essentially. One "tick" of effect costs, not per entity.
         for(LivingEntity entity : nearbyEntities) {
-            entity.addPotionEffect(new EffectInstance(Effects.SLOWNESS, 1, 6));
+            entity.addPotionEffect(new EffectInstance(Effects.SLOWNESS, 5, 6));
         }
         return true;
     }

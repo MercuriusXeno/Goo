@@ -47,6 +47,7 @@ public class ItemsRegistry {
 
     // spawn eggs
     public static final RegistryObject<GooBeeSpawnEgg> GooBeeSpawnEgg = Items.register("goo_bee_spawn_egg", GooBeeSpawnEgg::new);
+    public static final RegistryObject<GooSnailSpawnEgg> GooSnailSpawnEgg = Items.register("goo_snail_spawn_egg", GooSnailSpawnEgg::new);
 
     private final static Map<String, Integer> crystallizedGooVariants = new HashMap<>();
     static {

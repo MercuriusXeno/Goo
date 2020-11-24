@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 960.0,
-      "type": "goo:radiant"
+      "type": "goo:crystal"
     },
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "amount": 960.0,
+      "type": "goo:weird"
     },
     {
       "amount": 960.0,
@@ -31,11 +31,11 @@
     },
     {
       "amount": 960.0,
-      "type": "goo:crystal"
+      "type": "goo:radiant"
     },
     {
-      "amount": 960.0,
-      "type": "goo:weird"
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

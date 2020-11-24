@@ -70,6 +70,7 @@ public class ModClientEvents
         GooBlobRenderer.register();
         GooSplatRenderer.register();
         GooBeeRenderer.register();
+        GooSnailRenderer.register();
         MutantBeeRendeerer.register();
     }
 
@@ -131,6 +132,7 @@ public class ModClientEvents
     @SubscribeEvent
     public static void onItemColor(ColorHandlerEvent.Item event) {
         event.getItemColors().register((stack, color) -> 0x00a0f0, ItemsRegistry.GooBeeSpawnEgg.get());
+        event.getItemColors().register((stack, color) -> 0x3b636b, ItemsRegistry.GooSnailSpawnEgg.get());
     }
 
     @SubscribeEvent

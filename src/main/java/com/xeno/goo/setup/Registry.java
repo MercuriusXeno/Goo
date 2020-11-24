@@ -7,10 +7,7 @@ import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.enchantments.Containment;
-import com.xeno.goo.entities.GooBee;
-import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.entities.GooSplat;
-import com.xeno.goo.entities.MutantBee;
+import com.xeno.goo.entities.*;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.*;
@@ -107,6 +104,15 @@ public class Registry {
                     .setUpdateInterval(1)
                     .setShouldReceiveVelocityUpdates(true)
                     .build("mutant_bee")
+    );
+
+    public static final RegistryObject<EntityType<GooSnail>> GOO_SNAIL = ENTITIES.register("goo_snail",
+            () -> EntityType.Builder.<GooSnail>create(GooSnail::new, EntityClassification.CREATURE)
+                    .size(0.7f, 0.6f)
+                    .setTrackingRange(64)
+                    .setUpdateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("goo_snail")
     );
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions

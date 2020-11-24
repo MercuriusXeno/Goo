@@ -17,6 +17,7 @@ public class LootTables extends BaseLootTableProvider {
         lootTables.put(BlocksRegistry.Gooifier.get(), createGooContainerLootTable("gooifier", BlocksRegistry.Gooifier.get()));
         lootTables.put(BlocksRegistry.Drain.get(), createMundaneTable("drain", BlocksRegistry.Drain.get()));
         lootTables.put(BlocksRegistry.Lobber.get(), createMundaneTable("lobber", BlocksRegistry.Lobber.get()));
-        lootTables.put(BlocksRegistry.Pump.get(), createMundaneTable("lobber", BlocksRegistry.Pump.get()));
+        lootTables.put(BlocksRegistry.Pump.get(), createMundaneTable("pump", BlocksRegistry.Pump.get()));
+        lootTables.put(BlocksRegistry.Trough.get(), createGooContainerLootTable("trough", BlocksRegistry.Trough.get()));
     }
 }
