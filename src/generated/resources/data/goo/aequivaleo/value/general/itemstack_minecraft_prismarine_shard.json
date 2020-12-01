@@ -26,12 +26,12 @@
       "type": "goo:crystal"
     },
     {
-      "amount": 10.0,
-      "type": "goo:radiant"
+      "amount": 2.0,
+      "type": "goo:primordial"
     },
     {
-      "amount": 2.0,
-      "type": "goo:weird"
+      "amount": 10.0,
+      "type": "goo:radiant"
     }
   ]
 }

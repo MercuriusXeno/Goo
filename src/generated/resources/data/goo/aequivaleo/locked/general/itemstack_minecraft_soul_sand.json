@@ -18,16 +18,16 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:vital"
-    },
-    {
       "amount": 180.0,
       "type": "goo:earthen"
     },
     {
       "amount": 60.0,
       "type": "goo:decay"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:vital"
     }
   ]
 }

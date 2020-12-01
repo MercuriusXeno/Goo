@@ -1,0 +1,25 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "goo:primordial_goo_shard"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"goo:primordial_goo_shard\",Count:1b}"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 100.0,
+      "type": "goo:primordial"
+    }
+  ]
+}

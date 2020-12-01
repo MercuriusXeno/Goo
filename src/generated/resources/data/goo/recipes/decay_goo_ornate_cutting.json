@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": [
+    {
+      "item": "goo:decay_goo_ornate"
+    },
+    {
+      "item": "goo:decay_goo_solid"
+    },
+    {
+      "item": "goo:decay_goo_pillar"
+    },
+    {
+      "item": "goo:decay_goo_marbled"
+    },
+    {
+      "item": "goo:decay_goo_craggy"
+    },
+    {
+      "item": "goo:decay_goo_debris"
+    },
+    {
+      "item": "goo:decay_goo_keystone"
+    },
+    {
+      "item": "goo:decay_goo_smooth"
+    },
+    {
+      "item": "goo:decay_goo_bricks"
+    },
+    {
+      "item": "goo:decay_goo_bundled"
+    },
+    {
+      "item": "goo:decay_goo_bulbous"
+    }
+  ],
+  "result": "goo:decay_goo_ornate",
+  "count": 1
+}

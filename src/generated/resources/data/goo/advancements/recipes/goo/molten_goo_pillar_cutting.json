@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:molten_goo_pillar_cutting"
+    ]
+  },
+  "criteria": {
+    "molten_goo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:molten_goo_shard"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:molten_goo_pillar_cutting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "molten_goo_shard",
+      "has_the_recipe"
+    ]
+  ]
+}

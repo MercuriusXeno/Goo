@@ -81,43 +81,49 @@
     },
     {
       "predicate": {
-        "goo:held_liquid": 0.014
+        "goo:held_liquid": 0.015
       },
       "model": "goo:item/obsidian_gauntlet"
     },
     {
       "predicate": {
-        "goo:held_liquid": 0.015
+        "goo:held_liquid": 0.014
       },
-      "model": "goo:item/radiant_gauntlet"
+      "model": "goo:item/primordial_gauntlet"
     },
     {
       "predicate": {
         "goo:held_liquid": 0.016
       },
-      "model": "goo:item/regal_gauntlet"
+      "model": "goo:item/radiant_gauntlet"
     },
     {
       "predicate": {
         "goo:held_liquid": 0.017
       },
-      "model": "goo:item/slime_gauntlet"
+      "model": "goo:item/regal_gauntlet"
     },
     {
       "predicate": {
         "goo:held_liquid": 0.018
       },
-      "model": "goo:item/snow_gauntlet"
+      "model": "goo:item/slime_gauntlet"
     },
     {
       "predicate": {
         "goo:held_liquid": 0.019
       },
-      "model": "goo:item/vital_gauntlet"
+      "model": "goo:item/snow_gauntlet"
     },
     {
       "predicate": {
         "goo:held_liquid": 0.02
+      },
+      "model": "goo:item/vital_gauntlet"
+    },
+    {
+      "predicate": {
+        "goo:held_liquid": 0.021
       },
       "model": "goo:item/weird_gauntlet"
     }

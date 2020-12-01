@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:logic_goo_craggy_cutting"
+    ]
+  },
+  "criteria": {
+    "logic_goo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:logic_goo_shard"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:logic_goo_craggy_cutting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "logic_goo_shard",
+      "has_the_recipe"
+    ]
+  ]
+}

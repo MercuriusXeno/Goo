@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "name": "aquatic_goo_debris",
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_name",
+              "source": "block_entity"
+            }
+          ],
+          "name": "goo:aquatic_goo_debris"
+        }
+      ]
+    }
+  ]
+}

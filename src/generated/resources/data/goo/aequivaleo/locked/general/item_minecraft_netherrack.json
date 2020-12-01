@@ -23,11 +23,11 @@
     },
     {
       "amount": 5.0,
-      "type": "goo:molten"
+      "type": "goo:decay"
     },
     {
       "amount": 5.0,
-      "type": "goo:decay"
+      "type": "goo:molten"
     }
   ]
 }

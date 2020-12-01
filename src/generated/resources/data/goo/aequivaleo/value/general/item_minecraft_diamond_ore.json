@@ -24,6 +24,10 @@
     {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
+    },
+    {
+      "amount": 3.0,
+      "type": "goo:primordial"
     }
   ]
 }

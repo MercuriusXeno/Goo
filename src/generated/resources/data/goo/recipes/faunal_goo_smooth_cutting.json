@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": [
+    {
+      "item": "goo:faunal_goo_ornate"
+    },
+    {
+      "item": "goo:faunal_goo_bulbous"
+    },
+    {
+      "item": "goo:faunal_goo_pillar"
+    },
+    {
+      "item": "goo:faunal_goo_craggy"
+    },
+    {
+      "item": "goo:faunal_goo_bricks"
+    },
+    {
+      "item": "goo:faunal_goo_smooth"
+    },
+    {
+      "item": "goo:faunal_goo_debris"
+    },
+    {
+      "item": "goo:faunal_goo_solid"
+    },
+    {
+      "item": "goo:faunal_goo_marbled"
+    },
+    {
+      "item": "goo:faunal_goo_keystone"
+    },
+    {
+      "item": "goo:faunal_goo_bundled"
+    }
+  ],
+  "result": "goo:faunal_goo_smooth",
+  "count": 1
+}

@@ -2,15 +2,23 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.blocks.CrystalBlock;
+import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.data.*;
+import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.util.IItemProvider;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.datafix.fixes.FurnaceRecipes;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.fml.RegistryObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class RecipesProvider extends RecipeProvider {
     public RecipesProvider(DataGenerator generatorIn) {
@@ -34,6 +42,49 @@ public class RecipesProvider extends RecipeProvider {
         registerDrainRecipe(consumer);
         registerCrystalNestRecipe(consumer);
         registerTroughRecipe(consumer);
+
+        registerDecorativeBlocks(consumer);
+    }
+
+    private void registerDecorativeBlocks(Consumer<IFinishedRecipe> consumer) {
+        BlocksRegistry.CrystalBlocks.forEach((k, v) -> registerDecorativeBlockRecipe(k, v, consumer));
+    }
+
+    private void registerDecorativeBlockRecipe(ResourceLocation resourceLocation, RegistryObject<CrystalBlock> crystalBlockRegistryObject, Consumer<IFinishedRecipe> consumer) {
+        if (!crystalBlockRegistryObject.isPresent()) {
+            return;
+        }
+        String baseKey = resourceLocation.getPath();
+        int index = baseKey.indexOf("_goo_") + 4;
+        String streamKey = resourceLocation.getPath().substring(0, index);
+        String crystalInputKey = streamKey + "_shard";
+        ResourceLocation crystalInput =  new ResourceLocation(GooMod.MOD_ID, crystalInputKey);
+        Supplier<CrystallizedGooAbstract> item = ItemsRegistry.CrystallizedGoo.get(crystalInput);
+
+        if (resourceLocation.getPath().contains("_smooth")) {
+            ShapedRecipeBuilder
+                    .shapedRecipe(crystalBlockRegistryObject.get())
+                    .patternLine("cc")
+                    .patternLine("cc")
+                    .key('c', item.get())
+                    .addCriterion(crystalInputKey, InventoryChangeTrigger.Instance.forItems(item.get()))
+                    .build(consumer);
+        }
+        Ingredient ingredients = ingredientsForStreamKey(streamKey);
+        SingleItemRecipeBuilder
+                .stonecuttingRecipe(ingredients, crystalBlockRegistryObject.get())
+                .addCriterion(crystalInputKey, InventoryChangeTrigger.Instance.forItems(item.get()))
+                .build(consumer, new ResourceLocation(GooMod.MOD_ID, resourceLocation.getPath() + "_cutting"));
+    }
+
+    private Ingredient ingredientsForStreamKey(String streamKey) {
+        List<IItemProvider> blocks = new ArrayList<>();
+        ItemsRegistry.CrystalBlocks.forEach((k, v) -> {
+            if (k.getPath().contains(streamKey)) {
+                blocks.add(v.get());
+            }
+        });
+        return Ingredient.fromItems(blocks.toArray(new IItemProvider[0]));
     }
 
     private void registerGauntletRecipe(Consumer<IFinishedRecipe> consumer) {

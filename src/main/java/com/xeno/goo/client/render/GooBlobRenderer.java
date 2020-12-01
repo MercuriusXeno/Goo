@@ -123,13 +123,13 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
         // otherwise it just looks dull by nature, which is what we want most of the time.
-        if (isBrightFluid(entity.goo().getFluid(), entity.world.getGameTime())) {
+        if (isBrightFluid(entity.onlyGoo().getFluid(), entity.world.getGameTime())) {
             light = GooRenderHelper.FULL_BRIGHT;
         } else {
             light = WorldRenderer.getCombinedLight(entity.getEntityWorld(), entity.getPosition());
         }
         IVertexBuilder buffer = bufferType.getBuffer(rType);
-        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.goo().getFluid().getAttributes().getStillTexture());
+        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE).getSprite(entity.onlyGoo().getFluid().getAttributes().getStillTexture());
 
         float f = MathHelper.interpolateAngle(partialTicks, entity.prevRotationYaw, entity.rotationYaw);
         float f1 = MathHelper.interpolateAngle(partialTicks, entity.prevRotationPitch, entity.rotationPitch);
@@ -159,7 +159,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
     @Override
     protected int getBlockLight(GooBlob entityIn, BlockPos partialTicks)
     {
-        if (isBrightFluid(entityIn.goo().getFluid(), entityIn.world.getGameTime())) {
+        if (isBrightFluid(entityIn.onlyGoo().getFluid(), entityIn.world.getGameTime())) {
             return 15;
         }
         return super.getBlockLight(entityIn, partialTicks);

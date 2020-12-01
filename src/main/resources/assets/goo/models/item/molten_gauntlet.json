@@ -1,6 +1,6 @@
 {
 	"parent": "goo:item/template_gauntlet_held",
 	"textures": {
-		"7": "goo:item/gauntlet_fluids/molten_still"
+		"7": "goo:block/fluid/molten_still"
 	}
 }

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "goo:block/crystal_blocks/molten_goo_pillar_side",
+    "end": "goo:block/crystal_blocks/molten_goo_pillar_top"
+  }
+}

@@ -32,8 +32,8 @@ public class Weird
         List<GooSplat> nearbyWarpSplat = splatContext.world().getEntitiesWithinAABB(GooSplat.class,
                 splatContext.splat().getBoundingBox().grow(BOUNDS_REACH),
                     (e) -> !e.equals(splatContext.splat())
-                        && e.goo().getFluid().equals(Registry.WEIRD_GOO.get())
-                        && e.goo().getAmount() >= warpCost
+                        && e.onlyGoo().getFluid().equals(Registry.WEIRD_GOO.get())
+                        && e.onlyGoo().getAmount() >= warpCost
         );
         if (nearbyWarpSplat.size() == 0) {
             return false;

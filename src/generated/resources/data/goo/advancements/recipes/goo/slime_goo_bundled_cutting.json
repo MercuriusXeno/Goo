@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:slime_goo_bundled_cutting"
+    ]
+  },
+  "criteria": {
+    "slime_goo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:slime_goo_shard"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:slime_goo_bundled_cutting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "slime_goo_shard",
+      "has_the_recipe"
+    ]
+  ]
+}

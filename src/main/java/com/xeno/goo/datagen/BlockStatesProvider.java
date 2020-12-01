@@ -6,6 +6,8 @@ import com.xeno.goo.blocks.CrystalNest;
 import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.PumpRenderMode;
+import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -13,6 +15,8 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.client.model.generators.*;
 import net.minecraftforge.common.data.ExistingFileHelper;
+
+import java.util.function.Supplier;
 
 public class BlockStatesProvider extends BlockStateProvider {
     private static final float GASKET_U = 4f;
@@ -37,6 +41,36 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerRadiantLight();
         registerTrough();
         registerCrystalNest();
+        registerDecorativeBlocks();
+    }
+
+    private void registerDecorativeBlocks() {
+
+        // loop over fluid variants and generate a variant for each fluid + variant composite (and two for the pillars, they are special)
+        Registry.FluidSuppliers.forEach(this::proceduralGooBlockVariant);
+    }
+    private void proceduralGooBlockVariant(ResourceLocation k, Supplier<GooFluid> v) {
+        String prefix = k.getPath();
+        String textureDir = "block/crystal_blocks/";
+        for(String variant : BlocksRegistry.CRYSTAL_BLOCK_VARIANTS) {
+            String fullPath = prefix + "_" + variant;
+            ResourceLocation loc = new ResourceLocation(GooMod.MOD_ID, textureDir + fullPath);
+            ResourceLocation block = new ResourceLocation(GooMod.MOD_ID, fullPath);
+            BlockModelBuilder model = models().cubeAll(prefix +  "_" + variant, loc);
+            simpleBlock(BlocksRegistry.CrystalBlocks.get(block).get(), model);
+            simpleBlockItem(BlocksRegistry.CrystalBlocks.get(block).get(), model);
+        }
+
+        for(String variant : BlocksRegistry.PILLAR_CRYSTAL_BLOCK_VARIANTS) {
+            String topPath = prefix +  "_" + variant + "_top";
+            String sidePath = prefix +  "_" + variant + "_side";
+            ResourceLocation topLoc = new ResourceLocation(GooMod.MOD_ID, textureDir + topPath);
+            ResourceLocation sideLoc = new ResourceLocation(GooMod.MOD_ID, textureDir + sidePath);
+            ResourceLocation block = new ResourceLocation(GooMod.MOD_ID, prefix +  "_" + variant);
+            BlockModelBuilder model = models().cubeColumn(prefix +  "_" + variant, sideLoc, topLoc);
+            simpleBlock(BlocksRegistry.CrystalBlocks.get(block).get(), model);
+            simpleBlockItem(BlocksRegistry.CrystalBlocks.get(block).get(), model);
+        }
     }
 
     private void registerDrain() {

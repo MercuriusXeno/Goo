@@ -22,6 +22,10 @@
       "type": "goo:weird"
     },
     {
+      "amount": 15.0,
+      "type": "goo:primordial"
+    },
+    {
       "amount": 320.0,
       "type": "goo:aquatic"
     }

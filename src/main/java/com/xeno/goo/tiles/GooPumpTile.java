@@ -142,6 +142,10 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             return;
         }
 
+        if (!getBlockState().get(BlockStateProperties.POWERED)) {
+            return;
+        }
+
         if (world.isRemote) {
             // vertical fill visuals are client-sided, for a reason. We get sent activity from server but
             // the decay is local because that's needless packets otherwise. It's deterministic.

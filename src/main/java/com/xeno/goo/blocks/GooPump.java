@@ -170,12 +170,13 @@ public class GooPump extends BlockWithConnections
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(FACING, context.getFace().getOpposite())
+                .with(BlockStateProperties.POWERED, true)
                 .with(RENDER, PumpRenderMode.STATIC);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(FACING, RENDER);
+        builder.add(FACING, BlockStateProperties.POWERED, RENDER);
     }
 
     @SuppressWarnings("deprecation")
@@ -213,6 +214,21 @@ public class GooPump extends BlockWithConnections
     static {
         for(Direction d : Direction.values()) {
             RELEVANT_DIRECTIONS.put(d, new Direction[] { d, d.getOpposite()});
+        }
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
+        if (!worldIn.isRemote) {
+            boolean flag = state.get(BlockStateProperties.POWERED);
+            if (flag != worldIn.isBlockPowered(pos)) {
+                if (flag) {
+                    worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
+                } else {
+                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                }
+            }
         }
     }
 

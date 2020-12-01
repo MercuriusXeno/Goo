@@ -45,9 +45,9 @@ public class ItemsProvider extends ItemModelProvider {
 
         ItemModelBuilder model = withExistingParent(itemRegistryObject.get().getRegistryName().getPath(), mcLoc("item/handheld"))
                 .texture("layer0", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath()));
-        if (resourceLocation.getPath().startsWith("chromatic")) {
-            model.texture("layer1", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath() + "_overlay"));
-        }
+//        if (resourceLocation.getPath().startsWith("chromatic")) {
+//            model.texture("layer1", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath() + "_overlay"));
+//        }
     }
 
     private void registerTrough()

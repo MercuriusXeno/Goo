@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "goo:block/crystal_blocks/energetic_goo_smooth"
+  }
+}

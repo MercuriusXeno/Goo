@@ -2,6 +2,7 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.blocks.CrystalBlock;
 import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.fluids.GooFluid;
@@ -59,9 +60,15 @@ public class ItemsRegistry {
     }
 
     public static final Map<ResourceLocation, RegistryObject<CrystallizedGooAbstract>> CrystallizedGoo = new HashMap<>();
+    public static final Map<ResourceLocation, RegistryObject<Item>> CrystalBlocks = new HashMap<>();
     // crystallized goo
     static {
         crystallizedGooVariants.forEach(ItemsRegistry::registerCrystalGooForType);
+        BlocksRegistry.CrystalBlocks.forEach(ItemsRegistry::registerCrystalBlockItem);
+    }
+
+    private static void registerCrystalBlockItem(ResourceLocation resourceLocation, RegistryObject<CrystalBlock> crystalBlockRegistryObject) {
+        CrystalBlocks.put(resourceLocation, Items.register(resourceLocation.getPath(), () -> new BlockItem(crystalBlockRegistryObject.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64))));
     }
 
     private static void registerCrystalGooForType(String crystalType, Integer gooAmount) {

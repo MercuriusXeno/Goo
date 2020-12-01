@@ -2,7 +2,7 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "name": "lobber",
+      "name": "pump",
       "rolls": 1,
       "entries": [
         {

@@ -666,23 +666,35 @@ public class TargetingHandler
         if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
-        FluidStack entry = gooInEntity(e);
+        List<FluidStack> entries = gooInEntity(e);
 
         int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
         int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
+        int xOff = -ICON_WIDTH;
+        int yOff = -ICON_HEIGHT;
+        int entriesPerRow = (int)Math.ceil(Math.sqrt(entries.size()));
+        int procCount = 0;
+        for(FluidStack entry : entries) {
+            procCount++;
+            if (!(entry.getFluid() instanceof GooFluid)) {
+                return;
+            }
+            xOff += ICON_WIDTH;
+            if(procCount >= entriesPerRow) {
+                yOff += ICON_HEIGHT;
+                procCount = 0;
+            }
 
-        if (!(entry.getFluid() instanceof GooFluid)) {
-            return;
+            renderGooIcon(matrices, ((GooFluid) entry.getFluid()).icon(), bx + xOff, by + yOff, (int) Math.floor(entry.getAmount()));
         }
-        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
-    private static FluidStack gooInEntity(EntityRayTraceResult e)
+    private static List<FluidStack> gooInEntity(EntityRayTraceResult e)
     {
         if (e.getEntity() instanceof IGooContainingEntity) {
             return ((IGooContainingEntity) e.getEntity()).goo();
         }
-        return FluidStack.EMPTY;
+        return Collections.singletonList(FluidStack.EMPTY);
     }
 
     private static boolean hasGooContents(BlockState state)

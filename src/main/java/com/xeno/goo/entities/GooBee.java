@@ -106,6 +106,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         return worldIn.getBlockState(pos).isAir(worldIn, pos) ? 10.0F : 0.0F;
     }
 
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new EnterCrystalNestGoal());
         this.drinkGooGoal = new DrinkGooGoal();
@@ -469,6 +470,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     private boolean isWithinDistance(BlockPos pos, int distance) {
         return pos.withinDistance(this.getPosition(), distance);
     }
+
     @Override
     public int getTanks()
     {

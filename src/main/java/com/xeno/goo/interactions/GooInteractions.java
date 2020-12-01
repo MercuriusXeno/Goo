@@ -38,8 +38,8 @@ public class GooInteractions
             return;
         }
         // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
-        if (e.goo().getFluid() instanceof GooFluid) {
-            spawnParticles(e, (GooFluid) e.goo().getFluid());
+        if (e.onlyGoo().getFluid() instanceof GooFluid) {
+            spawnParticles(e, (GooFluid) e.onlyGoo().getFluid());
         }
     }
 
@@ -60,7 +60,7 @@ public class GooInteractions
         double offX = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
         double offZ = (e.cubicSize() / 2d) * (e.getEntityWorld().rand.nextFloat() - 0.5f);
 
-        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, (int)Math.sqrt(e.goo().getAmount()),
+        ((ServerWorld)e.getEntityWorld()).spawnParticle(type, spawnVec.x, spawnVec.y, spawnVec.z, (int)Math.sqrt(e.onlyGoo().getAmount()),
                 offX, e.cubicSize(), offZ, 0.2d);
     }
 
@@ -69,8 +69,8 @@ public class GooInteractions
             return;
         }
         // we should be able to guarantee the fluid has goo particles, so spawn a mess of them
-        if (e.goo().getFluid() instanceof GooFluid) {
-            spawnParticles(e, (GooFluid) e.goo().getFluid());
+        if (e.onlyGoo().getFluid() instanceof GooFluid) {
+            spawnParticles(e, (GooFluid) e.onlyGoo().getFluid());
         }
     }
 
@@ -154,6 +154,7 @@ public class GooInteractions
         Metal.registerInteractions();
         Molten.registerInteractions();
         Obsidian.registerInteractions();
+        Primordial.registerInteractions();
         Radiant.registerInteractions();
         Regal.registerInteractions();
         Slime.registerInteractions();
@@ -165,13 +166,13 @@ public class GooInteractions
     public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)
     {
         // no interactions registered, we don't want to crash.
-        if (!blobRegistry.containsKey(gooBlob.goo().getFluid())) {
+        if (!blobRegistry.containsKey(gooBlob.onlyGoo().getFluid())) {
             return;
         }
-        BlobContext context = new BlobContext(blockResult, gooBlob, gooBlob.goo().getFluid());
+        BlobContext context = new BlobContext(blockResult, gooBlob, gooBlob.onlyGoo().getFluid());
         // cycle over resolvers in rank order and drain/apply when possible.
-        Map<Tuple<Integer, String>, IBlobInteraction> map = blobRegistry.get(gooBlob.goo().getFluid());
-        map.forEach((k, v) -> tryResolving(gooBlob.goo().getFluid(), k, v, context.withKey(k.getB())));
+        Map<Tuple<Integer, String>, IBlobInteraction> map = blobRegistry.get(gooBlob.onlyGoo().getFluid());
+        map.forEach((k, v) -> tryResolving(gooBlob.onlyGoo().getFluid(), k, v, context.withKey(k.getB())));
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobInteraction iBlobInteraction, BlobContext context)
@@ -204,13 +205,13 @@ public class GooInteractions
     public static void tryResolving(GooSplat gooSplat)
     {
         // no interactions registered, we don't want to crash.
-        if (!splatRegistry.containsKey(gooSplat.goo().getFluid())) {
+        if (!splatRegistry.containsKey(gooSplat.onlyGoo().getFluid())) {
             return;
         }
-        SplatContext context = new SplatContext(gooSplat, gooSplat.goo().getFluid());
+        SplatContext context = new SplatContext(gooSplat, gooSplat.onlyGoo().getFluid());
         // cycle over resolvers in rank order and drain/apply when possible.
-        Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(gooSplat.goo().getFluid());
-        map.forEach((k, v) -> tryResolving(gooSplat.goo().getFluid(), k, v, context.withKey(k.getB())));
+        Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(gooSplat.onlyGoo().getFluid());
+        map.forEach((k, v) -> tryResolving(gooSplat.onlyGoo().getFluid(), k, v, context.withKey(k.getB())));
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)

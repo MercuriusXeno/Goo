@@ -20,6 +20,10 @@
     {
       "amount": 240.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 3.0,
+      "type": "goo:primordial"
     }
   ]
 }

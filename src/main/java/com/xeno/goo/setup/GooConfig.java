@@ -98,6 +98,9 @@ public class GooConfig
     private ForgeConfigSpec.IntValue RADIAL_MENU_HELD_TICKS_THRESHOLD;
     public int radialMenuThreshold() { return RADIAL_MENU_HELD_TICKS_THRESHOLD.get(); }
 
+    private ForgeConfigSpec.IntValue SNAIL_PRODUCTION_AMOUNT;
+    public int snailProductionAmount() { return SNAIL_PRODUCTION_AMOUNT.get(); }
+
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
     private final Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
     private final Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
@@ -377,6 +380,7 @@ public class GooConfig
         // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
+        private static final int SNAIL_PRODUCTION_AMOUNT = 4;
     }
 
     private void setupClientConfig() {

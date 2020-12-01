@@ -297,7 +297,7 @@ public class GooHandlingHelper {
             FluidStack splatStack = cap.drain(drainAmountPlaced, IFluidHandler.FluidAction.EXECUTE);
             int originalAmount = splatStack.getAmount();
             splatStack.setAmount(1);
-            GooSplat splat = GooSplat.createPlacedSplat(player, actualPos, side, hit, splatStack, !playedSoundYet, imperceptibleOffset);
+            GooSplat splat = GooSplat.createPlacedSplat(player, actualPos, side, hit, splatStack, !playedSoundYet, imperceptibleOffset, false);
             playedSoundYet = true;
             if (originalAmount > 1) {
                 FluidStack blobStack = splatStack.copy();
@@ -350,7 +350,7 @@ public class GooHandlingHelper {
         FluidStack splatStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
         int originalAmount = splatStack.getAmount();
         splatStack.setAmount(1);
-        GooSplat splat = GooSplat.createPlacedSplat(player, pos, side, hit, splatStack, true, 0f);
+        GooSplat splat = GooSplat.createPlacedSplat(player, pos, side, hit, splatStack, true, 0f, false);
         if (originalAmount > 1) {
             FluidStack blobStack = splatStack.copy();
             blobStack.setAmount(originalAmount - 1);

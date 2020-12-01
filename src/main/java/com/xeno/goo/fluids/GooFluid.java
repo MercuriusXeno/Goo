@@ -21,6 +21,7 @@ import java.util.Map;
 
 public class GooFluid extends Fluid
 {
+    private final int lightLevel;
     private static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
             // alpha
             192 << 24 |
@@ -31,7 +32,7 @@ public class GooFluid extends Fluid
     private final ResourceLocation shortIcon;
     private final FluidAttributes.Builder builder;
     private final float overrideIndex;
-    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon, float overrideIndex)
+    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon, float overrideIndex, int lightLevel)
     {
         super();
         this.builder = FluidAttributes
@@ -42,6 +43,7 @@ public class GooFluid extends Fluid
         String subpathWithoutExtension = icon.getPath().substring(0, icon.getPath().lastIndexOf(".png"));
         this.shortIcon = new ResourceLocation(icon.getNamespace(), subpathWithoutExtension + "_short.png");
         this.overrideIndex = overrideIndex;
+        this.lightLevel = lightLevel;
     }
 
     public float overrideIndex() {
@@ -122,4 +124,8 @@ public class GooFluid extends Fluid
     }
 
     public ResourceLocation shortIcon() { return this.shortIcon; }
+
+    public int getLightLevel() {
+        return this.lightLevel;
+    }
 }

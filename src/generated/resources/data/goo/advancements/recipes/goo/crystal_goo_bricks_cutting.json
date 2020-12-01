@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:crystal_goo_bricks_cutting"
+    ]
+  },
+  "criteria": {
+    "crystal_goo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:crystal_goo_shard"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:crystal_goo_bricks_cutting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "crystal_goo_shard",
+      "has_the_recipe"
+    ]
+  ]
+}

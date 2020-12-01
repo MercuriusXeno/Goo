@@ -1,0 +1,40 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": [
+    {
+      "item": "goo:radiant_goo_craggy"
+    },
+    {
+      "item": "goo:radiant_goo_debris"
+    },
+    {
+      "item": "goo:radiant_goo_bulbous"
+    },
+    {
+      "item": "goo:radiant_goo_bundled"
+    },
+    {
+      "item": "goo:radiant_goo_pillar"
+    },
+    {
+      "item": "goo:radiant_goo_keystone"
+    },
+    {
+      "item": "goo:radiant_goo_ornate"
+    },
+    {
+      "item": "goo:radiant_goo_bricks"
+    },
+    {
+      "item": "goo:radiant_goo_marbled"
+    },
+    {
+      "item": "goo:radiant_goo_solid"
+    },
+    {
+      "item": "goo:radiant_goo_smooth"
+    }
+  ],
+  "result": "goo:radiant_goo_marbled",
+  "count": 1
+}

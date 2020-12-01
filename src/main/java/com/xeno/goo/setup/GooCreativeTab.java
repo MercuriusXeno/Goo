@@ -1,7 +1,9 @@
 package com.xeno.goo.setup;
 
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.blocks.CrystalBlock;
 import com.xeno.goo.items.CrystallizedGooAbstract;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
@@ -26,6 +28,9 @@ public class GooCreativeTab extends ItemGroup
     public static final NonNullList<ItemStack> sortedCreativeItems = NonNullList.create();
 
     private static final Function<ItemStack, Boolean> isNotShard = (i) -> !(i.getItem() instanceof CrystallizedGooAbstract);
+    private static final Function<ItemStack, Boolean> isNotBlock = (i) -> !(i.getItem() instanceof BlockItem && ((BlockItem)i.getItem()).getBlock() instanceof CrystalBlock);
+    private static final Function<ItemStack, Boolean> isNotShardOrBlock = (i) -> !(i.getItem() instanceof CrystallizedGooAbstract) &&
+            !(i.getItem() instanceof BlockItem && ((BlockItem)i.getItem()).getBlock() instanceof CrystalBlock);
     private static final Function<ItemStack, Integer> shardSize = (i) -> (i.getItem() instanceof CrystallizedGooAbstract ? ((CrystallizedGooAbstract)i.getItem()).amount() : 0);
     private static final Function<ItemStack, String> registryName = (i) -> i.getItem().getRegistryName().toString();
     private static final Function<ItemStack, String> gooTypeName = (i) ->
@@ -42,7 +47,7 @@ public class GooCreativeTab extends ItemGroup
         if (sortedCreativeItems.size() == 0) {
             super.fill(items);
             items.sort(Comparator
-                    .comparing(isNotShard).reversed()
+                    .comparing(isNotShardOrBlock).reversed()
                     .thenComparing(gooTypeName)
                     .thenComparing(shardSize)
                     .thenComparing(registryName)

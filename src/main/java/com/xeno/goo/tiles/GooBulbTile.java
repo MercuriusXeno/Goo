@@ -162,6 +162,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             // there's no progress so we're about to start some.
             crystalFluid = getMostQuantityGoo().getFluid();
 
+            // interrupt our assumption above, if we have a crystal type, insist on that type of goo strictly.
+            if (crystal.getItem() instanceof CrystallizedGooAbstract) {
+                crystalFluid = ((CrystallizedGooAbstract)crystal.getItem()).gooType();
+            }
+
             // there's no progress so we're about to start some.
             CrystallizedGooAbstract crystalTarget = nextStepInCrystallization(crystalFluid);
             if (crystalTarget == null) {

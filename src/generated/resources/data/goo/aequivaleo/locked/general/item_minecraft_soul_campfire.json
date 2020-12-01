@@ -22,7 +22,7 @@
       "type": "goo:decay"
     },
     {
-      "amount": 80.0,
+      "amount": 50.0,
       "type": "goo:radiant"
     }
   ]

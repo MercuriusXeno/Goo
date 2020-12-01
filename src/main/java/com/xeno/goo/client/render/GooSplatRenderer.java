@@ -2,7 +2,6 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
@@ -123,7 +122,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)
         // otherwise it just looks dull by nature, which is what we want most of the time.
-        if (isBrightFluid(entity.goo().getFluid(), entity.world.getGameTime())) {
+        if (isBrightFluid(entity.onlyGoo().getFluid(), entity.world.getGameTime())) {
             light = GooRenderHelper.FULL_BRIGHT;
         } else {
             light = WorldRenderer.getCombinedLight(entity.getEntityWorld(), entity.getPosition());
@@ -131,7 +130,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         IVertexBuilder buffer = bufferType.getBuffer(rType);
         TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager()
                 .getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE)
-                .getSprite(entity.goo().getFluid().getAttributes().getStillTexture());
+                .getSprite(entity.onlyGoo().getFluid().getAttributes().getStillTexture());
 
         Vector3d scale = entity.shape();
         Vector3f[][] scaledQuads = scale(UNSCALED_QUADS, scale);
@@ -154,7 +153,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
     @Override
     protected int getBlockLight(GooSplat entityIn, BlockPos partialTicks)
     {
-        if (isBrightFluid(entityIn.goo().getFluid(), entityIn.world.getGameTime())) {
+        if (isBrightFluid(entityIn.onlyGoo().getFluid(), entityIn.world.getGameTime())) {
             return 15;
         }
         return super.getBlockLight(entityIn, partialTicks);

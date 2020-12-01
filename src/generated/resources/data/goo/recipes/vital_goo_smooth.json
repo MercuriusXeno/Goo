@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cc",
+    "cc"
+  ],
+  "key": {
+    "c": {
+      "item": "goo:vital_goo_shard"
+    }
+  },
+  "result": {
+    "item": "goo:vital_goo_smooth"
+  }
+}

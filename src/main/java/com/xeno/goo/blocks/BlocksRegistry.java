@@ -1,11 +1,18 @@
 package com.xeno.goo.blocks;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class BlocksRegistry {
 
@@ -26,4 +33,29 @@ public class BlocksRegistry {
     public static final RegistryObject<RadiantLight> RadiantLight = Blocks.register("radiant_light", RadiantLight::new);
     public static final RegistryObject<CrystalNest> CrystalNest = Blocks.register("crystal_nest", CrystalNest::new);
     public static final RegistryObject<GooTrough> Trough = Blocks.register("goo_trough", GooTrough::new);
+
+    public static final Map<ResourceLocation, RegistryObject<CrystalBlock>> CrystalBlocks = new HashMap<>();
+
+
+    public static final String[] CRYSTAL_BLOCK_VARIANTS = { "bricks", "bulbous", "bundled", "craggy", "keystone", "marbled", "ornate", "smooth", "solid"};
+    public static final String[] PILLAR_CRYSTAL_BLOCK_VARIANTS = { "debris", "pillar"};
+    static {
+        Registry.FluidSuppliers.forEach(BlocksRegistry::registerCrystalBlockVariants);
+    }
+
+    private static void registerCrystalBlockVariants(ResourceLocation k, Supplier<GooFluid> v) {
+        for(String variant : CRYSTAL_BLOCK_VARIANTS) {
+            registerCrystalBlock(k.getPath() +  "_" + variant, v);
+        }
+
+        for (String variant : PILLAR_CRYSTAL_BLOCK_VARIANTS) {
+            registerCrystalBlock(k.getPath() +  "_" + variant, v);
+        }
+    }
+
+    public static RegistryObject<CrystalBlock> registerCrystalBlock(String name, Supplier<GooFluid> f) {
+        RegistryObject<CrystalBlock> registeredObject = Blocks.register(name, () -> new CrystalBlock(f));
+        CrystalBlocks.put(new ResourceLocation(GooMod.MOD_ID, name), registeredObject);
+        return registeredObject;
+    }
 }

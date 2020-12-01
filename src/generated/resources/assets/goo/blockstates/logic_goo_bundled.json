@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "goo:block/logic_goo_bundled"
+    }
+  }
+}

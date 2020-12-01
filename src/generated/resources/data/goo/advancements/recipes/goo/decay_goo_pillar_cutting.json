@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:decay_goo_pillar_cutting"
+    ]
+  },
+  "criteria": {
+    "decay_goo_shard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:decay_goo_shard"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:decay_goo_pillar_cutting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "decay_goo_shard",
+      "has_the_recipe"
+    ]
+  ]
+}

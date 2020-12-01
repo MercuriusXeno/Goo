@@ -18,16 +18,16 @@
   ],
   "compounds": [
     {
-      "amount": 36.0,
-      "type": "goo:metal"
+      "amount": 72.0,
+      "type": "goo:regal"
     },
     {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
     },
     {
-      "amount": 72.0,
-      "type": "goo:regal"
+      "amount": 36.0,
+      "type": "goo:metal"
     }
   ]
 }
