@@ -124,13 +124,13 @@ dependencies {
     compileOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}:api")
     runtimeOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}")
 
-    runtimeOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:universal")
-    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
-    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
+    //runtimeOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:universal")
+    //compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
+    //compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
 
-    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}")
-    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
-    runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
+    //compileOnly fg.deobf("${patchouli_location}:${patchouli_version}")
+    //compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
+    //runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
