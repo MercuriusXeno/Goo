@@ -1,21 +1,30 @@
 buildscript {
     repositories {
         mavenLocal()
-        maven {
-            name 'Forge'
-            url 'https://files.minecraftforge.net/maven'
-        }
+        maven { url 'https://files.minecraftforge.net/maven' }
         jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.1.+', changing: true
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
+
+repositories {
+    mavenLocal()
+    maven {
+        name 'Jareds for Patchouli'
+        url 'https://maven.blamejared.com'
+    }
+    maven {
+        name 'LDTTeam for Aequivaleo'
+        url 'https://ldtteam.jfrog.io/ldtteam/modding'
+    }
+}
 
 version = "${goo_version}"
 group = mod_group
@@ -102,18 +111,6 @@ minecraft {
                 }
             }
         }
-    }
-}
-
-repositories {
-    mavenLocal()
-    maven {
-        name 'Jareds for Patchouli'
-        url 'https://maven.blamejared.com'
-    }
-    maven {
-        name 'LDTTeam for Aequivaleo'
-        url 'https://ldtteam.jfrog.io/ldtteam/modding'
     }
 }
 

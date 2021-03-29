@@ -226,7 +226,7 @@ public class GooPump extends BlockWithConnections
                 if (flag) {
                     worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
                 } else {
-                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                    worldIn.setBlockState(pos, state.cycleValue(BlockStateProperties.POWERED), 2);
                 }
             }
         }

@@ -138,7 +138,7 @@ public class Solidifier extends BlockWithConnections {
                 if (flag) {
                     worldIn.getPendingBlockTicks().scheduleTick(pos, this, 4);
                 } else {
-                    worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+                    worldIn.setBlockState(pos, state.cycleValue(BlockStateProperties.POWERED), 2);
                 }
             }
         }
@@ -171,7 +171,7 @@ public class Solidifier extends BlockWithConnections {
     @Override
     public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
         if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
-            worldIn.setBlockState(pos, state.func_235896_a_(BlockStateProperties.POWERED), 2);
+            worldIn.setBlockState(pos, state.cycleValue(BlockStateProperties.POWERED), 2);
         }
     }
 

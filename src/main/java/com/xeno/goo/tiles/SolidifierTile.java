@@ -491,7 +491,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity, C
             ItemStack tagTargetStack = targetStacks.get(0);
 
             if (!tagTargetStack.isEmpty()) {
-                tooltip.add(new TranslationTextComponent("tooltip.goo.solidifying_target_preface").append(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
+                tooltip.add(new TranslationTextComponent("tooltip.goo.solidifying_target_preface").appendSibling(new TranslationTextComponent(tagTargetStack.getTranslationKey())));
             }
         }
     }

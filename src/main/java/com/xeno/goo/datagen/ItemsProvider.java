@@ -35,6 +35,7 @@ public class ItemsProvider extends ItemModelProvider {
         registerGooCrystals();
         registerSpawnEggs();
         registerTrough();
+        registerSnail();
     }
 
     private void registerGooCrystals() {
@@ -80,6 +81,10 @@ public class ItemsProvider extends ItemModelProvider {
         ResourceLocation heldLiquid = new ResourceLocation(GooMod.MOD_ID, Gauntlet.HELD_LIQUID_TAG_NAME);
         ItemModelBuilder builder = withExistingParent(Objects.requireNonNull(ItemsRegistry.Gauntlet.get().getRegistryName()).getPath(), new ResourceLocation(GooMod.MOD_ID, "template_gauntlet_held"));
         Registry.FluidSuppliers.forEach((k, v) -> registerFluidOverrideForGauntlet(k, v, builder, heldLiquid));
+    }
+
+    private void registerSnail() {
+        withExistingParent(ItemsRegistry.Snail.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "snail_item"));
     }
 
     private void registerFluidOverrideForGauntlet(ResourceLocation k, Supplier<GooFluid> v, ItemModelBuilder builder, ResourceLocation predicateName) {

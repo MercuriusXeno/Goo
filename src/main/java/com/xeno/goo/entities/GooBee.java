@@ -49,6 +49,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -96,6 +97,12 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
             }
         }
         return super.hitByEntity(entityIn);
+    }
+
+    @Nullable
+    @Override
+    public AgeableEntity createChild(ServerWorld world, AgeableEntity mate) {
+        return Registry.GOO_BEE.get().create(world);
     }
 
     protected void registerData() {
@@ -220,7 +227,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         Vector3d vector3d1 = RandomPositionGenerator.func_226344_b_(this, 
                 k, l, i, vector3d, ((float) Math.PI / 10F));
         if (vector3d1 != null) {
-            this.navigator.setRangeMultiplier(0.5F);
+            this.navigator.setSearchDepthMultiplier(0.5F);
             this.navigator.tryMoveToXYZ(vector3d1.x, vector3d1.y, vector3d1.z, 1.0D);
         }
     }
@@ -408,10 +415,6 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
      */
     protected float getSoundVolume() {
         return 0.4F;
-    }
-
-    public GooBee func_241840_a(ServerWorld world, AgeableEntity p_241840_2_) {
-        return Registry.GOO_BEE.get().create(world);
     }
 
     protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
@@ -643,7 +646,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
             this.ticks = 0;
             this.ticksTried = 0;
             GooBee.this.navigator.clearPath();
-            GooBee.this.navigator.resetRangeMultiplier();
+            GooBee.this.navigator.resetSearchDepthMultiplier();
         }
 
         /**
@@ -681,7 +684,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         }
 
         private boolean startMovingToFar(BlockPos pos) {
-            GooBee.this.navigator.setRangeMultiplier(10.0F);
+            GooBee.this.navigator.setSearchDepthMultiplier(10.0F);
             GooBee.this.navigator.tryMoveToXYZ(pos.getX(), pos.getY(), pos.getZ(), 1.0D);
             return GooBee.this.navigator.getPath() != null && GooBee.this.navigator.getPath().reachesTarget();
         }
@@ -757,7 +760,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
         public void resetTask() {
             this.ticks = 0;
             GooBee.this.navigator.clearPath();
-            GooBee.this.navigator.resetRangeMultiplier();
+            GooBee.this.navigator.resetSearchDepthMultiplier();
         }
 
         /**

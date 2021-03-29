@@ -21,7 +21,7 @@ public class CustomIconButton extends Button {
     }
 
     @Override
-    public void renderButton(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         TargetingHandler.renderGooShortIcon(matrixStack, icon, this.x, this.y, this.width, this.height, toggled);
 
         if (this.isHovered()) {

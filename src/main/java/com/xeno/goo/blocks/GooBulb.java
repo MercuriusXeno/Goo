@@ -2,18 +2,15 @@ package com.xeno.goo.blocks;
 
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.library.VoxelHelper;
-import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
@@ -113,7 +110,7 @@ public class GooBulb extends BlockWithConnections
     @SuppressWarnings("deprecation")
     @Override
     public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.isIn(newState.getBlock())) {
+        if (!state.matchesBlock(newState.getBlock())) {
             TileEntity tileentity = worldIn.getTileEntity(pos);
             if (tileentity instanceof GooBulbTile) {
                 ((GooBulbTile) tileentity).spewItems();

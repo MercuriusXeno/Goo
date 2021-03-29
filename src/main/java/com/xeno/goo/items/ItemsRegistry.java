@@ -32,6 +32,7 @@ public class ItemsRegistry {
     public static final RegistryObject<CrystalComb> CrystalComb = Items.register("crystal_comb", CrystalComb::new);
     public static final RegistryObject<Basin> Basin = Items.register("basin", Basin::new);
     public static final RegistryObject<Gauntlet> Gauntlet = Items.register("gauntlet", Gauntlet::new);
+    public static final RegistryObject<GooSnailCaptured> Snail = Items.register("snail", GooSnailCaptured::new);
 
     // block items
     public static final RegistryObject<Item> GooBulb = Items.register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.Bulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::gooBulb)));

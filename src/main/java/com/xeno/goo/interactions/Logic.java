@@ -108,7 +108,7 @@ public class Logic
     private static void toggleButton(BlockState state, World world, BlockPos pos) {
         AbstractButtonBlock button = (AbstractButtonBlock) state.getBlock();
         if (world.isRemote) {
-            BlockState newState = state.func_235896_a_(BlockStateProperties.POWERED);
+            BlockState newState = state.cycleValue(BlockStateProperties.POWERED);
             if (newState.get(BlockStateProperties.POWERED)) {
                 doLeverParticles(newState, world, pos, 1.0F);
             }
@@ -129,7 +129,7 @@ public class Logic
     private static void toggleLever(BlockState state, World world, BlockPos pos) {
         LeverBlock lever = (LeverBlock) state.getBlock();
         if (world.isRemote) {
-            BlockState newState = state.func_235896_a_(BlockStateProperties.POWERED);
+            BlockState newState = state.cycleValue(BlockStateProperties.POWERED);
             if (newState.get(BlockStateProperties.POWERED)) {
                 doLeverParticles(newState, world, pos, 1.0F);
             }

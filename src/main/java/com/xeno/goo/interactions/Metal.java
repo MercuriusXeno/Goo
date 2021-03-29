@@ -50,7 +50,7 @@ public class Metal
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder
                     .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
-                    .withParameter(LootParameters.field_237457_g_, context.blockCenterVec())
+                    .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
                     .withParameter(LootParameters.TOOL, mockPick)
             );
             boolean hasChanges = context.world().removeBlock(blockPos, false);

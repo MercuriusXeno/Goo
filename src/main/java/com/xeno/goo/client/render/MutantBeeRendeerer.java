@@ -30,7 +30,7 @@ public class MutantBeeRendeerer extends MobRenderer<MutantBee, MutantBeeModel<Mu
      * Returns the location of an entity's texture.
      */
     public ResourceLocation getEntityTexture(MutantBee entity) {
-        if (entity.func_233678_J__()) {
+        if (entity.isAngry()) {
             return entity.hasNectar() ? angryWithNectar : justAngry;
         } else {
             return entity.hasNectar() ? withNectar : normal;

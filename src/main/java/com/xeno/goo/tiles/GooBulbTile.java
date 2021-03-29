@@ -63,6 +63,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     }
 
     @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+    }
+
+    @Override
     protected void invalidateCaps() {
         super.invalidateCaps();
         lazyHandler.invalidate();

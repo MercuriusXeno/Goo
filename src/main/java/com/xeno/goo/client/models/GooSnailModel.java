@@ -29,7 +29,6 @@ public class GooSnailModel extends EntityModel<GooSnail> {
             // shell only!
             shell.setTextureOffset(0, 0).addBox(-2.0F, -8.0F, -3.0F, 4.0F, 8.0F, 8.0F, 0.0F, false);
         } else {
-            float snailDepth = 14f;
             // shell
             shell = new ModelRenderer(this);
             shell.setRotationPoint(0.0F, 24.0F, 0.0F);
@@ -59,24 +58,26 @@ public class GooSnailModel extends EntityModel<GooSnail> {
     private static final float snailDepth = 14f;
     @Override
     public void render(MatrixStack matrixStack, IVertexBuilder buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha){
+        // pre-calculate the offset of the body stretch.
+        // as the body stretches, the eyes and body are offset by a preset Z position to give the illusion of slinking.
+        // when the "stretch" is 1.0 (not stretched), this Offset should be zero.
+        // when the "stretch" offset is at its peak, this offset should be half the difference in size between 1.0 and peak.
+        double scaledDepth = snailDepth / 16d;
+        double bodyOffset = -((stretchRatio - 1.0d) * scaledDepth / 2d);
+        double eyesOffset = -((stretchRatio - 1.0d) * scaledDepth);
         if (this.body != null) {
             // transform body based on stretch ratio
             matrixStack.push();
+            matrixStack.translate(0f, 0f, bodyOffset);
             matrixStack.scale(1f, 1f, stretchRatio);
             body.render(matrixStack, buffer, packedLight, packedOverlay);
             matrixStack.pop();
         }
 
-        if (this.leftEye != null) {
+        if (this.leftEye != null && this.rightEye != null) {
             matrixStack.push();
-            matrixStack.translate(0f, 0f, stretchRatio * snailDepth - snailDepth);
+            matrixStack.translate(0f, 0f, eyesOffset);
             leftEye.render(matrixStack, buffer, packedLight, packedOverlay);
-            matrixStack.pop();
-        }
-
-        if (this.rightEye != null) {
-            matrixStack.push();
-            matrixStack.translate(0f, 0f, stretchRatio * snailDepth - snailDepth);
             rightEye.render(matrixStack, buffer, packedLight, packedOverlay);
             matrixStack.pop();
         }

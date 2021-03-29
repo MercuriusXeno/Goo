@@ -110,7 +110,7 @@ public class MutantBeeModel<T extends MutantBee> extends AgeableModel<T> {
             this.body.rotateAngleZ = 0.0F;
         }
 
-        if (!entityIn.func_233678_J__()) {
+        if (!entityIn.isAngry()) {
             this.body.rotateAngleX = 0.0F;
             this.body.rotateAngleY = 0.0F;
             this.body.rotateAngleZ = 0.0F;

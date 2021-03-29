@@ -18,16 +18,16 @@
   ],
   "compounds": [
     {
+      "amount": 3.0,
+      "type": "goo:primordial"
+    },
+    {
       "amount": 1.0,
       "type": "goo:vital"
     },
     {
       "amount": 60.0,
       "type": "goo:faunal"
-    },
-    {
-      "amount": 3.0,
-      "type": "goo:primordial"
     }
   ]
 }

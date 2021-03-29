@@ -489,7 +489,7 @@ public class TargetingHandler
         TranslationTextComponent notationMarker = new TranslationTextComponent(getOrderOfMagnitudeNotation(oom));
         String result = NumberFormat.getNumberInstance(Locale.ROOT).format((float)count + r);
 
-        return  new TranslationTextComponent(result).append(notationMarker);
+        return  new TranslationTextComponent(result).appendSibling(notationMarker);
     }
 
     private static String getOrderOfMagnitudeNotation(int oom)
