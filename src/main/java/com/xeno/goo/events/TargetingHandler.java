@@ -3,15 +3,11 @@ package com.xeno.goo.events;
 import com.google.common.collect.Sets;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.blocks.*;
-import com.xeno.goo.client.ClientUtils;
-import com.xeno.goo.client.render.GooRenderHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
-import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.entities.IGooContainingEntity;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.BasinAbstractionCapability;
@@ -49,12 +45,9 @@ import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import vazkii.patchouli.client.book.gui.GuiBook;
 
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.List;
-import java.util.function.Supplier;
 
 public class TargetingHandler
 {
@@ -98,10 +91,6 @@ public class TargetingHandler
 
     public static void onDraw(ItemTooltipEvent event)
     {
-        // avoid trying to draw for Patchouli book, it's full of sadness.
-        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
-            return;
-        }
         lastStack = currentStack;
         //This method will make space for goo icons in the tooltip
         currentStack = event.getItemStack();
@@ -181,11 +170,6 @@ public class TargetingHandler
 
     public static void tryDraw(RenderTooltipEvent.PostText event)
     {
-        // avoid trying to draw for Patchouli book, it's full of sadness.
-        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
-            return;
-        }
-
         // special handler for goo bulbs, goo bulbs show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
             tryDrawingGooContents(event);

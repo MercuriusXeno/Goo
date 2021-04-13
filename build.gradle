@@ -128,7 +128,6 @@ dependencies {
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
 
-    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}")
     compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
     runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
 }
