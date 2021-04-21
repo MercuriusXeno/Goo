@@ -2,9 +2,10 @@ package com.xeno.goo.datagen;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.items.*;
+import com.xeno.goo.items.CrystallizedGooAbstract;
+import com.xeno.goo.items.Gauntlet;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.client.renderer.model.BlockModel;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
@@ -13,7 +14,6 @@ import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.fml.RegistryObject;
 
-import javax.annotation.Resource;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -119,5 +119,6 @@ public class ItemsProvider extends ItemModelProvider {
     private void registerSpawnEggs() {
         withExistingParent(ItemsRegistry.GooBeeSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
         withExistingParent(ItemsRegistry.GooSnailSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        withExistingParent(ItemsRegistry.LightingBugSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
     }
 }

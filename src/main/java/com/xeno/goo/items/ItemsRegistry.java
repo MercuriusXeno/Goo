@@ -7,7 +7,8 @@ import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.item.*;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -50,6 +51,9 @@ public class ItemsRegistry {
     // spawn eggs
     public static final RegistryObject<GooBeeSpawnEgg> GooBeeSpawnEgg = Items.register("goo_bee_spawn_egg", GooBeeSpawnEgg::new);
     public static final RegistryObject<GooSnailSpawnEgg> GooSnailSpawnEgg = Items.register("goo_snail_spawn_egg", GooSnailSpawnEgg::new);
+    public static final RegistryObject<DeferredSpawnEgg<?>> LightingBugSpawnEgg = Items.register("lighting_bug_spawn_egg", () ->
+            new DeferredSpawnEgg<>(Registry.LIGHTING_BUG, 0x000000, 0xffffff)
+    );
 
     private final static Map<String, Integer> crystallizedGooVariants = new HashMap<>();
     static {

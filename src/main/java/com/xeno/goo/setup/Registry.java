@@ -109,6 +109,15 @@ public class Registry {
                     .build("goo_snail")
     );
 
+    public static final RegistryObject<EntityType<LightingBug>> LIGHTING_BUG = ENTITIES.register("lighting_bug",
+            () -> EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
+                    .size(0.5f, 0.5f)
+                    .setTrackingRange(64)
+                    .setUpdateInterval(1)
+                    .setShouldReceiveVelocityUpdates(true)
+                    .build("lighting_bug")
+    );
+
     // sound events to overload vanilla sounds and subsequently give them the correct captions
     public static final RegistryObject<SoundEvent> GOO_CHOP_SOUND = SOUNDS.register("goo_chop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_chop_sound")));
     public static final RegistryObject<SoundEvent> GOO_SPLAT_SOUND = SOUNDS.register("goo_splat_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_splat_sound")));

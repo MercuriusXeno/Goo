@@ -2,7 +2,7 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.client.models.*;
+import com.xeno.goo.client.models.BasinModel;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.VaporParticle;
 import com.xeno.goo.client.render.*;
@@ -13,7 +13,6 @@ import com.xeno.goo.setup.Resources;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.item.ItemModelsProperties;
 import net.minecraft.util.ResourceLocation;
@@ -72,6 +71,7 @@ public class ModClientEvents
         GooBeeRenderer.register();
         GooSnailRenderer.register();
         MutantBeeRendeerer.register();
+        LightingBugRenderer.register();
     }
 
     private static void setRenderLayers()
@@ -133,6 +133,7 @@ public class ModClientEvents
     public static void onItemColor(ColorHandlerEvent.Item event) {
         event.getItemColors().register((stack, color) -> 0x00a0f0, ItemsRegistry.GooBeeSpawnEgg.get());
         event.getItemColors().register((stack, color) -> 0x734f31, ItemsRegistry.GooSnailSpawnEgg.get());
+        event.getItemColors().register((stack, color) -> ItemsRegistry.LightingBugSpawnEgg.get().getColor(color), ItemsRegistry.LightingBugSpawnEgg.get());
     }
 
     @SubscribeEvent

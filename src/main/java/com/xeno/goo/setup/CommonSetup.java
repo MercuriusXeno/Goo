@@ -3,6 +3,7 @@ package com.xeno.goo.setup;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.entities.GooSnail;
+import com.xeno.goo.entities.LightingBug;
 import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
@@ -26,6 +27,7 @@ public class CommonSetup
             GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
             GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
             GlobalEntityTypeAttributes.put(Registry.GOO_SNAIL.get(), GooSnail.setCustomAttributes().create());
+            GlobalEntityTypeAttributes.put(Registry.LIGHTING_BUG.get(), LightingBug.setCustomAttributes().create());
             PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.CRYSTAL_NEST_POI.get().blockStates);
             PointOfInterestType.registerBlockStates(Registry.GOO_TROUGH_POI.get());
