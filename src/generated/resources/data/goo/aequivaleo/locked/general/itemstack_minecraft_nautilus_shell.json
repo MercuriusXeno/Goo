@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:primordial"
-    },
-    {
       "amount": 320.0,
       "type": "goo:aquatic"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:primordial"
     },
     {
       "amount": 60.0,

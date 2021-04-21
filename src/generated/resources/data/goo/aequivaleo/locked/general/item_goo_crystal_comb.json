@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 32.0,
-      "type": "goo:crystal"
-    }
-  ]
+  "compounds": {
+    "amount": 32.0,
+    "type": "goo:crystal"
+  }
 }

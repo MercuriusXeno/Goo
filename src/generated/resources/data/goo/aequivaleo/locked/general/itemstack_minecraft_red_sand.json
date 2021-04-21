@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 180.0,
-      "type": "goo:earthen"
-    }
-  ]
+  "compounds": {
+    "amount": 180.0,
+    "type": "goo:earthen"
+  }
 }

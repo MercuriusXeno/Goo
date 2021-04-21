@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 120.0,
-      "type": "goo:molten"
-    }
-  ]
+  "compounds": {
+    "amount": 120.0,
+    "type": "goo:molten"
+  }
 }

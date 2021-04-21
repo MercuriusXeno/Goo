@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 240.0,
-      "type": "goo:chromatic"
-    }
-  ]
+  "compounds": {
+    "amount": 240.0,
+    "type": "goo:chromatic"
+  }
 }

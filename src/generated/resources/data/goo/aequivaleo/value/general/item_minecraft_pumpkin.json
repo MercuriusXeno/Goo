@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 60.0,
-      "type": "goo:floral"
-    }
-  ]
+  "compounds": {
+    "amount": 60.0,
+    "type": "goo:floral"
+  }
 }

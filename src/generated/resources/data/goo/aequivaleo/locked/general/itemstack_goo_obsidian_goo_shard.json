@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 100.0,
-      "type": "goo:obsidian"
-    }
-  ]
+  "compounds": {
+    "amount": 100.0,
+    "type": "goo:obsidian"
+  }
 }

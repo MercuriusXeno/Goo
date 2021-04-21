@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 1000.0,
-      "type": "goo:weird"
-    }
-  ]
+  "compounds": {
+    "amount": 1000.0,
+    "type": "goo:weird"
+  }
 }

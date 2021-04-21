@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 15.0,
-      "type": "goo:fungal"
-    }
-  ]
+  "compounds": {
+    "amount": 15.0,
+    "type": "goo:fungal"
+  }
 }

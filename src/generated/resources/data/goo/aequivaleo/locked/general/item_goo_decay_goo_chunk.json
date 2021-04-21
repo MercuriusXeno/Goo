@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 10000.0,
-      "type": "goo:decay"
-    }
-  ]
+  "compounds": {
+    "amount": 10000.0,
+    "type": "goo:decay"
+  }
 }

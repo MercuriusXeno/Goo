@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 60.0,
-      "type": "goo:snow"
-    }
-  ]
+  "compounds": {
+    "amount": 60.0,
+    "type": "goo:snow"
+  }
 }

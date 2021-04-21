@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 100000.0,
-      "type": "goo:regal"
-    }
-  ]
+  "compounds": {
+    "amount": 100000.0,
+    "type": "goo:regal"
+  }
 }
