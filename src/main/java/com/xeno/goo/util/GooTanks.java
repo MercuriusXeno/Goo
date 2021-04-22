@@ -182,16 +182,22 @@ public class GooTanks extends IGooTank {
 	@Override
 	public FluidStack drain(int maxDrain, FluidAction action) {
 
-		int tankAmt;
-		FluidStack tank;
-		loop: {
+		int tankAmt = 0;
+		FluidStack tank = FluidStack.EMPTY;
+		{
+			long min = Long.MAX_VALUE;
+			FluidStack cur;
+			int amt;
 			for (int i = 0, e = tankCount; i < e; ++i) {
-				tank = getFluidInTankInternal(i);
-				tankAmt = tank.getAmount();
-				if (tankAmt > 0)
-					break loop;
+				cur = getFluidInTankInternal(i);
+				amt = cur.getAmount();
+				if (amt > 0 && amt < min) {
+					tank = cur;
+					min = tankAmt = amt;
+				}
 			}
-			return FluidStack.EMPTY;
+			if (min == Long.MAX_VALUE)
+				return FluidStack.EMPTY;
 		}
 
 		final int accept = Math.min(maxDrain, tankAmt);
