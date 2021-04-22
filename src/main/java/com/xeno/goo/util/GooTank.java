@@ -46,6 +46,18 @@ public class GooTank extends IGooTank {
 		return tank.isEmpty();
 	}
 
+	@Override
+	public int getTotalContents() {
+
+		return tank.getAmount();
+	}
+
+	@Override
+	public int getTotalCapacity() {
+
+		return capacity.getAsInt();
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */

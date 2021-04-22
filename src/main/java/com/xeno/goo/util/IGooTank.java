@@ -64,6 +64,24 @@ public abstract class IGooTank implements IFluidHandler {
 	public abstract boolean isEmpty();
 
 	/**
+	 * @return Current amount of fluid in the tank.
+	 */
+	public abstract int getTotalContents();
+
+	/**
+	 * @return Capacity of this fluid tank.
+	 */
+	public abstract int getTotalCapacity();
+
+	/**
+	 * @return Unutilized capacity of this fluid tank.
+	 */
+	public final int getRemainingCapacity() {
+
+		return getTotalCapacity() - getTotalContents();
+	}
+
+	/**
 	 * Returns the FluidStack in a given tank.
 	 *
 	 * @param index int representing the tank to query.

@@ -10,18 +10,20 @@ import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.function.IntSupplier;
 
-public class GooTanks extends IGooTank {
+public class MultiGooTank extends IGooTankMulti {
 
-	protected int amount = 0;
-
-	protected FluidStack[] tanks;
-	protected HashMap<Fluid, FluidStack> contents = new HashMap<>();
 	protected int tankCount = 0;
 
-	public GooTanks(IntSupplier capacity) {
+	public MultiGooTank(IntSupplier capacity) {
 
 		super(capacity);
 		tanks = new FluidStack[4];
+	}
+
+	@Override
+	protected int getTankCount() {
+
+		return tankCount;
 	}
 
 	@Override
@@ -49,15 +51,9 @@ public class GooTanks extends IGooTank {
 	}
 
 	@Override
-	protected void writeToNBTInternal(CompoundNBT nbt) {
+	public int getTotalCapacity() {
 
-		FluidStack[] tanks = this.tanks;
-
-		ListNBT out = new ListNBT();
-		for (int i = 0, e = tankCount; i < e; ++i) {
-			out.add(tanks[i].writeToNBT(new CompoundNBT()));
-		}
-		nbt.put("Tanks", out);
+		return capacity.getAsInt();
 	}
 
 	/**
@@ -67,15 +63,6 @@ public class GooTanks extends IGooTank {
 	public int getTanks() {
 
 		return tankCount < Integer.MAX_VALUE ? tankCount + 1 : tankCount;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public boolean isEmpty() {
-
-		return amount <= 0;
 	}
 
 	/**
@@ -150,60 +137,5 @@ public class GooTanks extends IGooTank {
 				tank.grow(accept);
 		}
 		return accept;
-	}
-
-	/**
-	 * <b>This implementation ignores fluid tags.</b>
-	 * <p>
-	 * {@inheritDoc}
-	 */
-	@Nonnull
-	@Override
-	public FluidStack drain(FluidStack resource, FluidAction action) {
-
-		if (resource == null || resource.isEmpty() || tankCount == 0)
-			return FluidStack.EMPTY;
-
-		final FluidStack tank = contents.get(resource.getRawFluid());
-		if (tank == null || tank.getAmount() <= 0)
-			return FluidStack.EMPTY;
-
-		final int accept = Math.min(resource.getAmount(), tank.getAmount());
-		if (accept > 0 && action.execute())
-			tank.shrink(accept);
-
-		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Nonnull
-	@Override
-	public FluidStack drain(int maxDrain, FluidAction action) {
-
-		int tankAmt = 0;
-		FluidStack tank = FluidStack.EMPTY;
-		{
-			long min = Long.MAX_VALUE;
-			FluidStack cur;
-			int amt;
-			for (int i = 0, e = tankCount; i < e; ++i) {
-				cur = getFluidInTankInternal(i);
-				amt = cur.getAmount();
-				if (amt > 0 && amt < min) {
-					tank = cur;
-					min = tankAmt = amt;
-				}
-			}
-			if (min == Long.MAX_VALUE)
-				return FluidStack.EMPTY;
-		}
-
-		final int accept = Math.min(maxDrain, tankAmt);
-		if (accept > 0 && action.execute())
-			tank.shrink(accept);
-
-		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
 	}
 }

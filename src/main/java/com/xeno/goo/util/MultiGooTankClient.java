@@ -11,9 +11,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.function.IntSupplier;
 
-public class GooTanksClient extends GooTanks {
+public class MultiGooTankClient extends MultiGooTank {
 
-	public GooTanksClient(IntSupplier capacity) {
+	public MultiGooTankClient(IntSupplier capacity) {
 
 		super(capacity);
 	}
