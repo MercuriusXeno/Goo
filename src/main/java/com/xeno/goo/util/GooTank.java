@@ -102,6 +102,7 @@ public class GooTank extends IGooTank {
 				this.tank = new FluidStack(resource.getRawFluid(), accept, resource.getTag());
 			else
 				tank.grow(accept);
+			onChange();
 		}
 		return accept;
 	}
@@ -135,8 +136,10 @@ public class GooTank extends IGooTank {
 		}
 
 		final int accept = Math.min(maxDrain, tankAmt);
-		if (accept > 0 && action.execute())
+		if (accept > 0 && action.execute()) {
 			tank.shrink(accept);
+			onChange();
+		}
 
 		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
 	}

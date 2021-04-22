@@ -135,6 +135,7 @@ public class MultiGooTank extends IGooTankMulti {
 				addTank(resource, accept);
 			else
 				tank.grow(accept);
+			onChange();
 		}
 		return accept;
 	}

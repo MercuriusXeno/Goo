@@ -5,6 +5,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
@@ -20,16 +21,19 @@ public abstract class IGooTank implements IFluidHandler {
 	protected final IntSupplier capacity;
 	@Nonnull
 	protected Predicate<FluidStack> filter = ALWAYS;
+	@Nullable
+	private Runnable changeCallback;
 
 	protected IGooTank(@Nonnull IntSupplier capacity) {
 
 		this.capacity = Objects.requireNonNull(capacity);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "UnusedReturnValue" })
 	public final <T extends IGooTank> T readFromNBT(CompoundNBT nbt) {
 
 		readFromNBTInternal(nbt);
+		onChange();
 		return (T) this;
 	}
 
@@ -56,6 +60,27 @@ public abstract class IGooTank implements IFluidHandler {
 
 		this.filter = Objects.requireNonNull(filter);
 		return (T) this;
+	}
+
+	/**
+	 * Sets a filter to limit the tank to specific fluids.
+	 *
+	 * @param changeCallback Runnable to restrict what fluids this tank may accept.
+	 * @param <T>    The implementation of IGooTank.
+	 * @return <code>this</code> tank.
+	 */
+	@Nonnull
+	@SuppressWarnings("unchecked")
+	public final <T extends IGooTank> T setChangeCallback(@Nullable Runnable changeCallback) {
+
+		this.changeCallback = changeCallback;
+		return (T) this;
+	}
+
+	protected final void onChange() {
+
+		if (changeCallback != null)
+			changeCallback.run();
 	}
 
 	/**

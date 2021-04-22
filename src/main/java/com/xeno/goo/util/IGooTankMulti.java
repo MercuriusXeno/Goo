@@ -67,8 +67,10 @@ public abstract class IGooTankMulti extends IGooTank {
 			return FluidStack.EMPTY;
 
 		final int accept = Math.min(resource.getAmount(), tank.getAmount());
-		if (accept > 0 && action.execute())
+		if (accept > 0 && action.execute()) {
 			tank.shrink(accept);
+			onChange();
+		}
 
 		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
 	}
@@ -99,8 +101,10 @@ public abstract class IGooTankMulti extends IGooTank {
 		}
 
 		final int accept = Math.min(maxDrain, tankAmt);
-		if (accept > 0 && action.execute())
+		if (accept > 0 && action.execute()) {
 			tank.shrink(accept);
+			onChange();
+		}
 
 		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
 	}

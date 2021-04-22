@@ -140,6 +140,7 @@ public class GooMultiTank extends IGooTankMulti {
 				tank.grow(accept);
 
 			amount += accept;
+			onChange();
 		} else if (tank == null && accept > 0) {
 			for (int i = 0, tankCount = this.tankCount; i < tankCount; ++i) {
 				tank = tanks[i];
