@@ -34,14 +34,9 @@ public class GooTanks extends IGooTank {
 
 		int count = 0, amt = 0;
 
-		boolean hasEmpty = false;
 		for (int i = 0, e = tankList.size(); i < e; ++i) {
 			FluidStack tank = FluidStack.loadFluidStackFromNBT(tankList.getCompound(i));
-			if (tank == FluidStack.EMPTY) {
-				if (hasEmpty) continue;
-				else hasEmpty = true;
-			}
-			if (filter.test(tank)) {
+			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
 				contents.put(tank.getRawFluid(), tanks[count++] = tank);
 				amt += tank.getAmount();
 			}
