@@ -1,8 +1,11 @@
 package com.xeno.goo.util;
 
+import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -16,6 +19,26 @@ import java.util.function.Predicate;
 public abstract class IGooTank implements IFluidHandler {
 
 	private final Predicate<FluidStack> ALWAYS = p -> true;
+
+	public static void writeFluidStack(PacketBuffer buf, FluidStack fluid) {
+
+		if (fluid == null || fluid.getRawFluid() == Fluids.EMPTY)
+			buf.writeBoolean(false);
+		else {
+			buf.writeBoolean(true);
+			buf.writeRegistryIdUnsafe(ForgeRegistries.FLUIDS, fluid.getRawFluid());
+			buf.writeVarInt(fluid.getAmount());
+			buf.writeCompoundTag(fluid.getTag());
+		}
+	}
+
+	public static FluidStack readFluidStack(PacketBuffer buf) {
+
+		if (buf.readBoolean())
+			return new FluidStack(buf.readRegistryIdUnsafe(ForgeRegistries.FLUIDS), buf.readVarInt(), buf.readCompoundTag());
+
+		return FluidStack.EMPTY;
+	}
 
 	@Nonnull
 	protected final IntSupplier capacity;
@@ -46,6 +69,10 @@ public abstract class IGooTank implements IFluidHandler {
 	protected abstract void readFromNBTInternal(CompoundNBT nbt);
 
 	protected abstract void writeToNBTInternal(CompoundNBT nbt);
+
+	public abstract void readFromPacket(PacketBuffer buf);
+
+	public abstract void writeToPacket(PacketBuffer buf);
 
 	/**
 	 * Sets a filter to limit the tank to specific fluids.

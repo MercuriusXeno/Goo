@@ -3,6 +3,7 @@ package com.xeno.goo.util;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
@@ -33,6 +34,16 @@ public abstract class IGooTankMulti extends IGooTank {
 			out.add(tanks[i].writeToNBT(new CompoundNBT()));
 		}
 		nbt.put("Tanks", out);
+	}
+
+	@Override
+	public void writeToPacket(PacketBuffer buf) {
+
+		FluidStack[] tanks = this.tanks;
+
+		buf.writeVarInt(getTankCount());
+		for (int i = 0, e = getTankCount(); i < e; ++i)
+			writeFluidStack(buf, tanks[i]);
 	}
 
 	/**

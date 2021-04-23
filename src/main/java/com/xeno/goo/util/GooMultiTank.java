@@ -3,6 +3,7 @@ package com.xeno.goo.util;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -55,6 +56,29 @@ public class GooMultiTank extends IGooTankMulti {
 	}
 
 	@Override
+	public void readFromPacket(PacketBuffer buf) {
+
+		final int tankCount = this.tankCount;
+		FluidStack[] tanks = new FluidStack[tankCount];
+		Arrays.fill(tanks, FluidStack.EMPTY);
+		HashMap<Fluid, FluidStack> contents = new HashMap<>();
+
+		int count = 0, amt = 0;
+
+		for (int i = 0, e = buf.readVarInt(); i < e && count < tankCount; ++i) {
+			FluidStack tank = readFluidStack(buf);
+			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
+				contents.put(tank.getRawFluid(), tanks[count++] = tank);
+				amt += tank.getAmount();
+			}
+		}
+
+		amount = amt;
+		this.tanks = tanks;
+		this.contents = contents;
+	}
+
+	@Override
 	public int getTotalCapacity() {
 
 		return capacity.getAsInt() * tankCount;
@@ -94,8 +118,10 @@ public class GooMultiTank extends IGooTankMulti {
 	/**
 	 * Adds a new internal tank based on the resource passed in
 	 *
-	 * @param resource FluidStack representing the Fluid and fluid to be filled.
-	 * @param amount int representing the amount of fluid the tank should have when returned.
+	 * @param resource
+	 * 		FluidStack representing the Fluid and fluid to be filled.
+	 * @param amount
+	 * 		int representing the amount of fluid the tank should have when returned.
 	 */
 	protected void addTank(@Nonnull FluidStack resource, int amount) {
 
@@ -103,7 +129,8 @@ public class GooMultiTank extends IGooTankMulti {
 
 		FluidStack tank;
 		int index = 0;
-		loop: {
+		loop:
+		{
 			for (int tankCount = this.tankCount; index < tankCount; ++index) {
 				tank = tanks[index];
 				if (tank.isEmpty())

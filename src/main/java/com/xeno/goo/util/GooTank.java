@@ -1,6 +1,9 @@
 package com.xeno.goo.util;
 
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
@@ -19,13 +22,33 @@ public class GooTank extends IGooTank {
 	@Override
 	protected void readFromNBTInternal(CompoundNBT nbt) {
 
-		tank = FluidStack.loadFluidStackFromNBT(nbt);
+		// we save and load with an array for inter-op with the multi-tanks
+		tank = FluidStack.loadFluidStackFromNBT(nbt.getList("Tanks", NBT.TAG_COMPOUND).getCompound(0));
 	}
 
 	@Override
 	protected void writeToNBTInternal(CompoundNBT nbt) {
 
-		tank.writeToNBT(nbt);
+		// we save and load with an array for inter-op with the multi-tanks
+		ListNBT val = new ListNBT();
+		val.add(tank.writeToNBT(new CompoundNBT()));
+		nbt.put("Tanks", val);
+	}
+
+	@Override
+	public void readFromPacket(PacketBuffer buf) {
+
+		// we save and load with an array for inter-op with the multi-tanks
+		buf.readVarInt();
+		tank = readFluidStack(buf);
+	}
+
+	@Override
+	public void writeToPacket(PacketBuffer buf) {
+
+		// we save and load with an array for inter-op with the multi-tanks
+		buf.writeVarInt(1);
+		writeFluidStack(buf, tank);
 	}
 
 	/**

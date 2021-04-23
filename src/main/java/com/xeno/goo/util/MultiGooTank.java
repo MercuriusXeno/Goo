@@ -3,6 +3,7 @@ package com.xeno.goo.util;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -38,6 +39,30 @@ public class MultiGooTank extends IGooTankMulti {
 
 		for (int i = 0, e = tankList.size(); i < e; ++i) {
 			FluidStack tank = FluidStack.loadFluidStackFromNBT(tankList.getCompound(i));
+			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
+				contents.put(tank.getRawFluid(), tanks[count++] = tank);
+				amt += tank.getAmount();
+			}
+		}
+
+		tankCount = count;
+		amount = amt;
+		this.tanks = tanks;
+		this.contents = contents;
+	}
+
+	@Override
+	public void readFromPacket(PacketBuffer buf) {
+
+		final int e = buf.readVarInt();
+
+		FluidStack[] tanks = new FluidStack[e];
+		HashMap<Fluid, FluidStack> contents = new HashMap<>();
+
+		int count = 0, amt = 0;
+
+		for (int i = 0; i < e; ++i) {
+			FluidStack tank = readFluidStack(buf);
 			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
 				contents.put(tank.getRawFluid(), tanks[count++] = tank);
 				amt += tank.getAmount();
