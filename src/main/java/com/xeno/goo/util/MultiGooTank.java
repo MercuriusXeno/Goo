@@ -135,6 +135,8 @@ public class MultiGooTank extends IGooTankMulti {
 			this.tanks = new FluidStack[tankCount + 4 < 0 ? Integer.MAX_VALUE : tankCount + 4];
 			System.arraycopy(tanks, 0, this.tanks, 0, this.tankCount++);
 			tanks = this.tanks;
+		} else {
+			++this.tankCount;
 		}
 
 		tanks[tankCount] = tank;
