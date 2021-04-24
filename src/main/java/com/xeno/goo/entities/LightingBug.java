@@ -419,19 +419,38 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 			return lightSplat != null && lightSplat.isAlive();
 		}
 
+		private void moveToSplat() {
+
+			// move near to the splat
+			Vector3d target = Vector3d.copyCentered(lightSplat.getPosition()).add(Vector3d.copy(lightSplat.sideWeLiveOn().getDirectionVec()).scale(0.25));
+			getMoveHelper().setMoveTo(target.getX(), target.getY(), target.getZ(), 0.7);
+		}
+
 		@Override
 		public void startExecuting() {
 
+			// we're at lightSplat *or* darkPosition
 			final BlockPos start = getPosition();
 
+			// disable movement
 			goalSelector.disableFlag(Flag.MOVE);
+			// move to current location, in case something else tried to queue a path this will prevent that path from resuming
 			navigator.tryMoveToXYZ(start.getX(), start.getY(), start.getZ(), 1);
+			// stop
 			setMotion(0, 0, 0);
-			if (shouldContinueExecuting())
+
+			// if we already have a splat
+			if (shouldContinueExecuting()) {
+				moveToSplat();
 				return;
+			}
+
 			World world = getEntityWorld();
+			// if the block has changed
 			if (!world.getBlockState(start).isAir(world, start))
 				return;
+
+			// scan for a valid block based on facing
 			for (Direction dir : Direction.getFacingDirections(LightingBug.this)) {
 				BlockPos pos = start.offset(dir);
 				BlockState state = world.getBlockState(pos);
@@ -443,21 +462,29 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 							pos, dir.getOpposite(),
 							true, 0, false);
 					world.addEntity(lightSplat);
+					moveToSplat();
 					return;
 				}
 			}
+			// fell out of the loop
 		}
 
 		@Override
 		public void tick() {
 
 			if (lightSplat != null && lightSplat.isAtRest())
-				GooSplat.getGoo(lightSplat).fill(new FluidStack(Registry.RADIANT_GOO.get(), 1), FluidAction.EXECUTE);
+				// validate our little splat
+				if (world.getBlockState(lightSplat.getPosition()).isAir(world, lightSplat.getPosition()))
+					GooSplat.getGoo(lightSplat).fill(new FluidStack(Registry.RADIANT_GOO.get(), 1), FluidAction.EXECUTE);
+				else
+					// and kill it if it's invalid
+					GooSplat.getGoo(lightSplat).drain(1, FluidAction.EXECUTE);
 		}
 
 		@Override
 		public void resetTask() {
 
+			// re-enable movement (very important)
 			goalSelector.enableFlag(Flag.MOVE);
 			if (lightSplat != null && !lightSplat.isAlive())
 				lightSplat = null;
