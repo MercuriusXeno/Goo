@@ -9,8 +9,13 @@ import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import net.minecraft.block.*;
-import net.minecraft.entity.*;
+import com.xeno.goo.util.GooTank;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.LeavesBlock;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.entity.projectile.ProjectileHelper;
@@ -29,15 +34,17 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 
@@ -48,8 +55,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     private static final int QUIVER_TIMER_INITIALIZED_VALUE = 100;
     private static final int QUIVER_TIMER_ONE_CYCLE_DOWN = 75;
     private static final double GOO_GRAVITY = 0.06d;
+
     private int quiverTimer;
-    private List<FluidStack> goo = new ArrayList<>();
+
+    private GooTank goo = new GooTank(() -> 1000).setFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
+    private final LazyOptional<IFluidHandler> lazyHandler = LazyOptional.of(() -> goo);
+
     private Entity owner;
     private Direction sideWeLiveOn;
     private BlockPos blockAttached = null;
@@ -64,30 +75,20 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack) {
         super(type, worldIn);
-        setGoo(stack);
         isAttachedToBlock = false;
         if (!(stack.getFluid() instanceof GooFluid)) {
-            this.setDead();
             this.remove();
         } else {
             Vector3d pos = initialPosition(sender);
             this.setPositionAndRotation(pos.x, pos.y, pos.z, sender.rotationYaw, sender.rotationPitch);
             this.owner = sender;
-            this.setSize();
+            goo.fill(stack, FluidAction.EXECUTE);
             this.shoot();
         }
     }
 
-    private void setGoo(FluidStack stack) {
-        if (this.goo.size() == 0) {
-            this.goo.add(stack);
-        } else {
-            this.goo.set(0, stack);
-        }
-    }
-
     public static GooBlob createLobbedBlob(GooSplat splat) {
-        return new GooBlob(splat, splat.getPositionVec(), splat.onlyGoo());
+        return new GooBlob(splat, splat.getPositionVec(), GooSplat.getGoo(splat).getFluidInTankInternal(0));
     }
 
     public static GooBlob createLobbedBlob(SplatContext context, Vector3d dropPosition, FluidStack stackReturned) {
@@ -118,7 +119,6 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     // special constructor for goo blobs that don't shoot; this is important.
     private GooBlob(EntityType<GooBlob> type, World worldIn, Entity sender, FluidStack stack, Vector3d pos) {
         super(type, worldIn);
-        setGoo(stack);
         isAttachedToBlock = false;
         float yaw = 0f;
         float pitch = 0f;
@@ -128,13 +128,12 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
             this.owner = sender;
         }
         this.setPositionAndRotation(pos.x, pos.y, pos.z, yaw, pitch);
-        this.setSize();
+        goo.fill(stack, FluidAction.EXECUTE);
     }
 
     // special constructor for goo blobs created by a drain.
     public GooBlob(EntityType<GooBlob> type, World worldIn, Entity proxySender, FluidStack stack, BlockPos blockPos) {
         super(type, worldIn);
-        setGoo(stack);
         isAttachedToBlock = false;
         float offset = cubicSize() / 2f;
         // neutral offset "below" the drain
@@ -142,7 +141,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                 .add(0.5d, 0.74d - offset, 0.5d);
         this.setPositionAndRotation(pos.x, pos.y, pos.z, 0f, 0f);
         this.owner = proxySender;
-        this.setSize();
+        goo.fill(stack, FluidAction.EXECUTE);
     }
 
     private Vector3d initialPosition(Entity sender)
@@ -203,8 +202,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         // let the server handle motion and updates
         if (world.isRemote()) {
             int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
-            if (!onlyGoo().isEmpty() && dataManagerGooSize != onlyGoo().getAmount()) {
-                onlyGoo().setAmount(this.dataManager.get(GOO_AMOUNT));
+            if (!goo.isEmpty() && dataManagerGooSize != goo.getTotalContents()) {
+                goo.getFluidInTankInternal(0).setAmount(this.dataManager.get(GOO_AMOUNT));
             }
         }
 
@@ -224,8 +223,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         if (attachedSplat != null) {
             approachSplatOffset();
             if (!world.isRemote()) {
-                int amountToDrain = (int) Math.ceil(Math.sqrt(this.onlyGoo().getAmount()) / 2d);
-                attachedSplat.fill(this.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+                int amountToDrain = (int) Math.ceil(Math.sqrt(goo.getTotalContents()) / 2d);
+                GooSplat.getGoo(attachedSplat).fill(goo.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
             }
         }
     }
@@ -265,7 +264,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
             // check to see if the block is a solid cube.
             // goo bounces off of anything that isn't.
-            if (isValidForSplat(blockResult) && onlyGoo().getAmount() > 0) {
+            if (isValidForSplat(blockResult) && goo.getTotalContents() > 0) {
                 splat(blockResult.getPos(), blockResult.getFace(), blockResult.getHitVec());
                 return true;
             } else {
@@ -334,27 +333,27 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     {
         FluidStack heldGoo = item.getFluidInTank(0);
         if (!item.getFluidInTank(0).isEmpty()) {
-            if (!heldGoo.isFluidEqual(getFluidInTank(0)) || getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(goo.getFluidInTankInternal(0)) || goo.isEmpty()) {
                 return false;
             }
         }
 
         int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
-        FluidStack tryDrain = drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        FluidStack tryDrain = goo.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
         if (tryDrain.isEmpty()) {
             return false;
         }
 
-        item.fill(drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        item.fill(goo.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         return true;
     }
 
     private boolean isValidForPassThrough(BlockRayTraceResult blockResult) {
         BlockState state = world.getBlockState(blockResult.getPos());
-        if (!GooInteractions.materialPassThroughPredicateRegistry.containsKey(onlyGoo().getFluid())) {
+        if (!GooInteractions.materialPassThroughPredicateRegistry.containsKey(goo.getFluidInTankInternal(0).getFluid())) {
             return isPassableMaterial(state);
         }
-        IPassThroughPredicate funk = GooInteractions.materialPassThroughPredicateRegistry.get(onlyGoo().getFluid());
+        IPassThroughPredicate funk = GooInteractions.materialPassThroughPredicateRegistry.get(goo.getFluidInTankInternal(0).getFluid());
         return funk.blobPassThroughPredicate(blockResult, this);
     }
 
@@ -400,12 +399,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
         // check if there isn't already a splat we can stick onto, if there is, attach to it instead of a new one
 
-        List<GooSplat> splats = world.getEntitiesWithinAABB(Registry.GOO_SPLAT.get(), this.getBoundingBox(), (s) -> s.onlyGoo().getFluid().equals(this.onlyGoo().getFluid()));
+        List<GooSplat> splats = world.getEntitiesWithinAABB(Registry.GOO_SPLAT.get(), this.getBoundingBox(),
+                (s) -> GooSplat.getGoo(s).getFluidInTankInternal(0).getFluid().equals(goo.getFluidInTankInternal(0).getFluid()));
         if (splats.size() > 0) {
             attachToBlock(pos, face, splats.get(0));
         } else {
             // create a goo splat
-            FluidStack traceGoo = drain(1, FluidAction.EXECUTE);
+            FluidStack traceGoo = goo.drain(1, FluidAction.EXECUTE);
             GooSplat splatToAdd = new GooSplat(Registry.GOO_SPLAT.get(), this.owner, world, traceGoo, hitVec, pos, face, true, 0f, false);
             attachToBlock(pos, face, splatToAdd);
             world.addEntity(splatToAdd);
@@ -484,9 +484,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     public void read(CompoundNBT tag)
     {
         super.read(tag);
-        setGoo(FluidStack.loadFluidStackFromNBT(tag));
         deserializeAttachment(tag);
-        setSize();
+        goo.readFromNBT(tag.getCompound("goo"));
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
         }
@@ -509,7 +508,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
-        onlyGoo().writeToNBT(tag);
+        tag.put("goo", goo.writeToNBT(new CompoundNBT()));
         serializeAttachment(tag);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
         if (this.isCollidingEntity) { tag.putBoolean("isDepartedOwner", true); }
@@ -600,7 +599,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     // return false if we need to keep processing movement because some or all of the goo is still there
     private boolean enterTank(IFluidHandler fh)
     {
-        int attemptTransfer = fh.fill(onlyGoo(), IFluidHandler.FluidAction.SIMULATE);
+        int attemptTransfer = fh.fill(goo.getFluidInTank(0), IFluidHandler.FluidAction.SIMULATE);
         if (attemptTransfer == 0) {
             return false;
         }
@@ -608,21 +607,13 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
             GooInteractions.spawnParticles(this);
             AudioHelper.entityAudioEvent(this, Registry.GOO_DEPOSIT_SOUND.get(), SoundCategory.PLAYERS, 1.0f, AudioHelper.PitchFormulas.HalfToOne);
         }
-        if (attemptTransfer >= onlyGoo().getAmount()) {
-            fh.fill(onlyGoo(), IFluidHandler.FluidAction.EXECUTE);
-            setGoo(FluidStack.EMPTY);
-            return true;
-        } else {
-            fh.fill(new FluidStack(onlyGoo().getFluid(), attemptTransfer), IFluidHandler.FluidAction.EXECUTE);
-            onlyGoo().setAmount(onlyGoo().getAmount() - attemptTransfer);
-        }
-
-        return onlyGoo().getAmount() <= 0;
+        fh.fill(goo.drain(attemptTransfer, FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        return goo.isEmpty();
     }
 
 
     protected void setSize() {
-        this.dataManager.set(GOO_AMOUNT, onlyGoo().getAmount());
+        this.dataManager.set(GOO_AMOUNT, goo.getTotalContents());
         this.recalculateSize();
     }
 
@@ -651,8 +642,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
             for(Entity e : collidedEntities) {
                 if (isBlobToMergeWith(e)) {
                     GooBlob target = (GooBlob)e;
-                    double mergeSigma = (double) onlyGoo().getAmount() + target.onlyGoo().getAmount();
-                    double sourceDominance = (double) onlyGoo().getAmount() / mergeSigma;
+                    double mergeSigma = (double) goo.getTotalContents() + target.goo.getTotalContents();
+                    double sourceDominance = (double) goo.getTotalContents() / mergeSigma;
                     Vector3d positionDelta = target.getPositionVec().subtract(this.getPositionVec()).scale(1d - sourceDominance);
                     Vector3d motionDelta = target.getMotion().subtract(this.getMotion()).scale(1d - sourceDominance);
                     Vector3d newPos = this.getPositionVec().add(positionDelta);
@@ -660,7 +651,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                     this.setPositionAndRotation(newPos.x, newPos.y, newPos.z, rotationYaw, rotationPitch);
                     this.setMotion(newMotion.x, newMotion.y, newMotion.z);
 
-                    this.fill(((GooBlob)e).drain(this.getTankCapacity(0) - onlyGoo().getAmount(), FluidAction.EXECUTE), FluidAction.EXECUTE);
+                    goo.fill(((GooBlob)e).goo.drain(goo.getRemainingCapacity(), FluidAction.EXECUTE), FluidAction.EXECUTE);
                 }
                 // skip riders unless we're hitting the lowest
                 if (owner != null) {
@@ -675,8 +666,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
     private boolean isBlobToMergeWith(Entity eInBB) {
         return eInBB instanceof GooBlob && eInBB.isAlive()
-                && ((GooBlob)eInBB).onlyGoo().isFluidEqual(onlyGoo())
-                && ((GooBlob)eInBB).onlyGoo().getAmount() <= onlyGoo().getAmount();
+                && ((GooBlob)eInBB).goo.getFluidInTankInternal(0).isFluidEqual(goo.getFluidInTankInternal(0))
+                && ((GooBlob)eInBB).goo.getTotalContents() <= goo.getTotalContents();
     }
 
     protected void onImpact(RayTraceResult rayTraceResult) {
@@ -699,7 +690,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
     public float cubicSize()
     {
-        return cubicSize(onlyGoo().getAmount());
+        return cubicSize(goo.getTotalContents());
     }
 
     public static float cubicSize(int amount) {
@@ -710,97 +701,32 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     {
         return quiverTimer;
     }
-
+    @Nonnull
     @Override
-    public int getTanks()
-    {
-        return 1;
-    }
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, Direction side) {
 
-    @Override
-    public FluidStack getFluidInTank(int tank)
-    {
-        return onlyGoo();
-    }
-
-    @Override
-    public int getTankCapacity(int tank)
-    {
-        return 1000;
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, FluidStack stack)
-    {
-        return stack.isFluidEqual(this.onlyGoo());
-    }
-
-    @Override
-    public int fill(FluidStack resource, IFluidHandler.FluidAction action)
-    {
-        int spaceRemaining = getTankCapacity(1) - onlyGoo().getAmount();
-        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
-        if (action == IFluidHandler.FluidAction.EXECUTE && transferAmount > 0) {
-            onlyGoo().setAmount(onlyGoo().getAmount() + transferAmount);
-            setSize();
+        if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+            return lazyHandler.cast();
         }
-
-        return transferAmount;
+        return super.getCapability(cap, side);
     }
 
     @Override
-    public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action)
-    {
-        FluidStack result = new FluidStack(onlyGoo().getFluid(), Math.min(onlyGoo().getAmount(), resource.getAmount()));
-        if (action == IFluidHandler.FluidAction.EXECUTE) {
-            onlyGoo().setAmount(onlyGoo().getAmount() - result.getAmount());
-            if (goo.isEmpty()) {
-                this.remove();
-            } else {
-                setSize();
-            }
-        }
+    protected void invalidateCaps() {
 
-        return result;
+        super.invalidateCaps();
+        lazyHandler.invalidate();
     }
 
-    @Override
-    public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action)
-    {
-        if (this.world.isRemote()) {
-            return FluidStack.EMPTY;
-        }
-        if (onlyGoo().isEmpty()) {
-            return FluidStack.EMPTY;
-        }
-        FluidStack result = new FluidStack(onlyGoo().getFluid(), Math.min(onlyGoo().getAmount(), maxDrain));
-        if (action == IFluidHandler.FluidAction.EXECUTE) {
-            onlyGoo().setAmount(onlyGoo().getAmount() - result.getAmount());
-            if (goo.isEmpty()) {
-                this.remove();
-            } else {
-                setSize();
-            }
-        }
+    private void contentsChanged() {
 
-        return result;
+        if (goo.isEmpty()) remove(true); // do not kill caps here, World will do this for us when it removes us at the end of the tick
+        else setSize();
     }
 
     public Entity owner()
     {
         return this.owner;
-    }
-
-    public FluidStack onlyGoo() {
-        if (this.goo.size() == 0) {
-            setGoo(FluidStack.EMPTY);
-        }
-        return this.goo.get(0);
-    }
-
-    @Override
-    public List<FluidStack> goo() {
-        return this.goo;
     }
 
     public Direction sideWeLiveOn()
@@ -811,5 +737,11 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     public BlockPos blockAttached()
     {
         return this.blockAttached;
+    }
+
+    @Override
+    public FluidStack goo() {
+
+        return goo.getFluidInTank(0);
     }
 }

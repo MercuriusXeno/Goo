@@ -10,6 +10,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class SplatContext
@@ -31,7 +32,9 @@ public class SplatContext
                         Fluid fluid) {
         this.hitResult = trace;
         this.world = world;
-        this.fluidHandler = entity;
+        // if this is somehow null we want to throw anyway
+        //noinspection OptionalGetWithoutIsPresent
+        this.fluidHandler = entity.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null).resolve().get();
         this.blockPos = trace.getPos();
         this.sideHit = trace.getFace();
         this.blockState = world.getBlockState(this.blockPos);

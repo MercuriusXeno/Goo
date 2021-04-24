@@ -98,7 +98,7 @@ public class GooBulb extends BlockWithConnections
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
         int containment = GooBulbItem.containment(stack);
         GooBulbTile tile = (GooBulbTile)worldIn.getTileEntity(pos);
-        tile.enchantContainment(containment);
+        tile.setContainmentLevel(containment);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.xeno.goo.network;
 
+import com.xeno.goo.util.IGooTank;
+import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.tileentity.TileEntity;
@@ -7,19 +9,16 @@ import net.minecraft.util.RegistryKey;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 public class FluidUpdatePacket implements IGooModPacket {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos pos;
     private int indexes;
-    private List<FluidStack> fluids;
+    private PacketBuffer fluids;
 
     public FluidUpdatePacket(PacketBuffer buf) {
         read(buf);
@@ -28,28 +27,24 @@ public class FluidUpdatePacket implements IGooModPacket {
     public void read(PacketBuffer buf) {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.pos = buf.readBlockPos();
-        this.indexes = buf.readInt();
-        this.fluids = new ArrayList<>();
-        for(int i = 0; i < indexes; i++) {
-            this.fluids.add(buf.readFluidStack());
+        this.fluids = new PacketBuffer(Unpooled.buffer());
+        for (int i = 0, e = buf.readVarInt(), dummy = fluids.writeVarInt(e).refCnt(); i < e; ++i) {
+            IGooTank.writeFluidStack(fluids, IGooTank.readFluidStack(buf));
         }
     }
 
-    public FluidUpdatePacket(RegistryKey<World> registryKey, BlockPos pos, List<FluidStack> fluidStacks) {
+    public FluidUpdatePacket(RegistryKey<World> registryKey, BlockPos pos, IGooTank fluidStacks) {
         this.worldRegistryKey = registryKey;
         this.pos = pos;
-        this.indexes = fluidStacks.size();
-        this.fluids = new ArrayList<>();
-        fluids.addAll(fluidStacks);
+        this.fluids = new PacketBuffer(Unpooled.buffer());
+        fluidStacks.writeToPacket(fluids);
     }
 
     public void toBytes(PacketBuffer buf) {
         buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeBlockPos(pos);
-        buf.writeInt(indexes);
-        for(int i = 0; i < indexes; i++) {
-            buf.writeFluidStack(fluids.get(i));
-        }
+        fluids.readerIndex(0);
+        buf.writeBytes(fluids);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -76,8 +71,8 @@ public class FluidUpdatePacket implements IGooModPacket {
         /**
          * Updates the current fluid to the specified value
          *
-         * @param fluids New fluidstack
+         * @param data New fluidstack
          */
-        void updateFluidsTo(List<FluidStack> fluids);
+        void updateFluidsTo(PacketBuffer data);
     }
 }

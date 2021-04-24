@@ -10,6 +10,10 @@ import com.xeno.goo.library.Compare;
 import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.util.FluidHandlerWrapper;
+import com.xeno.goo.util.MultiGooTank;
+import com.xeno.goo.util.IGooTank;
+import it.unimi.dsi.fastutil.ints.Int2DoubleLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.block.BlockState;
@@ -20,6 +24,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.ITickableTileEntity;
@@ -35,6 +40,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -46,17 +52,28 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     public static final int PROGRESS_TICKS_PER_TIER_UP = 9;
     public static final int TICKS_PER_PROGRESS_TICK = 5;
     private static final int RADIUS_BEFORE_WHO_CARES_HOW_STUTTERY_IT_LOOKS = 12;
-    private final BulbFluidHandler fluidHandler = createHandler();
-    private final LazyOptional<BulbFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
     private float verticalFillIntensity = 0f;
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
-    private int enchantContainment = 0;
     private int crystalProgressTicks = 0;
     private int lastIncrement = 0;
     private ItemStack crystal = ItemStack.EMPTY;
     private Fluid crystalFluid = Fluids.EMPTY;
     private FluidStack crystalProgress = FluidStack.EMPTY;
+
+    private final LazyOptional<IFluidHandler> topHandler = LazyOptional.of(() -> new FluidHandlerWrapper(goo) {
+
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+
+            int r = super.fill(resource, action);
+            if (r > 0) {
+                float fillVisual = Math.max(1f, r / (float) transferRate());
+                toggleVerticalFillVisuals(resource.getFluid(), fillVisual);
+            }
+            return r;
+        }
+    });
 
     public GooBulbTile() {
         super(Registry.GOO_BULB_TILE.get());
@@ -65,20 +82,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
-    }
-
-    @Override
-    protected void invalidateCaps() {
-        super.invalidateCaps();
-        lazyHandler.invalidate();
-    }
-
-    public void enchantContainment(int containment) {
-        this.enchantContainment = containment;
-    }
-
-    public int containment() {
-        return this.enchantContainment;
     }
 
     public int progress() { return this.crystalProgressTicks; }
@@ -118,8 +121,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         boolean verticalDrained = tryVerticalDrain();
         boolean lateralShared = tryLateralShare();
         boolean didStuff = isAnyCrystalProgress || verticalDrained || lateralShared;
-
-        pruneEmptyGoo();
 
         if (didStuff) {
             onContentsChanged();
@@ -189,7 +190,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             lastIncrement = target.getAmount() / (PROGRESS_TICKS_PER_TIER_UP + 1);
 
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
+            if (goo.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
@@ -213,7 +214,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
             }
 
             // not enough, we fail.
-            if (this.fluidHandler.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
+            if (goo.drain(target, IFluidHandler.FluidAction.SIMULATE).getAmount() < (target.getAmount() - lastIncrement)) {
                 reverseAnyUnfinishedCrystalProgress(true);
                 return false;
             }
@@ -235,7 +236,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
                 spawnParticles(crystalProgress, 4);
                 // reduce the target by the 10th we don't need or we'll decrease the fluid amount by more than we intended.
                 target.setAmount(target.getAmount() - lastIncrement);
-                this.fluidHandler.drain(target, IFluidHandler.FluidAction.EXECUTE);
+                goo.drain(target, IFluidHandler.FluidAction.EXECUTE);
                 crystal = new ItemStack(nextStepInCrystallization(target.getFluid()));
                 crystalProgress = FluidStack.EMPTY;
                 crystalFluid = Fluids.EMPTY;
@@ -283,11 +284,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
 
         crystalTransformations.put(f, result);
-    }
-
-    public List<FluidStack> goo()
-    {
-        return this.goo;
     }
 
     @Override
@@ -356,19 +352,9 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return !verticalFillFluid.equals(Fluids.EMPTY) && verticalFillIntensity > 0f;
     }
 
-    public void pruneEmptyGoo()
-    {
-        goo.removeIf(FluidStack::isEmpty);
-    }
-
-    public void addGoo(FluidStack fluidStack)
-    {
-        goo.add(fluidStack);
-    }
-
     // if placed above another bulb, the bulb above will drain everything downward.
     private boolean tryVerticalDrain() {
-        if (this.goo.size() == 0) {
+        if (this.goo.isEmpty()) {
             return false;
         }
 
@@ -393,7 +379,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
         boolean didStuff = false;
         // iterate over the stacks and ensure
-        for(FluidStack s : goo) {
+        for (int i = 0, e = goo.getTanks(); i < e; ++i) {
+            FluidStack s = goo.getFluidInTankInternal(i);
             if (simulatedDrainLeft <= 0) {
                 break;
             }
@@ -409,12 +396,12 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     private int transferRate()
     {
-        return GooMod.config.gooTransferRate() * storageMultiplier();
+        return GooMod.config.gooTransferRate() * getStorageMultiplier();
     }
 
     // bulbs adjacent to one another laterally "equalize" their contents to allow some hotswapping behaviors.
     private boolean tryLateralShare() {
-        if (this.goo.size() == 0) {
+        if (this.goo.isEmpty()) {
             return false;
         }
         boolean[] didStuff = {false};
@@ -435,7 +422,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         int simulatedDrainLeft =  transferRate();
 
         // iterate over the stacks and ensure
-        for(FluidStack s : goo) {
+        for (int i = 0, e = goo.getTanks(); i < e; ++i) {
+            FluidStack s = goo.getFluidInTankInternal(i);
             if (simulatedDrainLeft <= 0) {
                 break;
             }
@@ -480,13 +468,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         // fill the receptacle.
         cap.fill(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
 
-        // this is purely visual and not vital to the fill operation
-        if (cap instanceof BulbFluidHandler && isVerticalDrain) {
-            ((BulbFluidHandler)cap).sendVerticalFillSignalForVisuals(s.getFluid());
-        }
-
         // now call our drain, we're the sender.
-        fluidHandler.drain(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
+        goo.drain(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
 
         // we can only handle so much work in a tick. Decrement the work limit. If it's zero, this loop breaks.
         // but if it was less than we're allowed to send, we can do more work in this tick, so it will continue.
@@ -495,43 +478,32 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return simulatedDrainLeft;
     }
 
-    public boolean hasFluid(Fluid fluid) {
-        return !getSpecificGooType(fluid).equals(FluidStack.EMPTY);
-    }
-
     public boolean fluidNamesAreEqual(FluidStack fluidStack, String gooType) {
         return Objects.requireNonNull(fluidStack.getFluid().getRegistryName()).getPath().equals(gooType);
     }
 
-    public FluidStack getLeastQuantityGoo() {
-        return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0).min(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
-    }
-
     public FluidStack getMostQuantityGoo() {
-        return goo.stream().filter(f -> !f.isEmpty() && f.getAmount() > 0 && f.getFluid() instanceof GooFluid).max(Comparator.comparingInt(FluidStack::getAmount)).orElse(FluidStack.EMPTY);
-    }
 
-    public FluidStack getSpecificGooType(Fluid fluid) {
-        if (fluid == null) {
-            return FluidStack.EMPTY;
+        FluidStack ret = FluidStack.EMPTY;
+        for (int i = 0, e = goo.getTanks(); i < e; ++i) {
+            FluidStack tank = goo.getFluidInTankInternal(0);
+            if (tank.getAmount() > ret.getAmount())
+                ret = tank;
         }
-        return goo.stream().filter(f -> fluidNamesAreEqual(f, fluid.getRegistryName().getPath())).findFirst().orElse(FluidStack.EMPTY);
+        return ret;
     }
 
     public int getTotalGoo() {
-        return goo.stream().mapToInt(FluidStack::getAmount).sum();
+
+        return goo.getTotalContents();
     }
 
     public void onContentsChanged() {
-        if (world == null) {
+
+        if (world == null || world.isRemote) {
             return;
         }
-        if (!world.isRemote) {
-            if (world.getServer() == null) {
-                return;
-            }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
-        }
+        Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), (ServerWorld) world, pos);
     }
 
     @Override
@@ -542,8 +514,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     @Override
     public CompoundNBT write(CompoundNBT tag) {
-        tag.put("goo", serializeGoo());
-        tag.putInt(Containment.id(), enchantContainment);
         CompoundNBT crystalTag = crystal.write(new CompoundNBT());
         CompoundNBT crystalProgressTag = crystalProgress.writeToNBT(new CompoundNBT());
         tag.put("crystal_tag", crystalTag);
@@ -553,13 +523,12 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public void read(BlockState state, CompoundNBT tag)
     {
-        CompoundNBT gooTag = tag.getCompound("goo");
-        deserializeGoo(gooTag);
+        super.read(state, tag);
         // old holding data fixer
         if (tag.contains("holding")) {
-            enchantContainment(tag.getInt("holding"));
+            setContainmentLevel(tag.getInt("holding"));
         } else if (tag.contains(Containment.id())) {
-            enchantContainment(tag.getInt(Containment.id()));
+            setContainmentLevel(tag.getInt(Containment.id()));
         }
         if (tag.contains("crystal_tag")) {
             crystal = ItemStack.read(tag.getCompound("crystal_tag"));
@@ -567,26 +536,13 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         if (tag.contains("crystal_progress")) {
             crystalProgress = FluidStack.loadFluidStackFromNBT(tag.getCompound("crystal_progress"));
         }
-        super.read(state, tag);
         onContentsChanged();
     }
 
     @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        // tanks have omnidirectional gaskets so side is irrelevant.
-        if (cap.equals(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)) {
-            return lazyHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
+    public void updateFluidsTo(PacketBuffer fluids) {
 
-    @Override
-    public void updateFluidsTo(List<FluidStack> fluids) {
-        goo = fluids;
-    }
-
-    private BulbFluidHandler createHandler() {
-        return new BulbFluidHandler(this);
+        this.goo.readFromPacket(fluids);
     }
 
     public void spewItems()
@@ -601,7 +557,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public int getSpaceRemaining()
     {
-        return fluidHandler.getTankCapacity(0) - getTotalGoo();
+        return goo.getRemainingCapacity();
     }
 
     // moved this from renderer to here so that both can utilize the same
@@ -611,16 +567,21 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     public static final float HEIGHT_SCALE = (1f - FLUID_VERTICAL_MAX) - FLUID_VERTICAL_OFFSET;
     public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 1f / Registry.FluidSuppliers.size(); // percentile is a representation of all the fluid types in existence.
 
-    public static final Map<Integer, Double> CAPACITY_LOGS = new HashMap<>();
+    public static final Int2DoubleLinkedOpenHashMap CAPACITY_LOGS = new Int2DoubleLinkedOpenHashMap();
 
-    public static Object2FloatMap<Fluid> calculateFluidHeights(int capacity, List<FluidStack> unsortedGoo, FluidStack crystalProgress, int lastAmount, int progressTicks, float partialTicks) {
+    public static Object2FloatMap<Fluid> calculateFluidHeights(int capacity, IGooTank unsortedGoo, FluidStack crystalProgress, int lastAmount, int progressTicks, float partialTicks) {
         if (!CAPACITY_LOGS.containsKey(capacity)) {
             CAPACITY_LOGS.put(capacity, calculateCapacityLog(capacity));
         }
         // start with the smallest stacks because those will influence the "minimum heights" first
         // and result in the larger stacks being diminished to compensate for their relative smallness.
         // shallow copy to avoid concurrent mods
-        List<FluidStack> gooStacks = new ArrayList<>(unsortedGoo);
+        List<FluidStack> gooStacks = new ArrayList<>();
+        for (int i = 0, e = unsortedGoo.getTanks(); i < e; ++i)
+            // quick hacks
+            if (unsortedGoo.getFluidInTankInternal(i).getAmount() > 0)
+                gooStacks.add(unsortedGoo.getFluidInTankInternal(i));
+
         gooStacks.sort(Compare.fluidAmountComparator);
         float total = gooStacks.stream().mapToInt(FluidStack::getAmount).sum();
         total -= crystalProgress.getAmount();
@@ -673,12 +634,12 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         return results;
     }
 
-    private static Double calculateCapacityLog(int capacity) {
+    private static double calculateCapacityLog(int capacity) {
         return Math.log(capacity) / Math.log(16d);
     }
 
     public Object2FloatMap<Fluid> calculateFluidHeights(float partialTicks) {
-        return calculateFluidHeights(fluidHandler.getTankCapacity(0), goo, crystalProgress, lastIncrement, crystalProgressTicks, partialTicks);
+        return calculateFluidHeights(getStorageCapacity(), goo, crystalProgress, lastIncrement, crystalProgressTicks, partialTicks);
     }
 
     public Object2FloatMap<Fluid> calculateFluidHeights() {
@@ -694,39 +655,66 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     @Override
     public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction side, RayTraceTargetSource targetSource)
     {
-        pruneEmptyGoo();
-        if (goo.size() == 0) {
+        if (goo.isEmpty()) {
             return FluidStack.EMPTY;
         }
 
+        FluidStack last = FluidStack.EMPTY;
         Object2FloatMap<Fluid> fluidStacksHeights = calculateFluidHeights();
         float height = this.pos.getY() + FLUID_VERTICAL_OFFSET;
         float hitY = (float)hitVec.y;
-        for(FluidStack g : goo) {
-            if (!fluidStacksHeights.containsKey(g.getFluid())) {
-                // something is wrong...
+
+        for (int i = 0, e = goo.getTanks(); i < e; ++i) {
+            FluidStack g = goo.getFluidInTankInternal(i);
+            if (g.getAmount() <= 0 || !fluidStacksHeights.containsKey(g.getFluid()))
                 continue;
-            }
+
+            last = g;
+
             float gooHeight = fluidStacksHeights.getFloat(g.getFluid()) * HEIGHT_SCALE;
-            if (hitY >= height && hitY < height + gooHeight) {
+            if (hitY >= height && hitY < height + gooHeight)
                 return g;
-            }
+
             height += gooHeight;
         }
 
         // we couldn't find the stack which means we're *above* any stack. Return the last one.
-        return goo.get(goo.size() - 1);
+        return last;
     }
 
     @Override
     public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
-        return fluidHandler;
+        return goo;
     }
 
-    public int storageMultiplier()
+    @Override
+    protected IGooTank createGooTank() {
+
+        return new MultiGooTank(this::getStorageCapacity).
+                setFilter(f -> f.getRawFluid() == Fluids.EMPTY || f.getFluid() instanceof GooFluid).
+                setChangeCallback(this::onContentsChanged);
+    }
+
+    @Nonnull
+    @Override
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, Direction side) {
+
+        if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY && side == Direction.UP) {
+            return topHandler.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public int getBaseCapacity() {
+
+        return GooMod.config.bulbCapacity();
+    }
+
+    public int getStorageMultiplier()
     {
-        return storageMultiplier(enchantContainment);
+        return storageMultiplier(getContainmentLevel());
     }
 
     public static int storageMultiplier(int enchantContainment)

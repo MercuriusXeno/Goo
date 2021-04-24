@@ -33,14 +33,15 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
     @Override
     public void render(CrucibleTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
-        cap.ifPresent((c) -> render(c.getTankCapacity(0), tile.onlyGoo().getAmount(), tile.onlyGoo(), tile.getPos(),
+        cap.ifPresent((c) -> render(c.getTankCapacity(0), c.getFluidInTank(0), tile.getPos(),
                 matrixStack, buffer, combinedLightIn));
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
     private static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
-    public static void render(int bulbCapacity, float totalGoo, FluidStack goo, BlockPos pos,
+    public static void render(int bulbCapacity, FluidStack goo, BlockPos pos,
             MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
+        float totalGoo = goo.getAmount();
         if (goo.isEmpty()) {
             return;
         }
