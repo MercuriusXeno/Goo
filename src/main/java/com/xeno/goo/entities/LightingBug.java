@@ -430,6 +430,8 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 			if (shouldContinueExecuting())
 				return;
 			World world = getEntityWorld();
+			if (!world.getBlockState(start).isAir(world, start))
+				return;
 			for (Direction dir : Direction.getFacingDirections(LightingBug.this)) {
 				BlockPos pos = start.offset(dir);
 				BlockState state = world.getBlockState(pos);
