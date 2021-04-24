@@ -24,6 +24,23 @@ public abstract class IGooTankMulti extends IGooTank {
 
 	protected abstract int getTankCount();
 
+	/**
+	 * Helper method to handle saving the true fluid, rather than associating random data with the Empty fluid when amount <= 0
+	 */
+	protected static CompoundNBT writeTankToNBT(FluidStack tank) {
+
+		// TODO validate logic matches forge in newer versions (last check 1.16.3)
+		CompoundNBT nbt = new CompoundNBT();
+		//noinspection ConstantConditions
+		nbt.putString("FluidName", tank.getRawFluid().getRegistryName().toString());
+		nbt.putInt("Amount", tank.getAmount());
+
+		if (tank.hasTag()) {
+			nbt.put("Tag", tank.getTag());
+		}
+		return nbt;
+	}
+
 	@Override
 	protected void writeToNBTInternal(CompoundNBT nbt) {
 
@@ -31,7 +48,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		ListNBT out = new ListNBT();
 		for (int i = 0, tankCount = getTankCount(); i < tankCount; ++i) {
-			out.add(tanks[i].writeToNBT(new CompoundNBT()));
+			out.add(writeTankToNBT(tanks[i]));
 		}
 		nbt.put("Tanks", out);
 	}
