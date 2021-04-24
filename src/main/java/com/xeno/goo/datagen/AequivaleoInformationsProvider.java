@@ -286,6 +286,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(newLinkedHashSet(item, new ItemStack(item)), instances);
     }
 
+    private void saveData(LinkedHashSet<Object> items, CompoundInstance... instances) {
+        save(specFor(items).withCompounds(instances));
+    }
+
     private void registerLockedInfoForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> crystallizedGooAbstractRegistryObject) {
         Fluid f = crystallizedGooAbstractRegistryObject.get().gooType();
 

@@ -22,16 +22,16 @@
       "type": "goo:aquatic"
     },
     {
+      "amount": 120.0,
+      "type": "goo:primordial"
+    },
+    {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
     },
     {
       "amount": 120.0,
       "type": "goo:weird"
-    },
-    {
-      "amount": 120.0,
-      "type": "goo:primordial"
     }
   ]
 }

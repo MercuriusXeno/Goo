@@ -1,7 +1,7 @@
 buildscript {
     repositories {
-        mavenLocal()
         maven { url 'https://files.minecraftforge.net/maven' }
+        maven { url 'https://plugins.gradle.org/m2/' }
         jcenter()
         mavenCentral()
     }
@@ -15,7 +15,10 @@ apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
 repositories {
-    mavenLocal()
+    maven { url 'https://files.minecraftforge.net/maven' }
+    maven { url 'https://plugins.gradle.org/m2/' }
+    jcenter()
+    mavenCentral()
     maven {
         name 'Jareds for Patchouli'
         url 'https://maven.blamejared.com'
@@ -128,7 +131,6 @@ dependencies {
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
 
-    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}")
     compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
     runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
 }

@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 10.0,
-      "type": "goo:metal"
-    }
-  ]
+  "compounds": {
+    "amount": 10.0,
+    "type": "goo:metal"
+  }
 }

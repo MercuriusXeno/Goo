@@ -16,10 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 100000.0,
-      "type": "goo:logic"
-    }
-  ]
+  "compounds": {
+    "amount": 100000.0,
+    "type": "goo:logic"
+  }
 }
