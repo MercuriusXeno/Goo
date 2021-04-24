@@ -17,13 +17,13 @@ import java.util.function.Supplier;
 public class FluidUpdatePacket implements IGooModPacket {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos pos;
-    private int indexes;
     private PacketBuffer fluids;
 
     public FluidUpdatePacket(PacketBuffer buf) {
         read(buf);
     }
 
+    @SuppressWarnings("unused")
     public void read(PacketBuffer buf) {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.pos = buf.readBlockPos();
