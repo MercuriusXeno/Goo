@@ -426,7 +426,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 			goalSelector.disableFlag(Flag.MOVE);
 			navigator.tryMoveToXYZ(start.getX(), start.getY(), start.getZ(), 1);
-			navigator.clearPath();
+			setMotion(0, 0, 0);
 			if (shouldContinueExecuting())
 				return;
 			World world = getEntityWorld();
