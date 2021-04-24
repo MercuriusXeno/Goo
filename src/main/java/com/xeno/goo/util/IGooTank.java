@@ -47,9 +47,12 @@ public abstract class IGooTank implements IFluidHandler {
 	@Nullable
 	private Runnable changeCallback;
 
-	protected IGooTank(@Nonnull IntSupplier capacity) {
+	private final boolean lockedTanks;
+
+	protected IGooTank(@Nonnull IntSupplier capacity, boolean lockedTanks) {
 
 		this.capacity = Objects.requireNonNull(capacity);
+		this.lockedTanks = lockedTanks;
 	}
 
 	@SuppressWarnings({ "unchecked", "UnusedReturnValue" })
@@ -168,6 +171,7 @@ public abstract class IGooTank implements IFluidHandler {
 	final public boolean isFluidValid(int tank, @Nonnull FluidStack stack) { // this method feels useless?
 
 		final FluidStack fluid = getFluidInTankInternal(tank);
-		return (fluid == FluidStack.EMPTY && filter.test(stack)) || (fluid.getRawFluid() == stack.getRawFluid() && FluidStack.areFluidStackTagsEqual(fluid, stack));
+		return ((lockedTanks ? fluid == FluidStack.EMPTY : fluid.isEmpty()) && filter.test(stack)) ||
+				(fluid.getRawFluid() == stack.getRawFluid() && FluidStack.areFluidStackTagsEqual(fluid, stack));
 	}
 }

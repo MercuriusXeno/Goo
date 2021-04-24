@@ -16,7 +16,7 @@ public class GooTank extends IGooTank {
 
 	public GooTank(IntSupplier capacity) {
 
-		super(capacity);
+		super(capacity, false);
 	}
 
 	@Override

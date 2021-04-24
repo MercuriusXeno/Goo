@@ -17,9 +17,9 @@ public abstract class IGooTankMulti extends IGooTank {
 	protected FluidStack[] tanks;
 	protected HashMap<Fluid, FluidStack> contents = new HashMap<>();
 
-	protected IGooTankMulti(@Nonnull IntSupplier capacity) {
+	protected IGooTankMulti(@Nonnull IntSupplier capacity, boolean lockedTanks) {
 
-		super(capacity);
+		super(capacity, lockedTanks);
 	}
 
 	protected abstract int getTankCount();

@@ -18,7 +18,7 @@ public class GooMultiTank extends IGooTankMulti {
 
 	public GooMultiTank(IntSupplier capacity, int tankCount) {
 
-		super(capacity);
+		super(capacity, false);
 		tanks = new FluidStack[tankCount];
 		Arrays.fill(tanks, FluidStack.EMPTY);
 		this.tankCount = tankCount;

@@ -17,7 +17,7 @@ public class MultiGooTank extends IGooTankMulti {
 
 	public MultiGooTank(IntSupplier capacity) {
 
-		super(capacity);
+		super(capacity, true);
 		tanks = new FluidStack[4];
 	}
 
