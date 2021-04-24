@@ -449,7 +449,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void tick() {
 
-			if (lightSplat.isAtRest())
+			if (lightSplat != null && lightSplat.isAtRest())
 				GooSplat.getGoo(lightSplat).fill(new FluidStack(Registry.RADIANT_GOO.get(), 1), FluidAction.EXECUTE);
 		}
 
