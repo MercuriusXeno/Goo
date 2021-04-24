@@ -5,6 +5,7 @@ import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.util.IGooTank;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
@@ -58,11 +59,16 @@ public abstract class GooContainerAbstraction extends FluidHandlerInteractionAbs
 	public static List<FluidStack> deserializeGooForDisplay(CompoundNBT tag) {
 
 		List<FluidStack> tagGooList = new ArrayList<>();
-		int size = tag.getInt("count");
-		for (int i = 0; i < size; i++) {
-			CompoundNBT gooTag = tag.getCompound("goo" + i);
-			FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
-			tagGooList.add(stack);
+		if (tag.contains("count", NBT.TAG_ANY_NUMERIC)) {
+			int size = tag.getInt("count");
+			for (int i = 0; i < size; i++) {
+				CompoundNBT gooTag = tag.getCompound("goo" + i);
+				FluidStack stack = FluidStack.loadFluidStackFromNBT(gooTag);
+				tagGooList.add(stack);
+			}
+		} else {
+			for (INBT data : tag.getList("Tanks", NBT.TAG_COMPOUND))
+				tagGooList.add(FluidStack.loadFluidStackFromNBT((CompoundNBT) data));
 		}
 
 		return tagGooList;
