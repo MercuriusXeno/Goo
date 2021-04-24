@@ -1,6 +1,7 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.blocks.Drain;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.items.Basin;
 import com.xeno.goo.items.Gauntlet;
@@ -8,8 +9,11 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.DrainTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import com.xeno.goo.util.GooTank;
+import com.xeno.goo.util.IGooTank;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.*;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.IPacket;
@@ -28,17 +32,18 @@ import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraftforge.fml.network.NetworkHooks;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
 import java.util.Collection;
-import java.util.List;
 
 public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGooContainingEntity
 {
@@ -58,7 +63,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
 
     // actual properties of the splat
-    private List<FluidStack> goo = new ArrayList<>();
+    private GooTank goo = new GooTank(() -> 1000).setFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
+    private final LazyOptional<IFluidHandler> lazyHandler = LazyOptional.of(() -> goo);
+
     private Entity owner;
     private Vector3d shape;
     private AxisAlignedBB box;
@@ -87,28 +94,19 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     public GooSplat(EntityType<GooSplat> type, Entity sender, World world, FluidStack traceGoo, Vector3d hitVec,
                     BlockPos pos, Direction face, boolean playSound, float imperceptibleOffset, boolean isInert) {
         super(type, world);
-        setGoo(traceGoo);
         this.owner = sender;
         this.sideWeLiveOn = face;
         this.blockAttached = pos;
         this.isAtRest = false;
         this.imperceptibleOffset = imperceptibleOffset;
         this.isInert = isInert;
-        // send clients the updated size, it defaults to 1
-        setSize();
+        // this will also send clients the size
+        goo.fill(traceGoo, FluidAction.EXECUTE);
         Vector3d findCenter = findCenter(hitVec);
         this.setPosition(findCenter.x, findCenter.y, findCenter.z);
         if (playSound) {
             AudioHelper.entityAudioEvent(this, Registry.GOO_SPLAT_SOUND.get(), SoundCategory.AMBIENT,
                     1.0f, AudioHelper.PitchFormulas.HalfToOne);
-        }
-    }
-
-    private void setGoo(FluidStack stack) {
-        if (this.goo.size() == 0) {
-            this.goo.add(stack);
-        } else {
-            this.goo.set(0, stack);
         }
     }
 
@@ -119,9 +117,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
     private void updateSplatState()
     {
-        double cubicArea = onlyGoo().getAmount() / LIQUID_CUBIC_RATIO;
+        double cubicArea = goo.getTotalContents() / LIQUID_CUBIC_RATIO;
         double targetSurfaceArea = cubicArea / PUDDLE_DEPTH;
-        double sideLength = Math.min(0.999d, Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO);
+        double sideLength = MathHelper.clamp(Math.sqrt(targetSurfaceArea) * PUDDLE_EXPANSION_RATIO, 0.001d, 0.999d);
         // this will be puddle depth const until sidelength gets throttled.
         double actualDepth = cubicArea / (sideLength * sideLength);
         switch (depthAxis()) {
@@ -177,7 +175,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     private void resetBox() {
         // on initialization this box doesn't exist
         // but almost immediately afterwards we should always have a shape
-        if (box != null && this.onlyGoo().getAmount() > 0) {
+        if (box != null && goo.getTotalContents() > 0) {
             this.setBoundingBox(box.offset(this.getPositionVec()));
         }
     }
@@ -195,6 +193,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     protected void registerData() {
         this.dataManager.register(GOO_AMOUNT, 1);
         this.dataManager.register(IS_AT_REST, false);
+    }
+
+    private void contentsChanged() {
+
+        if (goo.isEmpty()) remove(true); // do not kill caps here, World will do this for us when it removes us at the end of the tick
+        else setSize();
     }
 
     @Override
@@ -217,15 +221,15 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         if (world.isRemote()) {
             int dataManagerGooSize = this.dataManager.get(GOO_AMOUNT);
             isAtRest = this.dataManager.get(IS_AT_REST);
-            if (!onlyGoo().isEmpty() && dataManagerGooSize != onlyGoo().getAmount()) {
-                onlyGoo().setAmount(dataManagerGooSize);
+            if (!goo.isEmpty() && dataManagerGooSize != goo.getTotalContents()) {
+                goo.getFluidInTankInternal(0).setAmount(dataManagerGooSize);
                 updateSplatState();
             }
             return;
         }
 
         boolean wasAtRest = this.isAtRest;
-        this.isAtRest = lastGooAmount == onlyGoo().getAmount();
+        this.isAtRest = lastGooAmount == goo.getTotalContents();
 
         if (wasAtRest != isAtRest) {
             this.dataManager.set(IS_AT_REST, this.isAtRest);
@@ -255,12 +259,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
             this.remove();
         }
 
-        lastGooAmount = onlyGoo().getAmount();
+        lastGooAmount = goo.getTotalContents();
     }
 
     private void spawnParticles() {
         if (world instanceof ServerWorld) {
-            BasicParticleType type = Registry.vaporParticleFromFluid(onlyGoo().getFluid());
+            BasicParticleType type = Registry.vaporParticleFromFluid(goo.getFluidInTankInternal(0).getRawFluid());
             if (type == null) {
                 return;
             }
@@ -314,18 +318,18 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     {
         FluidStack heldGoo = item.getFluidInTank(0);
         if (!item.getFluidInTank(0).isEmpty()) {
-            if (!heldGoo.isFluidEqual(getFluidInTank(0)) || getFluidInTank(0).isEmpty()) {
+            if (!heldGoo.isFluidEqual(goo.getFluidInTank(0)) || goo.getFluidInTank(0).isEmpty()) {
                 return false;
             }
         }
 
         int spaceRemaining = item.getTankCapacity(0) - item.getFluidInTank(0).getAmount();
-        FluidStack tryDrain = drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
+        FluidStack tryDrain = goo.drain(spaceRemaining, IFluidHandler.FluidAction.SIMULATE);
         if (tryDrain.isEmpty()) {
             return false;
         }
 
-        item.fill(drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
+        item.fill(goo.drain(tryDrain, IFluidHandler.FluidAction.EXECUTE), IFluidHandler.FluidAction.EXECUTE);
         return true;
     }
 
@@ -333,8 +337,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         BlockPos below = this.getPosition().offset(Direction.DOWN);
         TileEntity e = world.getTileEntity(below);
         if (e instanceof DrainTile) {
-            if (((DrainTile) e).canFill(onlyGoo())) {
-                ((DrainTile)e).fill(this.drain(1, FluidAction.EXECUTE), this.owner);
+            if (((DrainTile) e).canFill(goo.getFluidInTankInternal(0))) {
+                ((DrainTile)e).fill(goo.drain(1, FluidAction.EXECUTE), this.owner);
             }
         }
     }
@@ -423,13 +427,13 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     public void read(CompoundNBT tag)
     {
         super.read(tag);
-        setGoo(FluidStack.loadFluidStackFromNBT(tag));
         lastGooAmount = tag.getInt("lastGooAmount");
         isAtRest = tag.getBoolean("isAtRest");
         deserializeAttachment(tag);
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
         }
+        goo.readFromNBT(tag.getCompound("goo"));
         updateSplatState();
     }
 
@@ -444,7 +448,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     @Override
     public CompoundNBT serializeNBT() {
         CompoundNBT tag = super.serializeNBT();
-        onlyGoo().writeToNBT(tag);
+        tag.put("goo", goo.writeToNBT(new CompoundNBT()));
         tag.putInt("lastGooAmount", lastGooAmount);
         tag.putBoolean("isAtRest", isAtRest);
         serializeAttachment(tag);
@@ -477,7 +481,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     }
 
     protected void setSize() {
-        this.dataManager.set(GOO_AMOUNT, onlyGoo().getAmount());
+        this.dataManager.set(GOO_AMOUNT, goo.getTotalContents());
         this.recalculateSize();
     }
 
@@ -549,12 +553,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
     private void enterTank(IFluidHandler fh)
     {
-        FluidStack attemptTransfer = this.drain(1, FluidAction.SIMULATE);
+        FluidStack attemptTransfer = goo.drain(1, FluidAction.SIMULATE);
         int allowed = fh.fill(attemptTransfer, FluidAction.SIMULATE);
         if (allowed == 0) {
             return;
         }
-        fh.fill(this.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
+        fh.fill(goo.drain(1, FluidAction.EXECUTE), FluidAction.EXECUTE);
     }
 
     private boolean checkForEntityCollision() {
@@ -568,9 +572,9 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
                         // filter
                         (eInBB) -> eInBB.equals(owner) || eInBB instanceof GooSplat || isValidCollisionEntity(eInBB));
         for(Entity e : collidedEntities) {
-            if (e instanceof GooSplat && ((GooSplat) e).onlyGoo().isFluidEqual(onlyGoo())) {
+            if (e instanceof GooSplat && ((GooSplat) e).goo.getFluidInTankInternal(0).isFluidEqual(goo.getFluidInTankInternal(0))) {
                 // must be dominant
-                if (this.onlyGoo().getAmount() < ((GooSplat)e).onlyGoo().getAmount()) {
+                if (goo.getTotalContents() < ((GooSplat)e).goo.getTotalContents()) {
                     continue;
                 }
                 // must be resting
@@ -581,13 +585,13 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
                 if (((GooSplat)e).sideWeLiveOn() != this.sideWeLiveOn || !((GooSplat)e).blockAttached().equals(this.blockAttached)) {
                     continue;
                 }
-                int amountToDrain = (int)Math.ceil(Math.sqrt(((GooSplat)e).onlyGoo().getAmount()) / 2d);
-                this.fill(((GooSplat) e).drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
+                int amountToDrain = (int)Math.ceil(Math.sqrt(((GooSplat)e).goo.getTotalContents()) / 2d);
+                goo.fill(((GooSplat) e).goo.drain(amountToDrain, FluidAction.EXECUTE), FluidAction.EXECUTE);
             } else if (e.equals(owner)) {
                 if (e == owner) {
                     // only try catching the goos flagged to bounce/return goo
                     // at the time of writing, hard coded.
-                    if (!isAutoGrabbedGoo()) {
+                    if (!isAutoGrabbedGoo(goo.getFluidInTankInternal(0))) {
                         continue;
                     }
                     return true;
@@ -598,15 +602,20 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         return false;
     }
 
+    public static IGooTank getGoo(GooSplat splat) {
+
+        return splat.goo;
+    }
+
     public boolean isAtRest() {
         return this.isAtRest;
     }
 
-    private boolean isAutoGrabbedGoo() {
-        return onlyGoo().getFluid().equals(Registry.CRYSTAL_GOO.get())
-                || onlyGoo().getFluid().equals(Registry.METAL_GOO.get())
-                || onlyGoo().getFluid().equals(Registry.REGAL_GOO.get())
-                || onlyGoo().getFluid().equals(Registry.OBSIDIAN_GOO.get());
+    private boolean isAutoGrabbedGoo(FluidStack goo) {
+        return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
+                || goo.getFluid().equals(Registry.METAL_GOO.get())
+                || goo.getFluid().equals(Registry.REGAL_GOO.get())
+                || goo.getFluid().equals(Registry.OBSIDIAN_GOO.get());
     }
 
     private boolean isValidCollisionEntity(Entity eInBB)
@@ -622,89 +631,21 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         tryFluidHandlerInteraction(blockPos, sideHit);
     }
 
+    @Nonnull
     @Override
-    public int getTanks()
-    {
-        return 1;
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, Direction side) {
+
+        if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+            return lazyHandler.cast();
+        }
+        return super.getCapability(cap, side);
     }
 
     @Override
-    public FluidStack getFluidInTank(int tank)
-    {
-        return onlyGoo();
-    }
+    protected void invalidateCaps() {
 
-    @Override
-    public int getTankCapacity(int tank)
-    {
-        return 1000;
-    }
-
-    @Override
-    public boolean isFluidValid(int tank, FluidStack stack)
-    {
-        return stack.isFluidEqual(onlyGoo());
-    }
-
-    @Override
-    public int fill(FluidStack resource, IFluidHandler.FluidAction action)
-    {
-        if (this.world.isRemote()) {
-            return 0;
-        }
-        int spaceRemaining = getTankCapacity(1) - onlyGoo().getAmount();
-        int transferAmount = Math.min(resource.getAmount(), spaceRemaining);
-        if (action == IFluidHandler.FluidAction.EXECUTE && transferAmount > 0) {
-            if (goo.isEmpty()) {
-                setGoo(resource);
-            } else {
-                onlyGoo().setAmount(onlyGoo().getAmount() + transferAmount);
-            }
-            setSize();
-        }
-
-        return transferAmount;
-    }
-
-    @Override
-    public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action)
-    {
-        if (this.world.isRemote()) {
-            return FluidStack.EMPTY;
-        }
-        if (onlyGoo().isEmpty()) {
-            return FluidStack.EMPTY;
-        }
-        FluidStack result = new FluidStack(onlyGoo().getFluid(), Math.min(onlyGoo().getAmount(), resource.getAmount()));
-        if (action == IFluidHandler.FluidAction.EXECUTE) {
-            onlyGoo().setAmount(onlyGoo().getAmount() - result.getAmount());
-            if (goo.isEmpty()) {
-                this.remove();
-            } else {
-                setSize();
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action)
-    {
-        if (this.world.isRemote()) {
-            return FluidStack.EMPTY;
-        }
-        FluidStack result = new FluidStack(onlyGoo().getFluid(), Math.min(onlyGoo().getAmount(), maxDrain));
-        if (action == IFluidHandler.FluidAction.EXECUTE) {
-            onlyGoo().setAmount(onlyGoo().getAmount() - result.getAmount());
-            if (goo.isEmpty()) {
-                this.remove();
-            } else {
-                setSize();
-            }
-        }
-
-        return result;
+        super.invalidateCaps();
+        lazyHandler.invalidate();
     }
 
     public BlockPos blockAttached()
@@ -716,18 +657,6 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         return this.sideWeLiveOn;
     }
 
-    public FluidStack onlyGoo() {
-        if (this.goo.size() == 0) {
-            setGoo(FluidStack.EMPTY);
-        }
-        return this.goo.get(0);
-    }
-
-    @Override
-    public List<FluidStack> goo() {
-        return this.goo;
-    }
-
     public Entity owner()
     {
         return this.owner;
@@ -735,5 +664,11 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
     public void setCooldown(int cooldown) {
         this.cooldown = cooldown;
+    }
+
+    @Override
+    public FluidStack goo() {
+
+        return goo.getFluidInTank(0);
     }
 }

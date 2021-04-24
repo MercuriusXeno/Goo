@@ -4,7 +4,6 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
@@ -18,15 +17,13 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.text.NumberFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class GooifierTile extends FluidHandlerInteractionAbstraction implements ITickableTileEntity, ISidedInventory
 {
@@ -156,6 +153,8 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
                 }
                 state.addWork(fillResult);
                 fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
+
+                if (state.workRemaining <= 0) break; // fastpath
             }
         }
         return state;

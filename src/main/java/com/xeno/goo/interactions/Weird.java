@@ -32,8 +32,8 @@ public class Weird
         List<GooSplat> nearbyWarpSplat = splatContext.world().getEntitiesWithinAABB(GooSplat.class,
                 splatContext.splat().getBoundingBox().grow(BOUNDS_REACH),
                     (e) -> !e.equals(splatContext.splat())
-                        && e.onlyGoo().getFluid().equals(Registry.WEIRD_GOO.get())
-                        && e.onlyGoo().getAmount() >= warpCost
+                        && GooSplat.getGoo(e).getFluidInTankInternal(0).getFluid().equals(Registry.WEIRD_GOO.get())
+                        && GooSplat.getGoo(e).getFluidInTankInternal(0).getAmount() >= warpCost
         );
         if (nearbyWarpSplat.size() == 0) {
             return false;
@@ -45,7 +45,7 @@ public class Weird
             Tuple<Boolean, Vector3d> safePassageResult = testSafePassage(splatContext, nearestWarp, entity);
             if (safePassageResult.getA()) {
                 teleportToSafePassage(entity, safePassageResult.getB());
-                nearestWarp.drain(warpCost, IFluidHandler.FluidAction.EXECUTE);
+                GooSplat.getGoo(nearestWarp).drain(warpCost, IFluidHandler.FluidAction.EXECUTE);
                 doEffects(nearestWarp, true);
                 doEffects(splatContext.splat(), false);
                 return true;

@@ -9,6 +9,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class BlobContext
@@ -25,7 +26,8 @@ public class BlobContext
     public BlobContext(BlockRayTraceResult blockResult, BlockPos blockPos, World world, GooBlob entity,
                        Fluid fluid) {
         this.world = world;
-        this.fluidHandler = entity;
+        //noinspection OptionalGetWithoutIsPresent
+        this.fluidHandler = entity.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY).resolve().get();
         this.blockPos = blockResult.getPos();
         this.blockState = world.getBlockState(this.blockPos);
         this.blockCenterVec = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);

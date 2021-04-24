@@ -18,12 +18,11 @@ public abstract class BlockWithConnections extends Block
     @SuppressWarnings("deprecation")
     @Override
     public void neighborChanged(BlockState state, World world, BlockPos pos, Block block, BlockPos neighbor, boolean isMoving) {
-        for (Direction d : relevantConnectionDirections(state)) {
-            if (pos.offset(d).equals(neighbor)) {
-                TileEntity te = world.getTileEntity(pos);
-                if (te instanceof FluidHandlerInteractionAbstraction) {
-                    ((FluidHandlerInteractionAbstraction) te).clearCachedReference(d);
-                }
+        Direction d = Direction.getFacingFromVector(neighbor.getX() - pos.getX(), neighbor.getY() - pos.getY(), neighbor.getZ() - pos.getZ());
+        {
+            TileEntity te = world.getTileEntity(pos);
+            if (te instanceof FluidHandlerInteractionAbstraction) {
+                ((FluidHandlerInteractionAbstraction) te).clearCachedReference(d);
             }
         }
     }

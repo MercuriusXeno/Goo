@@ -2,7 +2,6 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooBulbTile;
@@ -18,10 +17,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-
-import java.util.List;
 
 public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static final float FLUID_HORIZONTAL_OFFSET = 0.01626f;
@@ -39,7 +37,7 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     @Override
     public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
-        cap.ifPresent((c) -> render(tile, partialTicks, tile.crystal(), tile.goo(),
+        cap.ifPresent((c) -> render(tile, partialTicks, tile.crystal(),
                 tile.isVerticallyFilled(), tile.verticalFillFluid(),
                 tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn));
@@ -47,10 +45,9 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
 
-    public static void render(GooBulbTile tile, float partialTicks, ItemStack crystal, List<FluidStack> gooList,
+    public static void render(GooBulbTile tile, float partialTicks, ItemStack crystal,
                               boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
                               MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn) {
-        gooList.removeIf(FluidStack::isEmpty);
         IVertexBuilder normalBrightness = buffer.getBuffer(GooRenderHelper.GOO_CUBE);
 
         float yOffset = 0;
@@ -64,9 +61,14 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
         float highestToY = minY;
 
         Object2FloatMap<Fluid> entries = tile.calculateFluidHeights(partialTicks);
+        //noinspection OptionalGetWithoutIsPresent
+        IFluidHandler fluids = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null).resolve().get();
 
         // then we can render
-        for(FluidStack goo : tile.goo()) {
+        for(int i = 0, e = fluids.getTanks(); i < e; ++i) {
+            FluidStack goo = fluids.getFluidInTank(i);
+            if (goo.getAmount() <= 0) // quick hacks
+                continue;
             float entry = entries.getFloat(goo.getFluid());
             float fromY, toY;
             fromY = minY + yOffset;

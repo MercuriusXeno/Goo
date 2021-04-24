@@ -233,10 +233,6 @@ public class GooPumpTile extends TileEntity implements ITickableTileEntity, GooF
             // pump for real though
             targetHandler.fill(result, IFluidHandler.FluidAction.EXECUTE);
 
-            // this is purely visual and not vital to the fill operation
-            if (targetHandler instanceof BulbFluidHandler && targetDirection() == Direction.DOWN) {
-                ((BulbFluidHandler)targetHandler).sendVerticalFillSignalForVisuals(s.getFluid());
-            }
             // don't continue if we hit this break, we managed to push some fluid.
             break;
         }

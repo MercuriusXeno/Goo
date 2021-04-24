@@ -3,234 +3,176 @@ package com.xeno.goo.tiles;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.library.CrucibleRecipe;
 import com.xeno.goo.library.CrucibleRecipes;
-import com.xeno.goo.library.MixerRecipes;
-import com.xeno.goo.library.WeakConsumerWrapper;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.block.Block;
+import com.xeno.goo.util.GooTank;
+import com.xeno.goo.util.IGooTank;
 import net.minecraft.block.BlockState;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
-import java.lang.ref.WeakReference;
-import java.util.*;
-import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
-public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
-{
-    private final CrucibleFluidHandler fluidHandler = createHandler();
-    private final LazyOptional<CrucibleFluidHandler> lazyHandler = LazyOptional.of(() -> fluidHandler);
+public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver {
 
-    public CrucibleTile()
-    {
-        super(Registry.CRUCIBLE_TILE.get());
-        goo.addAll(Collections.singletonList(FluidStack.EMPTY));
-    }
+	public CrucibleTile() {
 
-    @Override
-    protected void invalidateCaps() {
-        super.invalidateCaps();
-        lazyHandler.invalidate();
-    }
+		super(Registry.CRUCIBLE_TILE.get());
+	}
 
-    public FluidStack onlyGoo() {
-        if (goo().size() == 0) {
-            goo.addAll(Collections.singletonList(FluidStack.EMPTY));
-        }
+	@Override
+	public void updateFluidsTo(PacketBuffer fluids) {
 
-        return goo.get(0);
-    }
+		this.goo.readFromPacket(fluids);
+	}
 
-    public boolean hasFluid(Fluid fluid)
-    {
-        return onlyGoo() != FluidStack.EMPTY && onlyGoo().getFluid().equals(fluid);
-    }
+	@Override
+	public void tick() {
 
-    @Override
-    public void updateFluidsTo(List<FluidStack> fluids)
-    {
-        if (fluids.size() == 0) {
-            this.setGoo(FluidStack.EMPTY);
-        } else {
-            this.setGoo(fluids.get(0));
-        }
-    }
+		if (world == null || world.isRemote) {
+			return;
+		}
 
-    @Override
-    public void tick()
-    {
-        if (world == null || world.isRemote) {
-            return;
-        }
+		if (getBlockState().get(BlockStateProperties.POWERED)) {
+			return;
+		}
 
-        if (getBlockState().get(BlockStateProperties.POWERED)) {
-            return;
-        }
+		tryPushingRecipeResult();
+	}
 
-        tryPushingRecipeResult();
-    }
+	private CrucibleRecipe getRecipeFromInputs() {
 
-    private CrucibleRecipe getRecipeFromInputs()
-    {
-        return CrucibleRecipes.getRecipe(onlyGoo());
-    }
+		return CrucibleRecipes.getRecipe(goo.getFluidInTankInternal(0));
+	}
 
-    private void tryPushingRecipeResult() {
-        CrucibleRecipe recipe = getRecipeFromInputs();
-        if (recipe == null) {
-            return;
-        }
+	private void tryPushingRecipeResult() {
 
-        // check to make sure the recipe inputs amounts are satisfied.
-        if (!isRecipeSatisfied(recipe)) {
-            return;
-        }
+		CrucibleRecipe recipe = getRecipeFromInputs();
+		if (recipe == null) {
+			return;
+		}
 
-        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
-        cap.ifPresent((c) -> pushRecipeResult(recipe, c));
-    }
+		// check to make sure the recipe inputs amounts are satisfied.
+		if (!isRecipeSatisfied(recipe)) {
+			return;
+		}
 
-    private void pushRecipeResult(CrucibleRecipe recipe, IFluidHandler cap) {
-        int sentResult = cap.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
-        if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
-            return;
-        }
+		LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
+		cap.ifPresent((c) -> pushRecipeResult(recipe, c));
+	}
 
-        deductInputQuantity(recipe.input());
+	private void pushRecipeResult(CrucibleRecipe recipe, IFluidHandler cap) {
 
-        cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+		int sentResult = cap.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
+		if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
+			return;
+		}
 
-        if (cap instanceof BulbFluidHandler) {
-            float fillVisual = Math.max(0.3f, recipe.output().getAmount() / (float)GooMod.config.gooTransferRate());
-            ((BulbFluidHandler) cap).sendVerticalFillSignalForVisuals(recipe.output().getFluid(), fillVisual);
-        }
-    }
+		deductInputQuantity(recipe.input());
 
-    private void deductInputQuantity(FluidStack input)
-    {
-        fluidHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
-    }
+		cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+	}
 
-    private boolean isRecipeSatisfied(CrucibleRecipe recipe)
-    {
-        return recipe.input().isFluidEqual(onlyGoo()) && recipe.input().getAmount() <= onlyGoo().getAmount();
-    }
+	private void deductInputQuantity(FluidStack input) {
 
-    public void setGoo(FluidStack fluidStack)
-    {
-        if (goo.size() == 0) {
-            goo.add(fluidStack);
-        } else {
-            goo.set(0, fluidStack);
-        }
-    }
+		goo.drain(input, IFluidHandler.FluidAction.EXECUTE);
+	}
 
-    public void onContentsChanged() {
-        if (world == null) {
-            return;
-        }
-        if (!world.isRemote) {
-            if (world.getServer() == null) {
-                return;
-            }
-            Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), Objects.requireNonNull(Objects.requireNonNull(world.getServer()).getWorld(world.getDimensionKey())), pos);
-        }
-    }
+	private boolean isRecipeSatisfied(CrucibleRecipe recipe) {
 
-    @Override
-    public CompoundNBT getUpdateTag()
-    {
-        return this.write(new CompoundNBT());
-    }
+		return goo.getFluidInTankInternal(0).containsFluid(recipe.input());
+	}
 
-    @Override
-    public CompoundNBT write(CompoundNBT tag) {
-        tag.put("goo", serializeGoo());
-        return super.write(tag);
-    }
+	public void setGoo(FluidStack fluidStack) {
 
-    public void read(BlockState state, CompoundNBT tag)
-    {
-        CompoundNBT gooTag = tag.getCompound("goo");
-        deserializeGoo(gooTag);
-        super.read(state, tag);
-        onContentsChanged();
-    }
+		if (!goo.isEmpty()) {
+			goo.drain(goo.getTotalContents(), FluidAction.EXECUTE);
+		}
+		goo.fill(fluidStack, FluidAction.EXECUTE);
+	}
 
+	public void onContentsChanged() {
 
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        if (side == Direction.UP) {
-            return LazyOptional.empty();
-        }
-        if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-            return lazyHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
+		if (world == null || world.isRemote) {
+			return;
+		}
+		Networking.sendToClientsAround(new FluidUpdatePacket(world.getDimensionKey(), pos, goo), (ServerWorld) world, pos);
+	}
 
-    private CrucibleFluidHandler createHandler() {
-        return new CrucibleFluidHandler(this);
-    }
+	@Nonnull
+	@Override
+	public CompoundNBT getUpdateTag() {
 
-    public int getSpaceRemaining(FluidStack stack)
-    {
-        if (!onlyGoo().isEmpty() && !onlyGoo().getFluid().equals(stack.getFluid())) {
-            return 0;
-        }
+		return this.write(new CompoundNBT());
+	}
 
-        // one last check; we don't allow "inert" fluids or inherently invalid fluids.
-        if (!shouldAllowFluid(stack)) {
-            return 0;
-        }
-        return fluidHandler.getTankCapacity(0) - onlyGoo().getAmount();
-    }
+	@Override
+	protected IGooTank createGooTank() {
 
-    private boolean shouldAllowFluid(FluidStack stack)
-    {
+		return new GooTank(this::getStorageCapacity).setFilter(CrucibleRecipes::isAnyRecipe).setChangeCallback(this::onContentsChanged);
+	}
 
-        // if we already contain this fluid we've passed this test already.
-        if (onlyGoo().isFluidEqual(stack)) {
-            return true;
-        }
+	@Override
+	public int getBaseCapacity() {
 
-        if (!onlyGoo().isEmpty()) {
-            return false;
-        }
+		return GooMod.config.crucibleInputCapacity();
+	}
 
-        return CrucibleRecipes.isAnyRecipe(stack);
-    }
+	@Override
+	public int getStorageMultiplier() {
 
-    @Override
-    public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource)
-    {
-        return onlyGoo();
-    }
+		return 1;
+	}
 
-    @Override
-    public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
-    {
-        return fluidHandler;
-    }
+	@Nonnull
+	@Override
+	public CompoundNBT write(CompoundNBT tag) {
 
-    public int getTotalGoo() {
-        int[] total = {0};
-        goo().forEach((g) -> total[0] += g.getAmount());
-        return total[0];
-    }
+		return super.write(tag);
+	}
+
+	public void read(BlockState state, CompoundNBT tag) {
+
+		super.read(state, tag);
+		onContentsChanged();
+	}
+
+	@Nonnull
+	@Override
+	public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, Direction side) {
+
+		if (side == Direction.UP) {
+			return LazyOptional.empty();
+		}
+		return super.getCapability(cap, side);
+	}
+
+	@Override
+	public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVector, Direction face, RayTraceTargetSource targetSource) {
+
+		return goo.getFluidInTankInternal(0);
+	}
+
+	@Override
+	public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource) {
+
+		return goo;
+	}
+
+	public int getTotalGoo() {
+
+		return goo.getTotalContents();
+	}
 }

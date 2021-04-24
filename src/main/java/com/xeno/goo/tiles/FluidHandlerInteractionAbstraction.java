@@ -11,42 +11,43 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class FluidHandlerInteractionAbstraction extends TileEntity
-{
-    public FluidHandlerInteractionAbstraction(TileEntityType<?> tileEntityTypeIn)
-    {
-        super(tileEntityTypeIn);
-    }
+public abstract class FluidHandlerInteractionAbstraction extends TileEntity {
 
-    /** Lambda to call when a lazy optional is invalidated. Final variable to reduce memory usage */
+    /**
+     * Lambda to call when a lazy optional is invalidated.
+     */
     protected final NonNullConsumer<LazyOptional<IFluidHandler>> directionalInvalidator =
-            new WeakConsumerWrapper<>(this, (te, handler) -> {
-                for (Direction d : Direction.values())
-                    if (te.directionalHandlers.containsKey(d) && te.directionalHandlers.get(d) == handler) {
-                        te.clearCachedReference(d);
-                    }
-            });
+            WeakConsumerWrapper.of(this, FluidHandlerInteractionAbstraction::clearCachedReference);
 
-    public void clearCachedReference(Direction d)
-    {
-        directionalHandlers.put(d, null);
-    }
+    protected Map<Direction, LazyOptional<IFluidHandler>> directionalHandlers = new HashMap<>();
 
-    Map<Direction, LazyOptional<IFluidHandler>> directionalHandlers = new HashMap<>();
-    protected LazyOptional<IFluidHandler> fluidHandlerInDirection(Direction d)
-    {
-        if (directionalHandlers.containsKey(d) && directionalHandlers.get(d) != null) {
-            return directionalHandlers.get(d);
-        }
+	public FluidHandlerInteractionAbstraction(TileEntityType<?> tileEntityTypeIn) {
 
-        LazyOptional<IFluidHandler> handler = FluidHandlerHelper.capabilityOfNeighbor(this, d);
-        if (handler.isPresent()) {
-            handler.addListener(directionalInvalidator);
-            directionalHandlers.put(d, handler);
-            return directionalHandlers.get(d);
-        }
+		super(tileEntityTypeIn);
+	}
 
-        directionalHandlers.put(d, LazyOptional.empty());
-        return directionalHandlers.get(d);
-    }
+	public void clearCachedReference(Direction d) {
+
+		directionalHandlers.remove(d);
+	}
+
+	public void clearCachedReference(LazyOptional<IFluidHandler> handler) {
+
+		for (Direction d : Direction.values())
+			if (directionalHandlers.containsKey(d) && directionalHandlers.get(d) == handler)
+				directionalHandlers.remove(d);
+	}
+
+	protected LazyOptional<IFluidHandler> fluidHandlerInDirection(Direction d) {
+
+		LazyOptional<IFluidHandler> ret = directionalHandlers.computeIfAbsent(d, k -> {
+
+			LazyOptional<IFluidHandler> handler = FluidHandlerHelper.capabilityOfNeighbor(this, k);
+			if (!handler.isPresent()) return null;
+
+			handler.addListener(directionalInvalidator);
+			return handler;
+		});
+		return ret == null ? LazyOptional.empty() : ret;
+	}
 }

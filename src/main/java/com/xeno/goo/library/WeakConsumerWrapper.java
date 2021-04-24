@@ -9,28 +9,25 @@ import java.util.function.BiConsumer;
  * Implementation of {@link NonNullConsumer} that weakly references a parent object.
  * Designed for use in {@link net.minecraftforge.common.util.LazyOptional#addListener(NonNullConsumer)},
  * to prevent the capability owner from keeping a reference to the listener TE and preventing garbage collection.
- * @param <TE>  Parent object type, typically a TE
- * @param <C>   Consumer value
  */
-public class WeakConsumerWrapper<TE,C> implements NonNullConsumer<C> {
-    private final WeakReference<TE> te;
-    private final BiConsumer<TE,C> consumer;
+public abstract class WeakConsumerWrapper {
 
-    /**
-     * Creates a new weak consumer wrapper
-     * @param te        Weak reference, typically to a TE
-     * @param consumer  Consumer using the TE and the consumed value. Should not use a lambda reference to an object that may need to be garbage collected
-     */
-    public WeakConsumerWrapper(TE te, BiConsumer<TE,C> consumer) {
-        this.te = new WeakReference<>(te);
-        this.consumer = consumer;
-    }
+	/**
+	 * Creates a new weak consumer wrapper
+	 *
+	 * @param te
+	 * 		Object to wrap in a WeakReference and passed to the first parameter of the BiConsumer if non-null at the time of calling
+	 * @param consumer
+	 * 		Consumer using the TE and the consumed value. Should not use a lambda reference to an object that may need to be garbage collected
+	 */
+	public static <TE, C> NonNullConsumer<C> of(TE te, BiConsumer<TE, C> consumer) {
 
-    @Override
-    public void accept(C c) {
-        TE te = this.te.get();
-        if (te != null) {
-            consumer.accept(te, c);
-        }
-    }
+		final WeakReference<TE> ref = new WeakReference<>(te);
+		return (c) -> {
+			TE that = ref.get();
+			if (that != null) {
+				consumer.accept(that, c);
+			}
+		};
+	}
 }
