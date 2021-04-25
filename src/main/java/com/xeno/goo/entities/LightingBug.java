@@ -20,6 +20,8 @@ import net.minecraft.pathfinding.PathNavigator;
 import net.minecraft.pathfinding.PathNodeType;
 import net.minecraft.tags.ITag;
 import net.minecraft.util.Direction;
+import net.minecraft.util.SoundEvent;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
@@ -27,6 +29,8 @@ import net.minecraft.village.PointOfInterest;
 import net.minecraft.village.PointOfInterestManager;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
@@ -67,6 +71,13 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		this.setPathPriority(PathNodeType.COCOA, -1);
 		this.setPathPriority(PathNodeType.FENCE, -1);
 		setGrowingAge(-100000);
+	}
+
+	@Override
+	public boolean isInRangeToRenderDist(double distance) {
+
+		final double maxDist = 64;
+		return distance < maxDist * maxDist;
 	}
 
 	@Override
@@ -170,7 +181,35 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	}
 
 	@Override
+	public void playSound(SoundEvent soundIn, float volume, float pitch) {
+
+		if (!this.isSilent() && soundIn != SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE) {
+			this.world.playSound(null, this.getPosX(), this.getPosY(), this.getPosZ(), soundIn, this.getSoundCategory(), volume, pitch);
+		}
+	}
+
+	@Override
+	public boolean isBurning() {
+
+		// we override this to hijack renderer lighting logic
+		if (ticksExisted % 40 <= 5)
+			return true;
+		return super.isBurning();
+	}
+
+	/**
+	 * Return whether this entity should be rendered as on fire.
+	 */
+	@Override
+	@OnlyIn(Dist.CLIENT)
+	public boolean canRenderOnFire() {
+		// call super to get the raw logic
+		return super.isBurning() && !this.isSpectator();
+	}
+
+	@Override
 	protected void updateMovementGoalFlags() {
+
 		boolean flag = !(this.getControllingPassenger() instanceof MobEntity);
 		boolean flag1 = !(this.getRidingEntity() instanceof BoatEntity);
 		this.goalSelector.setFlag(Flag.JUMP, flag && flag1);
@@ -391,7 +430,8 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		public void resetTask() {
 
 			goalSelector.enableFlag(Flag.TARGET);
-			darkPosition = null;
+			if (getPosition().equals(darkPosition))
+				darkPosition = null;
 		}
 	}
 
