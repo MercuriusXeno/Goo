@@ -8,9 +8,7 @@ import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraft.entity.ai.controller.FlyingMovementController;
 import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.ai.goal.Goal.Flag;
 import net.minecraft.entity.ai.goal.SwimGoal;
-import net.minecraft.entity.item.BoatEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.IFlyingAnimal;
 import net.minecraft.fluid.Fluid;
@@ -31,14 +29,13 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 import javax.annotation.Nullable;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +44,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	public static AttributeModifierMap.MutableAttribute setCustomAttributes() {
 
 		return MobEntity.func_233666_p_()
+				.createMutableAttribute(ForgeMod.ENTITY_GRAVITY.get(), 0)
 				.createMutableAttribute(Attributes.MAX_HEALTH, 10D)
 				.createMutableAttribute(Attributes.FLYING_SPEED, 1.2F)
 				.createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.5F)
@@ -61,16 +59,25 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	public LightingBug(EntityType<LightingBug> type, World worldIn) {
 
 		super(type, worldIn);
+		this.setNoGravity(true);
 		this.moveController = new FlyingMovementController(this, 20, true);
 		this.setPathPriority(PathNodeType.DANGER_CACTUS, -1);
-		this.setPathPriority(PathNodeType.DANGER_FIRE, -1);
+		this.setPathPriority(PathNodeType.DANGER_FIRE, -100);
+		this.setPathPriority(PathNodeType.DAMAGE_FIRE, -1000);
+		this.setPathPriority(PathNodeType.LAVA, -1000);
 		this.setPathPriority(PathNodeType.DANGER_OTHER, -1);
 		this.setPathPriority(PathNodeType.UNPASSABLE_RAIL, 0);
-		this.setPathPriority(PathNodeType.WATER, -1);
+		this.setPathPriority(PathNodeType.WATER, -5);
 		this.setPathPriority(PathNodeType.WATER_BORDER, 16);
 		this.setPathPriority(PathNodeType.COCOA, -1);
 		this.setPathPriority(PathNodeType.FENCE, -1);
 		setGrowingAge(-100000);
+	}
+
+	@Override
+	public boolean func_233660_b_(PathNodeType p_233660_1_) {
+
+		return p_233660_1_ != PathNodeType.LAVA && p_233660_1_ != PathNodeType.DAMAGE_FIRE && super.func_233660_b_(p_233660_1_);
 	}
 
 	@Override
@@ -83,14 +90,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	@Override
 	protected PathNavigator createNavigator(World worldIn) {
 
-		FlyingPathNavigator flyingpathnavigator = new FlyingPathNavigator(this, worldIn) {
-
-			@Override
-			public boolean canEntityStandOnPos(BlockPos pos) {
-
-				return this.world.getBlockState(pos).isTopSolid(this.world, pos, this.entity, Direction.UP);
-			}
-		};
+		FlyingPathNavigator flyingpathnavigator = new FlyingPathNavigator(this, worldIn);
 		flyingpathnavigator.setCanOpenDoors(false);
 		flyingpathnavigator.setCanSwim(false);
 		flyingpathnavigator.setCanEnterDoors(true);
@@ -203,6 +203,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public boolean canRenderOnFire() {
+
 		// call super to get the raw logic
 		return super.isBurning() && !this.isSpectator();
 	}
@@ -210,10 +211,6 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	@Override
 	protected void updateMovementGoalFlags() {
 
-		boolean flag = !(this.getControllingPassenger() instanceof MobEntity);
-		boolean flag1 = !(this.getRidingEntity() instanceof BoatEntity);
-		this.goalSelector.setFlag(Flag.JUMP, flag && flag1);
-		this.goalSelector.setFlag(Flag.LOOK, flag);
 	}
 
 	class DrinkGooGoal extends Goal {
@@ -419,7 +416,6 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void startExecuting() {
 
-			goalSelector.disableFlag(Flag.TARGET);
 			if (lightSplat != null) {
 				navigator.setPath(navigator.getPathToPos(lightSplat.getPosition(), 0), 1.0D);
 			} else
@@ -429,7 +425,6 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void resetTask() {
 
-			goalSelector.enableFlag(Flag.TARGET);
 			if (getPosition().equals(darkPosition))
 				darkPosition = null;
 		}
@@ -439,6 +434,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 		private LightDarkBlockGoal() {
 
+			this.setMutexFlags(EnumSet.of(Flag.TARGET));
 		}
 
 		@Override
@@ -464,6 +460,8 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 			// move near to the splat
 			Vector3d target = Vector3d.copyCentered(lightSplat.getPosition()).add(Vector3d.copy(lightSplat.sideWeLiveOn().getDirectionVec()).scale(0.25));
 			getMoveHelper().setMoveTo(target.getX(), target.getY(), target.getZ(), 0.7);
+			if (getPosition().equals(darkPosition))
+				darkPosition = null;
 		}
 
 		@Override
@@ -487,8 +485,10 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 			World world = getEntityWorld();
 			// if the block has changed
-			if (!world.getBlockState(start).isAir(world, start))
+			if (!world.getBlockState(start).isAir(world, start)) {
+				darkPosition = null;
 				return;
+			}
 
 			// scan for a valid block based on facing
 			for (Direction dir : Direction.getFacingDirections(LightingBug.this)) {
@@ -533,60 +533,86 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 	class FindDarkBlockGoal extends Goal {
 
+		private static final int MAX_SEARCH_LIMIT = 24;
+
+		private final Deque<BlockPos> blocks = new LinkedList<>();
+		private BlockPos start = BlockPos.ZERO;
+
 		private FindDarkBlockGoal() {
 
-			this.setMutexFlags(EnumSet.of(Flag.TARGET));
+			this.setMutexFlags(EnumSet.of(Flag.LOOK));
 		}
 
 		@Override
 		public boolean shouldExecute() {
 
-			return darkPosition == null && rand.nextInt(10) == 0;
+			return darkPosition == null && rand.nextInt(80) == 0;
 		}
 
 		@Override
 		public boolean shouldContinueExecuting() {
 
-			return false;
+			return darkPosition == null && !blocks.isEmpty() && getPosition().withinDistance(start, MAX_SEARCH_LIMIT * 2);
 		}
 
 		@Override
 		public void tick() {
 
+			World world = getEntityWorld();
+			// search up to 15 blocks per tick. every searching bug hits this, so let's not go too crazy
+			for (int i = 0; i < 15; ++i) {
+				BlockPos start = blocks.pollFirst();
+				if (start == null) return;
+				if (!start.withinDistance(start, MAX_SEARCH_LIMIT)) continue;
+
+				BlockState state = world.getBlockState(start);
+				if (!state.isAir(world, start))
+					continue;
+
+				int startLight = world.getNeighborAwareLightSubtracted(start, 0); // 0, because we do not light the outside
+
+				// most hostile mobs spawn below light level 8
+				if (startLight < 8) {
+					// combined scan for solid block, and adding valid neighbors to search
+					for (Direction d : Direction.values()) {
+						BlockPos pos = start.offset(d);
+						// don't both scanning into a brighter neighbor
+						if (world.getNeighborAwareLightSubtracted(pos, 0) <= startLight) {
+							blocks.addLast(pos);
+						}
+						if (darkPosition == null) {
+							state = world.getBlockState(pos);
+							if (state.isSolidSide(world, pos, d.getOpposite())) {
+								darkPosition = start;
+							}
+						}
+					}
+					// if we validated a position, abort searching more
+					if (darkPosition != null)
+						return;
+				} else {
+					// just scan for neighbors
+					for (Direction d : Direction.values()) {
+						BlockPos pos = start.offset(d);
+						// don't both scanning into a brighter neighbor
+						if (world.getNeighborAwareLightSubtracted(pos, 0) <= startLight) {
+							blocks.addLast(pos);
+						}
+					}
+				}
+			}
 		}
 
 		@Override
 		public void startExecuting() {
 
-			Vector3d position;
-			//			if (LightingBug.this.isNestValid() && !LightingBug.this.isWithinDistance(LightingBug.this.nestPos, 22)) {
-			//				Vector3d vector3d1 = Vector3d.copyCentered(LightingBug.this.nestPos);
-			//				position = vector3d1.subtract(LightingBug.this.getPositionVec()).normalize();
-			//			} else
-			{
-				position = LightingBug.this.getLook(0.0F);
-			}
+			blocks.addLast(start = getPosition());
+		}
 
-			Vector3d airTarget = RandomPositionGenerator.findAirTarget(LightingBug.this,
-					8, 7, position, ((float) Math.PI / 2F), 2, 1);
-			Vector3d target = airTarget != null ? airTarget : RandomPositionGenerator.findGroundTarget(LightingBug.this,
-					8, 4, -2, position, ((float) Math.PI / 2F));
-			if (target != null) {
-				BlockPos start = new BlockPos(target);
-				World world = getEntityWorld();
-				BlockState state = world.getBlockState(start);
-				if (!state.isAir(world, start)) {
-					return;
-				}
-				for (Direction dir : Direction.getFacingDirections(LightingBug.this)) {
-					BlockPos pos = start.offset(dir);
-					state = world.getBlockState(pos);
-					if (state.isSolidSide(world, pos, dir.getOpposite())) {
-						darkPosition = start;
-						return;
-					}
-				}
-			}
+		@Override
+		public void resetTask() {
+
+			blocks.clear();
 		}
 	}
 
@@ -604,7 +630,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public boolean shouldExecute() {
 
-			return navigator.noPath() && rand.nextInt(10) == 0;
+			return navigator.noPath() && rand.nextInt(60) == 0;
 		}
 
 		/**
