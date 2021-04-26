@@ -47,7 +47,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     private int ticksMoving;
     private int ticksToMove;
     private int ticksSpooked;
-    private Vector3d savedCombPos = null;
+    private ItemEntity combToSeek = null;
     private GooSnail.EatCombGoal eatCombGoal;
     private FluidStack goo = FluidStack.EMPTY;
     private BlockPos homePos = null;
@@ -164,24 +164,10 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     public void writeAdditional(CompoundNBT compound) {
         super.writeAdditional(compound);
         compound.put("HomePos", NBTUtil.writeBlockPos(this.homePos()));
-
-        if (this.hasComb()) {
-            compound.putDouble("CombPosX", this.getCombPos().x);
-            compound.putDouble("CombPosY", this.getCombPos().y);
-            compound.putDouble("CombPosZ", this.getCombPos().z);
-        }
         compound.putInt("SpookedTicks", this.ticksSpooked);
         compound.putInt("TicksToMove", this.ticksToMove);
         compound.putInt("TicksMoving", this.ticksMoving);
         compound.put("goo", goo.writeToNBT(new CompoundNBT()));
-    }
-
-    private boolean hasComb() {
-        return savedCombPos != null;
-    }
-
-    private Vector3d getCombPos() {
-        return savedCombPos;
     }
 
     private BlockPos homePos() {
@@ -201,11 +187,6 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         clearComb();
-        if (compound.contains("CombPosX") && compound.contains("CombPosY") && compound.contains("CombPosZ")) {
-            this.savedCombPos = new Vector3d(compound.getDouble("CombPosX"),
-                    compound.getDouble("CombPosY"),
-                    compound.getDouble("CombPosZ"));
-        }
         this.ticksSpooked = compound.getInt("SpookedTicks");
         this.ticksMoving = compound.getInt("TicksMoving");
         this.ticksToMove = compound.getInt("TicksToMove");
@@ -322,14 +303,14 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                 if (comb == null) {
                     return false;
                 }
-                GooSnail.this.savedCombPos = comb.getPositionVec();
+                GooSnail.this.combToSeek = comb;
                 return true;
             }
         }
 
         @Override
         public boolean canSnailContinue() {
-            if (!this.running || GooSnail.this.isSpooked() || GooSnail.this.savedCombPos == null) {
+            if (!this.running || GooSnail.this.isSpooked() || GooSnail.this.combToSeek == null) {
                 return false;
             } else if (GooSnail.this.hasGoo() && GooSnail.this.goo.getAmount() >= 10) {
                 return false;
@@ -352,12 +333,12 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         public void startExecuting() {
             this.ticks = 0;
             this.running = true;
-            GooSnail.this.getLookController().setLookPosition(GooSnail.this.savedCombPos.getX(),
-                    Math.floor(GooSnail.this.savedCombPos.getY()),
-                    GooSnail.this.savedCombPos.getZ());
-            GooSnail.this.navigator.tryMoveToXYZ(GooSnail.this.savedCombPos.getX(),
-                    Math.floor(GooSnail.this.savedCombPos.getY()),
-                    GooSnail.this.savedCombPos.getZ(), 1.5f);
+            GooSnail.this.getLookController().setLookPosition(GooSnail.this.combToSeek.getPosX(),
+                    GooSnail.this.combToSeek.getPosY(),
+                    GooSnail.this.combToSeek.getPosZ());
+            GooSnail.this.navigator.tryMoveToXYZ(GooSnail.this.combToSeek.getPosX(),
+                    GooSnail.this.combToSeek.getPosY(),
+                    GooSnail.this.combToSeek.getPosZ(), 1.5f);
         }
 
         /**
@@ -369,7 +350,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         private int EAT_COMB_TIMEOUT = 120;
-        private double DISTANCE_THAT_IS_VERY_CLOSE = 0.2D;
+        // private double DISTANCE_THAT_IS_VERY_CLOSE = 0.2D;
         private double DISTANCE_TO_EAT = 0.7D;
         /**
          * Keep ticking a continuous task that has already been started
@@ -380,22 +361,17 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                 GooSnail.this.clearComb();
                 resetTask();
             } else {
-                if (GooSnail.this.savedCombPos == null) {
-                    GooSnail.this.clearComb();
+                if (GooSnail.this.combToSeek == null) {
                     resetTask();
                     return;
                 }
-                double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(GooSnail.this.savedCombPos);
-                if (GooSnail.this.savedCombPos.distanceTo(GooSnail.this.getPositionVec()) <= DISTANCE_TO_EAT) {
-                    boolean isCloseEnoughToTarget = distanceToTarget <= DISTANCE_TO_EAT;
-
-                    if (isCloseEnoughToTarget) {
-                        ItemEntity comb = getComb();
-                        if (comb != null) {
-                            eatComb(comb);
-                        }
-                        GooSnail.this.clearComb();
+                double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(GooSnail.this.getPositionVec());
+                if (distanceToTarget <= DISTANCE_TO_EAT) {
+                    ItemEntity comb = getComb();
+                    if (comb != null) {
+                        eatComb(comb);
                     }
+                    GooSnail.this.clearComb();
                 }
             }
         }
@@ -418,6 +394,9 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
             ItemEntity closestComb = null;
             double d = Double.MAX_VALUE;
             for(ItemEntity e : combs) {
+                if (e.getMotion().lengthSquared() > 0.0001d) {
+                    continue;
+                }
                 double toEntity = e.getDistance(GooSnail.this);
                 if (toEntity < d) {
                     d = toEntity;
@@ -496,7 +475,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     }
 
     private void clearComb() {
-        this.savedCombPos = null;
+        this.combToSeek = null;
     }
 
     class WanderGoal extends Goal {
