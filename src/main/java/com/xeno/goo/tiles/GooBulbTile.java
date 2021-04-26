@@ -615,7 +615,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         // The purpose here is to scale the contents of the bulb so that amounts
         // less than a threshold are made larger than they should be, so you can see them and target
         // them easily even though there's not a lot.
-        // It's currently busted and doing dumb stuff.
         float scale = 1f;
         float remainder = 1f;
         float diminished = 0f;
@@ -783,10 +782,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         }
     }
 
-    public FluidStack crystalProgress() {
-        return crystalProgress;
-    }
-
     public ItemStack crystal() {
         return crystal;
     }
@@ -801,13 +796,5 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public void updateCrystalTicks(int progressTicks) {
         this.crystalProgressTicks = progressTicks;
-    }
-
-    public int Increment() {
-        return lastIncrement;
-    }
-
-    public Fluid crystalFluid() {
-        return crystalFluid;
     }
 }

@@ -1,8 +1,6 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.items.Basin;
-import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.AgeableEntity;
@@ -35,18 +33,16 @@ import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Random;
 
 public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData {
     private static final DataParameter<Integer> TICKS_MOVING = EntityDataManager.createKey(GooSnail.class, DataSerializers.VARINT);
     private static final DataParameter<Integer> TICKS_TO_MOVE = EntityDataManager.createKey(GooSnail.class, DataSerializers.VARINT);
     private static final DataParameter<Integer> TICKS_SPOOKED = EntityDataManager.createKey(GooSnail.class, DataSerializers.VARINT);
-    private static final float MAX_DURATION_OF_MOVEMENT = 20;
-    private static float SNAIL_SPEED = 0.06f;
+    private static final int MAX_DURATION_OF_MOVEMENT = 20;
+    private static final float SNAIL_SQUIDGE_RATIO = 0.1f;
     private static final int SPOOK_DURATION = 100;
     private int ticksMoving;
     private int ticksToMove;
@@ -81,7 +77,6 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
             this.ticksMoving = this.dataManager.get(TICKS_MOVING);
             this.ticksToMove = this.dataManager.get(TICKS_TO_MOVE);
             this.ticksSpooked = this.dataManager.get(TICKS_SPOOKED);
-            GooMod.debug("moving " + this.ticksMoving + " dest " + this.ticksToMove + " spooked " + this.ticksSpooked);
         } else {
             UpdateNavigatorAndSlinkingAnimations();
 
@@ -95,27 +90,23 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
 
     private void UpdateNavigatorAndSlinkingAnimations() {
         if (this.navigator.hasPath()) {
-            if (this.ticksToMove == 0 && this.ticksMoving == 0) {
-                double distance = this.navigator.getTargetPos().distanceSq(getPosX(), getPosY(), getPosZ(), true);
-                int steps = (int)Math.ceil(distance / SNAIL_SPEED);
-                ticksToMove = steps;
-                dataManager.set(TICKS_TO_MOVE, ticksToMove);
-            } else {
+            if (this.ticksToMove == 0) {
+                ticksToMove = MAX_DURATION_OF_MOVEMENT;
+            }
+            if (this.ticksToMove > 0) {
                 ticksMoving++;
             }
-            dataManager.set(TICKS_MOVING, ticksMoving);
-        } else if (this.ticksMoving < this.ticksToMove) {
+        // here we want to ensure that our CURRENT movement cycle is finished before resetting the vars, otherwise weird snapping occurs.
+        } else if ((this.ticksMoving % MAX_DURATION_OF_MOVEMENT) < this.ticksToMove) {
             // we haven't finished our movement animation, which makes the snail sproingy and weird.
             // finish animating before resetting.
             this.ticksMoving++;
-            dataManager.set(TICKS_MOVING, ticksMoving);
-        } else
-        {
+        } else {
             ticksMoving = 0;
-            dataManager.set(TICKS_MOVING, ticksMoving);
             ticksToMove = 0;
-            dataManager.set(TICKS_TO_MOVE, ticksToMove);
         }
+        dataManager.set(TICKS_TO_MOVE, ticksToMove);
+        dataManager.set(TICKS_MOVING, ticksMoving);
     }
 
     @Override
@@ -165,8 +156,9 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     protected void registerGoals() {
         this.eatCombGoal = new GooSnail.EatCombGoal();
         this.goalSelector.addGoal(0, this.eatCombGoal);
-        this.goalSelector.addGoal(1, new GooSnail.WanderGoal());
-        this.goalSelector.addGoal(2, new SwimGoal(this));
+        this.goalSelector.addGoal(1, new PoopGoal());
+        this.goalSelector.addGoal(2, new GooSnail.WanderGoal());
+        this.goalSelector.addGoal(3, new SwimGoal(this));
     }
 
     public void writeAdditional(CompoundNBT compound) {
@@ -235,7 +227,8 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         protected boolean shouldResetPitch() {
-            return !GooSnail.this.eatCombGoal.isRunning();
+            return true;
+            // return !GooSnail.this.eatCombGoal.isRunning();
         }
     }
 
@@ -245,24 +238,21 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     }
 
     public float getBodyStretch() {
-        float maxStretch = 0.3f;
-        if (this.isInMotion() && this.ticksToMove > 0) {
+        if (ticksMoving > 0 || ticksToMove > 0) {
             int halfStep = (this.ticksToMove / 2);
-            int stepProgress = ticksMoving % halfStep;
-            float stretch = 1f + (maxStretch * (ticksMoving < halfStep ? stepProgress : halfStep - stepProgress) / (float)halfStep);
-            return Math.max(1f, Math.min(1f + maxStretch, stretch));
+            int stepProgress = ticksMoving % ticksToMove;
+            int actualProgress = stepProgress <= halfStep ? stepProgress : halfStep - (stepProgress - halfStep);
+            float progressPercent = actualProgress / (float)halfStep;
+            float stretch = 1f + SNAIL_SQUIDGE_RATIO * progressPercent;
+            return Math.max(1f, Math.min(1f + SNAIL_SQUIDGE_RATIO, stretch));
         }
         return 1f;
-    }
-
-    private boolean isInMotion() {
-        return ticksMoving > 0;
     }
 
     public static AttributeModifierMap.MutableAttribute setCustomAttributes() {
         return MobEntity.func_233666_p_()
                 .createMutableAttribute(Attributes.MAX_HEALTH, 10D)
-                .createMutableAttribute(Attributes.MOVEMENT_SPEED, SNAIL_SPEED)
+                .createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.09f)
                 .createMutableAttribute(Attributes.ATTACK_DAMAGE, 1.0D)
                 .createMutableAttribute(Attributes.FOLLOW_RANGE, 48.0D);
     }
@@ -288,39 +278,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         return pos.withinDistance(this.getPosition(), distance);
     }
 
-    private boolean isTooFar(BlockPos pos) {
-        return !this.isWithinDistance(pos, 32);
-    }
-
-    private void startMovingTo(BlockPos pos) {
-        Vector3d vector3d = Vector3d.copyCenteredHorizontally(pos);
-        int i = 0;
-        BlockPos blockpos = this.getPosition();
-        int j = (int) vector3d.y - blockpos.getY();
-        if (j > 2) {
-            i = 4;
-        } else if (j < -2) {
-            i = -4;
-        }
-
-        int k = 6;
-        int l = 8;
-        int i1 = blockpos.manhattanDistance(pos);
-        if (i1 < 15) {
-            k = i1 / 2;
-            l = i1 / 2;
-        }
-
-        Vector3d vector3d1 = RandomPositionGenerator.func_226344_b_(this,
-                k, l, i, vector3d, ((float) Math.PI / 10F));
-        if (vector3d1 != null) {
-            this.navigator.setSearchDepthMultiplier(0.5F);
-            this.navigator.tryMoveToXYZ(vector3d1.x, vector3d1.y, vector3d1.z, SNAIL_SPEED);
-        }
-    }
-
     // goal stuff
-
     abstract class PassiveGoal extends Goal {
         private PassiveGoal() {
         }
@@ -345,10 +303,8 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
     }
 
-
     class EatCombGoal extends GooSnail.PassiveGoal {
         private boolean running;
-        private Vector3d nextTarget;
         private int ticks = 0;
 
         EatCombGoal() {
@@ -359,7 +315,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         public boolean canSnailStart() {
             if (GooSnail.this.isSpooked()) {
                 return false;
-            } else if (GooSnail.this.hasGoo()) {
+            } else if (GooSnail.this.hasGoo() && GooSnail.this.goo.getAmount() >= 10) {
                 return false;
             } else {
                 ItemEntity comb = this.getComb();
@@ -367,18 +323,15 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                     return false;
                 }
                 GooSnail.this.savedCombPos = comb.getPositionVec();
-                GooSnail.this.navigator.tryMoveToXYZ(GooSnail.this.savedCombPos.getX(),
-                        GooSnail.this.savedCombPos.getY(),
-                        GooSnail.this.savedCombPos.getZ(), SNAIL_SPEED);
                 return true;
             }
         }
 
         @Override
         public boolean canSnailContinue() {
-            if (!this.running || GooSnail.this.isSpooked()) {
+            if (!this.running || GooSnail.this.isSpooked() || GooSnail.this.savedCombPos == null) {
                 return false;
-            } else if (GooSnail.this.hasGoo()) {
+            } else if (GooSnail.this.hasGoo() && GooSnail.this.goo.getAmount() >= 10) {
                 return false;
             } else {
                 return true;
@@ -399,6 +352,12 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         public void startExecuting() {
             this.ticks = 0;
             this.running = true;
+            GooSnail.this.getLookController().setLookPosition(GooSnail.this.savedCombPos.getX(),
+                    Math.floor(GooSnail.this.savedCombPos.getY()),
+                    GooSnail.this.savedCombPos.getZ());
+            GooSnail.this.navigator.tryMoveToXYZ(GooSnail.this.savedCombPos.getX(),
+                    Math.floor(GooSnail.this.savedCombPos.getY()),
+                    GooSnail.this.savedCombPos.getZ(), 1.5f);
         }
 
         /**
@@ -409,40 +368,33 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
             GooSnail.this.navigator.clearPath();
         }
 
+        private int EAT_COMB_TIMEOUT = 120;
+        private double DISTANCE_THAT_IS_VERY_CLOSE = 0.2D;
+        private double DISTANCE_TO_EAT = 0.7D;
         /**
          * Keep ticking a continuous task that has already been started
          */
         public void tick() {
             ++this.ticks;
-            if (this.ticks > 1200) {
+            if (this.ticks > EAT_COMB_TIMEOUT) {
                 GooSnail.this.clearComb();
+                resetTask();
             } else {
-                if (GooSnail.this.savedCombPos.distanceTo(GooSnail.this.getPositionVec()) > getMaxMovementPerCycle()) {
-                    Vector3d intermediatePosition = GooSnail.this.savedCombPos.subtract(GooSnail.this.getPositionVec()).normalize().scale(getMaxMovementPerCycle());
-                    this.nextTarget = intermediatePosition;
-                    this.moveToNextTarget();
-                } else {
-                    if (this.nextTarget == null) {
-                        this.nextTarget = GooSnail.this.savedCombPos;
-                    }
-                    double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(this.nextTarget);
+                if (GooSnail.this.savedCombPos == null) {
+                    GooSnail.this.clearComb();
+                    resetTask();
+                    return;
+                }
+                double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(GooSnail.this.savedCombPos);
+                if (GooSnail.this.savedCombPos.distanceTo(GooSnail.this.getPositionVec()) <= DISTANCE_TO_EAT) {
+                    boolean isCloseEnoughToTarget = distanceToTarget <= DISTANCE_TO_EAT;
 
-                    boolean isVeryCloseToTarget = distanceToTarget <= 0.2D;
-                    boolean isCloseEnoughToTarget = distanceToTarget <= 0.7D;
-                    if (!isVeryCloseToTarget && this.ticks > 1200) {
+                    if (isCloseEnoughToTarget) {
+                        ItemEntity comb = getComb();
+                        if (comb != null) {
+                            eatComb(comb);
+                        }
                         GooSnail.this.clearComb();
-                    } else {
-                        if (isVeryCloseToTarget) {
-                            GooSnail.this.navigator.clearPath();
-                            GooSnail.this.getLookController().setLookPosition(this.nextTarget.getX(), this.nextTarget.getY(), this.nextTarget.getZ());
-                        }
-                        if (isCloseEnoughToTarget) {
-                            ItemEntity comb = getComb();
-                            if (comb != null) {
-                                eatComb(comb);
-                            }
-                            GooSnail.this.clearComb();
-                        }
                     }
                 }
             }
@@ -450,11 +402,11 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
 
         private void eatComb(ItemEntity comb) {
             comb.remove();
-            GooSnail.this.goo = new FluidStack(Registry.PRIMORDIAL_GOO.get(), GooMod.config.snailProductionAmount());
-        }
-
-        private void moveToNextTarget() {
-            GooSnail.this.getMoveHelper().setMoveTo(this.nextTarget.getX(), this.nextTarget.getY(), this.nextTarget.getZ(), SNAIL_SPEED);
+            if (GooSnail.this.goo.isEmpty()) {
+                GooSnail.this.goo = new FluidStack(Registry.PRIMORDIAL_GOO.get(), GooMod.config.snailProductionAmount());
+            } else {
+                GooSnail.this.goo.setAmount(GooSnail.this.goo.getAmount() + GooMod.config.snailProductionAmount());
+            }
         }
 
         private ItemEntity getComb() {
@@ -476,9 +428,68 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
     }
 
-    private double getMaxMovementPerCycle() {
-        return SNAIL_SPEED * MAX_DURATION_OF_MOVEMENT;
+    class PoopGoal extends GooSnail.PassiveGoal {
+        private boolean running;
+        private int ticks = 0;
+        private int TICKS_TO_POOP = 120;
+        // PoopGoal() { }
+
+        @Override
+        public boolean canSnailStart() {
+            if (this.running || GooSnail.this.isSpooked()) {
+                return false;
+            }
+            return GooSnail.this.hasGoo() && GooSnail.this.goo.getAmount() >= 10;
+        }
+
+        @Override
+        public boolean canSnailContinue() {
+            if (!this.running || GooSnail.this.isSpooked()) {
+                return false;
+            }
+            return GooSnail.this.hasGoo() && GooSnail.this.goo.getAmount() >= 10;
+        }
+
+        /**
+         * Execute a one shot task or start executing a continuous task
+         */
+        public void startExecuting() {
+            this.running = true;
+            this.ticks = 0;
+        }
+
+        /**
+         * Reset the task's internal state. Called when this task is interrupted by another one
+         */
+        public void resetTask() {
+            this.running = false;
+        }
+
+        /**
+         * Keep ticking a continuous task that has already been started
+         */
+        public void tick() {
+            ++this.ticks;
+            if (this.ticks >= TICKS_TO_POOP) {
+                DoPoop();
+                resetTask();
+            }
+        }
+
+        private void DoPoop() {
+            if (world.isRemote()) {
+                return;
+            }
+            GooSnail.this.goo.setAmount(GooSnail.this.goo.getAmount() - 10);
+            if (GooSnail.this.goo.getAmount() == 0) {
+                GooSnail.this.goo =  FluidStack.EMPTY;
+            }
+            ItemStack primordialShard = new ItemStack(ItemsRegistry.gooCrystalByFluidAndType(Registry.PRIMORDIAL_GOO.get(), "sliver").get());
+            Vector3d pos = new Vector3d(GooSnail.this.getPosX(), GooSnail.this.getPosY(), GooSnail.this.getPosZ());
+            world.addEntity(new ItemEntity(world, pos.x, pos.y, pos.z, primordialShard));
+        }
     }
+
 
     private boolean hasGoo() {
         return !this.goo.isEmpty();
@@ -514,20 +525,20 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         public void startExecuting() {
             Vector3d vector3d = this.getRandomLocation();
             if (vector3d != null) {
-                GooSnail.this.navigator.setPath(GooSnail.this.navigator.getPathToPos(new BlockPos(vector3d), 1), SNAIL_SPEED);
+                GooSnail.this.navigator.setPath(GooSnail.this.navigator.getPathToPos(new BlockPos(vector3d), 1), 1f);
                 GooSnail.this.getLookController().setLookPosition(vector3d.getX(), vector3d.getY(), vector3d.getZ());
             }
         }
 
         private Vector3d getRandomLocation() {
             Vector3d bearing;
-            if (!GooSnail.this.isWithinDistance(GooSnail.this.homePos(), 2)) {
+            if (!GooSnail.this.isWithinDistance(GooSnail.this.homePos(), 5)) {
                 Vector3d home = Vector3d.copyCentered(GooSnail.this.homePos());
                 bearing = home.subtract(GooSnail.this.getPositionVec()).normalize();
             } else {
                 bearing = GooSnail.this.getLook(0.0F);
             }
-            return generateRandomDest(1, 0, 0, bearing, ((float) Math.PI / 2F));
+            return generateRandomDest(6, 0, 0, bearing, ((float) Math.PI / 2F));
         }
 
         private Vector3d generateRandomDest(int range, int verticality, int verticalOffset, Vector3d bearing, float radians) {

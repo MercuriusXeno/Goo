@@ -7,6 +7,7 @@ import com.xeno.goo.blocks.GooBulbItem;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
@@ -77,6 +78,18 @@ public class ItemsRegistry {
                 CrystallizedGoo.put(gooCrystalRegistryKey(crystalType, k),
                         registerCrystalGooForType(gooCrystalRegistryKey(crystalType, k), k,  crystalType, v, gooAmount))
         );
+    }
+
+    public static RegistryObject<CrystallizedGooAbstract> gooCrystalByFluidAndType(Fluid f, String type) {
+
+        if (f.getRegistryName() == null) {
+            return null;
+        }
+        ResourceLocation key = gooCrystalRegistryKey(type, f.getRegistryName());
+        if (!CrystallizedGoo.containsKey(key)) {
+            return null;
+        }
+        return CrystallizedGoo.get(key);
     }
 
     private static ResourceLocation gooCrystalRegistryKey(String crystalType, ResourceLocation k) {

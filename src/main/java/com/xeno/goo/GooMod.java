@@ -40,6 +40,7 @@ public class GooMod
     private void initializeEventListeners()
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::entityAttributeCreation);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::loadComplete);
     }
 

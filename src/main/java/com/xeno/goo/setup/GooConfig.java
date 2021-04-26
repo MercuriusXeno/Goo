@@ -420,6 +420,8 @@ public class GooConfig
                 .defineInRange("energeticMiningBlastDistance", Defaults.ENERGETIC_MINING_BLAST_DISTANCE, 1, 10);
         RADIAL_MENU_HELD_TICKS_THRESHOLD = serverBuilder.comment("Held ticks threshold for radial menu to open, default: " + Defaults.RADIAL_HELD_THRESHOLD_TICKS)
                 .defineInRange("heldTicksRadialMenuThreshold", Defaults.RADIAL_HELD_THRESHOLD_TICKS, 10, 60);
+        SNAIL_PRODUCTION_AMOUNT = serverBuilder.comment("Amount of primordial goo from snail per Crystal Comb, default: " + Defaults.SNAIL_PRODUCTION_AMOUNT)
+                .defineInRange("snailProductionAmount", Defaults.SNAIL_PRODUCTION_AMOUNT, 1, 1000000);
         GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);
         GooInteractions.blobRegistry.forEach(this::registerBlobInteractions);
         serverBuilder.pop();

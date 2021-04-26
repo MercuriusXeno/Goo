@@ -10,7 +10,10 @@ issueTrackerURL="https://github.com/MercuriusXeno/Goo/issues"
     displayURL="https://github.com/MercuriusXeno/Goo"
     authors="MercuriusXeno"
     description='''Goo is a mod about things being made of goo. You make it out of things, and you make things out of it.'''
-    credits=''' \n  MercuriusXeno\n   (Full Stack)\n  OrionOnline\n   (Aequivaleo, Backend, Utility)\n  Bluberry Kat\n   (Art, Ideas, Testing)\n  Entoarox\n   (Design, Ideas, Art, Testing, Utility, TONS)\n  Webmilio\n   (Backend, Refactoring)\n  Skyboy (COFH)\n   (Procgen, Ideas, Art, Testing, Backend)\n  Yelldow\n   (Audio and Event Sound Design)'''
+    credits='''MercuriusXeno (Author)
+    Contributors (of many fine things)
+    OrionOnline, BluberryKat, Entoarox
+    Webmilio, Skyboy, Yelldow'''
 [[dependencies.goo]]
     modId="forge"
     mandatory=true

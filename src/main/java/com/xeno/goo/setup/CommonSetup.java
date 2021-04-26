@@ -8,6 +8,7 @@ import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.village.PointOfInterestType;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -23,14 +24,17 @@ public class CommonSetup
         GooInteractions.initialize();
 
         event.enqueueWork(() -> {
-            GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
-            GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
-            GlobalEntityTypeAttributes.put(Registry.GOO_SNAIL.get(), GooSnail.setCustomAttributes().create());
             PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.CRYSTAL_NEST_POI.get().blockStates);
             PointOfInterestType.registerBlockStates(Registry.GOO_TROUGH_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.GOO_TROUGH_POI.get().blockStates);
         });
+    }
+
+    public static void entityAttributeCreation(final EntityAttributeCreationEvent event) {
+        event.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
+        event.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
+        event.put(Registry.GOO_SNAIL.get(), GooSnail.setCustomAttributes().create());
     }
 
     public static void loadComplete(final FMLLoadCompleteEvent event)

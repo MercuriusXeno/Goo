@@ -1,11 +1,9 @@
 package com.xeno.goo.entities;
 
 import com.google.common.collect.Lists;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalNest;
 import com.xeno.goo.library.AudioHelper;
-import com.xeno.goo.library.DebugHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrystalNestTile;
 import com.xeno.goo.tiles.TroughTile;
