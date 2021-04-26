@@ -2,6 +2,8 @@ package com.xeno.goo.entities;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.AgeableEntity;
 import net.minecraft.entity.EntityType;
@@ -23,10 +25,13 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
+import net.minecraft.particles.ItemParticleData;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.pathfinding.PathNodeType;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
@@ -141,6 +146,24 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         this.ticksSpooked = SPOOK_DURATION;
         if (!world.isRemote()) {
             dataManager.set(TICKS_SPOOKED, ticksSpooked);
+        }
+    }
+
+    // stolen from LivingEntity, but it's private.
+    private void spawnEatingParticles(ItemStack stack, int count) {
+        for(int i = 0; i < count; ++i) {
+            Vector3d offset = new Vector3d(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
+            offset = offset.rotatePitch(-this.rotationPitch * ((float)Math.PI / 180F));
+            offset = offset.rotateYaw(-this.rotationYaw * ((float)Math.PI / 180F));
+            double d0 = (double)(-this.rand.nextFloat()) * 0.6D - 0.3D;
+            Vector3d spawnPos = new Vector3d(((double)this.rand.nextFloat() - 0.5D) * 0.3D, d0, 0.6D);
+            spawnPos = spawnPos.rotatePitch(-this.rotationPitch * ((float)Math.PI / 180F));
+            spawnPos = spawnPos.rotateYaw(-this.rotationYaw * ((float)Math.PI / 180F));
+            spawnPos = spawnPos.add(this.getPosX(), this.getPosYEye(), this.getPosZ());
+            if (this.world instanceof ServerWorld)
+                ((ServerWorld)this.world).spawnParticle(new ItemParticleData(ParticleTypes.ITEM, stack), spawnPos.x, spawnPos.y, spawnPos.z, 1, offset.x, offset.y + 0.05D, offset.z, 0.0D);
+            else
+                this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, stack), spawnPos.x, spawnPos.y, spawnPos.z, offset.x, offset.y + 0.05D, offset.z);
         }
     }
 
@@ -376,10 +399,17 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                                 GooSnail.this.combToSeek.getPosZ());
                     }
                     ++this.ticksEating;
+                    GooSnail.this.spawnEatingParticles(combToSeek.getItem(), 2);
+                    AudioHelper.entityAudioEvent(GooSnail.this, Registry.SNAIL_EAT_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
                     if (this.ticksEating > EAT_COMB_DURATION) {
                         eatComb(GooSnail.this.combToSeek);
                         GooSnail.this.clearComb();
                     }
+                } else {
+                    // we're stalling out trying to get to the thing, try squidging closer
+                    GooSnail.this.getMoveHelper().setMoveTo(GooSnail.this.combToSeek.getPosX(),
+                            GooSnail.this.combToSeek.getPosY(),
+                            GooSnail.this.combToSeek.getPosZ(), 1.5f);
                 }
             }
         }
@@ -464,6 +494,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         private void DoPoop() {
+            AudioHelper.entityAudioEvent(GooSnail.this, Registry.SNAIL_POOP_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
             if (world.isRemote()) {
                 return;
             }

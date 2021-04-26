@@ -122,5 +122,19 @@
       "minecraft:random/glass2",
       "minecraft:random/glass3"
     ]
+  },
+  "snail_poop_sound": {
+    "subtitle": "sound_event.goo.snail_poop_sound",
+    "sounds": [
+      "minecraft:mob/chicken/plop"
+    ]
+  },
+  "snail_eat_sound": {
+    "subtitle": "sound_event.goo.snail_eat_sound",
+    "sounds": [
+      "minecraft:random/eat1",
+      "minecraft:random/eat2",
+      "minecraft:random/eat3"
+    ]
   }
 }

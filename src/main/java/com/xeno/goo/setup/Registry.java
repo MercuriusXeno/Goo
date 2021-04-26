@@ -125,6 +125,8 @@ public class Registry {
     public static final RegistryObject<SoundEvent> MOLTEN_SIZZLE_SOUND = SOUNDS.register("molten_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "molten_sizzle_sound")));
     public static final RegistryObject<SoundEvent> CRYSTALLIZE_SOUND = SOUNDS.register("crystallize_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "crystallize_sound")));
     public static final RegistryObject<SoundEvent> GOO_BEE_SHATTER_SOUND = SOUNDS.register("goo_bee_shatter_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_bee_shatter_sound")));
+    public static final RegistryObject<SoundEvent> SNAIL_POOP_SOUND = SOUNDS.register("snail_poop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_poop_sound")));
+    public static final RegistryObject<SoundEvent> SNAIL_EAT_SOUND = SOUNDS.register("snail_eat_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_eat_sound")));
 
     // Tile registrations
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
