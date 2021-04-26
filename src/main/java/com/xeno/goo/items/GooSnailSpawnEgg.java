@@ -1,10 +1,12 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.entities.GooSnail;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -61,7 +63,10 @@ public class GooSnailSpawnEgg extends Item {
                 blockpos1 = blockpos.offset(direction);
             }
 
-            if (Registry.GOO_SNAIL.get().spawn((ServerWorld)world, itemstack, context.getPlayer(), blockpos1, SpawnReason.SPAWN_EGG, true, !Objects.equals(blockpos, blockpos1) && direction == Direction.UP) != null) {
+            GooSnail spawn = (GooSnail) Registry.GOO_SNAIL.get().spawn((ServerWorld)world, itemstack, context.getPlayer(), blockpos1, SpawnReason.SPAWN_EGG, true, !Objects.equals(blockpos, blockpos1) && direction == Direction.UP);
+
+            if (spawn != null) {
+                spawn.setSpawnedByPlayerPlacement(true);
                 itemstack.shrink(1);
             }
 

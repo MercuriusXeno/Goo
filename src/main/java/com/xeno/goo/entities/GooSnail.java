@@ -5,9 +5,12 @@ import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.AgeableEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.MobEntity;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.RandomPositionGenerator;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
@@ -34,11 +37,13 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -56,7 +61,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     private GooSnail.EatCombGoal eatCombGoal;
     private FluidStack goo = FluidStack.EMPTY;
     private BlockPos homePos = null;
-
+    private boolean isSpawnedByPlayerPlacement;
     public GooSnail(EntityType<? extends AnimalEntity> type, World worldIn) {
         super(type, worldIn);
         ticksMoving = 0;
@@ -69,6 +74,29 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         this.setPathPriority(PathNodeType.COCOA, -1.0F);
         this.setPathPriority(PathNodeType.FENCE, -1.0F);
         setGrowingAge(1);
+    }
+
+    public void setSpawnedByPlayerPlacement(boolean spawnedByPlayerPlacement) {
+        isSpawnedByPlayerPlacement = spawnedByPlayerPlacement;
+    }
+
+    @Override
+    public int getMaxSpawnedInChunk() {
+        return 1;
+    }
+
+    private static List<SpawnReason> naturalSpawnReasons = Arrays.asList(SpawnReason.CHUNK_GENERATION, SpawnReason.NATURAL, SpawnReason.JOCKEY);
+    @Override
+    public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
+        if (naturalSpawnReasons.contains(spawnReasonIn)) {
+            BlockState stateIn = worldIn.getBlockState(this.getPosition());
+            BlockState stateOn = worldIn.getBlockState(this.getPosition().down());
+
+            return stateIn.getBlock().equals(Blocks.CAVE_AIR) && stateOn.getBlock().equals(Blocks.STONE) && this.getPosition().getY() < 36
+                    && !worldIn.canBlockSeeSky(this.getPosition().down());
+        } else {
+            return true;
+        }
     }
 
     @Override
@@ -150,6 +178,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     }
 
     // stolen from LivingEntity, but it's private.
+    // TODO this sometimes doesn't put the particles in the snail's face where I'd like them to kinda be. Needs tuning.
     private void spawnEatingParticles(ItemStack stack, int count) {
         for(int i = 0; i < count; ++i) {
             Vector3d offset = new Vector3d(((double)this.rand.nextFloat() - 0.5D) * 0.1D, Math.random() * 0.1D + 0.1D, 0.0D);
@@ -167,12 +196,44 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
     }
 
+    public boolean canDespawn(double distanceToClosestPlayer) {
+        return !this.isTrusting() && this.ticksExisted > 2400;
+    }
+
+    private boolean isTrusting() {
+        return this.isSpawnedByPlayerPlacement;
+    }
+
     public boolean isSpooked() {
         return ticksSpooked > 0;
     }
 
     public void setHome(BlockPos pos) {
         this.homePos = pos;
+    }
+
+    @Override
+    protected boolean isDespawnPeaceful() {
+
+        return super.isDespawnPeaceful();
+    }
+
+    @Override
+    public boolean isNoDespawnRequired() {
+
+        return super.isNoDespawnRequired();
+    }
+
+    @Override
+    public boolean preventDespawn() {
+
+        return super.preventDespawn();
+    }
+
+    @Override
+    public void checkDespawn() {
+
+        super.checkDespawn();
     }
 
     @Override
@@ -400,7 +461,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                     }
                     ++this.ticksEating;
                     GooSnail.this.spawnEatingParticles(combToSeek.getItem(), 2);
-                    AudioHelper.entityAudioEvent(GooSnail.this, Registry.SNAIL_EAT_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
+                    AudioHelper.entityAudioEvent(GooSnail.this, Registry.SNAIL_EAT_SOUND.get(), SoundCategory.NEUTRAL, 0.7f, PitchFormulas.HalfToOne);
                     if (this.ticksEating > EAT_COMB_DURATION) {
                         eatComb(GooSnail.this.combToSeek);
                         GooSnail.this.clearComb();

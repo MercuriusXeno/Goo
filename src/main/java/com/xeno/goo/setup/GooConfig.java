@@ -101,6 +101,9 @@ public class GooConfig
     private ForgeConfigSpec.IntValue SNAIL_PRODUCTION_AMOUNT;
     public int snailProductionAmount() { return SNAIL_PRODUCTION_AMOUNT.get(); }
 
+    private ForgeConfigSpec.IntValue SNAIL_SPAWN_WEIGHT;
+    public int snailSpawnWeight() { return SNAIL_SPAWN_WEIGHT.get(); }
+
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
     private final Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
     private final Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_TRIGGER_CHANCE = new HashMap<>();
@@ -381,6 +384,7 @@ public class GooConfig
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
         private static final int SNAIL_PRODUCTION_AMOUNT = 4;
+        private static final int SNAIL_SPAWN_WEIGHT = 1;
     }
 
     private void setupClientConfig() {
@@ -422,6 +426,8 @@ public class GooConfig
                 .defineInRange("heldTicksRadialMenuThreshold", Defaults.RADIAL_HELD_THRESHOLD_TICKS, 10, 60);
         SNAIL_PRODUCTION_AMOUNT = serverBuilder.comment("Amount of primordial goo from snail per Crystal Comb, default: " + Defaults.SNAIL_PRODUCTION_AMOUNT)
                 .defineInRange("snailProductionAmount", Defaults.SNAIL_PRODUCTION_AMOUNT, 1, 1000000);
+        SNAIL_SPAWN_WEIGHT = serverBuilder.comment("Weight relative to other mobs for snails spawning, default:" + Defaults.SNAIL_SPAWN_WEIGHT)
+                .defineInRange("snailSpawnWeight", Defaults.SNAIL_SPAWN_WEIGHT, 0, 100);
         GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);
         GooInteractions.blobRegistry.forEach(this::registerBlobInteractions);
         serverBuilder.pop();

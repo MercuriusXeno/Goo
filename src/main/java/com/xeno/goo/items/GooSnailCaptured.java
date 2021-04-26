@@ -1,6 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.entities.GooSnail;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -43,8 +44,9 @@ public class GooSnailCaptured extends Item {
             } else {
                 offsetPos = blockpos.offset(direction);
             }
-
-            if (Registry.GOO_SNAIL.get().spawn((ServerWorld) world, itemstack, context.getPlayer(), offsetPos, SpawnReason.EVENT, true, !Objects.equals(blockpos, offsetPos) && direction == Direction.UP) != null) {
+            GooSnail spawn = (GooSnail) Registry.GOO_SNAIL.get().spawn((ServerWorld) world, itemstack, context.getPlayer(), offsetPos, SpawnReason.EVENT, true, !Objects.equals(blockpos, offsetPos) && direction == Direction.UP);
+            if (spawn != null) {
+                spawn.setSpawnedByPlayerPlacement(true);
                 itemstack.shrink(1);
             }
 
