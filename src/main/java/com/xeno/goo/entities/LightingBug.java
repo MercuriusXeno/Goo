@@ -560,7 +560,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		private static final int MAX_SEARCH_LIMIT = 24;
 
 		private final LinkedHashList<DirectionalPos> blocks = new LinkedHashList<>();
-		private BlockPos start = BlockPos.ZERO;
+		private BlockPos beginning = BlockPos.ZERO;
 
 		private FindDarkBlockGoal() {
 
@@ -576,7 +576,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public boolean shouldContinueExecuting() {
 
-			return darkPosition == null && !blocks.isEmpty() && getPosition().withinDistance(start, MAX_SEARCH_LIMIT * 2);
+			return darkPosition == null && !blocks.isEmpty() && getPosition().withinDistance(beginning, MAX_SEARCH_LIMIT * 2);
 		}
 
 		@Override
@@ -587,7 +587,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 			for (int i = 0; i < 15; ++i) {
 				DirectionalPos start = blocks.shift();
 				if (start == null) return;
-				if (!start.withinDistance(start, MAX_SEARCH_LIMIT)) continue;
+				if (!start.withinDistance(beginning, MAX_SEARCH_LIMIT)) continue;
 
 				BlockState state = world.getBlockState(start);
 				if (!state.isAir(world, start))
@@ -630,7 +630,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void startExecuting() {
 
-			blocks.add(new DirectionalPos(start = getPosition()));
+			blocks.add(new DirectionalPos(beginning = getPosition()));
 		}
 
 		@Override
