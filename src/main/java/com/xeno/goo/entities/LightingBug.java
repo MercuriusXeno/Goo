@@ -1,6 +1,8 @@
 package com.xeno.goo.entities;
 
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.util.DirectionalPos;
+import com.xeno.goo.util.LinkedHashList;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.RandomPositionGenerator;
@@ -35,7 +37,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -555,7 +559,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 		private static final int MAX_SEARCH_LIMIT = 24;
 
-		private final Deque<BlockPos> blocks = new LinkedList<>();
+		private final LinkedHashList<DirectionalPos> blocks = new LinkedHashList<>();
 		private BlockPos start = BlockPos.ZERO;
 
 		private FindDarkBlockGoal() {
@@ -581,7 +585,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 			World world = getEntityWorld();
 			// search up to 15 blocks per tick. every searching bug hits this, so let's not go too crazy
 			for (int i = 0; i < 15; ++i) {
-				BlockPos start = blocks.pollFirst();
+				DirectionalPos start = blocks.shift();
 				if (start == null) return;
 				if (!start.withinDistance(start, MAX_SEARCH_LIMIT)) continue;
 
@@ -595,10 +599,10 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 				if (startLight < 8) {
 					// combined scan for solid block, and adding valid neighbors to search
 					for (Direction d : Direction.values()) {
-						BlockPos pos = start.offset(d);
+						DirectionalPos pos = start.offset(d);
 						// don't both scanning into a brighter neighbor
-						if (world.getNeighborAwareLightSubtracted(pos, 0) <= startLight) {
-							blocks.addLast(pos);
+						if (!start.isFrom(d) && world.getNeighborAwareLightSubtracted(pos, 0) <= startLight) {
+							blocks.add(pos);
 						}
 						if (darkPosition == null) {
 							state = world.getBlockState(pos);
@@ -612,11 +616,11 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 						return;
 				} else {
 					// just scan for neighbors
-					for (Direction d : Direction.values()) {
-						BlockPos pos = start.offset(d);
+					for (Direction d : start.unusedDirections()) {
+						DirectionalPos pos = start.offset(d);
 						// don't both scanning into a brighter neighbor
 						if (world.getNeighborAwareLightSubtracted(pos, 0) <= startLight) {
-							blocks.addLast(pos);
+							blocks.add(pos);
 						}
 					}
 				}
@@ -626,7 +630,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void startExecuting() {
 
-			blocks.addLast(start = getPosition());
+			blocks.add(new DirectionalPos(start = getPosition()));
 		}
 
 		@Override
@@ -660,6 +664,12 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		public boolean shouldContinueExecuting() {
 
 			return navigator.hasPath();
+		}
+
+		@Override
+		public void resetTask() {
+
+			setMotion(Vector3d.ZERO);
 		}
 
 		/**
