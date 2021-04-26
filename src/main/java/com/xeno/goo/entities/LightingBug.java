@@ -46,7 +46,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		return MobEntity.func_233666_p_()
 				.createMutableAttribute(ForgeMod.ENTITY_GRAVITY.get(), 0)
 				.createMutableAttribute(Attributes.MAX_HEALTH, 10D)
-				.createMutableAttribute(Attributes.FLYING_SPEED, 1.2F)
+				.createMutableAttribute(Attributes.FLYING_SPEED, 2F)
 				.createMutableAttribute(Attributes.MOVEMENT_SPEED, 0.5F)
 				.createMutableAttribute(Attributes.ATTACK_DAMAGE, 1.0D)
 				.createMutableAttribute(Attributes.FOLLOW_RANGE, 48.0D);
@@ -211,6 +211,26 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	@Override
 	protected void updateMovementGoalFlags() {
 
+	}
+
+	@Override
+	protected float getSpeedFactor() {
+
+		return 1.0f;
+	}
+
+	@Override
+	public void move(MoverType typeIn, Vector3d pos) {
+
+		super.move(typeIn, pos);
+		if (typeIn == MoverType.SELF)
+			fricMotion(this.getMotion());
+	}
+
+	protected void fricMotion(Vector3d motionIn) {
+
+		final double FRICTION = 0.96;
+		super.setMotion(motionIn.mul(FRICTION, FRICTION, FRICTION));
 	}
 
 	class DrinkGooGoal extends Goal {
