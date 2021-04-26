@@ -446,8 +446,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     }
 
     @Override
-    public CompoundNBT serializeNBT() {
-        CompoundNBT tag = super.serializeNBT();
+    public CompoundNBT writeWithoutTypeId(CompoundNBT compound) {
+        CompoundNBT tag = super.writeWithoutTypeId(compound);
         tag.put("goo", goo.writeToNBT(new CompoundNBT()));
         tag.putInt("lastGooAmount", lastGooAmount);
         tag.putBoolean("isAtRest", isAtRest);
@@ -523,7 +523,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     @Override
     public void writeSpawnData(PacketBuffer buffer)
     {
-        CompoundNBT tag = serializeNBT();
+        CompoundNBT tag = writeWithoutTypeId(new CompoundNBT());
         writeAdditional(tag);
         buffer.writeCompoundTag(tag);
     }

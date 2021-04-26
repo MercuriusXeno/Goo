@@ -506,8 +506,8 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     }
 
     @Override
-    public CompoundNBT serializeNBT() {
-        CompoundNBT tag = super.serializeNBT();
+    public CompoundNBT writeWithoutTypeId(CompoundNBT compound) {
+        CompoundNBT tag = super.writeWithoutTypeId(compound);
         tag.put("goo", goo.writeToNBT(new CompoundNBT()));
         serializeAttachment(tag);
         if (this.owner != null) { tag.putUniqueId("owner", owner.getUniqueID()); }
@@ -545,7 +545,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     @Override
     public void writeSpawnData(PacketBuffer buffer)
     {
-        CompoundNBT tag = serializeNBT();
+        CompoundNBT tag = writeWithoutTypeId(new CompoundNBT());
         writeAdditional(tag);
         buffer.writeCompoundTag(tag);
     }

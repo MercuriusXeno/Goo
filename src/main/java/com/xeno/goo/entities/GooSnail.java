@@ -287,6 +287,8 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     class EatCombGoal extends GooSnail.PassiveGoal {
         private boolean running;
         private int ticks = 0;
+        private int ticksEating = 0;
+        private final int EAT_COMB_DURATION = 20;
 
         EatCombGoal() {
             this.setMutexFlags(EnumSet.of(Goal.Flag.MOVE));
@@ -332,6 +334,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
          */
         public void startExecuting() {
             this.ticks = 0;
+            this.ticksEating = 0;
             this.running = true;
             GooSnail.this.getLookController().setLookPosition(GooSnail.this.combToSeek.getPosX(),
                     GooSnail.this.combToSeek.getPosY(),
@@ -350,7 +353,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         private int EAT_COMB_TIMEOUT = 120;
-        // private double DISTANCE_THAT_IS_VERY_CLOSE = 0.2D;
+        private double DISTANCE_THAT_IS_VERY_CLOSE = 0.2D;
         private double DISTANCE_TO_EAT = 0.7D;
         /**
          * Keep ticking a continuous task that has already been started
@@ -361,17 +364,22 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
                 GooSnail.this.clearComb();
                 resetTask();
             } else {
-                if (GooSnail.this.combToSeek == null) {
+                if (GooSnail.this.combToSeek == null || !GooSnail.this.combToSeek.isAlive()) {
                     resetTask();
                     return;
                 }
-                double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(GooSnail.this.getPositionVec());
+                double distanceToTarget = GooSnail.this.getPositionVec().distanceTo(GooSnail.this.combToSeek.getPositionVec());
                 if (distanceToTarget <= DISTANCE_TO_EAT) {
-                    ItemEntity comb = getComb();
-                    if (comb != null) {
-                        eatComb(comb);
+                    if (distanceToTarget > DISTANCE_THAT_IS_VERY_CLOSE) {
+                        GooSnail.this.getLookController().setLookPosition(GooSnail.this.combToSeek.getPosX(),
+                                GooSnail.this.combToSeek.getPosY(),
+                                GooSnail.this.combToSeek.getPosZ());
                     }
-                    GooSnail.this.clearComb();
+                    ++this.ticksEating;
+                    if (this.ticksEating > EAT_COMB_DURATION) {
+                        eatComb(GooSnail.this.combToSeek);
+                        GooSnail.this.clearComb();
+                    }
                 }
             }
         }
