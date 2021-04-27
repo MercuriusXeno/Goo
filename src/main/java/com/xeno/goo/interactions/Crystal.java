@@ -6,6 +6,7 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -26,6 +27,9 @@ public class Crystal
     private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
+    static {
+        mockPick.addEnchantment(Enchantments.SILK_TOUCH, 1);
+    }
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.CRYSTAL_GOO.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);

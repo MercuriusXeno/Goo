@@ -90,10 +90,11 @@ public class GooConfig
     private ForgeConfigSpec.IntValue GAUNTLET_CONTAINMENT_MULTIPLIER;
     public int gauntletContainmentMultiplier() { return GAUNTLET_CONTAINMENT_MULTIPLIER.get(); }
 
-    // private ForgeConfigSpec.DoubleValue ENERGETIC_MINING_BLAST_RADIUS;
     private ForgeConfigSpec.IntValue ENERGETIC_MINING_BLAST_DISTANCE;
-    // public double energeticMiningBlastRadius() { return ENERGETIC_MINING_BLAST_RADIUS.get(); }
     public int energeticMiningBlastDistance() { return ENERGETIC_MINING_BLAST_DISTANCE.get(); }
+
+    private ForgeConfigSpec.IntValue PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE;
+    public int primordialSilkTouchBlastDistance() { return PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE.get(); }
 
     private ForgeConfigSpec.IntValue RADIAL_MENU_HELD_TICKS_THRESHOLD;
     public int radialMenuThreshold() { return RADIAL_MENU_HELD_TICKS_THRESHOLD.get(); }
@@ -180,6 +181,9 @@ public class GooConfig
             }
             if (fluid.equals(Registry.METAL_GOO.get())) {
                 actualCost = 2;
+            }
+            if (fluid.equals(Registry.PRIMORDIAL_GOO.get())) {
+                actualCost = 1;
             }
             if (fluid.equals(Registry.RADIANT_GOO.get())) {
                 actualCost = 4;
@@ -377,8 +381,8 @@ public class GooConfig
         private static final int GAUNTLET_CAPACITY = 400;
         private static final int GAUNTLET_CONTAINMENT_MULTIPLIER = 4;
         private static final int TROUGH_CAPACITY = 1000;
-        // private static final double ENERGETIC_MINING_BLAST_RADIUS = 2.25d;
         private static final int ENERGETIC_MINING_BLAST_DISTANCE = 1;
+        private static final int PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE = 2;
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
         private static final int SNAIL_PRODUCTION_AMOUNT = 4;
         private static final int SNAIL_SPAWN_WEIGHT = 1;
@@ -419,6 +423,8 @@ public class GooConfig
                 .defineInRange("gauntletContainmentMultiplier", Defaults.GAUNTLET_CONTAINMENT_MULTIPLIER, 0, 10);
         ENERGETIC_MINING_BLAST_DISTANCE = serverBuilder.comment("Mining blast reach of energetic goo, default: " + Defaults.ENERGETIC_MINING_BLAST_DISTANCE)
                 .defineInRange("energeticMiningBlastDistance", Defaults.ENERGETIC_MINING_BLAST_DISTANCE, 1, 10);
+        PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE = serverBuilder.comment("Silk-touch blast reach of primordial goo, default: " + Defaults.PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE)
+                .defineInRange("primordialSilkTouchBlastDistance", Defaults.PRIMORDIAL_SILK_TOUCH_BLAST_DISTANCE, 1, 10);
         RADIAL_MENU_HELD_TICKS_THRESHOLD = serverBuilder.comment("Held ticks threshold for radial menu to open, default: " + Defaults.RADIAL_HELD_THRESHOLD_TICKS)
                 .defineInRange("heldTicksRadialMenuThreshold", Defaults.RADIAL_HELD_THRESHOLD_TICKS, 10, 60);
         SNAIL_PRODUCTION_AMOUNT = serverBuilder.comment("Amount of primordial goo from snail per Crystal Comb, default: " + Defaults.SNAIL_PRODUCTION_AMOUNT)

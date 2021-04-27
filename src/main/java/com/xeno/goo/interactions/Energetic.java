@@ -5,9 +5,11 @@ import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.ParticleTypes;
@@ -28,7 +30,7 @@ public class Energetic
     private static final int bedrockHardness = -1;
     private static final int ironHarvestLevel = 2;
     private static final float particleChance = 0.33f;
-
+    private static final ItemStack mockPick = new ItemStack(Items.IRON_PICKAXE, 1);
 
     public static void registerInteractions()
     {
@@ -74,7 +76,7 @@ public class Energetic
                 LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
                 List<ItemStack> drops = state.getDrops(lootBuilder
                         .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
-                        .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
+                        .withParameter(LootParameters.TOOL, mockPick)
                 );
                 // throttle particles to look a bit less dense.
                 // spawning roughly a 1/3 chance
