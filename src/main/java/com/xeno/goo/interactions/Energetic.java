@@ -76,12 +76,6 @@ public class Energetic
                         .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
                         .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
                 );
-                // if the drops don't resemble the block, we presume there's some fortune potential and refuse to break it
-                // the point of this is to make it so that we only break things that return their respective block.
-                // Diamonds, coal, lapis, emeralds, glowstone dust and other goodies will be left for fortune.
-                if (!validDropsForMiningBlast(drops, state)) {
-                    return;
-                }
                 // throttle particles to look a bit less dense.
                 // spawning roughly a 1/3 chance
                 if (context.world().rand.nextFloat() <= particleChance) {
@@ -111,26 +105,6 @@ public class Energetic
         return false;
     }
 
-    private static boolean validDropsForMiningBlast(List<ItemStack> drops, BlockState state)
-    {
-        // leaves are fine lol
-        if (state.getBlock() instanceof LeavesBlock) {
-            return true;
-        }
-
-        // singleton drops indicate a "normal" block drop. Anything else we reject.
-        if (drops.size() != 1) {
-            return false;
-        }
-        // now analyze our one drop. Is it a block? If it's a block, we're cool with it.
-        // but we reject "item" drops on the off chance it could benefit from fortune.
-        if (drops.get(0).getItem() instanceof BlockItem) {
-            return true;
-        }
-
-        return false;
-    }
-
     private static List<BlockPos> blockPositionsByCuboid(BlockPos blockPos, int radius)
     {
         List<BlockPos> result = new ArrayList<>();
@@ -146,26 +120,6 @@ public class Energetic
         result.sort((bp1, bp2) -> compareManhattanDistance(blockPos, bp1, bp2));
         return result;
     }
-
-//    private static List<BlockPos> blockPositionsByRadius(Vector3d center, BlockPos blockPos, double radius)
-//    {
-//        int ceilingRadius = (int)Math.ceil(radius);
-//        List<BlockPos> result = new ArrayList<>();
-//        for(int x = -ceilingRadius; x <= ceilingRadius; x++) {
-//            for(int y = -ceilingRadius; y <= ceilingRadius; y++) {
-//                for(int z = -ceilingRadius; z <= ceilingRadius; z++) {
-//                    BlockPos match = blockPos.add(x, y, z);
-//                    Vector3d matchCenter = Vector3d.copy(match).add(0.5d, 0.5d, 0.5d);
-//                    if (center.distanceTo(matchCenter) <= radius) {
-//                        result.add(match);
-//                    }
-//                }
-//            }
-//        }
-//
-//        result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
-//        return result;
-//    }
 
     private static int compareManhattanDistance(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {
