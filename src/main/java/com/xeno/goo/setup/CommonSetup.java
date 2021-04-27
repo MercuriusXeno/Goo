@@ -35,7 +35,7 @@ public class CommonSetup
 
         GooInteractions.initialize();
 
-        EntityClassification.create("goo:goo_snail", "goo:goo_snail", 6, true, true, 128);
+        GooEntityClassifications.init();
 
         event.enqueueWork(() -> {
             PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());

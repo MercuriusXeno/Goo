@@ -5,6 +5,7 @@ import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.setup.EntitySpawnConditions;
 import com.xeno.goo.setup.GooConfig;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.EntityClassification;
@@ -43,18 +44,8 @@ public class ForgeCommonEvents {
         }
     }
 
-    // borrowed from Ars Nouveau
-    // normal biomes we're okay with snails spawning in caves in
-    private static List<Category> VALID_SNAIL_SPAWN_BIOMES = Arrays.asList(Biome.Category.FOREST, Biome.Category.EXTREME_HILLS, Biome.Category.JUNGLE,
-            Biome.Category.PLAINS, Biome.Category.SWAMP, Biome.Category.SAVANNA);
-
     @SubscribeEvent
     public static void biomeLoad(BiomeLoadingEvent e) {
-        if (VALID_SNAIL_SPAWN_BIOMES.contains(e.getCategory())) {
-            if (GooMod.config.snailSpawnWeight() > 0) {
-                MobSpawnInfo.Spawners spawnInfo = new MobSpawnInfo.Spawners(Registry.GOO_SNAIL.get(), GooMod.config.snailSpawnWeight(), 1, 1);
-                e.getSpawns().withSpawner(EntityClassification.getClassificationByName("goo:goo_snail"), spawnInfo);
-            }
-        }
+        EntitySpawnConditions.injectSnailSpawnConditions(e);
     }
 }

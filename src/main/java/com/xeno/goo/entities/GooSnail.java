@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.library.AudioHelper.PitchFormulas;
+import com.xeno.goo.setup.EntitySpawnConditions;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -35,6 +36,7 @@ import net.minecraft.util.ActionResultType;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IWorld;
@@ -43,9 +45,9 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData {
     private static final DataParameter<Integer> TICKS_MOVING = EntityDataManager.createKey(GooSnail.class, DataSerializers.VARINT);
@@ -68,7 +70,9 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         ticksToMove = 0;
         this.moveController = new MovementController(this);
         this.lookController = new GooSnail.SnailLookController(this);
-        this.setPathPriority(PathNodeType.DANGER_FIRE, -1.0F);
+        this.setPathPriority(PathNodeType.DANGER_FIRE, -100);
+        this.setPathPriority(PathNodeType.DAMAGE_FIRE, -1000);
+        this.setPathPriority(PathNodeType.LAVA, -1000);
         this.setPathPriority(PathNodeType.WATER, -1.0F);
         this.setPathPriority(PathNodeType.WATER_BORDER, 16.0F);
         this.setPathPriority(PathNodeType.COCOA, -1.0F);
@@ -85,18 +89,32 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         return 1;
     }
 
-    private static List<SpawnReason> naturalSpawnReasons = Arrays.asList(SpawnReason.CHUNK_GENERATION, SpawnReason.NATURAL, SpawnReason.JOCKEY);
     @Override
     public boolean canSpawn(IWorld worldIn, SpawnReason spawnReasonIn) {
-        if (naturalSpawnReasons.contains(spawnReasonIn)) {
-            BlockState stateIn = worldIn.getBlockState(this.getPosition());
-            BlockState stateOn = worldIn.getBlockState(this.getPosition().down());
+        return EntitySpawnConditions.snailSpawnConditions(worldIn, spawnReasonIn, this.getPosition(), this.rand);
+    }
 
-            return stateIn.getBlock().equals(Blocks.CAVE_AIR) && stateOn.getBlock().equals(Blocks.STONE) && this.getPosition().getY() < 36
-                    && !worldIn.canBlockSeeSky(this.getPosition().down());
-        } else {
-            return true;
+    public static boolean nearbyLiquidConditionsMet(IWorld world, BlockPos pos) {
+        Stream<BlockPos> positions = BlockPos.getAllInBox(pos.getX() - 7, pos.getY() - 1, pos.getZ() - 7,
+                pos.getX() + 7, pos.getY() + 1, pos.getZ() + 7);
+        Iterable<BlockPos> iterable = positions::iterator;
+        boolean nearLava = false;
+        boolean nearWater = false;
+        for(BlockPos p : iterable) {
+            BlockState state = world.getBlockState(p);
+            if (state.matchesBlock(Blocks.LAVA)) {
+                nearLava = true;
+            }
+            if (state.matchesBlock(Blocks.WATER)) {
+                nearWater = true;
+            }
         }
+        return !nearLava && nearWater;
+    }
+
+    public static boolean nearbySnail(IWorld world, BlockPos pos) {
+        AxisAlignedBB box = new AxisAlignedBB(pos.getX() - 16, pos.getY() - 16, pos.getZ() - 16, pos.getX() + 16, pos.getY() + 16, pos.getZ() + 16);
+        return !world.getEntitiesWithinAABB(GooSnail.class, box).isEmpty();
     }
 
     @Override
@@ -197,10 +215,10 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     }
 
     public boolean canDespawn(double distanceToClosestPlayer) {
-        return !this.isTrusting() && this.ticksExisted > 2400;
+        return !this.isBondedToPlayers() && this.ticksExisted > 2400;
     }
 
-    private boolean isTrusting() {
+    private boolean isBondedToPlayers() {
         return this.isSpawnedByPlayerPlacement;
     }
 
@@ -210,30 +228,6 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
 
     public void setHome(BlockPos pos) {
         this.homePos = pos;
-    }
-
-    @Override
-    protected boolean isDespawnPeaceful() {
-
-        return super.isDespawnPeaceful();
-    }
-
-    @Override
-    public boolean isNoDespawnRequired() {
-
-        return super.isNoDespawnRequired();
-    }
-
-    @Override
-    public boolean preventDespawn() {
-
-        return super.preventDespawn();
-    }
-
-    @Override
-    public void checkDespawn() {
-
-        super.checkDespawn();
     }
 
     @Override
