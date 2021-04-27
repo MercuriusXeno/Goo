@@ -153,11 +153,15 @@ public class Floral
     }
 
     private static void doEffects(SplatContext context) {
-        BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        if (context.isRemote()) {
+            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        }
     }
 
     private static void doEffects(BlobContext context) {
-        BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        if (context.isRemote()) {
+            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        }
     }
 
     private static boolean canSupportMoss(SplatContext splatContext) {

@@ -486,16 +486,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
         FluidStack ret = FluidStack.EMPTY;
         for (int i = 0, e = goo.getTanks(); i < e; ++i) {
-            FluidStack tank = goo.getFluidInTankInternal(0);
+            FluidStack tank = goo.getFluidInTankInternal(i);
             if (tank.getAmount() > ret.getAmount())
                 ret = tank;
         }
         return ret;
-    }
-
-    public int getTotalGoo() {
-
-        return goo.getTotalContents();
     }
 
     public void onContentsChanged() {
@@ -553,11 +548,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), crystal);
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
-    }
-
-    public int getSpaceRemaining()
-    {
-        return goo.getRemainingCapacity();
     }
 
     // moved this from renderer to here so that both can utilize the same
