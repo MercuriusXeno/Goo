@@ -18,16 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 960.0,
-      "type": "goo:decay"
-    },
-    {
       "amount": 120.0,
       "type": "goo:weird"
     },
     {
-      "amount": 60.0,
-      "type": "goo:primordial"
+      "amount": 960.0,
+      "type": "goo:decay"
     },
     {
       "amount": 1.0,
@@ -36,6 +32,10 @@
     {
       "amount": 120.0,
       "type": "goo:radiant"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:primordial"
     }
   ]
 }

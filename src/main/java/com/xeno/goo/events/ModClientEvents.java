@@ -163,8 +163,6 @@ public class ModClientEvents
         Minecraft.getInstance().particles.registerFactory(Registry.METAL_LANDING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.LandingGooFactory(iAnimatedSprite, Registry.METAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.MOLTEN_FALLING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.FallingGooFactory(iAnimatedSprite, Registry.MOLTEN_GOO.get(), Registry.MOLTEN_LANDING_GOO_PARTICLE.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.MOLTEN_LANDING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.LandingGooFactory(iAnimatedSprite, Registry.MOLTEN_GOO.get()));
-        Minecraft.getInstance().particles.registerFactory(Registry.OBSIDIAN_FALLING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.FallingGooFactory(iAnimatedSprite, Registry.OBSIDIAN_GOO.get(), Registry.OBSIDIAN_LANDING_GOO_PARTICLE.get()));
-        Minecraft.getInstance().particles.registerFactory(Registry.OBSIDIAN_LANDING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.LandingGooFactory(iAnimatedSprite, Registry.OBSIDIAN_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.PRIMORDIAL_FALLING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.FallingGooFactory(iAnimatedSprite, Registry.PRIMORDIAL_GOO.get(), Registry.PRIMORDIAL_LANDING_GOO_PARTICLE.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.PRIMORDIAL_LANDING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.LandingGooFactory(iAnimatedSprite, Registry.PRIMORDIAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.RADIANT_FALLING_GOO_PARTICLE.get(), (iAnimatedSprite) -> new GooParticle.FallingGooFactory(iAnimatedSprite, Registry.RADIANT_GOO.get(), Registry.RADIANT_LANDING_GOO_PARTICLE.get()));
@@ -193,7 +191,6 @@ public class ModClientEvents
         Minecraft.getInstance().particles.registerFactory(Registry.LOGIC_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.LOGIC_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.METAL_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.METAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.MOLTEN_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.MOLTEN_GOO.get()));
-        Minecraft.getInstance().particles.registerFactory(Registry.OBSIDIAN_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.OBSIDIAN_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.PRIMORDIAL_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.PRIMORDIAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.RADIANT_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.RADIANT_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.REGAL_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.REGAL_GOO.get()));

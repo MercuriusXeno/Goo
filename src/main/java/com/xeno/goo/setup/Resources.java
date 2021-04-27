@@ -22,7 +22,6 @@ public class Resources
         public static final ResourceLocation LOGIC_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/logic_still");
         public static final ResourceLocation METAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/metal_still");
         public static final ResourceLocation MOLTEN_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/molten_still");
-        public static final ResourceLocation OBSIDIAN_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/obsidian_still");
         public static final ResourceLocation PRIMORDIAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/primordial_still");
         public static final ResourceLocation RADIANT_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/radiant_still");
         public static final ResourceLocation REGAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/regal_still");
@@ -47,7 +46,6 @@ public class Resources
         public static final ResourceLocation LOGIC_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/logic_flow");
         public static final ResourceLocation METAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/metal_flow");
         public static final ResourceLocation MOLTEN_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/molten_flow");
-        public static final ResourceLocation OBSIDIAN_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/obsidian_flow");
         public static final ResourceLocation PRIMORDIAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/primordial_flow");
         public static final ResourceLocation RADIANT_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/radiant_flow");
         public static final ResourceLocation REGAL_GOO = new ResourceLocation(GooMod.MOD_ID, "block/fluid/regal_flow");
@@ -73,7 +71,6 @@ public class Resources
         public static final ResourceLocation LOGIC_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/logic.png");
         public static final ResourceLocation METAL_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/metal.png");
         public static final ResourceLocation MOLTEN_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/molten.png");
-        public static final ResourceLocation OBSIDIAN_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/obsidian.png");
         public static final ResourceLocation PRIMORDIAL_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/primordial.png");
         public static final ResourceLocation RADIANT_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/radiant.png");
         public static final ResourceLocation REGAL_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/regal.png");

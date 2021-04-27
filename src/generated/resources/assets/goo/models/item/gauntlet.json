@@ -81,12 +81,6 @@
     },
     {
       "predicate": {
-        "goo:held_liquid": 0.015
-      },
-      "model": "goo:item/obsidian_gauntlet"
-    },
-    {
-      "predicate": {
         "goo:held_liquid": 0.014
       },
       "model": "goo:item/primordial_gauntlet"

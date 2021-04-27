@@ -18,8 +18,8 @@
   ],
   "compounds": [
     {
-      "amount": 6.0,
-      "type": "goo:obsidian"
+      "amount": 15.0,
+      "type": "goo:molten"
     },
     {
       "amount": 180.0,

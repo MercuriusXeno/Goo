@@ -153,7 +153,6 @@ public class GooInteractions
         Logic.registerInteractions();
         Metal.registerInteractions();
         Molten.registerInteractions();
-        Obsidian.registerInteractions();
         Primordial.registerInteractions();
         Radiant.registerInteractions();
         Regal.registerInteractions();

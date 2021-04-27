@@ -19,15 +19,15 @@
   "compounds": [
     {
       "amount": 120.0,
-      "type": "goo:obsidian"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:primordial"
+      "type": "goo:molten"
     },
     {
       "amount": 960.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:primordial"
     }
   ]
 }

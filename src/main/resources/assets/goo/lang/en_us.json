@@ -105,12 +105,6 @@
   "item.goo.molten_goo_chunk": "Molten Chunk",
   "item.goo.molten_goo_slab": "Molten Slab",
 
-  "item.goo.obsidian_goo_sliver": "Obsidian Chip",
-  "item.goo.obsidian_goo_shard": "Obsidian Fragment",
-  "item.goo.obsidian_goo_crystal": "Obsidian Shard",
-  "item.goo.obsidian_goo_chunk": "Obsidian Chunk",
-  "item.goo.obsidian_goo_slab": "Obsidian Slab",
-
   "item.goo.primordial_goo_sliver": "Primordial Chip",
   "item.goo.primordial_goo_shard": "Primordial Fragment",
   "item.goo.primordial_goo_crystal": "Primordial Shard",
@@ -309,18 +303,6 @@
   "block.goo.molten_goo_smooth": "Molten Stone",
   "block.goo.molten_goo_solid": "Molten Block",
 
-  "block.goo.obsidian_goo_bricks": "Obsidian Bricks",
-  "block.goo.obsidian_goo_bulbous": "Obsidian Growth",
-  "block.goo.obsidian_goo_bundled": "Obsidian Bundle",
-  "block.goo.obsidian_goo_craggy": "Obsidian Crag",
-  "block.goo.obsidian_goo_debris": "Obsidian Debris",
-  "block.goo.obsidian_goo_keystone": "Obsidian Keystone",
-  "block.goo.obsidian_goo_marbled": "Obsidian Marble",
-  "block.goo.obsidian_goo_ornate": "Obsidian Ornament",
-  "block.goo.obsidian_goo_pillar": "Obsidian Pillar",
-  "block.goo.obsidian_goo_smooth": "Obsidian Stone",
-  "block.goo.obsidian_goo_solid": "Obsidian Block",
-
   "block.goo.primordial_goo_bricks": "Primordial Bricks",
   "block.goo.primordial_goo_bulbous": "Primordial Growth",
   "block.goo.primordial_goo_bundled": "Primordial Bundle",
@@ -420,7 +402,6 @@
   "fluid.goo.logic_goo": "Logic",
   "fluid.goo.metal_goo": "Metal",
   "fluid.goo.molten_goo": "Molten",
-  "fluid.goo.obsidian_goo": "Obsidian",
   "fluid.goo.radiant_goo": "Radiant",
   "fluid.goo.regal_goo": "Regal",
   "fluid.goo.slime_goo": "Slime",
@@ -510,8 +491,6 @@
   "goo.description.metal2": "Metal goo breaks blocks as though with an iron pick, making it capable of breaking many things.",
   "goo.description.molten": "Found in lava and things which burn.",
   "goo.description.molten2": "Molten goo cooks any block it touches in world, as though with a furnace, though you won't receive experience for it. It can also melt obsidian back into lava.",
-  "goo.description.obsidian": "Found in obsidian and specific nether materials.",
-  "goo.description.obsidian2": "Obsidian breaks blocks as though with a diamond tool enchanted with silk touch.",
   "goo.description.radiant": "Found in sources of light.",
   "goo.description.radiant2": "Radiant goo places a crystalline light adhering to the surface it was on. It's like torch goo, kinda.",
   "goo.description.regal": "Found in gold and royal things.",
@@ -541,6 +520,6 @@
   "sound_event.goo.molten_sizzle_sound": "Goo sizzles",
   "sound_event.goo.crystallize_sound": "Goo crystallizes",
   "sound_event.goo.goo_bee_shatter_sound": "Crystal bee shatters",
-  "sound_event.goo.snail_poop_sound": "Snail made a, uh, crystal",
+  "sound_event.goo.snail_poop_sound": "Snail makes crystal",
   "sound_event.goo.snail_eat_sound": "Snail eats something"
 }

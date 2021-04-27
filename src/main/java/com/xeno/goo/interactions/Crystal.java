@@ -39,14 +39,13 @@ public class Crystal
 
     private static boolean breaker(SplatContext context)
     {
-        if (!context.isRemote()) {
+        if ((context.world() instanceof ServerWorld)) {
             BlockPos blockPos = context.blockPos();
             BlockState state = context.world().getBlockState(blockPos);
             Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
-
             SoundType breakAudio = state.getBlock().getSoundType(state, context.world(), blockPos, null);
             AudioHelper.headlessAudioEvent(context.world(), blockPos, breakAudio.getBreakSound(), SoundCategory.BLOCKS,
-                breakAudio.volume, () -> breakAudio.pitch);
+                    breakAudio.volume, () -> breakAudio.pitch);
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder

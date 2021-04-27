@@ -162,7 +162,6 @@ public class Registry {
     public static final RegistryObject<GooFluid> METAL_GOO = registerGooFluid("metal_goo", Resources.Still.METAL_GOO, Resources.Flowing.METAL_GOO, Resources.Icon.METAL_GOO, 0.012f, 0);
     public static final RegistryObject<GooFluid> MOLTEN_GOO = registerGooFluid("molten_goo", Resources.Still.MOLTEN_GOO, Resources.Flowing.MOLTEN_GOO, Resources.Icon.MOLTEN_GOO, 0.013f, 15);
     public static final RegistryObject<GooFluid> PRIMORDIAL_GOO = registerGooFluid("primordial_goo", Resources.Still.PRIMORDIAL_GOO, Resources.Flowing.PRIMORDIAL_GOO, Resources.Icon.PRIMORDIAL_GOO, 0.014f, 15);
-    public static final RegistryObject<GooFluid> OBSIDIAN_GOO = registerGooFluid("obsidian_goo", Resources.Still.OBSIDIAN_GOO, Resources.Flowing.OBSIDIAN_GOO, Resources.Icon.OBSIDIAN_GOO, 0.015f, 0);
     public static final RegistryObject<GooFluid> RADIANT_GOO = registerGooFluid("radiant_goo", Resources.Still.RADIANT_GOO, Resources.Flowing.RADIANT_GOO, Resources.Icon.RADIANT_GOO, 0.016f, 15);
     public static final RegistryObject<GooFluid> REGAL_GOO = registerGooFluid("regal_goo", Resources.Still.REGAL_GOO, Resources.Flowing.REGAL_GOO, Resources.Icon.REGAL_GOO, 0.017f, 0);
     public static final RegistryObject<GooFluid> SLIME_GOO = registerGooFluid("slime_goo", Resources.Still.SLIME_GOO, Resources.Flowing.SLIME_GOO, Resources.Icon.SLIME_GOO, 0.018f, 0);
@@ -194,7 +193,6 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> LOGIC = registerCompound("logic", LOGIC_GOO);
     public static final RegistryObject<GooCompoundType> METAL = registerCompound("metal", METAL_GOO);
     public static final RegistryObject<GooCompoundType> MOLTEN = registerCompound("molten", MOLTEN_GOO);
-    public static final RegistryObject<GooCompoundType> OBSIDIAN = registerCompound("obsidian", OBSIDIAN_GOO);
     public static final RegistryObject<GooCompoundType> PRIMORDIAL = registerCompound("primordial", PRIMORDIAL_GOO);
     public static final RegistryObject<GooCompoundType> RADIANT = registerCompound("radiant", RADIANT_GOO);
     public static final RegistryObject<GooCompoundType> REGAL = registerCompound("regal", REGAL_GOO);
@@ -241,8 +239,6 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> METAL_LANDING_GOO_PARTICLE = PARTICLES.register("metal_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_FALLING_GOO_PARTICLE = PARTICLES.register("molten_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_LANDING_GOO_PARTICLE = PARTICLES.register("molten_landing_goo", () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_FALLING_GOO_PARTICLE = PARTICLES.register("obsidian_falling_goo", () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_LANDING_GOO_PARTICLE = PARTICLES.register("obsidian_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_FALLING_GOO_PARTICLE = PARTICLES.register("primordial_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_LANDING_GOO_PARTICLE = PARTICLES.register("primordial_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> RADIANT_FALLING_GOO_PARTICLE = PARTICLES.register("radiant_falling_goo", () -> new BasicParticleType(false));
@@ -272,7 +268,6 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> LOGIC_VAPOR_PARTICLE = PARTICLES.register("logic_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> METAL_VAPOR_PARTICLE = PARTICLES.register("metal_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_VAPOR_PARTICLE = PARTICLES.register("molten_vapor",  () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_VAPOR_PARTICLE = PARTICLES.register("obsidian_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_VAPOR_PARTICLE = PARTICLES.register("primordial_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> RADIANT_VAPOR_PARTICLE = PARTICLES.register("radiant_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> REGAL_VAPOR_PARTICLE = PARTICLES.register("regal_vapor",  () -> new BasicParticleType(false));
@@ -296,7 +291,6 @@ public class Registry {
         fallingParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(METAL_GOO.get(), METAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_FALLING_GOO_PARTICLE.get());
-        fallingParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(REGAL_GOO.get(), REGAL_FALLING_GOO_PARTICLE.get());
@@ -321,7 +315,6 @@ public class Registry {
         vaporParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(METAL_GOO.get(), METAL_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_VAPOR_PARTICLE.get());
-        vaporParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(REGAL_GOO.get(), REGAL_VAPOR_PARTICLE.get());

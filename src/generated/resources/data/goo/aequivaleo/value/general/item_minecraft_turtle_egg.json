@@ -23,11 +23,11 @@
     },
     {
       "amount": 30.0,
-      "type": "goo:vital"
+      "type": "goo:faunal"
     },
     {
       "amount": 30.0,
-      "type": "goo:faunal"
+      "type": "goo:vital"
     }
   ]
 }

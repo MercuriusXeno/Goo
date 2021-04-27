@@ -614,8 +614,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     private boolean isAutoGrabbedGoo(FluidStack goo) {
         return goo.getFluid().equals(Registry.CRYSTAL_GOO.get())
                 || goo.getFluid().equals(Registry.METAL_GOO.get())
-                || goo.getFluid().equals(Registry.REGAL_GOO.get())
-                || goo.getFluid().equals(Registry.OBSIDIAN_GOO.get());
+                || goo.getFluid().equals(Registry.REGAL_GOO.get());
     }
 
     private boolean isValidCollisionEntity(Entity eInBB)

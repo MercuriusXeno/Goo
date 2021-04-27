@@ -176,22 +176,19 @@ public class GooConfig
             int actualCooldown = defaultTickCooldown;
             // specific overrides for map defaults for goos that need it.
             if (fluid.equals(Registry.CRYSTAL_GOO.get())) {
-                actualCost = 1;
+                actualCost = 2;
             }
             if (fluid.equals(Registry.METAL_GOO.get())) {
-                actualCost = 1;
-            }
-            if (fluid.equals(Registry.OBSIDIAN_GOO.get())) {
                 actualCost = 2;
             }
             if (fluid.equals(Registry.RADIANT_GOO.get())) {
                 actualCost = 4;
             }
             if (fluid.equals(Registry.REGAL_GOO.get())) {
-                actualCost = 8;
+                actualCost = 4;
             }
             if (fluid.equals(Registry.FAUNAL_GOO.get())) {
-                actualCost = 8;
+                actualCost = 4;
             }
             if (fluid.equals(Registry.FLORAL_GOO.get()) && k.getB().equals("flourish")) {
                 actualFailChance = 0.8d;

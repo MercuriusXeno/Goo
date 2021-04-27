@@ -140,7 +140,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.SAND, earthen(180));
         saveData(Items.APPLE, floral(15), vital(1));
         saveData(Items.BAMBOO, floral(8));
-        saveData(Items.BASALT, earthen(180), obsidian(6));
+        saveData(Items.BASALT, earthen(180), molten(15));
         saveData(Items.BEEF, faunal(15), vital(1));
         saveData(Items.BEETROOT, floral(15), vital(1), chromatic(240));
         saveData(Items.BEETROOT_SEEDS, floral(15));
@@ -160,14 +160,14 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.COD, faunal(15), vital(1));
         saveData(Items.CRIMSON_NYLIUM, earthen(120), fungal(15), chromatic(60));
         saveData(Items.CRIMSON_FUNGUS, fungal(15));
-        saveData(Items.CRYING_OBSIDIAN, weird(30), obsidian(960));
+        saveData(Items.CRYING_OBSIDIAN, weird(30), molten(480), crystal(180));
         saveData(Items.EGG, faunal(15), vital(15));
         saveData(Items.END_ROD, radiant(20));
         saveData(Items.END_STONE, earthen(120), weird(5), vital(1));
         saveData(Items.ENDER_PEARL, weird(30));
         saveData(Items.FEATHER, faunal(15));
         saveData(Items.GHAST_TEAR, weird(30), crystal(24));
-        saveData(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), obsidian(240));
+        saveData(Items.GILDED_BLACKSTONE, metal(240), regal(240), weird(60), earthen(240), molten(240));
         saveData(Items.GLOWSTONE_DUST, radiant(10));
         saveData(Items.BELL, earthen(360), regal(216), metal(180), floral(128));
         saveData(Items.GRASS_BLOCK, earthen(180), floral(15));
@@ -186,7 +186,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.NETHER_WART, weird(1), fungal(5));
         saveData(Items.WARPED_WART_BLOCK, weird(9), fungal(45));
         saveData(Items.NETHERRACK, earthen(180), molten(5), decay(5));
-        saveData(Items.OBSIDIAN, obsidian(120), molten(60), earthen(180));
+        saveData(Items.OBSIDIAN, molten(180), earthen(180), weird(15), crystal(15));
         saveData(Items.PHANTOM_MEMBRANE, decay(60), vital(1), weird(60));
         saveData(Items.POISONOUS_POTATO, floral(15), weird(3));
         saveData(Items.PORKCHOP, faunal(15), vital(1));
@@ -270,8 +270,8 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.LAPIS_LAZULI, weird(4), chromatic(240), crystal(30));
         saveData(Items.NETHER_QUARTZ_ORE, earthen(60), crystal (30), forbidden(1));
         saveData(Items.QUARTZ, earthen(60), crystal (30));
-        saveData(Items.ANCIENT_DEBRIS, metal(960), obsidian(120), primordial(15), forbidden(1));
-        saveData(Items.NETHERITE_SCRAP, metal(960), obsidian(120), primordial(15));
+        saveData(Items.ANCIENT_DEBRIS, metal(960), molten(120), primordial(15), forbidden(1));
+        saveData(Items.NETHERITE_SCRAP, metal(960), molten(120), primordial(15));
 
         // controversial
         saveData(Items.NETHER_STAR, weird(120), radiant(120), decay(960), primordial(60), forbidden(1));
@@ -326,7 +326,6 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
     private static CompoundInstance logic(double d) { return new CompoundInstance(Registry.LOGIC.get(), d); }
     private static CompoundInstance metal(double d) { return new CompoundInstance(Registry.METAL.get(), d); }
     private static CompoundInstance molten(double d) { return new CompoundInstance(Registry.MOLTEN.get(), d); }
-    private static CompoundInstance obsidian(double d) { return new CompoundInstance(Registry.OBSIDIAN.get(), d); }
     private static CompoundInstance primordial(double d) { return new CompoundInstance(Registry.PRIMORDIAL.get(), d); }
     private static CompoundInstance radiant(double d) { return new CompoundInstance(Registry.RADIANT.get(), d); }
     private static CompoundInstance regal(double d) { return new CompoundInstance(Registry.REGAL.get(), d); }
