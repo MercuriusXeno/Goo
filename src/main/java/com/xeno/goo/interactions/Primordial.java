@@ -53,7 +53,7 @@ public class Primordial
         // always hit at least one visual here.
         ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, context.blockCenterVec().x,
                 context.blockCenterVec().y, context.blockCenterVec().z, 1, 0d, 0d, 0d, 0d);
-        AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS,
+        AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), Registry.PRIMORDIAL_WARP_SOUND.get(), SoundCategory.BLOCKS,
                 3.0f, AudioHelper.PitchFormulas.HalfToOne);
 
         return true;

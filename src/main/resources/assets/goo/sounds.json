@@ -136,5 +136,12 @@
       "minecraft:random/eat2",
       "minecraft:random/eat3"
     ]
+  },
+  "primordial_warp_sound": {
+    "subtitle": "sound_event.goo.primordial_warp_sound",
+    "sounds": [
+      "minecraft:mob/endermen/portal",
+      "minecraft:mob/endermen/portal2"
+    ]
   }
 }

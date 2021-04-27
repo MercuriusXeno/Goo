@@ -521,5 +521,6 @@
   "sound_event.goo.crystallize_sound": "Goo crystallizes",
   "sound_event.goo.goo_bee_shatter_sound": "Crystal bee shatters",
   "sound_event.goo.snail_poop_sound": "Snail makes crystal",
-  "sound_event.goo.snail_eat_sound": "Snail eats something"
+  "sound_event.goo.snail_eat_sound": "Snail eats something",
+  "sound_event.goo.primordial_warp_sound": "Primordial explosion"
 }

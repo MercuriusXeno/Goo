@@ -1,5 +1,6 @@
 package com.xeno.goo.setup;
 
+import com.ldtteam.aequivaleo.api.compound.information.datagen.data.CompoundInstanceRef;
 import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.xeno.goo.GooMod;
@@ -35,6 +36,7 @@ import java.util.function.Supplier;
 
 public class Registry {
     public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new TreeMap<>(Comparator.comparing(ResourceLocation::getPath));
+
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
@@ -127,6 +129,7 @@ public class Registry {
     public static final RegistryObject<SoundEvent> GOO_BEE_SHATTER_SOUND = SOUNDS.register("goo_bee_shatter_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_bee_shatter_sound")));
     public static final RegistryObject<SoundEvent> SNAIL_POOP_SOUND = SOUNDS.register("snail_poop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_poop_sound")));
     public static final RegistryObject<SoundEvent> SNAIL_EAT_SOUND = SOUNDS.register("snail_eat_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_eat_sound")));
+    public static final RegistryObject<SoundEvent> PRIMORDIAL_WARP_SOUND = SOUNDS.register("primordial_warp_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "primordial_warp_sound")));
 
     // Tile registrations
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
