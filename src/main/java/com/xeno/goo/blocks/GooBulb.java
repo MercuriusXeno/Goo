@@ -19,6 +19,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
@@ -72,18 +73,43 @@ public class GooBulb extends BlockWithConnections
         return VoxelHelper.mergeAll(central, top, bottom, east, west, south, north);
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * This method is used for the collision shape
+     * returning a full cube here so the player doesn't stand on quarter-pixel protrusions
+     */
     @Override
-    public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
+    @SuppressWarnings("deprecation")
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+        return this.canCollide ? VoxelShapes.fullCube() : VoxelShapes.empty();
+    }
+
+    /**
+     * This method is used for outline raytraces, highlighter edges will be drawn on this shape's borders
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
         return shape;
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * This method is used for visual raytraces, so we report what the outline shape is
+     */
     @Override
-    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
-    {
-        return getCollisionShape(state, worldIn, pos);
+    @SuppressWarnings("deprecation")
+    public VoxelShape getRayTraceShape(BlockState state, IBlockReader reader, BlockPos pos, ISelectionContext context) {
+        return getShape(state, reader, pos, context);
+    }
+
+    /**
+     * This is the override shape used by the raytracer in *all* modes, it changes what face the raytracer reports was hit.
+     * We want small protrusions to act like they're *not* protrusions when you hit the thin edges, thus return a larger shape here.
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public VoxelShape getRaytraceShape(BlockState state, IBlockReader worldIn, BlockPos pos) {
+        return VoxelShapes.fullCube();
     }
 
     @Override
