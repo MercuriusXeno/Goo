@@ -1,6 +1,5 @@
 package com.xeno.goo.util;
 
-import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.network.PacketBuffer;
@@ -9,7 +8,6 @@ import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.function.IntSupplier;
 
 public class GooMultiTank extends IGooTankMulti {
@@ -35,47 +33,13 @@ public class GooMultiTank extends IGooTankMulti {
 
 		final ListNBT tankList = nbt.getList("Tanks", NBT.TAG_COMPOUND);
 
-		final int tankCount = this.tankCount;
-		FluidStack[] tanks = new FluidStack[tankCount];
-		Arrays.fill(tanks, FluidStack.EMPTY);
-		HashMap<Fluid, FluidStack> contents = new HashMap<>();
-
-		int count = 0, amt = 0;
-
-		for (int i = 0, e = tankList.size(); i < e && count < tankCount; ++i) {
-			FluidStack tank = FluidStack.loadFluidStackFromNBT(tankList.getCompound(i));
-			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
-				contents.put(tank.getRawFluid(), tanks[count++] = tank);
-				amt += tank.getAmount();
-			}
-		}
-
-		amount = amt;
-		this.tanks = tanks;
-		this.contents = contents;
+		setTanks(tankList.size(), tankCount, i -> FluidStack.loadFluidStackFromNBT(tankList.getCompound(i)));
 	}
 
 	@Override
 	public void readFromPacket(PacketBuffer buf) {
 
-		final int tankCount = this.tankCount;
-		FluidStack[] tanks = new FluidStack[tankCount];
-		Arrays.fill(tanks, FluidStack.EMPTY);
-		HashMap<Fluid, FluidStack> contents = new HashMap<>();
-
-		int count = 0, amt = 0;
-
-		for (int i = 0, e = buf.readVarInt(); i < e && count < tankCount; ++i) {
-			FluidStack tank = readFluidStack(buf);
-			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
-				contents.put(tank.getRawFluid(), tanks[count++] = tank);
-				amt += tank.getAmount();
-			}
-		}
-
-		amount = amt;
-		this.tanks = tanks;
-		this.contents = contents;
+		setTanks(buf.readVarInt(), tankCount, i -> readFluidStack(buf));
 	}
 
 	@Override
