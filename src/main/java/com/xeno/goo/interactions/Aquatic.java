@@ -16,6 +16,12 @@ public class Aquatic
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
         GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "extinguish_fire", Aquatic::extinguishFire);
+
+        GooInteractions.registerBlobHit(Registry.AQUATIC_GOO.get(), "aquatic_hit", Aquatic::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext blobHitContext) {
+        return false;
     }
 
     public static boolean hydrateFarmland(BlobContext context)

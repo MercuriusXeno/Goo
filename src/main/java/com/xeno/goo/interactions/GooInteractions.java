@@ -127,6 +127,22 @@ public class GooInteractions
         blobRegistry.get(fluid).put(new Tuple<>(rank, key), interaction);
     }
 
+    public static final Map<Fluid, Map<Tuple<Integer, String>, IBlobHitInteraction>> blobHitRegistry = new HashMap<>();
+    public static void registerBlobHit(Fluid f, String key, IBlobHitInteraction i) {
+        ensureBlobHitMapContainsFluid(f);
+        registerBlobHit(f, key, blobHitRegistry.get(f).size(), i);
+    }
+
+    private static void registerBlobHit(Fluid f, String key, int rank, IBlobHitInteraction i) {
+        blobHitRegistry.get(f).put(new Tuple<>(rank, key), i);
+    }
+
+    private static void ensureBlobHitMapContainsFluid(Fluid f) {
+        if (!blobHitRegistry.containsKey(f)) {
+            blobHitRegistry.put(f, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank
+        }
+    }
+
     private static void ensureBlobMapContainsFluid(Fluid f) {
         if (!blobRegistry.containsKey(f)) {
             blobRegistry.put(f, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank

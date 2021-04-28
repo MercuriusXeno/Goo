@@ -652,6 +652,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                     this.setMotion(newMotion.x, newMotion.y, newMotion.z);
 
                     goo.fill(((GooBlob)e).goo.drain(goo.getRemainingCapacity(), FluidAction.EXECUTE), FluidAction.EXECUTE);
+                } else if (e instanceof LivingEntity) {
+                    // do stuff if the entity is a living entity
+                    ;
                 }
                 // skip riders unless we're hitting the lowest
                 if (owner != null) {
