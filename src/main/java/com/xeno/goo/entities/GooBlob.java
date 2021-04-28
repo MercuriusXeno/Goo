@@ -685,8 +685,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         if (entityHit == owner) {
             return;
         }
-        // collisions with entities cause a dead drop but nothing else
+        // collisions with entities cause a dead drop and attempt to resolve their blob hit effect
         if (entityHit instanceof LivingEntity && this.owner instanceof LivingEntity) {
+            GooInteractions.tryResolving((LivingEntity)entityHit, (LivingEntity)this.owner, this);
             this.setMotion(this.getMotion().mul(0d, -GOO_GRAVITY, 0d));
         }
     }

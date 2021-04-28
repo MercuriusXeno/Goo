@@ -5,6 +5,8 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.util.*;
@@ -176,6 +178,47 @@ public class GooInteractions
         Snow.registerInteractions();
         Vital.registerInteractions();
         Weird.registerInteractions();
+    }
+
+
+    public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob gooBlob)
+    {
+        Fluid fluid = gooBlob.goo().getFluid();
+        // no interactions registered, we don't want to crash.
+        if (!blobHitRegistry.containsKey(fluid)) {
+            return;
+        }
+        BlobHitContext context = new BlobHitContext(e, owner, gooBlob, fluid);
+        // cycle over resolvers in rank order and drain/apply when possible.
+        Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
+        map.forEach((k, v) -> tryResolving(fluid, k, v, context.withKey(k.getB())));
+    }
+
+    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobHitInteraction iBlobInteraction, BlobHitContext context)
+    {
+        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction is disabled, abort
+            return;
+        }
+
+        boolean shouldResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (!shouldResolve) {
+            return;
+        }
+
+        FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
+        if (drained.getAmount() < keyCost) {
+            return;
+        }
+
+        boolean failureShortCircuit = GooMod.config.chanceOfBlobInteractionFailure(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        if (failureShortCircuit || iBlobInteraction.resolve(context)) {
+            boolean shouldDrain = GooMod.config.chanceOfBlobInteractionCost(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+            if (shouldDrain) {
+                context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
+            }
+        }
     }
 
     public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)

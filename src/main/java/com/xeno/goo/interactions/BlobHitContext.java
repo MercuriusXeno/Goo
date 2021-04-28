@@ -14,15 +14,17 @@ public class BlobHitContext {
 	private final Fluid fluid;
 	private final GooBlob blob;
 	private String interactionKey;
+	private final LivingEntity owner;
 
 
-	public BlobHitContext(LivingEntity entityHit, World world, GooBlob entity, Fluid fluid) {
-		this.world = world;
+	public BlobHitContext(LivingEntity entityHit, LivingEntity owner, GooBlob gooBlob, Fluid fluid) {
+		this.world = entityHit.world;
 		//noinspection OptionalGetWithoutIsPresent
-		this.fluidHandler = entity.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY).resolve().get();
+		this.fluidHandler = gooBlob.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY).resolve().get();
 		this.fluid = fluid;
-		this.blob = entity;
+		this.blob = gooBlob;
 		this.entityHit = entityHit;
+		this.owner = owner;
 	}
 
 	public BlobHitContext withKey(String interactionKey) {
