@@ -45,17 +45,22 @@ public abstract class IGooTankMulti extends IGooTank {
 
 	protected int setTanks(int size, IntFunction<FluidStack> tankReader) {
 
-		return setTanks(size, Integer.MAX_VALUE, tankReader);
+		return setTanks(size, Integer.MAX_VALUE, 0, tankReader);
 	}
 
 	protected int setTanks(int size, int maxSize, IntFunction<FluidStack> tankReader) {
+
+		return setTanks(size, maxSize, 0, tankReader);
+	}
+
+	protected int setTanks(int inSize, int maxSize, int minSize, IntFunction<FluidStack> tankReader) {
 
 		LinkedList<FluidStack> tanks = new LinkedList<>();
 		IdentityHashMap<Fluid, FluidStack> contents = new IdentityHashMap<>();
 
 		int count = 0, amt = 0;
 
-		for (int i = 0; (i < size) & (count < maxSize); ++i) {
+		for (int i = 0; (i < inSize) & (count < maxSize); ++i) {
 			FluidStack tank = tankReader.apply(i);
 			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
 				contents.put(tank.getRawFluid(), tank);
@@ -66,7 +71,7 @@ public abstract class IGooTankMulti extends IGooTank {
 		}
 
 		amount = amt;
-		this.tanks = tanks.toArray(new FluidStack[count]);
+		this.tanks = tanks.toArray(new FluidStack[Math.max(count, minSize)]);
 		this.contents = contents;
 		return count;
 	}

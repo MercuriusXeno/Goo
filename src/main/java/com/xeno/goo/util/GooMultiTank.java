@@ -33,13 +33,19 @@ public class GooMultiTank extends IGooTankMulti {
 
 		final ListNBT tankList = nbt.getList("Tanks", NBT.TAG_COMPOUND);
 
-		setTanks(tankList.size(), tankCount, i -> FluidStack.loadFluidStackFromNBT(tankList.getCompound(i)));
+		final int tankCount = this.tankCount;
+		int j = setTanks(tankList.size(), tankCount, tankCount, i -> FluidStack.loadFluidStackFromNBT(tankList.getCompound(i)));
+		for (; j < tankCount; ++j)
+			this.tanks[j] = FluidStack.EMPTY;
 	}
 
 	@Override
 	public void readFromPacket(PacketBuffer buf) {
 
-		setTanks(buf.readVarInt(), tankCount, i -> readFluidStack(buf));
+		final int tankCount = this.tankCount;
+		int j = setTanks(buf.readVarInt(), tankCount, tankCount, i -> readFluidStack(buf));
+		for (; j < tankCount; ++j)
+			this.tanks[j] = FluidStack.EMPTY;
 	}
 
 	@Override
