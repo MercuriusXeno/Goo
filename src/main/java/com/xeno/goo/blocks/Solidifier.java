@@ -6,13 +6,12 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.renderer.entity.ItemFrameRenderer;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.item.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.*;
+import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
@@ -23,8 +22,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
@@ -36,7 +35,6 @@ import java.util.Map;
 import java.util.Random;
 
 import static net.minecraft.util.Direction.*;
-import static net.minecraft.util.Direction.UP;
 
 public class Solidifier extends BlockWithConnections {
     VoxelShape[] shapes;
@@ -93,18 +91,43 @@ public class Solidifier extends BlockWithConnections {
                 };
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * This method is used for the collision shape
+     * returning a full cube here so the player doesn't stand on quarter-pixel protrusions
+     */
     @Override
-    public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
+    @SuppressWarnings("deprecation")
+    public VoxelShape getCollisionShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
+        return this.canCollide ? VoxelShapes.fullCube() : VoxelShapes.empty();
+    }
+
+    /**
+     * This method is used for outline raytraces, highlighter edges will be drawn on this shape's borders
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
         return shapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * This method is used for visual raytraces, so we report what the outline shape is
+     */
     @Override
-    public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
-    {
-        return getCollisionShape(state, worldIn, pos);
+    @SuppressWarnings("deprecation")
+    public VoxelShape getRayTraceShape(BlockState state, IBlockReader reader, BlockPos pos, ISelectionContext context) {
+        return getShape(state, reader, pos, context);
+    }
+
+    /**
+     * This is the override shape used by the raytracer in *all* modes, it changes what face the raytracer reports was hit.
+     * We want small protrusions to act like they're *not* protrusions when you hit the thin edges, thus return a larger shape here.
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public VoxelShape getRaytraceShape(BlockState state, IBlockReader worldIn, BlockPos pos) {
+        return VoxelShapes.fullCube();
     }
 
     @Override
