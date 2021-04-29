@@ -307,4 +307,8 @@ public class GooInteractions
             }
         }
     }
+
+    public static void blobHitKnockback(float v, BlobHitContext blobHitContext) {
+        blobHitContext.victim().applyKnockback(v, blobHitContext.blob().getMotion().x, blobHitContext.blob().getMotion().y);
+    }
 }

@@ -21,6 +21,8 @@ public class Aquatic
     }
 
     private static boolean hitEntity(BlobHitContext blobHitContext) {
+        GooInteractions.blobHitKnockback(1.0f, blobHitContext);
+        blobHitContext.hurt(3f);
         return false;
     }
 
