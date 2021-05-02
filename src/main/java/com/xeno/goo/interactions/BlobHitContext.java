@@ -4,7 +4,12 @@ import com.xeno.goo.entities.GooBlob;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.particles.BasicParticleType;
+import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.Effect;
+import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -73,7 +78,29 @@ public class BlobHitContext {
 		return mobDamage();
 	}
 
-	public void hurt(float v) {
+	public void damageVictim(float v) {
 		victim().attackEntityFrom(damageSource(), v);
+	}
+
+	public void knockback(float v) {
+		victim().applyKnockback(v, blob().getMotion().x, blob().getMotion().z);
+	}
+
+	public void healVictim(float v) {
+		victim().heal(v);
+	}
+
+	public void spawnScatteredFloatingParticles(BasicParticleType pType, int i) {
+		for (int p = 0; p < i; p++) {
+			double dx = world().rand.nextDouble() - 0.5d;
+			double dy = world().rand.nextDouble() - 0.5d;
+			double dz = world().rand.nextDouble() - 0.5d;
+			Vector3d pos = blob().getPositionVec().add(dx, dy, dz);
+			world().addParticle(pType, pos.x, pos.y, pos.z, 0d, 0.12d, 0d);
+		}
+	}
+
+	public void applyEffect(Effect pEffect, int duration, int amplitude) {
+		victim().addPotionEffect(new EffectInstance(pEffect, duration, amplitude));
 	}
 }

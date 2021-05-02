@@ -1,10 +1,19 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.GooMod;
+import com.xeno.goo.datagen.GooTags;
+import com.xeno.goo.datagen.GooTags.Entities;
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FarmlandBlock;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 
 public class Aquatic
 {
@@ -20,9 +29,24 @@ public class Aquatic
         GooInteractions.registerBlobHit(Registry.AQUATIC_GOO.get(), "aquatic_hit", Aquatic::hitEntity);
     }
 
-    private static boolean hitEntity(BlobHitContext blobHitContext) {
-        GooInteractions.blobHitKnockback(1.0f, blobHitContext);
-        blobHitContext.hurt(3f);
+    private static boolean hitEntity(BlobHitContext c) {
+        // extinguish the entity if on fire and do not deal damage
+        if (Entities.WATER_HATING_MOBS.contains(c.victim().getType())) {
+            // knock the enemy back and deal some damage.
+            // deal extra damage to water-haters.
+            c.knockback(1.0f);
+            c.damageVictim(5f);
+            return true;
+        }
+        if (c.victim().getFireTimer() > 0) {
+            c.victim().extinguish();
+            GooInteractions.spawnParticles(c.blob());
+            for(int i = 0; i < 4; i++) {
+                c.world().addParticle(ParticleTypes.SMOKE, c.blob().getPosX(), c.blob().getPosY(), c.blob().getPosZ(), 0d, 0.1d, 0d);
+            }
+            AudioHelper.entityAudioEvent(c.blob(), SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
+            return true;
+        }
         return false;
     }
 

@@ -6,6 +6,9 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.Effect;
+import net.minecraft.potion.EffectType;
+import net.minecraft.potion.Effects;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Direction;
@@ -54,6 +57,21 @@ public class Decay
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
         GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+
+        GooInteractions.registerBlobHit(Registry.DECAY_GOO.get(), "decay_hit", Decay::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        if (c.victim().isEntityUndead()) {
+            c.healVictim(2f);
+            GooInteractions.spawnParticles(c.blob());
+            c.spawnScatteredFloatingParticles(ParticleTypes.HAPPY_VILLAGER, 4);
+        } else {
+            c.damageVictim(2f);
+            c.knockback(1f);
+            c.applyEffect(Effects.WITHER, 120, 2);
+        }
+        return true;
     }
 
     private static boolean isMycelium(SplatContext splatContext) {

@@ -6,6 +6,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.particles.BlockParticleData;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.Effects;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.world.server.ServerWorld;
 
@@ -22,6 +23,14 @@ public class Earthen
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_andesite", Earthen::edifyAndesite, Earthen::isAndesite);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_granite", Earthen::edifyGranite, Earthen::isGranite);
         GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_diorite", Earthen::edifyDiorite, Earthen::isDiorite);
+
+        GooInteractions.registerBlobHit(Registry.EARTHEN_GOO.get(), "earthen_hit", Earthen::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.damageVictim(4f);
+        c.knockback(1f);
+        return true;
     }
 
     private static boolean edifyAndesite(SplatContext splatContext) {

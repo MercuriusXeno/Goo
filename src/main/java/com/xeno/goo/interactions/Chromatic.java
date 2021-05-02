@@ -7,6 +7,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.MaterialColor;
+import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.item.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -24,6 +25,23 @@ public class Chromatic
         GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
         GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
         GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
+
+        GooInteractions.registerBlobHit(Registry.CHROMATIC_GOO.get(), "chromatic_hit", Chromatic::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext blobHitContext) {
+        if (blobHitContext.victim() instanceof SheepEntity) {
+            SheepEntity sheep = ((SheepEntity)blobHitContext.victim());
+            DyeColor sheepColor = sheep.getFleeceColor();
+            DyeColor color = sheepColor;
+            while(color == sheepColor) {
+                color = SheepEntity.getRandomSheepColor(blobHitContext.world().rand);
+            }
+
+            sheep.setFleeceColor(color);
+            return true;
+        }
+        return false;
     }
 
     private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();

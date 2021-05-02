@@ -638,7 +638,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                             // grow bb
                             this.getBoundingBox().expand(this.getMotion()),
                             // filter
-                            (eInBB) -> isBlobToMergeWith(eInBB) || !eInBB.isSpectator() && eInBB.canBeCollidedWith());
+                            (eInBB) -> isBlobToMergeWith(eInBB) || !eInBB.isSpectator());
             for(Entity e : collidedEntities) {
                 if (isBlobToMergeWith(e)) {
                     GooBlob target = (GooBlob)e;
@@ -654,7 +654,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                     goo.fill(((GooBlob)e).goo.drain(goo.getRemainingCapacity(), FluidAction.EXECUTE), FluidAction.EXECUTE);
                 } else if (e instanceof LivingEntity) {
                     // do stuff if the entity is a living entity
-                    ;
+                    // sometimes the ray trace collision doesn't work and it passes through entities.
+                    // this is a motion projection collision instead of a here and there collision, which seems to catch what the other misses.
+                    collideWithEntity(e);
                 }
                 // skip riders unless we're hitting the lowest
                 if (owner != null) {

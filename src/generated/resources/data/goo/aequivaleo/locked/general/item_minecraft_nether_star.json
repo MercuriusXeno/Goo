@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 120.0,
-      "type": "goo:weird"
+      "type": "goo:radiant"
     },
     {
-      "amount": 960.0,
-      "type": "goo:decay"
+      "amount": 60.0,
+      "type": "goo:primordial"
     },
     {
       "amount": 1.0,
@@ -31,11 +31,11 @@
     },
     {
       "amount": 120.0,
-      "type": "goo:radiant"
+      "type": "goo:weird"
     },
     {
-      "amount": 60.0,
-      "type": "goo:primordial"
+      "amount": 960.0,
+      "type": "goo:decay"
     }
   ]
 }

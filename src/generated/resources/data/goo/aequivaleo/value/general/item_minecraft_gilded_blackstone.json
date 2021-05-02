@@ -18,8 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "amount": 240.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 240.0,
+      "type": "goo:metal"
     },
     {
       "amount": 240.0,
@@ -27,15 +31,11 @@
     },
     {
       "amount": 240.0,
-      "type": "goo:earthen"
-    },
-    {
-      "amount": 240.0,
       "type": "goo:molten"
     },
     {
-      "amount": 240.0,
-      "type": "goo:metal"
+      "amount": 60.0,
+      "type": "goo:weird"
     }
   ]
 }

@@ -191,33 +191,22 @@ public class GooInteractions
         BlobHitContext context = new BlobHitContext(e, owner, gooBlob, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
-        map.forEach((k, v) -> tryResolving(fluid, k, v, context.withKey(k.getB())));
+        map.forEach((k, v) -> tryResolving(v, context.withKey(k.getB())));
     }
 
-    private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobHitInteraction iBlobInteraction, BlobHitContext context)
+    /**
+     * Resolves a blob hit - generally blob hits (on entities) are less complex than blob splats on blocks.
+     * There's less argumentation, less configurability. The blob hits a thing and does something and dies.
+     * There also isn't a "cost" of interactions. The blob hits are balanced around the defaults for amounts
+     * thrown, and amounts thrown are balanced around block/splat effects primarily.
+     * @param iBlobInteraction
+     * @param context
+     */
+    private static void tryResolving(IBlobHitInteraction iBlobInteraction, BlobHitContext context)
     {
-        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
-        if (keyCost == -1) {
-            // interaction is disabled, abort
-            return;
-        }
-
-        boolean shouldResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
-        if (!shouldResolve) {
-            return;
-        }
-
-        FluidStack drained = context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.SIMULATE);
-        if (drained.getAmount() < keyCost) {
-            return;
-        }
-
-        boolean failureShortCircuit = GooMod.config.chanceOfBlobInteractionFailure(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
-        if (failureShortCircuit || iBlobInteraction.resolve(context)) {
-            boolean shouldDrain = GooMod.config.chanceOfBlobInteractionCost(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
-            if (shouldDrain) {
-                context.fluidHandler().drain(keyCost, IFluidHandler.FluidAction.EXECUTE);
-            }
+        if (iBlobInteraction.resolve(context)) {
+            GooInteractions.spawnParticles(context.blob());
+            context.blob().remove();
         }
     }
 
@@ -236,13 +225,18 @@ public class GooInteractions
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobInteraction iBlobInteraction, BlobContext context)
     {
-        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
-        if (keyCost == -1) {
-            // interaction is disabled, abort
+        double chanceToResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB());
+        if (chanceToResolve == 0d) {
             return;
         }
 
-        boolean shouldResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction costs the entire thrown amount
+            keyCost = context.blob().goo().getAmount();
+        }
+
+        boolean shouldResolve = chanceToResolve >= context.world().rand.nextDouble();
         if (!shouldResolve) {
             return;
         }
@@ -276,13 +270,18 @@ public class GooInteractions
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)
     {
-        int keyCost = GooMod.config.costOfSplatInteraction(fluid, interactionKey.getB());
-        if (keyCost == -1) {
-            // interaction is disabled, abort
+        double chanceToResolve = GooMod.config.chanceOfSplatInteraction(fluid, interactionKey.getB());
+        if (chanceToResolve == 0d) {
             return;
         }
 
-        boolean shouldResolve = GooMod.config.chanceOfSplatInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        int keyCost = GooMod.config.costOfSplatInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction costs the entire thrown amount
+            keyCost = context.splat().goo().getAmount();
+        }
+
+        boolean shouldResolve = chanceToResolve >= context.world().rand.nextDouble();
         if (!shouldResolve) {
             return;
         }
@@ -306,9 +305,5 @@ public class GooInteractions
                 context.splat().setCooldown(cooldown);
             }
         }
-    }
-
-    public static void blobHitKnockback(float v, BlobHitContext blobHitContext) {
-        blobHitContext.victim().applyKnockback(v, blobHitContext.blob().getMotion().x, blobHitContext.blob().getMotion().y);
     }
 }

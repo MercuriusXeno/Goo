@@ -15,10 +15,7 @@ import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.RayTraceContext;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 
@@ -35,6 +32,13 @@ public class Energetic
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
+
+        GooInteractions.registerBlobHit(Registry.ENERGETIC_GOO.get(), "energetic_hit", Energetic::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        // TODO do stuff here
+        return true;
     }
 
     private static boolean miningBlast(SplatContext context)

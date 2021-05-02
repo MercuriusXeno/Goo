@@ -33,6 +33,14 @@ public class Crystal
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.CRYSTAL_GOO.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);
+
+        GooInteractions.registerBlobHit(Registry.CRYSTAL_GOO.get(), "crystal_hit", Crystal::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.damageVictim(7f);
+        c.knockback(1f);
+        return true;
     }
 
     private static boolean canBreakBlock(SplatContext context) {

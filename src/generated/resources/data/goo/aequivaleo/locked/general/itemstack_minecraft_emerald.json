@@ -5,25 +5,25 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:black_wool\",Count:1b}"
+        "stack": "{id:\"minecraft:emerald\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:black_wool"
+        "item": "minecraft:emerald"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:chromatic"
+      "amount": 120.0,
+      "type": "goo:regal"
     },
     {
-      "amount": 15.0,
-      "type": "goo:faunal"
+      "amount": 120.0,
+      "type": "goo:crystal"
     }
   ]
 }

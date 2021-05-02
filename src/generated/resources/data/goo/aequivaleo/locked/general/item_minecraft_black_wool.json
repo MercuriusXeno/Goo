@@ -5,28 +5,24 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:lily_of_the_valley"
+        "item": "minecraft:black_wool"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:lily_of_the_valley\",Count:1b}"
+        "stack": "{id:\"minecraft:black_wool\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:vital"
+      "amount": 15.0,
+      "type": "goo:faunal"
     },
     {
-      "amount": 5.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 240.0,
+      "amount": 15.0,
       "type": "goo:chromatic"
     }
   ]

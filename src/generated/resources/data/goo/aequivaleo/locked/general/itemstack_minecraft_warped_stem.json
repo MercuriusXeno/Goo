@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 16.0,
-      "type": "goo:fungal"
+      "type": "goo:vital"
     },
     {
       "amount": 16.0,
-      "type": "goo:vital"
+      "type": "goo:fungal"
     },
     {
       "amount": 128.0,
