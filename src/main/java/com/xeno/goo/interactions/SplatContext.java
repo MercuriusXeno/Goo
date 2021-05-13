@@ -3,6 +3,7 @@ package com.xeno.goo.interactions;
 import com.xeno.goo.entities.GooSplat;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.Direction;
@@ -25,8 +26,10 @@ public class SplatContext
     private final Vector3d blockCenterVec;
     private final Fluid fluid;
     private final GooSplat splat;
+    private final LivingEntity owner;
     private String interactionKey;
     private boolean isFailing;
+
 
     public SplatContext(BlockRayTraceResult trace, World world, GooSplat entity,
                         Fluid fluid) {
@@ -42,6 +45,7 @@ public class SplatContext
         this.blockCenterVec = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
         this.fluid = fluid;
         this.splat = entity;
+        this.owner = entity.owner() instanceof LivingEntity ? (LivingEntity)entity.owner() : null;
     }
 
     public SplatContext(GooSplat gooSplat, Fluid fluid)
@@ -154,5 +158,9 @@ public class SplatContext
             }
         }
         return false;
+    }
+
+    public LivingEntity owner() {
+        return this.owner;
     }
 }

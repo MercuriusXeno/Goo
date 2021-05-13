@@ -2,6 +2,7 @@ package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
@@ -21,9 +22,11 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Regal
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.REGAL_GOO;
     private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
@@ -32,7 +35,7 @@ public class Regal
     }
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.REGAL_GOO.get(), "regal_breaker", Regal::breaker, Regal::isValidForHarvest);
+        GooInteractions.registerSplat(fluidSupplier.get(), "regal_breaker", Regal::breaker, Regal::isValidForHarvest);
     }
 
     private static boolean isValidForHarvest(SplatContext context) {

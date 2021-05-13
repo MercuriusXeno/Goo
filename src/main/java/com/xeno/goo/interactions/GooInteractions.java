@@ -183,11 +183,15 @@ public class GooInteractions
 
     public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob gooBlob)
     {
+        if (!gooBlob.isAlive()) {
+            return;
+        }
         Fluid fluid = gooBlob.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!blobHitRegistry.containsKey(fluid)) {
             return;
         }
+
         BlobHitContext context = new BlobHitContext(e, owner, gooBlob, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
@@ -207,11 +211,16 @@ public class GooInteractions
         if (iBlobInteraction.resolve(context)) {
             GooInteractions.spawnParticles(context.blob());
             context.blob().remove();
+        } else {
+            context.ricochet();
         }
     }
 
     public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)
     {
+        if (!gooBlob.isAlive()) {
+            return;
+        }
         Fluid fluid = gooBlob.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!blobRegistry.containsKey(fluid)) {
@@ -257,6 +266,9 @@ public class GooInteractions
 
     public static void tryResolving(GooSplat gooSplat)
     {
+        if (!gooSplat.isAlive()) {
+            return;
+        }
         Fluid fluid = gooSplat.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!splatRegistry.containsKey(fluid)) {

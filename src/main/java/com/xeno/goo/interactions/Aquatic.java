@@ -3,10 +3,10 @@ package com.xeno.goo.interactions;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.datagen.GooTags;
 import com.xeno.goo.datagen.GooTags.Entities;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.setup.Resources;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FarmlandBlock;
 import net.minecraft.fluid.Fluids;
@@ -15,18 +15,21 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
 
+import java.util.function.Supplier;
+
 public class Aquatic
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.AQUATIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.AQUATIC_GOO.get(), "cool_lava", Aquatic::waterCoolLava, Aquatic::isHittingSourceLava);
+        GooInteractions.registerSplat(fluidSupplier.get(), "cool_lava", Aquatic::waterCoolLava, Aquatic::isHittingSourceLava);
 
-        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
-        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
-        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
-        GooInteractions.registerBlob(Registry.AQUATIC_GOO.get(), "extinguish_fire", Aquatic::extinguishFire);
+        GooInteractions.registerBlob(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+        GooInteractions.registerBlob(fluidSupplier.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
+        GooInteractions.registerBlob(fluidSupplier.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
+        GooInteractions.registerBlob(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire);
 
-        GooInteractions.registerBlobHit(Registry.AQUATIC_GOO.get(), "aquatic_hit", Aquatic::hitEntity);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "aquatic_hit", Aquatic::hitEntity);
     }
 
     private static boolean hitEntity(BlobHitContext c) {

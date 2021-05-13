@@ -23,7 +23,7 @@ public class GooSnailRenderer extends MobRenderer<GooSnail, GooSnailModel> {
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_SNAIL.get(), GooSnailRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_SNAIL, GooSnailRenderer::new);
     }
 
     /**

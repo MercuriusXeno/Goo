@@ -13,9 +13,9 @@ import com.xeno.goo.setup.Resources;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.client.renderer.color.IItemColor;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.item.ItemModelsProperties;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -34,8 +34,6 @@ public class ModClientEvents
     public static void onModelRegistration(final ModelRegistryEvent event) {
         // model loaders
         setModelLoaders();
-
-
     }
 
     @SubscribeEvent
@@ -62,7 +60,7 @@ public class ModClientEvents
     }
 
     private static void setItemProperties() {
-        ItemModelsProperties.registerProperty(ItemsRegistry.Gauntlet.get(), new ResourceLocation(GooMod.MOD_ID, "held_liquid"), GauntletAbstraction::getHeldLiquidOverride);
+        ItemModelsProperties.registerProperty(ItemsRegistry.GAUNTLET.get(), new ResourceLocation(GooMod.MOD_ID, "held_liquid"), GauntletAbstraction::getHeldLiquidOverride);
     }
 
     private static void setEntityRenderers()
@@ -131,8 +129,9 @@ public class ModClientEvents
 
     @SubscribeEvent
     public static void onItemColor(ColorHandlerEvent.Item event) {
-        event.getItemColors().register((stack, color) -> 0x00a0f0, ItemsRegistry.GooBeeSpawnEgg.get());
-        event.getItemColors().register((stack, color) -> 0x734f31, ItemsRegistry.GooSnailSpawnEgg.get());
+        for(SpawnEggItem egg : Registry.EGGS) {
+            event.getItemColors().register((stack, color) -> egg.getColor(color), egg);
+        };
     }
 
     @SubscribeEvent

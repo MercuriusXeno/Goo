@@ -1,7 +1,6 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
@@ -29,7 +28,7 @@ public class GooAndYou extends Item
             return ActionResult.resultPass(playerIn.getHeldItem(handIn));
         }
         ServerPlayerEntity player = (ServerPlayerEntity)playerIn;
-        PatchouliAPI.instance.openBookGUI(player, Objects.requireNonNull(ItemsRegistry.GooAndYou.get().getRegistryName()));
+        PatchouliAPI.get().openBookGUI(player, Objects.requireNonNull(ItemsRegistry.GOO_AND_YOU.get().getRegistryName()));
         return super.onItemRightClick(worldIn, playerIn, handIn);
     }
 }

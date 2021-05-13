@@ -1,21 +1,25 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.util.SoundCategory;
 
+import java.util.function.Supplier;
+
 public class Snow
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.SNOW_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "freeze_water", Snow::freezeWater, Snow::isWaterSource);
-        GooInteractions.registerSplat(Registry.SNOW_GOO.get(), "cool_lava", Snow::coolLava, Snow::isLavaSource);
+        GooInteractions.registerSplat(fluidSupplier.get(), "freeze_water", Snow::freezeWater, Snow::isWaterSource);
+        GooInteractions.registerSplat(fluidSupplier.get(), "cool_lava", Snow::coolLava, Snow::isLavaSource);
 
         // outrageously, this is allowed
-        GooInteractions.registerBlob(Registry.SNOW_GOO.get(), "extinguish_fire", Aquatic::extinguishFire); // aquatic lolol
-        GooInteractions.registerBlob(Registry.SNOW_GOO.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+        GooInteractions.registerBlob(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire); // aquatic lolol
+        GooInteractions.registerBlob(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
     }
 
     private static boolean isWaterSource(SplatContext context) {

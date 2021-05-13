@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.passive.AnimalEntity;
@@ -9,20 +10,37 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Faunal
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.FAUNAL_GOO;
+
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.FAUNAL_GOO.get(), "twitterpate_animals", Faunal::makeAnimalsTwitterpated, Faunal::isBreedingAnimalInRange);
+        GooInteractions.registerSplat(fluidSupplier.get(), "breed_animals", Faunal::makeAnimalsBreed, Faunal::isBreedingAnimalInRange);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "faunal_hit", Faunal::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        if (c.victim() instanceof AnimalEntity && breedingAnimalPredicate((AnimalEntity)c.victim())) {
+            doEffects((AnimalEntity)c.victim());
+            return true;
+        }
+        return false;
     }
 
     private static boolean isBreedingAnimalInRange(SplatContext splatContext) {
         return splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.splat().getBoundingBox().grow(2d, 1d, 2d),
-                (e) -> !e.isInLove() && e.getGrowingAge() == 0).size() > 1;
+                Faunal::breedingAnimalPredicate).size() > 1;
     }
 
-    private static boolean makeAnimalsTwitterpated(SplatContext splatContext) {
+    private static boolean breedingAnimalPredicate(AnimalEntity e) {
+        return !e.isInLove() && e.getGrowingAge() == 0;
+    }
+
+    private static boolean makeAnimalsBreed(SplatContext splatContext) {
 
         List<AnimalEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.splat().getBoundingBox().grow(2d, 1d, 2d),
                 (e) -> !e.isInLove() && e.getGrowingAge() == 0);

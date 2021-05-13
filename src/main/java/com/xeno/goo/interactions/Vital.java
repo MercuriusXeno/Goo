@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
@@ -7,12 +8,14 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Vital
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.VITAL_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.VITAL_GOO.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
+        GooInteractions.registerSplat(fluidSupplier.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
     }
 
     private static boolean isLivingInRangeAndHalfSecondPulse(SplatContext splatContext) {

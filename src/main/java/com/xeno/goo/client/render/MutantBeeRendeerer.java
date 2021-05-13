@@ -23,7 +23,7 @@ public class MutantBeeRendeerer extends MobRenderer<MutantBee, MutantBeeModel<Mu
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.MUTANT_BEE.get(), MutantBeeRendeerer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.MUTANT_BEE, MutantBeeRendeerer::new);
     }
 
     /**

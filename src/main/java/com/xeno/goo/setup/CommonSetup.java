@@ -46,9 +46,9 @@ public class CommonSetup
     }
 
     public static void entityAttributeCreation(final EntityAttributeCreationEvent event) {
-        event.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
-        event.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
-        event.put(Registry.GOO_SNAIL.get(), GooSnail.setCustomAttributes().create());
+        event.put(Registry.GOO_BEE, GooBee.setCustomAttributes().create());
+        event.put(Registry.MUTANT_BEE, MutantBee.setCustomAttributes().create());
+        event.put(Registry.GOO_SNAIL, GooSnail.setCustomAttributes().create());
     }
 
     public static void loadComplete(final FMLLoadCompleteEvent event)

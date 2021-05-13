@@ -11,6 +11,7 @@ import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -25,8 +26,12 @@ public class BlobHitContext {
 
 	public BlobHitContext(LivingEntity entityHit, LivingEntity owner, GooBlob gooBlob, Fluid fluid) {
 		this.world = entityHit.world;
-		//noinspection OptionalGetWithoutIsPresent
-		this.fluidHandler = gooBlob.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY).resolve().get();
+		LazyOptional<IFluidHandler> cap = gooBlob.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
+		if (cap.resolve().isPresent()) {
+			this.fluidHandler = cap.resolve().get();
+		} else {
+			this.fluidHandler = null;
+		}
 		this.fluid = fluid;
 		this.blob = gooBlob;
 		this.entityHit = entityHit;
@@ -83,7 +88,7 @@ public class BlobHitContext {
 	}
 
 	public void knockback(float v) {
-		victim().applyKnockback(v, blob().getMotion().x, blob().getMotion().z);
+		victim().applyKnockback(v, -blob().getMotion().x, -blob().getMotion().z);
 	}
 
 	public void healVictim(float v) {
@@ -102,5 +107,23 @@ public class BlobHitContext {
 
 	public void applyEffect(Effect pEffect, int duration, int amplitude) {
 		victim().addPotionEffect(new EffectInstance(pEffect, duration, amplitude));
+	}
+
+	public void ricochet() {
+		Vector3d victimCenter = victim().getBoundingBox().getCenter();
+
+		Vector3d blobCenter = blob().getBoundingBox().getCenter();
+
+		Vector3d bounceVector = victimCenter.subtract(blobCenter).normalize();
+
+		blob().setMotion(blob().getMotion().mul(bounceVector));
+	}
+
+	public LivingEntity owner() {
+		return owner;
+	}
+
+	public Vector3d victimCenterVec() {
+		return victim().getBoundingBox().getCenter();
 	}
 }

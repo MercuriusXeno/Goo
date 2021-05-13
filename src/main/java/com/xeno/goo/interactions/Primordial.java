@@ -1,19 +1,24 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.datagen.GooTags.Entities;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceContext;
@@ -23,9 +28,11 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Primordial
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.PRIMORDIAL_GOO;
     private static final int bedrockHardness = -1;
     private static final int diamondHarvestLevel = 3;
     private static final float particleChance = 0.33f;
@@ -36,7 +43,52 @@ public class Primordial
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.PRIMORDIAL_GOO.get(), "silk_touch_blast", Primordial::silkTouchBlast, (context) -> true);
+        GooInteractions.registerSplat(fluidSupplier.get(), "silk_touch_blast", Primordial::silkTouchBlast, (context) -> true);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "primordial_hit", Primordial::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+        Iterable<SpawnEggItem> eggs = SpawnEggItem.getEggs();
+
+        // I COULD use a bitwise here to not short circuit but it feels dirty? Idk. I like this.
+        boolean isReducedToEgg = reduceToEgg(c.victim(), eggs);
+        boolean isReducedToDust = reduceToDust(c.owner(), c.victim());
+        return isReducedToEgg || isReducedToDust;
+    }
+
+    // this is what happens if reduce to egg does nothing
+    private static boolean reduceToDust(LivingEntity attackingEntity, LivingEntity victim) {
+        if (Entities.PRIMORDIAL_INSTANT_DEATH_IMMUNE_MOBS.contains(victim.getType())) {
+            return false;
+        }
+        if (attackingEntity instanceof PlayerEntity) {
+            victim.setAttackingPlayer((PlayerEntity)attackingEntity);
+        }
+        victim.setHealth(0f);
+        return true;
+    }
+
+    private static boolean reduceToEgg(LivingEntity victim, Iterable<SpawnEggItem> eggs) {
+        if (!Entities.PRIMORDIAL_SPAWN_EGGS_ALLOWED.contains(victim.getType())) {
+            return false;
+        }
+        for(SpawnEggItem egg : eggs) {
+            EntityType<?> eType = egg.getType(null);
+            // If someone fiddled with the tag and did something very silly, this can happen.
+            if (egg.hasType(null, victim.getType())) {
+                // generate an egg at the victim location and boop them to dead. spawn some particles in lieu of a laser lightshow or something more interesting.
+                victim.world.addEntity(new ItemEntity(victim.world, victim.getPosX(), victim.getPosY() + victim.getHeight() / 2d, victim.getPosZ(), new ItemStack(egg, 1)));
+                for (int i = 0; i < 8; i++) {
+                    double dx = victim.world.rand.nextDouble() - 0.5d;
+                    double dy = victim.world.rand.nextDouble() - 0.5d;
+                    double dz = victim.world.rand.nextDouble() - 0.5d;
+                    victim.world.addParticle(ParticleTypes.END_ROD, victim.getPosX() + dx, victim.getPosY() + dy, victim.getPosZ() + dz, dx, dy, dz);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean silkTouchBlast(SplatContext context)

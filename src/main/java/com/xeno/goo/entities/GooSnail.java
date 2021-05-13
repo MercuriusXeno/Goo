@@ -174,7 +174,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
     @Override
     public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
         if (player.getHeldItem(hand).isEmpty()) {
-            player.setHeldItem(hand, new ItemStack(ItemsRegistry.Snail.get()));
+            player.setHeldItem(hand, new ItemStack(ItemsRegistry.SNAIL.get()));
             this.remove();
             return ActionResultType.CONSUME;
         }
@@ -293,7 +293,7 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
 
     @Override
     public AgeableEntity createChild(ServerWorld p_241840_1_, AgeableEntity p_241840_2_) {
-        return Registry.GOO_SNAIL.get().create(world);
+        return Registry.GOO_SNAIL.create(world);
     }
 
     public float getBodyStretch() {
@@ -483,7 +483,8 @@ public class GooSnail extends AnimalEntity implements IEntityAdditionalSpawnData
         }
 
         private ItemEntity findComb(double distance) {
-            List<ItemEntity> combs = world.getEntitiesWithinAABB(ItemEntity.class, GooSnail.this.getBoundingBox().grow(distance), e -> e.getItem().getItem().equals(ItemsRegistry.CrystalComb.get()));
+            List<ItemEntity> combs = world.getEntitiesWithinAABB(ItemEntity.class, GooSnail.this.getBoundingBox().grow(distance), e -> e.getItem().getItem().equals(ItemsRegistry.CRYSTAL_COMB
+					.get()));
             ItemEntity closestComb = null;
             double d = Double.MAX_VALUE;
             for(ItemEntity e : combs) {

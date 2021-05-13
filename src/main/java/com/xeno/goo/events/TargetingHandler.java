@@ -69,7 +69,7 @@ public class TargetingHandler
     private static boolean hasGooAndYou(PlayerEntity player)
     {
         if (PATCHOULI_BOOK.isEmpty()) {
-            PATCHOULI_BOOK = new ItemStack(ItemsRegistry.GooAndYou.get());
+            PATCHOULI_BOOK = new ItemStack(ItemsRegistry.GOO_AND_YOU.get());
         }
         return player.inventory.mainInventory.stream().anyMatch(i -> i.getItem().equals(PATCHOULI_BOOK.getItem()));
     }
@@ -199,26 +199,26 @@ public class TargetingHandler
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        ItemsRegistry.Crucible.get(),
-                        ItemsRegistry.Mixer.get(),
-                        ItemsRegistry.GooBulb.get(),
-                        ItemsRegistry.Trough.get()
+                        ItemsRegistry.CRUCIBLE.get(),
+                        ItemsRegistry.MIXER.get(),
+                        ItemsRegistry.GOO_BULB.get(),
+                        ItemsRegistry.TROUGH.get()
                 )
         );
     }
     private static void initializeGooItemContainers() {
         GOO_ITEM_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        ItemsRegistry.Basin.get(),
-                        ItemsRegistry.Gauntlet.get()
+                        ItemsRegistry.BASIN.get(),
+                        ItemsRegistry.GAUNTLET.get()
                 )
         );
     }
     private static void initializeGooDoubleMaps() {
         GOO_DOUBLE_MAPS.addAll(
                 Sets.newHashSet(
-                        ItemsRegistry.Gooifier.get(),
-                        ItemsRegistry.Solidifier.get()
+                        ItemsRegistry.GOOIFIER.get(),
+                        ItemsRegistry.SOLIDIFIER.get()
                 )
         );
     }
@@ -298,13 +298,13 @@ public class TargetingHandler
     {
         String id = "";
         Item item = currentStack.getItem();
-        if (item.equals(ItemsRegistry.Mixer.get())) {
+        if (item.equals(ItemsRegistry.MIXER.get())) {
             id = Objects.requireNonNull(Registry.MIXER_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.Crucible.get())) {
+        } else if (item.equals(ItemsRegistry.CRUCIBLE.get())) {
             id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.GooBulb.get())) {
+        } else if (item.equals(ItemsRegistry.GOO_BULB.get())) {
             id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.Trough.get())) {
+        } else if (item.equals(ItemsRegistry.TROUGH.get())) {
             id = Objects.requireNonNull(Registry.TROUGH_TILE.get().getRegistryName()).toString();
         }
         if (id.equals("")) {
@@ -586,11 +586,11 @@ public class TargetingHandler
     private static boolean tryFetchingGooContentsAsDoubleMap()
     {
         String id = "";
-        if (currentStack.getItem().equals(ItemsRegistry.Gooifier.get())) {
+        if (currentStack.getItem().equals(ItemsRegistry.GOOIFIER.get())) {
             id = Objects.requireNonNull(Registry.GOOIFIER_TILE.get().getRegistryName()).toString();
         }
 
-        if (currentStack.getItem().equals(ItemsRegistry.Solidifier.get())) {
+        if (currentStack.getItem().equals(ItemsRegistry.SOLIDIFIER.get())) {
             id = Objects.requireNonNull(Registry.SOLIDIFIER_TILE.get().getRegistryName()).toString();
         }
 

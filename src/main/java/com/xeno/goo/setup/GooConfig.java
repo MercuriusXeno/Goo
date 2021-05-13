@@ -117,7 +117,7 @@ public class GooConfig
     private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_COOLDOWNS = new HashMap<>();
 
     private void registerBlobInteractions(Fluid fluid, Map<Tuple<Integer, String>, IBlobInteraction> blobInteractions) {
-        int defaultCostForInteractions = 16;
+        int defaultCostForInteractions = 4;
         double defaultChanceOfInteraction = 1.0d;
         double defaultChanceOfDrain = 1.0d;
         double defaultChanceofFail = 0d;
@@ -167,7 +167,6 @@ public class GooConfig
         HashMap<String, ForgeConfigSpec.DoubleValue> failMap = new HashMap<>();
         HashMap<String, ForgeConfigSpec.IntValue> cooldownMap = new HashMap<>();
         serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
-        int[] lowestCost = {Integer.MAX_VALUE};
         splatInteractions.forEach((k, v) -> {
             int amountToThrow = defaultCostForInteractions;
             int interactionCost = defaultCostForInteractions;
@@ -206,8 +205,8 @@ public class GooConfig
                     .defineInRange(k.getB() + "_fail_chance", chanceOfFailure, 0d, 1d);
             ForgeConfigSpec.IntValue cooldownOfInteraction = serverBuilder.comment("Cooldown of block effect for interactions that use a cooldown " + k.getB() + ", default: " + actualCooldown)
                     .defineInRange(k.getB() + "_cooldown", actualCooldown, 0, 1000);
-            ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + (lowestCost[0]))
-                    .defineInRange("thrown_amount", lowestCost[0], -1, 1000);
+            ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + amountToThrow)
+                    .defineInRange("thrown_amount", amountToThrow, -1, 1000);
             costMap.put(k.getB(), costOfInteraction);
             triggerMap.put(k.getB() + "_chance", chanceOfInteraction);
             drainMap.put(k.getB() + "_drain_chance", chanceOfDrain);
@@ -355,14 +354,14 @@ public class GooConfig
     }
 
     private void setupClientConfig() {
-        clientBuilder.comment().push("client_options");
+        clientBuilder.comment("Goo Client Configs").push("client_options");
         GOO_VALUES_VISIBLE_WITHOUT_BOOK = clientBuilder.comment("Make goo values visible without having the book in your inventory, default: " + Defaults.GOO_VALUES_VISIBLE_ALWAYS)
                 .define("gooValuesVisibleWithoutBook", false);
         clientBuilder.pop();
     }
 
     private void setupGeneralMachineConfig() {
-        serverBuilder.comment().push("general");
+        serverBuilder.comment("Goo Server Configs").push("general");
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + Defaults.GOO_TRANSFER_RATE)
                 .defineInRange("maxTransferRate", Defaults.GOO_TRANSFER_RATE, 0, 10000);
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + Defaults.GOO_PROCESSING_RATE)

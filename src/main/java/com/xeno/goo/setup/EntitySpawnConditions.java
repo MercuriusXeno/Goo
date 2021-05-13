@@ -49,7 +49,7 @@ public class EntitySpawnConditions {
 	public static void injectSnailSpawnConditions(BiomeLoadingEvent e) {
 		if (VALID_SNAIL_SPAWN_BIOMES.contains(e.getCategory())) {
 			if (GooMod.config.snailSpawnWeight() > 0) {
-				MobSpawnInfo.Spawners spawnInfo = new MobSpawnInfo.Spawners(Registry.GOO_SNAIL.get(), GooMod.config.snailSpawnWeight(), 0, 1);
+				MobSpawnInfo.Spawners spawnInfo = new MobSpawnInfo.Spawners(Registry.GOO_SNAIL, GooMod.config.snailSpawnWeight(), 0, 1);
 				e.getSpawns().withSpawner(EntityClassification.getClassificationByName("goo:goo_snail"), spawnInfo);
 			}
 		}

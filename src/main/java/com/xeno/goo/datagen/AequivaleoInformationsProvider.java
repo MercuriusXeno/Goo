@@ -278,8 +278,8 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.HEART_OF_THE_SEA, aquatic(120), weird(120), primordial(120), forbidden(1));
         saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60), primordial(15));
 
-        ItemsRegistry.CrystallizedGoo.forEach(this::registerLockedInfoForCrystallizedGoo);
-        saveData(ItemsRegistry.CrystalComb.get(), crystal(32));
+        ItemsRegistry.CRYSTALLIZED_GOO.forEach(this::registerLockedInfoForCrystallizedGoo);
+        saveData(ItemsRegistry.CRYSTAL_COMB.get(), crystal(32));
     }
 
     private void saveData(Item item, CompoundInstance... instances) {

@@ -1,10 +1,14 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.effects.HarmlessEffect;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
+import net.minecraft.entity.MobEntity;
 import net.minecraft.particles.RedstoneParticleData;
+import net.minecraft.potion.EffectInstance;
 import net.minecraft.state.properties.AttachFace;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -19,13 +23,27 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.function.Supplier;
+
 public class Logic
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.LOGIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.LOGIC_GOO.get(), "logic_pulse", Logic::logicPulse, Logic::isValidForLogicPulse);
+        GooInteractions.registerSplat(fluidSupplier.get(), "logic_pulse", Logic::logicPulse, Logic::isValidForLogicPulse);
 
-        GooInteractions.registerPassThroughPredicate(Registry.LOGIC_GOO.get(), Logic::blobPassThroughPredicate);
+        GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Logic::blobPassThroughPredicate);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "logic_hit", Logic::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+        if (c.victim() instanceof MobEntity) {
+            c.victim().addPotionEffect(new EffectInstance(HarmlessEffect.instance, 240));
+            return true;
+        }
+
+        return false;
     }
 
     private static boolean isValidForLogicPulse(SplatContext context) {

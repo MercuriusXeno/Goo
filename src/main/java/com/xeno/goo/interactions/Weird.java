@@ -2,6 +2,7 @@ package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.Entity;
@@ -17,14 +18,16 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Weird
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.WEIRD_GOO;
     private static final double BOUNDS_REACH = 16d;
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.WEIRD_GOO.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
+        GooInteractions.registerSplat(fluidSupplier.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
     }
 
     private static boolean weirdTransport(SplatContext splatContext) {

@@ -100,7 +100,7 @@ public class GooBee extends AnimalEntity implements IFlyingAnimal, IEntityAdditi
     @Nullable
     @Override
     public AgeableEntity createChild(ServerWorld world, AgeableEntity mate) {
-        return Registry.GOO_BEE.get().create(world);
+        return Registry.GOO_BEE.create(world);
     }
 
     protected void registerData() {

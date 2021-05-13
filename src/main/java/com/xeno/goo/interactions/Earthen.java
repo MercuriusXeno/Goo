@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
@@ -10,25 +11,28 @@ import net.minecraft.potion.Effects;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.function.Supplier;
+
 public class Earthen
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.EARTHEN_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_stone", Earthen::edifyStone, Earthen::isStone);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_cobblestone", Earthen::edifyCobblestone, Earthen::isCobblestone);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_sand", Earthen::edifySand, Earthen::isSand);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_gravel", Earthen::edifyGravel, Earthen::isGravel);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_coarse_dirt", Earthen::edifyCoarseDirt, Earthen::isCoarseDirt);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_dirt", Earthen::edifyDirt, Earthen::isDirt);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_andesite", Earthen::edifyAndesite, Earthen::isAndesite);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_granite", Earthen::edifyGranite, Earthen::isGranite);
-        GooInteractions.registerSplat(Registry.EARTHEN_GOO.get(), "edify_diorite", Earthen::edifyDiorite, Earthen::isDiorite);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_stone", Earthen::edifyStone, Earthen::isStone);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_cobblestone", Earthen::edifyCobblestone, Earthen::isCobblestone);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_sand", Earthen::edifySand, Earthen::isSand);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_gravel", Earthen::edifyGravel, Earthen::isGravel);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_coarse_dirt", Earthen::edifyCoarseDirt, Earthen::isCoarseDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_dirt", Earthen::edifyDirt, Earthen::isDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_andesite", Earthen::edifyAndesite, Earthen::isAndesite);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_granite", Earthen::edifyGranite, Earthen::isGranite);
+        GooInteractions.registerSplat(fluidSupplier.get(), "edify_diorite", Earthen::edifyDiorite, Earthen::isDiorite);
 
-        GooInteractions.registerBlobHit(Registry.EARTHEN_GOO.get(), "earthen_hit", Earthen::hitEntity);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "earthen_hit", Earthen::hitEntity);
     }
 
     private static boolean hitEntity(BlobHitContext c) {
-        c.damageVictim(4f);
+        c.damageVictim(3f);
         c.knockback(1f);
         return true;
     }

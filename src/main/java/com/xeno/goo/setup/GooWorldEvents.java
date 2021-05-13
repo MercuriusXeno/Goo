@@ -13,7 +13,7 @@ public class GooWorldEvents {
 
 	@SubscribeEvent
 	public static void entitySpawners(final RegistryEvent.Register<EntityType<?>> event) {
-		EntitySpawnPlacementRegistry.register(Registry.GOO_SNAIL.get(),
+		EntitySpawnPlacementRegistry.register(Registry.GOO_SNAIL,
 				EntitySpawnPlacementRegistry.PlacementType.ON_GROUND,
 				Type.MOTION_BLOCKING_NO_LEAVES,
 				EntitySpawnConditions::snailSpawnConditions);

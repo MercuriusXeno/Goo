@@ -1,6 +1,5 @@
 package com.xeno.goo.setup;
 
-import com.ldtteam.aequivaleo.api.compound.information.datagen.data.CompoundInstanceRef;
 import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.xeno.goo.GooMod;
@@ -12,14 +11,24 @@ import com.xeno.goo.entities.*;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.*;
+import net.minecraft.block.DispenserBlock;
+import net.minecraft.dispenser.DefaultDispenseItemBehavior;
+import net.minecraft.dispenser.IBlockSource;
+import net.minecraft.dispenser.IDispenseItemBehavior;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;
+import net.minecraft.potion.Effect;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.village.PointOfInterestType;
@@ -28,10 +37,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class Registry {
@@ -53,6 +59,9 @@ public class Registry {
         FLUIDS.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         BlocksRegistry.initialize();
+
+
+        // spawn egg relies on entities registered.
         ItemsRegistry.initialize();
 
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -84,32 +93,60 @@ public class Registry {
             .build("goo_splat")
     );
 
-    public static final RegistryObject<EntityType<GooBee>> GOO_BEE = ENTITIES.register("goo_bee",
-            () -> EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
-                    .size(0.7f, 0.6f) // actual size is halved by being dwarfism
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("goo_bee")
-    );
 
-    public static final RegistryObject<EntityType<MutantBee>> MUTANT_BEE = ENTITIES.register("mutant_bee",
-            () -> EntityType.Builder.<MutantBee>create(MutantBee::new, EntityClassification.CREATURE)
-                    .size(0.7f, 0.6f)
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("mutant_bee")
-    );
+    public static final EntityType<GooBee> GOO_BEE;
+    public static final EntityType<MutantBee> MUTANT_BEE;
+    public static final EntityType<GooSnail> GOO_SNAIL;
+    static {
+        ENTITIES.register("goo_bee", makeSupplier(GOO_BEE = EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
+                .size(0.7f, 0.6f) // actual size is halved by being dwarfism
+                .setTrackingRange(64)
+                .setUpdateInterval(1)
+                .setShouldReceiveVelocityUpdates(true)
+                .build("goo_bee")
+        ));
+        ENTITIES.register("mutant_bee",
+                makeSupplier(MUTANT_BEE = EntityType.Builder.<MutantBee>create(MutantBee::new, EntityClassification.CREATURE)
+                        .size(0.7f, 0.6f)
+                        .setTrackingRange(64)
+                        .setUpdateInterval(1)
+                        .setShouldReceiveVelocityUpdates(true)
+                        .build("mutant_bee")
+        ));
+        ENTITIES.register("goo_snail", makeSupplier(GOO_SNAIL = EntityType.Builder.<GooSnail>create(GooSnail::new, EntityClassification.CREATURE)
+                .size(0.375f, 0.75f)
+                .setTrackingRange(64)
+                .setUpdateInterval(1)
+                .setShouldReceiveVelocityUpdates(true)
+                .build("goo_snail")
+        ));
+    }
 
-    public static final RegistryObject<EntityType<GooSnail>> GOO_SNAIL = ENTITIES.register("goo_snail",
-            () -> EntityType.Builder.<GooSnail>create(GooSnail::new, EntityClassification.CREATURE)
-                    .size(0.375f, 0.75f)
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("goo_snail")
-    );
+    private static Supplier<EntityType<?>> makeSupplier(EntityType<?> entityType) {
+        return () -> entityType;
+    }
+
+    public static final IDispenseItemBehavior DISPENSE_EGG = new DefaultDispenseItemBehavior() {
+        public ItemStack dispenseStack(IBlockSource source, ItemStack stack) {
+            Direction direction = source.getBlockState().get(DispenserBlock.FACING);
+            EntityType<?> entitytype = ((SpawnEggItem)stack.getItem()).getType(stack.getTag());
+            entitytype.spawn(source.getWorld(), stack, null, source.getBlockPos().offset(direction), SpawnReason.DISPENSER, direction != Direction.UP, false);
+            stack.shrink(1);
+            return stack;
+        }
+    };
+
+    public static final List<SpawnEggItem> EGGS = new ArrayList<>();
+
+    // register eggs!
+    public static Supplier<SpawnEggItem> makeEgg(EntityType<?> entity, int primary, int secondary) {
+        return () -> {
+            SpawnEggItem egg = new SpawnEggItem(entity, primary, secondary, new Item.Properties().group(GooMod.ITEM_GROUP));
+            DispenserBlock.registerDispenseBehavior(egg, DISPENSE_EGG);
+            EGGS.add(egg);
+            return egg;
+        };
+    }
 
     // sound events to overload vanilla sounds and subsequently give them the correct captions
     public static final RegistryObject<SoundEvent> GOO_CHOP_SOUND = SOUNDS.register("goo_chop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_chop_sound")));

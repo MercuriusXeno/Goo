@@ -1,5 +1,6 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Blocks;
@@ -15,9 +16,11 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Slime
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.SLIME_GOO;
     // arbitrary threshold for detecting that a player seems to be jumping in the zone of control.
     // player jumps are slightly over 0.4f on initial acceleration, which seems to work pretty well.
     private static final double HEURISTIC_JUMP_DETECTION_SPEED = 0.4d;
@@ -41,10 +44,9 @@ public class Slime
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.SLIME_GOO.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
+        GooInteractions.registerSplat(fluidSupplier.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
     }
 
-    // TODO FIX ME - test with fixed filter and see if it works
     private static boolean isLivingInBounceArea(SplatContext splatContext) {
         return splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
                 splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround()).size() > 0;

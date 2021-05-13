@@ -1,6 +1,7 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
@@ -18,13 +19,24 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class Molten
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.MOLTEN_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
+        GooInteractions.registerSplat(fluidSupplier.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
+        GooInteractions.registerSplat(fluidSupplier.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "molten_hit", Molten::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.victim().setFire(60);
+        c.damageVictim(3f);
+        c.knockback(1f);
+        return true;
     }
 
     private static boolean isCookable(SplatContext context) {

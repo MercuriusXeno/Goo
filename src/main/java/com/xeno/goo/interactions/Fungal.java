@@ -3,28 +3,41 @@ package com.xeno.goo.interactions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.item.BoneMealItem;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.potion.Effects;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.function.Supplier;
+
 public class Fungal
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.FUNGAL_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_podzol", Fungal::growPodzol, Fungal::isDirt);
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_mycelium", Fungal::growMycelium, Fungal::isPodzol);
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_nylium", Fungal::growNylium, Fungal::isNetherrack);
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_shroom", Fungal::growShroom, Fungal::isShroomSoil);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_podzol", Fungal::growPodzol, Fungal::isDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_mycelium", Fungal::growMycelium, Fungal::isPodzol);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_nylium", Fungal::growNylium, Fungal::isNetherrack);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_shroom", Fungal::growShroom, Fungal::isShroomSoil);
         GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_bark", Fungal::growBark, Fungal::isStrippedStem);
-        GooInteractions.registerSplat(Registry.FUNGAL_GOO.get(), "grow_vines", Fungal::growVines, Fungal::canGrowLeaves);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_vines", Fungal::growVines, Fungal::canGrowLeaves);
 
 
-        GooInteractions.registerPassThroughPredicate(Registry.FUNGAL_GOO.get(), Fungal::blobPassThroughPredicate);
+        GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Fungal::blobPassThroughPredicate);
 
         // blob interactions
-        GooInteractions.registerBlob(Registry.FUNGAL_GOO.get(), "trigger_growable", Fungal::growableTick);
+        GooInteractions.registerBlob(fluidSupplier.get(), "trigger_growable", Fungal::growableTick);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "fungal_hit", Fungal::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+        c.victim().addPotionEffect(new EffectInstance(Effects.POISON, 120, 2));
+        return true;
     }
 
     private static boolean isShroomSoil(SplatContext splatContext) {

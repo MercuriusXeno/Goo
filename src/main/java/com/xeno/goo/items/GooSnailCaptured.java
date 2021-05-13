@@ -44,7 +44,7 @@ public class GooSnailCaptured extends Item {
             } else {
                 offsetPos = blockpos.offset(direction);
             }
-            GooSnail spawn = (GooSnail) Registry.GOO_SNAIL.get().spawn((ServerWorld) world, itemstack, context.getPlayer(), offsetPos, SpawnReason.EVENT, true, !Objects.equals(blockpos, offsetPos) && direction == Direction.UP);
+            GooSnail spawn = (GooSnail) Registry.GOO_SNAIL.spawn((ServerWorld) world, itemstack, context.getPlayer(), offsetPos, SpawnReason.EVENT, true, !Objects.equals(blockpos, offsetPos) && direction == Direction.UP);
             if (spawn != null) {
                 spawn.setSpawnedByPlayerPlacement(true);
                 itemstack.shrink(1);

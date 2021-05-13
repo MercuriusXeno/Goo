@@ -278,7 +278,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     private static void buildAndPushTransformationMapping(ResourceLocation k, Supplier<GooFluid> v) {
         Fluid f = v.get();
         Map<Item, CrystallizedGooAbstract> result = new HashMap<>();
-        ItemsRegistry.CrystallizedGoo.values().stream()
+        ItemsRegistry.CRYSTALLIZED_GOO.values().stream()
                 .filter((crystal) -> crystal.get().gooType().equals(f))
                 .forEach((crystal) -> result.put(crystal.get().source(), crystal.get()));
 

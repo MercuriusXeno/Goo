@@ -147,7 +147,7 @@ public class CrystalNestTile  extends TileEntity implements ITickableTileEntity,
             } else {
                 Entity entity = EntityType.loadEntityAndExecute(compoundnbt, this.world, (e) -> e);
                 if (entity != null) {
-                    if (!entity.getType().equals(Registry.GOO_BEE.get())) {
+                    if (!entity.getType().equals(Registry.GOO_BEE)) {
                         return false;
                     } else {
                         if (entity instanceof GooBee) {
