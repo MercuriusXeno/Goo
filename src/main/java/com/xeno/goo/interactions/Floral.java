@@ -2,7 +2,6 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.xeno.goo.effects.EntangledEffect;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
@@ -42,8 +41,7 @@ public class Floral
     }
 
     private static boolean entityHit(BlobHitContext c) {
-        c.victim().addPotionEffect(new EffectInstance(Effects.SLOWNESS, 240, 4));
-        c.victim().addPotionEffect(new EffectInstance(EntangledEffect.INSTANCE, 240));
+        // floral goo is inert. It doesn't do anything.
         return false;
     }
 
