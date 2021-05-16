@@ -208,7 +208,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             @Override
             public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
 
-                if (super.isFluidValid(this.tank, stack)) {
+                if (super.isFluidValid(tank, stack)) {
 
                     int otherTank = this.tank == 0 ? 1 : 0;
                     if (handler.getFluidInTank(this.tank).isEmpty() && !handler.getFluidInTank(otherTank).isEmpty())
