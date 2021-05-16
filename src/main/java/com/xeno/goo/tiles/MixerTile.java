@@ -208,7 +208,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             @Override
             public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
 
-                if (super.isFluidValid(tank, stack)) {
+                if (super.isFluidValid(this.tank, stack)) {
 
                     int otherTank = this.tank == 0 ? 1 : 0;
                     if (handler.getFluidInTank(this.tank).isEmpty() && !handler.getFluidInTank(otherTank).isEmpty())
@@ -246,7 +246,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return goo.getFluidInTankInternal(isRightSideMostly(hitVector, face) ? 0 : 1);
     }
 
-    // THESE ARE RIGHT DO NOT TOUCH THEM I WILL KILL YOU
     private boolean isRightSideMostly(Vector3d hitVec, Direction face)
     {
         boolean isRight;
