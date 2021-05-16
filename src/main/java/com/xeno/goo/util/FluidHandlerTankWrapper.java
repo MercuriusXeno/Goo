@@ -7,11 +7,18 @@ import javax.annotation.Nonnull;
 
 public class FluidHandlerTankWrapper extends FluidHandlerWrapper {
 
+	public static <T extends IFluidHandler & ISidedFluidHandler> FluidHandlerTankWrapper of(T t, int tank) {
+
+		return new FluidHandlerTankWrapper(t, tank);
+	}
+
+	protected final ISidedFluidHandler sidedHandler;
 	protected final int tank;
 
-	public FluidHandlerTankWrapper(IFluidHandler t, int sideTank) {
+	protected FluidHandlerTankWrapper(IFluidHandler t, int sideTank) {
 
 		super(t);
+		sidedHandler = (ISidedFluidHandler) t;
 		this.tank = sideTank;
 	}
 
@@ -34,7 +41,7 @@ public class FluidHandlerTankWrapper extends FluidHandlerWrapper {
 		if (tank != 0)
 			return false;
 
-		return super.isFluidValid(tank, stack);
+		return super.isFluidValid(this.tank, stack);
 	}
 
 	@Override
@@ -52,7 +59,7 @@ public class FluidHandlerTankWrapper extends FluidHandlerWrapper {
 		if (!isFluidValid(0, resource))
 			return 0;
 
-		return super.fill(resource, action);
+		return sidedHandler.fill(this.tank, resource, action);
 	}
 
 	@Nonnull
