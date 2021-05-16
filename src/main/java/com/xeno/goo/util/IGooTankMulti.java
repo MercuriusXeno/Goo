@@ -131,6 +131,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		final int accept = Math.min(resource.getAmount(), tank.getAmount());
 		if (accept > 0 && action.execute()) {
+			amount -= accept;
 			tank.shrink(accept);
 			onChange();
 		}
@@ -165,6 +166,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		final int accept = Math.min(maxDrain, tankAmt);
 		if (accept > 0 && action.execute()) {
+			amount -= accept;
 			tank.shrink(accept);
 			onChange();
 		}

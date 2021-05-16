@@ -1,8 +1,5 @@
 package com.xeno.goo.interactions;
 
-import com.google.common.collect.Comparators;
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -22,7 +19,6 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.function.Supplier;
