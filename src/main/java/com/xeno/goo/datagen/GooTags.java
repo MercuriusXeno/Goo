@@ -16,6 +16,7 @@ public class GooTags extends EntityTypeTagsProvider {
 	public static class Entities {
 
 		public static ITag.INamedTag<EntityType<?>> WATER_HATING_MOBS = EntityTypeTags.getTagById("water_hating_mobs");
+		public static ITag.INamedTag<EntityType<?>> COLD_HATING_MOBS = EntityTypeTags.getTagById("cold_hating_mobs");
 		public static ITag.INamedTag<EntityType<?>> PRIMORDIAL_INSTANT_DEATH_IMMUNE_MOBS = EntityTypeTags.getTagById("primordial_instant_death_immune_mobs");
 		public static ITag.INamedTag<EntityType<?>> PRIMORDIAL_SPAWN_EGGS_ALLOWED = EntityTypeTags.getTagById("primordial_spawn_eggs_allowed");
 	}
@@ -27,6 +28,7 @@ public class GooTags extends EntityTypeTagsProvider {
 	@Override
 	protected void registerTags() {
 		registerWaterHatingMobs();
+		registerColdHatingMobs();
 
 		registerPrimordialInstantDeathEntities();
 
@@ -59,5 +61,19 @@ public class GooTags extends EntityTypeTagsProvider {
 				.add(EntityType.IRON_GOLEM)
 				.add(EntityType.MAGMA_CUBE)
 				.add(EntityType.ENDERMAN);
+	}
+
+	private void registerColdHatingMobs() {
+		this.getOrCreateBuilder(Entities.COLD_HATING_MOBS)
+				.add(EntityType.BLAZE)
+				.add(EntityType.PIGLIN)
+				.add(EntityType.MAGMA_CUBE)
+				.add(EntityType.ZOMBIFIED_PIGLIN)
+				.add(EntityType.BEE)
+				.add(EntityType.SPIDER)
+				.add(EntityType.CAVE_SPIDER)
+				.add(EntityType.STRIDER)
+				.add(EntityType.GHAST)
+				.add(EntityType.HOGLIN);
 	}
 }

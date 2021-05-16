@@ -5,7 +5,6 @@ import com.electronwill.nightconfig.core.io.WritingMode;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IBlobInteraction;
 import com.xeno.goo.interactions.ISplatInteraction;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Tuple;
 import net.minecraftforge.common.ForgeConfigSpec;

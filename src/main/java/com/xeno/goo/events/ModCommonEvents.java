@@ -1,12 +1,15 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
-import net.minecraft.entity.EntityType;
-import net.minecraftforge.event.RegistryEvent;
+import com.xeno.goo.shrink.ShrinkImpl;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod.EventBusSubscriber(modid = GooMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCommonEvents {
-	// STUB
+	@SubscribeEvent
+	public static void commonSetup(FMLCommonSetupEvent event) {
+		ShrinkImpl.init();
+	}
 }

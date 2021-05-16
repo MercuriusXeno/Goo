@@ -517,7 +517,7 @@
   "sound_event.goo.freeze_sound": "Goo froze water",
   "sound_event.goo.twitterpate_animal_sound": "Fauna infatuated",
   "sound_event.goo.weird_teleport_sound": "Weird teleportation",
-  "sound_event.goo.molten_sizzle_sound": "Goo sizzles",
+  "sound_event.goo.sizzle_sound": "Goo sizzles",
   "sound_event.goo.crystallize_sound": "Goo crystallizes",
   "sound_event.goo.goo_bee_shatter_sound": "Crystal bee shatters",
   "sound_event.goo.snail_poop_sound": "Snail makes crystal",

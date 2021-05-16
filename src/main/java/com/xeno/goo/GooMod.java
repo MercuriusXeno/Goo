@@ -2,6 +2,7 @@ package com.xeno.goo;
 
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
+import com.xeno.goo.shrink.ShrinkImpl;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.DistExecutor;

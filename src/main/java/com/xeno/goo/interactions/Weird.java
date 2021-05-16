@@ -5,10 +5,16 @@ import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Direction;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvents;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
@@ -28,6 +34,12 @@ public class Weird
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(fluidSupplier.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "weird_hit", Weird::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        return teleportRandomly(c.victim());
     }
 
     private static boolean weirdTransport(SplatContext splatContext) {
@@ -120,5 +132,37 @@ public class Weird
             }
         }
         return new Tuple<>(true, result);
+    }
+
+    private static boolean teleportRandomly(LivingEntity e) {
+        if (!e.world.isRemote() && e.isAlive()) {
+            double dx = e.getPosX() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
+            double dy = e.getPosY() + (double)(e.world.rand.nextInt(64) - 32);
+            double dz = e.getPosZ() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
+            return teleportTo(e, dx, dy, dz);
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean teleportTo(LivingEntity e, double x, double y, double z) {
+        BlockPos.Mutable pos = new BlockPos.Mutable(x, y, z);
+
+        while(pos.getY() > 0 && !e.world.getBlockState(pos).getMaterial().blocksMovement()) {
+            pos.move(Direction.DOWN);
+        }
+
+        BlockState blockstate = e.world.getBlockState(pos);
+        boolean isBlockMaterialMovementBlocked = blockstate.getMaterial().blocksMovement();
+        boolean isTeleportBlockedByWater = blockstate.getFluidState().isTagged(FluidTags.WATER);
+        if (isBlockMaterialMovementBlocked && !isTeleportBlockedByWater) {
+            boolean isTeleportSuccessful = e.attemptTeleport(pos.getX(), pos.getY(), pos.getZ(), true);
+            if (isTeleportSuccessful && !e.isSilent()) {
+                AudioHelper.entityAudioEvent(e, Registry.WEIRD_TELEPORT_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, () -> 1.0f);
+            }
+            return isTeleportSuccessful;
+        } else {
+            return false;
+        }
     }
 }

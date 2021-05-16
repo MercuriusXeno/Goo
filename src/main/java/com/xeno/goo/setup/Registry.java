@@ -161,7 +161,7 @@ public class Registry {
     public static final RegistryObject<SoundEvent> FREEZE_SOUND = SOUNDS.register("freeze_water_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "freeze_water_sound")));
     public static final RegistryObject<SoundEvent> TWITTERPATE_ANIMAL_SOUND = SOUNDS.register("twitterpate_animal_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "twitterpate_animal_sound")));
     public static final RegistryObject<SoundEvent> WEIRD_TELEPORT_SOUND = SOUNDS.register("weird_teleport_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "weird_teleport_sound")));
-    public static final RegistryObject<SoundEvent> MOLTEN_SIZZLE_SOUND = SOUNDS.register("molten_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "molten_sizzle_sound")));
+    public static final RegistryObject<SoundEvent> GOO_SIZZLE_SOUND = SOUNDS.register("goo_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_sizzle_sound")));
     public static final RegistryObject<SoundEvent> CRYSTALLIZE_SOUND = SOUNDS.register("crystallize_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "crystallize_sound")));
     public static final RegistryObject<SoundEvent> GOO_BEE_SHATTER_SOUND = SOUNDS.register("goo_bee_shatter_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_bee_shatter_sound")));
     public static final RegistryObject<SoundEvent> SNAIL_POOP_SOUND = SOUNDS.register("snail_poop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_poop_sound")));

@@ -103,8 +103,8 @@
       "minecraft:mob/endermen/portal2"
     ]
   },
-  "molten_sizzle_sound": {
-    "subtitle": "sound_event.goo.molten_sizzle_sound",
+  "goo_sizzle_sound": {
+    "subtitle": "sound_event.goo.goo_sizzle_sound",
     "sounds": [
       "minecraft:random/fizz"
     ]

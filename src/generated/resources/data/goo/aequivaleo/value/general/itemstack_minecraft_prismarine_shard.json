@@ -19,7 +19,7 @@
   "compounds": [
     {
       "amount": 2.0,
-      "type": "goo:primordial"
+      "type": "goo:crystal"
     },
     {
       "amount": 120.0,
@@ -31,7 +31,7 @@
     },
     {
       "amount": 2.0,
-      "type": "goo:crystal"
+      "type": "goo:primordial"
     }
   ]
 }

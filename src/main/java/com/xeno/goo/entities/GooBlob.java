@@ -219,8 +219,9 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
             this.isCollidingEntity = this.checkForEntityCollision();
         }
 
-        // feed the splat we belong to
-        if (attachedSplat != null) {
+        // feed the splat we belong to - at this point it's possible we're collided with an entity and still moving,
+        // so we do a living check before this tick is over - but it's not needed any earlier than this.
+        if (this.isAlive() && attachedSplat != null) {
             approachSplatOffset();
             if (!world.isRemote()) {
                 int amountToDrain = (int) Math.ceil(Math.sqrt(goo.getTotalContents()) / 2d);

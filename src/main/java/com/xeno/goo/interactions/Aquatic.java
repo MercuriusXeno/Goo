@@ -33,13 +33,14 @@ public class Aquatic
     }
 
     private static boolean hitEntity(BlobHitContext c) {
+        boolean isUsed = false;
         // extinguish the entity if on fire and do not deal damage
         if (Entities.WATER_HATING_MOBS.contains(c.victim().getType())) {
             // knock the enemy back and deal some damage.
             // deal extra damage to water-haters.
             c.knockback(1.0f);
             c.damageVictim(5f);
-            return true;
+            isUsed = true;
         }
         if (c.victim().getFireTimer() > 0) {
             c.victim().extinguish();
@@ -48,9 +49,9 @@ public class Aquatic
                 c.world().addParticle(ParticleTypes.SMOKE, c.blob().getPosX(), c.blob().getPosY(), c.blob().getPosZ(), 0d, 0.1d, 0d);
             }
             AudioHelper.entityAudioEvent(c.blob(), SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
-            return true;
+            isUsed = true;
         }
-        return false;
+        return isUsed;
     }
 
     public static boolean hydrateFarmland(BlobContext context)

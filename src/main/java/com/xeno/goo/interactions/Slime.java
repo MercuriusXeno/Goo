@@ -45,6 +45,13 @@ public class Slime
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(fluidSupplier.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "slime_hit", Slime::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+        c.damageVictim(3f);
+        c.knockback(4f);
+        return true;
     }
 
     private static boolean isLivingInBounceArea(SplatContext splatContext) {
