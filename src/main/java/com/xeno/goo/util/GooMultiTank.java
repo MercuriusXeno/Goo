@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.function.IntSupplier;
 
-public class GooMultiTank extends IGooTankMulti {
+public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 
 	protected final int tankCount;
 
@@ -85,6 +85,17 @@ public class GooMultiTank extends IGooTankMulti {
 		return capacity.getAsInt();
 	}
 
+	protected FluidStack setTank(int index, FluidStack tank, FluidStack resource, int amount) {
+
+		contents.remove(tank.getRawFluid());
+
+		tank = new FluidStack(resource.getRawFluid(), amount, resource.getTag());
+
+		contents.put(tank.getRawFluid(), tank);
+		tanks[index] = tank;
+		return tank;
+	}
+
 	/**
 	 * Adds a new internal tank based on the resource passed in
 	 *
@@ -108,26 +119,22 @@ public class GooMultiTank extends IGooTankMulti {
 			}
 			return;
 		}
-		contents.remove(tank.getRawFluid());
-
-		tank = new FluidStack(resource.getRawFluid(), amount, resource.getTag());
-
-		contents.put(tank.getRawFluid(), tank);
-		tanks[index] = tank;
+		setTank(index, tank, resource, amount);
 	}
 
 	/**
-	 * <b>This implementation ignores fluid tags.</b>
-	 * <p>
-	 * {@inheritDoc}
+	 * Fills fluid into internal tanks, distribution is left entirely to the IFluidHandler.
+	 *
+	 * @param tank
+	 * 		FluidStack representing the internal tank that {@code resource} will be added to
+	 * @param resource
+	 * 		FluidStack representing the Fluid and maximum amount of fluid to be filled.
+	 * @param action
+	 * 		If SIMULATE, fill will only be simulated.
+	 *
+	 * @return Amount of resource that was (or would have been, if simulated) filled.
 	 */
-	@Override
-	public int fill(FluidStack resource, FluidAction action) {
-
-		if (resource == null || resource.isEmpty() || !filter.test(resource))
-			return 0;
-
-		FluidStack tank = contents.get(resource.getRawFluid());
+	protected int fill(FluidStack tank, FluidStack resource, FluidAction action) {
 
 		final int accept = Math.min(resource.getAmount(), capacity.getAsInt() - (tank == null ? 0 : tank.getAmount()));
 		if (accept > 0 && action.execute()) {
@@ -147,5 +154,42 @@ public class GooMultiTank extends IGooTankMulti {
 			return 0;
 		}
 		return accept;
+	}
+
+	/**
+	 * <b>This implementation ignores fluid tags.</b>
+	 * <p>
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int fill(FluidStack resource, FluidAction action) {
+
+		if (resource == null || resource.isEmpty() || !filter.test(resource))
+			return 0;
+
+		return fill(contents.get(resource.getRawFluid()), resource, action);
+	}
+
+	/**
+	 * <b>This implementation ignores fluid tags.</b>
+	 * <p>
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int fill(int tankIn, FluidStack resource, FluidAction action) {
+
+		if (resource == null || resource.isEmpty() || !filter.test(resource))
+			return 0;
+
+		FluidStack tank = getFluidInTankInternal(tankIn);
+		if (tank.getRawFluid() != resource.getRawFluid()) // not already a mtch
+			if (!tank.isEmpty())
+				return 0; // if it's not empty and doesn't match, fail
+			else if (contents.get(resource.getRawFluid()) == tank)
+				return 0; // if it IS empty but we already contain it, fail (it's in another tank)
+			else
+				tank = setTank(tankIn, tank, resource, 0); // update the tank state
+
+		return fill(tank, resource, action);
 	}
 }
