@@ -25,6 +25,15 @@ public class Faunal
 
     private static boolean hitEntity(BlobHitContext c) {
         if (c.victim() instanceof AnimalEntity && breedingAnimalPredicate((AnimalEntity)c.victim())) {
+            AnimalEntity animal = (AnimalEntity)c.victim();
+            if (!c.isRemote()) {
+                if (c.blob().owner() instanceof ServerPlayerEntity) {
+                    animal.setInLove(((ServerPlayerEntity) c.owner()));
+                } else {
+                    animal.setInLove(600);
+                    c.world().setEntityState(animal, (byte) 18);
+                }
+            }
             doEffects((AnimalEntity)c.victim());
             return true;
         }

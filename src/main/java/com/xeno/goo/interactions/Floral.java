@@ -2,12 +2,15 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.xeno.goo.effects.EntangledEffect;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BoneMealItem;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.potion.Effects;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -38,7 +41,9 @@ public class Floral
         GooInteractions.registerBlobHit(fluidSupplier.get(), "floral_hit", Floral::entityHit);
     }
 
-    private static boolean entityHit(BlobHitContext blobHitContext) {
+    private static boolean entityHit(BlobHitContext c) {
+        c.victim().addPotionEffect(new EffectInstance(Effects.SLOWNESS, 240, 4));
+        c.victim().addPotionEffect(new EffectInstance(EntangledEffect.INSTANCE, 240));
         return false;
     }
 
