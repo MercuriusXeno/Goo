@@ -17,7 +17,7 @@ public class GooBeeRenderer  extends MobRenderer<GooBee, GooBeeModel<GooBee>> {
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BEE.get(), GooBeeRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BEE, GooBeeRenderer::new);
     }
 
     /**

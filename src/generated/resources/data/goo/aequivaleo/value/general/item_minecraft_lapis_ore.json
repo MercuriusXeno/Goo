@@ -18,8 +18,8 @@
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "amount": 240.0,
+      "type": "goo:chromatic"
     },
     {
       "amount": 30.0,
@@ -30,8 +30,8 @@
       "type": "goo:weird"
     },
     {
-      "amount": 240.0,
-      "type": "goo:chromatic"
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

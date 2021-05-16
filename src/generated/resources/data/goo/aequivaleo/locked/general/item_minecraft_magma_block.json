@@ -19,7 +19,11 @@
   "compounds": [
     {
       "amount": 10.0,
-      "type": "goo:slime"
+      "type": "goo:molten"
+    },
+    {
+      "amount": 30.0,
+      "type": "goo:decay"
     },
     {
       "amount": 180.0,
@@ -27,11 +31,7 @@
     },
     {
       "amount": 10.0,
-      "type": "goo:molten"
-    },
-    {
-      "amount": 30.0,
-      "type": "goo:decay"
+      "type": "goo:slime"
     }
   ]
 }

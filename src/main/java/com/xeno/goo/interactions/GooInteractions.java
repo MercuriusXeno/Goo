@@ -5,6 +5,8 @@ import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.util.*;
@@ -127,6 +129,22 @@ public class GooInteractions
         blobRegistry.get(fluid).put(new Tuple<>(rank, key), interaction);
     }
 
+    public static final Map<Fluid, Map<Tuple<Integer, String>, IBlobHitInteraction>> blobHitRegistry = new HashMap<>();
+    public static void registerBlobHit(Fluid f, String key, IBlobHitInteraction i) {
+        ensureBlobHitMapContainsFluid(f);
+        registerBlobHit(f, key, blobHitRegistry.get(f).size(), i);
+    }
+
+    private static void registerBlobHit(Fluid f, String key, int rank, IBlobHitInteraction i) {
+        blobHitRegistry.get(f).put(new Tuple<>(rank, key), i);
+    }
+
+    private static void ensureBlobHitMapContainsFluid(Fluid f) {
+        if (!blobHitRegistry.containsKey(f)) {
+            blobHitRegistry.put(f, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank
+        }
+    }
+
     private static void ensureBlobMapContainsFluid(Fluid f) {
         if (!blobRegistry.containsKey(f)) {
             blobRegistry.put(f, new TreeMap<>(Comparator.comparing(Tuple::getA))); // sort by rank
@@ -153,7 +171,6 @@ public class GooInteractions
         Logic.registerInteractions();
         Metal.registerInteractions();
         Molten.registerInteractions();
-        Obsidian.registerInteractions();
         Primordial.registerInteractions();
         Radiant.registerInteractions();
         Regal.registerInteractions();
@@ -163,8 +180,47 @@ public class GooInteractions
         Weird.registerInteractions();
     }
 
+
+    public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob gooBlob)
+    {
+        if (!gooBlob.isAlive()) {
+            return;
+        }
+        Fluid fluid = gooBlob.goo().getFluid();
+        // no interactions registered, we don't want to crash.
+        if (!blobHitRegistry.containsKey(fluid)) {
+            return;
+        }
+
+        BlobHitContext context = new BlobHitContext(e, owner, gooBlob, fluid);
+        // cycle over resolvers in rank order and drain/apply when possible.
+        Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
+        map.forEach((k, v) -> tryResolving(v, context.withKey(k.getB())));
+    }
+
+    /**
+     * Resolves a blob hit - generally blob hits (on entities) are less complex than blob splats on blocks.
+     * There's less argumentation, less configurability. The blob hits a thing and does something and dies.
+     * There also isn't a "cost" of interactions. The blob hits are balanced around the defaults for amounts
+     * thrown, and amounts thrown are balanced around block/splat effects primarily.
+     * @param iBlobInteraction
+     * @param context
+     */
+    private static void tryResolving(IBlobHitInteraction iBlobInteraction, BlobHitContext context)
+    {
+        if (iBlobInteraction.resolve(context)) {
+            GooInteractions.spawnParticles(context.blob());
+            context.blob().remove();
+        } else {
+            context.ricochet();
+        }
+    }
+
     public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)
     {
+        if (!gooBlob.isAlive()) {
+            return;
+        }
         Fluid fluid = gooBlob.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!blobRegistry.containsKey(fluid)) {
@@ -178,13 +234,18 @@ public class GooInteractions
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobInteraction iBlobInteraction, BlobContext context)
     {
-        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
-        if (keyCost == -1) {
-            // interaction is disabled, abort
+        double chanceToResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB());
+        if (chanceToResolve == 0d) {
             return;
         }
 
-        boolean shouldResolve = GooMod.config.chanceOfBlobInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        int keyCost = GooMod.config.costOfBlobInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction costs the entire thrown amount
+            keyCost = context.blob().goo().getAmount();
+        }
+
+        boolean shouldResolve = chanceToResolve >= context.world().rand.nextDouble();
         if (!shouldResolve) {
             return;
         }
@@ -205,6 +266,9 @@ public class GooInteractions
 
     public static void tryResolving(GooSplat gooSplat)
     {
+        if (!gooSplat.isAlive()) {
+            return;
+        }
         Fluid fluid = gooSplat.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!splatRegistry.containsKey(fluid)) {
@@ -218,13 +282,18 @@ public class GooInteractions
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)
     {
-        int keyCost = GooMod.config.costOfSplatInteraction(fluid, interactionKey.getB());
-        if (keyCost == -1) {
-            // interaction is disabled, abort
+        double chanceToResolve = GooMod.config.chanceOfSplatInteraction(fluid, interactionKey.getB());
+        if (chanceToResolve == 0d) {
             return;
         }
 
-        boolean shouldResolve = GooMod.config.chanceOfSplatInteraction(fluid, interactionKey.getB()) >= context.world().rand.nextDouble();
+        int keyCost = GooMod.config.costOfSplatInteraction(fluid, interactionKey.getB());
+        if (keyCost == -1) {
+            // interaction costs the entire thrown amount
+            keyCost = context.splat().goo().getAmount();
+        }
+
+        boolean shouldResolve = chanceToResolve >= context.world().rand.nextDouble();
         if (!shouldResolve) {
             return;
         }

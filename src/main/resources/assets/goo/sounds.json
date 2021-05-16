@@ -103,8 +103,8 @@
       "minecraft:mob/endermen/portal2"
     ]
   },
-  "molten_sizzle_sound": {
-    "subtitle": "sound_event.goo.molten_sizzle_sound",
+  "goo_sizzle_sound": {
+    "subtitle": "sound_event.goo.goo_sizzle_sound",
     "sounds": [
       "minecraft:random/fizz"
     ]
@@ -121,6 +121,27 @@
       "minecraft:random/glass1",
       "minecraft:random/glass2",
       "minecraft:random/glass3"
+    ]
+  },
+  "snail_poop_sound": {
+    "subtitle": "sound_event.goo.snail_poop_sound",
+    "sounds": [
+      "minecraft:mob/chicken/plop"
+    ]
+  },
+  "snail_eat_sound": {
+    "subtitle": "sound_event.goo.snail_eat_sound",
+    "sounds": [
+      "minecraft:random/eat1",
+      "minecraft:random/eat2",
+      "minecraft:random/eat3"
+    ]
+  },
+  "primordial_warp_sound": {
+    "subtitle": "sound_event.goo.primordial_warp_sound",
+    "sounds": [
+      "minecraft:mob/endermen/portal",
+      "minecraft:mob/endermen/portal2"
     ]
   }
 }

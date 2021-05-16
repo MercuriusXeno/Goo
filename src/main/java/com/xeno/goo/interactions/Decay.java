@@ -1,11 +1,15 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.Effect;
+import net.minecraft.potion.EffectType;
+import net.minecraft.potion.Effects;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.Direction;
@@ -15,45 +19,62 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Decay
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.DECAY_GOO;
     private static final int HALF_SECOND_INTERVAL = 10;
 
     public static void registerInteractions()
     {
         // splat interactions
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "decay_shrooms", Decay::decayShrooms, Decay::isShroom);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "strip_log", Decay::stripLog, Decay::isLogWithBark);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "strip_stem", Decay::stripStem, Decay::isStemWithBark);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_grass", Decay::eatGrass, Decay::isGrassBlock);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "eat_moss", Decay::eatMoss, Decay::hasMoss);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_stone", Decay::deteriorateStone, Decay::isStone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_cobblestone", Decay::deteriorateCobblestone, Decay::isCobblestone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_sand_stone", Decay::deteriorateSandStone, Decay::isSandstone);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_gravel", Decay::deteriorateGravel, Decay::isGravel);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt, Decay::isCoarseDirt);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_dirt", Decay::deteriorateDirt, Decay::isDirt);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_nylium", Decay::deteriorateNylium, Decay::isNylium);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_mycelium", Decay::deteriorateMycelium, Decay::isMycelium);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "deteriorate_podzol", Decay::deterioratePodzol, Decay::isPodzol);
-        GooInteractions.registerSplat(Registry.DECAY_GOO.get(), "death_pulse", Decay::deathPulse, Decay::isLivingNearbyAndHalfSecondInterval);
+        GooInteractions.registerSplat(fluidSupplier.get(), "decay_shrooms", Decay::decayShrooms, Decay::isShroom);
+        GooInteractions.registerSplat(fluidSupplier.get(), "strip_log", Decay::stripLog, Decay::isLogWithBark);
+        GooInteractions.registerSplat(fluidSupplier.get(), "strip_stem", Decay::stripStem, Decay::isStemWithBark);
+        GooInteractions.registerSplat(fluidSupplier.get(), "eat_grass", Decay::eatGrass, Decay::isGrassBlock);
+        GooInteractions.registerSplat(fluidSupplier.get(), "eat_moss", Decay::eatMoss, Decay::hasMoss);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_stone", Decay::deteriorateStone, Decay::isStone);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_cobblestone", Decay::deteriorateCobblestone, Decay::isCobblestone);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_sand_stone", Decay::deteriorateSandStone, Decay::isSandstone);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_gravel", Decay::deteriorateGravel, Decay::isGravel);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_coarse_dirt", Decay::deteriorateCoarseDirt, Decay::isCoarseDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_dirt", Decay::deteriorateDirt, Decay::isDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_nylium", Decay::deteriorateNylium, Decay::isNylium);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_mycelium", Decay::deteriorateMycelium, Decay::isMycelium);
+        GooInteractions.registerSplat(fluidSupplier.get(), "deteriorate_podzol", Decay::deterioratePodzol, Decay::isPodzol);
+        GooInteractions.registerSplat(fluidSupplier.get(), "death_pulse", Decay::deathPulse, Decay::isLivingNearbyAndHalfSecondInterval);
 
-        GooInteractions.registerPassThroughPredicate(Registry.DECAY_GOO.get(), Decay::blobPassThroughPredicate);
+        GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Decay::blobPassThroughPredicate);
 
         // blob interactions
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_leaves", Decay::destroyLeaves);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bushes", Decay::destroyBushes);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_vines", Decay::destroyVines);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_grass", Decay::destroyGrass);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_crops", Decay::destroyCrops);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_cactus", Decay::destroyCactus);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_flowers", Decay::destroyFlowers);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sugar_cane", Decay::destroySugarCane);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo", Decay::destroyBamboo);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_sapling", Decay::destroySapling);
-        GooInteractions.registerBlob(Registry.DECAY_GOO.get(), "destroy_lilypad", Decay::destroyLilypad);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_leaves", Decay::destroyLeaves);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_bushes", Decay::destroyBushes);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_vines", Decay::destroyVines);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_grass", Decay::destroyGrass);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_crops", Decay::destroyCrops);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_cactus", Decay::destroyCactus);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_flowers", Decay::destroyFlowers);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_sugar_cane", Decay::destroySugarCane);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_bamboo", Decay::destroyBamboo);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_bamboo_sapling", Decay::destroyBambooSapling);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_sapling", Decay::destroySapling);
+        GooInteractions.registerBlob(fluidSupplier.get(), "destroy_lilypad", Decay::destroyLilypad);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "decay_hit", Decay::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        if (c.victim().isEntityUndead()) {
+            c.healVictim(2f);
+            GooInteractions.spawnParticles(c.blob());
+            c.spawnScatteredFloatingParticles(ParticleTypes.HAPPY_VILLAGER, 4);
+        } else {
+            c.damageVictim(2f);
+            c.knockback(1f);
+            c.applyEffect(Effects.WITHER, 120, 2);
+        }
+        return true;
     }
 
     private static boolean isMycelium(SplatContext splatContext) {

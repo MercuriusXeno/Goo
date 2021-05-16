@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 50.0,
-      "type": "goo:radiant"
-    },
-    {
       "amount": 60.0,
       "type": "goo:decay"
+    },
+    {
+      "amount": 50.0,
+      "type": "goo:radiant"
     }
   ]
 }

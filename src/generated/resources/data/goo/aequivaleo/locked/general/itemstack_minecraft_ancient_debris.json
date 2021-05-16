@@ -19,11 +19,7 @@
   "compounds": [
     {
       "amount": 120.0,
-      "type": "goo:obsidian"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "type": "goo:molten"
     },
     {
       "amount": 960.0,
@@ -32,6 +28,10 @@
     {
       "amount": 15.0,
       "type": "goo:primordial"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

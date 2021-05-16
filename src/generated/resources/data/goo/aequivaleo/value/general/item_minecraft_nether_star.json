@@ -23,11 +23,7 @@
     },
     {
       "amount": 120.0,
-      "type": "goo:weird"
-    },
-    {
-      "amount": 60.0,
-      "type": "goo:primordial"
+      "type": "goo:radiant"
     },
     {
       "amount": 1.0,
@@ -35,7 +31,11 @@
     },
     {
       "amount": 120.0,
-      "type": "goo:radiant"
+      "type": "goo:weird"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:primordial"
     }
   ]
 }

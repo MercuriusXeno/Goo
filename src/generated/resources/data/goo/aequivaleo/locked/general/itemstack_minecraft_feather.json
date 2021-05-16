@@ -1,0 +1,23 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:feather\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:feather"
+      }
+    }
+  ],
+  "compounds": {
+    "amount": 15.0,
+    "type": "goo:faunal"
+  }
+}

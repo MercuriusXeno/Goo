@@ -7,13 +7,26 @@ import com.xeno.goo.entities.LightingBug;
 import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
+import net.minecraft.entity.EntityClassification;
+import net.minecraft.entity.EntitySpawnPlacementRegistry;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.village.PointOfInterestType;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.gen.Heightmap;
+import net.minecraft.world.gen.Heightmap.Type;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.spawner.WorldEntitySpawner;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
+
+import static net.minecraft.world.spawner.WorldEntitySpawner.func_234967_a_;
 
 public class CommonSetup
 {
@@ -23,16 +36,21 @@ public class CommonSetup
 
         GooInteractions.initialize();
 
+        GooEntityClassifications.init();
+
         event.enqueueWork(() -> {
-            GlobalEntityTypeAttributes.put(Registry.GOO_BEE.get(), GooBee.setCustomAttributes().create());
-            GlobalEntityTypeAttributes.put(Registry.MUTANT_BEE.get(), MutantBee.setCustomAttributes().create());
-            GlobalEntityTypeAttributes.put(Registry.GOO_SNAIL.get(), GooSnail.setCustomAttributes().create());
-            GlobalEntityTypeAttributes.put(Registry.LIGHTING_BUG.get(), LightingBug.setCustomAttributes().create());
             PointOfInterestType.registerBlockStates(Registry.CRYSTAL_NEST_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.CRYSTAL_NEST_POI.get().blockStates);
             PointOfInterestType.registerBlockStates(Registry.GOO_TROUGH_POI.get());
             PointOfInterestType.BLOCKS_OF_INTEREST.addAll(Registry.GOO_TROUGH_POI.get().blockStates);
         });
+    }
+
+    public static void entityAttributeCreation(final EntityAttributeCreationEvent event) {
+        event.put(Registry.GOO_BEE, GooBee.setCustomAttributes().create());
+        event.put(Registry.MUTANT_BEE, MutantBee.setCustomAttributes().create());
+        event.put(Registry.GOO_SNAIL, GooSnail.setCustomAttributes().create());
+        event.put(Registry.LIGHTING_BUG, LightingBug.setCustomAttributes().create());
     }
 
     public static void loadComplete(final FMLLoadCompleteEvent event)
@@ -47,9 +65,5 @@ public class CommonSetup
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GooMod.config.client);
         GooMod.config.loadConfig(GooMod.config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));
         GooMod.config.loadConfig(GooMod.config.client, FMLPaths.CONFIGDIR.get().resolve("goo-client.toml"));
-    }
-
-    private static void toggleClientSideGooVisibilityPreference(boolean f) {
-        GooMod.config.setValuesVisibleWithoutBook(f);
     }
 }

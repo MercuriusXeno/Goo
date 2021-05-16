@@ -3,10 +3,13 @@ package com.xeno.goo.interactions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BoneMealItem;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.potion.Effects;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -14,22 +17,32 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
 
+import java.util.function.Supplier;
+
 public class Floral
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.FLORAL_GOO;
     public static void registerInteractions()
     {
         // splat interactions
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_grass", Floral::growGrass, Floral::isDirt);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
-        GooInteractions.registerSplat(Registry.FLORAL_GOO.get(), "flourish", Floral::flourish, Floral::isGrassBlock);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_grass", Floral::growGrass, Floral::isDirt);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
+        GooInteractions.registerSplat(fluidSupplier.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
+        GooInteractions.registerSplat(fluidSupplier.get(), "flourish", Floral::flourish, Floral::isGrassBlock);
 
-        GooInteractions.registerPassThroughPredicate(Registry.FLORAL_GOO.get(), Floral::blobPassThroughPredicate);
+        GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Floral::blobPassThroughPredicate);
 
         // blob interactions
-        GooInteractions.registerBlob(Registry.FLORAL_GOO.get(), "trigger_growable", Floral::growableTick);
-        GooInteractions.registerBlob(Registry.FLORAL_GOO.get(), "grow_vines", Floral::growVines);
+        GooInteractions.registerBlob(fluidSupplier.get(), "trigger_growable", Floral::growableTick);
+        GooInteractions.registerBlob(fluidSupplier.get(), "grow_vines", Floral::growVines);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "floral_hit", Floral::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+        // floral goo is inert. It doesn't do anything.
+        return false;
     }
 
     private static boolean growVines(BlobContext blobContext) {
@@ -153,11 +166,15 @@ public class Floral
     }
 
     private static void doEffects(SplatContext context) {
-        BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        if (context.isRemote()) {
+            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        }
     }
 
     private static void doEffects(BlobContext context) {
-        BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        if (context.isRemote()) {
+            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
+        }
     }
 
     private static boolean canSupportMoss(SplatContext splatContext) {

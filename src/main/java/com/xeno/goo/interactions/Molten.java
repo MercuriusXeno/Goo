@@ -1,7 +1,9 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -18,13 +20,28 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class Molten
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.MOLTEN_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
-        GooInteractions.registerSplat(Registry.MOLTEN_GOO.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
+        GooInteractions.registerSplat(fluidSupplier.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
+        GooInteractions.registerSplat(fluidSupplier.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "molten_hit", Molten::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.victim().setFire(60);
+        c.damageVictim(3f);
+        c.knockback(1f);
+        for(int i = 0; i < 4; i++) {
+            c.world().addParticle(ParticleTypes.SMOKE, c.blob().getPosX(), c.blob().getPosY(), c.blob().getPosZ(), 0d, 0.1d, 0d);
+        }
+        AudioHelper.entityAudioEvent(c.blob(), Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
+        return true;
     }
 
     private static boolean isCookable(SplatContext context) {
@@ -94,7 +111,7 @@ public class Molten
                 ((ServerWorld) context.world()).spawnParticle(ParticleTypes.SMOKE,
                         finalPos2.x, finalPos2.y, finalPos2.z, 1, 0d, 0d, 0d, 0d);
             }
-            AudioHelper.entityAudioEvent(context.splat(), Registry.MOLTEN_SIZZLE_SOUND.get(), SoundCategory.BLOCKS,
+            AudioHelper.entityAudioEvent(context.splat(), Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.BLOCKS,
                     1f, AudioHelper.PitchFormulas.HalfToOne);
         }
     }

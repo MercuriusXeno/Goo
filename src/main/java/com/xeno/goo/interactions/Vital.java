@@ -1,18 +1,47 @@
 package com.xeno.goo.interactions;
 
+import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.potion.Effects;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Vital
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.VITAL_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.VITAL_GOO.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
+        GooInteractions.registerSplat(fluidSupplier.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "vital_hit", Vital::hitEntity);
+    }
+
+    static boolean hitEntity(BlobHitContext c) {
+        if (c.victim().isEntityUndead()) {
+            // damage for undead
+            c.damageVictim(7f);
+            c.knockback(1f);
+            for(int i = 0; i < 4; i++) {
+                c.world().addParticle(ParticleTypes.SMOKE, c.blob().getPosX(), c.blob().getPosY(), c.blob().getPosZ(), 0d, 0.1d, 0d);
+            }
+            AudioHelper.entityAudioEvent(c.blob(), Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
+        } else {
+            c.healVictim(2f);
+            for(int i = 0; i < 4; i++) {
+                c.world().addParticle(ParticleTypes.HAPPY_VILLAGER, c.blob().getPosX(), c.blob().getPosY(), c.blob().getPosZ(), 0d, 0.1d, 0d);
+            }
+            c.victim().addPotionEffect(new EffectInstance(Effects.REGENERATION, 40, 2));
+        }
+        return true;
     }
 
     private static boolean isLivingInRangeAndHalfSecondPulse(SplatContext splatContext) {

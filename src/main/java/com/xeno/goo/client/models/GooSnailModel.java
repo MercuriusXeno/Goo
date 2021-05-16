@@ -52,6 +52,7 @@ public class GooSnailModel extends EntityModel<GooSnail> {
 
     @Override
     public void setRotationAngles(GooSnail entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+
         stretchRatio = entityIn.getBodyStretch();
     }
 

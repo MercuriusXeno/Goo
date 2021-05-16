@@ -14,7 +14,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
-import net.minecraft.util.IItemProvider;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -29,7 +28,7 @@ public class CrystallizedGooAbstract extends Item {
     private static final Supplier<EntityType<?>> vanillaBeeTypeSupplier =
             () -> ForgeRegistries.ENTITIES.getValue(vanillaBeeResourceLocation);
     private static final RegistryObject<CrystallizedGooAbstract> crystalBeeBreedingItemSupplier =
-            ItemsRegistry.CrystallizedGoo.get(crystalBeeBreedingItemResourceLocation);
+            ItemsRegistry.CRYSTALLIZED_GOO.get(crystalBeeBreedingItemResourceLocation);
     private final Supplier<GooFluid> gooType;
     private final Supplier<Item> crystalFrom;
     private final int gooValue;
@@ -64,7 +63,7 @@ public class CrystallizedGooAbstract extends Item {
     private ActionResultType tryBeeMutation(ItemStack stack, PlayerEntity playerIn, LivingEntity target, Hand hand) {
         if (isValidItemForMutation(stack) && isValidForMutation(target)) {
             if (!playerIn.world.isRemote) {
-                MutantBee swapBee = new MutantBee(Registry.MUTANT_BEE.get(), playerIn.world);
+                MutantBee swapBee = new MutantBee(Registry.MUTANT_BEE, playerIn.world);
                 CompoundNBT serializeBee = target.serializeNBT();
                 swapBee.writeAdditional(serializeBee);
                 serializeBee.putString("id", "goo:mutant_bee"); // overwrite the

@@ -3,10 +3,12 @@ package com.xeno.goo.interactions;
 import com.xeno.goo.entities.GooBlob;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.EntityRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -43,11 +45,6 @@ public class BlobContext
     public BlobContext withKey(String interactionKey) {
         this.interactionKey = interactionKey;
         return this;
-    }
-
-    private static BlockRayTraceResult rayTraceResultFrom(GooBlob gooBlob)
-    {
-        return new BlockRayTraceResult(gooBlob.getPositionVec(), gooBlob.sideWeLiveOn(), gooBlob.blockAttached(), false);
     }
 
     public BlockState blockState()

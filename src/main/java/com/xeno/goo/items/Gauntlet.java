@@ -12,8 +12,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.EntityRayTraceResult;
 import net.minecraft.util.math.RayTraceContext;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -102,6 +104,7 @@ public class Gauntlet extends GauntletAbstraction
         if (ticksHeld(timeLeft) >= RADIAL_MENU_DELAY) {
             return;
         }
+        // try an entity ray trace first, we want to prioritize entity right clicks over blocks.
         BlockRayTraceResult trace = rayTrace(worldIn, (ServerPlayerEntity) player, RayTraceContext.FluidMode.ANY);
         if (GooHandlingHelper.tryBlockInteraction(new ItemUseContext((ServerPlayerEntity)player,
                 player.getActiveHand(), trace))) {

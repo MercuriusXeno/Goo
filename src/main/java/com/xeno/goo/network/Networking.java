@@ -73,6 +73,13 @@ public class Networking {
                 .decoder(CrystalProgressTickPacket::new)
                 .consumer(CrystalProgressTickPacket::handle)
                 .add();
+
+
+        INSTANCE.messageBuilder(ShrinkPacket.class, nextID())
+                .encoder(ShrinkPacket::toBytes)
+                .decoder(ShrinkPacket::new)
+                .consumer(ShrinkPacket::handle)
+                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
@@ -99,6 +106,10 @@ public class Networking {
         if (player.world.isRemote()) {
             INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
         }
+    }
+
+    public static void send(PacketDistributor.PacketTarget target, Object msg) {
+        INSTANCE.send(target, msg);
     }
 
     public static void syncGooValuesForPlayer(ServerPlayerEntity player)

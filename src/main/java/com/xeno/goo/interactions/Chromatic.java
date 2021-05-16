@@ -2,28 +2,49 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.MaterialColor;
+import net.minecraft.entity.passive.SheepEntity;
 import net.minecraft.item.DyeColor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class Chromatic
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.CHROMATIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_wool", Chromatic::dyeWool,Chromatic::isWool);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder, Chromatic::isConcretePowder);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_concrete", Chromatic::dyeConcrete, Chromatic::isConcrete);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_terracotta", Chromatic::dyeTerracotta, Chromatic::isTerracotta);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
-        GooInteractions.registerSplat(Registry.CHROMATIC_GOO.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_wool", Chromatic::dyeWool,Chromatic::isWool);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder, Chromatic::isConcretePowder);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_concrete", Chromatic::dyeConcrete, Chromatic::isConcrete);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_terracotta", Chromatic::dyeTerracotta, Chromatic::isTerracotta);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
+        GooInteractions.registerSplat(fluidSupplier.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
+        GooInteractions.registerSplat(fluidSupplier.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "chromatic_hit", Chromatic::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext blobHitContext) {
+        if (blobHitContext.victim() instanceof SheepEntity) {
+            SheepEntity sheep = ((SheepEntity)blobHitContext.victim());
+            DyeColor sheepColor = sheep.getFleeceColor();
+            DyeColor color = sheepColor;
+            while(color == sheepColor) {
+                color = SheepEntity.getRandomSheepColor(blobHitContext.world().rand);
+            }
+
+            sheep.setFleeceColor(color);
+            return true;
+        }
+        return false;
     }
 
     private final static Map<MaterialColor, MaterialColor> cycleMap = new HashMap<>();

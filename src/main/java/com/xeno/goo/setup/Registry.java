@@ -11,14 +11,24 @@ import com.xeno.goo.entities.*;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.*;
+import net.minecraft.block.DispenserBlock;
+import net.minecraft.dispenser.DefaultDispenseItemBehavior;
+import net.minecraft.dispenser.IBlockSource;
+import net.minecraft.dispenser.IDispenseItemBehavior;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;
+import net.minecraft.potion.Effect;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.village.PointOfInterestType;
@@ -27,14 +37,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class Registry {
     public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new TreeMap<>(Comparator.comparing(ResourceLocation::getPath));
+
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
@@ -51,6 +59,9 @@ public class Registry {
         FLUIDS.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         BlocksRegistry.initialize();
+
+
+        // spawn egg relies on entities registered.
         ItemsRegistry.initialize();
 
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
@@ -82,32 +93,60 @@ public class Registry {
             .build("goo_splat")
     );
 
-    public static final RegistryObject<EntityType<GooBee>> GOO_BEE = ENTITIES.register("goo_bee",
-            () -> EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
-                    .size(0.7f, 0.6f) // actual size is halved by being dwarfism
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("goo_bee")
-    );
 
-    public static final RegistryObject<EntityType<MutantBee>> MUTANT_BEE = ENTITIES.register("mutant_bee",
-            () -> EntityType.Builder.<MutantBee>create(MutantBee::new, EntityClassification.CREATURE)
-                    .size(0.7f, 0.6f)
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("mutant_bee")
-    );
+    public static final EntityType<GooBee> GOO_BEE;
+    public static final EntityType<MutantBee> MUTANT_BEE;
+    public static final EntityType<GooSnail> GOO_SNAIL;
+    static {
+        ENTITIES.register("goo_bee", makeSupplier(GOO_BEE = EntityType.Builder.<GooBee>create(GooBee::new, EntityClassification.CREATURE)
+                .size(0.7f, 0.6f) // actual size is halved by being dwarfism
+                .setTrackingRange(64)
+                .setUpdateInterval(1)
+                .setShouldReceiveVelocityUpdates(true)
+                .build("goo_bee")
+        ));
+        ENTITIES.register("mutant_bee",
+                makeSupplier(MUTANT_BEE = EntityType.Builder.<MutantBee>create(MutantBee::new, EntityClassification.CREATURE)
+                        .size(0.7f, 0.6f)
+                        .setTrackingRange(64)
+                        .setUpdateInterval(1)
+                        .setShouldReceiveVelocityUpdates(true)
+                        .build("mutant_bee")
+        ));
+        ENTITIES.register("goo_snail", makeSupplier(GOO_SNAIL = EntityType.Builder.<GooSnail>create(GooSnail::new, EntityClassification.CREATURE)
+                .size(0.375f, 0.75f)
+                .setTrackingRange(64)
+                .setUpdateInterval(1)
+                .setShouldReceiveVelocityUpdates(true)
+                .build("goo_snail")
+        ));
+    }
 
-    public static final RegistryObject<EntityType<GooSnail>> GOO_SNAIL = ENTITIES.register("goo_snail",
-            () -> EntityType.Builder.<GooSnail>create(GooSnail::new, EntityClassification.CREATURE)
-                    .size(0.375f, 0.75f)
-                    .setTrackingRange(64)
-                    .setUpdateInterval(1)
-                    .setShouldReceiveVelocityUpdates(true)
-                    .build("goo_snail")
-    );
+    private static Supplier<EntityType<?>> makeSupplier(EntityType<?> entityType) {
+        return () -> entityType;
+    }
+
+    public static final IDispenseItemBehavior DISPENSE_EGG = new DefaultDispenseItemBehavior() {
+        public ItemStack dispenseStack(IBlockSource source, ItemStack stack) {
+            Direction direction = source.getBlockState().get(DispenserBlock.FACING);
+            EntityType<?> entitytype = ((SpawnEggItem)stack.getItem()).getType(stack.getTag());
+            entitytype.spawn(source.getWorld(), stack, null, source.getBlockPos().offset(direction), SpawnReason.DISPENSER, direction != Direction.UP, false);
+            stack.shrink(1);
+            return stack;
+        }
+    };
+
+    public static final List<SpawnEggItem> EGGS = new ArrayList<>();
+
+    // register eggs!
+    public static Supplier<SpawnEggItem> makeEgg(EntityType<?> entity, int primary, int secondary) {
+        return () -> {
+            SpawnEggItem egg = new SpawnEggItem(entity, primary, secondary, new Item.Properties().group(GooMod.ITEM_GROUP));
+            DispenserBlock.registerDispenseBehavior(egg, DISPENSE_EGG);
+            EGGS.add(egg);
+            return egg;
+        };
+    }
 
     public static final RegistryObject<EntityType<LightingBug>> LIGHTING_BUG = ENTITIES.register("lighting_bug",
             () -> EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
@@ -131,9 +170,12 @@ public class Registry {
     public static final RegistryObject<SoundEvent> FREEZE_SOUND = SOUNDS.register("freeze_water_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "freeze_water_sound")));
     public static final RegistryObject<SoundEvent> TWITTERPATE_ANIMAL_SOUND = SOUNDS.register("twitterpate_animal_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "twitterpate_animal_sound")));
     public static final RegistryObject<SoundEvent> WEIRD_TELEPORT_SOUND = SOUNDS.register("weird_teleport_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "weird_teleport_sound")));
-    public static final RegistryObject<SoundEvent> MOLTEN_SIZZLE_SOUND = SOUNDS.register("molten_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "molten_sizzle_sound")));
+    public static final RegistryObject<SoundEvent> GOO_SIZZLE_SOUND = SOUNDS.register("goo_sizzle_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_sizzle_sound")));
     public static final RegistryObject<SoundEvent> CRYSTALLIZE_SOUND = SOUNDS.register("crystallize_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "crystallize_sound")));
     public static final RegistryObject<SoundEvent> GOO_BEE_SHATTER_SOUND = SOUNDS.register("goo_bee_shatter_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_bee_shatter_sound")));
+    public static final RegistryObject<SoundEvent> SNAIL_POOP_SOUND = SOUNDS.register("snail_poop_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_poop_sound")));
+    public static final RegistryObject<SoundEvent> SNAIL_EAT_SOUND = SOUNDS.register("snail_eat_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "snail_eat_sound")));
+    public static final RegistryObject<SoundEvent> PRIMORDIAL_WARP_SOUND = SOUNDS.register("primordial_warp_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "primordial_warp_sound")));
 
     // Tile registrations
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
@@ -169,7 +211,6 @@ public class Registry {
     public static final RegistryObject<GooFluid> METAL_GOO = registerGooFluid("metal_goo", Resources.Still.METAL_GOO, Resources.Flowing.METAL_GOO, Resources.Icon.METAL_GOO, 0.012f, 0);
     public static final RegistryObject<GooFluid> MOLTEN_GOO = registerGooFluid("molten_goo", Resources.Still.MOLTEN_GOO, Resources.Flowing.MOLTEN_GOO, Resources.Icon.MOLTEN_GOO, 0.013f, 15);
     public static final RegistryObject<GooFluid> PRIMORDIAL_GOO = registerGooFluid("primordial_goo", Resources.Still.PRIMORDIAL_GOO, Resources.Flowing.PRIMORDIAL_GOO, Resources.Icon.PRIMORDIAL_GOO, 0.014f, 15);
-    public static final RegistryObject<GooFluid> OBSIDIAN_GOO = registerGooFluid("obsidian_goo", Resources.Still.OBSIDIAN_GOO, Resources.Flowing.OBSIDIAN_GOO, Resources.Icon.OBSIDIAN_GOO, 0.015f, 0);
     public static final RegistryObject<GooFluid> RADIANT_GOO = registerGooFluid("radiant_goo", Resources.Still.RADIANT_GOO, Resources.Flowing.RADIANT_GOO, Resources.Icon.RADIANT_GOO, 0.016f, 15);
     public static final RegistryObject<GooFluid> REGAL_GOO = registerGooFluid("regal_goo", Resources.Still.REGAL_GOO, Resources.Flowing.REGAL_GOO, Resources.Icon.REGAL_GOO, 0.017f, 0);
     public static final RegistryObject<GooFluid> SLIME_GOO = registerGooFluid("slime_goo", Resources.Still.SLIME_GOO, Resources.Flowing.SLIME_GOO, Resources.Icon.SLIME_GOO, 0.018f, 0);
@@ -201,7 +242,6 @@ public class Registry {
     public static final RegistryObject<GooCompoundType> LOGIC = registerCompound("logic", LOGIC_GOO);
     public static final RegistryObject<GooCompoundType> METAL = registerCompound("metal", METAL_GOO);
     public static final RegistryObject<GooCompoundType> MOLTEN = registerCompound("molten", MOLTEN_GOO);
-    public static final RegistryObject<GooCompoundType> OBSIDIAN = registerCompound("obsidian", OBSIDIAN_GOO);
     public static final RegistryObject<GooCompoundType> PRIMORDIAL = registerCompound("primordial", PRIMORDIAL_GOO);
     public static final RegistryObject<GooCompoundType> RADIANT = registerCompound("radiant", RADIANT_GOO);
     public static final RegistryObject<GooCompoundType> REGAL = registerCompound("regal", REGAL_GOO);
@@ -248,8 +288,6 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> METAL_LANDING_GOO_PARTICLE = PARTICLES.register("metal_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_FALLING_GOO_PARTICLE = PARTICLES.register("molten_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_LANDING_GOO_PARTICLE = PARTICLES.register("molten_landing_goo", () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_FALLING_GOO_PARTICLE = PARTICLES.register("obsidian_falling_goo", () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_LANDING_GOO_PARTICLE = PARTICLES.register("obsidian_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_FALLING_GOO_PARTICLE = PARTICLES.register("primordial_falling_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_LANDING_GOO_PARTICLE = PARTICLES.register("primordial_landing_goo", () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> RADIANT_FALLING_GOO_PARTICLE = PARTICLES.register("radiant_falling_goo", () -> new BasicParticleType(false));
@@ -279,7 +317,6 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> LOGIC_VAPOR_PARTICLE = PARTICLES.register("logic_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> METAL_VAPOR_PARTICLE = PARTICLES.register("metal_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> MOLTEN_VAPOR_PARTICLE = PARTICLES.register("molten_vapor",  () -> new BasicParticleType(false));
-    public static final RegistryObject<BasicParticleType> OBSIDIAN_VAPOR_PARTICLE = PARTICLES.register("obsidian_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> PRIMORDIAL_VAPOR_PARTICLE = PARTICLES.register("primordial_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> RADIANT_VAPOR_PARTICLE = PARTICLES.register("radiant_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> REGAL_VAPOR_PARTICLE = PARTICLES.register("regal_vapor",  () -> new BasicParticleType(false));
@@ -303,7 +340,6 @@ public class Registry {
         fallingParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(METAL_GOO.get(), METAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_FALLING_GOO_PARTICLE.get());
-        fallingParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_FALLING_GOO_PARTICLE.get());
         fallingParticleLookupCache.put(REGAL_GOO.get(), REGAL_FALLING_GOO_PARTICLE.get());
@@ -328,7 +364,6 @@ public class Registry {
         vaporParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(METAL_GOO.get(), METAL_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_VAPOR_PARTICLE.get());
-        vaporParticleLookupCache.put(OBSIDIAN_GOO.get(), OBSIDIAN_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(REGAL_GOO.get(), REGAL_VAPOR_PARTICLE.get());

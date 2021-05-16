@@ -278,7 +278,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     private static void buildAndPushTransformationMapping(ResourceLocation k, Supplier<GooFluid> v) {
         Fluid f = v.get();
         Map<Item, CrystallizedGooAbstract> result = new HashMap<>();
-        ItemsRegistry.CrystallizedGoo.values().stream()
+        ItemsRegistry.CRYSTALLIZED_GOO.values().stream()
                 .filter((crystal) -> crystal.get().gooType().equals(f))
                 .forEach((crystal) -> result.put(crystal.get().source(), crystal.get()));
 
@@ -486,16 +486,11 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
         FluidStack ret = FluidStack.EMPTY;
         for (int i = 0, e = goo.getTanks(); i < e; ++i) {
-            FluidStack tank = goo.getFluidInTankInternal(0);
+            FluidStack tank = goo.getFluidInTankInternal(i);
             if (tank.getAmount() > ret.getAmount())
                 ret = tank;
         }
         return ret;
-    }
-
-    public int getTotalGoo() {
-
-        return goo.getTotalContents();
     }
 
     public void onContentsChanged() {
@@ -555,11 +550,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         world.addEntity(itemEntity);
     }
 
-    public int getSpaceRemaining()
-    {
-        return goo.getRemainingCapacity();
-    }
-
     // moved this from renderer to here so that both can utilize the same
     // offset logic (and also renderer is client code, not the same in reverse)
     public static final float FLUID_VERTICAL_OFFSET = 0.01626f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
@@ -615,7 +605,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         // The purpose here is to scale the contents of the bulb so that amounts
         // less than a threshold are made larger than they should be, so you can see them and target
         // them easily even though there's not a lot.
-        // It's currently busted and doing dumb stuff.
         float scale = 1f;
         float remainder = 1f;
         float diminished = 0f;
@@ -783,10 +772,6 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         }
     }
 
-    public FluidStack crystalProgress() {
-        return crystalProgress;
-    }
-
     public ItemStack crystal() {
         return crystal;
     }
@@ -801,13 +786,5 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
 
     public void updateCrystalTicks(int progressTicks) {
         this.crystalProgressTicks = progressTicks;
-    }
-
-    public int Increment() {
-        return lastIncrement;
-    }
-
-    public Fluid crystalFluid() {
-        return crystalFluid;
     }
 }

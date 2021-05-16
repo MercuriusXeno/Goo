@@ -1,131 +1,181 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LeavesBlock;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.item.BlockItem;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.loot.LootContext;
 import net.minecraft.loot.LootParameters;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.RayTraceContext;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.*;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Energetic
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.ENERGETIC_GOO;
     private static final int bedrockHardness = -1;
     private static final int ironHarvestLevel = 2;
     private static final float particleChance = 0.33f;
-
+    private static final ItemStack mockPick = new ItemStack(Items.IRON_PICKAXE, 1);
 
     public static void registerInteractions()
     {
         GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
+
+        GooInteractions.registerBlobHit(Registry.ENERGETIC_GOO.get(), "energetic_hit", Energetic::hitEntity);
     }
 
-    private static boolean miningBlast(SplatContext context)
-    {
-        // in a radius centered around the block with a spherical distance of [configurable] or less
-        // and a harvest level of wood (stone type blocks only) only
-        // destroy blocks in the radius and yield full drops.
-        // double radius = GooMod.config.energeticMiningBlastRadius();
-        int radius = GooMod.config.energeticMiningBlastDistance();
-        List<BlockPos> blockPosList = blockPositionsByCuboid(context.blockPos(), radius);
+    private static boolean hitEntity(BlobHitContext c) {
+        // note here using victim center as the block center, the origin of the blast, makes a bit of sense when
+        // doing entity collisions. We're making the entity we hit explode, in a sense.
+        return miningBlast(c.blob().getPosition(), c.world(), c.victimCenterVec(), c.owner());
+    }
 
-        blockPosList.forEach((p) -> tryMiningBlast(p, context));
-        // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
-        // always hit at least one visual here.
-        ((ServerWorld)context.world()).spawnParticle(ParticleTypes.EXPLOSION, context.blockCenterVec().x,
-                context.blockCenterVec().y, context.blockCenterVec().z, 1, 0d, 0d, 0d, 0d);
-        AudioHelper.headlessAudioEvent(context.world(), context.blockPos(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS,
-                3.0f, AudioHelper.PitchFormulas.HalfToOne);
+    private static boolean miningBlast(SplatContext c)
+    {
+        return miningBlast(c.blockPos(), c.world(), c.blockCenterVec(), c.owner());
+    }
+
+    private static DamageSource mobDamage(LivingEntity owner) {
+        return DamageSource.causeMobDamage(owner);
+    }
+
+    private static DamageSource damageSource(LivingEntity owner) {
+        if (owner == null) {
+            return DamageSource.GENERIC;
+        }
+        if (owner instanceof PlayerEntity) {
+            return DamageSource.causePlayerDamage((PlayerEntity)owner);
+        }
+        return mobDamage(owner);
+    }
+
+
+    private static boolean miningBlast(BlockPos blockPos, World world, Vector3d blockCenter, LivingEntity owner) {
+
+        miningBlastOnBlocks(blockPos, world, blockCenter);
+        miningBlastOnEntities(blockCenter, world, owner);
+
+        doMinimumParticleAndAudio(blockPos, world, blockCenter);
 
         return true;
     }
 
-    private static void tryMiningBlast(BlockPos blockPos, SplatContext context)
+    private static void miningBlastOnEntities(Vector3d gooCenter, World world, LivingEntity owner) {
+        int radius = GooMod.config.energeticMiningBlastDistance();
+        Vector3d cubeMin = gooCenter.subtract(radius, radius, radius);
+        Vector3d cubeMax = gooCenter.add(radius, radius, radius);
+        AxisAlignedBB bb = new AxisAlignedBB(cubeMin, cubeMax);
+        List<LivingEntity> entitiesInBounds = world.getEntitiesWithinAABB(LivingEntity.class, bb, null);
+
+        entitiesInBounds.forEach(l -> hurtEntity(l, radius, gooCenter, owner));
+    }
+
+    public static double getDistanceSq(Vector3d targetCenter, double targetSize, Vector3d vec) {
+
+        double d0 = targetCenter.x - vec.x;
+        double d1 = targetCenter.y - vec.y;
+        double d2 = targetCenter.z - vec.z;
+        return (d0 * d0 + d1 * d1 + d2 * d2) - (targetSize * targetSize);
+    }
+
+    private static void hurtEntity(LivingEntity livingEntity, int radius, Vector3d gooCenter, LivingEntity owner) {
+        // test distance and abort if distance breaks threshold
+        double radiusSq = radius * radius;
+        AxisAlignedBB bb = livingEntity.getBoundingBox();
+        double volume = bb.getXSize() * bb.getYSize() * bb.getZSize();
+        double emulatedEntityRadius = Math.pow(volume, 1d / 3d);
+        double distanceSq = getDistanceSq(livingEntity.getBoundingBox().getCenter(), emulatedEntityRadius, gooCenter);
+        if (distanceSq > radiusSq) {
+            return;
+        }
+        double damageFactor = Math.min(1d, ((radius - distanceSq) + 1d) / radius);
+        float baseDamage = 5f;
+        float damage = (float)Math.ceil(damageFactor * baseDamage);
+
+        livingEntity.attackEntityFrom(damageSource(owner), damage);
+    }
+
+    private static void doMinimumParticleAndAudio(BlockPos pos, World world, Vector3d vec) {
+        // it's possible for the explosion to not *do* anything, and it looks really bizarre when there's no visual.
+        // always hit at least one visual here.
+        if (world instanceof ServerWorld) {
+            ((ServerWorld) world).spawnParticle(ParticleTypes.EXPLOSION, vec.x, vec.y, vec.z,
+                    1, 0d, 0d, 0d, 0d);
+        }
+        AudioHelper.headlessAudioEvent(world, pos, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS,
+                3.0f, AudioHelper.PitchFormulas.HalfToOne);
+    }
+
+    private static void miningBlastOnBlocks(BlockPos blockPos, World world, Vector3d blockCenterVec ) {
+
+        int radius = GooMod.config.energeticMiningBlastDistance();
+        List<BlockPos> blockPosList = blockPositionsByCuboid(blockPos, radius);
+        blockPosList.forEach((p) -> tryMiningBlast(p, world, blockCenterVec));
+    }
+
+    private static void tryMiningBlast(BlockPos blockPos, World world, Vector3d blockCenterVec)
     {
-        BlockState state = context.world().getBlockState(blockPos);
+        BlockState state = world.getBlockState(blockPos);
         // we don't break blocks with tile entities, sorry not sorry
         if (state.getBlock().hasTileEntity(state)) {
             return;
         }
         Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
 
-        if (isExplosionOccluded(dropPos, blockPos, state, context)) {
+        if (isExplosionOccluded(dropPos, blockPos, state, world, blockCenterVec)) {
             return;
         }
 
-        if (state.getHarvestLevel() <= ironHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness) {
-            if ((context.world() instanceof ServerWorld)) {
+        if (state.getHarvestLevel() <= ironHarvestLevel && state.getBlockHardness(world, blockPos) != bedrockHardness) {
+            if ((world instanceof ServerWorld)) {
                 // figure out drops for this block
-                LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
+                LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld)world);
                 List<ItemStack> drops = state.getDrops(lootBuilder
-                        .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
-                        .withParameter(LootParameters.TOOL, ItemStack.EMPTY)
+                        .withParameter(LootParameters.ORIGIN, blockCenterVec)
+                        .withParameter(LootParameters.TOOL, mockPick)
                 );
-                // if the drops don't resemble the block, we presume there's some fortune potential and refuse to break it
-                // the point of this is to make it so that we only break things that return their respective block.
-                // Diamonds, coal, lapis, emeralds, glowstone dust and other goodies will be left for fortune.
-                if (!validDropsForMiningBlast(drops, state)) {
-                    return;
-                }
                 // throttle particles to look a bit less dense.
                 // spawning roughly a 1/3 chance
-                if (context.world().rand.nextFloat() <= particleChance) {
-                    ((ServerWorld) context.world()).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
+                if (world.rand.nextFloat() <= particleChance) {
+                    ((ServerWorld) world).spawnParticle(ParticleTypes.EXPLOSION, dropPos.x, dropPos.y, dropPos.z, 1, 0d, 0d, 0d, 0d);
                 }
-                drops.forEach((d) -> context.world().addEntity(
-                        new ItemEntity(context.world(), dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
+                drops.forEach((d) -> world.addEntity(
+                        new ItemEntity(world, dropPos.getX(), dropPos.getY(), dropPos.getZ(), d)
                 ));
-                context.world().removeBlock(blockPos, false);
+                world.removeBlock(blockPos, false);
             }
         }
     }
 
-    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, SplatContext context) {
+    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state,
+            World world, Vector3d blockCenterVec) {
         // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
         // context center in this case is the block we're touching, not the block we exist in.
         // if this changes, the block sorting function needs to match whatever this is doing.
-        RayTraceContext rtc = new RayTraceContext(context.blockCenterVec(), dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
-        BlockRayTraceResult result = context.world().rayTraceBlocks(rtc);
+        RayTraceContext rtc = new RayTraceContext(blockCenterVec, dropPos, RayTraceContext.BlockMode.COLLIDER, RayTraceContext.FluidMode.ANY, null);
+        BlockRayTraceResult result = world.rayTraceBlocks(rtc);
         if (result.getType() != RayTraceResult.Type.MISS) {
             // we intersected with a block that isn't the one we're trying to break
             if (!result.getPos().equals(blockPos)) {
                 return state.getMaterial().blocksMovement() && !(state.getBlock() instanceof LeavesBlock);
             }
-        }
-
-        return false;
-    }
-
-    private static boolean validDropsForMiningBlast(List<ItemStack> drops, BlockState state)
-    {
-        // leaves are fine lol
-        if (state.getBlock() instanceof LeavesBlock) {
-            return true;
-        }
-
-        // singleton drops indicate a "normal" block drop. Anything else we reject.
-        if (drops.size() != 1) {
-            return false;
-        }
-        // now analyze our one drop. Is it a block? If it's a block, we're cool with it.
-        // but we reject "item" drops on the off chance it could benefit from fortune.
-        if (drops.get(0).getItem() instanceof BlockItem) {
-            return true;
         }
 
         return false;
@@ -146,26 +196,6 @@ public class Energetic
         result.sort((bp1, bp2) -> compareManhattanDistance(blockPos, bp1, bp2));
         return result;
     }
-
-//    private static List<BlockPos> blockPositionsByRadius(Vector3d center, BlockPos blockPos, double radius)
-//    {
-//        int ceilingRadius = (int)Math.ceil(radius);
-//        List<BlockPos> result = new ArrayList<>();
-//        for(int x = -ceilingRadius; x <= ceilingRadius; x++) {
-//            for(int y = -ceilingRadius; y <= ceilingRadius; y++) {
-//                for(int z = -ceilingRadius; z <= ceilingRadius; z++) {
-//                    BlockPos match = blockPos.add(x, y, z);
-//                    Vector3d matchCenter = Vector3d.copy(match).add(0.5d, 0.5d, 0.5d);
-//                    if (center.distanceTo(matchCenter) <= radius) {
-//                        result.add(match);
-//                    }
-//                }
-//            }
-//        }
-//
-//        result.sort((bp1, bp2) -> vector3dComparator(blockPos, bp1, bp2));
-//        return result;
-//    }
 
     private static int compareManhattanDistance(BlockPos blockPos, BlockPos bp1, BlockPos bp2)
     {

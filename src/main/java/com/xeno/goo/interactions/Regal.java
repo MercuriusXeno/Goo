@@ -1,13 +1,14 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.loot.LootContext;
@@ -18,12 +19,13 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Regal
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.REGAL_GOO;
     private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
@@ -32,7 +34,31 @@ public class Regal
     }
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.REGAL_GOO.get(), "regal_breaker", Regal::breaker, Regal::isValidForHarvest);
+        GooInteractions.registerSplat(fluidSupplier.get(), "regal_breaker", Regal::breaker, Regal::isValidForHarvest);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "regal_hit", Regal::entityHit);
+    }
+
+    private static boolean entityHit(BlobHitContext c) {
+
+        c.damageVictim(5f);
+        // find nearby revenge target
+        List<LivingEntity> entities = c.world().getEntitiesWithinAABB(LivingEntity.class, c.victim().getBoundingBox().grow(12), e -> e != c.victim() && !(e instanceof PlayerEntity));
+        if (!entities.isEmpty()) {
+            LivingEntity closest = entities.stream().min((e1, e2) -> findNearestEntity(c.victim(), e1, e2)).get();
+            c.victim().setRevengeTarget(closest);
+            c.victim().setAttackingPlayer(null);
+            c.victim().setLastAttackedEntity(closest);
+        }
+
+        c.knockback(1f);
+        return true;
+    }
+
+    private static int findNearestEntity(LivingEntity victim, LivingEntity livingEntity, LivingEntity livingEntity1) {
+        float distance1 = livingEntity.getDistance(victim);
+        float distance2 = livingEntity1.getDistance(victim);
+        return Float.compare(distance1, distance2);
     }
 
     private static boolean isValidForHarvest(SplatContext context) {

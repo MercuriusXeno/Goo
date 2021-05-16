@@ -77,7 +77,7 @@ public class CrystalNest extends ContainerBlock {
         TileEntity e = world.getTileEntity(pos);
         if (e instanceof CrystalNestTile) {
             ((CrystalNestTile) e).resetGooAmount();;
-            spawnAsEntity(world, pos, new ItemStack(ItemsRegistry.CrystalComb.get(), 3));
+            spawnAsEntity(world, pos, new ItemStack(ItemsRegistry.CRYSTAL_COMB.get(), 3));
         }
     }
 

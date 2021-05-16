@@ -2,6 +2,7 @@ package com.xeno.goo;
 
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
+import com.xeno.goo.shrink.ShrinkImpl;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.DistExecutor;
@@ -40,6 +41,7 @@ public class GooMod
     private void initializeEventListeners()
     {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::entityAttributeCreation);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::loadComplete);
     }
 

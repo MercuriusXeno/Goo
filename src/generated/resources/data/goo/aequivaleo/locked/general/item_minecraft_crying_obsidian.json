@@ -18,12 +18,16 @@
   ],
   "compounds": [
     {
-      "amount": 30.0,
-      "type": "goo:weird"
+      "amount": 480.0,
+      "type": "goo:molten"
     },
     {
-      "amount": 960.0,
-      "type": "goo:obsidian"
+      "amount": 180.0,
+      "type": "goo:crystal"
+    },
+    {
+      "amount": 30.0,
+      "type": "goo:weird"
     }
   ]
 }

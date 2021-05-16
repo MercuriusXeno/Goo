@@ -48,7 +48,7 @@ public class Containment extends Enchantment
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(ItemsRegistry.GooBulb.get());
+        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(ItemsRegistry.GOO_BULB.get());
     }
 
     @Override
@@ -57,8 +57,6 @@ public class Containment extends Enchantment
         return canApply(stack);
     }
 
-    // I don't get why this should have to be true, but trying something
-    // TODO experimental
     @Override
     public boolean canGenerateInLoot()
     {

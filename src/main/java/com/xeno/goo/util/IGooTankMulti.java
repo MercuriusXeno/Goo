@@ -7,22 +7,12 @@ import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.function.IntFunction;
 import java.util.function.IntSupplier;
 
 public abstract class IGooTankMulti extends IGooTank {
-
-	protected int amount = 0;
-
-	protected FluidStack[] tanks;
-	protected HashMap<Fluid, FluidStack> contents = new HashMap<>();
-
-	protected IGooTankMulti(@Nonnull IntSupplier capacity, boolean lockedTanks) {
-
-		super(capacity, lockedTanks);
-	}
-
-	protected abstract int getTankCount();
 
 	/**
 	 * Helper method to handle saving the true fluid, rather than associating random data with the Empty fluid when amount <= 0
@@ -39,6 +29,51 @@ public abstract class IGooTankMulti extends IGooTank {
 			nbt.put("Tag", tank.getTag());
 		}
 		return nbt;
+	}
+
+	protected int amount = 0;
+
+	protected FluidStack[] tanks;
+	protected IdentityHashMap<Fluid, FluidStack> contents = new IdentityHashMap<>();
+
+	protected IGooTankMulti(@Nonnull IntSupplier capacity, boolean lockedTanks) {
+
+		super(capacity, lockedTanks);
+	}
+
+	protected abstract int getTankCount();
+
+	protected int setTanks(int size, IntFunction<FluidStack> tankReader) {
+
+		return setTanks(size, Integer.MAX_VALUE, 0, tankReader);
+	}
+
+	protected int setTanks(int size, int maxSize, IntFunction<FluidStack> tankReader) {
+
+		return setTanks(size, maxSize, 0, tankReader);
+	}
+
+	protected int setTanks(int inSize, int maxSize, int minSize, IntFunction<FluidStack> tankReader) {
+
+		LinkedList<FluidStack> tanks = new LinkedList<>();
+		IdentityHashMap<Fluid, FluidStack> contents = new IdentityHashMap<>();
+
+		int count = 0, amt = 0;
+
+		for (int i = 0; (i < inSize) & (count < maxSize); ++i) {
+			FluidStack tank = tankReader.apply(i);
+			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
+				contents.put(tank.getRawFluid(), tank);
+				tanks.add(tank);
+				amt += tank.getAmount();
+				++count;
+			}
+		}
+
+		amount = amt;
+		this.tanks = tanks.toArray(new FluidStack[Math.max(count, minSize)]);
+		this.contents = contents;
+		return count;
 	}
 
 	@Override
@@ -96,6 +131,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		final int accept = Math.min(resource.getAmount(), tank.getAmount());
 		if (accept > 0 && action.execute()) {
+			amount -= accept;
 			tank.shrink(accept);
 			onChange();
 		}
@@ -130,6 +166,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		final int accept = Math.min(maxDrain, tankAmt);
 		if (accept > 0 && action.execute()) {
+			amount -= accept;
 			tank.shrink(accept);
 			onChange();
 		}

@@ -7,6 +7,7 @@ import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
@@ -39,7 +40,7 @@ public class ItemsProvider extends ItemModelProvider {
     }
 
     private void registerGooCrystals() {
-        ItemsRegistry.CrystallizedGoo.forEach(this::generateModelForCrystallizedGoo);
+        ItemsRegistry.CRYSTALLIZED_GOO.forEach(this::generateModelForCrystallizedGoo);
     }
 
     private void generateModelForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> itemRegistryObject) {
@@ -53,38 +54,38 @@ public class ItemsProvider extends ItemModelProvider {
 
     private void registerTrough()
     {
-        withExistingParent(ItemsRegistry.Trough.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(ItemsRegistry.TROUGH.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerBulbs()
     {
-        withExistingParent(ItemsRegistry.GooBulb.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(ItemsRegistry.GOO_BULB.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerMixer()
     {
-        withExistingParent(ItemsRegistry.Mixer.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerCrucible()
     {
-        withExistingParent(ItemsRegistry.Crucible.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(ItemsRegistry.CRUCIBLE.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerBasin()
     {
-        withExistingParent(ItemsRegistry.Basin.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_basin"));
+        withExistingParent(ItemsRegistry.BASIN.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_basin"));
     }
 
     private void registerGauntlet()
     {
         ResourceLocation heldLiquid = new ResourceLocation(GooMod.MOD_ID, Gauntlet.HELD_LIQUID_TAG_NAME);
-        ItemModelBuilder builder = withExistingParent(Objects.requireNonNull(ItemsRegistry.Gauntlet.get().getRegistryName()).getPath(), new ResourceLocation(GooMod.MOD_ID, "template_gauntlet_held"));
+        ItemModelBuilder builder = withExistingParent(Objects.requireNonNull(ItemsRegistry.GAUNTLET.get().getRegistryName()).getPath(), new ResourceLocation(GooMod.MOD_ID, "template_gauntlet_held"));
         Registry.FluidSuppliers.forEach((k, v) -> registerFluidOverrideForGauntlet(k, v, builder, heldLiquid));
     }
 
     private void registerSnail() {
-        withExistingParent(ItemsRegistry.Snail.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "snail_item"));
+        withExistingParent(ItemsRegistry.SNAIL.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "snail_item"));
     }
 
     private void registerFluidOverrideForGauntlet(ResourceLocation k, Supplier<GooFluid> v, ItemModelBuilder builder, ResourceLocation predicateName) {
@@ -100,25 +101,25 @@ public class ItemsProvider extends ItemModelProvider {
 
     private void registerGasket()
     {
-        singleTexture(ItemsRegistry.Gasket.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+        singleTexture(ItemsRegistry.GASKET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/gasket"));
     }
 
     private void registerCrystalComb()
     {
-        singleTexture(ItemsRegistry.CrystalComb.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+        singleTexture(ItemsRegistry.CRYSTAL_COMB.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/crystal_comb"));
     }
 
     private void registerGooAndYou()
     {
-        singleTexture(ItemsRegistry.GooAndYou.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+        singleTexture(ItemsRegistry.GOO_AND_YOU.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/goo_and_you"));
     }
 
     private void registerSpawnEggs() {
-        withExistingParent(ItemsRegistry.GooBeeSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
-        withExistingParent(ItemsRegistry.GooSnailSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
-        withExistingParent(ItemsRegistry.LightingBugSpawnEgg.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        withExistingParent(ItemsRegistry.GOO_BEE_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        withExistingParent(ItemsRegistry.GOO_SNAIL_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        withExistingParent(ItemsRegistry.LIGHTNING_BUG_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
     }
 }

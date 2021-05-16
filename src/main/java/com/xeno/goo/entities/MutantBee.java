@@ -31,7 +31,7 @@ public class MutantBee extends BeeEntity {
         if (!this.isInLove() && !this.world.isRemote) {
             // TODO spawn bee instead of me
             BeeEntity swapBee = new BeeEntity(EntityType.BEE, this.world);
-            CompoundNBT serializeThis = this.serializeNBT();
+            CompoundNBT serializeThis = this.writeWithoutTypeId(new CompoundNBT());
             this.writeAdditional(serializeThis);
             serializeThis.putString("id", "minecraft:bee"); // overwrite the id
             serializeThis.putUniqueId("UUID", swapBee.getUniqueID());

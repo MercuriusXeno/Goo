@@ -200,11 +200,6 @@ public class GooChopEffects
             return;
         }
 
-        if (goo.getFluid().equals(Registry.OBSIDIAN_GOO.get())) {
-            obsidianChop(attacker, target, intensity);
-            return;
-        }
-
         if (goo.getFluid().equals(Registry.REGAL_GOO.get())) {
             regalChop(attacker, target, intensity);
             return;

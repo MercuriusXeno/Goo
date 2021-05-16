@@ -1,13 +1,17 @@
 package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHelper;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.MobEntity;
 import net.minecraft.util.text.event.HoverEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -42,5 +46,55 @@ public class ForgeClientEvents
             return;
         }
         TargetingHandler.onGameOverlay(event);
+    }
+
+    @SubscribeEvent
+    public static void onLivingRenderPre(RenderLivingEvent.Pre event)
+    {
+        try
+        {
+            LivingEntity livingEntity = event.getEntity();
+            if(livingEntity instanceof MobEntity)
+            {
+                livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
+                {
+                    if(iShrinkProvider.isShrunk())
+                    {
+                        event.getMatrixStack().push();
+
+                        event.getMatrixStack().scale(iShrinkProvider.scale(), iShrinkProvider.scale(), iShrinkProvider.scale());
+                        event.getRenderer().shadowSize = 0.08F;
+                    }
+                });
+            }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingRenderPost(RenderLivingEvent.Post event)
+    {
+        try
+        {
+            LivingEntity livingEntity = event.getEntity();
+            if(livingEntity instanceof MobEntity)
+            {
+                if(livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).isPresent())
+                {
+                    livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
+                    {
+                        if(iShrinkProvider.isShrunk())
+                        {
+                            event.getMatrixStack().pop();
+                        }
+                    });
+                }
+            }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

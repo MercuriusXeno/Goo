@@ -2,10 +2,12 @@ package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -20,15 +22,28 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Crystal
 {
+    private static final Supplier<GooFluid> fluidSupplier = Registry.CRYSTAL_GOO;
     private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
+    static {
+        mockPick.addEnchantment(Enchantments.SILK_TOUCH, 1);
+    }
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.CRYSTAL_GOO.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);
+        GooInteractions.registerSplat(fluidSupplier.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "crystal_hit", Crystal::hitEntity);
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.damageVictim(7f);
+        c.knockback(1f);
+        return true;
     }
 
     private static boolean canBreakBlock(SplatContext context) {
@@ -39,14 +54,13 @@ public class Crystal
 
     private static boolean breaker(SplatContext context)
     {
-        if (!context.isRemote()) {
+        if ((context.world() instanceof ServerWorld)) {
             BlockPos blockPos = context.blockPos();
             BlockState state = context.world().getBlockState(blockPos);
             Vector3d dropPos = Vector3d.copy(blockPos).add(0.5d, 0.5d, 0.5d);
-
             SoundType breakAudio = state.getBlock().getSoundType(state, context.world(), blockPos, null);
             AudioHelper.headlessAudioEvent(context.world(), blockPos, breakAudio.getBreakSound(), SoundCategory.BLOCKS,
-                breakAudio.volume, () -> breakAudio.pitch);
+                    breakAudio.volume, () -> breakAudio.pitch);
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder

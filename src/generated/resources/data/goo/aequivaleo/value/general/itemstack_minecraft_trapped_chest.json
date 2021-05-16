@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:logic"
-    },
-    {
       "amount": 256.0,
       "type": "goo:floral"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:logic"
     }
   ]
 }

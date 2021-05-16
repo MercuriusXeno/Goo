@@ -27,6 +27,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
@@ -172,8 +173,10 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     @Override
     protected IGooTank createGooTank() {
-
-        return new GooMultiTank(this::getStorageCapacity, 2).setFilter(MixerRecipes::isAnyRecipe).setChangeCallback(this::onContentsChanged);
+        Predicate<FluidStack> recipe = MixerRecipes::isAnyRecipe;
+        return new GooMultiTank(this::getStorageCapacity, 2)
+                .setFilter(recipe.or(s -> s == null || s.isEmpty()))
+                .setChangeCallback(this::onContentsChanged);
     }
 
     @Override
@@ -246,7 +249,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return goo.getFluidInTankInternal(isRightSideMostly(hitVector, face) ? 0 : 1);
     }
 
-    // THESE ARE RIGHT DO NOT TOUCH THEM I WILL KILL YOU
     private boolean isRightSideMostly(Vector3d hitVec, Direction face)
     {
         boolean isRight;

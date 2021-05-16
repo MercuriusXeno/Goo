@@ -1,7 +1,6 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
@@ -17,24 +16,33 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class Metal
 {
-    private static final int ironHarvestLevel = 2;
+    private static final Supplier<GooFluid> fluidSupplier = Registry.METAL_GOO;
+    private static final int diamondHarvestLevel = 3;
     private static final int bedrockHardness = -1;
-    private static final ItemStack mockPick = new ItemStack(Items.IRON_PICKAXE, 1);
+    private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.METAL_GOO.get(), "metal_breaker", Metal::breaker, Metal::isValidForHarvest);
+        GooInteractions.registerSplat(fluidSupplier.get(), "metal_breaker", Metal::breaker, Metal::isValidForHarvest);
+
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "metal_hit", Metal::hitEntity);
     }
 
     private static boolean isValidForHarvest(SplatContext context) {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);
-        return !state.getMaterial().isLiquid() && state.getHarvestLevel() <= ironHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
+        return !state.getMaterial().isLiquid() && state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
+    }
+
+    private static boolean hitEntity(BlobHitContext c) {
+        c.damageVictim(5f);
+        c.knockback(1f);
+        return true;
     }
 
     private static boolean breaker(SplatContext context)

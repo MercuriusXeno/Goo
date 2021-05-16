@@ -114,11 +114,11 @@ public abstract class FluidHandlerHelper
     }
 
     private static boolean isTileTagWorthy(ItemStack i) {
-        return i.getItem().equals(ItemsRegistry.Solidifier.get())
-                || i.getItem().equals(ItemsRegistry.Gooifier.get())
-                || i.getItem().equals(ItemsRegistry.GooBulb.get())
-                || i.getItem().equals(ItemsRegistry.Crucible.get())
-                || i.getItem().equals(ItemsRegistry.Mixer.get());
+        return i.getItem().equals(ItemsRegistry.SOLIDIFIER.get())
+                || i.getItem().equals(ItemsRegistry.GOOIFIER.get())
+                || i.getItem().equals(ItemsRegistry.GOO_BULB.get())
+                || i.getItem().equals(ItemsRegistry.CRUCIBLE.get())
+                || i.getItem().equals(ItemsRegistry.MIXER.get());
 
     }
 }
