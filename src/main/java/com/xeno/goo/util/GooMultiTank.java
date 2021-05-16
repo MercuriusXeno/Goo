@@ -156,6 +156,24 @@ public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 		return accept;
 	}
 
+	@Override
+	protected void shrinkTank(FluidStack tank, int amount) {
+
+		tank.shrink(amount);
+		if (tank.isEmpty()) {
+			contents.remove(tank.getRawFluid());
+			final FluidStack[] tanks = this.tanks;
+			for (int i = 0, e = tanks.length; i < e; ++i) {
+				FluidStack o = tanks[i];
+				if (o == tank) {
+					tanks[i] = FluidStack.EMPTY;
+					break;
+				}
+			}
+		}
+		onChange();
+	}
+
 	/**
 	 * <b>This implementation ignores fluid tags.</b>
 	 * <p>
@@ -182,13 +200,23 @@ public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 			return 0;
 
 		FluidStack tank = getFluidInTankInternal(tankIn);
-		if (tank.getRawFluid() != resource.getRawFluid()) // not already a mtch
-			if (!tank.isEmpty())
-				return 0; // if it's not empty and doesn't match, fail
-			else if (contents.get(resource.getRawFluid()) == tank)
-				return 0; // if it IS empty but we already contain it, fail (it's in another tank)
-			else
-				tank = setTank(tankIn, tank, resource, 0); // update the tank state
+
+		updateTank:
+		{
+			if (tank.getRawFluid() != resource.getRawFluid()) { // not already a match
+				if (!tank.isEmpty())
+					return 0; // if it's not empty and doesn't match, fail
+				else if (!contents.getOrDefault(resource.getRawFluid(), FluidStack.EMPTY).isEmpty())
+					return 0; // if it IS empty but we already contain it, fail (it's in another tank)
+				// else, fall through to tank update logic
+			} else if (contents.get(resource.getRawFluid()) != tank) { // if we are not the 'main' tank for this fluid
+				if (!contents.getOrDefault(resource.getRawFluid(), FluidStack.EMPTY).isEmpty())
+					return 0; // if we are not the 'main' tank and the 'main' tank is not empty, fail
+				// else, fall through to tank update logic
+			} else
+				break updateTank; // *don't* update the tank since everything is valid here
+			tank = setTank(tankIn, tank, resource, 0); // update the tank state
+		}
 
 		return fill(tank, resource, action);
 	}
