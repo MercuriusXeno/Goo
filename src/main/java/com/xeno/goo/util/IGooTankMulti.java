@@ -113,6 +113,12 @@ public abstract class IGooTankMulti extends IGooTank {
 		return amount;
 	}
 
+	protected void shrinkTank(FluidStack tank, int amount) {
+
+		tank.shrink(amount);
+		onChange();
+	}
+
 	/**
 	 * <b>This implementation ignores fluid tags.</b>
 	 * <p>
@@ -132,8 +138,7 @@ public abstract class IGooTankMulti extends IGooTank {
 		final int accept = Math.min(resource.getAmount(), tank.getAmount());
 		if (accept > 0 && action.execute()) {
 			amount -= accept;
-			tank.shrink(accept);
-			onChange();
+			shrinkTank(tank, accept);
 		}
 
 		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
@@ -167,8 +172,7 @@ public abstract class IGooTankMulti extends IGooTank {
 		final int accept = Math.min(maxDrain, tankAmt);
 		if (accept > 0 && action.execute()) {
 			amount -= accept;
-			tank.shrink(accept);
-			onChange();
+			shrinkTank(tank, accept);
 		}
 
 		return new FluidStack(tank.getRawFluid(), accept, tank.getTag());
