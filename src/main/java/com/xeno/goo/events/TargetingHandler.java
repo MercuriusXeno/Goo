@@ -65,6 +65,7 @@ public class TargetingHandler
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;
+    public static boolean isGooReady = false;
 
     private static boolean hasGooAndYou(PlayerEntity player)
     {
@@ -74,8 +75,13 @@ public class TargetingHandler
         return player.inventory.mainInventory.stream().anyMatch(i -> i.getItem().equals(PATCHOULI_BOOK.getItem()));
     }
 
-    private static boolean hasEntry(World entityWorld)
+    /**
+     * @return {@code null} if goo not ready, false if no goo, true if goo
+     */
+    private static Boolean hasEntry(World entityWorld)
     {
+        // TODO: this is part of a nicer unavailable gooification display
+        if (!isGooReady) return null;
         return Equivalencies.getEntry(entityWorld, currentStack.getItem()).values().size() > 0;
     }
 
@@ -116,15 +122,15 @@ public class TargetingHandler
         }
 
         // these always show up
-        boolean hasEntry = hasEntry(event.getPlayer().getEntityWorld());
-        if (!hasEntry) {
-            event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.not_goo"));
+        Boolean hasEntry = hasEntry(event.getPlayer().getEntityWorld());
+        if (Boolean.TRUE != hasEntry) {
+            event.getToolTip().add(new TranslationTextComponent(hasEntry == null ? "tooltip.goo.composition.goo_not_ready" : "tooltip.goo.composition.not_goo"));
         }
 
         // EVERYTHING shows its composition with shift held, bulbs are the exception
         if (Screen.hasShiftDown()) {
             prepGooCompositionRealEstate(event);
-        } else if (hasEntry) {
+        } else if (hasEntry == Boolean.TRUE) {
             event.getToolTip().add(new TranslationTextComponent("tooltip.goo.composition.hold_key"));
         }
     }
