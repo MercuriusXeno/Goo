@@ -17,7 +17,7 @@ public class LightingBugRenderer extends MobRenderer<LightingBug, LightingBugMod
 
 	public static void register()
 	{
-		RenderingRegistry.registerEntityRenderingHandler(Registry.LIGHTING_BUG.get(), LightingBugRenderer::new);
+		RenderingRegistry.registerEntityRenderingHandler(Registry.LIGHTING_BUG, LightingBugRenderer::new);
 	}
 
 	/**

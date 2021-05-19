@@ -127,7 +127,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 	@Override
 	public AgeableEntity createChild(ServerWorld world, AgeableEntity mate) {
 
-		LightingBug childEntity = Registry.LIGHTING_BUG.get().create(world);
+		LightingBug childEntity = Registry.LIGHTING_BUG.create(world);
 		//		if (mate instanceof LightingBug) {
 		//			if (this.rand.nextBoolean()) {
 		//				childEntity.setType(this.getType());
