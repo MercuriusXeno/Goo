@@ -26,7 +26,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;
-import net.minecraft.potion.Effect;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
@@ -123,6 +122,19 @@ public class Registry {
         ));
 
         ENTITIES.register("lighting_bug", makeSupplier(LIGHTING_BUG = EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
+                        .size(0.5f, 0.5f)
+                        .setTrackingRange(64)
+                        .setUpdateInterval(1)
+                        .setShouldReceiveVelocityUpdates(true)
+                        .build("lighting_bug")
+        ));
+    }
+
+    public static final EntityType<LightingBug> LIGHTING_BUG;
+
+    static {
+        ENTITIES.register("lighting_bug", makeSupplier(
+                LIGHTING_BUG = EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
                         .size(0.5f, 0.5f)
                         .setTrackingRange(64)
                         .setUpdateInterval(1)
