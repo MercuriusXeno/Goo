@@ -1,5 +1,6 @@
 package com.xeno.goo.network;
 
+import com.xeno.goo.GooMod;
 import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
@@ -57,7 +58,8 @@ public class ShrinkPacket implements IGooModPacket {
 
 						if(iShrinkProvider.isShrunk())
 						{
-							entity.size = new EntitySize(iShrinkProvider.scale(), iShrinkProvider.scale() * 2, true);
+							GooMod.debug(entity.getName().getString() + " shrinking to " + iShrinkProvider.scale());
+							entity.size = new EntitySize(iShrinkProvider.widthScale(), iShrinkProvider.heightScale(), true);
 							entity.eyeHeight = iShrinkProvider.defaultEyeHeight() * iShrinkProvider.scale();
 						}
 						else

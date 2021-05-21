@@ -43,6 +43,9 @@ public class GooConfig
     private ForgeConfigSpec.BooleanValue GOO_VALUES_VISIBLE_WITHOUT_BOOK;
     public boolean gooValuesAlwaysVisible() { return GOO_VALUES_VISIBLE_WITHOUT_BOOK.get(); }
 
+    private ForgeConfigSpec.BooleanValue DAMAGED_ITEMS_CAN_BE_GOOIFIED;
+    public boolean canDamagedItemsBeGooified() { return DAMAGED_ITEMS_CAN_BE_GOOIFIED.get(); }
+
     // machine config values
     private ForgeConfigSpec.IntValue GOO_MAX_TRANSFER_RATE;
     public int gooTransferRate() { return GOO_MAX_TRANSFER_RATE.get(); }
@@ -330,8 +333,9 @@ public class GooConfig
         this.client.save();
     }
 
-    private static class Defaults {
+	private static class Defaults {
         public static final boolean GOO_VALUES_VISIBLE_ALWAYS = false;
+        public static final boolean DAMAGED_ITEMS_CAN_BE_GOOIFIED = true;
         private static final int GOO_TRANSFER_RATE = 30;
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
@@ -355,12 +359,14 @@ public class GooConfig
     private void setupClientConfig() {
         clientBuilder.comment("Goo Client Configs").push("client_options");
         GOO_VALUES_VISIBLE_WITHOUT_BOOK = clientBuilder.comment("Make goo values visible without having the book in your inventory, default: " + Defaults.GOO_VALUES_VISIBLE_ALWAYS)
-                .define("gooValuesVisibleWithoutBook", false);
+                .define("gooValuesVisibleWithoutBook", Defaults.GOO_VALUES_VISIBLE_ALWAYS);
         clientBuilder.pop();
     }
 
     private void setupGeneralMachineConfig() {
         serverBuilder.comment("Goo Server Configs").push("general");
+        DAMAGED_ITEMS_CAN_BE_GOOIFIED = serverBuilder.comment("Damaged items can be gooified for a proportional fration of their worth, default: " + Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED)
+                .define("damagedItemsCanBeGooified", Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED);
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + Defaults.GOO_TRANSFER_RATE)
                 .defineInRange("maxTransferRate", Defaults.GOO_TRANSFER_RATE, 0, 10000);
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + Defaults.GOO_PROCESSING_RATE)

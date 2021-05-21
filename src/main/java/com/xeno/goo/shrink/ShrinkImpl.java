@@ -7,6 +7,7 @@ import com.xeno.goo.shrink.api.IShrinkProvider;
 import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.MoverType;
 import net.minecraft.entity.Pose;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -14,6 +15,8 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
@@ -99,8 +102,8 @@ public final class ShrinkImpl
 			if (entity.world.isRemote) {
 				return;
 			}
-			Networking.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> this.entity),
-					new ShrinkPacket(this.entity.getEntityId(), serializeNBT()));
+			Networking.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
+					new ShrinkPacket(entity.getEntityId(), serializeNBT()));
 		}
 
 		@Override
@@ -108,18 +111,9 @@ public final class ShrinkImpl
 		{
 			setShrunk(true);
 			setShrinking(true);
-			entity.size = new EntitySize(0.1F, 0.2F, true);
-			PlayerEntity.STANDING_SIZE = EntitySize.flexible(0.1F, 0.2F);
-			PlayerEntity.SIZE_BY_POSE = ImmutableMap.<Pose, EntitySize>builder()
-					.put(Pose.STANDING, PlayerEntity.STANDING_SIZE)
-					.put(Pose.SLEEPING, EntitySize.fixed(0.2F, 0.2F))
-					.put(Pose.FALL_FLYING, EntitySize.flexible(0.6F, 0.6F))
-					.put(Pose.SWIMMING, EntitySize.flexible(0.6F, 0.6F))
-					.put(Pose.SPIN_ATTACK, EntitySize.flexible(0.6F, 0.6F))
-					.put(Pose.CROUCHING, EntitySize.flexible(0.5F, 0.5F))
-					.put(Pose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
-			entity.eyeHeight = 0.16F;
-			entity.recalculateSize();
+			EntitySize oldSize = entity.size;
+			entity.size = new EntitySize(entity.size.width, entity.size.height, true);
+			// recalculateSize(oldSize, entity);
 			sync(entity);
 		}
 
@@ -129,10 +123,28 @@ public final class ShrinkImpl
 			setShrunk(false);
 			setShrinking(false);
 			entity.eyeHeight = defaultEyeHeight;
+			EntitySize oldSize = entity.size;
 			entity.size = defaultSize;
-			PlayerEntity.SIZE_BY_POSE = defaultSizes;
-			entity.recalculateSize();
+			recalculateSize(oldSize, entity);
 			sync(entity);
+		}
+
+
+		private void recalculateSize(EntitySize oldSize, LivingEntity e) {
+			EntitySize newSize = e.size;
+			if (newSize.width < oldSize.width) {
+				double d0 = (double)newSize.width / 2.0D;
+				e.setBoundingBox(new AxisAlignedBB(e.getPosX() - d0, e.getPosY(), e.getPosZ() - d0,
+						e.getPosX() + d0, e.getPosY() + (double)newSize.height, e.getPosZ() + d0));
+			} else {
+				AxisAlignedBB axisalignedbb = e.getBoundingBox();
+				e.setBoundingBox(new AxisAlignedBB(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ,
+						axisalignedbb.minX + (double)newSize.width, axisalignedbb.minY + (double)newSize.height, axisalignedbb.minZ + (double)newSize.width));
+//				if (entitysize1.width > entitysize.width && !e.world.isRemote) {
+//					float f = entitysize.width - entitysize1.width;
+//					this.move(MoverType.SELF, new Vector3d((double)f, 0.0D, (double)f));
+//				}
+			}
 		}
 
 		@Override
@@ -164,11 +176,22 @@ public final class ShrinkImpl
 		}
 
 		@Override
+		public float widthScale() {
+			return defaultSize.width * scale();
+		}
+
+		@Override
+		public float heightScale() {
+			return defaultSize.height * scale();
+		}
+
+		@Override
 		public CompoundNBT serializeNBT()
 		{
 			CompoundNBT properties = new CompoundNBT();
 			properties.putBoolean("isshrunk", isShrunk);
 			properties.putBoolean("isshrinking", isShrinking);
+			properties.putFloat("scale", scale);
 			return properties;
 		}
 
@@ -177,6 +200,7 @@ public final class ShrinkImpl
 		{
 			isShrunk = properties.getBoolean("isshrunk");
 			isShrinking = properties.getBoolean("isshrinking");
+			scale = properties.getFloat("scale");
 		}
 	}
 

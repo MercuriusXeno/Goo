@@ -1,6 +1,9 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.setup.Registry;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
@@ -8,9 +11,14 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static net.minecraftforge.fluids.capability.CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY;
 
@@ -118,7 +126,59 @@ public abstract class FluidHandlerHelper
                 || i.getItem().equals(ItemsRegistry.GOOIFIER.get())
                 || i.getItem().equals(ItemsRegistry.GOO_BULB.get())
                 || i.getItem().equals(ItemsRegistry.CRUCIBLE.get())
-                || i.getItem().equals(ItemsRegistry.MIXER.get());
+                || i.getItem().equals(ItemsRegistry.MIXER.get())
+                || i.getItem().equals(ItemsRegistry.TROUGH.get());
 
+    }
+
+    public static List<FluidStack> contentsOfTileStack(ItemStack currentStack) {
+        String id = "";
+        Item item = currentStack.getItem();
+        if (item.equals(ItemsRegistry.MIXER.get())) {
+            id = Objects.requireNonNull(Registry.MIXER_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.CRUCIBLE.get())) {
+            id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.GOO_BULB.get())) {
+            id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.TROUGH.get())) {
+            id = Objects.requireNonNull(Registry.TROUGH_TILE.get().getRegistryName()).toString();
+        }
+        if (id.equals("")) {
+            return new ArrayList<>();
+        }
+        CompoundNBT containerTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
+        if (containerTag == null) {
+            return new ArrayList<>();
+        }
+        CompoundNBT gooTag = containerTag.getCompound("goo");
+        List<FluidStack> containerValues = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
+        containerValues.sort((v, v2) -> v2.getAmount() - v.getAmount());
+        return containerValues;
+    }
+
+    public static List<FluidStack> contentsOfItemStack(ItemStack currentStack) {
+        List<FluidStack> values = new ArrayList<>();
+
+        IFluidHandlerItem cap = FluidHandlerHelper.capability(currentStack);
+        if (cap == null) {
+            return values;
+        }
+
+        // basins have a more elaborate contents list than gauntlets
+        if (cap instanceof BasinAbstractionCapability) {
+            List<FluidStack> fluids = new ArrayList<>(((BasinAbstractionCapability) cap).getFluids());
+            fluids.removeIf(FluidStack::isEmpty);
+            if (fluids.size() == 0) {
+                return values;
+            }
+            values.addAll(fluids);
+        } else {
+            if (cap.getFluidInTank(0).isEmpty()) {
+                return values;
+            }
+
+            values.add(cap.getFluidInTank(0));
+        }
+        return values;
     }
 }

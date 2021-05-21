@@ -56,19 +56,16 @@ public class ForgeClientEvents
         try
         {
             LivingEntity livingEntity = event.getEntity();
-            if(livingEntity instanceof MobEntity)
+            livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
             {
-                livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
+                if(iShrinkProvider.isShrunk())
                 {
-                    if(iShrinkProvider.isShrunk())
-                    {
-                        event.getMatrixStack().push();
+                    event.getMatrixStack().push();
 
-                        event.getMatrixStack().scale(iShrinkProvider.scale(), iShrinkProvider.scale(), iShrinkProvider.scale());
-                        event.getRenderer().shadowSize = 0.08F;
-                    }
-                });
-            }
+                    event.getMatrixStack().scale(iShrinkProvider.scale(), iShrinkProvider.scale(), iShrinkProvider.scale());
+                    event.getRenderer().shadowSize = 0.08F;
+                }
+            });
         } catch (Exception e)
         {
             e.printStackTrace();

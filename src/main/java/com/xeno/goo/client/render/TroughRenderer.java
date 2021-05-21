@@ -36,7 +36,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
     public void render(TroughTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
         cap.ifPresent((c) -> render(c.getTankCapacity(0), c.getFluidInTank(0), tile.getPos(),
-                tile.facing(), tile.isVerticallyFilled(), tile.verticalFillFluid(),
+                tile.hasWorld() ? tile.facing() :  Direction.NORTH, tile.isVerticallyFilled(), tile.verticalFillFluid(),
                 tile.verticalFillIntensity(),
                 matrixStack, buffer, combinedLightIn));
     }

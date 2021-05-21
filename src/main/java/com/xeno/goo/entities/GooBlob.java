@@ -277,6 +277,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         if (entityResult != null && entityResult.getType() != RayTraceResult.Type.MISS) {
             onImpact(entityResult);
             this.isAirBorne = true;
+            return true;
         }
 
         handleLiquidCollisions(motion);

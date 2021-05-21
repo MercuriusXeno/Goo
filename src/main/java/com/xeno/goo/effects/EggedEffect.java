@@ -19,6 +19,9 @@ public class EggedEffect extends Effect {
 
 	@Override
 	public void performEffect(LivingEntity e, int amplifier) {
+		if (e.world.isRemote) {
+			return;
+		}
 		e.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(s ->
 			{
 				if (!s.isShrunk()) {
@@ -27,6 +30,7 @@ public class EggedEffect extends Effect {
 					double entityVolume = volumeOfEntity(s);
 					if (entityVolume > VOLUME_OF_EGG) {
 						s.setScale(s.scale() - 0.025f);
+
 					} else {
 						spawnEggForEntity(e);
 						e.remove();

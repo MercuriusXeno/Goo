@@ -31,4 +31,8 @@ public interface IShrinkProvider extends INBTSerializable<CompoundNBT>
 	float scale();
 
 	void setScale(float scale);
+
+	float widthScale();
+
+	float heightScale();
 }

@@ -85,7 +85,7 @@ public class TroughTile extends GooContainerAbstraction implements ITickableTile
     }
 
     public Direction facing() {
-        return getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
+        return world == null ? Direction.NORTH : getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
 
     @Override
@@ -187,6 +187,11 @@ public class TroughTile extends GooContainerAbstraction implements ITickableTile
 
     @Override
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+        // fixes an issue where trying to get the tile entity during a render state for *breaking it* (and it being an item)
+        // causes the facing() call to crash with an NRE.
+        if (side == null) {
+            return super.getCapability(cap, null);
+        }
         if (side == Direction.UP) {
             return LazyOptional.empty();
         }

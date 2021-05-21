@@ -22,6 +22,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -78,16 +79,28 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         if (world == null) {
             return GooEntry.UNKNOWN;
         }
-        // you may not melt down items that are damageable *and damaged*. Sorry not sorry
-        if (e.isDamageable() && e.isDamaged()) {
-            return GooEntry.UNKNOWN;
-        }
 
         GooEntry mapping = Equivalencies.getEntry(world, e.getItem());
 
         if (mapping.isUnusable()) {
-            return null;
+            return GooEntry.UNKNOWN;
         }
+
+        List<FluidStack> itemHandlerContents = FluidHandlerHelper.contentsOfItemStack(e);
+        List<FluidStack> tileHandlerContents = FluidHandlerHelper.contentsOfTileStack(e);
+        if (!itemHandlerContents.isEmpty()) {
+            return mapping.addGooContentsToMapping(itemHandlerContents);
+        } else if (!tileHandlerContents.isEmpty()) {
+            return mapping.addGooContentsToMapping(tileHandlerContents);
+        } else if (GooMod.config.canDamagedItemsBeGooified()) { // this is here to prevent "damage" containers from falsely reporting their damage values as durability
+            // you may not melt down items that are damageable *and damaged*. Sorry not sorry
+            if (e.isDamageable() && e.isDamaged()) {
+                return mapping.scale((e.getMaxDamage() * 1d - e.getDamage()) / e.getMaxDamage());
+            }
+        } else {
+            return GooEntry.UNKNOWN;
+        }
+
         return mapping;
     }
 

@@ -28,6 +28,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -241,7 +242,7 @@ public class TargetingHandler
             initializeGooItemContainers();
         }
         return GOO_CONTAINERS.contains(currentStack.getItem()) || GOO_ITEM_CONTAINERS.contains(currentStack.getItem())
-                || GOO_DOUBLE_MAPS.contains(currentStack.getItem());
+                || GOO_DOUBLE_MAPS.contains(currentStack.getItem()) || currentStack.getItem() instanceof BucketItem;
     }
 
     // some client side caching to speed things up a little.
@@ -273,56 +274,25 @@ public class TargetingHandler
 
     private static boolean tryFetchingGooContentsAsItem()
     {
-        if (!GOO_ITEM_CONTAINERS.contains(currentStack.getItem())) {
+        if (!(currentStack.getItem() instanceof BucketItem) && !GOO_ITEM_CONTAINERS.contains(currentStack.getItem())) {
+            return false;
+        }
+        List<FluidStack> contents = FluidHandlerHelper.contentsOfItemStack(currentStack);
+        if (contents.isEmpty()) {
             return false;
         }
 
-        IFluidHandlerItem cap = FluidHandlerHelper.capability(currentStack);
-        if (cap == null) {
-            return false;
-        }
-
-        // basins have a more elaborate contents list than gauntlets
-        if (cap instanceof BasinAbstractionCapability) {
-            List<FluidStack> fluids = new ArrayList<>(((BasinAbstractionCapability) cap).getFluids());
-            fluids.removeIf(FluidStack::isEmpty);
-            if (fluids.size() == 0) {
-                return false;
-            }
-            lastGooEntry.addAll(fluids);
-        } else {
-            if (cap.getFluidInTank(0).isEmpty()) {
-                return false;
-            }
-
-            lastGooEntry.add(cap.getFluidInTank(0));
-        }
+        lastGooEntry = contents;
         return true;
     }
 
     private static void tryFetchingGooContentsAsGooContainerAbstraction()
     {
-        String id = "";
-        Item item = currentStack.getItem();
-        if (item.equals(ItemsRegistry.MIXER.get())) {
-            id = Objects.requireNonNull(Registry.MIXER_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.CRUCIBLE.get())) {
-            id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.GOO_BULB.get())) {
-            id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.TROUGH.get())) {
-            id = Objects.requireNonNull(Registry.TROUGH_TILE.get().getRegistryName()).toString();
-        }
-        if (id.equals("")) {
-            return;
-        }
-        CompoundNBT bulbTag = FluidHandlerHelper.getOrCreateTileTag(currentStack, id);
-        if (bulbTag == null) {
-            return;
-        }
-        CompoundNBT gooTag = bulbTag.getCompound("goo");
-        lastGooEntry = GooContainerAbstraction.deserializeGooForDisplay(gooTag);
-        lastGooEntry.sort((v, v2) -> v2.getAmount() - v.getAmount());
+        lastGooEntry = contentsOfCurrentItemStackAsGooContainer();
+    }
+
+    private static List<FluidStack> contentsOfCurrentItemStackAsGooContainer() {
+        return FluidHandlerHelper.contentsOfTileStack(currentStack);
     }
 
     private static int getArrangementStacksPerLine(int compoundCount)
@@ -346,6 +316,21 @@ public class TargetingHandler
         GooEntry gooEntry = Equivalencies.getEntry(Minecraft.getInstance().world, currentStack.getItem());
         if (gooEntry.isUnusable()) {
             return;
+        }
+
+        List<FluidStack> itemHandlerContents = FluidHandlerHelper.contentsOfItemStack(currentStack);
+        List<FluidStack> tileHandlerContents = FluidHandlerHelper.contentsOfTileStack(currentStack);
+        if (!itemHandlerContents.isEmpty()) {
+            gooEntry = gooEntry.addGooContentsToMapping(itemHandlerContents);
+        } else if (!tileHandlerContents.isEmpty()) {
+            gooEntry = gooEntry.addGooContentsToMapping(tileHandlerContents);
+        } else if (GooMod.config.canDamagedItemsBeGooified()) {
+            // you may not melt down items that are damageable *and damaged*. Sorry not sorry
+            if (currentStack.isDamageable() && currentStack.isDamaged()) {
+                gooEntry = gooEntry.scale((currentStack.getMaxDamage() * 1d - currentStack.getDamage()) / currentStack.getMaxDamage());
+            }
+        } else {
+            gooEntry = GooEntry.UNKNOWN;
         }
         
         drawGooForEvent(event, gooEntry);

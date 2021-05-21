@@ -97,28 +97,28 @@ public class ForgeCommonEvents {
             LivingEntity livingEntity = (LivingEntity) event.getEntity();
             livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
             {
-                double x = event.getEntity().getPosX();
-                double y = event.getEntity().getPosY();
-                double z = event.getEntity().getPosZ();
+//                double x = event.getEntity().getPosX();
+//                double y = event.getEntity().getPosY();
+//                double z = event.getEntity().getPosZ();
 
-                if(iShrinkProvider.isShrunk() && (event.getPose() == Pose.STANDING || event.getPose() == Pose.SWIMMING))
+                if(iShrinkProvider.isShrunk())
                 {
-                    event.setNewSize(new EntitySize(iShrinkProvider.scale(), iShrinkProvider.scale() * 2, true));
+                    event.setNewSize(new EntitySize(iShrinkProvider.widthScale(), iShrinkProvider.heightScale(), true));
                     if(event.getPose() != Pose.STANDING) event.getEntity().setPose(Pose.STANDING);
                     event.setNewEyeHeight(iShrinkProvider.defaultEyeHeight() * iShrinkProvider.scale());
-                    event.getEntity().setPosition(x, y, z);
+                    // event.getEntity().setPosition(x, y, z);
                 }
-                else if(iShrinkProvider.isShrunk() && event.getPose() == Pose.CROUCHING && livingEntity instanceof PlayerEntity)
-                {
-                    event.setNewSize(new EntitySize(0.1F, 0.14F, true));
-                    event.getEntity().setPosition(x, y, z);
-                }
-                else if(!iShrinkProvider.isShrunk() && event.getPose() == Pose.STANDING && livingEntity instanceof PlayerEntity)
-                {
-                    event.setNewSize(iShrinkProvider.defaultEntitySize());
-                    event.setNewEyeHeight(iShrinkProvider.defaultEyeHeight());
-                    event.getEntity().setPosition(x, y, z);
-                }
+//                else if(iShrinkProvider.isShrunk() && event.getPose() == Pose.CROUCHING && livingEntity instanceof PlayerEntity)
+//                {
+//                    event.setNewSize(new EntitySize(0.1F, 0.14F, true));
+//                    // event.getEntity().setPosition(x, y, z);
+//                }
+//                else if(!iShrinkProvider.isShrunk() && event.getPose() == Pose.STANDING && livingEntity instanceof PlayerEntity)
+//                {
+//                    event.setNewSize(iShrinkProvider.defaultEntitySize());
+//                    event.setNewEyeHeight(iShrinkProvider.defaultEyeHeight());
+//                    // event.getEntity().setPosition(x, y, z);
+//                }
             });
         }
     }

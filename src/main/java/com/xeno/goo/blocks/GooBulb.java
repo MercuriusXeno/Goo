@@ -2,6 +2,8 @@ package com.xeno.goo.blocks;
 
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
@@ -218,6 +220,7 @@ public class GooBulb extends BlockWithConnections
             cap.fill(bucketStack, FluidAction.EXECUTE);
             player.setHeldItem(handIn, new ItemStack(Items.BUCKET));
         }
+        AudioHelper.playerAudioEvent(player, Registry.GOO_DEPOSIT_SOUND.get(), PitchFormulas.HalfToOne.get());
         return ActionResultType.func_233537_a_(player.world.isRemote);
     }
 
@@ -246,6 +249,7 @@ public class GooBulb extends BlockWithConnections
                     player.addItemStackToInventory(filledBucket);
                 }
             }
+            AudioHelper.playerAudioEvent(player, Registry.GOO_WITHDRAW_SOUND.get(), PitchFormulas.HalfToOne.get());
             return ActionResultType.func_233537_a_(player.world.isRemote);
         }
     }

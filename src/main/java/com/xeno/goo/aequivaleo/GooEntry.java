@@ -3,6 +3,7 @@ package com.xeno.goo.aequivaleo;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.item.Item;
@@ -10,6 +11,8 @@ import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import java.text.NumberFormat;
 import java.util.*;
@@ -133,5 +136,45 @@ public class GooEntry
     public GooEntry copy()
     {
         return new GooEntry(this);
+    }
+
+	public GooEntry scale(double scale) {
+        List<GooValue> values = new ArrayList<>();
+        this.values().forEach((v) -> values.add(scaleValue(v, scale)));
+        values.removeIf(Objects::isNull);
+        return new GooEntry(values);
+	}
+
+    private GooValue scaleValue(GooValue v, double scale) {
+        double amount = Math.floor(v.amount() * scale);
+        if (amount <= 0d) {
+            return null;
+        }
+        return new GooValue(v.getFluidResourceLocation(), amount);
+    }
+
+    public GooEntry addGooContentsToMapping(IFluidHandlerItem capability) {
+        int tanks = capability.getTanks();
+        List<GooValue> valuesInTank = new ArrayList<>();
+        for(int i = 0; i < tanks; i++) {
+            FluidStack maybeGoo = capability.getFluidInTank(i);
+            if (maybeGoo.isEmpty()) {
+                continue;
+            }
+            if (!(maybeGoo.getFluid() instanceof GooFluid)) {
+                continue;
+            }
+
+            valuesInTank.add(new GooValue(maybeGoo.getFluid().getRegistryName().toString(), maybeGoo.getAmount()));
+        }
+        valuesInTank.addAll(this.values);
+        return new GooEntry(valuesInTank);
+    }
+
+    public GooEntry addGooContentsToMapping(List<FluidStack> contentsOfCurrentItemStackAsGooContainer) {
+        List<GooValue> valuesInTank = new ArrayList<>();
+        contentsOfCurrentItemStackAsGooContainer.forEach(v -> valuesInTank.add(new GooValue(v.getFluid().getRegistryName().toString(), v.getAmount())));
+        valuesInTank.addAll(this.values);
+        return new GooEntry(valuesInTank);
     }
 }

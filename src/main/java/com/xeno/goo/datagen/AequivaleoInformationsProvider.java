@@ -252,6 +252,27 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.MILK_BUCKET, metal(216), faunal(15));
         saveData(Items.WATER_BUCKET, metal(216), aquatic(60));
 
+        saveData(Registry.AQUATIC_BUCKET.get(), metal(216), aquatic(1000));
+        saveData(Registry.CHROMATIC_BUCKET.get(), metal(216), chromatic(1000));
+        saveData(Registry.CRYSTAL_BUCKET.get(), metal(216), crystal(1000));
+        saveData(Registry.DECAY_BUCKET.get(), metal(216), decay(1000));
+        saveData(Registry.EARTHEN_BUCKET.get(), metal(216), earthen(1000));
+        saveData(Registry.ENERGETIC_BUCKET.get(), metal(216), energetic(1000));
+        saveData(Registry.FAUNAL_BUCKET.get(), metal(216), faunal(1000));
+        saveData(Registry.FLORAL_BUCKET.get(), metal(216), floral(1000));
+        saveData(Registry.FUNGAL_BUCKET.get(), metal(216), fungal(1000));
+        saveData(Registry.HONEY_BUCKET.get(), metal(216), honey(1000));
+        saveData(Registry.LOGIC_BUCKET.get(), metal(216), logic(1000));
+        saveData(Registry.METAL_BUCKET.get(), metal(216), metal(1000));
+        saveData(Registry.MOLTEN_BUCKET.get(), metal(216), molten(1000));
+        saveData(Registry.PRIMORDIAL_BUCKET.get(), metal(216), primordial(1000));
+        saveData(Registry.RADIANT_BUCKET.get(), metal(216), radiant(1000));
+        saveData(Registry.REGAL_BUCKET.get(), metal(216), regal(1000));
+        saveData(Registry.SLIME_BUCKET.get(), metal(216), slime(1000));
+        saveData(Registry.SNOW_BUCKET.get(), metal(216), snow(1000));
+        saveData(Registry.VITAL_BUCKET.get(), metal(216), vital(1000));
+        saveData(Registry.WEIRD_BUCKET.get(), metal(216), weird(1000));
+
         // ore blocks
         saveData(Items.COAL_ORE, molten(80), earthen(16), forbidden(1));
         saveData(Items.COAL, molten(80), earthen(16));
