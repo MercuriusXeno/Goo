@@ -21,10 +21,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.SpawnEggItem;
+import net.minecraft.item.*;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;
 import net.minecraft.tileentity.TileEntityType;
@@ -38,6 +35,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
 
 public class Registry {
@@ -443,6 +441,23 @@ public class Registry {
             return null;
         }
         return fluid.get();
+    }
+
+    private static final Map<Fluid, Item> FluidBuckets = new HashMap<>();
+    public static Item getBucket(GooFluid gooFluid) {
+        if (FluidBuckets.isEmpty()) {
+            initFluidBuckets();
+        }
+        if (!FluidBuckets.containsKey(gooFluid)) {
+            return Items.BUCKET;
+        }
+        return FluidBuckets.get(gooFluid);
+    }
+
+    private static void initFluidBuckets() {
+        for(Entry<Supplier<GooFluid>, Supplier<Item>> entry : BucketSuppliers.entrySet()) {
+            FluidBuckets.put(entry.getKey().get(), entry.getValue().get());
+        }
     }
 
     public static ICompoundType compoundFromFluid(Fluid f) {

@@ -8,5 +8,7 @@ public enum RayTraceTargetSource
 
     GAUNTLET,
 
-    JUST_LOOKING
+    JUST_LOOKING,
+
+	BUCKET
 }

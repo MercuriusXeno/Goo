@@ -60,7 +60,7 @@ public class GooFluid extends Fluid
 
     @Override
     public Item getFilledBucket() {
-        return Registry.BucketSuppliers.get(this.getRegistryName()).get();
+        return Registry.getBucket(this);
     }
 
     @Override

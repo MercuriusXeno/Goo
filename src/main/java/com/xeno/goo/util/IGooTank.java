@@ -1,5 +1,6 @@
 package com.xeno.goo.util;
 
+import com.xeno.goo.fluids.GooFluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
@@ -169,7 +170,9 @@ public abstract class IGooTank implements IFluidHandler {
 	 */
 	@Override
 	final public boolean isFluidValid(int tank, @Nonnull FluidStack stack) { // this method feels useless?
-
+		if (!(stack.getFluid() instanceof GooFluid)) {
+			return false;
+		}
 		final FluidStack fluid = getFluidInTankInternal(tank);
 		return ((lockedTanks ? fluid == FluidStack.EMPTY : fluid.isEmpty()) && filter.test(stack)) ||
 				(fluid.getRawFluid() == stack.getRawFluid() && FluidStack.areFluidStackTagsEqual(fluid, stack));

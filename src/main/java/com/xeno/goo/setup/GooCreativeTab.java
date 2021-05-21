@@ -4,13 +4,13 @@ import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalBlock;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 
 import java.util.Comparator;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class GooCreativeTab extends ItemGroup
 {
@@ -29,8 +29,8 @@ public class GooCreativeTab extends ItemGroup
 
     private static final Function<ItemStack, Boolean> isNotShard = (i) -> !(i.getItem() instanceof CrystallizedGooAbstract);
     private static final Function<ItemStack, Boolean> isNotBlock = (i) -> !(i.getItem() instanceof BlockItem && ((BlockItem)i.getItem()).getBlock() instanceof CrystalBlock);
-    private static final Function<ItemStack, Boolean> isNotShardOrBlock = (i) -> !(i.getItem() instanceof CrystallizedGooAbstract) &&
-            !(i.getItem() instanceof BlockItem && ((BlockItem)i.getItem()).getBlock() instanceof CrystalBlock);
+    private static final Function<ItemStack, Boolean> isNotShardOrBlockOrBucket = (i) -> !(i.getItem() instanceof CrystallizedGooAbstract) &&
+            !(i.getItem() instanceof BlockItem && ((BlockItem)i.getItem()).getBlock() instanceof CrystalBlock) && !(i.getItem() instanceof BucketItem);
     private static final Function<ItemStack, Integer> shardSize = (i) -> (i.getItem() instanceof CrystallizedGooAbstract ? ((CrystallizedGooAbstract)i.getItem()).amount() : 0);
     private static final Function<ItemStack, String> registryName = (i) -> i.getItem().getRegistryName().toString();
     private static final Function<ItemStack, String> gooTypeName = (i) ->
@@ -47,7 +47,7 @@ public class GooCreativeTab extends ItemGroup
         if (sortedCreativeItems.size() == 0) {
             super.fill(items);
             items.sort(Comparator
-                    .comparing(isNotShardOrBlock).reversed()
+                    .comparing(isNotShardOrBlockOrBucket).reversed()
                     .thenComparing(gooTypeName)
                     .thenComparing(shardSize)
                     .thenComparing(registryName)

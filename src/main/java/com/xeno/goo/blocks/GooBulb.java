@@ -1,13 +1,17 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.library.VoxelHelper;
+import com.xeno.goo.overlay.RayTraceTargetSource;
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooBulbTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -23,11 +27,17 @@ import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
 public class GooBulb extends BlockWithConnections
 {
+
+    private static final int BUCKET_AMOUNT = 1000;
     VoxelShape shape;
 
     public GooBulb()
@@ -163,22 +173,107 @@ public class GooBulb extends BlockWithConnections
         }
 
         GooBulbTile bulb = ((GooBulbTile) tile);
+        ActionResultType bucketInteracted = tryBucketInteraction(bulb, state, worldIn, pos, player, handIn, hit);
+        if (bucketInteracted != ActionResultType.FAIL) {
+            return bucketInteracted;
+        }
+        return tryBidirectionalCrystalInteraction(worldIn, player, handIn, hit, (GooBulbTile) tile, bulb);
+    }
+
+    private ActionResultType tryBucketInteraction(GooBulbTile bulb, BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn,
+            BlockRayTraceResult hit) {
+
+        ActionResultType emptyBucketFill = tryFillingEmptyBucket(bulb, player, handIn, hit);
+        if (emptyBucketFill != ActionResultType.FAIL) {
+            return emptyBucketFill;
+        }
+        return tryEmptyingFilledBucket(bulb, player, handIn, hit);
+
+
+    }
+
+    private ActionResultType tryEmptyingFilledBucket(GooBulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+
+        if (!(player.getHeldItem(handIn).getItem() instanceof BucketItem)) {
+            return ActionResultType.FAIL;
+        }
+
+        BucketItem bucket = (BucketItem)player.getHeldItem(handIn).getItem();
+        if (!(bucket.getFluid() instanceof GooFluid)) {
+            return ActionResultType.FAIL;
+        }
+
+        IFluidHandler cap = bulb.getCapabilityFromRayTraceResult(hit.getHitVec(), hit.getFace(), RayTraceTargetSource.BUCKET);
+        if (cap == null) {
+            return ActionResultType.FAIL;
+        }
+
+        FluidStack bucketStack = new FluidStack(bucket.getFluid(), BUCKET_AMOUNT);
+        int amountTransferred = cap.fill(bucketStack, FluidAction.SIMULATE);
+        if (amountTransferred < BUCKET_AMOUNT) {
+            return ActionResultType.FAIL;
+        }
+
+        if (!player.world.isRemote) {
+            cap.fill(bucketStack, FluidAction.EXECUTE);
+            player.setHeldItem(handIn, new ItemStack(Items.BUCKET));
+        }
+        return ActionResultType.func_233537_a_(player.world.isRemote);
+    }
+
+    @NotNull
+    private ActionResultType tryFillingEmptyBucket(GooBulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+
+        if (player.getHeldItem(handIn).getItem() != Items.BUCKET) {
+            return ActionResultType.FAIL;
+        }
+        IFluidHandler cap = bulb.getCapabilityFromRayTraceResult(hit.getHitVec(), hit.getFace(), RayTraceTargetSource.BUCKET);
+        if (cap == null) {
+            return ActionResultType.FAIL;
+        }
+
+        FluidStack simulate = cap.drain(BUCKET_AMOUNT, FluidAction.SIMULATE);
+        if (simulate.isEmpty() || simulate.getAmount() < BUCKET_AMOUNT) {
+            return ActionResultType.FAIL;
+        } else {
+            if (!player.world.isRemote) {
+                FluidStack execute = cap.drain(BUCKET_AMOUNT, FluidAction.EXECUTE);
+                ItemStack filledBucket = new ItemStack(execute.getFluid().getFilledBucket());
+                player.getHeldItem(handIn).shrink(1);
+                if (player.getHeldItem(handIn).isEmpty()) {
+                    player.setHeldItem(handIn, filledBucket);
+                } else {
+                    player.addItemStackToInventory(filledBucket);
+                }
+            }
+            return ActionResultType.func_233537_a_(player.world.isRemote);
+        }
+    }
+
+    @NotNull
+    private ActionResultType tryBidirectionalCrystalInteraction(World worldIn, PlayerEntity player, Hand handIn, BlockRayTraceResult hit, GooBulbTile tile, GooBulbTile bulb) {
+
         if (bulb.hasCrystal()) {
             if (!worldIn.isRemote) {
                 bulb.spitOutCrystal(player, hit.getFace());
             }
             return ActionResultType.func_233537_a_(worldIn.isRemote);
         } else {
-            // bulb is empty so it can take a crystal if you're holding one.
-            Item item = player.getHeldItem(handIn).getItem();
-            if (!item.equals(Items.QUARTZ) && !(item instanceof CrystallizedGooAbstract)) {
-                return ActionResultType.FAIL;
-            }
-            if (!worldIn.isRemote) {
-                player.getHeldItem(handIn).shrink(1);
-                ((GooBulbTile) tile).addCrystal(item);
-            }
-            return ActionResultType.func_233537_a_(worldIn.isRemote);
+            return tryFeedingBulbCrystal(worldIn, player, handIn, tile);
         }
+    }
+
+    @NotNull
+    private ActionResultType tryFeedingBulbCrystal(World worldIn, PlayerEntity player, Hand handIn, GooBulbTile tile) {
+        // bulb is empty so it can take a crystal if you're holding one.
+        Item item = player.getHeldItem(handIn).getItem();
+        if (!item.equals(Items.QUARTZ) && !(item instanceof CrystallizedGooAbstract)) {
+            return ActionResultType.FAIL;
+        }
+        if (!worldIn.isRemote) {
+            player.getHeldItem(handIn).shrink(1);
+            tile.addCrystal(item);
+        }
+        return ActionResultType.func_233537_a_(worldIn.isRemote);
     }
 }
