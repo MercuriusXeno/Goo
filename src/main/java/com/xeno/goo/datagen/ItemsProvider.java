@@ -7,14 +7,20 @@ import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.model.DynamicBucketModel;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
+import net.minecraftforge.client.model.generators.ModelBuilder;
 import net.minecraftforge.client.model.generators.ModelFile;
+import net.minecraftforge.client.model.generators.loaders.DynamicBucketModelBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.fml.RegistryObject;
 
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -37,6 +43,21 @@ public class ItemsProvider extends ItemModelProvider {
         registerSpawnEggs();
         registerTrough();
         registerSnail();
+        registerBuckets();
+    }
+
+    private void registerBuckets() {
+        for(Entry<Supplier<GooFluid>, Supplier<Item>> entry : Registry.BucketSuppliers.entrySet()) {
+            DynamicBucketModelBuilder<ItemModelBuilder> model =
+                    DynamicBucketModelBuilder.begin(withExistingParent(entry.getValue().get().getRegistryName().getPath(), new ResourceLocation("forge", "bucket")),
+                            this.existingFileHelper)
+                    .fluid(entry.getKey().get())
+                    .applyFluidLuminosity(false)
+                    .applyTint(false)
+                    .coverIsMask(true)
+                    .flipGas(false);
+
+        }
     }
 
     private void registerGooCrystals() {
@@ -120,6 +141,6 @@ public class ItemsProvider extends ItemModelProvider {
     private void registerSpawnEggs() {
         withExistingParent(ItemsRegistry.GOO_BEE_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
         withExistingParent(ItemsRegistry.GOO_SNAIL_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
-        withExistingParent(ItemsRegistry.LIGHTNING_BUG_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
+        // withExistingParent(ItemsRegistry.LIGHTNING_BUG_SPAWN_EGG.get().getRegistryName().getPath(), new ResourceLocation("item/template_spawn_egg"));
     }
 }

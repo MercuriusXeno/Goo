@@ -21,6 +21,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.SpawnEggItem;
@@ -41,6 +42,7 @@ import java.util.function.Supplier;
 
 public class Registry {
     public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new TreeMap<>(Comparator.comparing(ResourceLocation::getPath));
+    public static final Map<Supplier<GooFluid>, Supplier<Item>> BucketSuppliers = new HashMap<>();
 
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
@@ -122,19 +124,6 @@ public class Registry {
         ));
 
         ENTITIES.register("lighting_bug", makeSupplier(LIGHTING_BUG = EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
-                        .size(0.5f, 0.5f)
-                        .setTrackingRange(64)
-                        .setUpdateInterval(1)
-                        .setShouldReceiveVelocityUpdates(true)
-                        .build("lighting_bug")
-        ));
-    }
-
-    public static final EntityType<LightingBug> LIGHTING_BUG;
-
-    static {
-        ENTITIES.register("lighting_bug", makeSupplier(
-                LIGHTING_BUG = EntityType.Builder.create(LightingBug::new, EntityClassification.CREATURE)
                         .size(0.5f, 0.5f)
                         .setTrackingRange(64)
                         .setUpdateInterval(1)
@@ -234,6 +223,35 @@ public class Registry {
         RegistryObject<GooFluid> registeredObject = FLUIDS.register(name, () -> new GooFluid(still, flowing, icon, overrideIndex, lightLevel));
         FluidSuppliers.put(new ResourceLocation(GooMod.MOD_ID, name), registeredObject);
         return registeredObject;
+    }
+
+
+
+    public static final RegistryObject<Item> AQUATIC_BUCKET = registerGooBucket("aquatic_goo", AQUATIC_GOO);
+    public static final RegistryObject<Item> CHROMATIC_BUCKET = registerGooBucket("chromatic_goo", CHROMATIC_GOO);
+    public static final RegistryObject<Item> CRYSTAL_BUCKET = registerGooBucket("crystal_goo", CRYSTAL_GOO);
+    public static final RegistryObject<Item> DECAY_BUCKET = registerGooBucket("decay_goo", DECAY_GOO);
+    public static final RegistryObject<Item> EARTHEN_BUCKET = registerGooBucket("earthen_goo", EARTHEN_GOO);
+    public static final RegistryObject<Item> ENERGETIC_BUCKET = registerGooBucket("energetic_goo", ENERGETIC_GOO);
+    public static final RegistryObject<Item> FAUNAL_BUCKET = registerGooBucket("faunal_goo", FAUNAL_GOO);
+    public static final RegistryObject<Item> FLORAL_BUCKET = registerGooBucket("floral_goo", FLORAL_GOO);
+    public static final RegistryObject<Item> FUNGAL_BUCKET = registerGooBucket("fungal_goo", FUNGAL_GOO);
+    public static final RegistryObject<Item> HONEY_BUCKET = registerGooBucket("honey_goo", HONEY_GOO);
+    public static final RegistryObject<Item> LOGIC_BUCKET = registerGooBucket("logic_goo", LOGIC_GOO);
+    public static final RegistryObject<Item> METAL_BUCKET = registerGooBucket("metal_goo", METAL_GOO);
+    public static final RegistryObject<Item> MOLTEN_BUCKET = registerGooBucket("molten_goo", MOLTEN_GOO);
+    public static final RegistryObject<Item> PRIMORDIAL_BUCKET = registerGooBucket("primordial_goo", PRIMORDIAL_GOO);
+    public static final RegistryObject<Item> RADIANT_BUCKET = registerGooBucket("radiant_goo", RADIANT_GOO);
+    public static final RegistryObject<Item> REGAL_BUCKET = registerGooBucket("regal_goo", REGAL_GOO);
+    public static final RegistryObject<Item> SLIME_BUCKET = registerGooBucket("slime_goo", SLIME_GOO);
+    public static final RegistryObject<Item> SNOW_BUCKET = registerGooBucket("snow_goo", SNOW_GOO);
+    public static final RegistryObject<Item> VITAL_BUCKET = registerGooBucket("vital_goo", VITAL_GOO);
+    public static final RegistryObject<Item> WEIRD_BUCKET = registerGooBucket("weird_goo", WEIRD_GOO);
+
+    public static RegistryObject<Item> registerGooBucket(String name, Supplier<GooFluid> fluid) {
+        RegistryObject<Item> registeredBucket = ItemsRegistry.ITEMS.register(name + "_bucket", () -> new BucketItem(fluid, new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+        BucketSuppliers.put(fluid, registeredBucket);
+        return registeredBucket;
     }
 
     // compound groups

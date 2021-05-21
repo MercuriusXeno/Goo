@@ -1,9 +1,11 @@
 package com.xeno.goo.fluids;
 
+import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.util.Direction;
@@ -58,7 +60,7 @@ public class GooFluid extends Fluid
 
     @Override
     public Item getFilledBucket() {
-        return Items.AIR;
+        return Registry.BucketSuppliers.get(this.getRegistryName()).get();
     }
 
     @Override

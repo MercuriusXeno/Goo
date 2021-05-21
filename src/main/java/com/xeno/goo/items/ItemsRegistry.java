@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 public class ItemsRegistry {
 
-    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, GooMod.MOD_ID);
     public static void initialize() {
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
@@ -58,7 +58,7 @@ public class ItemsRegistry {
     // eggs
     public static final RegistryObject<Item> GOO_BEE_SPAWN_EGG = ITEMS.register("goo_bee_spawn_egg", Registry.makeEgg(Registry.GOO_BEE, 0xff7cbdc4, 0xffa674cf));
     public static final RegistryObject<Item> GOO_SNAIL_SPAWN_EGG = ITEMS.register("goo_snail_spawn_egg", Registry.makeEgg(Registry.GOO_SNAIL, 0xff6b6656, 0xffc7c3b3));
-    public static final RegistryObject<Item> LIGHTNING_BUG_SPAWN_EGG = ITEMS.register("lightning_bug_spawn_egg", Registry.makeEgg(Registry.LIGHTING_BUG, 0xffffffcc, 0xffffcc99));
+    // public static final RegistryObject<Item> LIGHTNING_BUG_SPAWN_EGG = ITEMS.register("lightning_bug_spawn_egg", Registry.makeEgg(Registry.LIGHTING_BUG, 0xffffffcc, 0xffffcc99));
 
     private final static Map<String, Integer> crystallizedGooVariants = new HashMap<>();
     static {
