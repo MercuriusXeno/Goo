@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:faunal"
+      "type": "goo:vital"
     },
     {
       "amount": 15.0,
-      "type": "goo:vital"
+      "type": "goo:faunal"
     }
   ]
 }

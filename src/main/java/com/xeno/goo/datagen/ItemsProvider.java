@@ -48,15 +48,9 @@ public class ItemsProvider extends ItemModelProvider {
 
     private void registerBuckets() {
         for(Entry<Supplier<GooFluid>, Supplier<Item>> entry : Registry.BucketSuppliers.entrySet()) {
-            DynamicBucketModelBuilder<ItemModelBuilder> model =
-                    DynamicBucketModelBuilder.begin(withExistingParent(entry.getValue().get().getRegistryName().getPath(), new ResourceLocation("forge", "bucket")),
-                            this.existingFileHelper)
-                    .fluid(entry.getKey().get())
-                    .applyFluidLuminosity(false)
-                    .applyTint(false)
-                    .coverIsMask(true)
-                    .flipGas(false);
-
+            withExistingParent(entry.getValue().get().getRegistryName().getPath(), new ResourceLocation("forge", "bucket"))
+                    .customLoader(DynamicBucketModelBuilder::begin)
+                    .fluid(entry.getKey().get());
         }
     }
 

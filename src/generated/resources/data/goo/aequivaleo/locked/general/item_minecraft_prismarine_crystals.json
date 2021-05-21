@@ -23,15 +23,15 @@
     },
     {
       "amount": 3.0,
-      "type": "goo:crystal"
-    },
-    {
-      "amount": 3.0,
       "type": "goo:primordial"
     },
     {
       "amount": 20.0,
       "type": "goo:radiant"
+    },
+    {
+      "amount": 3.0,
+      "type": "goo:crystal"
     }
   ]
 }

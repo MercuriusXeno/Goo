@@ -18,8 +18,8 @@
   ],
   "compounds": [
     {
-      "amount": 180.0,
-      "type": "goo:earthen"
+      "amount": 15.0,
+      "type": "goo:crystal"
     },
     {
       "amount": 15.0,
@@ -30,8 +30,8 @@
       "type": "goo:molten"
     },
     {
-      "amount": 15.0,
-      "type": "goo:crystal"
+      "amount": 180.0,
+      "type": "goo:earthen"
     }
   ]
 }
