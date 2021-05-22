@@ -1,5 +1,8 @@
 package com.xeno.goo.effects;
 
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
+import com.xeno.goo.setup.Registry;
 import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.attributes.AttributeModifierManager;
@@ -8,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectType;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.EntityRayTraceResult;
 
 public class EggedEffect extends Effect {
@@ -33,6 +37,7 @@ public class EggedEffect extends Effect {
 	@Override
 	public void removeAttributesModifiersFromEntity(LivingEntity entityLivingBaseIn, AttributeModifierManager attributeMapIn, int amplifier) {
 		if (entityLivingBaseIn.world.isRemote()) {
+			AudioHelper.entityAudioEvent(entityLivingBaseIn, Registry.PRIMORDIAL_WARP_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, PitchFormulas.HalfToOne);
 			return;
 		}
 		spawnEggForEntity(entityLivingBaseIn);
@@ -64,14 +69,14 @@ public class EggedEffect extends Effect {
 				double dx = victim.world.rand.nextDouble() - 0.5d;
 				double dy = victim.world.rand.nextDouble() - 0.5d;
 				double dz = victim.world.rand.nextDouble() - 0.5d;
-				victim.world.addParticle(ParticleTypes.END_ROD, victim.getPosX() + dx, victim.getPosY() + dy, victim.getPosZ() + dz, dx, dy, dz);
+				victim.world.addParticle(ParticleTypes.END_ROD, victim.getPosX() + dx, victim.getPosY() + dy, victim.getPosZ() + dz,
+						dx / 3d, dy / 3d, dz / 3d);
 			}
 			return;
 		}
 	}
 
 	public boolean isReady(int duration, int amplifier) {
-		// return duration % 4 == 0;
 		return true;
 	}
 }

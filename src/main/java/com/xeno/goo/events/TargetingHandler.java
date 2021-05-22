@@ -361,14 +361,8 @@ public class TargetingHandler
         by += centeringVerticalOffset;
         MatrixStack matrices = event.getMatrixStack();
         RenderSystem.pushMatrix();
-//        if (Minecraft.getInstance().currentScreen instanceof GuiBook) {
-//            GooMod.debug("Z level at " + PATCHOULI_Z_LEVEL.get());
-//        }
-//        RenderSystem.translatef(bx, by, Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL.get() : Z_LEVEL_OF_MODAL);
         RenderSystem.translatef(bx, by, Z_LEVEL_OF_MODAL);
         RenderSystem.translatef(0, 0, Minecraft.getInstance().getItemRenderer().zLevel);
-        // float zLevel = Minecraft.getInstance().currentScreen instanceof GuiBook ? PATCHOULI_Z_LEVEL : Z_LEVEL_OF_MODAL;
-        // matrices.translate(bx, by, Z_LEVEL_OF_MODAL);
         for (FluidStack entry : gooEntry) {
             if (!(entry.getFluid() instanceof GooFluid)) {
                 continue;
@@ -378,7 +372,6 @@ public class TargetingHandler
             renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), x, y, (int)Math.floor(entry.getAmount()));
             j++;
         }
-        // matrices.pop();
         RenderSystem.popMatrix();
     }
 

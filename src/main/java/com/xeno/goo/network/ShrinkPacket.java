@@ -58,7 +58,6 @@ public class ShrinkPacket implements IGooModPacket {
 
 						if(iShrinkProvider.isShrunk())
 						{
-							GooMod.debug(entity.getName().getString() + " shrinking to " + iShrinkProvider.scale());
 							entity.size = new EntitySize(iShrinkProvider.widthScale(), iShrinkProvider.heightScale(), true);
 							entity.eyeHeight = iShrinkProvider.defaultEyeHeight() * iShrinkProvider.scale();
 						}

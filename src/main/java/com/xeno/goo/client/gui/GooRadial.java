@@ -69,8 +69,6 @@ public class GooRadial extends Screen {
 
         this.selectedItem = -1;
         this.lastFluidStackTarget = FluidStack.EMPTY;
-
-        // GooMod.debug("Radial opening...");
     }
 
     @SubscribeEvent
