@@ -76,6 +76,12 @@ public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 		return stack == null ? FluidStack.EMPTY : stack;
 	}
 
+	@Override
+	public void empty() {
+		tanks = new FluidStack[tankCount];
+		Arrays.fill(tanks, FluidStack.EMPTY);
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */

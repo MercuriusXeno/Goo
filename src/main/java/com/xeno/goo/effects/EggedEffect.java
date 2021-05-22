@@ -1,8 +1,8 @@
 package com.xeno.goo.effects;
 
-import com.xeno.goo.shrink.api.IShrinkProvider;
 import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.attributes.AttributeModifierManager;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particles.ParticleTypes;
@@ -12,6 +12,7 @@ import net.minecraft.util.math.EntityRayTraceResult;
 
 public class EggedEffect extends Effect {
 	public static EggedEffect instance = new EggedEffect();
+	private static final float SCALE_REDUCTION_PER_TICK = 0.025f;
 
 	protected EggedEffect() {
 		super(EffectType.NEUTRAL, 0xffffffff);
@@ -19,34 +20,40 @@ public class EggedEffect extends Effect {
 
 	@Override
 	public void performEffect(LivingEntity e, int amplifier) {
-		if (e.world.isRemote) {
-			return;
-		}
 		e.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(s ->
 			{
 				if (!s.isShrunk()) {
 					s.shrink(e);
-				} else {
-					double entityVolume = volumeOfEntity(s);
-					if (entityVolume > VOLUME_OF_EGG) {
-						s.setScale(s.scale() - 0.025f);
-
-					} else {
-						spawnEggForEntity(e);
-						e.remove();
-					}
 				}
+				s.setScale(s.scale() - 0.025f);
 			}
 		);
 	}
 
-	private double volumeOfEntity(IShrinkProvider e) {
-		return e.defaultEntitySize().width * e.defaultEntitySize().width * e.defaultEntitySize().height	* e.scale();
+	@Override
+	public void removeAttributesModifiersFromEntity(LivingEntity entityLivingBaseIn, AttributeModifierManager attributeMapIn, int amplifier) {
+		if (entityLivingBaseIn.world.isRemote()) {
+			return;
+		}
+		spawnEggForEntity(entityLivingBaseIn);
+		entityLivingBaseIn.remove();
+	}
+
+	private static double volumeOfEntity(LivingEntity e) {
+		return e.size.width * e.size.width * e.size.height;
+	}
+
+	private static double scaleTarget(LivingEntity e) {
+		return VOLUME_OF_EGG / volumeOfEntity(e);
+	}
+
+	public static int durationOfEffect(LivingEntity e) {
+		return (int)Math.ceil(Math.max(1, (1f - scaleTarget(e)) / SCALE_REDUCTION_PER_TICK));
 	}
 
 	// this is ballparked/made up, but bear with me.
-	private float RADIUS_OF_EGG = 1f / 4f;
-	private float VOLUME_OF_EGG = (float)Math.PI * RADIUS_OF_EGG * RADIUS_OF_EGG * RADIUS_OF_EGG * 4f / 3f;
+	private static final float RADIUS_OF_EGG = 1f / 4f;
+	private static final float VOLUME_OF_EGG = (float)Math.PI * RADIUS_OF_EGG * RADIUS_OF_EGG * RADIUS_OF_EGG * 4f / 3f;
 
 	private void spawnEggForEntity(LivingEntity victim) {
 		ItemStack maybeEgg = victim.getPickedResult(new EntityRayTraceResult(victim));

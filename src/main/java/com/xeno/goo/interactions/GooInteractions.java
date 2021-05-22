@@ -4,14 +4,17 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.entities.GooSplat;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.network.BlobHitInteractionPacket;
+import com.xeno.goo.network.BlobInteractionPacket;
+import com.xeno.goo.network.Networking;
+import com.xeno.goo.network.SplatInteractionPacket;
 import com.xeno.goo.setup.Registry;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
@@ -24,11 +27,6 @@ import java.util.TreeMap;
 
 public class GooInteractions
 {
-    private static BasicParticleType particleTypeFromGoo(FluidStack fluidInTank)
-    {
-        return particleTypeFromGoo(fluidInTank.getFluid());
-    }
-
     private static BasicParticleType particleTypeFromGoo(Fluid f)
     {
         return Registry.fallingParticleFromFluid(f);
@@ -181,21 +179,25 @@ public class GooInteractions
     }
 
 
-    public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob gooBlob)
+    public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob blob)
     {
-        if (!gooBlob.isAlive()) {
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new BlobHitInteractionPacket(e, owner, blob), (ServerWorld)e.world, e.getPosition(), 32);
+        }
+        if (!blob.isAlive() || blob.goo().isEmpty()) {
             return;
         }
-        Fluid fluid = gooBlob.goo().getFluid();
+        Fluid fluid = blob.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!blobHitRegistry.containsKey(fluid)) {
             return;
         }
 
-        BlobHitContext context = new BlobHitContext(e, owner, gooBlob, fluid);
+        BlobHitContext context = new BlobHitContext(e, owner, blob, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
         map.forEach((k, v) -> tryResolving(v, context.withKey(k.getB())));
+
     }
 
     /**
@@ -203,33 +205,40 @@ public class GooInteractions
      * There's less argumentation, less configurability. The blob hits a thing and does something and dies.
      * There also isn't a "cost" of interactions. The blob hits are balanced around the defaults for amounts
      * thrown, and amounts thrown are balanced around block/splat effects primarily.
-     * @param iBlobInteraction
-     * @param context
+     * @param iBlobInteraction The functional interface of the resolver effect, this is what does the thing, whatever it is.
+     * @param context The interaction context for a blob hit, contains the state for what the thing should affect.
      */
     private static void tryResolving(IBlobHitInteraction iBlobInteraction, BlobHitContext context)
     {
+        if (!context.blob().isAlive() || context.blob().goo().isEmpty()) {
+            return;
+        }
         if (iBlobInteraction.resolve(context)) {
             GooInteractions.spawnParticles(context.blob());
+            GooBlob.getGoo(context.blob()).empty();
             context.blob().remove();
         } else {
             context.ricochet();
         }
     }
 
-    public static void tryResolving(BlockRayTraceResult blockResult, GooBlob gooBlob)
+    public static void tryResolving(BlockPos blockHitPos, GooBlob e)
     {
-        if (!gooBlob.isAlive()) {
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new BlobInteractionPacket(blockHitPos, e), (ServerWorld)e.world, e.getPosition(), 32);
+        }
+        if (!e.isAlive()) {
             return;
         }
-        Fluid fluid = gooBlob.goo().getFluid();
+        Fluid fluid = e.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!blobRegistry.containsKey(fluid)) {
             return;
         }
-        BlobContext context = new BlobContext(blockResult, gooBlob, fluid);
+        BlobContext context = new BlobContext(blockHitPos, e);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobInteraction> map = blobRegistry.get(fluid);
-        map.forEach((k, v) -> tryResolving(fluid, k, v, context.withKey(k.getB())));
+        map.forEach((k, v) -> tryResolving(fluid, k, v, context));
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, IBlobInteraction iBlobInteraction, BlobContext context)
@@ -264,20 +273,23 @@ public class GooInteractions
         }
     }
 
-    public static void tryResolving(GooSplat gooSplat)
+    public static void tryResolving(GooSplat e)
     {
-        if (!gooSplat.isAlive()) {
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new SplatInteractionPacket(e), (ServerWorld)e.world, e.getPosition(), 32);
+        }
+        if (!e.isAlive()) {
             return;
         }
-        Fluid fluid = gooSplat.goo().getFluid();
+        Fluid fluid = e.goo().getFluid();
         // no interactions registered, we don't want to crash.
         if (!splatRegistry.containsKey(fluid)) {
             return;
         }
-        SplatContext context = new SplatContext(gooSplat, fluid);
+        SplatContext context = new SplatContext(e, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(fluid);
-        map.forEach((k, v) -> tryResolving(fluid, k, v, context.withKey(k.getB())));
+        map.forEach((k, v) -> tryResolving(fluid, k, v, context));
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)

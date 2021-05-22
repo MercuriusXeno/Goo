@@ -235,7 +235,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
             this.dataManager.set(IS_AT_REST, this.isAtRest);
         }
 
-        if (this.isAtRest && !this.isInert) {
+        if (!this.world.isRemote() && this.isAtRest && !this.isInert) {
             // first we try to drain into a drain if we're vertical and it's below
             if (sideWeLiveOn == Direction.UP && isDrainBelow()) {
                 drainIntoDrain();

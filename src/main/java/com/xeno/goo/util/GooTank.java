@@ -93,6 +93,11 @@ public class GooTank extends IGooTank {
 		return tank;
 	}
 
+	@Override
+	public void empty() {
+		tank.setAmount(0);
+	}
+
 	/**
 	 * {@inheritDoc}
 	 */

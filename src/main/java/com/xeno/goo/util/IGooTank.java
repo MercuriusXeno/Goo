@@ -177,4 +177,6 @@ public abstract class IGooTank implements IFluidHandler {
 		return ((lockedTanks ? fluid == FluidStack.EMPTY : fluid.isEmpty()) && filter.test(stack)) ||
 				(fluid.getRawFluid() == stack.getRawFluid() && FluidStack.areFluidStackTagsEqual(fluid, stack));
 	}
+
+	public abstract void empty();
 }

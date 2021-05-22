@@ -7,6 +7,7 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.function.IntSupplier;
 
 public class MultiGooTank extends IGooTankMulti {
@@ -67,6 +68,12 @@ public class MultiGooTank extends IGooTankMulti {
 			return FluidStack.EMPTY;
 		final FluidStack stack = tanks[index];
 		return stack == null ? FluidStack.EMPTY : stack;
+	}
+
+	@Override
+	public void empty() {
+		tanks = new FluidStack[tankCount];
+		Arrays.fill(tanks, FluidStack.EMPTY);
 	}
 
 	/**

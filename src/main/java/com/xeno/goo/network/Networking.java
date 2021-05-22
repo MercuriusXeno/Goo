@@ -74,11 +74,28 @@ public class Networking {
                 .consumer(CrystalProgressTickPacket::handle)
                 .add();
 
-
         INSTANCE.messageBuilder(ShrinkPacket.class, nextID())
                 .encoder(ShrinkPacket::toBytes)
                 .decoder(ShrinkPacket::new)
                 .consumer(ShrinkPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(BlobHitInteractionPacket.class, nextID())
+                .encoder(BlobHitInteractionPacket::toBytes)
+                .decoder(BlobHitInteractionPacket::new)
+                .consumer(BlobHitInteractionPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(BlobInteractionPacket.class, nextID())
+                .encoder(BlobInteractionPacket::toBytes)
+                .decoder(BlobInteractionPacket::new)
+                .consumer(BlobInteractionPacket::handle)
+                .add();
+
+        INSTANCE.messageBuilder(SplatInteractionPacket.class, nextID())
+                .encoder(SplatInteractionPacket::toBytes)
+                .decoder(SplatInteractionPacket::new)
+                .consumer(SplatInteractionPacket::handle)
                 .add();
     }
 
