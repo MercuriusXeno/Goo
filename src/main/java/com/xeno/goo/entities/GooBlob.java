@@ -246,7 +246,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
             if (!this.world.isRemote() && isValidForPassThrough(blockResult)) {
                 GooInteractions.tryResolving(blockResult.getPos(), this);
-                return true;
+                return false;
             }
 
             // check to see if the block is a solid cube.
