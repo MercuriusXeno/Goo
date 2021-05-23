@@ -31,7 +31,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	public void seedRecipes(World world) {
-		Equivalencies.cache(world).
+		
 
 	}
 }
