@@ -3,6 +3,7 @@ package com.xeno.goo.tiles;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.util.IGooTank;
+import com.xeno.goo.util.MathUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
@@ -48,8 +49,7 @@ public abstract class GooContainerAbstraction extends FluidHandlerInteractionAbs
 	}
 
 	public final int getStorageCapacity() {
-
-		return (int) MathHelper.clamp(getBaseCapacity() * (long) getStorageMultiplier(), 0, Integer.MAX_VALUE);
+		return (int) MathUtil.clamp(getBaseCapacity() * (long) getStorageMultiplier(), 0, Integer.MAX_VALUE);
 	}
 
 	public abstract int getBaseCapacity();

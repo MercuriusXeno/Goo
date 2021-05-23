@@ -410,6 +410,8 @@
   "fluid.goo.weird_goo": "Weird",
   "fluid.goo.primordial_goo": "Primordial",
 
+  "goo.amount_of_goo": "%d mB",
+
   "item.goo.aquatic_goo_bucket": "Aquatic Bucket",
   "item.goo.chromatic_goo_bucket": "Chromatic Bucket",
   "item.goo.crystal_goo_bucket": "Crystal Bucket",

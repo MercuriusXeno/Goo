@@ -17,32 +17,32 @@ import java.util.stream.Collectors;
 
 public class Equivalencies
 {
-    public static Map<ICompoundContainer<?>, ImmutableSet<CompoundInstance>> locked(World world) {
-        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(world.getDimensionKey()).getLockingInformation();
-    }
-
-    public static IResultsInformationCache cache(World world) {
-        return cache(world.getDimensionKey());
+    public static Map<ICompoundContainer<?>, ImmutableSet<CompoundInstance>> locked(RegistryKey<World> worldKey) {
+        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(worldKey).getLockingInformation();
     }
 
     public static IResultsInformationCache cache(RegistryKey<World> worldKey) {
         return IAequivaleoAPI.getInstance().getResultsInformationCache(worldKey);
     }
 
-    public static GooEntry getEntry(World entityWorld, Item item)
-    {
-        return getEntry(entityWorld, new ItemStack(item));
+    public static GooEntry getEntry(World world, Item item) {
+        return getEntry(world.getDimensionKey(), item);
     }
 
-    public static GooEntry getEntry(World entityWorld, ItemStack item)
+    public static GooEntry getEntry(RegistryKey<World> worldKey, Item item)
     {
-        Set<CompoundInstance> results = cache(entityWorld).getFor(item);
-        return new GooEntry(entityWorld, item.getItem(), results);
+        return getEntry(worldKey, new ItemStack(item));
     }
 
-    public static boolean isLocked(World world, Item item)
+    public static GooEntry getEntry(RegistryKey<World> worldKey, ItemStack item)
     {
-        return locked(world).entrySet().stream().anyMatch(l -> l.getKey().getContents().equals(item));
+        Set<CompoundInstance> results = cache(worldKey).getFor(item);
+        return new GooEntry(worldKey, item.getItem(), results);
+    }
+
+    public static boolean isLocked(RegistryKey<World> worldKey, Item item)
+    {
+        return locked(worldKey).entrySet().stream().anyMatch(l -> l.getKey().getContents().equals(item));
     }
 
     // used to be used to restrict solidification of furnace products but now all it does is power molten goo
@@ -50,6 +50,7 @@ public class Equivalencies
     public static Map<RegistryKey<World>, Set<Item>> furnaceProducts = new HashMap<>();
 
     public static List<IRecipe<?>> furnaceRecipes(World world) {
+
         return world.getRecipeManager().getRecipes().stream()
                 .filter(r -> r.getType().toString().equals("smelting")).collect(Collectors.toList());
     }

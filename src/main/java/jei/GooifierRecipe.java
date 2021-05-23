@@ -10,22 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GooifierRecipe {
-	private final List<FluidStack> outputStacks;
+	private final List<GooIngredient> outputStacks;
 	private final ItemStack inputStack;
 
-	public GooifierRecipe(ItemStack stack, GooEntry entry) {
+	public GooifierRecipe(ItemStack stack, GooConversionWrapper entry) {
 		this.inputStack = stack;
-		this.outputStacks = new ArrayList<>();
-		for (GooValue value : entry.values()) {
-			this.outputStacks.add(new FluidStack(Registry.getFluid(value.getFluidResourceLocation()), (int)Math.floor(value.amount())));
-		}
+		this.outputStacks = entry.goo();
 	}
 
 	public ItemStack input() {
 		return inputStack;
 	}
 
-	public List<FluidStack> outputs() {
+	public List<GooIngredient> outputs() {
 		return outputStacks;
 	}
 

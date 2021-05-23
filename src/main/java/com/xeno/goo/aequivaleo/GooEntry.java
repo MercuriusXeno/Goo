@@ -6,8 +6,11 @@ import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
+import jei.GooIngredient;
 import net.minecraft.item.Item;
 import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -74,13 +77,13 @@ public class GooEntry
         this.deniesSolidification = gooEntry.deniesSolidification;
     }
 
-    public GooEntry(World world, Item item, Set<CompoundInstance> compounds)
+    public GooEntry(RegistryKey<World> worldKey, Item item, Set<CompoundInstance> compounds)
     {
         boolean isValid = compounds.stream().anyMatch(c -> (c.getType() instanceof GooCompoundType));
 
         this.isDenied = !isValid;
         this.isUnknown = compounds.size() == 0;
-        this.isFixed = Equivalencies.isLocked(world, item);
+        this.isFixed = Equivalencies.isLocked(worldKey, item);
         this.deniesSolidification = compounds.stream().anyMatch(compoundInstance -> compoundInstance.getType() == Registry.FORBIDDEN.get());
         if (isValid)
         {
@@ -183,6 +186,14 @@ public class GooEntry
         List<FluidStack> ingredients = new ArrayList<>();
         for(GooValue value : values) {
             ingredients.add(new FluidStack(Registry.getFluid(value.getFluidResourceLocation()), (int)value.amount()));
+        }
+        return ingredients;
+	}
+
+	public List<GooIngredient> inputsAsGooIngredient() {
+        List<GooIngredient> ingredients = new ArrayList<>();
+        for(GooValue value : values) {
+            ingredients.add(new GooIngredient((int)value.amount(), new ResourceLocation(value.getFluidResourceLocation())));
         }
         return ingredients;
 	}

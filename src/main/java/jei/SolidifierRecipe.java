@@ -13,18 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SolidifierRecipe {
-	private final List<FluidStack> inputStacks;
+	private final List<GooIngredient> inputStacks;
 	private final ItemStack outputStack;
 
-	public SolidifierRecipe(ItemStack stack, GooEntry entry) {
-		this.inputStacks = new ArrayList<>();
-		for (GooValue value : entry.values()) {
-			this.inputStacks.add(new FluidStack(Registry.getFluid(value.getFluidResourceLocation()), (int)Math.floor(value.amount())));
-		}
+	public SolidifierRecipe(ItemStack stack, GooConversionWrapper entry) {
+		this.inputStacks = entry.goo();
 		this.outputStack = stack;
 	}
 
-	public List<FluidStack> inputs() {
+	public List<GooIngredient> inputs() {
 		return inputStacks;
 	}
 
