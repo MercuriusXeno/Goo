@@ -22,7 +22,11 @@ public class Equivalencies
     }
 
     public static IResultsInformationCache cache(World world) {
-        return IAequivaleoAPI.getInstance().getResultsInformationCache(world.getDimensionKey());
+        return cache(world.getDimensionKey());
+    }
+
+    public static IResultsInformationCache cache(RegistryKey<World> worldKey) {
+        return IAequivaleoAPI.getInstance().getResultsInformationCache(worldKey);
     }
 
     public static GooEntry getEntry(World entityWorld, Item item)

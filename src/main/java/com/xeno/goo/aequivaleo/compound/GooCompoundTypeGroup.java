@@ -93,10 +93,4 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     {
         return Objects.requireNonNull(getRegistryName()).compareTo(iCompoundTypeGroup.getRegistryName());
     }
-
-    @Override
-    public Optional<?> convertToCacheEntry(Set<CompoundInstance> instances) {
-
-        return Optional.empty();
-    }
 }
