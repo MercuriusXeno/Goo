@@ -9,6 +9,7 @@ import com.ldtteam.aequivaleo.api.mediation.IMediationContext;
 import com.ldtteam.aequivaleo.api.mediation.IMediationEngine;
 import com.ldtteam.aequivaleo.api.recipe.equivalency.IEquivalencyRecipe;
 import com.ldtteam.aequivaleo.vanilla.api.recipe.equivalency.ITagEquivalencyRecipe;
+import com.xeno.goo.aequivaleo.GooEntry;
 import net.minecraft.block.OreBlock;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -91,5 +92,11 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
     public int compareTo(@NotNull final ICompoundTypeGroup iCompoundTypeGroup)
     {
         return Objects.requireNonNull(getRegistryName()).compareTo(iCompoundTypeGroup.getRegistryName());
+    }
+
+    @Override
+    public Optional<?> convertToCacheEntry(Set<CompoundInstance> instances) {
+
+        return Optional.empty();
     }
 }

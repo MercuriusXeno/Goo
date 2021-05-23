@@ -7,6 +7,7 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.item.Item;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.text.IFormattableTextComponent;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -177,4 +178,12 @@ public class GooEntry
         valuesInTank.addAll(this.values);
         return new GooEntry(valuesInTank);
     }
+
+	public List<FluidStack> inputsAsFluidStacks() {
+        List<FluidStack> ingredients = new ArrayList<>();
+        for(GooValue value : values) {
+            ingredients.add(new FluidStack(Registry.getFluid(value.getFluidResourceLocation()), (int)value.amount()));
+        }
+        return ingredients;
+	}
 }
