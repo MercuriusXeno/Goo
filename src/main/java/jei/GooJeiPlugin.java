@@ -17,12 +17,18 @@ import java.util.stream.Collectors;
 
 @JeiPlugin
 public class GooJeiPlugin implements IModPlugin {
+	private static List<GooIngredient> fluids;
 
 	private static final ResourceLocation pluginId = new ResourceLocation(GooMod.MOD_ID, "jei_plugin");
 	@Override
 	public ResourceLocation getPluginUid() {
 		return pluginId;
 	}
+
+//	@Override
+//	public void registerRecipes(IRecipeRegistration registration) {
+//		registration.getIngredientManager().removeIngredientsAtRuntime(GooIngredient.GOO, fluids);
+//	}
 
 	@Override
 	public void registerCategories(IRecipeCategoryRegistration registration) {
@@ -39,10 +45,10 @@ public class GooJeiPlugin implements IModPlugin {
 
 	@Override
 	public void registerIngredients(IModIngredientRegistration registration) {
-
-		List<GooIngredient> fluids = Registry.FluidSuppliers.values().stream().map((e) ->
-			new GooIngredient(e.get().getRegistryName())
+		fluids = Registry.FluidSuppliers.values().stream().map((e) ->
+				new GooIngredient(e.get().getRegistryName())
 		).collect(Collectors.toList());
+
 		registration.register(GooIngredient.GOO, fluids, new GooIngredientHelper(), new GooIngredientRenderer());
 	}
 }

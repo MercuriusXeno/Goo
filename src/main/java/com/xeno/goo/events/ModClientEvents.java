@@ -22,6 +22,7 @@ import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.client.event.TextureStitchEvent.Pre;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -107,7 +108,13 @@ public class ModClientEvents
             addBasinMaskingTexture(event);
             addGauntletMaskingTexture(event);
             addUnmappedOverlayTextures(event);
+            // addGuiTexture(event);
         }
+    }
+
+    private static void addGuiTexture(Pre event) {
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "gui/gui_sheet"));
+
     }
 
     private static void addGauntletMaskingTexture(TextureStitchEvent.Pre event)

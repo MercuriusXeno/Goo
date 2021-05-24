@@ -32,7 +32,7 @@ public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 		background = guiHelper.createBlankDrawable(150, 60);
 		localizedName = I18n.format("block.goo.gooifier");
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
-		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/arrow.png"),
+		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
 				0, 0, 16, 16);
 	}
 
@@ -74,44 +74,33 @@ public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 
 	@Override
 	public void setRecipe(IRecipeLayout recipeLayout, GooifierRecipe recipe, IIngredients ingredients) {
-		recipeLayout.getItemStacks().init(0, true, 12, 12);
+		recipeLayout.getItemStacks().init(0, true, inputX(0), inputY(0));
 		recipeLayout.getItemStacks().set(0, recipe.input());
 
-		for(int index = 0; index <= recipe.outputs().size(); index++) {
-			recipeLayout.getIngredientsGroup(GooIngredient.GOO).init(index + 1, false, outputX(index), outputY(index));
-			recipeLayout.getIngredientsGroup(GooIngredient.GOO).set(index + 1, recipe.outputs().get(index));
+		for(int index = 0; index < recipe.outputs().size(); index++) {
+			recipeLayout.getIngredientsGroup(GooIngredient.GOO).init(index, false, outputX(index), outputY(index));
+			recipeLayout.getIngredientsGroup(GooIngredient.GOO).set(index, recipe.outputs().get(index));
 		}
 	}
 
 	@Override
 	public void draw(GooifierRecipe recipe, MatrixStack matrixStack, double mouseX, double mouseY) {
-		arrow.draw(matrixStack, 30, 12);
+		arrow.draw(matrixStack, outputX(0) - GooIngredientRenderer.horizontalSpacing, GooIngredientRenderer.comfyPadding + 1);
 	}
 
 	private static int inputX(int index) {
-		return 12;
+		return GooIngredientRenderer.comfyPadding;
 	}
 
 	private static int inputY(int index) {
-		return 12;
+		return GooIngredientRenderer.comfyPadding;
 	}
 
 	private static int outputX(int index) {
-		return 50 + (index * 18);
+		return GooIngredientRenderer.comfyPadding + ((index % GooIngredientRenderer.itemsPerRow) + 2) * GooIngredientRenderer.horizontalSpacing;
 	}
 
 	private static int outputY(int index) {
-		return 12 + (index / 5) * 18;
-	}
-
-	private GooIngredient mouseOverFluidStack(GooifierRecipe recipe, double mouseX, double mouseY) {
-		// figure out if the mouse X is in the range of any fluidstack input, each is 16x16.
-		for(int index = 0; index < recipe.outputs().size(); index++) {
-			if (mouseX >= outputX(index) && mouseX <= outputX(index) + 16 && mouseY >= outputY(index) && mouseY <= outputY(index) + 16) {
-				return recipe.outputs().get(index);
-			}
-		}
-
-		return null;
+		return GooIngredientRenderer.comfyPadding + (index / GooIngredientRenderer.itemsPerRow) *  GooIngredientRenderer.verticalSpacing;
 	}
 }

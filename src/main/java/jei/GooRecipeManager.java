@@ -33,35 +33,55 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 
 	@Override
 	public <T, V> List<T> getRecipes(IRecipeCategory<T> recipeCategory, IFocus<V> focus) {
-		if (focus.getMode().equals(Mode.INPUT)) {
-			if (recipeCategory.getUid() == GooifierRecipeCategory.UID && focus.getValue() instanceof ItemStack) {
-				ItemStack stack = ((ItemStack)focus.getValue());
-				return (List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.input().isItemEqual(stack))
-						.collect(Collectors.toList());
-			}
-			if (recipeCategory.getUid() == SolidifierRecipeCategory.UID && focus.getValue() instanceof GooIngredient) {
-				GooIngredient stack = ((GooIngredient)focus.getValue());
-				return (List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.inputs().stream().anyMatch(v -> v.fluidKey() == stack.fluidKey()))
-						.collect(Collectors.toList());
-
-			}
-		} else if (focus.getMode().equals(Mode.OUTPUT)) {
-			if (recipeCategory.getUid() == GooifierRecipeCategory.UID && focus.getValue() instanceof GooIngredient) {
-				GooIngredient stack = ((GooIngredient)focus.getValue());
-				return (List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+		List<T> recipeMatches = new ArrayList<>();
+		if (recipeCategory.getUid() == GooifierRecipeCategory.UID) {
+			if (focus.getMode().equals(Mode.INPUT)) {
+				if (focus.getValue() instanceof ItemStack) {
+					ItemStack stack = ((ItemStack)focus.getValue());
+					recipeMatches.addAll((List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+							.stream().filter(k -> k.input().isItemEqual(stack))
+							.collect(Collectors.toList()));
+				}
+			} else if (focus.getMode().equals(Mode.OUTPUT)) {
+				if (focus.getValue() instanceof GooIngredient) {
+					GooIngredient stack = ((GooIngredient)focus.getValue());
+					recipeMatches.addAll((List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
 							.stream().filter(k -> k.outputs().stream().anyMatch(v -> v.fluidKey() == stack.fluidKey()))
-							.collect(Collectors.toList());
-			}
-			if (recipeCategory.getUid() == SolidifierRecipeCategory.UID && focus.getValue() instanceof ItemStack) {
-				ItemStack stack = ((ItemStack)focus.getValue());
-				return (List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.output().isItemEqual(stack))
-						.collect(Collectors.toList());
+							.collect(Collectors.toList()));
+				}
 			}
 		}
-		return new ArrayList<>();
+		if (recipeCategory.getUid() == SolidifierRecipeCategory.UID) {
+			if (focus.getMode().equals(Mode.INPUT)) {
+				if (focus.getValue() instanceof GooIngredient) {
+					GooIngredient stack = ((GooIngredient)focus.getValue());
+					recipeMatches.addAll((List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+							.stream().filter(k -> k.inputs().stream().anyMatch(v -> v.fluidKey() == stack.fluidKey()))
+							.collect(Collectors.toList()));
+				}
+				if (focus.getValue() instanceof Item) {
+					Item stack = ((Item)focus.getValue());
+					recipeMatches.addAll((List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+							.stream().filter(k -> k.input().getItem().equals(stack))
+							.collect(Collectors.toList()));
+				}
+			} else if (focus.getMode().equals(Mode.OUTPUT)) {
+				if (focus.getValue() instanceof ItemStack) {
+					ItemStack stack = ((ItemStack)focus.getValue());
+					recipeMatches.addAll((List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+							.stream().filter(k -> k.output().isItemEqual(stack))
+							.collect(Collectors.toList()));
+				}
+				if (focus.getValue() instanceof Item) {
+					Item stack = ((Item)focus.getValue());
+					recipeMatches.addAll((List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
+							.stream().filter(k -> k.output().getItem().equals(stack))
+							.collect(Collectors.toList()));
+				}
+			}
+		}
+
+		return recipeMatches.size() > 0 ? recipeMatches : Collections.emptyList();
 	}
 
 	@Override

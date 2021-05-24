@@ -11,12 +11,23 @@ import java.util.Collections;
 import java.util.List;
 
 public class GooIngredientRenderer implements IIngredientRenderer<GooIngredient> {
+	public static int horizontalSpacing = 24;
+	public static int verticalSpacing = 24;
+	public static int itemsPerRow = 3;
+	public static int comfyPadding = 12;
+	public static float fontScale = 0.5f;
 
 	@Override
 	public void render(MatrixStack matrixStack, int xPosition, int yPosition, GooIngredient ingredient) {
 		if (ingredient != null) {
-			Minecraft.getInstance().fontRenderer.drawString(matrixStack, ingredient.asString(), xPosition + 1, yPosition + 18, 0xffffff);
 			TargetingHandler.renderGooShortIcon(matrixStack, ingredient.gooIcon(), xPosition, yPosition, 16, 16, true);
+			if (ingredient.amount() > 0) {
+				matrixStack.push();
+				matrixStack.translate(xPosition, yPosition + 18, 1);
+				matrixStack.scale(fontScale, fontScale, fontScale);
+				Minecraft.getInstance().fontRenderer.drawStringWithShadow(matrixStack, ingredient.justAmountAsString(), 0, 0, 0xffffff);
+				matrixStack.pop();
+			}
 		}
 	}
 

@@ -1,14 +1,16 @@
 package jei;
 
-import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import mezz.jei.api.ingredients.IIngredientType;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TranslationTextComponent;
 
+import java.util.Objects;
+
 public class GooIngredient {
-	public static final String ID = "goo:goo_ingredient";
+	private static final String ID_PREFIX = "goo:ingredient_";
+	public final String id;
 	public static final IIngredientType<GooIngredient> GOO = () -> GooIngredient.class;
 	private final String fluidKey;
 	private final int amount;
@@ -20,7 +22,8 @@ public class GooIngredient {
 	public GooIngredient(int i, ResourceLocation fluidKey) {
 		this.amount = i;
 		this.fluidKey = fluidKey.getPath();
-		this.icon = ((GooFluid)Registry.getFluid(fluidKey.toString())).icon();
+		this.icon = ((GooFluid)Registry.getFluid(fluidKey.toString())).shortIcon();
+		this.id = ID_PREFIX + fluidKey.getPath();
 	}
 
 	public int amount() {
@@ -32,7 +35,10 @@ public class GooIngredient {
 	}
 
 	public TranslationTextComponent asTranslatable() {
-		return new TranslationTextComponent("goo.amount_of_goo", this.amount);
+		if (this.amount == 0) {
+			return new TranslationTextComponent("fluid.goo." + this.fluidKey);
+		}
+		return new TranslationTextComponent("goo.amount_of_" + this.fluidKey, this.amount);
 	}
 
 	public String asString() {
@@ -41,5 +47,24 @@ public class GooIngredient {
 
 	public ResourceLocation gooIcon() {
 		return icon;
+	}
+
+	public String justAmountAsString() {
+		return new TranslationTextComponent("goo.amount_of_goo", this.amount).getString();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		GooIngredient that = (GooIngredient) o;
+		return id == that.id && Objects.equals(fluidKey, that.fluidKey) && Objects.equals(icon, that.icon);
+	}
+
+	@Override
+	public int hashCode() {
+
+		return Objects.hash(fluidKey, icon, id);
 	}
 }

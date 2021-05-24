@@ -39,7 +39,7 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 		background = guiHelper.createBlankDrawable(150, 60);
 		localizedName = I18n.format("block.goo.solidifier");
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
-		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/arrow.png"),
+		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
 				0, 0, 16, 16);
 	}
 
@@ -81,46 +81,33 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 
 	@Override
 	public void setRecipe(IRecipeLayout recipeLayout, SolidifierRecipe recipe, IIngredients ingredients) {
-		int lastIndex = 0;
 		for(int index = 0; index < recipe.inputs().size(); index++) {
 			recipeLayout.getIngredientsGroup(GooIngredient.GOO).init(index, true, inputX(index), inputY(index));
 			recipeLayout.getIngredientsGroup(GooIngredient.GOO).set(index, recipe.inputs().get(index));
-			lastIndex = index;
 		}
 
-		recipeLayout.getItemStacks().init(lastIndex + 1, false, 93, 12);
-		recipeLayout.getItemStacks().set(lastIndex + 1, recipe.output());
+		recipeLayout.getItemStacks().init(recipe.inputs().size() + 1, false, outputX(0), outputY(0));
+		recipeLayout.getItemStacks().set(recipe.inputs().size() + 1, recipe.output());
 	}
 
 	@Override
 	public void draw(SolidifierRecipe recipe, MatrixStack matrixStack, double mouseX, double mouseY) {
-		arrow.draw(matrixStack, 75, 12);
+		arrow.draw(matrixStack, outputX(0) - GooIngredientRenderer.horizontalSpacing, GooIngredientRenderer.comfyPadding + 1);
 	}
 
 	private static int inputX(int index) {
-		return 12 + (index * 18);
+		return GooIngredientRenderer.comfyPadding + (index % GooIngredientRenderer.itemsPerRow) * GooIngredientRenderer.horizontalSpacing;
 	}
 
 	private static int inputY(int index) {
-		return 12 + (index / 5) * 18;
+		return GooIngredientRenderer.comfyPadding + (index / GooIngredientRenderer.itemsPerRow) * GooIngredientRenderer.verticalSpacing;
 	}
 
 	private static int outputX(int index) {
-		return 93;
+		return GooIngredientRenderer.comfyPadding + GooIngredientRenderer.horizontalSpacing * (GooIngredientRenderer.itemsPerRow + 2);
 	}
 
 	private static int outputY(int index) {
-		return 12;
-	}
-
-	private GooIngredient mouseOverFluidStack(SolidifierRecipe recipe, double mouseX, double mouseY) {
-		// figure out if the mouse X is in the range of any fluidstack input, each is 16x16.
-		for(int index = 0; index < recipe.inputs().size(); index++) {
-			if (mouseX >= inputX(index) && mouseX <= inputX(index) + 16 && mouseY >= inputY(index) && mouseY <= inputY(index) + 16) {
-				return recipe.inputs().get(index);
-			}
-		}
-
-		return null;
+		return GooIngredientRenderer.comfyPadding;
 	}
 }

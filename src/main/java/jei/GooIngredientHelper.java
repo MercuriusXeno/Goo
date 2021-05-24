@@ -8,7 +8,7 @@ public class GooIngredientHelper implements IIngredientHelper<GooIngredient> {
 	@Override
 	public GooIngredient getMatch(Iterable<GooIngredient> ingredients, GooIngredient ingredientToMatch) {
 		for (GooIngredient gooIngredient : ingredients) {
-			if (gooIngredient.amount() == ingredientToMatch.amount() && gooIngredient.fluidKey().equals(ingredientToMatch.fluidKey())) {
+			if (gooIngredient.fluidKey().equals(ingredientToMatch.fluidKey())) {
 				return gooIngredient;
 			}
 		}
@@ -24,7 +24,7 @@ public class GooIngredientHelper implements IIngredientHelper<GooIngredient> {
 	@Override
 	public String getUniqueId(GooIngredient ingredient) {
 
-		return GooIngredient.ID;
+		return ingredient.id;
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class GooIngredientHelper implements IIngredientHelper<GooIngredient> {
 	@Override
 	public String getResourceId(GooIngredient ingredient) {
 
-		return GooIngredient.ID;
+		return ingredient.id;
 	}
 
 	@Override

@@ -25,6 +25,4 @@ public class GooifierRecipe {
 	public List<GooIngredient> outputs() {
 		return outputStacks;
 	}
-
-
 }
