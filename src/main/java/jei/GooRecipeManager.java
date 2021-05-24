@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class GooRecipeManager implements IRecipeManagerPlugin {
+
 	public static GooRecipeManager instance = new GooRecipeManager();
 	private static Map<RegistryKey<World>, List<SolidifierRecipe>> worldSolidifierRecipeCache = new HashMap<>();
 	private static Map<RegistryKey<World>, List<GooifierRecipe>> worldGooifierRecipeCache = new HashMap<>();
@@ -35,24 +36,24 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	public <T, V> List<T> getRecipes(IRecipeCategory<T> recipeCategory, IFocus<V> focus) {
 		List<T> recipeMatches = new ArrayList<>();
 		if (recipeCategory.getUid() == GooifierRecipeCategory.UID) {
-			if (focus.getMode().equals(Mode.INPUT)) {
+			//if (focus.getMode().equals(Mode.INPUT)) {
 				if (focus.getValue() instanceof ItemStack) {
 					ItemStack stack = ((ItemStack)focus.getValue());
 					recipeMatches.addAll((List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
 							.stream().filter(k -> k.input().isItemEqual(stack))
 							.collect(Collectors.toList()));
 				}
-			} else if (focus.getMode().equals(Mode.OUTPUT)) {
+			//} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				if (focus.getValue() instanceof GooIngredient) {
 					GooIngredient stack = ((GooIngredient)focus.getValue());
 					recipeMatches.addAll((List<T>)worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
 							.stream().filter(k -> k.outputs().stream().anyMatch(v -> v.fluidKey() == stack.fluidKey()))
 							.collect(Collectors.toList()));
 				}
-			}
+			//}
 		}
 		if (recipeCategory.getUid() == SolidifierRecipeCategory.UID) {
-			if (focus.getMode().equals(Mode.INPUT)) {
+			//if (focus.getMode().equals(Mode.INPUT)) {
 				if (focus.getValue() instanceof GooIngredient) {
 					GooIngredient stack = ((GooIngredient)focus.getValue());
 					recipeMatches.addAll((List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
@@ -65,7 +66,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 							.stream().filter(k -> k.input().getItem().equals(stack))
 							.collect(Collectors.toList()));
 				}
-			} else if (focus.getMode().equals(Mode.OUTPUT)) {
+			//} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				if (focus.getValue() instanceof ItemStack) {
 					ItemStack stack = ((ItemStack)focus.getValue());
 					recipeMatches.addAll((List<T>)worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
@@ -78,7 +79,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 							.stream().filter(k -> k.output().getItem().equals(stack))
 							.collect(Collectors.toList()));
 				}
-			}
+			//}
 		}
 
 		return recipeMatches.size() > 0 ? recipeMatches : Collections.emptyList();
@@ -96,20 +97,20 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 
 	public void seedRecipes(RegistryKey<World> worldKey) {
 		Map<ICompoundContainer<?>, Set<CompoundInstance>> cache = Equivalencies.cache(worldKey).getAllDataOf(Registry.GOO_GROUP.get());
-		List<GooConversionWrapper> convertedCache = new ArrayList<>();
+		Map<Item, GooConversionWrapper> convertedCache = new HashMap<>();
 		cache.forEach((k, v) -> {
 			if (k.getContents() instanceof ItemStack) {
 				GooEntry g = new GooEntry(worldKey, ((ItemStack)k.getContents()).getItem(), v);
-				convertedCache.add(new GooConversionWrapper((ItemStack)k.getContents(), g));
+				convertedCache.put(((ItemStack)k.getContents()).getItem(), new GooConversionWrapper((ItemStack)k.getContents(), g));
 			}
 			if (k.getContents() instanceof Item) {
 				GooEntry g = new GooEntry(worldKey, ((Item)k.getContents()), v);
-				convertedCache.add(new GooConversionWrapper((Item)k.getContents(), g));
+				convertedCache.put((Item)k.getContents(), new GooConversionWrapper((Item)k.getContents(), g));
 			}
 		});
 		worldGooifierRecipeCache.put(worldKey, new ArrayList<>());
 		worldSolidifierRecipeCache.put(worldKey, new ArrayList<>());
-		convertedCache.forEach(v -> {
+		convertedCache.forEach((k, v) -> {
 			if (v.isSolidifiable()) {
 				worldSolidifierRecipeCache.get(worldKey).add(v.toSolidifierRecipe());
 			}

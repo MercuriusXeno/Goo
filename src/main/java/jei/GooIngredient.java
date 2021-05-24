@@ -59,7 +59,7 @@ public class GooIngredient {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		GooIngredient that = (GooIngredient) o;
-		return id == that.id && Objects.equals(fluidKey, that.fluidKey) && Objects.equals(icon, that.icon);
+		return id.equals(that.id) && Objects.equals(fluidKey, that.fluidKey) && Objects.equals(icon, that.icon);
 	}
 
 	@Override

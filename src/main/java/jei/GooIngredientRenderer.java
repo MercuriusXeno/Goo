@@ -12,9 +12,9 @@ import java.util.List;
 
 public class GooIngredientRenderer implements IIngredientRenderer<GooIngredient> {
 	public static int horizontalSpacing = 24;
-	public static int verticalSpacing = 24;
-	public static int itemsPerRow = 3;
-	public static int comfyPadding = 12;
+	public static int verticalSpacing = 22;
+	public static int itemsPerRow = 4;
+	public static int comfyPadding = 1;
 	public static float fontScale = 0.5f;
 
 	@Override

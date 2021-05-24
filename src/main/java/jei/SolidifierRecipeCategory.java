@@ -104,7 +104,7 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 	}
 
 	private static int outputX(int index) {
-		return GooIngredientRenderer.comfyPadding + GooIngredientRenderer.horizontalSpacing * (GooIngredientRenderer.itemsPerRow + 2);
+		return GooIngredientRenderer.comfyPadding + GooIngredientRenderer.horizontalSpacing * (GooIngredientRenderer.itemsPerRow + 1);
 	}
 
 	private static int outputY(int index) {
