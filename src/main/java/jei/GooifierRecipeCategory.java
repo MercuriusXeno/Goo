@@ -29,7 +29,7 @@ public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 	private final ItemStack renderStack = new ItemStack(BlocksRegistry.Gooifier.get());
 
 	public GooifierRecipeCategory(IGuiHelper guiHelper) {
-		background = guiHelper.createBlankDrawable(150, 60);
+		background = guiHelper.createBlankDrawable(180, 52);
 		localizedName = I18n.format("block.goo.gooifier");
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
 		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
@@ -68,6 +68,9 @@ public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 
 	@Override
 	public void setIngredients(GooifierRecipe recipe, IIngredients ingredients) {
+		if (recipe.input().isEmpty() || recipe.outputs().size() == 0) {
+			GooMod.debug("This is bad");
+		}
 		ingredients.setInput(VanillaTypes.ITEM, recipe.input());
 		ingredients.setOutputs(GooIngredient.GOO, recipe.outputs());
 	}
@@ -97,10 +100,19 @@ public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 	}
 
 	private static int outputX(int index) {
+		if (index >= GooIngredientRenderer.itemsPerRow) {
+			int shiftDifferential = GooIngredientRenderer.horizontalSpacing - GooIngredientRenderer.horizontalSpacing / 2;
+			return GooIngredientRenderer.comfyPadding +
+					(((index - GooIngredientRenderer.itemsPerRow) % (GooIngredientRenderer.itemsPerRow + 1)) + 2) * GooIngredientRenderer.horizontalSpacing -
+					shiftDifferential;
+		}
 		return GooIngredientRenderer.comfyPadding + ((index % GooIngredientRenderer.itemsPerRow) + 2) * GooIngredientRenderer.horizontalSpacing;
 	}
 
 	private static int outputY(int index) {
+		if (index >= GooIngredientRenderer.itemsPerRow) {
+			return GooIngredientRenderer.comfyPadding + ((index - GooIngredientRenderer.itemsPerRow) / (GooIngredientRenderer.itemsPerRow + 1) + 1) *  GooIngredientRenderer.verticalSpacing;
+		}
 		return GooIngredientRenderer.comfyPadding + (index / GooIngredientRenderer.itemsPerRow) *  GooIngredientRenderer.verticalSpacing;
 	}
 }

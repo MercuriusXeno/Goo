@@ -36,7 +36,7 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 	private final ItemStack renderStack = new ItemStack(BlocksRegistry.Solidifier.get());
 
 	public SolidifierRecipeCategory(IGuiHelper guiHelper) {
-		background = guiHelper.createBlankDrawable(150, 60);
+		background = guiHelper.createBlankDrawable(180, 52);
 		localizedName = I18n.format("block.goo.solidifier");
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
 		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
@@ -75,6 +75,9 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 
 	@Override
 	public void setIngredients(SolidifierRecipe recipe, IIngredients ingredients) {
+		if (recipe.inputs().size() == 0 || recipe.output().isEmpty()) {
+			GooMod.debug("This is bad");
+		}
 		ingredients.setInputs(GooIngredient.GOO, recipe.inputs());
 		ingredients.setOutput(VanillaTypes.ITEM, recipe.output());
 	}
@@ -96,10 +99,18 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 	}
 
 	private static int inputX(int index) {
+		if (index >= GooIngredientRenderer.itemsPerRow) {
+			int shiftDifferential = GooIngredientRenderer.horizontalSpacing - GooIngredientRenderer.horizontalSpacing / 2;
+			return GooIngredientRenderer.comfyPadding + ((index - GooIngredientRenderer.itemsPerRow) % (GooIngredientRenderer.itemsPerRow + 1)) * GooIngredientRenderer.horizontalSpacing
+					+ shiftDifferential;
+		}
 		return GooIngredientRenderer.comfyPadding + (index % GooIngredientRenderer.itemsPerRow) * GooIngredientRenderer.horizontalSpacing;
 	}
 
 	private static int inputY(int index) {
+		if (index >= GooIngredientRenderer.itemsPerRow) {
+			return GooIngredientRenderer.comfyPadding + ((index - GooIngredientRenderer.itemsPerRow) / (GooIngredientRenderer.itemsPerRow + 1) + 1) * GooIngredientRenderer.verticalSpacing;
+		}
 		return GooIngredientRenderer.comfyPadding + (index / GooIngredientRenderer.itemsPerRow) * GooIngredientRenderer.verticalSpacing;
 	}
 

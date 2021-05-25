@@ -410,7 +410,7 @@
   "fluid.goo.weird_goo": "Weird",
   "fluid.goo.primordial_goo": "Primordial",
 
-  "goo.amount_of_goo": "%d mB",
+  "goo.amount_of_goo": "%d",
   "goo.amount_of_aquatic_goo": "%d mB Aquatic",
   "goo.amount_of_chromatic_goo": "%d mB Chromatic",
   "goo.amount_of_crystal_goo": "%d mB Crystal",
