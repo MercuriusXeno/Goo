@@ -39,19 +39,24 @@ public class BlobInteractionPacket implements IGooModPacket {
 
 	@Override
 	public void handle(Supplier<Context> supplier) {
-		supplier.get().enqueueWork(() -> {
-			if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-				if (Minecraft.getInstance().world == null) {
-					return;
-				}
-				World world = Minecraft.getInstance().world;
+		supplier.get().enqueueWork(new Runnable() {
 
-				Entity blob = world.getEntityByID(blobId);
-				if (!(blob instanceof GooBlob)) {
-					return;
-				}
+			@Override
+			public void run() {
 
-				GooInteractions.tryResolving(blockHitPos, (GooBlob)blob);
+				if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
+					if (Minecraft.getInstance().world == null) {
+						return;
+					}
+					World world = Minecraft.getInstance().world;
+
+					Entity blob = world.getEntityByID(blobId);
+					if (!(blob instanceof GooBlob)) {
+						return;
+					}
+
+					GooInteractions.tryResolving(blockHitPos, (GooBlob) blob);
+				}
 			}
 		});
 
