@@ -3,6 +3,7 @@ package com.xeno.goo.network;
 import com.xeno.goo.GooMod;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
@@ -11,6 +12,8 @@ import net.minecraftforge.fml.network.NetworkDirection;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
+
+import java.util.function.Function;
 
 public class Networking {
     private static SimpleChannel INSTANCE;
@@ -26,77 +29,39 @@ public class Networking {
                 s -> true,
                 s -> true);
 
-        INSTANCE.messageBuilder(FluidUpdatePacket.class, nextID())
-                .encoder(FluidUpdatePacket::toBytes)
-                .decoder(FluidUpdatePacket::new)
-                .consumer(FluidUpdatePacket::handle)
+        registerPacket(FluidUpdatePacket.class, FluidUpdatePacket::new);
+
+        registerPacket(GooFlowPacket.class, GooFlowPacket::new);
+
+        registerPacket(ChangeItemTargetPacket.class, ChangeItemTargetPacket::new);
+
+        registerPacket(SolidifierPoppedPacket.class, SolidifierPoppedPacket::new);
+
+        registerPacket(GooGauntletSwapPacket.class, GooGauntletSwapPacket::new);
+
+        registerPacket(GooBasinSwapPacket.class, GooBasinSwapPacket::new);
+
+        registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
+
+        registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);
+
+        registerPacket(ShrinkPacket.class, ShrinkPacket::new);
+
+        registerPacket(BlobHitInteractionPacket.class, BlobHitInteractionPacket::new);
+
+        registerPacket(BlobInteractionPacket.class, BlobInteractionPacket::new);
+
+        registerPacket(SplatInteractionPacket.class, SplatInteractionPacket::new);
+    }
+
+    private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {
+
+        INSTANCE.messageBuilder(clazz, nextID())
+                .encoder(IGooModPacket::toBytes)
+                .decoder(constructor)
+                .consumer(IGooModPacket::handle)
                 .add();
 
-        INSTANCE.messageBuilder(GooFlowPacket.class, nextID())
-                .encoder(GooFlowPacket::toBytes)
-                .decoder(GooFlowPacket::new)
-                .consumer(GooFlowPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(ChangeItemTargetPacket.class, nextID())
-                .encoder(ChangeItemTargetPacket::toBytes)
-                .decoder(ChangeItemTargetPacket::new)
-                .consumer(ChangeItemTargetPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(SolidifierPoppedPacket.class, nextID())
-                .encoder(SolidifierPoppedPacket::toBytes)
-                .decoder(SolidifierPoppedPacket::new)
-                .consumer(SolidifierPoppedPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooGauntletSwapPacket.class, nextID())
-                .encoder(GooGauntletSwapPacket::toBytes)
-                .decoder(GooGauntletSwapPacket::new)
-                .consumer(GooGauntletSwapPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(GooBasinSwapPacket.class, nextID())
-                .encoder(GooBasinSwapPacket::toBytes)
-                .decoder(GooBasinSwapPacket::new)
-                .consumer(GooBasinSwapPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(UpdateBulbCrystalProgressPacket.class, nextID())
-                .encoder(UpdateBulbCrystalProgressPacket::toBytes)
-                .decoder(UpdateBulbCrystalProgressPacket::new)
-                .consumer(UpdateBulbCrystalProgressPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(CrystalProgressTickPacket.class, nextID())
-                .encoder(CrystalProgressTickPacket::toBytes)
-                .decoder(CrystalProgressTickPacket::new)
-                .consumer(CrystalProgressTickPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(ShrinkPacket.class, nextID())
-                .encoder(ShrinkPacket::toBytes)
-                .decoder(ShrinkPacket::new)
-                .consumer(ShrinkPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(BlobHitInteractionPacket.class, nextID())
-                .encoder(BlobHitInteractionPacket::toBytes)
-                .decoder(BlobHitInteractionPacket::new)
-                .consumer(BlobHitInteractionPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(BlobInteractionPacket.class, nextID())
-                .encoder(BlobInteractionPacket::toBytes)
-                .decoder(BlobInteractionPacket::new)
-                .consumer(BlobInteractionPacket::handle)
-                .add();
-
-        INSTANCE.messageBuilder(SplatInteractionPacket.class, nextID())
-                .encoder(SplatInteractionPacket::toBytes)
-                .decoder(SplatInteractionPacket::new)
-                .consumer(SplatInteractionPacket::handle)
-                .add();
     }
 
     public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
