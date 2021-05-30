@@ -9,94 +9,151 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraftforge.fml.network.NetworkEvent.Context;
 import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Networking {
-    private static SimpleChannel INSTANCE;
-    private static int ID = 0;
 
-    private static int nextID() {
-        return ID++;
-    }
+	private static SimpleChannel INSTANCE;
+	private static int ID = 0;
 
-    public static void registerNetworkMessages() {
-        INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(GooMod.MOD_ID, "goo"),
-                () -> "1.0",
-                s -> true,
-                s -> true);
+	private static synchronized int nextID() {
 
-        registerPacket(FluidUpdatePacket.class, FluidUpdatePacket::new);
+		return ID++;
+	}
 
-        registerPacket(GooFlowPacket.class, GooFlowPacket::new);
+	public static void registerNetworkMessages() {
 
-        registerPacket(ChangeItemTargetPacket.class, ChangeItemTargetPacket::new);
+		INSTANCE = NetworkRegistry.newSimpleChannel(
+				new ResourceLocation(GooMod.MOD_ID, "goo"),
+				() -> "1.0",
+				s -> true,
+				s -> true
+		);
 
-        registerPacket(SolidifierPoppedPacket.class, SolidifierPoppedPacket::new);
+		registerPacket(
+				FluidUpdatePacket.class,
+				FluidUpdatePacket::new
+		);
 
-        registerPacket(GooGauntletSwapPacket.class, GooGauntletSwapPacket::new);
+		registerPacket(
+				GooFlowPacket.class,
+				GooFlowPacket::new
+		);
 
-        registerPacket(GooBasinSwapPacket.class, GooBasinSwapPacket::new);
+		registerPacket(
+				ChangeItemTargetPacket.class,
+				ChangeItemTargetPacket::new
+		);
 
-        registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
+		registerPacket(
+				SolidifierPoppedPacket.class,
+				SolidifierPoppedPacket::new
+		);
 
-        registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);
+		registerPacket(
+				GooGauntletSwapPacket.class,
+				GooGauntletSwapPacket::new
+		);
 
-        registerPacket(ShrinkPacket.class, ShrinkPacket::new);
+		registerPacket(
+				GooBasinSwapPacket.class,
+				GooBasinSwapPacket::new
+		);
 
-        registerPacket(BlobHitInteractionPacket.class, BlobHitInteractionPacket::new);
+		registerPacket(
+				UpdateBulbCrystalProgressPacket.class,
+				UpdateBulbCrystalProgressPacket::new
+		);
 
-        registerPacket(BlobInteractionPacket.class, BlobInteractionPacket::new);
+		registerPacket(
+				CrystalProgressTickPacket.class,
+				CrystalProgressTickPacket::new
+		);
 
-        registerPacket(SplatInteractionPacket.class, SplatInteractionPacket::new);
-    }
+		registerPacket(
+				ShrinkPacket.class,
+				ShrinkPacket::new
+		);
 
-    private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {
+		registerPacket(
+				BlobHitInteractionPacket.class,
+				BlobHitInteractionPacket::new
+		);
 
-        INSTANCE.messageBuilder(clazz, nextID())
-                .encoder(IGooModPacket::toBytes)
-                .decoder(constructor)
-                .consumer(IGooModPacket::handle)
-                .add();
+		registerPacket(
+				BlobInteractionPacket.class,
+				BlobInteractionPacket::new
+		);
 
-    }
+		registerPacket(
+				SplatInteractionPacket.class,
+				SplatInteractionPacket::new
+		);
+	}
 
-    public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
-        Chunk chunk = serverWorld.getChunkAt(position);
+	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {
 
-        INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), msg);
-    }
+		registerPacket(clazz, constructor, () -> IGooModPacket::handle);
+	}
 
-    public static void sendToClientsNearTarget(Object msg, ServerWorld world, BlockPos pos, int radius) {
-        INSTANCE.send(PacketDistributor.NEAR
-                .with(PacketDistributor.TargetPoint.p(pos.getX() + 0.5d, pos.getY() + 0.5d,
-                        pos.getZ() + 0.5d, radius, world.getDimensionKey()))
-                , msg);
-    }
+	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor, Supplier<BiConsumer<M, Supplier<Context>>> handler) {
 
-    public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {
-        if (player.server.isDedicatedServer() || !player.getGameProfile().getName().equals(player.server.getServerOwner())) {
-            INSTANCE.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
-        }
-    }
+		INSTANCE.messageBuilder(clazz, nextID())
+				.consumer(handler.get())
+				.decoder(constructor)
+				.encoder(IGooModPacket::toBytes)
+				.add();
+	}
 
-    public static void sendToServer(Object msg, ClientPlayerEntity player)
-    {
-        if (player.world.isRemote()) {
-            INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
-        }
-    }
+	public static void sendToClientsAround(Object msg, ServerWorld serverWorld, BlockPos position) {
 
-    public static void send(PacketDistributor.PacketTarget target, Object msg) {
-        INSTANCE.send(target, msg);
-    }
+		Chunk chunk = serverWorld.getChunkAt(position);
 
-    public static void syncGooValuesForPlayer(ServerPlayerEntity player)
-    {
-        // GooValueSyncPacket packet = GooMod.handler.createPacketData();
-        // sendRemotePacket(packet, player);
-    }
+		INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> chunk), msg);
+	}
+
+	public static void sendToClientsNearTarget(Object msg, ServerWorld world, BlockPos pos, int radius) {
+
+		INSTANCE.send(PacketDistributor.NEAR.with(
+				PacketDistributor.TargetPoint.p(
+						pos.getX() + 0.5d,
+						pos.getY() + 0.5d,
+						pos.getZ() + 0.5d,
+						radius,
+						world.getDimensionKey()
+				)
+		), msg);
+	}
+
+	public static void sendRemotePacket(Object msg, ServerPlayerEntity player) {
+
+		if (player.server.isDedicatedServer() || !player.getGameProfile().getName().equals(player.server.getServerOwner())) {
+			INSTANCE.sendTo(msg, player.connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+		}
+	}
+
+	public static void sendToServer(Object msg, ClientPlayerEntity player) {
+
+		if (player.world.isRemote()) {
+			INSTANCE.sendTo(msg, player.connection.getNetworkManager(), NetworkDirection.PLAY_TO_SERVER);
+		}
+	}
+
+	public static void send(PacketDistributor.PacketTarget target, Object msg) {
+
+		INSTANCE.send(target, msg);
+	}
+
+	public static void syncGooValuesForPlayer(ServerPlayerEntity player) {
+
+		// GooValueSyncPacket packet = GooMod.handler.createPacketData();
+		// sendRemotePacket(packet, player);
+	}
 }
