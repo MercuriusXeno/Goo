@@ -1,14 +1,13 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.GooMod;
 import com.xeno.goo.shrink.api.ShrinkAPI;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
 import java.util.function.Supplier;
@@ -44,7 +43,7 @@ public class ShrinkPacket implements IGooModPacket {
 
 		ctx.get().enqueueWork(() ->
 		{
-			ClientWorld world = Minecraft.getInstance().world;
+			World world = Minecraft.getInstance().world;
 
 			if (world != null)
 			{
