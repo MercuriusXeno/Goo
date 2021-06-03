@@ -123,12 +123,6 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 						.stream().filter(k -> k.inputs().stream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList()));
 			}
-			if (focus.getValue() instanceof Item) {
-				Item stack = ((Item) focus.getValue());
-				solidifierMatches.addAll((List<T>) worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.input().getItem().equals(stack))
-						.collect(Collectors.toList()));
-			}
 		} else if (focus.getMode().equals(Mode.OUTPUT)) {
 			if (focus.getValue() instanceof ItemStack) {
 				ItemStack stack = ((ItemStack) focus.getValue());

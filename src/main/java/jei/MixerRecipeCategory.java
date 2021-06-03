@@ -82,7 +82,7 @@ public class MixerRecipeCategory implements IRecipeCategory<JeiMixerRecipe> {
 	}
 
 	private static int inputX(int index) {
-		return GooIngredientRenderer.comfyPadding;
+		return GooIngredientRenderer.comfyPadding + index * GooIngredientRenderer.horizontalSpacing;
 	}
 
 	private static int inputY(int index) {
@@ -90,19 +90,10 @@ public class MixerRecipeCategory implements IRecipeCategory<JeiMixerRecipe> {
 	}
 
 	private static int outputX(int index) {
-		if (index >= GooIngredientRenderer.itemsPerRow) {
-			int shiftDifferential = GooIngredientRenderer.horizontalSpacing - GooIngredientRenderer.horizontalSpacing / 2;
-			return GooIngredientRenderer.comfyPadding +
-					(((index - GooIngredientRenderer.itemsPerRow) % (GooIngredientRenderer.itemsPerRow + 1)) + 2) * GooIngredientRenderer.horizontalSpacing -
-					shiftDifferential;
-		}
-		return GooIngredientRenderer.comfyPadding + ((index % GooIngredientRenderer.itemsPerRow) + 2) * GooIngredientRenderer.horizontalSpacing;
+		return GooIngredientRenderer.comfyPadding + GooIngredientRenderer.horizontalSpacing * 3;
 	}
 
 	private static int outputY(int index) {
-		if (index >= GooIngredientRenderer.itemsPerRow) {
-			return GooIngredientRenderer.comfyPadding + ((index - GooIngredientRenderer.itemsPerRow) / (GooIngredientRenderer.itemsPerRow + 1) + 1) *  GooIngredientRenderer.verticalSpacing;
-		}
-		return GooIngredientRenderer.comfyPadding + (index / GooIngredientRenderer.itemsPerRow) *  GooIngredientRenderer.verticalSpacing;
+		return GooIngredientRenderer.comfyPadding;
 	}
 }
