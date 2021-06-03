@@ -5,8 +5,6 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.client.render.FluidCuboidHelper;
-import com.xeno.goo.setup.Registry;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.math.vector.TransformationMatrix;

@@ -20,6 +20,9 @@ public class MixerRecipes
     }
 
     public static List<MixerRecipe> recipes() {
+        if (!isInitialized) {
+            init();
+        }
         return recipes;
     }
 

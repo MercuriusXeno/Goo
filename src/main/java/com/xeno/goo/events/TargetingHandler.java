@@ -23,7 +23,6 @@ import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -45,7 +44,6 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 import java.text.NumberFormat;
 import java.util.*;
@@ -528,7 +526,7 @@ public class TargetingHandler
         if (target == null) {
             return false;
         }
-        ClientWorld world = (ClientWorld)e.getEntityWorld();
+        World world = e.getEntityWorld();
 
         BlockState state = world.getBlockState(target.getPos());
         if (state.getBlock().isAir(state, world, target.getPos())) {

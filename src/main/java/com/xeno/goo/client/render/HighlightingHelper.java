@@ -10,7 +10,6 @@ import com.xeno.goo.setup.Resources;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
@@ -23,6 +22,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 
 public class HighlightingHelper
@@ -76,7 +76,7 @@ public class HighlightingHelper
         if (!target.getPos().equals(pos)) {
             return false;
         }
-        ClientWorld world = (ClientWorld)e.getEntityWorld();
+        World world = e.getEntityWorld();
 
         TileEntity t = world.getTileEntity(target.getPos());
         if (!(t instanceof GooContainerAbstraction)) {

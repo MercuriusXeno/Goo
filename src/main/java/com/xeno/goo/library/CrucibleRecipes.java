@@ -20,6 +20,10 @@ public class CrucibleRecipes
     }
 
     public static List<CrucibleRecipe> recipes() {
+
+        if (!isInitialized) {
+            init();
+        }
         return recipes;
     }
 

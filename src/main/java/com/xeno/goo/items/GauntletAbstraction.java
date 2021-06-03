@@ -2,30 +2,18 @@ package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
-import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooContainerAbstraction;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.ItemFluidContainer;
@@ -112,7 +100,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         return fh.getTankCapacity(0) - fh.getFluidInTank(0).getAmount();
     }
 
-    public static float getHeldLiquidOverride(ItemStack stack, ClientWorld world, LivingEntity e) {
+    public static float getHeldLiquidOverride(ItemStack stack, World world, LivingEntity e) {
         if (!stack.hasTag() || stack.getTag() == null) {
             return 0f;
         }
