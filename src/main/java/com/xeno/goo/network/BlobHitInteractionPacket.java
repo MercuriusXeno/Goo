@@ -47,32 +47,37 @@ public class BlobHitInteractionPacket implements IGooModPacket {
 
 	@Override
 	public void handle(Supplier<Context> supplier) {
-		supplier.get().enqueueWork(() -> {
-			if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-				if (Minecraft.getInstance().world == null) {
-					return;
-				}
-				World world = Minecraft.getInstance().world;
-				Entity owner = null;
-				// owner is allowed to be null, but if it isn't a living entity, there's an issue.
-				if (ownerId != -1) {
-					owner = world.getEntityByID(ownerId);
-					if (!(owner instanceof LivingEntity)) {
+		supplier.get().enqueueWork(new Runnable() {
+
+			@Override
+			public void run() {
+
+				if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
+					if (Minecraft.getInstance().world == null) {
 						return;
 					}
-				}
+					World world = Minecraft.getInstance().world;
+					Entity owner = null;
+					// owner is allowed to be null, but if it isn't a living entity, there's an issue.
+					if (ownerId != -1) {
+						owner = world.getEntityByID(ownerId);
+						if (!(owner instanceof LivingEntity)) {
+							return;
+						}
+					}
 
-				Entity e = world.getEntityByID(entityHitId);
-				if (!(e instanceof LivingEntity)) {
-					return;
-				}
+					Entity e = world.getEntityByID(entityHitId);
+					if (!(e instanceof LivingEntity)) {
+						return;
+					}
 
-				Entity blob = world.getEntityByID(blobId);
-				if (!(blob instanceof GooBlob)) {
-					return;
-				}
+					Entity blob = world.getEntityByID(blobId);
+					if (!(blob instanceof GooBlob)) {
+						return;
+					}
 
-				GooInteractions.tryResolving((LivingEntity)e, (LivingEntity)owner, (GooBlob)blob);
+					GooInteractions.tryResolving((LivingEntity) e, (LivingEntity) owner, (GooBlob) blob);
+				}
 			}
 		});
 

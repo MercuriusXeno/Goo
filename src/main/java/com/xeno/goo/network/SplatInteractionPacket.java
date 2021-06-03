@@ -5,7 +5,6 @@ import com.xeno.goo.interactions.GooInteractions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
@@ -35,19 +34,24 @@ public class SplatInteractionPacket implements IGooModPacket {
 
 	@Override
 	public void handle(Supplier<Context> supplier) {
-		supplier.get().enqueueWork(() -> {
-			if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
-				if (Minecraft.getInstance().world == null) {
-					return;
-				}
-				World world = Minecraft.getInstance().world;
+		supplier.get().enqueueWork(new Runnable() {
 
-				Entity splat = world.getEntityByID(splatId);
-				if (!(splat instanceof GooSplat)) {
-					return;
-				}
+			@Override
+			public void run() {
 
-				GooInteractions.tryResolving((GooSplat)splat);
+				if (supplier.get().getDirection().getReceptionSide() == LogicalSide.CLIENT) {
+					if (Minecraft.getInstance().world == null) {
+						return;
+					}
+					World world = Minecraft.getInstance().world;
+
+					Entity splat = world.getEntityByID(splatId);
+					if (!(splat instanceof GooSplat)) {
+						return;
+					}
+
+					GooInteractions.tryResolving((GooSplat) splat);
+				}
 			}
 		});
 
