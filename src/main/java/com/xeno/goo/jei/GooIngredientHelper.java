@@ -1,9 +1,7 @@
-package jei;
+package com.xeno.goo.jei;
 
 import com.xeno.goo.GooMod;
 import mezz.jei.api.ingredients.IIngredientHelper;
-import mezz.jei.api.ingredients.subtypes.UidContext;
-import org.jetbrains.annotations.Nullable;
 
 public class GooIngredientHelper implements IIngredientHelper<GooIngredient> {
 

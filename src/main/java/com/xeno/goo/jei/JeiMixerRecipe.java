@@ -1,4 +1,4 @@
-package jei;
+package com.xeno.goo.jei;
 
 public class JeiMixerRecipe {
 	private final GooIngredient outputStack;

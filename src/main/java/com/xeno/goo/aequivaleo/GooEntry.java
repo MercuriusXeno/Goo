@@ -1,24 +1,18 @@
 package com.xeno.goo.aequivaleo;
 
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
-import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
 import com.xeno.goo.setup.Registry;
-import jei.GooIngredient;
+import com.xeno.goo.jei.GooIngredient;
 import net.minecraft.item.Item;
-import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.IFormattableTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 

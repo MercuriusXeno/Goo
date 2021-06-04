@@ -1,4 +1,4 @@
-package jei;
+package com.xeno.goo.jei;
 
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;

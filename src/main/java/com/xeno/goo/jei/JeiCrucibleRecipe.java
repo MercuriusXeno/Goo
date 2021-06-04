@@ -1,9 +1,4 @@
-package jei;
-
-import mezz.jei.api.recipe.IFocus;
-import net.minecraft.item.ItemStack;
-
-import java.util.List;
+package com.xeno.goo.jei;
 
 public class JeiCrucibleRecipe {
 	private final GooIngredient outputStack;

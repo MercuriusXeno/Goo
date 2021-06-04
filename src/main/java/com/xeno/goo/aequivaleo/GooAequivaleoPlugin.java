@@ -4,8 +4,6 @@ import com.ldtteam.aequivaleo.api.plugin.AequivaleoPlugin;
 import com.ldtteam.aequivaleo.api.plugin.AequivaleoPlugin.Instance;
 import com.ldtteam.aequivaleo.api.plugin.IAequivaleoPlugin;
 import com.xeno.goo.events.TargetingHandler;
-import jei.GooRecipeManager;
-import net.minecraft.client.Minecraft;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -38,7 +36,7 @@ public class GooAequivaleoPlugin implements IAequivaleoPlugin {
 		// TODO: this is a very simple first-pass
 		TargetingHandler.isGooReady = true;
 
-		GooRecipeManager.instance.seedRecipes(worldRegistryKey);
+		// GooRecipeManager.instance.seedRecipes(worldRegistryKey);
     }
 
 }

@@ -1,4 +1,4 @@
-package jei;
+package com.xeno.goo.jei;
 
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
@@ -9,6 +9,7 @@ import com.xeno.goo.library.CrucibleRecipes;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.util.LinkedHashList;
 import mezz.jei.api.recipe.IFocus;
 import mezz.jei.api.recipe.IFocus.Mode;
 import mezz.jei.api.recipe.advanced.IRecipeManagerPlugin;
@@ -25,9 +26,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class GooRecipeManager implements IRecipeManagerPlugin {
+
+	private static final GooConversionWrapper INVALID_CONVERSION_WRAPPER = new GooConversionWrapper();
+	private static Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache = new HashMap<>();
+	private static LinkedHashList<GooConversionWrapper> conversionWrappers = new LinkedHashList<>();
 	public static GooRecipeManager instance = new GooRecipeManager();
-	private static Map<RegistryKey<World>, List<SolidifierRecipe>> worldSolidifierRecipeCache = new HashMap<>();
-	private static Map<RegistryKey<World>, List<GooifierRecipe>> worldGooifierRecipeCache = new HashMap<>();
 
 	@Override
 	public <V> List<ResourceLocation> getRecipeCategoryUids(IFocus<V> focus) {
@@ -74,13 +77,13 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				mixerMatches.addAll((List<T>) getRecipes(category(MixerRecipeCategory.UID))
-						.stream().filter(r -> Arrays.stream(((JeiMixerRecipe) r).inputs()).anyMatch(m -> m.fluidKey().equals(stack.fluidKey())))
+						.parallelStream().filter(r -> Arrays.stream(((JeiMixerRecipe) r).inputs()).parallel().anyMatch(m -> m.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				mixerMatches.addAll((List<T>) getRecipes(category(MixerRecipeCategory.UID))
-						.stream().filter(r -> ((JeiMixerRecipe) r).output().fluidKey().equals(stack.fluidKey()))
+						.parallelStream().filter(r -> ((JeiMixerRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			}
@@ -94,13 +97,14 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
-						.stream().filter(r -> ((JeiCrucibleRecipe) r).input().fluidKey().equals(stack.fluidKey()))
+						.parallelStream()
+						.filter(r -> ((JeiCrucibleRecipe) r).input().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
-						.stream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
+						.parallelStream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			}
@@ -119,21 +123,21 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (focus.getMode().equals(Mode.INPUT)) {
 			if (focus.getValue() instanceof GooIngredient) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				solidifierMatches.addAll((List<T>) worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.inputs().stream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
+				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
+						.parallelStream().filter(k -> k.inputs().parallelStream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList()));
 			}
 		} else if (focus.getMode().equals(Mode.OUTPUT)) {
 			if (focus.getValue() instanceof ItemStack) {
 				ItemStack stack = ((ItemStack) focus.getValue());
-				solidifierMatches.addAll((List<T>) worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.output().isItemEqual(stack))
+				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
+						.parallelStream().filter(k -> k.output().isItemEqual(stack))
 						.collect(Collectors.toList()));
 			}
 			if (focus.getValue() instanceof Item) {
 				Item stack = ((Item) focus.getValue());
-				solidifierMatches.addAll((List<T>) worldSolidifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.output().getItem().equals(stack))
+				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
+						.parallelStream().filter(k -> k.output().getItem().equals(stack))
 						.collect(Collectors.toList()));
 			}
 		}
@@ -148,15 +152,15 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (focus.getMode().equals(Mode.INPUT)) {
 			if (focus.getValue() instanceof ItemStack) {
 				ItemStack stack = ((ItemStack) focus.getValue());
-				gooifierMatches.addAll((List<T>) worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.input().isItemEqual(stack))
+				gooifierMatches.addAll((List<T>) getJeiGooifierRecipes()
+						.parallelStream().filter(k -> k.input().isItemEqual(stack))
 						.collect(Collectors.toList()));
 			}
 		} else if (focus.getMode().equals(Mode.OUTPUT)) {
 			if (focus.getValue() instanceof GooIngredient) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				gooifierMatches.addAll((List<T>) worldGooifierRecipeCache.get(Minecraft.getInstance().world.getDimensionKey())
-						.stream().filter(k -> k.outputs().stream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
+				gooifierMatches.addAll((List<T>) getJeiGooifierRecipes()
+						.parallelStream().filter(k -> k.outputs().parallelStream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList()));
 			}
 		}
@@ -167,10 +171,10 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	@Override
 	public <T> List<T> getRecipes(IRecipeCategory<T> recipeCategory) {
 		if (recipeCategory.getUid().equals(SolidifierRecipeCategory.UID)) {
-			return (List<T>) worldSolidifierRecipeCache.getOrDefault(Minecraft.getInstance().world.getDimensionKey(), Collections.emptyList());
+			return (List<T>)getJeiSolidifierRecipes();
 		}
 		if (recipeCategory.getUid().equals(GooifierRecipeCategory.UID)) {
-			return (List<T>) worldGooifierRecipeCache.getOrDefault(Minecraft.getInstance().world.getDimensionKey(), Collections.emptyList());
+			return (List<T>)getJeiGooifierRecipes();
 		}
 		if (recipeCategory.getUid().equals(CrucibleRecipeCategory.UID)) {
 			return convertCrucibleRecipesToJeiFormat(CrucibleRecipes.recipes());
@@ -179,6 +183,58 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			return convertMixerRecipesToJeiFormat(MixerRecipes.recipes());
 		}
 		return new ArrayList<>();
+	}
+
+	private List<GooifierRecipe> getJeiGooifierRecipes() {
+		if (shouldTryReseedingConversionWrappers()) {
+			seedConversionWrappers();
+		}
+
+		return validGooifierRecipes();
+	}
+
+	private List<GooifierRecipe> validGooifierRecipes() {
+		return conversionWrappers.parallelStream().filter(c -> c != INVALID_CONVERSION_WRAPPER).map(GooConversionWrapper::toGooifierRecipe).collect(Collectors.toList());
+	}
+
+	private boolean shouldTryReseedingConversionWrappers() {
+		return conversionWrappers.isEmpty() || conversionWrappers.size() < aequivaleoCache().size();
+	}
+
+	private void seedConversionWrappers() {
+		conversionWrappers.addAll(convertToConversionWrappers(aequivaleoCache()));
+	}
+
+	private Collection<? extends GooConversionWrapper> convertToConversionWrappers(Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache) {
+		return aequivaleoCache.entrySet().parallelStream().map((e) -> conversionWrapper(e.getKey(), e.getValue())).collect(Collectors.toList());
+	}
+
+	private List<SolidifierRecipe> getJeiSolidifierRecipes() {
+		if (shouldTryReseedingConversionWrappers()) {
+			seedConversionWrappers();
+		}
+
+		return validSolidifierRecipes();
+	}
+
+	private List<SolidifierRecipe> validSolidifierRecipes() {
+		return conversionWrappers.parallelStream().filter(c -> c != INVALID_CONVERSION_WRAPPER).map(GooConversionWrapper::toSolidifierRecipe).collect(Collectors.toList());
+	}
+
+	private Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache() {
+		if (aequivaleoCache.isEmpty()) {
+			Equivalencies.cache(worldKey()).getAllDataOf(Registry.GOO_GROUP.get()).entrySet().parallelStream().forEach((e) -> {
+					if (e.getKey().getContents() instanceof ItemStack) {
+						aequivaleoCache.put(e.getKey(), e.getValue());
+					}
+				}
+			);
+		}
+		return aequivaleoCache;
+	}
+
+	private GooConversionWrapper conversionWrapper(ICompoundContainer<?> k, Set<CompoundInstance> v) {
+		return new GooConversionWrapper(((ItemStack)k.getContents()).getItem(), new GooEntry(worldKey(), ((ItemStack)k.getContents()).getItem(), v));
 	}
 
 	private <T> List<T> convertMixerRecipesToJeiFormat(List<MixerRecipe> recipes) {
@@ -208,30 +264,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		);
 	}
 
-	public void seedRecipes(RegistryKey<World> worldKey) {
-		Map<ICompoundContainer<?>, Set<CompoundInstance>> cache = Equivalencies.cache(worldKey).getAllDataOf(Registry.GOO_GROUP.get());
-		Map<Item, GooConversionWrapper> convertedCache = new HashMap<>();
-		cache.forEach((k, v) -> {
-			if (k.getContents() instanceof ItemStack) {
-				GooEntry g = new GooEntry(worldKey, ((ItemStack)k.getContents()).getItem(), v);
-				convertedCache.put(((ItemStack)k.getContents()).getItem(), new GooConversionWrapper((ItemStack)k.getContents(), g));
-			}
-			if (k.getContents() instanceof Item) {
-				GooEntry g = new GooEntry(worldKey, ((Item)k.getContents()), v);
-				convertedCache.put((Item)k.getContents(), new GooConversionWrapper((Item)k.getContents(), g));
-			}
-		});
-		worldGooifierRecipeCache.put(worldKey, new ArrayList<>());
-		worldSolidifierRecipeCache.put(worldKey, new ArrayList<>());
-		convertedCache.forEach((k, v) -> {
-			if (v.isSolidifiable()) {
-				worldSolidifierRecipeCache.get(worldKey).add(v.toSolidifierRecipe());
-			}
-			if (v.isGooifiable()) {
-				worldGooifierRecipeCache.get(worldKey).add(v.toGooifierRecipe());
-			}
-		});
-		GooJeiPlugin.cachedJeiRunTime.getRecipeManager().unhideRecipeCategory(GooifierRecipeCategory.UID);
-		GooJeiPlugin.cachedJeiRunTime.getRecipeManager().unhideRecipeCategory(SolidifierRecipeCategory.UID);
+	private RegistryKey<World> worldKey() {
+		return Minecraft.getInstance().world.getDimensionKey();
 	}
 }

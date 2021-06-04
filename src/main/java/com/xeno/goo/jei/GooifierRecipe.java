@@ -1,13 +1,8 @@
-package jei;
+package com.xeno.goo.jei;
 
-import com.xeno.goo.aequivaleo.GooEntry;
-import com.xeno.goo.aequivaleo.GooValue;
-import com.xeno.goo.setup.Registry;
 import mezz.jei.api.recipe.IFocus;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class GooifierRecipe {

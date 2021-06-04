@@ -1,4 +1,4 @@
-package jei;
+package com.xeno.goo.jei;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.xeno.goo.GooMod;
@@ -12,13 +12,6 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fluids.FluidStack;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
 	public static final ResourceLocation UID = new ResourceLocation(GooMod.MOD_ID, "gooifier_jei_category");

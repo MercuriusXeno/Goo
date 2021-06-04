@@ -1,6 +1,5 @@
 package com.xeno.goo.library;
 
-import jei.GooIngredient;
 import net.minecraftforge.fluids.FluidStack;
 
 public class CrucibleRecipe

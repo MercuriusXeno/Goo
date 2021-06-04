@@ -1,11 +1,8 @@
-package jei;
+package com.xeno.goo.jei;
 
-import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.xeno.goo.GooMod;
-import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.setup.Registry;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.IRecipeLayout;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -13,19 +10,8 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.items.ItemHandlerHelper;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map.Entry;
 
 public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecipe> {
 	public static final ResourceLocation UID = new ResourceLocation(GooMod.MOD_ID, "solidifier_jei_category");

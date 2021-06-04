@@ -1,4 +1,4 @@
-package jei;
+package com.xeno.goo.jei;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.xeno.goo.GooMod;
