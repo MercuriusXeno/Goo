@@ -186,9 +186,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	private List<GooifierRecipe> getJeiGooifierRecipes() {
-		if (shouldTryReseedingConversionWrappers()) {
-			seedConversionWrappers();
-		}
+		initConversionWrappers();
 
 		return validGooifierRecipes();
 	}
@@ -210,11 +208,15 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	private List<SolidifierRecipe> getJeiSolidifierRecipes() {
+		initConversionWrappers();
+
+		return validSolidifierRecipes();
+	}
+
+	private void initConversionWrappers() {
 		if (shouldTryReseedingConversionWrappers()) {
 			seedConversionWrappers();
 		}
-
-		return validSolidifierRecipes();
 	}
 
 	private List<SolidifierRecipe> validSolidifierRecipes() {
