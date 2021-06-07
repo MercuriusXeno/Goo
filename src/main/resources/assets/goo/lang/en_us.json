@@ -10,6 +10,7 @@
   "block.goo.radiant_light": "Radiant Light",
   "block.goo.goo_trough": "Goo Trough",
   "block.goo.crystal_nest": "Crystal Nest",
+  "block.goo.goo_pad": "Spray Pad",
 
   "numbers.notation.thousand": "k",
   "numbers.notation.million": "m",
@@ -461,6 +462,10 @@
   "tooltip.goo.solidifying_target_preface": "Solidifying: ",
   "tooltip.goo.goo_in_buffer": "Goo in Buffer: ",
 
+  "effect.goo.floral_effect": "Fertilizing",
+  "effect.goo.harmless_effect": "Illogical",
+  "effect.goo.egged_effect": "Reverse-Aging!",
+
   "itemGroup.goo": "Goo",
 
   "item.goo.goo_and_you": "Goo and You",
@@ -499,6 +504,8 @@
   "patchouli.goo.lobber.summary": "Lobbers are simple devices that take goo from a nearby source (like a bulb) and throw it into the world, the same way a player would with a gauntlet. This can be used to automate in-world goo interactions.",
   "patchouli.goo.goo_trough.description": "Troughs are a way to supply special creatures with the type of goo they want to drink. Simply attach it to a bulb and goo will pour out.",
   "patchouli.goo.goo_trough.summary": "Favorite drinks:$(br)Crystal Bees: Chromatic Goo.$(br)",
+  "patchouli.goo.goo_pad.description": "Spray Pads pull goo from a bulb below them and spray it on whatever lands on it. Goo effects on entities are consistent with what they'd be if you threw them, for the most part.",
+  "patchouli.goo.goo_pad.summary": "Can be triggered by any entity that would trigger a lightweight plate.",
   "patchouli.goo.crystallization_title": "Goo Crystallization",
   "patchouli.goo.crystallization_description": "Placing quartz in a bulb rapidly crystallizes the goo. The first tier holds 10 Goo, and subsequent tiers hold 10 times as much as the last. These can be used to filter goo or store large amounts.",
   "patchouli.goo.crystallization_description2": "Placing a crystallized goo in a bulb can only grow the crystal if the right kind of goo is in the bulb. If you interrupt the process, don't worry. The goo is not lost.",
@@ -525,7 +532,7 @@
   "goo.description.energetic2": "In the world, it will explode, breaking a 3x3 area around the block it hits. There are some things it won't break.",
   "goo.description.faunal": "Found in the products of creatures. Faunal goo is a universal aphrodisiac for creatures that can breed, and sets the mood on impact.",
   "goo.description.faunal2": "Faunal goo causes animals that touch it to be $(thing)in the mood$().",
-  "goo.description.floral": "Found in plants. Floral goo is completely inert to creatures.",
+  "goo.description.floral": "Found in plants. Floral goo clings to creatures and fertilizes plants they pass through..",
   "goo.description.floral2": "Floral goo can $(br)- grow grass on dirt$(br)- grow moss on stone$(br)- grow lilypads on water$(br)- grow bark on stripped logs$(br)- cause grassy areas to flourish$(br)- cause crops to grow, generally$(br)- grow vines on leaves",
   "goo.description.fungal": "Found in mushrooms and fungal things. Fungal goo is toxic to creatures, but it's an ordinary poison; undead are immune.",
   "goo.description.fungal2": "Fungal goo can$(br)- turn dirt into podzol$(br)- turn podzol into mycelium$(br)- turn netherack into nylium$(br)- grow mushrooms on shroomy soil$(br)- nourish stripped stems$(br)- grow fungal vines$(br)- nourish shrooms",

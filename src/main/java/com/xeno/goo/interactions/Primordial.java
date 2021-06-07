@@ -49,7 +49,7 @@ public class Primordial
     }
 
     private static boolean entityHit(BlobHitContext c) {
-        if (c.victim().isPotionActive(EggedEffect.instance)) {
+        if (c.victim().isPotionActive(Registry.EGGED_EFFECT.get())) {
             return false;
         }
         boolean isImmuneToInstantDeath = Entities.PRIMORDIAL_INSTANT_DEATH_IMMUNE_MOBS.contains(c.victim().getType());
@@ -59,7 +59,7 @@ public class Primordial
         }
         if (!isImmuneToEgging) {
             int duration = EggedEffect.durationOfEffect(c.victim());
-            c.victim().addPotionEffect(new EffectInstance(EggedEffect.instance, duration));
+            c.victim().addPotionEffect(new EffectInstance(Registry.EGGED_EFFECT.get(), duration));
             return true;
         }
         return reduceToDust(c.owner(), c.victim());

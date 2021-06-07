@@ -2,10 +2,12 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.xeno.goo.effects.FloralEffect;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BoneMealItem;
 import net.minecraft.potion.EffectInstance;
@@ -41,8 +43,8 @@ public class Floral
     }
 
     private static boolean entityHit(BlobHitContext c) {
-        // floral goo is inert. It doesn't do anything.
-        return false;
+        c.victim().addPotionEffect(new EffectInstance(Registry.FLORAL_EFFECT.get(), 320));
+        return true;
     }
 
     private static boolean growVines(BlobContext blobContext) {

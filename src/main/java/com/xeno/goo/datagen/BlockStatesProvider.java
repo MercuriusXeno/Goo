@@ -42,6 +42,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerTrough();
         registerCrystalNest();
         registerDecorativeBlocks();
+        registerPad();
     }
 
     private void registerDecorativeBlocks() {
@@ -265,6 +266,20 @@ public class BlockStatesProvider extends BlockStateProvider {
                         (s) -> ConfiguredModel.builder()
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
                                 .build()
+                );
+    }
+
+    private void registerPad() {
+        BlockModelBuilder model = models()
+                .withExistingParent("goo_pad", new ResourceLocation(GooMod.MOD_ID, "template_goo_pad"));
+        BlockModelBuilder modelTriggered = models()
+                .withExistingParent("goo_pad_triggered", new ResourceLocation(GooMod.MOD_ID, "template_goo_pad_triggered"));
+
+        getVariantBuilder(BlocksRegistry.Pad.get())
+                .forAllStates(s ->
+                        ConfiguredModel.builder()
+                        .modelFile(s.get(BlockStateProperties.TRIGGERED) ? modelTriggered : model)
+                        .build()
                 );
     }
 

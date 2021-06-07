@@ -18,20 +18,20 @@
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "amount": 120.0,
+      "type": "goo:radiant"
     },
     {
       "amount": 120.0,
-      "type": "goo:radiant"
+      "type": "goo:weird"
     },
     {
       "amount": 60.0,
       "type": "goo:primordial"
     },
     {
-      "amount": 120.0,
-      "type": "goo:weird"
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     },
     {
       "amount": 960.0,

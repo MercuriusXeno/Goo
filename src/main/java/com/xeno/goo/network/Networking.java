@@ -83,6 +83,11 @@ public class Networking {
 		);
 
 		registerPacket(
+				FertilizePacket.class,
+				FertilizePacket::new
+		);
+
+		registerPacket(
 				BlobHitInteractionPacket.class,
 				BlobHitInteractionPacket::new
 		);

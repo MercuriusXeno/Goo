@@ -1,0 +1,29 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:dead_tube_coral\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:dead_tube_coral"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 5.0,
+      "type": "goo:decay"
+    },
+    {
+      "amount": 5.0,
+      "type": "goo:faunal"
+    }
+  ]
+}

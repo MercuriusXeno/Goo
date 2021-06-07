@@ -22,12 +22,12 @@
       "type": "goo:crystal"
     },
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
-    },
-    {
       "amount": 240.0,
       "type": "goo:chromatic"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     },
     {
       "amount": 4.0,

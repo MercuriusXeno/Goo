@@ -15,10 +15,9 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.EntityRayTraceResult;
 
 public class EggedEffect extends Effect {
-	public static EggedEffect instance = new EggedEffect();
 	private static final float SCALE_REDUCTION_PER_TICK = 0.025f;
 
-	protected EggedEffect() {
+	public EggedEffect() {
 		super(EffectType.NEUTRAL, 0xffffffff);
 	}
 

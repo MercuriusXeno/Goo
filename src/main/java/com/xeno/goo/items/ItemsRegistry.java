@@ -54,6 +54,8 @@ public class ItemsRegistry {
             .register("crystal_nest", () -> new BlockItem(BlocksRegistry.CrystalNest.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> TROUGH = ITEMS
             .register("goo_trough", () -> new BlockItem(BlocksRegistry.Trough.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::trough)));
+    public static final RegistryObject<Item> PAD = ITEMS
+            .register("goo_pad", () -> new BlockItem(BlocksRegistry.Pad.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::pad)));
 
     // eggs
     public static final RegistryObject<Item> GOO_BEE_SPAWN_EGG = ITEMS.register("goo_bee_spawn_egg", Registry.makeEgg(Registry.GOO_BEE, 0xff7cbdc4, 0xffa674cf));

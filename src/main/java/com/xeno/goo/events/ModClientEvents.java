@@ -4,6 +4,7 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.BasinModel;
 import com.xeno.goo.client.particle.GooParticle;
+import com.xeno.goo.client.particle.SprayParticle;
 import com.xeno.goo.client.particle.VaporParticle;
 import com.xeno.goo.client.render.*;
 import com.xeno.goo.items.GauntletAbstraction;
@@ -83,6 +84,7 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Lobber.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getSolid());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Trough.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), RenderType.getCutoutMipped());
     }
 
     private static void setTileEntityRenderers()
@@ -93,6 +95,7 @@ public class ModClientEvents
         CrucibleRenderer.register();
         SolidifierRenderer.register();
         TroughRenderer.register();
+        PadRenderer.register();
     }
 
     private static void setModelLoaders()
@@ -205,5 +208,26 @@ public class ModClientEvents
         Minecraft.getInstance().particles.registerFactory(Registry.SNOW_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.SNOW_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.VITAL_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.VITAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.WEIRD_VAPOR_PARTICLE.get(), (iAnimatedSprite) -> new VaporParticle.VaporGooFactory(iAnimatedSprite, Registry.WEIRD_GOO.get()));
+
+        Minecraft.getInstance().particles.registerFactory(Registry.AQUATIC_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.AQUATIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.CHROMATIC_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.CHROMATIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.CRYSTAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.CRYSTAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.DECAY_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.DECAY_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.EARTHEN_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.EARTHEN_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.ENERGETIC_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.ENERGETIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FAUNAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.FAUNAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FLORAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.FLORAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FUNGAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.FUNGAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.HONEY_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.HONEY_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.LOGIC_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.LOGIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.METAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.METAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.MOLTEN_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.MOLTEN_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.PRIMORDIAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.PRIMORDIAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.RADIANT_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.RADIANT_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.REGAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.REGAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.SLIME_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.SLIME_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.SNOW_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.SNOW_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.VITAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.VITAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.WEIRD_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.WEIRD_GOO.get()));
     }
 }

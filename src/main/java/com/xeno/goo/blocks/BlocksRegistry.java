@@ -33,6 +33,7 @@ public class BlocksRegistry {
     public static final RegistryObject<RadiantLight> RadiantLight = Blocks.register("radiant_light", RadiantLight::new);
     public static final RegistryObject<CrystalNest> CrystalNest = Blocks.register("crystal_nest", CrystalNest::new);
     public static final RegistryObject<GooTrough> Trough = Blocks.register("goo_trough", GooTrough::new);
+    public static final RegistryObject<GooPad> Pad = Blocks.register("goo_pad", GooPad::new);
 
     public static final Map<ResourceLocation, RegistryObject<CrystalBlock>> CrystalBlocks = new HashMap<>();
 

@@ -1,8 +1,5 @@
 package com.xeno.goo.client;
-import com.xeno.goo.client.render.CrucibleItemRenderer;
-import com.xeno.goo.client.render.GooBulbItemRenderer;
-import com.xeno.goo.client.render.MixerItemRenderer;
-import com.xeno.goo.client.render.TroughItemRenderer;
+import com.xeno.goo.client.render.*;
 import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 
 import java.util.concurrent.Callable;
@@ -23,5 +20,9 @@ public class ISTERProvider
 
     public static Callable<ItemStackTileEntityRenderer> trough() {
         return TroughItemRenderer::new;
+    }
+
+    public static Callable<ItemStackTileEntityRenderer> pad() {
+        return PadItemRenderer::new;
     }
 }

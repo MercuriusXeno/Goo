@@ -39,7 +39,7 @@ public class Logic
 
     private static boolean entityHit(BlobHitContext c) {
         if (c.victim() instanceof MobEntity) {
-            c.victim().addPotionEffect(new EffectInstance(HarmlessEffect.instance, 240));
+            c.victim().addPotionEffect(new EffectInstance(Registry.HARMLESS_EFFECT.get(), 240));
             return true;
         }
 

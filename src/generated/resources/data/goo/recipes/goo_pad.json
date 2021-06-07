@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " o ",
+    "igi",
+    " o "
+  ],
+  "key": {
+    "o": {
+      "item": "goo:gasket"
+    },
+    "i": {
+      "item": "minecraft:gold_ingot"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    }
+  },
+  "result": {
+    "item": "goo:goo_pad"
+  }
+}

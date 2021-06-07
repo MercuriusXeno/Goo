@@ -41,6 +41,7 @@ public class RecipesProvider extends RecipeProvider {
         registerDrainRecipe(consumer);
         registerCrystalNestRecipe(consumer);
         registerTroughRecipe(consumer);
+        registerPadRecipe(consumer);
 
         registerDecorativeBlocks(consumer);
     }
@@ -259,6 +260,18 @@ public class RecipesProvider extends RecipeProvider {
                 .key('w', Items.DIORITE_WALL)
                 .key('d', Items.DIORITE_SLAB)
                 .key('g', ItemsRegistry.GASKET.get())
+                .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.GASKET.get()))
+                .build(consumer);
+    }
+
+    private void registerPadRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Pad.get())
+                .patternLine(" o ")
+                .patternLine("igi")
+                .patternLine(" o ")
+                .key('o', ItemsRegistry.GASKET.get())
+                .key('i', Items.GOLD_INGOT)
+                .key('g', Items.GLASS)
                 .addCriterion("gasket", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.GASKET.get()))
                 .build(consumer);
     }

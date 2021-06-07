@@ -1,0 +1,33 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:nether_gold_ore\",Count:1b}"
+      }
+    },
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:nether_gold_ore"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
+    },
+    {
+      "amount": 72.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 36.0,
+      "type": "goo:metal"
+    }
+  ]
+}

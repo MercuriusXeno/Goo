@@ -380,6 +380,12 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     protected void doFreeMovement()
     {
         Vector3d projection = getPositionVec().add(getMotion());
+        this.prevPosX = getPositionVec().x;
+        this.prevPosY = getPositionVec().y;
+        this.prevPosZ = getPositionVec().z;
+        this.lastTickPosX = getPositionVec().x;
+        this.lastTickPosY = getPositionVec().y;
+        this.lastTickPosZ = getPositionVec().z;
         this.setPosition(projection.x, projection.y, projection.z);
     }
 

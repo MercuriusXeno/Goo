@@ -412,8 +412,11 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         Vector3d motion = this.getMotion();
         Vector3d position = this.getPositionVec();
         Vector3d projection = position.add(motion);
-
+        this.lastTickPosX = position.x;
+        this.lastTickPosY = position.y;
+        this.lastTickPosZ = position.z;
         this.setPositionAndRotation(projection.x, projection.y, projection.z, this.rotationYaw, this.rotationPitch);
+
         this.realignBoundingBox(projection);
     }
 

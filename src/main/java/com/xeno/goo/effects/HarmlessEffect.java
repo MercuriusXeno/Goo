@@ -9,10 +9,7 @@ import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectType;
 
 public class HarmlessEffect extends Effect {
-
-	public static Effect instance = new HarmlessEffect();
-
-	protected HarmlessEffect() {
+	public HarmlessEffect() {
 		super(EffectType.NEUTRAL, 0xffff0000);
 	}
 

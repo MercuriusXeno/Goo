@@ -3,6 +3,8 @@ package com.xeno.goo.events;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.entities.GooBee;
 import com.xeno.goo.entities.MutantBee;
+import com.xeno.goo.fertilize.FertilizeCapability;
+import com.xeno.goo.fertilize.FertilizeImpl;
 import com.xeno.goo.items.GooChopEffects;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.EntitySpawnConditions;
@@ -15,10 +17,12 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.Pose;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
+import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
@@ -60,7 +64,15 @@ public class ForgeCommonEvents {
         if(evt.getObject() instanceof LivingEntity)
         {
             evt.addCapability(ShrinkImpl.Provider.NAME, new ShrinkImpl.Provider((LivingEntity) evt.getObject()));
+            evt.addCapability(FertilizeImpl.Provider.NAME, new FertilizeImpl.Provider((LivingEntity) evt.getObject()));
         }
+    }
+
+    @SubscribeEvent
+    public static void onLivingTick(LivingUpdateEvent event) {
+
+        event.getEntityLiving().getCapability(FertilizeCapability.FERTILIZE_CAPABILITY)
+                .ifPresent(iFertilizeProvider -> iFertilizeProvider.setPrevBlockPos(event.getEntityLiving().getPosition()));
     }
 
 
@@ -74,6 +86,7 @@ public class ForgeCommonEvents {
         {
             LivingEntity livingEntity = (LivingEntity) target;
             livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider -> iShrinkProvider.sync(livingEntity));
+            livingEntity.getCapability(FertilizeCapability.FERTILIZE_CAPABILITY).ifPresent(iFertilizeProvider -> iFertilizeProvider.sync(livingEntity));
         }
     }
 
@@ -85,6 +98,7 @@ public class ForgeCommonEvents {
             LivingEntity livingEntity = (LivingEntity) event.getEntity();
             livingEntity.recalculateSize();
             livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider -> iShrinkProvider.sync(livingEntity));
+            livingEntity.getCapability(FertilizeCapability.FERTILIZE_CAPABILITY).ifPresent(iFertilizeProvider -> iFertilizeProvider.sync(livingEntity));
         }
     }
 
@@ -97,28 +111,13 @@ public class ForgeCommonEvents {
             LivingEntity livingEntity = (LivingEntity) event.getEntity();
             livingEntity.getCapability(ShrinkAPI.SHRINK_CAPABILITY).ifPresent(iShrinkProvider ->
             {
-//                double x = event.getEntity().getPosX();
-//                double y = event.getEntity().getPosY();
-//                double z = event.getEntity().getPosZ();
 
                 if(iShrinkProvider.isShrunk())
                 {
                     event.setNewSize(new EntitySize(iShrinkProvider.widthScale(), iShrinkProvider.heightScale(), true));
                     if(event.getPose() != Pose.STANDING) event.getEntity().setPose(Pose.STANDING);
                     event.setNewEyeHeight(iShrinkProvider.defaultEyeHeight() * iShrinkProvider.scale());
-                    // event.getEntity().setPosition(x, y, z);
                 }
-//                else if(iShrinkProvider.isShrunk() && event.getPose() == Pose.CROUCHING && livingEntity instanceof PlayerEntity)
-//                {
-//                    event.setNewSize(new EntitySize(0.1F, 0.14F, true));
-//                    // event.getEntity().setPosition(x, y, z);
-//                }
-//                else if(!iShrinkProvider.isShrunk() && event.getPose() == Pose.STANDING && livingEntity instanceof PlayerEntity)
-//                {
-//                    event.setNewSize(iShrinkProvider.defaultEntitySize());
-//                    event.setNewEyeHeight(iShrinkProvider.defaultEyeHeight());
-//                    // event.getEntity().setPosition(x, y, z);
-//                }
             });
         }
     }

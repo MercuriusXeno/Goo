@@ -1,0 +1,16 @@
+{
+  "name": "block.goo.goo_pad",
+  "icon": "goo:goo_pad",
+  "category": "goo:machines",
+  "pages": [
+    {
+      "type": "text",
+      "text": "patchouli.goo.goo_pad.description"
+    },
+    {
+      "type": "crafting",
+      "recipe": "goo:goo_pad",
+      "text": "patchouli.goo.goo_pad.summary"
+    }
+  ]
+}

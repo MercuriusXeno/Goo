@@ -6,6 +6,9 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
 import com.xeno.goo.blocks.BlocksRegistry;
+import com.xeno.goo.effects.EggedEffect;
+import com.xeno.goo.effects.FloralEffect;
+import com.xeno.goo.effects.HarmlessEffect;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.entities.*;
 import com.xeno.goo.fluids.GooFluid;
@@ -24,6 +27,7 @@ import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.*;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;
+import net.minecraft.potion.Effect;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
@@ -52,6 +56,7 @@ public class Registry {
     private static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, GooMod.MOD_ID);
     private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, GooMod.MOD_ID);
     private static final DeferredRegister<PointOfInterestType> POINTS_OF_INTEREST = DeferredRegister.create(ForgeRegistries.POI_TYPES, GooMod.MOD_ID);
+    private static final DeferredRegister<Effect> EFFECTS = DeferredRegister.create(ForgeRegistries.POTIONS, GooMod.MOD_ID);
 
     public static void init () {
         // fluids needs to be before items
@@ -72,6 +77,7 @@ public class Registry {
         PARTICLES.register(FMLJavaModLoadingContext.get().getModEventBus());
         SOUNDS.register(FMLJavaModLoadingContext.get().getModEventBus());
         POINTS_OF_INTEREST.register(FMLJavaModLoadingContext.get().getModEventBus());
+        EFFECTS.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     public static final RegistryObject<EntityType<GooBlob>> GOO_BLOB = ENTITIES.register("goo_blob",
@@ -187,6 +193,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<DrainTile>> DRAIN_TILE = TILES.register("drain", () -> TileEntityType.Builder.create(DrainTile::new, BlocksRegistry.Drain.get()).build(null));
     public static final RegistryObject<TileEntityType<CrystalNestTile>> CRYSTAL_NEST_TILE = TILES.register("crystal_nest", () -> TileEntityType.Builder.create(CrystalNestTile::new, BlocksRegistry.CrystalNest.get()).build(null));
     public static final RegistryObject<TileEntityType<TroughTile>> TROUGH_TILE = TILES.register("goo_trough", () -> TileEntityType.Builder.create(TroughTile::new, BlocksRegistry.Trough.get()).build(null));
+    public static final RegistryObject<TileEntityType<PadTile>> PAD_TILE = TILES.register("goo_pad", () -> TileEntityType.Builder.create(PadTile::new, BlocksRegistry.Pad.get()).build(null));
 
     // Points of interest
     public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest",
@@ -194,6 +201,10 @@ public class Registry {
     public static final RegistryObject<PointOfInterestType> GOO_TROUGH_POI = POINTS_OF_INTEREST.register("goo_trough",
             () -> new PointOfInterestType("goo_trough", PointOfInterestType.getAllStates(BlocksRegistry.Trough.get()), 0, 1));
 
+    // Custom "potion" effects
+    public static final RegistryObject<Effect> HARMLESS_EFFECT = EFFECTS.register("harmless_effect", HarmlessEffect::new);
+    public static final RegistryObject<Effect> EGGED_EFFECT = EFFECTS.register("egged_effect", EggedEffect::new);
+    public static final RegistryObject<Effect> FLORAL_EFFECT = EFFECTS.register("floral_effect", FloralEffect::new);
 
     // Goo!
     public static final RegistryObject<GooFluid> AQUATIC_GOO = registerGooFluid("aquatic_goo", Resources.Still.AQUATIC_GOO, Resources.Flowing.AQUATIC_GOO, Resources.Icon.AQUATIC_GOO, 0.001f, 0);
@@ -353,6 +364,28 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> VITAL_VAPOR_PARTICLE = PARTICLES.register("vital_vapor",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> WEIRD_VAPOR_PARTICLE = PARTICLES.register("weird_vapor",  () -> new BasicParticleType(false));
 
+    // vapor particles
+    public static final RegistryObject<BasicParticleType> AQUATIC_SPRAY_PARTICLE = PARTICLES.register("aquatic_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CHROMATIC_SPRAY_PARTICLE = PARTICLES.register("chromatic_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CRYSTAL_SPRAY_PARTICLE = PARTICLES.register("crystal_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> DECAY_SPRAY_PARTICLE = PARTICLES.register("decay_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> EARTHEN_SPRAY_PARTICLE = PARTICLES.register("earthen_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> ENERGETIC_SPRAY_PARTICLE = PARTICLES.register("energetic_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FAUNAL_SPRAY_PARTICLE = PARTICLES.register("faunal_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FLORAL_SPRAY_PARTICLE = PARTICLES.register("floral_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FUNGAL_SPRAY_PARTICLE = PARTICLES.register("fungal_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> HONEY_SPRAY_PARTICLE = PARTICLES.register("honey_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> LOGIC_SPRAY_PARTICLE = PARTICLES.register("logic_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> METAL_SPRAY_PARTICLE = PARTICLES.register("metal_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> MOLTEN_SPRAY_PARTICLE = PARTICLES.register("molten_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> PRIMORDIAL_SPRAY_PARTICLE = PARTICLES.register("primordial_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> RADIANT_SPRAY_PARTICLE = PARTICLES.register("radiant_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> REGAL_SPRAY_PARTICLE = PARTICLES.register("regal_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SLIME_SPRAY_PARTICLE = PARTICLES.register("slime_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SNOW_SPRAY_PARTICLE = PARTICLES.register("snow_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> VITAL_SPRAY_PARTICLE = PARTICLES.register("vital_spray",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> WEIRD_SPRAY_PARTICLE = PARTICLES.register("weird_spray",  () -> new BasicParticleType(false));
+
     private static final Map<Fluid, BasicParticleType> fallingParticleLookupCache = new HashMap<>();
     private static void initializeFallingParticleLookupCache() {
         fallingParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_FALLING_GOO_PARTICLE.get());
@@ -400,6 +433,30 @@ public class Registry {
         vaporParticleLookupCache.put(VITAL_GOO.get(), VITAL_VAPOR_PARTICLE.get());
         vaporParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_VAPOR_PARTICLE.get());
     }
+
+    private static final Map<Fluid, BasicParticleType> sprayParticleLookupCache = new HashMap<>();
+    private static void initializeSprayParticleLookupCache() {
+        sprayParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(CHROMATIC_GOO.get(), CHROMATIC_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(CRYSTAL_GOO.get(), CRYSTAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(DECAY_GOO.get(), DECAY_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(EARTHEN_GOO.get(), EARTHEN_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(ENERGETIC_GOO.get(), ENERGETIC_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(FAUNAL_GOO.get(), FAUNAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(FLORAL_GOO.get(), FLORAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(FUNGAL_GOO.get(), FUNGAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(HONEY_GOO.get(), HONEY_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(METAL_GOO.get(), METAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(REGAL_GOO.get(), REGAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(SLIME_GOO.get(), SLIME_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(SNOW_GOO.get(), SNOW_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(VITAL_GOO.get(), VITAL_SPRAY_PARTICLE.get());
+        sprayParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_SPRAY_PARTICLE.get());
+    }
     
     public static BasicParticleType fallingParticleFromFluid(Fluid fluid)
     {
@@ -423,6 +480,17 @@ public class Registry {
         }
 
         return vaporParticleLookupCache.get(fluid);
+    }
+
+    public static BasicParticleType sprayParticleFromFluid(Fluid fluid) {
+        if (sprayParticleLookupCache.size() == 0) {
+            initializeSprayParticleLookupCache();
+        }
+        if (!sprayParticleLookupCache.containsKey(fluid)) {
+            return null;
+        }
+
+        return sprayParticleLookupCache.get(fluid);
     }
 
     public static String getFluidTranslationKey(String key)
