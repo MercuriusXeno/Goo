@@ -5,25 +5,29 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:redstone_ore"
+        "item": "minecraft:nether_gold_ore"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:redstone_ore\",Count:1b}"
+        "stack": "{id:\"minecraft:nether_gold_ore\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "amount": 36.0,
+      "type": "goo:metal"
     },
     {
-      "amount": 15.0,
-      "type": "goo:logic"
+      "amount": 72.0,
+      "type": "goo:regal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

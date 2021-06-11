@@ -18,16 +18,16 @@
   ],
   "compounds": [
     {
-      "amount": 240.0,
-      "type": "goo:chromatic"
-    },
-    {
       "amount": 30.0,
       "type": "goo:crystal"
     },
     {
       "amount": 4.0,
       "type": "goo:weird"
+    },
+    {
+      "amount": 48.0,
+      "type": "goo:chromatic"
     }
   ]
 }

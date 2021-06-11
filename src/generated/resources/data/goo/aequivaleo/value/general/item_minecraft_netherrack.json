@@ -5,24 +5,28 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:soul_campfire"
+        "item": "minecraft:netherrack"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:soul_campfire\",Count:1b}"
+        "stack": "{id:\"minecraft:netherrack\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 50.0,
-      "type": "goo:radiant"
+      "amount": 5.0,
+      "type": "goo:molten"
     },
     {
       "amount": 60.0,
+      "type": "goo:earthen"
+    },
+    {
+      "amount": 5.0,
       "type": "goo:decay"
     }
   ]

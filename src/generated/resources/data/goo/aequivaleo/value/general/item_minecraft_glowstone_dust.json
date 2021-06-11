@@ -2,22 +2,22 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:campfire\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:campfire"
+        "item": "minecraft:glowstone_dust"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:glowstone_dust\",Count:1b}"
       }
     }
   ],
   "compounds": {
-    "amount": 30.0,
+    "amount": 10.0,
     "type": "goo:radiant"
   }
 }

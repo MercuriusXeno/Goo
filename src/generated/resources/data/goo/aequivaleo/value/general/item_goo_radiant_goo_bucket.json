@@ -16,14 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 216.0,
-      "type": "goo:metal"
-    },
-    {
-      "amount": 1000.0,
-      "type": "goo:radiant"
-    }
-  ]
+  "compounds": {
+    "amount": 216.0,
+    "type": "goo:metal"
+  }
 }

@@ -17,7 +17,7 @@
     }
   ],
   "compounds": {
-    "amount": 120.0,
+    "amount": 60.0,
     "type": "goo:energetic"
   }
 }

@@ -29,11 +29,11 @@ import java.util.function.Supplier;
 public class Weird
 {
     private static final Supplier<GooFluid> fluidSupplier = Registry.WEIRD_GOO;
-    private static final double BOUNDS_REACH = 16d;
+    private static final double BOUNDS_REACH = 32d;
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "weird_transport", Weird::weirdTransport, (c) -> true); // too complicated
+        GooInteractions.registerSplat(fluidSupplier.get(), "weird_transport", Weird::weirdTransport, (c) -> true);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "weird_hit", Weird::hitEntity);
     }
@@ -49,6 +49,7 @@ public class Weird
                     (e) -> !e.equals(splatContext.splat())
                         && GooSplat.getGoo(e).getFluidInTankInternal(0).getFluid().equals(Registry.WEIRD_GOO.get())
                         && GooSplat.getGoo(e).getFluidInTankInternal(0).getAmount() >= warpCost
+                        && e.cooldown() <= 0
         );
         if (nearbyWarpSplat.size() == 0) {
             return false;
@@ -61,6 +62,8 @@ public class Weird
             if (safePassageResult.getA()) {
                 teleportToSafePassage(entity, safePassageResult.getB());
                 GooSplat.getGoo(nearestWarp).drain(warpCost, IFluidHandler.FluidAction.EXECUTE);
+                nearestWarp.setCooldown(20);
+                splatContext.splat().setCooldown(20);
                 doEffects(nearestWarp, true);
                 doEffects(splatContext.splat(), false);
                 return true;
@@ -136,13 +139,16 @@ public class Weird
 
     private static boolean teleportRandomly(LivingEntity e) {
         if (!e.world.isRemote() && e.isAlive()) {
-            double dx = e.getPosX() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
-            double dy = e.getPosY() + (double)(e.world.rand.nextInt(64) - 32);
-            double dz = e.getPosZ() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
-            return teleportTo(e, dx, dy, dz);
-        } else {
-            return false;
+            for (int attempts = 0; attempts < 250; attempts++) {
+                double dx = e.getPosX() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
+                double dy = e.getPosY() + (double) (e.world.rand.nextInt(64) - 32);
+                double dz = e.getPosZ() + (e.world.rand.nextDouble() - 0.5D) * 64.0D;
+                if (teleportTo(e, dx, dy, dz)) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     private static boolean teleportTo(LivingEntity e, double x, double y, double z) {

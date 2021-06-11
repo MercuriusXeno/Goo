@@ -17,7 +17,7 @@
     }
   ],
   "compounds": {
-    "amount": 128.0,
+    "amount": 64.0,
     "type": "goo:floral"
   }
 }

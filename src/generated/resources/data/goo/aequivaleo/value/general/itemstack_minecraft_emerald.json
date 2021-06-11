@@ -5,25 +5,25 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:trapped_chest\",Count:1b}"
+        "stack": "{id:\"minecraft:emerald\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:trapped_chest"
+        "item": "minecraft:emerald"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:logic"
+      "amount": 120.0,
+      "type": "goo:regal"
     },
     {
-      "amount": 256.0,
-      "type": "goo:floral"
+      "amount": 120.0,
+      "type": "goo:crystal"
     }
   ]
 }

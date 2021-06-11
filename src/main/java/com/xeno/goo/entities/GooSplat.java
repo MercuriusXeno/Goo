@@ -676,4 +676,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
         return goo.getFluidInTank(0);
     }
+
+    public int cooldown() {
+        return cooldown;
+    }
 }

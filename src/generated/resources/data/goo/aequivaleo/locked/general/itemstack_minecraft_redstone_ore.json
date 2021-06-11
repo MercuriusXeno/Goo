@@ -5,29 +5,25 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:netherrack\",Count:1b}"
+        "stack": "{id:\"minecraft:redstone_ore\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:netherrack"
+        "item": "minecraft:redstone_ore"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 180.0,
-      "type": "goo:earthen"
+      "amount": 15.0,
+      "type": "goo:logic"
     },
     {
-      "amount": 5.0,
-      "type": "goo:molten"
-    },
-    {
-      "amount": 5.0,
-      "type": "goo:decay"
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

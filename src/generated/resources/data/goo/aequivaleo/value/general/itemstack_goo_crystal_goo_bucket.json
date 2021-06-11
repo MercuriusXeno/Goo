@@ -16,14 +16,8 @@
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 1000.0,
-      "type": "goo:crystal"
-    },
-    {
-      "amount": 216.0,
-      "type": "goo:metal"
-    }
-  ]
+  "compounds": {
+    "amount": 216.0,
+    "type": "goo:metal"
+  }
 }

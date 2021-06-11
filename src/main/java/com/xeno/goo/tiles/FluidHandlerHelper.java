@@ -1,5 +1,6 @@
 package com.xeno.goo.tiles;
 
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
@@ -177,7 +178,9 @@ public abstract class FluidHandlerHelper
                 return values;
             }
 
-            values.add(cap.getFluidInTank(0));
+            if (cap.getFluidInTank(0).getFluid() instanceof GooFluid) {
+                values.add(cap.getFluidInTank(0));
+            }
         }
         return values;
     }
