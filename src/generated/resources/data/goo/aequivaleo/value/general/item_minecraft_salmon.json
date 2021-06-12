@@ -5,19 +5,25 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "goo:faunal_goo_shard"
+        "item": "minecraft:salmon"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"goo:faunal_goo_shard\",Count:1b}"
+        "stack": "{id:\"minecraft:salmon\",Count:1b}"
       }
     }
   ],
-  "compounds": {
-    "amount": 100.0,
-    "type": "goo:faunal"
-  }
+  "compounds": [
+    {
+      "amount": 1.0,
+      "type": "goo:vital"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:faunal"
+    }
+  ]
 }

@@ -153,7 +153,7 @@ public class Weird
 
     private static boolean teleportTo(LivingEntity e, double x, double y, double z) {
         BlockPos.Mutable pos = new BlockPos.Mutable(x, y, z);
-
+        BlockPos previousPos = e.getPosition();
         while(pos.getY() > 0 && !e.world.getBlockState(pos).getMaterial().blocksMovement()) {
             pos.move(Direction.DOWN);
         }
@@ -165,6 +165,7 @@ public class Weird
             boolean isTeleportSuccessful = e.attemptTeleport(pos.getX(), pos.getY(), pos.getZ(), true);
             if (isTeleportSuccessful && !e.isSilent()) {
                 AudioHelper.entityAudioEvent(e, Registry.WEIRD_TELEPORT_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, () -> 1.0f);
+                AudioHelper.headlessAudioEvent(e.world, previousPos, Registry.WEIRD_TELEPORT_SOUND.get(), SoundCategory.NEUTRAL, 1.0f, () -> 1.0f);
             }
             return isTeleportSuccessful;
         } else {

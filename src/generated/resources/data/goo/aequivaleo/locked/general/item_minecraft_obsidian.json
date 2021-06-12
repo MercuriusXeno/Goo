@@ -19,10 +19,6 @@
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:weird"
-    },
-    {
-      "amount": 15.0,
       "type": "goo:crystal"
     },
     {
@@ -32,6 +28,10 @@
     {
       "amount": 60.0,
       "type": "goo:earthen"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:weird"
     }
   ]
 }

@@ -19,7 +19,7 @@
   "compounds": [
     {
       "amount": 12.0,
-      "type": "goo:earthen"
+      "type": "goo:crystal"
     },
     {
       "amount": 1.0,
@@ -27,7 +27,7 @@
     },
     {
       "amount": 12.0,
-      "type": "goo:crystal"
+      "type": "goo:earthen"
     }
   ]
 }

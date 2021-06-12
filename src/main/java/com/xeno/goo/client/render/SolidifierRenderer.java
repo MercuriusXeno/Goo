@@ -39,6 +39,12 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
             return;
         }
 
+        renderItem(tile, matrices, buffer);
+    }
+
+    private void renderItem(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer) {
+
+
         // one function of the solidifier is a safety mechanism to prevent accidentally changing the item.
         // when you attempt to change it, you get a flashing indication that you're trying to alter the target
         // which you must then confirm. this is achieved by checking the tile change timer is nonzero, abstracted into shouldFlash()
@@ -78,6 +84,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 matrices.pop();
             }
         }
+
     }
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();

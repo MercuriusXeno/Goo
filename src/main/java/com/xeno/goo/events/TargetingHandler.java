@@ -59,7 +59,7 @@ public class TargetingHandler
     private static final int TEXT_START_Y_OFFSET = 20;
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
-    private static final float Z_LEVEL_OF_MODAL = 500f;
+    private static final float Z_LEVEL_OF_MODAL = 500;
     // private static final Supplier<Float> PATCHOULI_Z_LEVEL = () -> (float)Minecraft.getInstance().world.getDayTime() % 1000;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
@@ -388,15 +388,15 @@ public class TargetingHandler
 
     public static void renderGooIcon(MatrixStack matrices, ResourceLocation icon, int x, int y, int count) {
         matrices.push();
-        matrices.translate(0, 0, 1);
+        matrices.translate(0, 0, 2d);
         drawModalIcons(matrices, x, y, icon);
 
         IFormattableTextComponent t1 = getGooAmountForDisplay(count);
         String s1 = t1.getString();
         int w1 = Minecraft.getInstance().fontRenderer.getStringWidth(s1);
         int color = 0xFFFFFFFF;
-        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, 1);
-        matrices.scale(TEXT_SCALE, TEXT_SCALE, TEXT_SCALE);
+        matrices.translate(x + (ICON_WIDTH / 2f) - w1 / 4f, y + TEXT_START_Y_OFFSET, 3d);
+        matrices.scale(TEXT_SCALE, TEXT_SCALE, 1f);
         Minecraft.getInstance().fontRenderer.drawStringWithShadow(matrices, s1, 0, 0, color);
         matrices.pop();
     }

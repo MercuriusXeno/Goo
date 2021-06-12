@@ -23,11 +23,11 @@
     },
     {
       "amount": 60.0,
-      "type": "goo:decay"
+      "type": "goo:earthen"
     },
     {
       "amount": 60.0,
-      "type": "goo:earthen"
+      "type": "goo:decay"
     }
   ]
 }

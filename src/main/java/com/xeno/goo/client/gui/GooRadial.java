@@ -140,10 +140,10 @@ public class GooRadial extends Screen {
             float s = (((i - 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
             float e = (((i + 0.5f) / (float) numberOfSlices) + 0.25f) * 360;
             if (selectedItem == i) {
-                drawSlice(buffer, x, y, 10, radiusIn, radiusOut, s, e, 63, 161, 191, 60);
+                drawSlice(buffer, x, y, 1, radiusIn, radiusOut, s, e, 63, 161, 191, 60);
             }
             else {
-                drawSlice(buffer, x, y, 10, radiusIn, radiusOut, s, e, 0, 0, 0, 64);
+                drawSlice(buffer, x, y, 1, radiusIn, radiusOut, s, e, 0, 0, 0, 64);
             }
         }
         tessellator.draw();

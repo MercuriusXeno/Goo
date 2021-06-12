@@ -39,8 +39,8 @@ public class Slime
 
     // coefficient of kinetic decay when bouncing. Experimental. High numbers mean bouncier bouncing.
     // anything above 1 is a positive feedback loop and inadvisable. Anything under 0.35d is very dull.
-    private static final double VERTICAL_BOUNCE_DECAY = 0.65d;
-    private static final double HORIZONTAL_BOUNCE_DECAY = 0.9d;
+    private static final double VERTICAL_BOUNCE_DECAY = .7d;
+    private static final double HORIZONTAL_BOUNCE_DECAY = .9d;
 
     public static void registerInteractions()
     {
@@ -56,7 +56,7 @@ public class Slime
 
     private static boolean isLivingInBounceArea(SplatContext splatContext) {
         return splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
-                splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround()).size() > 0;
+                splatContext.splat().getBoundingBox().grow(0.45d, 1.9d, 0.45d), e -> !e.isOnGround()).size() > 0;
     }
 
     private static boolean bounceLiving(SplatContext splatContext) {

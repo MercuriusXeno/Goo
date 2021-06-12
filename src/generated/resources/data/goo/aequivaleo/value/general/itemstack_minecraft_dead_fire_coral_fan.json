@@ -5,33 +5,25 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:sea_pickle\",Count:1b}"
+        "stack": "{id:\"minecraft:dead_fire_coral_fan\",Count:1b}"
       }
     },
     {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:sea_pickle"
+        "item": "minecraft:dead_fire_coral_fan"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 48.0,
-      "type": "goo:chromatic"
+      "amount": 5.0,
+      "type": "goo:decay"
     },
     {
-      "amount": 30.0,
-      "type": "goo:aquatic"
-    },
-    {
-      "amount": 30.0,
+      "amount": 5.0,
       "type": "goo:faunal"
-    },
-    {
-      "amount": 30.0,
-      "type": "goo:radiant"
     }
   ]
 }

@@ -5,19 +5,19 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:blackstone"
+        "item": "minecraft:ice"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:blackstone\",Count:1b}"
+        "stack": "{id:\"minecraft:ice\",Count:1b}"
       }
     }
   ],
   "compounds": {
     "amount": 60.0,
-    "type": "goo:earthen"
+    "type": "goo:snow"
   }
 }

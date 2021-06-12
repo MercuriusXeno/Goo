@@ -102,11 +102,11 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.rotate(Vector3f.YP.rotationDegrees(180f - (float)(d.getHorizontalIndex() * 90)));
 
                 // scale
-                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.001f);
+                Vector3f scaleVec = new Vector3f(0.375f, 0.375f, 0.01f);
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.GUI, light, overlay, matrices, buffer);
+                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, light, overlay, matrices, buffer);
                 matrices.pop();
             }
         }
