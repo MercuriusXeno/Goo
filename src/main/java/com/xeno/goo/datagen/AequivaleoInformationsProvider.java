@@ -138,6 +138,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.PODZOL, earthen(60), fungal(15));
         saveData(Items.RED_SAND, earthen(60));
         saveData(Items.SAND, earthen(60));
+        saveData(Items.GLASS, earthen(24), crystal(3));
         saveData(Items.APPLE, floral(15), vital(1));
         saveData(Items.BAMBOO, floral(8));
         saveData(Items.BASALT, earthen(60), molten(15));

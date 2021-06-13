@@ -17,6 +17,7 @@ import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Direction.Axis;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
@@ -91,18 +92,21 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.translate(vecOffset.getX(), vecOffset.getY(), vecOffset.getZ());
 
                 matrices.translate(0.5f, 0.5f, 0.5f);
-                // Vector3i vecRotate = rotations.get(d);
-//                matrices.rotate(Vector3f.YP.rotationDegrees(vecRotate.getY()));
-//                matrices.rotate(Vector3f.XP.rotationDegrees(vecRotate.getX()));
-//                matrices.rotate(Vector3f.ZP.rotationDegrees(vecRotate.getZ()));
-
-                // try a different rotation strat
                 // the only exception here is down flow direction is special, invert it. (Make all vertical up)
                 matrices.rotate(flow.getAxis().isVertical() ? Direction.UP.getRotation() : flow.getRotation());
+
                 matrices.rotate(Vector3f.YP.rotationDegrees(180f - (float)(d.getHorizontalIndex() * 90)));
 
+                if (flow.getAxis().isHorizontal()) {
+                    float xRotationOffset = xRotationOffsetsForHorizontalItemFrame(d);
+                    float zRotationOffset = zRotationOffsetsForHorizontalItemFrame(d);
+                    matrices.rotate(Vector3f.ZP.rotationDegrees(zRotationOffset - d.getHorizontalIndex() * 90));
+                    matrices.rotate(Vector3f.XP.rotationDegrees(xRotationOffset - d.getHorizontalIndex() * 90));
+                    // matrices.rotate(Vector3f.XP.rotationDegrees(180f - (d.getHorizontalIndex() - flow.getHorizontalIndex()) * 90));
+                }
+
                 // scale
-                Vector3f scaleVec = new Vector3f(0.375f, 0.375f, 0.01f);
+                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.001f);
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
@@ -110,6 +114,34 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 matrices.pop();
             }
         }
+    }
+
+    private float zRotationOffsetsForHorizontalItemFrame(Direction d) {
+        boolean isShiftHeld = Minecraft.getInstance().player.isSneaking();
+        float startOffset = isShiftHeld ? 90f : 0f;
+        switch (d) {
+            case NORTH:
+                return 180f;
+            case EAST:
+            case SOUTH:
+            case WEST:
+                return 0f;
+        }
+        return 0f;
+    }
+
+    private float xRotationOffsetsForHorizontalItemFrame(Direction d) {
+        switch (d) {
+            case NORTH:
+                return 180f;
+            case EAST:
+                return 270f;
+            case SOUTH:
+                return 0f;
+            case WEST:
+                return 90f;
+        }
+        return 0f;
     }
 
     // note these are "imaginary" directions; the actual faces are going to include UP/DOWN
@@ -160,47 +192,47 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
         }
     }
 
-
-    private static final Map<Direction, Map<Direction, Vector3i>> rotationVectors = new HashMap<>();
-    static {
-        for(Direction flow : Direction.values()) {
-            Map<Direction, Vector3i> passResult = new HashMap<>();
-            switch (flow) {
-                case UP:
-                case DOWN:
-                    passResult.put(Direction.NORTH, new Vector3i(0, 90, 0));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 270, 0));
-                    passResult.put(Direction.EAST, new Vector3i(0, 0, 0));
-                    passResult.put(Direction.WEST, new Vector3i(0, 180, 0));
-                    break;
-                case SOUTH:
-                    passResult.put(Direction.DOWN, new Vector3i(270, 90, 90));
-                    passResult.put(Direction.UP, new Vector3i(270, 90, 90));
-                    passResult.put(Direction.EAST, new Vector3i(0, 90, 90));
-                    passResult.put(Direction.WEST, new Vector3i(0, 90, 90));
-                    break;
-                case NORTH:
-                    passResult.put(Direction.DOWN, new Vector3i(90, 90, 270));
-                    passResult.put(Direction.UP, new Vector3i(90, 90, 270));
-                    passResult.put(Direction.EAST, new Vector3i(0, 90, 270));
-                    passResult.put(Direction.WEST, new Vector3i(0, 90, 270));
-                    break;
-                case WEST:
-                    passResult.put(Direction.DOWN, new Vector3i(90, 0, 90));
-                    passResult.put(Direction.UP, new Vector3i(90, 0, 90));
-                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 90));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 90));
-                    break;
-                case EAST:
-                    passResult.put(Direction.DOWN, new Vector3i(270, 0, 270));
-                    passResult.put(Direction.UP, new Vector3i(270, 0, 270));
-                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 270));
-                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 270));
-                    break;
-            }
-            rotationVectors.put(flow, passResult);
-        }
-    }
+//
+//    private static final Map<Direction, Map<Direction, Vector3i>> rotationVectors = new HashMap<>();
+//    static {
+//        for(Direction flow : Direction.values()) {
+//            Map<Direction, Vector3i> passResult = new HashMap<>();
+//            switch (flow) {
+//                case UP:
+//                case DOWN:
+//                    passResult.put(Direction.NORTH, new Vector3i(0, 90, 0));
+//                    passResult.put(Direction.SOUTH, new Vector3i(0, 270, 0));
+//                    passResult.put(Direction.EAST, new Vector3i(0, 0, 0));
+//                    passResult.put(Direction.WEST, new Vector3i(0, 180, 0));
+//                    break;
+//                case SOUTH:
+//                    passResult.put(Direction.DOWN, new Vector3i(270, 90, 90));
+//                    passResult.put(Direction.UP, new Vector3i(270, 90, 90));
+//                    passResult.put(Direction.EAST, new Vector3i(0, 90, 90));
+//                    passResult.put(Direction.WEST, new Vector3i(0, 90, 90));
+//                    break;
+//                case NORTH:
+//                    passResult.put(Direction.DOWN, new Vector3i(90, 90, 270));
+//                    passResult.put(Direction.UP, new Vector3i(90, 90, 270));
+//                    passResult.put(Direction.EAST, new Vector3i(0, 90, 270));
+//                    passResult.put(Direction.WEST, new Vector3i(0, 90, 270));
+//                    break;
+//                case WEST:
+//                    passResult.put(Direction.DOWN, new Vector3i(90, 0, 90));
+//                    passResult.put(Direction.UP, new Vector3i(90, 0, 90));
+//                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 90));
+//                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 90));
+//                    break;
+//                case EAST:
+//                    passResult.put(Direction.DOWN, new Vector3i(270, 0, 270));
+//                    passResult.put(Direction.UP, new Vector3i(270, 0, 270));
+//                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 270));
+//                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 270));
+//                    break;
+//            }
+//            rotationVectors.put(flow, passResult);
+//        }
+//    }
 
     private void renderActuator(GooPumpTile tile, MatrixStack matrices, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn, float partialTicks) {
         matrices.push();

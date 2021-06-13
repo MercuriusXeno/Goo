@@ -1,10 +1,8 @@
 package com.xeno.goo.aequivaleo;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.ldtteam.aequivaleo.api.IAequivaleoAPI;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
-import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.ldtteam.aequivaleo.api.results.IResultsInformationCache;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -17,10 +15,6 @@ import java.util.stream.Collectors;
 
 public class Equivalencies
 {
-    public static Map<ICompoundContainer<?>, ImmutableSet<CompoundInstance>> locked(RegistryKey<World> worldKey) {
-        return IAequivaleoAPI.getInstance().getLockedCompoundWrapperToTypeRegistry(worldKey).getLockingInformation();
-    }
-
     public static IResultsInformationCache cache(RegistryKey<World> worldKey) {
         return IAequivaleoAPI.getInstance().getResultsInformationCache(worldKey);
     }
@@ -37,12 +31,7 @@ public class Equivalencies
     public static GooEntry getEntry(RegistryKey<World> worldKey, ItemStack item)
     {
         Set<CompoundInstance> results = cache(worldKey).getFor(item);
-        return new GooEntry(worldKey, item.getItem(), results);
-    }
-
-    public static boolean isLocked(RegistryKey<World> worldKey, Item item)
-    {
-        return locked(worldKey).entrySet().stream().anyMatch(l -> l.getKey().getContents().equals(item));
+        return new GooEntry(results);
     }
 
     // used to be used to restrict solidification of furnace products but now all it does is power molten goo
@@ -58,4 +47,5 @@ public class Equivalencies
     public static void resetFurnaceProducts(World world) {
         furnaceProducts.put(world.getDimensionKey(), Sets.newHashSet(furnaceRecipes(world).stream().map(r -> r.getRecipeOutput().getItem()).collect(Collectors.toList())));
     }
+
 }

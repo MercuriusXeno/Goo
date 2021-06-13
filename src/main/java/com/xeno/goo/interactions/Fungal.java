@@ -152,13 +152,11 @@ public class Fungal
         }
     }
 
-    private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
-        BlockState state = gooBlob.getEntityWorld().getBlockState(blockRayTraceResult.getPos());
+    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }
-        return state.getBlock() instanceof LeavesBlock
-                || (state.getBlock() instanceof IGrowable && !(state.getBlock() instanceof GrassBlock));
+        return state.getBlock() instanceof LeavesBlock;
     }
 
     private static boolean growableTick(BlobContext blobContext) {

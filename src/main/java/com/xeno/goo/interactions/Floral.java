@@ -2,21 +2,17 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.xeno.goo.effects.FloralEffect;
 import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BoneMealItem;
 import net.minecraft.potion.EffectInstance;
-import net.minecraft.potion.Effects;
 import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.server.ServerWorld;
 
 import java.util.function.Supplier;
@@ -31,7 +27,7 @@ public class Floral
         GooInteractions.registerSplat(fluidSupplier.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
         GooInteractions.registerSplat(fluidSupplier.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
         GooInteractions.registerSplat(fluidSupplier.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
-        GooInteractions.registerSplat(fluidSupplier.get(), "flourish", Floral::flourish, Floral::isGrassBlock);
+        GooInteractions.registerSplat(fluidSupplier.get(), "flourish", Floral::flourish, Floral::isGrassBlockButNotTallGrassBlock);
 
         GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Floral::blobPassThroughPredicate);
 
@@ -118,8 +114,8 @@ public class Floral
         return false;
     }
 
-    private static boolean isGrassBlock(SplatContext context) {
-        return context.block() instanceof GrassBlock;
+    private static boolean isGrassBlockButNotTallGrassBlock(SplatContext context) {
+        return context.block() instanceof GrassBlock && !(context.block() instanceof TallGrassBlock);
     }
 
     private static boolean flourish(SplatContext context) {
@@ -196,13 +192,11 @@ public class Floral
         return exchangeBlock(context, Blocks.GRASS_BLOCK, Blocks.DIRT);
     }
 
-    private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
-        BlockState state = gooBlob.getEntityWorld().getBlockState(blockRayTraceResult.getPos());
+    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }
-        return state.getBlock() instanceof LeavesBlock
-                || (state.getBlock() instanceof IGrowable && !(state.getBlock() instanceof GrassBlock));
+        return state.getBlock() instanceof LeavesBlock;
     }
 
     // similar to exchange block but respect the state of the original log

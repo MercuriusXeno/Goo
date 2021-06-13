@@ -1,5 +1,6 @@
 package com.xeno.goo.jei;
 
+import com.xeno.goo.aequivaleo.GooConversionWrapper;
 import mezz.jei.api.recipe.IFocus;
 import net.minecraft.item.ItemStack;
 

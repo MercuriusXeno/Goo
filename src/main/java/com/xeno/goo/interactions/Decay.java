@@ -308,25 +308,17 @@ public class Decay
         return false;
     }
 
-    private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
-        BlockState state = gooBlob.getEntityWorld().getBlockState(blockRayTraceResult.getPos());
+    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }
         return
+                // things that normally have collision we want to pretend don't
                 state.getBlock() instanceof LeavesBlock
-                || state.getBlock() instanceof VineBlock
-                || state.getBlock() instanceof BushBlock
-                || state.getBlock() instanceof TallGrassBlock
-                || state.getBlock() instanceof CropsBlock
                 || state.getBlock() instanceof LilyPadBlock
-                || state.getBlock() instanceof SugarCaneBlock
                 || state.getBlock() instanceof BambooBlock
                 || state.getBlock() instanceof BambooSaplingBlock
-                || state.getBlock() instanceof SaplingBlock
-                || state.getBlock() instanceof CactusBlock
-                || state.getBlock() instanceof FlowerBlock
-                || state.getBlock() instanceof TallFlowerBlock;
+                || state.getBlock() instanceof CactusBlock;
     }
 
     private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {

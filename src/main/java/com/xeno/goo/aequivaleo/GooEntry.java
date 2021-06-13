@@ -27,7 +27,6 @@ public class GooEntry
     private List<GooValue> values;
     private boolean        isDenied;
     private boolean        isUnknown;
-    private boolean        isFixed;
     private boolean        deniesSolidification;
 
     public GooEntry(List<GooValue> gooValues)
@@ -35,7 +34,6 @@ public class GooEntry
         this.values = gooValues;
         this.isDenied = false;
         this.isUnknown = false;
-        this.isFixed = false;
         this.deniesSolidification = false;
         pruneEmptyValues();
         sortValues();
@@ -46,7 +44,6 @@ public class GooEntry
         this.values = Arrays.asList(adding);
         this.isDenied = false;
         this.isUnknown = false;
-        this.isFixed = false;
         this.deniesSolidification = false;
         pruneEmptyValues();
         sortValues();
@@ -57,7 +54,6 @@ public class GooEntry
         this.values = new ArrayList<>();
         this.isDenied = isDenied;
         this.isUnknown = isUnknown;
-        this.isFixed = false;
         this.deniesSolidification = false;
         pruneEmptyValues();
     }
@@ -67,17 +63,15 @@ public class GooEntry
         this.values = gooEntry.values;
         this.isDenied = gooEntry.isDenied;
         this.isUnknown = gooEntry.isUnknown;
-        this.isFixed = gooEntry.isFixed;
         this.deniesSolidification = gooEntry.deniesSolidification;
     }
 
-    public GooEntry(RegistryKey<World> worldKey, Item item, Set<CompoundInstance> compounds)
+    public GooEntry(Set<CompoundInstance> compounds)
     {
         boolean isValid = compounds.stream().anyMatch(c -> (c.getType() instanceof GooCompoundType));
 
         this.isDenied = !isValid;
         this.isUnknown = compounds.size() == 0;
-        this.isFixed = Equivalencies.isLocked(worldKey, item);
         this.deniesSolidification = compounds.stream().anyMatch(compoundInstance -> compoundInstance.getType() == Registry.FORBIDDEN.get());
         if (isValid)
         {
@@ -110,8 +104,6 @@ public class GooEntry
     public boolean isUnknown() { return this.isUnknown; }
 
     public boolean isEmpty() { return this.values.size() == 0; }
-
-    public boolean isFixed() {return this.isFixed; }
 
     public List<GooValue> values() { return this.values; }
 

@@ -17,6 +17,7 @@ import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
+import com.xeno.goo.tiles.GooPumpTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
@@ -41,6 +42,7 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.text.*;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.Post;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
@@ -401,6 +403,13 @@ public class TargetingHandler
         matrices.pop();
     }
 
+    public static void renderGooIconWithoutAmount(MatrixStack matrices, ResourceLocation icon, int x, int y) {
+        matrices.push();
+        matrices.translate(0, 0, 2d);
+        drawModalShortIcons(matrices, x, y, icon);
+        matrices.pop();
+    }
+
     public static void renderGooShortIcon(MatrixStack matrices, ResourceLocation icon, int x, int y,
                                           int width, int height, boolean isToggled) {
         drawModalIcons(matrices, x, y, icon, width, height, isToggled);
@@ -429,6 +438,10 @@ public class TargetingHandler
 
     private static void drawModalIcons(MatrixStack transform, int x, int y, ResourceLocation icon) {
         drawModalIcons(transform, x, y, icon, ICON_WIDTH, ICON_HEIGHT, true);
+    }
+
+    private static void drawModalShortIcons(MatrixStack transform, int x, int y, ResourceLocation icon) {
+        drawModalIcons(transform, x, y, icon, SHORT_ICON_WIDTH, SHORT_ICON_HEIGHT, true);
     }
 
     public static IFormattableTextComponent getGooAmountForDisplay(int count)
@@ -544,6 +557,13 @@ public class TargetingHandler
             }
             return false;
         }
+        if (state.getBlock() instanceof GooPump) {
+            TileEntity t = world.getTileEntity(target.getPos());
+            if (t instanceof GooPumpTile) {
+                GooEntry gooEntry = Equivalencies.getEntry(world.getDimensionKey(), ((GooPumpTile)t).getDisplayedItem());
+                renderGooFilter(event, gooEntry);
+            }
+        }
         return false;
     }
 
@@ -623,6 +643,38 @@ public class TargetingHandler
             return;
         }
         renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), bx, by, (int)Math.floor(entry.getAmount()));
+    }
+
+
+    private static void renderGooFilter(Post event, GooEntry gooEntry) {
+        MatrixStack matrices = event.getMatrixStack();
+
+        if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
+            return;
+
+
+        int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
+        int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
+        int xOff = -SHORT_ICON_WIDTH;
+        int yOff = -SHORT_ICON_HEIGHT;
+        int entriesPerRow = (int)Math.ceil(Math.sqrt(gooEntry.values().size()));
+        int procCount = 0;
+
+        for(int i = 0; i < gooEntry.values().size(); i++) {
+            procCount++;
+            Fluid fluid = Registry.getFluid(gooEntry.values().get(i).getFluidResourceLocation());
+            if (!(fluid instanceof GooFluid)) {
+                return;
+            }
+            xOff += SHORT_ICON_WIDTH;
+
+            renderGooIconWithoutAmount(matrices, ((GooFluid)fluid).shortIcon(), bx + xOff, by + yOff);
+            if(procCount >= entriesPerRow) {
+                xOff = -SHORT_ICON_WIDTH;
+                yOff += SHORT_ICON_HEIGHT;
+                procCount = 0;
+            }
+        }
     }
 
     private static void renderGooContentsOfEntity(RenderGameOverlayEvent.Post event, EntityRayTraceResult e)

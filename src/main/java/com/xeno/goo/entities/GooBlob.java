@@ -244,7 +244,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
                 return true;
             }
 
-            if (!this.world.isRemote() && isValidForPassThrough(blockResult)) {
+            if (!this.world.isRemote() && isValidForPassThrough(world.getBlockState(blockResult.getPos()))) {
                 GooInteractions.tryResolving(blockResult.getPos(), this);
                 return false;
             }
@@ -276,7 +276,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
     protected void onInsideBlock(BlockState state) {
         super.onInsideBlock(state);
         boolean wasOnGround = this.isOnGround();
-        boolean isAir = state.getBlock().isAir(state, world, this.getPosition());
+        boolean isAir = state.getBlock().isAir(state, world, this.getPosition()) || isValidForPassThrough(state);
         this.setOnGround(!isAir);
         if (!wasOnGround) {
             this.ticksInGround = 0;
@@ -334,17 +334,17 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
         return true;
     }
 
-    private boolean isValidForPassThrough(BlockRayTraceResult blockResult) {
-        BlockState state = world.getBlockState(blockResult.getPos());
+    private boolean isValidForPassThrough(BlockState state) {
         if (!GooInteractions.materialPassThroughPredicateRegistry.containsKey(goo.getFluidInTankInternal(0).getFluid())) {
             return isPassableMaterial(state);
         }
         IPassThroughPredicate funk = GooInteractions.materialPassThroughPredicateRegistry.get(goo.getFluidInTankInternal(0).getFluid());
-        return funk.blobPassThroughPredicate(blockResult, this);
+        // isPassable and the blob's passthrough predicate are cooperative, any combination of their conditions will pass.
+        return isPassableMaterial(state) || funk.blobPassThroughPredicate(state, this);
     }
 
     private boolean isPassableMaterial(BlockState state) {
-        return (!state.getMaterial().blocksMovement() || state.getBlock() instanceof LeavesBlock) && !isFullFluidBlock(state);
+        return !state.getMaterial().blocksMovement() && !isFullFluidBlock(state);
     }
 
     private boolean isValidForSplat(BlockRayTraceResult result)

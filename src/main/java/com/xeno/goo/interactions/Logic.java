@@ -178,8 +178,7 @@ public class Logic
         }
     }
 
-    private static Boolean blobPassThroughPredicate(BlockRayTraceResult blockRayTraceResult, GooBlob gooBlob) {
-        BlockState state = gooBlob.world.getBlockState(blockRayTraceResult.getPos());
+    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }

@@ -3,6 +3,7 @@ package com.xeno.goo.jei;
 import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.aequivaleo.GooConversionWrapper;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.library.CrucibleRecipe;
 import com.xeno.goo.library.CrucibleRecipes;
@@ -26,10 +27,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class GooRecipeManager implements IRecipeManagerPlugin {
-
-	private static final GooConversionWrapper INVALID_CONVERSION_WRAPPER = new GooConversionWrapper();
-	private static Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache = new HashMap<>();
-	private static LinkedHashList<GooConversionWrapper> conversionWrappers = new LinkedHashList<>();
 	public static GooRecipeManager instance = new GooRecipeManager();
 
 	@Override
@@ -77,13 +74,13 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				mixerMatches.addAll((List<T>) getRecipes(category(MixerRecipeCategory.UID))
-						.parallelStream().filter(r -> Arrays.stream(((JeiMixerRecipe) r).inputs()).parallel().anyMatch(m -> m.fluidKey().equals(stack.fluidKey())))
+						.stream().filter(r -> Arrays.stream(((JeiMixerRecipe) r).inputs()).parallel().anyMatch(m -> m.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				mixerMatches.addAll((List<T>) getRecipes(category(MixerRecipeCategory.UID))
-						.parallelStream().filter(r -> ((JeiMixerRecipe) r).output().fluidKey().equals(stack.fluidKey()))
+						.stream().filter(r -> ((JeiMixerRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			}
@@ -97,14 +94,14 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
-						.parallelStream()
+						.stream()
 						.filter(r -> ((JeiCrucibleRecipe) r).input().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
-						.parallelStream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
+						.stream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			}
@@ -124,20 +121,20 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getValue() instanceof GooIngredient) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
-						.parallelStream().filter(k -> k.inputs().parallelStream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
+						.stream().filter(k -> k.inputs().stream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList()));
 			}
 		} else if (focus.getMode().equals(Mode.OUTPUT)) {
 			if (focus.getValue() instanceof ItemStack) {
 				ItemStack stack = ((ItemStack) focus.getValue());
 				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
-						.parallelStream().filter(k -> k.output().isItemEqual(stack))
+						.stream().filter(k -> k.output().isItemEqual(stack))
 						.collect(Collectors.toList()));
 			}
 			if (focus.getValue() instanceof Item) {
 				Item stack = ((Item) focus.getValue());
 				solidifierMatches.addAll((List<T>) getJeiSolidifierRecipes()
-						.parallelStream().filter(k -> k.output().getItem().equals(stack))
+						.stream().filter(k -> k.output().getItem().equals(stack))
 						.collect(Collectors.toList()));
 			}
 		}
@@ -153,14 +150,14 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			if (focus.getValue() instanceof ItemStack) {
 				ItemStack stack = ((ItemStack) focus.getValue());
 				gooifierMatches.addAll((List<T>) getJeiGooifierRecipes()
-						.parallelStream().filter(k -> k.input().isItemEqual(stack))
+						.stream().filter(k -> k.input().isItemEqual(stack))
 						.collect(Collectors.toList()));
 			}
 		} else if (focus.getMode().equals(Mode.OUTPUT)) {
 			if (focus.getValue() instanceof GooIngredient) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
 				gooifierMatches.addAll((List<T>) getJeiGooifierRecipes()
-						.parallelStream().filter(k -> k.outputs().parallelStream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
+						.stream().filter(k -> k.outputs().stream().anyMatch(v -> v.fluidKey().equals(stack.fluidKey())))
 						.collect(Collectors.toList()));
 			}
 		}
@@ -186,57 +183,29 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	private List<GooifierRecipe> getJeiGooifierRecipes() {
-		initConversionWrappers();
-
 		return validGooifierRecipes();
 	}
 
 	private List<GooifierRecipe> validGooifierRecipes() {
-		return conversionWrappers.parallelStream().filter(c -> c != INVALID_CONVERSION_WRAPPER).map(GooConversionWrapper::toGooifierRecipe).collect(Collectors.toList());
-	}
-
-	private boolean shouldTryReseedingConversionWrappers() {
-		return conversionWrappers.isEmpty() || conversionWrappers.size() < aequivaleoCache().size();
-	}
-
-	private void seedConversionWrappers() {
-		conversionWrappers.addAll(convertToConversionWrappers(aequivaleoCache()));
-	}
-
-	private Collection<? extends GooConversionWrapper> convertToConversionWrappers(Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache) {
-		return aequivaleoCache.entrySet().parallelStream().map((e) -> conversionWrapper(e.getKey(), e.getValue())).collect(Collectors.toList());
+		return aequivaleoCache().values().stream()
+				.filter(gooConversionWrapper -> gooConversionWrapper.gooifierRecipe().isPresent())
+				.map(gooConversionWrapper -> gooConversionWrapper.gooifierRecipe().get())
+				.collect(Collectors.toList());
 	}
 
 	private List<SolidifierRecipe> getJeiSolidifierRecipes() {
-		initConversionWrappers();
-
 		return validSolidifierRecipes();
 	}
 
-	private void initConversionWrappers() {
-		if (shouldTryReseedingConversionWrappers()) {
-			seedConversionWrappers();
-		}
-	}
-
 	private List<SolidifierRecipe> validSolidifierRecipes() {
-		return conversionWrappers.parallelStream().filter(c -> c != INVALID_CONVERSION_WRAPPER).map(GooConversionWrapper::toSolidifierRecipe).collect(Collectors.toList());
+		return aequivaleoCache().values().stream()
+				.filter(gooConversionWrapper -> gooConversionWrapper.solidifierRecipe().isPresent())
+				.map(gooConversionWrapper -> gooConversionWrapper.solidifierRecipe().get())
+				.collect(Collectors.toList());
 	}
 
-	private Map<ICompoundContainer<?>, Set<CompoundInstance>> aequivaleoCache() {
-		if (aequivaleoCache.isEmpty()) {
-			Equivalencies.cache(worldKey()).getAllDataOf(Registry.GOO_GROUP.get()).entrySet().parallelStream().forEach((e) -> {
-					if (e.getKey().getContents() instanceof ItemStack) {
-						aequivaleoCache.put(e.getKey(), e.getValue());
-					}
-				}
-			);
-		}
-		return aequivaleoCache;
-	}
-
-	private GooConversionWrapper conversionWrapper(ICompoundContainer<?> k, Set<CompoundInstance> v) {
-		return new GooConversionWrapper(((ItemStack)k.getContents()).getItem(), new GooEntry(worldKey(), ((ItemStack)k.getContents()).getItem(), v));
+	private Map<ICompoundContainer<?>, GooConversionWrapper> aequivaleoCache() {
+		return Equivalencies.cache(worldKey()).getAllCachedDataOf(Registry.GOO_GROUP.get());
 	}
 
 	private <T> List<T> convertMixerRecipesToJeiFormat(List<MixerRecipe> recipes) {

@@ -181,9 +181,6 @@ public class GooInteractions
 
     public static void tryResolving(LivingEntity e, LivingEntity owner, GooBlob blob)
     {
-        if (!e.world.isRemote()) {
-            Networking.sendToClientsNearTarget(new BlobHitInteractionPacket(e, owner, blob), (ServerWorld)e.world, e.getPosition(), 32);
-        }
         if (!blob.isAlive() || blob.goo().isEmpty()) {
             return;
         }
@@ -197,7 +194,6 @@ public class GooInteractions
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
         map.forEach((k, v) -> tryResolving(v, context.withKey(k.getB())));
-
     }
 
     /**
@@ -290,6 +286,9 @@ public class GooInteractions
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(fluid);
         map.forEach((k, v) -> tryResolving(fluid, k, v, context));
+        if (e.goo().isEmpty()) {
+            e.remove();
+        }
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)
