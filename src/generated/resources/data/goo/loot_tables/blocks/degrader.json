@@ -2,7 +2,7 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "name": "crucible",
+      "name": "degrader",
       "rolls": 1,
       "entries": [
         {

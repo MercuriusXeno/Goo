@@ -1,10 +1,10 @@
 package com.xeno.goo.jei;
 
-public class JeiCrucibleRecipe {
+public class JeiDegraderRecipe {
 	private final GooIngredient outputStack;
 	private final GooIngredient inputStack;
 
-	public JeiCrucibleRecipe(GooIngredient a, GooIngredient b) {
+	public JeiDegraderRecipe(GooIngredient a, GooIngredient b) {
 		this.inputStack = a;
 		this.outputStack = b;
 	}

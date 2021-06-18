@@ -1,24 +1,24 @@
 {
-  "name": "block.goo.crucible",
+  "name": "block.goo.degrader",
   "icon": "goo:crucible",
   "category": "goo:machines",
   "pages": [
     {
       "type": "text",
-      "text": "patchouli.goo.crucible.summary"
+      "text": "patchouli.goo.degrader.summary"
     },
     {
       "type": "crafting",
-      "recipe": "goo:crucible"
+      "recipe": "goo:degrader"
     },
     {
       "type": "multiblock",
-      "text": "patchouli.goo.crucible.restrictions",
+      "text": "patchouli.goo.degrader.restrictions",
       "enable_visualize": false,
       "multiblock": {
         "mapping": {
           "B": "goo:goo_bulb",
-          "0": "goo:crucible",
+          "0": "goo:degrader",
           "N": "goo:goo_pump[facing=north]",
           "S": "goo:goo_pump[facing=south]"
         },
@@ -30,7 +30,7 @@
       }
     },
     {
-      "type": "goo:crucible_recipes",
+      "type": "goo:degrader_recipes",
       "1.img1": "goo:textures/icons/snow_short.png",
       "1.in": "1",
       "1.img2": "goo:textures/icons/aquatic_short.png",

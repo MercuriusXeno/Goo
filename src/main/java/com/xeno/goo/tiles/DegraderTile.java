@@ -127,7 +127,7 @@ public class DegraderTile extends GooContainerAbstraction implements ITickableTi
 	@Override
 	public int getBaseCapacity() {
 
-		return GooMod.config.crucibleInputCapacity();
+		return GooMod.config.degraderInputCapacity();
 	}
 
 	@Override

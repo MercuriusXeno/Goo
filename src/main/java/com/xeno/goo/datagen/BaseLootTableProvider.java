@@ -49,7 +49,7 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
         return LootTable.builder().addLootPool(builder);
     }
 
-    // crucible, degrader, solidifier, gooifier and mixer: needs some nbt (goo) and its id
+    // any tile that holds goo needs some nbt (goo) and its id
     protected LootTable.Builder createGooContainerLootTable(String name, Block block) {
         LootPool.Builder builder = LootPool.builder()
                 .name(name)

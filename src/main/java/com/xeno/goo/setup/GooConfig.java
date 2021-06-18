@@ -63,9 +63,9 @@ public class GooConfig
         return MIXER_INPUT_CAPACITY.get();
     }
 
-    private ForgeConfigSpec.IntValue CRUCIBLE_INPUT_CAPACITY;
-    public int crucibleInputCapacity() {
-        return CRUCIBLE_INPUT_CAPACITY.get();
+    private ForgeConfigSpec.IntValue DEGRADER_INPUT_CAPACITY;
+    public int degraderInputCapacity() {
+        return DEGRADER_INPUT_CAPACITY.get();
     }
 
     private ForgeConfigSpec.IntValue TROUGH_CAPACITY;
@@ -346,7 +346,7 @@ public class GooConfig
         private static final int BULB_CAPACITY = 16000;
         private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
         private static final int MIXER_INPUT_CAPACITY = 16000;
-        private static final int CRUCIBLE_INPUT_CAPACITY = 16000;
+        private static final int DEGRADER_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
         private static final int BASIN_CAPACITY = 8000;
         private static final int BASIN_CONTAINMENT_MULTIPLIER = 4;
@@ -383,8 +383,8 @@ public class GooConfig
                 .defineInRange("bulbContainmentMultiplier", Defaults.BULB_CONTAINMENT_MULTIPLIER, 0, 10);
         MIXER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single mixer input tank, default: " + Defaults.MIXER_INPUT_CAPACITY)
                 .defineInRange("maxMixerInputCapacity", Defaults.MIXER_INPUT_CAPACITY, 0, 100000);
-        CRUCIBLE_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a crucible tank, default: " + Defaults.CRUCIBLE_INPUT_CAPACITY)
-                .defineInRange("maxCrucibleInputCapacity", Defaults.CRUCIBLE_INPUT_CAPACITY, 0, 100000);
+        DEGRADER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a degrader tank, default: " + Defaults.DEGRADER_INPUT_CAPACITY)
+                .defineInRange("maxDegraderInputCapacity", Defaults.DEGRADER_INPUT_CAPACITY, 0, 100000);
         TROUGH_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a trough, default: " + Defaults.TROUGH_CAPACITY)
                 .defineInRange("maxTroughCapacity", Defaults.TROUGH_CAPACITY, 0, 100000);
         PAD_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a pad, default: " + Defaults.PAD_CAPACITY)

@@ -186,7 +186,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, BlocksRegistry.Pump.get()).build(null));
     public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, BlocksRegistry.Mixer.get()).build(null));
-    public static final RegistryObject<TileEntityType<DegraderTile>> DEGRADER_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(DegraderTile::new, BlocksRegistry.Degrader
+    public static final RegistryObject<TileEntityType<DegraderTile>> DEGRADER_TILE = TILES.register("degrader", () -> TileEntityType.Builder.create(DegraderTile::new, BlocksRegistry.Degrader
 			.get()).build(null));
     public static final RegistryObject<TileEntityType<GooifierTile>> GOOIFIER_TILE = TILES.register("gooifier", () -> TileEntityType.Builder.create(GooifierTile::new, BlocksRegistry.Gooifier.get()).build(null));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidifier.get()).build(null));

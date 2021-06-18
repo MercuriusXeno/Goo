@@ -55,7 +55,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		}
 
 		if (recipeCategory.getUid().equals(DegraderRecipeCategory.UID)) {
-			return crucibleRecipes(focus);
+			return degraderRecipes(focus);
 		}
 
 		if (recipeCategory.getUid().equals(MixerRecipeCategory.UID)) {
@@ -85,25 +85,25 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		return mixerMatches;
 	}
 
-	private <T, V> List<T> crucibleRecipes(IFocus<V> focus) {
-		List<T> crucibleMatches = new ArrayList<>();
+	private <T, V> List<T> degraderRecipes(IFocus<V> focus) {
+		List<T> degraderMatches = new ArrayList<>();
 		if (focus.getValue() instanceof GooIngredient) {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				crucibleMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
+				degraderMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
 						.stream()
-						.filter(r -> ((JeiCrucibleRecipe) r).input().fluidKey().equals(stack.fluidKey()))
+						.filter(r -> ((JeiDegraderRecipe) r).input().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				crucibleMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
-						.stream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
+				degraderMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
+						.stream().filter(r -> ((JeiDegraderRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			}
 		}
-		return crucibleMatches;
+		return degraderMatches;
 	}
 
 	private IRecipeCategory category(ResourceLocation uid) {
@@ -171,7 +171,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			return (List<T>)getJeiGooifierRecipes();
 		}
 		if (recipeCategory.getUid().equals(DegraderRecipeCategory.UID)) {
-			return convertCrucibleRecipesToJeiFormat(DegraderRecipes.recipes());
+			return convertDegraderRecipesToJeiFormat(DegraderRecipes.recipes());
 		}
 		if (recipeCategory.getUid().equals(MixerRecipeCategory.UID)) {
 			return convertMixerRecipesToJeiFormat(MixerRecipes.recipes());
@@ -219,14 +219,14 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		);
 	}
 
-	private <T> List<T> convertCrucibleRecipesToJeiFormat(List<DegraderRecipe> recipes) {
+	private <T> List<T> convertDegraderRecipesToJeiFormat(List<DegraderRecipe> recipes) {
 		List<T> result = new ArrayList<>();
-		recipes.forEach(r -> result.add((T) convertCrucibleRecipeToJei(r)));
+		recipes.forEach(r -> result.add((T) convertDegraderRecipeToJei(r)));
 		return result;
 	}
 
-	private JeiCrucibleRecipe convertCrucibleRecipeToJei(DegraderRecipe r) {
-		return new JeiCrucibleRecipe(
+	private JeiDegraderRecipe convertDegraderRecipeToJei(DegraderRecipe r) {
+		return new JeiDegraderRecipe(
 				new GooIngredient(r.input().getAmount(), r.input().getFluid().getRegistryName()),
 				new GooIngredient(r.output().getAmount(), r.output().getFluid().getRegistryName())
 		);
