@@ -1,0 +1,70 @@
+{
+	"textures": {
+		"0": "goo:block/crucible/crucible_bottom",
+		"1": "goo:block/crucible/crucible_inner",
+		"2": "goo:block/crucible/crucible_side",
+		"3": "goo:block/crucible/crucible_top",
+		"4": "goo:block/crucible/crucible_underside_sides",
+		"5": "goo:block/crucible/crucible_underside_center",
+		"particle": "goo:block/crucible/crucible_bottom"
+	},
+	"elements": [
+		{
+			"name": "crucible_outer",
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#3"},
+				"down": {"uv": [0, 0, 16, 16], "texture": "#0"}
+			}
+		},
+		{
+			"name": "crucible_inner",
+			"from": [13, 16, 13],
+			"to": [3, 3, 3],
+			"faces": {
+				"north": {"uv": [3, 0, 13, 14], "rotation": 180, "texture": "#2"},
+				"east": {"uv": [3, 0, 13, 14], "rotation": 180, "texture": "#2"},
+				"south": {"uv": [3, 0, 13, 14], "rotation": 180, "texture": "#2"},
+				"west": {"uv": [3, 0, 13, 14], "rotation": 180, "texture": "#2"},
+				"up": {"uv": [0, 0, 16, 16], "texture": "#1"}
+			}
+		},
+		{
+			"name": "feet_inner_x",
+			"from": [11, 2, 16],
+			"to": [5, 0, 0],
+			"faces": {
+				"east": {"uv": [0, 3, 16, 5], "texture": "#0"},
+				"west": {"uv": [0, 3, 16, 5], "texture": "#0"},
+				"down": {"uv": [5, 0, 11, 16], "texture": "#4"}
+			}
+		},
+		{
+			"name": "feet_inner_y",
+			"from": [16, 2, 11],
+			"to": [0, 0, 5],
+			"faces": {
+				"north": {"uv": [0, 3, 16, 5], "texture": "#0"},
+				"south": {"uv": [0, 3, 16, 5], "texture": "#0"},
+				"down": {"uv": [0, 5, 16, 11], "texture": "#4"}
+			}
+		},
+		{
+			"name": "feet_inner_z",
+			"from": [13, 2, 13],
+			"to": [3, 0, 3],
+			"faces": {
+				"north": {"uv": [3, 1, 13, 3], "texture": "#0"},
+				"east": {"uv": [3, 1, 13, 3], "texture": "#0"},
+				"south": {"uv": [3, 1, 13, 3], "texture": "#0"},
+				"west": {"uv": [3, 1, 13, 3], "texture": "#0"},
+				"down": {"uv": [3, 3, 13, 13], "texture": "#5"}
+			}
+		}
+	]
+}

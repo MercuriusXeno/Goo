@@ -36,21 +36,29 @@ public class Floral
         GooInteractions.registerBlob(fluidSupplier.get(), "grow_vines", Floral::growVines);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "floral_hit", Floral::entityHit);
+
+        GooInteractions.registerFailureCallback(fluidSupplier.get(), Floral::failureCallback);
+    }
+
+    private static boolean failureCallback(SplatContext splatContext) {
+        doEffects(splatContext);
+        return true;
     }
 
     private static boolean entityHit(BlobHitContext c) {
+        doEffects(c);
         c.victim().addPotionEffect(new EffectInstance(Registry.FLORAL_EFFECT.get(), 320));
         return true;
     }
 
     private static boolean growVines(BlobContext blobContext) {
+        doEffects(blobContext);
         if (blobContext.block() instanceof LeavesBlock) {
             for (Direction face : Direction.values()) {
                 Direction d = face.getOpposite();
                 if (d == Direction.DOWN) {
                     continue;
                 }
-                doEffects(blobContext);
                 
                 if (blobContext.world() instanceof ServerWorld) {
                     BooleanProperty prop = vinePlacementPropertyFromDirection(d);
@@ -97,6 +105,7 @@ public class Floral
 
     private static boolean growableTick(BlobContext blobContext) {
         if (blobContext.block() instanceof IGrowable) {
+            doEffects(blobContext);
             if (!((IGrowable)blobContext.block()).canGrow(blobContext.world(),
                     blobContext.blockPos(), blobContext.blockState(), blobContext.isRemote())) {
                 return false;
@@ -108,7 +117,6 @@ public class Floral
                 ((IGrowable) blobContext.block()).grow((ServerWorld) blobContext.world(), blobContext.world().rand,
                         blobContext.blockPos(), blobContext.blockState());
             }
-            doEffects(blobContext);
             return true;
         }
         return false;
@@ -119,12 +127,12 @@ public class Floral
     }
 
     private static boolean flourish(SplatContext context) {
+        doEffects(context);
         // grow needs a server world in scope, this one is weird.
         if (context.world() instanceof ServerWorld) {
             ((GrassBlock) context.block()).grow((ServerWorld)context.world(),
                     context.world().rand, context.blockPos(), context.blockState());
         }
-        doEffects(context);
         return true;
     }
 
@@ -135,17 +143,19 @@ public class Floral
 
     private static boolean growLilypad(SplatContext context) {
         // spawn lilypad
+        doEffects(context);
         if (!context.isRemote()) {
             boolean hasChanges = context.setBlockStateAbove(Blocks.LILY_PAD.getDefaultState());
             if (!hasChanges) {
                 return false;
             }
         }
-        doEffects(context);
         return true;
     }
 
     private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {
+        // spawn particles and stuff
+        doEffects(context);
         // do conversion
         for(Block source : sources) {
             if (context.block().equals(source)) {
@@ -155,12 +165,16 @@ public class Floral
                         return false;
                     }
                 }
-                // spawn particles and stuff
-                doEffects(context);
                 return true;
             }
         }
         return false;
+    }
+
+    private static void doEffects(BlobHitContext c) {
+        if (c.isRemote()) {
+            BoneMealItem.spawnBonemealParticles(c.world(), c.blob().getPosition(), 4);
+        }
     }
 
     private static void doEffects(SplatContext context) {
@@ -204,6 +218,8 @@ public class Floral
         if (!context.block().equals(source)) {
             return false;
         }
+        // spawn particles and stuff
+        doEffects(context);
         if (!context.isRemote()) {
             Direction.Axis preservedAxis = context.blockState().get(BlockStateProperties.AXIS);
             boolean hasChanges = context.setBlockState(target.getDefaultState().with(BlockStateProperties.AXIS, preservedAxis));
@@ -211,8 +227,6 @@ public class Floral
                 return false;
             }
         }
-        // spawn particles and stuff
-        doEffects(context);
         return true;
     }
 

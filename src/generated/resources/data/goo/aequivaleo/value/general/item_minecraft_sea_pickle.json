@@ -19,10 +19,6 @@
   "compounds": [
     {
       "amount": 30.0,
-      "type": "goo:faunal"
-    },
-    {
-      "amount": 30.0,
       "type": "goo:radiant"
     },
     {
@@ -32,6 +28,10 @@
     {
       "amount": 30.0,
       "type": "goo:aquatic"
+    },
+    {
+      "amount": 30.0,
+      "type": "goo:faunal"
     }
   ]
 }

@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "actuator_top": "goo:block/pump_actuator_top",
-    "actuator_side": "goo:block/pump_actuator_side",
-    "actuator_inner": "goo:block/pump_actuator_inner",
+    "actuator_top": "goo:block/pump/pump_actuator_top",
+    "actuator_side": "goo:block/pump/pump_actuator_side",
+    "actuator_inner": "goo:block/pump/pump_actuator_inner",
     "empty": "goo:block/empty"
   },
   "elements": [

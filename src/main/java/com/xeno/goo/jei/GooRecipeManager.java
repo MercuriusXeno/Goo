@@ -1,16 +1,13 @@
 package com.xeno.goo.jei;
 
-import com.ldtteam.aequivaleo.api.compound.CompoundInstance;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooConversionWrapper;
-import com.xeno.goo.aequivaleo.GooEntry;
-import com.xeno.goo.library.CrucibleRecipe;
-import com.xeno.goo.library.CrucibleRecipes;
+import com.xeno.goo.library.DegraderRecipe;
+import com.xeno.goo.library.DegraderRecipes;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.util.LinkedHashList;
 import mezz.jei.api.recipe.IFocus;
 import mezz.jei.api.recipe.IFocus.Mode;
 import mezz.jei.api.recipe.advanced.IRecipeManagerPlugin;
@@ -38,8 +35,8 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (getRecipes(category(SolidifierRecipeCategory.UID), focus).size() > 0) {
 			validUids.add(SolidifierRecipeCategory.UID);
 		}
-		if (getRecipes(category(CrucibleRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(CrucibleRecipeCategory.UID);
+		if (getRecipes(category(DegraderRecipeCategory.UID), focus).size() > 0) {
+			validUids.add(DegraderRecipeCategory.UID);
 		}
 		if (getRecipes(category(MixerRecipeCategory.UID), focus).size() > 0) {
 			validUids.add(MixerRecipeCategory.UID);
@@ -57,7 +54,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			return solidifierRecipes(focus);
 		}
 
-		if (recipeCategory.getUid().equals(CrucibleRecipeCategory.UID)) {
+		if (recipeCategory.getUid().equals(DegraderRecipeCategory.UID)) {
 			return crucibleRecipes(focus);
 		}
 
@@ -93,14 +90,14 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (focus.getValue() instanceof GooIngredient) {
 			if (focus.getMode().equals(Mode.INPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+				crucibleMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
 						.stream()
 						.filter(r -> ((JeiCrucibleRecipe) r).input().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
 			} else if (focus.getMode().equals(Mode.OUTPUT)) {
 				GooIngredient stack = ((GooIngredient) focus.getValue());
-				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+				crucibleMatches.addAll((List<T>) getRecipes(category(DegraderRecipeCategory.UID))
 						.stream().filter(r -> ((JeiCrucibleRecipe) r).output().fluidKey().equals(stack.fluidKey()))
 						.collect(Collectors.toList())
 				);
@@ -173,8 +170,8 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (recipeCategory.getUid().equals(GooifierRecipeCategory.UID)) {
 			return (List<T>)getJeiGooifierRecipes();
 		}
-		if (recipeCategory.getUid().equals(CrucibleRecipeCategory.UID)) {
-			return convertCrucibleRecipesToJeiFormat(CrucibleRecipes.recipes());
+		if (recipeCategory.getUid().equals(DegraderRecipeCategory.UID)) {
+			return convertCrucibleRecipesToJeiFormat(DegraderRecipes.recipes());
 		}
 		if (recipeCategory.getUid().equals(MixerRecipeCategory.UID)) {
 			return convertMixerRecipesToJeiFormat(MixerRecipes.recipes());
@@ -222,13 +219,13 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		);
 	}
 
-	private <T> List<T> convertCrucibleRecipesToJeiFormat(List<CrucibleRecipe> recipes) {
+	private <T> List<T> convertCrucibleRecipesToJeiFormat(List<DegraderRecipe> recipes) {
 		List<T> result = new ArrayList<>();
 		recipes.forEach(r -> result.add((T) convertCrucibleRecipeToJei(r)));
 		return result;
 	}
 
-	private JeiCrucibleRecipe convertCrucibleRecipeToJei(CrucibleRecipe r) {
+	private JeiCrucibleRecipe convertCrucibleRecipeToJei(DegraderRecipe r) {
 		return new JeiCrucibleRecipe(
 				new GooIngredient(r.input().getAmount(), r.input().getFluid().getRegistryName()),
 				new GooIngredient(r.output().getAmount(), r.output().getFluid().getRegistryName())

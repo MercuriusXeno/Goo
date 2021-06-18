@@ -10,7 +10,6 @@ import com.xeno.goo.blocks.*;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.entities.IGooContainingEntity;
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.items.BasinAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
@@ -206,7 +205,7 @@ public class TargetingHandler
     private static void initializeGooContainers() {
         GOO_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        ItemsRegistry.CRUCIBLE.get(),
+                        ItemsRegistry.DEGRADER.get(),
                         ItemsRegistry.MIXER.get(),
                         ItemsRegistry.GOO_BULB.get(),
                         ItemsRegistry.TROUGH.get()
@@ -719,7 +718,7 @@ public class TargetingHandler
     {
         return state.getBlock() instanceof GooBulb
                 || state.getBlock() instanceof Mixer
-                || state.getBlock() instanceof Crucible
+                || state.getBlock() instanceof Degrader
                 || state.getBlock() instanceof Solidifier
                 || state.getBlock() instanceof Gooifier
                 || state.getBlock() instanceof GooTrough;

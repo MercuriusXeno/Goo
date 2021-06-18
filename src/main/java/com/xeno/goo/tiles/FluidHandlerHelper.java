@@ -126,7 +126,7 @@ public abstract class FluidHandlerHelper
         return i.getItem().equals(ItemsRegistry.SOLIDIFIER.get())
                 || i.getItem().equals(ItemsRegistry.GOOIFIER.get())
                 || i.getItem().equals(ItemsRegistry.GOO_BULB.get())
-                || i.getItem().equals(ItemsRegistry.CRUCIBLE.get())
+                || i.getItem().equals(ItemsRegistry.DEGRADER.get())
                 || i.getItem().equals(ItemsRegistry.MIXER.get())
                 || i.getItem().equals(ItemsRegistry.TROUGH.get());
 
@@ -137,8 +137,8 @@ public abstract class FluidHandlerHelper
         Item item = currentStack.getItem();
         if (item.equals(ItemsRegistry.MIXER.get())) {
             id = Objects.requireNonNull(Registry.MIXER_TILE.get().getRegistryName()).toString();
-        } else if (item.equals(ItemsRegistry.CRUCIBLE.get())) {
-            id = Objects.requireNonNull(Registry.CRUCIBLE_TILE.get().getRegistryName()).toString();
+        } else if (item.equals(ItemsRegistry.DEGRADER.get())) {
+            id = Objects.requireNonNull(Registry.DEGRADER_TILE.get().getRegistryName()).toString();
         } else if (item.equals(ItemsRegistry.GOO_BULB.get())) {
             id = Objects.requireNonNull(Registry.GOO_BULB_TILE.get().getRegistryName()).toString();
         } else if (item.equals(ItemsRegistry.TROUGH.get())) {

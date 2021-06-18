@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 240.0,
-      "type": "goo:crystal"
-    },
-    {
       "amount": 6.0,
       "type": "goo:primordial"
+    },
+    {
+      "amount": 240.0,
+      "type": "goo:crystal"
     }
   ]
 }

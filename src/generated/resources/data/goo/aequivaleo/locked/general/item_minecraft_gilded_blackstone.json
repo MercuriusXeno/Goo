@@ -19,7 +19,7 @@
   "compounds": [
     {
       "amount": 60.0,
-      "type": "goo:weird"
+      "type": "goo:earthen"
     },
     {
       "amount": 240.0,
@@ -35,7 +35,7 @@
     },
     {
       "amount": 60.0,
-      "type": "goo:earthen"
+      "type": "goo:weird"
     }
   ]
 }

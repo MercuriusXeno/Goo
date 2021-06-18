@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/drain_side",
-    "top": "goo:block/drain_top",
-    "side": "goo:block/drain_side"
+    "particle": "goo:block/drain/drain_side",
+    "top": "goo:block/drain/drain_top",
+    "side": "goo:block/drain/drain_side"
   },
   "elements": [
     {

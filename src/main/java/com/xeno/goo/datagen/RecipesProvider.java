@@ -35,7 +35,7 @@ public class RecipesProvider extends RecipeProvider {
         registerSolidifierRecipe(consumer);
         registerGooPumpRecipe(consumer);
         registerMixerRecipe(consumer);
-        registerCrucibleRecipe(consumer);
+        registerDegraderRecipe(consumer);
         registerGooBulbRecipe(consumer);
         registerLobberRecipe(consumer);
         registerDrainRecipe(consumer);
@@ -201,8 +201,8 @@ public class RecipesProvider extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Crucible.get())
+    private void registerDegraderRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Degrader.get())
                 .patternLine("xsx")
                 .patternLine("scs")
                 .patternLine("fbf")

@@ -22,12 +22,12 @@
       "type": "goo:aquatic"
     },
     {
-      "amount": 6.0,
-      "type": "goo:radiant"
-    },
-    {
       "amount": 3.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 6.0,
+      "type": "goo:radiant"
     }
   ]
 }

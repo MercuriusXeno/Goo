@@ -1,17 +1,17 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "bottom": "goo:block/trough_bottom_outer",
-    "top": "goo:block/trough_top",
-    "side_outer": "goo:block/trough_side_outer",
+    "bottom": "goo:block/trough/trough_bottom_outer",
+    "top": "goo:block/trough/trough_top",
+    "side_outer": "goo:block/trough/trough_side_outer",
     "empty": "goo:block/empty",
-    "bottom_inner": "goo:block/trough_bottom_inner",
-    "side_inner": "goo:block/trough_side_inner",
-    "fixture_bottom": "goo:block/trough_fixture_bottom",
-    "fixture_top": "goo:block/trough_fixture_top",
-    "fixture_side": "goo:block/trough_fixture_side",
-    "fixture_face": "goo:block/trough_fixture_face",
-    "particle": "goo:block/trough_bottom_outer"
+    "bottom_inner": "goo:block/trough/trough_bottom_inner",
+    "side_inner": "goo:block/trough/trough_side_inner",
+    "fixture_bottom": "goo:block/trough/trough_fixture_bottom",
+    "fixture_top": "goo:block/trough/trough_fixture_top",
+    "fixture_side": "goo:block/trough/trough_fixture_side",
+    "fixture_face": "goo:block/trough/trough_fixture_face",
+    "particle": "goo:block/trough/trough_bottom_outer"
   },
   "elements": [
     {

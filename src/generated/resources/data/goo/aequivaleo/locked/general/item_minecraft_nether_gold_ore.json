@@ -22,12 +22,12 @@
       "type": "goo:regal"
     },
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
-    },
-    {
       "amount": 36.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

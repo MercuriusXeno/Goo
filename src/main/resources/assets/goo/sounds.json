@@ -45,8 +45,8 @@
       "minecraft:item/bucket/fill_lava3"
     ]
   },
-  "goo_crucible_sound": {
-    "subtitle": "sound_event.goo.goo_crucible_sound",
+  "degrader_sound": {
+    "subtitle": "sound_event.goo.goo_degrader_sound",
     "sounds": [
       "minecraft:block/blastfurnace/blastfurnace1",
       "minecraft:block/blastfurnace/blastfurnace2",

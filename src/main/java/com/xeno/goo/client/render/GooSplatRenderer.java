@@ -118,6 +118,9 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
     @Override
     public void render(GooSplat entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
+        if (entity.goo().isEmpty()) {
+            return;
+        }
         RenderType rType = GooRenderHelper.GOO_CUBE_BRIGHT;
 
         // disabling diffuse lighting makes the cube look "emissive" (lets fullbright work)

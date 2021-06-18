@@ -1,14 +1,14 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/pump_base_bottom",
-    "base_top": "goo:block/pump_base_top",
-    "base_side": "goo:block/pump_base_side",
-    "base_bottom": "goo:block/pump_base_bottom",
-    "base_inner": "goo:block/pump_base_inner",
+    "particle": "goo:block/pump/pump_base_bottom",
+    "base_top": "goo:block/pump/pump_base_top",
+    "base_side": "goo:block/pump/pump_base_side",
+    "base_bottom": "goo:block/pump/pump_base_bottom",
+    "base_inner": "goo:block/pump/pump_base_inner",
     "base_inner_bottom": "minecraft:block/polished_basalt_top",
-    "stem_top": "goo:block/pump_stem_top",
-    "stem_side": "goo:block/pump_stem_side",
+    "stem_top": "goo:block/pump/pump_stem_top",
+    "stem_side": "goo:block/pump/pump_stem_side",
     "empty": "goo:block/empty"
   },
   "elements": [

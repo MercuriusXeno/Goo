@@ -1,13 +1,13 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "hatch": "goo:block/hatch",
+    "hatch": "goo:block/gooifier_old/hatch",
     "gasket": "goo:block/gasket_filled",
     "empty": "goo:block/empty",
-    "particle": "goo:block/gooifier_front_on",
-    "front_on": "goo:block/gooifier_front_on",
-    "side": "goo:block/gooifier_side",
-    "top": "goo:block/gooifier_top",
+    "particle": "goo:block/gooifier_old/gooifier_front_on",
+    "front_on": "goo:block/gooifier_old/gooifier_front_on",
+    "side": "goo:block/gooifier_old/gooifier_side",
+    "top": "goo:block/gooifier_old/gooifier_top",
     "bottom": "minecraft:block/polished_blackstone"
   },
   "elements": [

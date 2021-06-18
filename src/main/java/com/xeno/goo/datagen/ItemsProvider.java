@@ -8,13 +8,9 @@ import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.item.SpawnEggItem;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.model.DynamicBucketModel;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.client.model.generators.ModelBuilder;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.loaders.DynamicBucketModelBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
@@ -36,7 +32,7 @@ public class ItemsProvider extends ItemModelProvider {
         registerBasin();
         registerGooAndYou();
         registerCrystalComb();
-        registerCrucible();
+        registerDegrader();
         registerMixer();
         registerBulbs();
         registerGooCrystals();
@@ -87,9 +83,9 @@ public class ItemsProvider extends ItemModelProvider {
         withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
-    private void registerCrucible()
+    private void registerDegrader()
     {
-        withExistingParent(ItemsRegistry.CRUCIBLE.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+        withExistingParent(ItemsRegistry.DEGRADER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerBasin()

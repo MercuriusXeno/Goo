@@ -18,16 +18,16 @@
   ],
   "compounds": [
     {
-      "amount": 1.0,
-      "type": "goo:vital"
+      "amount": 60.0,
+      "type": "goo:earthen"
     },
     {
       "amount": 5.0,
       "type": "goo:weird"
     },
     {
-      "amount": 60.0,
-      "type": "goo:earthen"
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }

@@ -1,15 +1,15 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/mixer_chamber_inner",
-    "chamber_end": "goo:block/mixer_chamber_end",
-    "chamber_bottom": "goo:block/mixer_chamber_bottom",
-    "chamber_side": "goo:block/mixer_chamber_side",
-    "chamber_inner": "goo:block/mixer_chamber_inner",
-    "channel_end": "goo:block/mixer_channel_end",
-    "merger_top": "goo:block/mixer_merger_top",
-    "merger_bottom": "goo:block/mixer_merger_bottom",
-    "merger_side": "goo:block/mixer_merger_side"
+    "particle": "goo:block/mixer_old/mixer_chamber_inner",
+    "chamber_end": "goo:block/mixer_old/mixer_chamber_end",
+    "chamber_bottom": "goo:block/mixer_old/mixer_chamber_bottom",
+    "chamber_side": "goo:block/mixer_old/mixer_chamber_side",
+    "chamber_inner": "goo:block/mixer_old/mixer_chamber_inner",
+    "channel_end": "goo:block/mixer_old/mixer_channel_end",
+    "merger_top": "goo:block/mixer_old/mixer_merger_top",
+    "merger_bottom": "goo:block/mixer_old/mixer_merger_bottom",
+    "merger_side": "goo:block/mixer_old/mixer_merger_side"
   },
   "elements": [
     {

@@ -168,7 +168,7 @@ public class Registry {
     public static final RegistryObject<SoundEvent> GOO_LOB_SOUND = SOUNDS.register("goo_lob_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_lob_sound")));
     public static final RegistryObject<SoundEvent> GOO_DEPOSIT_SOUND = SOUNDS.register("goo_deposit_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_deposit_sound")));
     public static final RegistryObject<SoundEvent> GOO_WITHDRAW_SOUND = SOUNDS.register("goo_withdraw_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_withdraw_sound")));
-    public static final RegistryObject<SoundEvent> GOO_CRUCIBLE_SOUND = SOUNDS.register("goo_crucible_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "goo_crucible_sound")));
+    public static final RegistryObject<SoundEvent> DEGRADER_SOUND = SOUNDS.register("degrader_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "degrader_sound")));
     public static final RegistryObject<SoundEvent> GOOIFIER_SOUND = SOUNDS.register("gooifier_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "gooifier_sound")));
     public static final RegistryObject<SoundEvent> DETERIORATE_SOUND = SOUNDS.register("deteriorate_block_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "deteriorate_block_sound")));
     public static final RegistryObject<SoundEvent> EDIFY_SOUND = SOUNDS.register("edify_block_sound", () -> new SoundEvent(new ResourceLocation(GooMod.MOD_ID, "edify_block_sound")));
@@ -186,7 +186,8 @@ public class Registry {
     public static final RegistryObject<TileEntityType<GooBulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(GooBulbTile::new, BlocksRegistry.Bulb.get()).build(null));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, BlocksRegistry.Pump.get()).build(null));
     public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, BlocksRegistry.Mixer.get()).build(null));
-    public static final RegistryObject<TileEntityType<CrucibleTile>> CRUCIBLE_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(CrucibleTile::new, BlocksRegistry.Crucible.get()).build(null));
+    public static final RegistryObject<TileEntityType<DegraderTile>> DEGRADER_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(DegraderTile::new, BlocksRegistry.Degrader
+			.get()).build(null));
     public static final RegistryObject<TileEntityType<GooifierTile>> GOOIFIER_TILE = TILES.register("gooifier", () -> TileEntityType.Builder.create(GooifierTile::new, BlocksRegistry.Gooifier.get()).build(null));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidifier.get()).build(null));
     public static final RegistryObject<TileEntityType<LobberTile>> LOBBER_TILE = TILES.register("lobber", () -> TileEntityType.Builder.create(LobberTile::new, BlocksRegistry.Lobber.get()).build(null));

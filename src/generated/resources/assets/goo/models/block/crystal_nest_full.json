@@ -1,12 +1,12 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "goo:block/bee_nest_bottom",
-    "up": "goo:block/bee_nest_top",
-    "north": "goo:block/bee_nest_front_honey",
-    "south": "goo:block/bee_nest_side",
-    "east": "goo:block/bee_nest_side",
-    "west": "goo:block/bee_nest_side",
-    "particle": "goo:block/bee_nest_side"
+    "down": "goo:block/bee_nest/bee_nest_bottom",
+    "up": "goo:block/bee_nest/bee_nest_top",
+    "north": "goo:block/bee_nest/bee_nest_front_honey",
+    "south": "goo:block/bee_nest/bee_nest_side",
+    "east": "goo:block/bee_nest/bee_nest_side",
+    "west": "goo:block/bee_nest/bee_nest_side",
+    "particle": "goo:block/bee_nest/bee_nest_side"
   }
 }

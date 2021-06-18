@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/bulb_side",
+    "particle": "goo:block/bulb/bulb_side",
     "gasket": "goo:block/gasket",
     "empty": "goo:block/empty",
-    "end": "goo:block/bulb_end",
-    "side": "goo:block/bulb_side"
+    "end": "goo:block/bulb/bulb_end",
+    "side": "goo:block/bulb/bulb_side"
   },
   "elements": [
     {

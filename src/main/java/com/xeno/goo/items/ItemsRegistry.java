@@ -40,8 +40,8 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> GOO_PUMP = ITEMS.register("goo_pump", () -> new BlockItem(BlocksRegistry.Pump.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> GOOIFIER = ITEMS
             .register("gooifier", () -> new BlockItem(BlocksRegistry.Gooifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
-    public static final RegistryObject<Item> CRUCIBLE = ITEMS
-            .register("crucible", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::crucible)));
+    public static final RegistryObject<Item> DEGRADER = ITEMS
+            .register("degrader", () -> new BlockItem(BlocksRegistry.Degrader.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::degrader)));
     public static final RegistryObject<Item> MIXER = ITEMS
             .register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::mixer)));
     public static final RegistryObject<Item> SOLIDIFIER = ITEMS

@@ -14,8 +14,8 @@ public class ISTERProvider
         return MixerItemRenderer::new;
     }
 
-    public static Callable<ItemStackTileEntityRenderer> crucible() {
-        return CrucibleItemRenderer::new;
+    public static Callable<ItemStackTileEntityRenderer> degrader() {
+        return DegraderItemRenderer::new;
     }
 
     public static Callable<ItemStackTileEntityRenderer> trough() {

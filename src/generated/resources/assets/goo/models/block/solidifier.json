@@ -3,11 +3,11 @@
   "textures": {
     "gasket": "goo:block/gasket_filled",
     "empty": "goo:block/empty",
-    "particle": "goo:block/solidifier_front_off",
+    "particle": "goo:block/solidifier_old/solidifier_front_off",
     "bottom": "minecraft:block/nether_bricks",
-    "top_off": "goo:block/solidifier_top_off",
-    "side_off": "goo:block/solidifier_side_off",
-    "front_off": "goo:block/solidifier_front_off"
+    "top_off": "goo:block/solidifier_old/solidifier_top_off",
+    "side_off": "goo:block/solidifier_old/solidifier_side_off",
+    "front_off": "goo:block/solidifier_old/solidifier_front_off"
   },
   "elements": [
     {

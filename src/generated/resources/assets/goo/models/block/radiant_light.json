@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/radiant_top",
-    "light_top": "goo:block/radiant_top",
-    "light_side": "goo:block/radiant_side"
+    "particle": "goo:block/radiant_light/radiant_top",
+    "light_top": "goo:block/radiant_light/radiant_top",
+    "light_side": "goo:block/radiant_light/radiant_side"
   },
   "elements": [
     {

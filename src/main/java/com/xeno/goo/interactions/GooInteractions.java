@@ -149,6 +149,11 @@ public class GooInteractions
         }
     }
 
+    public static final Map<Fluid, ISplatInteraction> splatFailureRegistry = new HashMap<>();
+    public static void registerFailureCallback(Fluid f, ISplatInteraction i) {
+        splatFailureRegistry.put(f, i);
+    }
+
     public static final Map<Fluid, IPassThroughPredicate> materialPassThroughPredicateRegistry = new HashMap<>();
     public static void registerPassThroughPredicate(Fluid fluid, IPassThroughPredicate p) {
         materialPassThroughPredicateRegistry.put(fluid, p);
@@ -190,6 +195,10 @@ public class GooInteractions
             return;
         }
 
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new BlobHitInteractionPacket(e, owner, blob), (ServerWorld)e.world, e.getPosition(), 32);
+        }
+
         BlobHitContext context = new BlobHitContext(e, owner, blob, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, IBlobHitInteraction> map = blobHitRegistry.get(fluid);
@@ -220,9 +229,6 @@ public class GooInteractions
 
     public static void tryResolving(BlockPos blockHitPos, GooBlob e)
     {
-        if (!e.world.isRemote()) {
-            Networking.sendToClientsNearTarget(new BlobInteractionPacket(blockHitPos, e), (ServerWorld)e.world, e.getPosition(), 32);
-        }
         if (!e.isAlive()) {
             return;
         }
@@ -230,6 +236,9 @@ public class GooInteractions
         // no interactions registered, we don't want to crash.
         if (!blobRegistry.containsKey(fluid)) {
             return;
+        }
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new BlobInteractionPacket(blockHitPos, e), (ServerWorld)e.world, e.getPosition(), 32);
         }
         BlobContext context = new BlobContext(blockHitPos, e);
         // cycle over resolvers in rank order and drain/apply when possible.
@@ -271,9 +280,6 @@ public class GooInteractions
 
     public static void tryResolving(GooSplat e)
     {
-        if (!e.world.isRemote()) {
-            Networking.sendToClientsNearTarget(new SplatInteractionPacket(e), (ServerWorld)e.world, e.getPosition(), 32);
-        }
         if (!e.isAlive()) {
             return;
         }
@@ -282,13 +288,13 @@ public class GooInteractions
         if (!splatRegistry.containsKey(fluid)) {
             return;
         }
+        if (!e.world.isRemote()) {
+            Networking.sendToClientsNearTarget(new SplatInteractionPacket(e), (ServerWorld)e.world, e.getPosition(), 32);
+        }
         SplatContext context = new SplatContext(e, fluid);
         // cycle over resolvers in rank order and drain/apply when possible.
         Map<Tuple<Integer, String>, ISplatInteraction> map = splatRegistry.get(fluid);
         map.forEach((k, v) -> tryResolving(fluid, k, v, context));
-        if (e.goo().isEmpty()) {
-            e.remove();
-        }
     }
 
     private static void tryResolving(Fluid fluid, Tuple<Integer, String> interactionKey, ISplatInteraction iSplatInteraction, SplatContext context)
@@ -306,6 +312,9 @@ public class GooInteractions
 
         boolean shouldResolve = chanceToResolve >= context.world().rand.nextDouble();
         if (!shouldResolve) {
+            if (splatFailureRegistry.containsKey(fluid)) {
+                splatFailureRegistry.get(fluid).resolve(context);
+            }
             return;
         }
 

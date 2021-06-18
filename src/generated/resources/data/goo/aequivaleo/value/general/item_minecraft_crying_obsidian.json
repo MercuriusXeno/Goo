@@ -1,0 +1,37 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "minecraft:crying_obsidian"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:crying_obsidian\",Count:1b}"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 60.0,
+      "type": "goo:weird"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:molten"
+    },
+    {
+      "amount": 3.0,
+      "type": "goo:primordial"
+    },
+    {
+      "amount": 90.0,
+      "type": "goo:crystal"
+    }
+  ]
+}

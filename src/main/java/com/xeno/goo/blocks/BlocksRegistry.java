@@ -26,7 +26,7 @@ public class BlocksRegistry {
     public static final RegistryObject<GooPump> Pump = Blocks.register("goo_pump", GooPump::new);
     public static final RegistryObject<Gooifier> Gooifier = Blocks.register("gooifier", Gooifier::new);
     public static final RegistryObject<Mixer> Mixer = Blocks.register("mixer", Mixer::new);
-    public static final RegistryObject<Crucible> Crucible = Blocks.register("crucible", Crucible::new);
+    public static final RegistryObject<Degrader> Degrader = Blocks.register("degrader", Degrader::new);
     public static final RegistryObject<Solidifier> Solidifier = Blocks.register("solidifier", Solidifier::new);
     public static final RegistryObject<Drain> Drain = Blocks.register("drain", Drain::new);
     public static final RegistryObject<Lobber> Lobber = Blocks.register("lobber", Lobber::new);

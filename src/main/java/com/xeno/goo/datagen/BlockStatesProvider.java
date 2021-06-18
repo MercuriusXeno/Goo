@@ -35,7 +35,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerGooifier();
         registerSolidifier();
         registerMixer();
-        registerCrucible();
+        registerDegrader();
         registerLobber();
         registerDrain();
         registerRadiantLight();
@@ -75,8 +75,8 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerDrain() {
-        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain_top");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain_side");
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/drain/drain_top");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/drain/drain_side");
         BlockModelBuilder model = models()
                 .withExistingParent("drain", "block/block")
                 .texture("particle", side)
@@ -163,8 +163,8 @@ public class BlockStatesProvider extends BlockStateProvider {
 
 
     private void registerLobber() {
-        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber_front");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber_side");
+        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_front");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_side");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
         float gasketThickness = 0.25f;
@@ -192,76 +192,14 @@ public class BlockStatesProvider extends BlockStateProvider {
         simpleBlockItem(BlocksRegistry.Lobber.get(), model);
     }
 
-    private void registerCrucible()
+    private void registerDegrader()
     {
-        ResourceLocation crucible_side = new ResourceLocation(GooMod.MOD_ID, "block/crucible_side");
-        ResourceLocation crucible_side_lit = new ResourceLocation(GooMod.MOD_ID, "block/crucible_side_lit");
-        ResourceLocation crucible_top = new ResourceLocation(GooMod.MOD_ID, "block/crucible_top");
-        ResourceLocation crucible_bottom = new ResourceLocation(GooMod.MOD_ID, "block/crucible_bottom");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        float gasketThickness = 0.25f;
         BlockModelBuilder modelInactive = models()
-                .withExistingParent("crucible", "block/block")
-                .texture("particle", crucible_side)
-                .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.UP ? "#crucible_top" :
-                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side"))
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .element()
-                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
-                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#crucible_top" :
-                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side"))
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty)
-                .texture("crucible_top", crucible_top)
-                .texture("crucible_bottom", crucible_bottom)
-                .texture("crucible_side", crucible_side);
-        addGasket(modelInactive, Direction.DOWN, gasketThickness);
-        addGasket(modelInactive, Direction.EAST, gasketThickness);
-        addGasket(modelInactive, Direction.WEST, gasketThickness);
-        addGasket(modelInactive, Direction.SOUTH, gasketThickness);
-        addGasket(modelInactive, Direction.NORTH, gasketThickness);
-
+                .withExistingParent("degrader", new ResourceLocation(GooMod.MOD_ID, "template_degrader"));
         BlockModelBuilder modelActive = models()
-                .withExistingParent("crucible_lit", "block/block")
-                .texture("particle", crucible_side)
-                .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.UP ? "#crucible_top" :
-                                (t == Direction.DOWN ? "#crucible_bottom" : "#crucible_side_lit"))
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .element()
-                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
-                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#crucible_top" :
-                                (t == Direction.UP ? "#crucible_bottom" : "#crucible_side_lit"))
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty)
-                .texture("crucible_top", crucible_top)
-                .texture("crucible_bottom", crucible_bottom)
-                .texture("crucible_side_lit", crucible_side_lit);
-        addGasket(modelActive, Direction.DOWN, gasketThickness);
-        addGasket(modelActive, Direction.EAST, gasketThickness);
-        addGasket(modelActive, Direction.WEST, gasketThickness);
-        addGasket(modelActive, Direction.SOUTH, gasketThickness);
-        addGasket(modelActive, Direction.NORTH, gasketThickness);
+                .withExistingParent("degrader_active", new ResourceLocation(GooMod.MOD_ID, "template_degrader_active"));
 
-        getVariantBuilder(BlocksRegistry.Crucible.get())
+        getVariantBuilder(BlocksRegistry.Degrader.get())
                 .forAllStates(
                         (s) -> ConfiguredModel.builder()
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
@@ -284,8 +222,8 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerGooBulbGeneric(GooBulb base) {
-        ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb_end");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb_side");
+        ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb/bulb_end");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb/bulb_side");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
         float gasketThickness = 0.25f;
@@ -319,12 +257,12 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerGooifier() {
-        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_top");
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_old/gooifier_top");
         ResourceLocation bottom = new ResourceLocation("minecraft", "block/polished_blackstone");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_side");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_front_on");
-        ResourceLocation hatch = new ResourceLocation(GooMod.MOD_ID, "block/hatch");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_old/gooifier_side");
+        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_old/gooifier_front_off");
+        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_old/gooifier_front_on");
+        ResourceLocation hatch = new ResourceLocation(GooMod.MOD_ID, "block/gooifier_old/hatch");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket_filled");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
         float gasketThickness = 0.25f;
@@ -400,13 +338,13 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerSolidifier() {
-        ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_off");
-        ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_top_on");
+        ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_top_off");
+        ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_top_on");
         ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
-        ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_off");
-        ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_side_on");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_front_on");
+        ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_side_off");
+        ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_side_on");
+        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_front_off");
+        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_front_on");
         ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket_filled");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
         float gasketThickness = 0.25f;
@@ -461,14 +399,14 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     private void registerMixer()
     {
-        ResourceLocation chamber_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_chamber_side");
-        ResourceLocation chamber_inner = new ResourceLocation(GooMod.MOD_ID, "block/mixer_chamber_inner");
-        ResourceLocation chamber_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_chamber_end");
-        ResourceLocation chamber_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_chamber_bottom");
-        ResourceLocation channel_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_channel_end");
-        ResourceLocation merger_top = new ResourceLocation(GooMod.MOD_ID, "block/mixer_merger_top");
-        ResourceLocation merger_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_merger_bottom");
-        ResourceLocation merger_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_merger_side");
+        ResourceLocation chamber_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_side");
+        ResourceLocation chamber_inner = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_inner");
+        ResourceLocation chamber_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_end");
+        ResourceLocation chamber_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_bottom");
+        ResourceLocation channel_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_channel_end");
+        ResourceLocation merger_top = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_top");
+        ResourceLocation merger_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_bottom");
+        ResourceLocation merger_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_side");
         BlockModelBuilder model = models()
                 .withExistingParent("mixer", "block/block")
                 .texture("particle", chamber_inner)
@@ -571,8 +509,8 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerRadiantLight() {
-        ResourceLocation lightTop = new ResourceLocation(GooMod.MOD_ID, "block/radiant_top");
-        ResourceLocation lightSide = new ResourceLocation(GooMod.MOD_ID, "block/radiant_side");
+        ResourceLocation lightTop = new ResourceLocation(GooMod.MOD_ID, "block/radiant_light/radiant_top");
+        ResourceLocation lightSide = new ResourceLocation(GooMod.MOD_ID, "block/radiant_light/radiant_side");
         BlockModelBuilder light = models()
                 .withExistingParent("radiant_light", "block/block")
                 .texture("particle", lightTop)
@@ -604,17 +542,17 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerGooPump() {
-        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_top");
-        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_side");
-        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_bottom");
-        ResourceLocation baseInner = new ResourceLocation(GooMod.MOD_ID, "block/pump_base_inner");
+        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_top");
+        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_side");
+        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_bottom");
+        ResourceLocation baseInner = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_inner");
         ResourceLocation baseInnerBottom = new ResourceLocation("minecraft", "block/polished_basalt_top");
-        ResourceLocation stemTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_top");
-        ResourceLocation stemSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_stem_side");
+        ResourceLocation stemTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_stem_top");
+        ResourceLocation stemSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_stem_side");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_top");
-        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_side");
-        ResourceLocation actuatorInner = new  ResourceLocation(GooMod.MOD_ID, "block/pump_actuator_inner");
+        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_top");
+        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_side");
+        ResourceLocation actuatorInner = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_inner");
         BlockModelBuilder base = models()
                 .withExistingParent("goo_pump", "block/block")
                 .texture("particle", baseBottom)
@@ -722,11 +660,11 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerCrystalNest() {
-        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_top");
-        ResourceLocation bottom = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_bottom");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_side");
-        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_front");
-        ResourceLocation frontFull = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest_front_honey");
+        ResourceLocation top = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest/bee_nest_top");
+        ResourceLocation bottom = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest/bee_nest_bottom");
+        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest/bee_nest_side");
+        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest/bee_nest_front");
+        ResourceLocation frontFull = new ResourceLocation(GooMod.MOD_ID, "block/bee_nest/bee_nest_front_honey");
         BlockModelBuilder model = models()
                 .cube("crystal_nest", bottom, top, front, side, side, side)
                 .texture("particle", side);
@@ -738,16 +676,16 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerTrough() {
-        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/trough_side_outer");
-        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/trough_top");
-        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough_bottom_outer");
-        ResourceLocation baseSideInner = new ResourceLocation(GooMod.MOD_ID, "block/trough_side_inner");
-        ResourceLocation baseBottomInner = new ResourceLocation(GooMod.MOD_ID, "block/trough_bottom_inner");
+        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_side_outer");
+        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_top");
+        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_bottom_outer");
+        ResourceLocation baseSideInner = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_side_inner");
+        ResourceLocation baseBottomInner = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_bottom_inner");
         ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        ResourceLocation fixtureBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_bottom");
-        ResourceLocation fixtureTop = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_top");
-        ResourceLocation fixtureSide = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_side");
-        ResourceLocation fixtureFace = new ResourceLocation(GooMod.MOD_ID, "block/trough_fixture_face");
+        ResourceLocation fixtureBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_bottom");
+        ResourceLocation fixtureTop = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_top");
+        ResourceLocation fixtureSide = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_side");
+        ResourceLocation fixtureFace = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_face");
         BlockModelBuilder model = models()
                 .withExistingParent("goo_trough", "block/block")
                 .element()

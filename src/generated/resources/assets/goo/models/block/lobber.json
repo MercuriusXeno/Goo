@@ -1,9 +1,9 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "particle": "goo:block/lobber_front",
-    "front": "goo:block/lobber_front",
-    "side": "goo:block/lobber_side",
+    "particle": "goo:block/lobber/lobber_front",
+    "front": "goo:block/lobber/lobber_front",
+    "side": "goo:block/lobber/lobber_side",
     "gasket": "goo:block/gasket",
     "empty": "goo:block/empty"
   },

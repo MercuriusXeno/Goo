@@ -33,7 +33,7 @@ public class GooJeiPlugin implements IModPlugin {
 		registration.addRecipeCategories(
 				new SolidifierRecipeCategory(registration.getJeiHelpers().getGuiHelper()),
 				new GooifierRecipeCategory(registration.getJeiHelpers().getGuiHelper()),
-				new CrucibleRecipeCategory(registration.getJeiHelpers().getGuiHelper()),
+				new DegraderRecipeCategory(registration.getJeiHelpers().getGuiHelper()),
 				new MixerRecipeCategory(registration.getJeiHelpers().getGuiHelper())
 		);
 	}
