@@ -22,11 +22,12 @@ public class BlocksRegistry {
         Blocks.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
+    public static final RegistryObject<PassivatedBlock> PassivatedBlock = Blocks.register("passivated_block", PassivatedBlock::new);
     public static final RegistryObject<GooBulb> Bulb = Blocks.register("goo_bulb", GooBulb::new);
     public static final RegistryObject<GooPump> Pump = Blocks.register("goo_pump", GooPump::new);
     public static final RegistryObject<Gooifier> Gooifier = Blocks.register("gooifier", Gooifier::new);
     public static final RegistryObject<Mixer> Mixer = Blocks.register("mixer", Mixer::new);
-    public static final RegistryObject<Degrader> Degrader = Blocks.register("degrader", Degrader::new);
+    public static final RegistryObject<Degrader> Degrader = Blocks.register("crucible", Degrader::new);
     public static final RegistryObject<Solidifier> Solidifier = Blocks.register("solidifier", Solidifier::new);
     public static final RegistryObject<Drain> Drain = Blocks.register("drain", Drain::new);
     public static final RegistryObject<Lobber> Lobber = Blocks.register("lobber", Lobber::new);

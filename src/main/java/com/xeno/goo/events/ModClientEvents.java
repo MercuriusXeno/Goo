@@ -2,11 +2,13 @@ package com.xeno.goo.events;
 
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.client.models.BasinModel;
+import com.xeno.goo.client.models.VesselModel;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.SprayParticle;
 import com.xeno.goo.client.particle.VaporParticle;
-import com.xeno.goo.client.render.*;
+import com.xeno.goo.client.render.RenderHelper;
+import com.xeno.goo.client.render.block.*;
+import com.xeno.goo.client.render.entity.*;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
@@ -78,13 +80,14 @@ public class ModClientEvents
     private static void setRenderLayers()
     {
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Bulb.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pump.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pump.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Degrader.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Lobber.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getSolid());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Gooifier.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Trough.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), RenderType.getCutoutMipped());
     }
 
     private static void setTileEntityRenderers()
@@ -100,19 +103,27 @@ public class ModClientEvents
 
     private static void setModelLoaders()
     {
-        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "basin"), BasinModel.Loader.INSTANCE);
-        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet"), GauntletModel.Loader.INSTANCE);
-        // ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "gauntlet_held"), GauntletHeldModel.Loader.INSTANCE);
+        ModelLoaderRegistry.registerLoader(new ResourceLocation(GooMod.MOD_ID, "vessel"), VesselModel.Loader.INSTANCE);
     }
 
     @SubscribeEvent
     public static void onTextureStitch(TextureStitchEvent.Pre event) {
         if (event.getMap().getTextureLocation().equals(PlayerContainer.LOCATION_BLOCKS_TEXTURE)) {
-            addBasinMaskingTexture(event);
+            addVesselMaskingTexture(event);
             addGauntletMaskingTexture(event);
             addUnmappedOverlayTextures(event);
+            addMixerGlassTextures(event);
             // addGuiTexture(event);
         }
+    }
+
+    private static void addMixerGlassTextures(Pre event) {
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_back_glass"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_front_glass"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_internals_glass"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_middle_glass"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_side_glass"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_top_glass"));
     }
 
     private static void addGuiTexture(Pre event) {
@@ -132,10 +143,9 @@ public class ModClientEvents
         event.addSprite(Resources.Flowing.OVERLAY);
     }
 
-    private static void addBasinMaskingTexture(TextureStitchEvent.Pre event)
+    private static void addVesselMaskingTexture(TextureStitchEvent.Pre event)
     {
-        // event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/basin"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/basin_fluid"));
+        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/vessel_fluid"));
     }
 
     @SubscribeEvent

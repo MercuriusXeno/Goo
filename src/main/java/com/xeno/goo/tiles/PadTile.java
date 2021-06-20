@@ -4,15 +4,12 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.GooPad;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.network.FluidUpdatePacket;
-import com.xeno.goo.network.GooFlowPacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.util.GooTank;
 import com.xeno.goo.util.IGooTank;
 import net.minecraft.entity.Entity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.particles.BasicParticleType;
@@ -31,7 +28,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import java.util.List;
-import java.util.Objects;
 
 public class PadTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
@@ -181,7 +177,7 @@ public class PadTile extends GooContainerAbstraction implements ITickableTileEnt
     @Override
     protected IGooTank createGooTank() {
 
-        return new GooTank(this::getStorageCapacity).setFilter(stack -> stack.getFluid() instanceof GooFluid).setChangeCallback(this::onContentsChanged);
+        return new GooTank(this::getStorageCapacity).setUniversalFilter(stack -> stack.getFluid() instanceof GooFluid).setChangeCallback(this::onContentsChanged);
     }
 
     @Override

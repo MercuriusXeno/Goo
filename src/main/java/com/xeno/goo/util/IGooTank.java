@@ -10,7 +10,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 
@@ -43,8 +46,11 @@ public abstract class IGooTank implements IFluidHandler {
 
 	@Nonnull
 	protected final IntSupplier capacity;
+
 	@Nonnull
-	protected Predicate<FluidStack> filter = ALWAYS;
+	protected Map<Integer,Predicate<FluidStack>> filter = new HashMap<>();
+	protected Predicate<FluidStack> universalFilter = null;
+
 	@Nullable
 	private Runnable changeCallback;
 
@@ -87,9 +93,14 @@ public abstract class IGooTank implements IFluidHandler {
 	 */
 	@Nonnull
 	@SuppressWarnings("unchecked")
-	public final <T extends IGooTank> T setFilter(@Nonnull Predicate<FluidStack> filter) {
+	public final <T extends IGooTank> T setSpecificTankFilter(int tank, @Nonnull Predicate<FluidStack> filter) {
 
-		this.filter = Objects.requireNonNull(filter);
+		this.filter.put(tank, Objects.requireNonNull(filter));
+		return (T) this;
+	}
+
+	public final <T extends IGooTank> T setUniversalFilter(@Nonnull Predicate<FluidStack> filter) {
+		this.universalFilter = Objects.requireNonNull(filter);
 		return (T) this;
 	}
 
@@ -174,9 +185,13 @@ public abstract class IGooTank implements IFluidHandler {
 			return false;
 		}
 		final FluidStack fluid = getFluidInTankInternal(tank);
-		return ((lockedTanks ? fluid == FluidStack.EMPTY : fluid.isEmpty()) && filter.test(stack)) ||
+		return ((lockedTanks ? fluid == FluidStack.EMPTY : fluid.isEmpty()) && filterCheck(tank, stack)) ||
 				(fluid.getRawFluid() == stack.getRawFluid() && FluidStack.areFluidStackTagsEqual(fluid, stack));
 	}
 
 	public abstract void empty();
+
+	protected boolean filterCheck(int i, FluidStack resource) {
+		return (filter.containsKey(i) && filter.get(i).test(resource)) || (universalFilter != null && universalFilter.test(resource));
+	}
 }

@@ -1,24 +1,13 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " g ",
-    "scs",
-    " b "
-  ],
-  "key": {
-    "s": {
-      "item": "minecraft:netherite_scrap"
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:lava_bucket"
     },
-    "g": {
-      "item": "goo:gasket"
-    },
-    "b": {
-      "item": "minecraft:magma_cream"
-    },
-    "c": {
-      "item": "minecraft:bucket"
+    {
+      "item": "goo:netherite_ash"
     }
-  },
+  ],
   "result": {
     "item": "goo:basin"
   }

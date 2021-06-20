@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "goo:block/goo_bulb"
+      "model": "goo:block/bulb"
     }
   }
 }

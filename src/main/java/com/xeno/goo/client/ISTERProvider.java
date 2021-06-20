@@ -1,5 +1,5 @@
 package com.xeno.goo.client;
-import com.xeno.goo.client.render.*;
+import com.xeno.goo.client.render.blockitem.*;
 import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 
 import java.util.concurrent.Callable;

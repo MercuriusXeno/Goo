@@ -3,7 +3,7 @@ package com.xeno.goo.entities;
 import com.xeno.goo.blocks.Drain;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
-import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Vessel;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -63,7 +63,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
 
     // actual properties of the splat
-    private GooTank goo = new GooTank(() -> 1000).setFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
+    private GooTank goo = new GooTank(() -> 1000).setUniversalFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
     private final LazyOptional<IFluidHandler> lazyHandler = LazyOptional.of(() -> goo);
 
     private Entity owner;
@@ -293,7 +293,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
     @Override
     public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
-        if (player.getHeldItem(hand).getItem() instanceof Basin ||
+        if (player.getHeldItem(hand).getItem() instanceof Vessel ||
                 player.getHeldItem(hand).getItem() instanceof Gauntlet) {
             if (isAtRest()) {
                 tryPlayerInteraction(player, hand);

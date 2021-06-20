@@ -2,7 +2,7 @@ package com.xeno.goo.client.particle;
 
 
 import com.xeno.goo.client.render.FluidCuboidHelper;
-import com.xeno.goo.client.render.GooRenderHelper;
+import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.particle.*;
 import net.minecraft.client.world.ClientWorld;
@@ -36,7 +36,7 @@ public class VaporParticle  extends SpriteTexturedParticle {
 
     @Override
     public IParticleRenderType getRenderType() {
-        return GooRenderHelper.VAPOR_RENDER;
+        return RenderHelper.VAPOR_RENDER;
     }
 
     public static class VaporGooFactory implements IParticleFactory<BasicParticleType> {

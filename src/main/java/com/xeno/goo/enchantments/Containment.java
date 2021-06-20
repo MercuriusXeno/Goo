@@ -1,6 +1,6 @@
 package com.xeno.goo.enchantments;
 
-import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Vessel;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
@@ -48,7 +48,7 @@ public class Containment extends Enchantment
     @Override
     public boolean canApply(ItemStack stack)
     {
-        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet || stack.getItem().equals(ItemsRegistry.GOO_BULB.get());
+        return stack.getItem() instanceof Vessel || stack.getItem() instanceof Gauntlet || stack.getItem().equals(ItemsRegistry.GOO_BULB.get());
     }
 
     @Override

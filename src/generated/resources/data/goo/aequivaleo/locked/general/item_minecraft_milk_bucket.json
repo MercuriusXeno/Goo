@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:faunal"
-    },
-    {
       "amount": 216.0,
       "type": "goo:metal"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:faunal"
     }
   ]
 }

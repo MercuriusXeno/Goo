@@ -2,7 +2,7 @@ package com.xeno.goo.client.particle;
 
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.client.render.FluidCuboidHelper;
-import com.xeno.goo.client.render.GooRenderHelper;
+import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.particle.*;
 import net.minecraft.client.renderer.ActiveRenderInfo;
@@ -68,7 +68,7 @@ public class GooParticle extends SpriteTexturedParticle
     }
 
     public int getBrightnessForRender(float partialTick) {
-        return GooRenderHelper.FULL_BRIGHT;
+        return RenderHelper.FULL_BRIGHT;
     }
 
     public void tick() {

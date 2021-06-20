@@ -1,22 +1,28 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "n n",
-    "bcb",
-    "npn"
+    "gsg",
+    "obo",
+    "fgp"
   ],
   "key": {
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "s": {
+      "item": "goo:passivated_ingot"
+    },
+    "o": {
+      "item": "goo:gasket"
+    },
     "b": {
-      "item": "goo:goo_bulb"
+      "item": "goo:passivated_block"
     },
-    "c": {
-      "item": "minecraft:cauldron"
-    },
-    "n": {
-      "item": "minecraft:netherite_scrap"
+    "f": {
+      "item": "minecraft:blast_furnace"
     },
     "p": {
-      "item": "goo:goo_pump"
+      "item": "minecraft:piston"
     }
   },
   "result": {

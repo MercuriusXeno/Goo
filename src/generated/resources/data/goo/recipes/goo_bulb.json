@@ -2,17 +2,17 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "non",
-    "o#o",
+    " g ",
     "non"
   ],
   "key": {
     "n": {
-      "item": "minecraft:iron_nugget"
+      "item": "goo:passivated_nugget"
     },
     "o": {
       "item": "goo:gasket"
     },
-    "#": {
+    "g": {
       "tag": "forge:glass"
     }
   },

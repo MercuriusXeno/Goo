@@ -26,9 +26,9 @@ import net.minecraft.world.server.ServerWorld;
 
 import java.util.Random;
 
-public class Degrader extends BlockWithConnections {
-    VoxelShape shape;
+import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 
+public class Degrader extends BlockWithConnections {
     public Degrader() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -36,39 +36,9 @@ public class Degrader extends BlockWithConnections {
                 .notSolid()
         );
         setDefaultState(this.getDefaultState()
+                .with(HORIZONTAL_FACING, Direction.NORTH)
                 .with(BlockStateProperties.POWERED, true)
         );
-        shape = makeShape();
-    }
-
-    double gasketThickness = 0.25d;
-    double borderLimit = 16f - gasketThickness;
-    double gasketStart = 6d;
-    double gasketEnd = 16d - gasketStart;
-
-    private VoxelShape makeShape()
-    {
-        Vector3d cs = new Vector3d(gasketThickness, gasketThickness, gasketThickness);
-        Vector3d ce = new Vector3d(borderLimit, borderLimit, borderLimit);
-        Vector3d bs = new Vector3d (gasketStart, 0d, gasketStart);
-        Vector3d be = new Vector3d (gasketEnd, gasketThickness, gasketEnd);
-        Vector3d es = new Vector3d(borderLimit, gasketStart, gasketStart);
-        Vector3d ee = new Vector3d(16d, gasketEnd, gasketEnd);
-        Vector3d ws = new Vector3d(0d, gasketStart, gasketStart);
-        Vector3d we = new Vector3d(gasketThickness, gasketEnd, gasketEnd);
-        Vector3d ss = new Vector3d(gasketStart, gasketStart, borderLimit);
-        Vector3d se = new Vector3d(gasketEnd, gasketEnd, 16d);
-        Vector3d ns = new Vector3d(gasketStart, gasketStart, 0d);
-        Vector3d ne = new Vector3d(gasketEnd, gasketEnd, gasketThickness);
-
-        VoxelShape central = VoxelHelper.cuboid(cs, ce);
-        VoxelShape bottom = VoxelHelper.cuboid(bs, be);
-        VoxelShape east = VoxelHelper.cuboid(es, ee);
-        VoxelShape west = VoxelHelper.cuboid(ws, we);
-        VoxelShape south = VoxelHelper.cuboid(ss, se);
-        VoxelShape north = VoxelHelper.cuboid(ns, ne);
-
-        return VoxelHelper.mergeAll(central, bottom, east, west, south, north);
     }
 
     /**
@@ -88,7 +58,7 @@ public class Degrader extends BlockWithConnections {
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
-        return shape;
+        return VoxelShapes.fullCube();
     }
 
     /**
@@ -126,17 +96,13 @@ public class Degrader extends BlockWithConnections {
                 AudioHelper.tileAudioEvent(worldIn, pos, Registry.DEGRADER_SOUND.get(), SoundCategory.BLOCKS, 1.0F, AudioHelper.PitchFormulas.FlatOne);
             }
 
-            for(Direction direction : Direction.values()) {
-                if (direction.getAxis().isVertical()) {
-                    continue;
-                }
-                Direction.Axis axis = direction.getAxis();
-                double d4 = rand.nextDouble() * 0.6D - 0.3D;
-                double d5 = axis == Direction.Axis.X ? (double)direction.getXOffset() * 0.52D : d4;
-                double d6 = rand.nextDouble() * 6.0D / 16.0D;
-                double d7 = axis == Direction.Axis.Z ? (double)direction.getZOffset() * 0.52D : d4;
-                worldIn.addParticle(ParticleTypes.SMOKE, d0 + d5, d1 + d6, d2 + d7, 0.0D, 0.0D, 0.0D);
-            }
+            Direction direction = stateIn.get(HORIZONTAL_FACING);
+            Direction.Axis axis = direction.getAxis();
+            double d4 = rand.nextDouble() * 0.6D - 0.3D;
+            double d5 = axis == Direction.Axis.X ? (double)direction.getXOffset() * 0.52D : d4;
+            double d6 = rand.nextDouble() * 6.0D / 16.0D;
+            double d7 = axis == Direction.Axis.Z ? (double)direction.getZOffset() * 0.52D : d4;
+            worldIn.addParticle(ParticleTypes.SMOKE, d0 + d5, d1 + d6, d2 + d7, 0.0D, 0.0D, 0.0D);
         }
     }
 
@@ -153,12 +119,13 @@ public class Degrader extends BlockWithConnections {
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()));
+                .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
+                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.POWERED);
+        builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED);
     }
 
     @Override
@@ -176,7 +143,7 @@ public class Degrader extends BlockWithConnections {
         }
     }
 
-    private static final Direction[] RELEVANT_DIRECTIONS = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.DOWN};
+    private static final Direction[] RELEVANT_DIRECTIONS = { Direction.UP, Direction.SOUTH, Direction.DOWN};
     @Override
     protected Direction[] relevantConnectionDirections(BlockState state)
     {

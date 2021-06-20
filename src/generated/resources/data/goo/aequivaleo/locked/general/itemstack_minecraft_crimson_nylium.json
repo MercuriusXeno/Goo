@@ -19,7 +19,7 @@
   "compounds": [
     {
       "amount": 60.0,
-      "type": "goo:chromatic"
+      "type": "goo:earthen"
     },
     {
       "amount": 15.0,
@@ -27,7 +27,7 @@
     },
     {
       "amount": 60.0,
-      "type": "goo:earthen"
+      "type": "goo:chromatic"
     }
   ]
 }

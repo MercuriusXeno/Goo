@@ -3,7 +3,7 @@ package com.xeno.goo.entities;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.interactions.IPassThroughPredicate;
-import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Vessel;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -11,7 +11,6 @@ import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.util.GooTank;
 import com.xeno.goo.util.IGooTank;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.LeavesBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -57,7 +56,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
     private int quiverTimer;
 
-    private final GooTank goo = new GooTank(() -> 1000).setFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
+    private final GooTank goo = new GooTank(() -> 1000).setUniversalFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
     private final LazyOptional<IFluidHandler> lazyHandler = LazyOptional.of(() -> goo);
 
     private Entity owner;
@@ -295,7 +294,7 @@ public class GooBlob extends Entity implements IEntityAdditionalSpawnData, IGooC
 
     @Override
     public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
-        if (player.getHeldItem(hand).getItem() instanceof Basin ||
+        if (player.getHeldItem(hand).getItem() instanceof Vessel ||
                 player.getHeldItem(hand).getItem() instanceof Gauntlet) {
             if (isOnGround()) {
                 tryPlayerInteraction(player, hand);

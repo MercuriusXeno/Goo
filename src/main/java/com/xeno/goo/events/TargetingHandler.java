@@ -103,7 +103,7 @@ public class TargetingHandler
 
         prepHandlingOfGooValuesOfThings(event);
 
-        // special handler for goo bulbs and basins, which show their contents at rest, but not with shift held.
+        // special handler for goo bulbs and vessels, which show their contents at rest, but not with shift held.
         if (hasGooContents() && !Screen.hasShiftDown()) {
             prepGooContentsRealEstate(event);
         }
@@ -215,7 +215,7 @@ public class TargetingHandler
     private static void initializeGooItemContainers() {
         GOO_ITEM_CONTAINERS.addAll(
                 Sets.newHashSet(
-                        ItemsRegistry.BASIN.get(),
+                        ItemsRegistry.VESSEL.get(),
                         ItemsRegistry.GAUNTLET.get()
                 )
         );

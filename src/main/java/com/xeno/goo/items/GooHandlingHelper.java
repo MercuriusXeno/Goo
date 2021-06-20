@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 public class GooHandlingHelper {
-    public static void tryUsingGauntletOrBasin(ServerPlayerEntity player, Hand hand) {
+    public static void tryUsingGauntletOrVessel(ServerPlayerEntity player, Hand hand) {
         if (player.isSwingInProgress) {
             return;
         }
@@ -61,8 +61,8 @@ public class GooHandlingHelper {
             if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
                 // refer to the targeting handler to figure out if we are looking at a goo container
                 didStuff = tryTakingFluidFromContainerWithGauntlet(context, player, hand);
-            } else if (player.getHeldItem(hand).getItem() instanceof Basin) {
-                didStuff = tryTakingFluidFromContainerWithBasin(context, player, hand);
+            } else if (player.getHeldItem(hand).getItem() instanceof Vessel) {
+                didStuff = tryTakingFluidFromContainerWithVessel(context, player, hand);
             }
         }
 
@@ -74,9 +74,9 @@ public class GooHandlingHelper {
         if (player.getHeldItem(hand).getItem() instanceof Gauntlet) {
             // try placing a splat at the block if it's a valid location. Let the server handle the check.
             didStuff = tryPlacingSplatWithGauntlet(player.getHeldItem(hand), player, context);
-        } else if (player.getHeldItem(hand).getItem() instanceof Basin) {
-            // basins instead place as many as 9, utilizing the overlay to indicate where they will be placed.
-            didStuff = tryPlacingSplatAreaWithBasin(context.getPlayer(), hand, context.getFace(), context.getPos(), context.getHitVec());
+        } else if (player.getHeldItem(hand).getItem() instanceof Vessel) {
+            // vessels instead place as many as 9, utilizing the overlay to indicate where they will be placed.
+            didStuff = tryPlacingSplatAreaWithVessel(context.getPlayer(), hand, context.getFace(), context.getPos(), context.getHitVec());
         }
         if (didStuff) {
             return true;
@@ -102,8 +102,11 @@ public class GooHandlingHelper {
             return false;
         }
 
-        // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
+        // special caller for getting the "right" capability
         IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(hit, side, RayTraceTargetSource.GAUNTLET);
+        if (tileCap == null) {
+            return false;
+        }
 
         FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(hit, side, RayTraceTargetSource.GAUNTLET);
         // if cap is empty try a drain.
@@ -240,7 +243,7 @@ public class GooHandlingHelper {
     }
 
     private static final float IMPERCEPTIBLE_OFFSET = 0.0001f;
-    private static boolean tryPlacingSplatAreaWithBasin(PlayerEntity player, Hand hand,
+    private static boolean tryPlacingSplatAreaWithVessel(PlayerEntity player, Hand hand,
                                                         Direction side, BlockPos pos, Vector3d hit)
     {
         ItemStack heldItem = player.getHeldItem(hand);
@@ -249,11 +252,11 @@ public class GooHandlingHelper {
             return false;
         }
         boolean[] didStuff = {false};
-        lazyCap.ifPresent((c) -> didStuff[0] = tryPlacingSplatAreaWithBasin(player, hand, side, pos, hit, c));
+        lazyCap.ifPresent((c) -> didStuff[0] = tryPlacingSplatAreaWithVessel(player, hand, side, pos, hit, c));
         return didStuff[0];
     }
 
-    private static boolean tryPlacingSplatAreaWithBasin(PlayerEntity player, Hand hand, Direction side, BlockPos pos,
+    private static boolean tryPlacingSplatAreaWithVessel(PlayerEntity player, Hand hand, Direction side, BlockPos pos,
                                                         Vector3d hit, IFluidHandlerItem cap) {
         // unlike gauntlet splat placement, we have to iterate over a list of block positions.
         // our convention for this is to start at 0, 0 and then move in a cross pattern (up left right down)
@@ -284,7 +287,7 @@ public class GooHandlingHelper {
                 continue;
             }
 
-            // basins have slightly more strict placement guidelines than gauntlets because they will
+            // vessels have slightly more strict placement guidelines than gauntlets because they will
             // try to place splats in places the player can't see by design. Don't allow non-air block placements
             BlockState splatZoneState = player.world.getBlockState(actualPos.offset(side));
             boolean isAir = splatZoneState.isAir(player.world, actualPos.offset(side));
@@ -362,22 +365,22 @@ public class GooHandlingHelper {
         return false;
     }
 
-    private static boolean tryTakingFluidFromContainerWithBasin(ItemUseContext context, PlayerEntity player, Hand hand) {
+    private static boolean tryTakingFluidFromContainerWithVessel(ItemUseContext context, PlayerEntity player, Hand hand) {
         ItemStack heldItem = player.getHeldItem(hand);
         LazyOptional<IFluidHandlerItem> lazyCap = heldItem.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
         if (lazyCap.isPresent()) {
             boolean[] didStuff = {false};
             lazyCap.ifPresent((c) ->
-                    didStuff[0] = tryTakingFluidFromContainerWithBasin(context.getWorld(), context.getPos(),
-                            context.getHitVec(), context.getFace(), context.getPlayer(), (BasinAbstractionCapability)c));
+                    didStuff[0] = tryTakingFluidFromContainerWithVessel(context.getWorld(), context.getPos(),
+                            context.getHitVec(), context.getFace(), context.getPlayer(), (VesselAbstractionCapability)c));
             player.swing(hand, true);
             return didStuff[0];
         }
         return false;
     }
 
-    private static boolean tryTakingFluidFromContainerWithBasin(World world, BlockPos pos, Vector3d hit, Direction side, PlayerEntity player,
-                                                                BasinAbstractionCapability cap)
+    private static boolean tryTakingFluidFromContainerWithVessel(World world, BlockPos pos, Vector3d hit, Direction side, PlayerEntity player,
+                                                                VesselAbstractionCapability cap)
     {
         TileEntity t = world.getTileEntity(pos);
         if (!(t instanceof GooContainerAbstraction)) {
@@ -385,28 +388,31 @@ public class GooHandlingHelper {
         }
 
         // special caller for getting the "right" capability, this is mainly for *mixers* having two caps
-        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(hit, side, RayTraceTargetSource.BASIN);
+        IFluidHandler tileCap = ((GooContainerAbstraction)t).getCapabilityFromRayTraceResult(hit, side, RayTraceTargetSource.VESSEL);
+        if (tileCap == null) {
+            return false;
+        }
 
-        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(hit, side, RayTraceTargetSource.BASIN);
+        FluidStack hitFluid = ((GooContainerAbstraction) t).getGooFromTargetRayTraceResult(hit, side, RayTraceTargetSource.VESSEL);
         // if cap is empty try a drain.
         if (cap.getFluidInTank(0).isEmpty()) {
-            return tryFillingEmptyBasin(world, player, cap, tileCap, hitFluid);
+            return tryFillingEmptyVessel(world, player, cap, tileCap, hitFluid);
         }
 
         boolean isAltBehavior = player.isSneaking();
 
-        // ordinarily the basin just empties and fills exclusively in a toggle state.
-        // holding [sneak] changes the behavior to try to fill the basin first.
+        // ordinarily the vessel just empties and fills exclusively in a toggle state.
+        // holding [sneak] changes the behavior to try to fill the vessel first.
         // the fluid we contain isn't the type hit or it is, but our receptacle is full so the intent is inverted.
         if (!isAltBehavior || !cap.getFluidInTank(0).isFluidEqual(hitFluid) || cap.totalFluid() == cap.capacity()) {
-            return tryFillingGooContainerFromBasin(world, player, cap, tileCap);
+            return tryFillingGooContainerFromVessel(world, player, cap, tileCap);
         }
 
-        return tryFillingBasinWithSameFluid(world, player, cap, tileCap, hitFluid);
+        return tryFillingVesselWithSameFluid(world, player, cap, tileCap, hitFluid);
     }
 
-    private static boolean tryFillingGooContainerFromBasin(World world, PlayerEntity player,
-                                                    BasinAbstractionCapability cap, IFluidHandler tileCap)
+    private static boolean tryFillingGooContainerFromVessel(World world, PlayerEntity player,
+                                                    VesselAbstractionCapability cap, IFluidHandler tileCap)
     {
         FluidStack sendingFluid = cap.getFluidInTank(0).copy();
         int amountSent = tileCap.fill(sendingFluid, IFluidHandler.FluidAction.SIMULATE);
@@ -427,8 +433,8 @@ public class GooHandlingHelper {
         return true;
     }
 
-    private static boolean tryFillingBasinWithSameFluid(World world, PlayerEntity player,
-                                                 BasinAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private static boolean tryFillingVesselWithSameFluid(World world, PlayerEntity player,
+                                                 VesselAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
         int amountRequested = cap.capacity() - cap.totalFluid();
         FluidStack requestFluid = hitFluid.copy();
@@ -448,8 +454,8 @@ public class GooHandlingHelper {
         return true;
     }
 
-    private static boolean tryFillingEmptyBasin(World world, PlayerEntity player,
-                                         BasinAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
+    private static boolean tryFillingEmptyVessel(World world, PlayerEntity player,
+                                         VesselAbstractionCapability cap, IFluidHandler tileCap, FluidStack hitFluid)
     {
         FluidStack requestFluid = hitFluid.copy();
         if (requestFluid.getAmount() > cap.capacity() - cap.totalFluid()) {

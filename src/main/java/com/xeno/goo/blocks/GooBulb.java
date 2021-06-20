@@ -40,7 +40,6 @@ public class GooBulb extends BlockWithConnections
 {
 
     private static final int BUCKET_AMOUNT = 1000;
-    VoxelShape shape;
 
     public GooBulb()
     {
@@ -49,40 +48,6 @@ public class GooBulb extends BlockWithConnections
                 .hardnessAndResistance(1.0f)
                 .notSolid()
         );
-        shape = makeShape();
-    }
-
-    double gasketThickness = 0.25d;
-    double borderLimit = 16f - gasketThickness;
-    double gasketStart = 6d;
-    double gasketEnd = 16d - gasketStart;
-
-    private VoxelShape makeShape()
-    {
-        Vector3d cs = new Vector3d(gasketThickness, gasketThickness, gasketThickness);
-        Vector3d ce = new Vector3d(borderLimit, borderLimit, borderLimit);
-        Vector3d bs = new Vector3d (gasketStart, 0d, gasketStart);
-        Vector3d be = new Vector3d (gasketEnd, gasketThickness, gasketEnd);
-        Vector3d ts = new Vector3d (gasketStart, borderLimit, gasketStart);
-        Vector3d te = new Vector3d (gasketEnd, 16d, gasketEnd);
-        Vector3d es = new Vector3d(borderLimit, gasketStart, gasketStart);
-        Vector3d ee = new Vector3d(16d, gasketEnd, gasketEnd);
-        Vector3d ws = new Vector3d(0d, gasketStart, gasketStart);
-        Vector3d we = new Vector3d(gasketThickness, gasketEnd, gasketEnd);
-        Vector3d ss = new Vector3d(gasketStart, gasketStart, borderLimit);
-        Vector3d se = new Vector3d(gasketEnd, gasketEnd, 16d);
-        Vector3d ns = new Vector3d(gasketStart, gasketStart, 0d);
-        Vector3d ne = new Vector3d(gasketEnd, gasketEnd, gasketThickness);
-
-        VoxelShape central = VoxelHelper.cuboid(cs, ce);
-        VoxelShape bottom = VoxelHelper.cuboid(bs, be);
-        VoxelShape top = VoxelHelper.cuboid(ts, te);
-        VoxelShape east = VoxelHelper.cuboid(es, ee);
-        VoxelShape west = VoxelHelper.cuboid(ws, we);
-        VoxelShape south = VoxelHelper.cuboid(ss, se);
-        VoxelShape north = VoxelHelper.cuboid(ns, ne);
-
-        return VoxelHelper.mergeAll(central, top, bottom, east, west, south, north);
     }
 
     /**
@@ -102,7 +67,7 @@ public class GooBulb extends BlockWithConnections
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
-        return shape;
+        return VoxelShapes.fullCube();
     }
 
     /**

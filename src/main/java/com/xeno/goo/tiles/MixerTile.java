@@ -1,6 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
@@ -29,6 +30,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Predicate;
 
+import static net.minecraft.util.Direction.*;
+
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
     private final FluidHandlerTankWrapper rightHandler = createHandler(0);
@@ -37,11 +40,15 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     private final FluidHandlerTankWrapper leftHandler = createHandler(1);
     private final LazyOptional<FluidHandlerTankWrapper> leftLazy = LazyOptional.of(() -> leftHandler);
 
+    private final FluidHandlerTankWrapper bottomHandler = createHandler(2);
+    private final LazyOptional<FluidHandlerTankWrapper> bottomLazy = LazyOptional.of(() -> bottomHandler);
+
     @Override
     protected void invalidateCaps() {
         super.invalidateCaps();
         leftLazy.invalidate();
         rightLazy.invalidate();
+        bottomLazy.invalidate();
     }
 
     public MixerTile()
@@ -56,9 +63,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             case SOUTH:
                 return Direction.WEST;
             case EAST:
-                return Direction.SOUTH;
+                return SOUTH;
             case WEST:
-                return Direction.NORTH;
+                return NORTH;
         }
         return Direction.EAST;
     }
@@ -70,9 +77,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             case SOUTH:
                 return Direction.EAST;
             case EAST:
-                return Direction.NORTH;
+                return NORTH;
             case WEST:
-                return Direction.SOUTH;
+                return SOUTH;
         }
         return Direction.WEST;
     }
@@ -80,7 +87,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     public Direction facing()
     {
         if (this.world == null) {
-            return Direction.NORTH;
+            return NORTH;
         }
         return this.getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
@@ -99,6 +106,78 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         }
 
         tryPushingRecipeResult();
+        tryVerticalDrain();
+    }
+
+    // if placed above another bulb, the bulb above will drain everything downward.
+    private boolean tryVerticalDrain() {
+        if (this.goo.getFluidInTankInternal(2).isEmpty()) {
+            return false;
+        }
+
+        // try fetching the bulb capabilities (below) and throw an exception if it fails. return if null.
+        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
+
+        final boolean[] verticalDrained = {false};
+        cap.ifPresent((c) -> {
+            verticalDrained[0] = doVerticalDrain(c);
+        });
+        return verticalDrained[0];
+    }
+
+    private boolean doVerticalDrain(IFluidHandler c)
+    {
+        // the maximum amount you can drain in a tick is here.
+        int simulatedDrainLeft = transferRate();
+
+        if (simulatedDrainLeft <= 0) {
+            return false;
+        }
+
+        FluidStack s = goo.getFluidInTankInternal(2);
+        if (s.isEmpty()) {
+            return false;
+        }
+        int simulatedDrain = trySendingFluid(simulatedDrainLeft, s, c, true);
+        if (simulatedDrain != simulatedDrainLeft) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private int trySendingFluid(int simulatedDrainLeft, FluidStack s, IFluidHandler cap, boolean isVerticalDrain) {
+        // simulated drain left represents how much "suction" is left in the interaction
+        // s is the maximum amount in the stack. the lesser of these is how much you can drain in one tick.
+        int amountLeft = Math.min(simulatedDrainLeft, s.getAmount());
+
+        // do it again, only this time, testing the amount the receptacle can tolerate.
+        amountLeft = Math.min(amountLeft, cap.fill(s, IFluidHandler.FluidAction.SIMULATE));
+
+        // now here, the number can be zero. If it is, it means we don't have space left in the receptacle. Break.
+        if (amountLeft == 0) {
+            return 0;
+        }
+
+        // at this point we know we're able to move a nonzero amount of fluid. Prep a new stack
+        FluidStack stackBeingSwapped = new FluidStack(s.getFluid(), amountLeft);
+
+        // fill the receptacle.
+        cap.fill(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
+
+        // now call our drain, we're the sender.
+        goo.drain(stackBeingSwapped, IFluidHandler.FluidAction.EXECUTE);
+
+        // we can only handle so much work in a tick. Decrement the work limit. If it's zero, this loop breaks.
+        // but if it was less than we're allowed to send, we can do more work in this tick, so it will continue.
+        simulatedDrainLeft -= amountLeft;
+
+        return simulatedDrainLeft;
+    }
+
+    private int transferRate()
+    {
+        return GooMod.config.gooTransferRate() * getStorageMultiplier();
     }
 
     private MixerRecipe getRecipeFromInputs()
@@ -117,20 +196,19 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             return;
         }
 
-        LazyOptional<IFluidHandler> cap = fluidHandlerInDirection(Direction.DOWN);
-        cap.ifPresent((c) -> pushRecipeResult(c, recipe));
+        pushRecipeResult(recipe);
     }
 
-    private void pushRecipeResult(IFluidHandler c, MixerRecipe recipe)
+    private void pushRecipeResult(MixerRecipe recipe)
     {
-        int sentResult = c.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
+        int sentResult = bottomHandler.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
         if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
             return;
         }
 
         deductInputQuantities(recipe.inputs());
 
-        c.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+        bottomHandler.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
     }
 
     private boolean deductInputQuantities(List<FluidStack> inputs)
@@ -174,8 +252,10 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     protected IGooTank createGooTank() {
         Predicate<FluidStack> recipe = MixerRecipes::isAnyRecipe;
-        return new GooMultiTank(this::getStorageCapacity, 2)
-                .setFilter(recipe.or(s -> s == null || s.isEmpty()))
+        return new GooMultiTank(this::getStorageCapacity, 3)
+                .setSpecificTankFilter(0, recipe.or(s -> s == null || s.isEmpty()))
+                .setSpecificTankFilter(1, recipe.or(s -> s == null || s.isEmpty()))
+                .setSpecificTankFilter(2, s -> s.getFluid() instanceof GooFluid)
                 .setChangeCallback(this::onContentsChanged);
     }
 
@@ -201,6 +281,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             if (side == orientedRight()) {
                 return rightLazy.cast();
             }
+            if (side == DOWN) {
+                return bottomLazy.cast();
+            }
         }
         return super.getCapability(cap, side);
     }
@@ -213,6 +296,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
                 if (super.isFluidValid(tank, stack)) {
 
+                    if (this.tank > 1) {
+                        return true;
+                    }
                     int otherTank = this.tank == 0 ? 1 : 0;
                     if (handler.getFluidInTank(this.tank).isEmpty() && !handler.getFluidInTank(otherTank).isEmpty())
                         return MixerRecipes.getRecipe(handler.getFluidInTank(otherTank), stack) != null;
@@ -246,20 +332,37 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (goo.isEmpty()) {
             return FluidStack.EMPTY;
         }
+        // try to handle the bottom tank
+        if (hitVector.y <= this.getPos().getY() + 0.375f) {
+            if (face == facing() || isOverMechanism(hitVector)) {
+                return FluidStack.EMPTY;
+            }
+            return goo.getFluidInTankInternal(2);
+        }
         return goo.getFluidInTankInternal(isRightSideMostly(hitVector, face) ? 0 : 1);
+    }
+
+    private boolean isOverMechanism(Vector3d hitVector) {
+        switch (facing()) {
+            case SOUTH:
+                return hitVector.z >= this.getPos().getZ() + 0.625f;
+            case NORTH:
+                return hitVector.z <= this.getPos().getZ() + 0.375f;
+            case EAST:
+                return hitVector.x >= this.getPos().getX() + 0.625f;
+            case WEST:
+                return hitVector.x <= this.getPos().getX() + 0.375f;
+        }
+        return false;
     }
 
     private boolean isRightSideMostly(Vector3d hitVec, Direction face)
     {
         boolean isRight;
-        if (face == orientedRight()) {
-            isRight = true;
+        if (this.facing().getAxis() == Direction.Axis.Z) {
+            isRight = (facing() == NORTH) == (hitVec.getX() >= this.getPos().getX() + 0.5f);
         } else {
-            if (this.facing().getAxis() == Direction.Axis.Z) {
-                isRight = (facing() == Direction.NORTH) == (hitVec.getX() >= this.getPos().getX() + 0.5f);
-            } else {
-                isRight = (facing() == Direction.EAST) == (hitVec.getZ() >= this.getPos().getZ() + 0.5f);
-            }
+            isRight = (facing() == Direction.EAST) == (hitVec.getZ() >= this.getPos().getZ() + 0.5f);
         }
         return isRight;
     }
@@ -267,6 +370,13 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
+        // try to handle the bottom tank
+        if (hitVec.y <= this.getPos().getY() + 0.375f) {
+            if (face == facing() || isOverMechanism(hitVec)) {
+                return null;
+            }
+            return bottomHandler;
+        }
         return isRightSideMostly(hitVec, face) ? rightHandler : leftHandler;
     }
 }

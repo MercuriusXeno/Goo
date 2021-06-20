@@ -1,16 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "ii ",
-    "sls",
-    "igi"
+    "nn ",
+    "nln",
+    "ngn"
   ],
   "key": {
-    "i": {
-      "item": "minecraft:iron_nugget"
-    },
-    "s": {
-      "item": "minecraft:netherite_scrap"
+    "n": {
+      "item": "goo:passivated_nugget"
     },
     "l": {
       "item": "minecraft:leather"

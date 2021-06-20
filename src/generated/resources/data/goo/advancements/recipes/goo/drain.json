@@ -6,12 +6,12 @@
     ]
   },
   "criteria": {
-    "gasket": {
+    "passivated_ingot": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "item": "goo:gasket"
+            "item": "goo:passivated_ingot"
           }
         ]
       }
@@ -25,7 +25,7 @@
   },
   "requirements": [
     [
-      "gasket",
+      "passivated_ingot",
       "has_the_recipe"
     ]
   ]

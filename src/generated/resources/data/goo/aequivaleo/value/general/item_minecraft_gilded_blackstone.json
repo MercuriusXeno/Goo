@@ -23,19 +23,19 @@
     },
     {
       "amount": 240.0,
-      "type": "goo:regal"
+      "type": "goo:metal"
     },
     {
       "amount": 60.0,
       "type": "goo:molten"
     },
     {
-      "amount": 240.0,
-      "type": "goo:metal"
-    },
-    {
       "amount": 60.0,
       "type": "goo:weird"
+    },
+    {
+      "amount": 240.0,
+      "type": "goo:regal"
     }
   ]
 }

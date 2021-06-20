@@ -29,8 +29,12 @@ public class ItemsRegistry {
     // major items
     public static final RegistryObject<GooAndYou> GOO_AND_YOU = ITEMS.register("goo_and_you", GooAndYou::new);
     public static final RegistryObject<Gasket> GASKET = ITEMS.register("gasket", Gasket::new);
+    public static final RegistryObject<NetheriteAsh> NETHERITE_ASH = ITEMS.register("netherite_ash", NetheriteAsh::new);
+    public static final RegistryObject<StygianWeepings> STYGIAN_WEEPINGS = ITEMS.register("stygian_weepings", StygianWeepings::new);
+    public static final RegistryObject<PassivatedNugget> PASSIVATED_NUGGET = ITEMS.register("passivated_nugget", PassivatedNugget::new);
+    public static final RegistryObject<PassivatedIngot> PASSIVATED_INGOT = ITEMS.register("passivated_ingot", PassivatedIngot::new);
     public static final RegistryObject<CrystalComb> CRYSTAL_COMB = ITEMS.register("crystal_comb", CrystalComb::new);
-    public static final RegistryObject<Basin> BASIN = ITEMS.register("basin", Basin::new);
+    public static final RegistryObject<Vessel> VESSEL = ITEMS.register("basin", Vessel::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);
     public static final RegistryObject<GooSnailCaptured> SNAIL = ITEMS.register("snail", GooSnailCaptured::new);
 
@@ -41,7 +45,7 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> GOOIFIER = ITEMS
             .register("gooifier", () -> new BlockItem(BlocksRegistry.Gooifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
     public static final RegistryObject<Item> DEGRADER = ITEMS
-            .register("degrader", () -> new BlockItem(BlocksRegistry.Degrader.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::degrader)));
+            .register("crucible", () -> new BlockItem(BlocksRegistry.Degrader.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::degrader)));
     public static final RegistryObject<Item> MIXER = ITEMS
             .register("mixer", () -> new BlockItem(BlocksRegistry.Mixer.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::mixer)));
     public static final RegistryObject<Item> SOLIDIFIER = ITEMS
@@ -56,6 +60,8 @@ public class ItemsRegistry {
             .register("goo_trough", () -> new BlockItem(BlocksRegistry.Trough.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::trough)));
     public static final RegistryObject<Item> PAD = ITEMS
             .register("goo_pad", () -> new BlockItem(BlocksRegistry.Pad.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64).setISTER(ISTERProvider::pad)));
+    public static final RegistryObject<Item> PASSIVATED_BLOCK = ITEMS
+            .register("passivated_block", () -> new BlockItem(BlocksRegistry.PassivatedBlock.get(), new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(64)));
 
     // eggs
     public static final RegistryObject<Item> GOO_BEE_SPAWN_EGG = ITEMS.register("goo_bee_spawn_egg", Registry.makeEgg(Registry.GOO_BEE, 0xff7cbdc4, 0xffa674cf));

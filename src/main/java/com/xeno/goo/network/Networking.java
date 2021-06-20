@@ -63,8 +63,8 @@ public class Networking {
 		);
 
 		registerPacket(
-				GooBasinSwapPacket.class,
-				GooBasinSwapPacket::new
+				GooVesselSwapPacket.class,
+				GooVesselSwapPacket::new
 		);
 
 		registerPacket(

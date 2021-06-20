@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:passivated_ingot_from_block"
+    ]
+  },
+  "criteria": {
+    "passivated_ingot": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:passivated_ingot"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:passivated_ingot_from_block"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "passivated_ingot",
+      "has_the_recipe"
+    ]
+  ]
+}

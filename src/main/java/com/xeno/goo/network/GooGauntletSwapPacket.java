@@ -1,7 +1,7 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.items.Basin;
-import com.xeno.goo.items.BasinAbstractionCapability;
+import com.xeno.goo.items.Vessel;
+import com.xeno.goo.items.VesselAbstractionCapability;
 import com.xeno.goo.items.Gauntlet;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -88,14 +88,14 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 return;
             }
             ItemStack i = player.inventory.getStackInSlot(index);
-            if (!(i.getItem() instanceof Basin)) {
+            if (!(i.getItem() instanceof Vessel)) {
                 continue;
             }
 
             LazyOptional<IFluidHandlerItem> lazyCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
             if (lazyCap.isPresent()) {
                 boolean[] hadResult = {false};
-                lazyCap.ifPresent((c) -> hadResult[0] = raidBasinForGoo((BasinAbstractionCapability) c, cap));
+                lazyCap.ifPresent((c) -> hadResult[0] = raidVesselForGoo((VesselAbstractionCapability) c, cap));
                 if (hadResult[0]) {
                     return;
                 }
@@ -103,7 +103,7 @@ public class GooGauntletSwapPacket implements IGooModPacket
         }
     }
 
-    private boolean raidBasinForGoo(BasinAbstractionCapability c, IFluidHandlerItem cap) {
+    private boolean raidVesselForGoo(VesselAbstractionCapability c, IFluidHandlerItem cap) {
         FluidStack result = c.drain(target, IFluidHandler.FluidAction.SIMULATE);
         if (result.isEmpty()) {
             return false;
@@ -127,14 +127,14 @@ public class GooGauntletSwapPacket implements IGooModPacket
                 return;
             }
             ItemStack i = player.inventory.getStackInSlot(index);
-            if (!(i.getItem() instanceof Basin)) {
+            if (!(i.getItem() instanceof Vessel)) {
                 continue;
             }
 
             LazyOptional<IFluidHandlerItem> lazyCap = i.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
             if (lazyCap.isPresent()) {
                 boolean[] hadResult = {false};
-                lazyCap.ifPresent((c) -> hadResult[0] = dumpGooInBasin((BasinAbstractionCapability) c, cap));
+                lazyCap.ifPresent((c) -> hadResult[0] = dumpGooInVessel((VesselAbstractionCapability) c, cap));
                 if (hadResult[0]) {
                     return;
                 }
@@ -142,7 +142,7 @@ public class GooGauntletSwapPacket implements IGooModPacket
         }
     }
 
-    private boolean dumpGooInBasin(BasinAbstractionCapability c, IFluidHandlerItem cap) {
+    private boolean dumpGooInVessel(VesselAbstractionCapability c, IFluidHandlerItem cap) {
         FluidStack dumpAll = cap.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         if (dumpAll.isEmpty()) {
             return false;

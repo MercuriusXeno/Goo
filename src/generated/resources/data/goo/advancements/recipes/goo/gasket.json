@@ -6,12 +6,12 @@
     ]
   },
   "criteria": {
-    "honeycomb": {
+    "passivated_ingot": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "item": "minecraft:honeycomb"
+            "item": "goo:passivated_ingot"
           }
         ]
       }
@@ -25,7 +25,7 @@
   },
   "requirements": [
     [
-      "honeycomb",
+      "passivated_ingot",
       "has_the_recipe"
     ]
   ]

@@ -6,12 +6,12 @@
     ]
   },
   "criteria": {
-    "gasket": {
+    "netherite_ash": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "item": "goo:gasket"
+            "item": "goo:netherite_ash"
           }
         ]
       }
@@ -25,7 +25,7 @@
   },
   "requirements": [
     [
-      "gasket",
+      "netherite_ash",
       "has_the_recipe"
     ]
   ]

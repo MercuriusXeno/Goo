@@ -1,7 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.fluids.GooFluid;
-import com.xeno.goo.items.BasinAbstractionCapability;
+import com.xeno.goo.items.VesselAbstractionCapability;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.item.Item;
@@ -165,9 +165,9 @@ public abstract class FluidHandlerHelper
             return values;
         }
 
-        // basins have a more elaborate contents list than gauntlets
-        if (cap instanceof BasinAbstractionCapability) {
-            List<FluidStack> fluids = new ArrayList<>(((BasinAbstractionCapability) cap).getFluids());
+        // vessels have a more elaborate contents list than gauntlets
+        if (cap instanceof VesselAbstractionCapability) {
+            List<FluidStack> fluids = new ArrayList<>(((VesselAbstractionCapability) cap).getFluids());
             fluids.removeIf(FluidStack::isEmpty);
             if (fluids.size() == 0) {
                 return values;

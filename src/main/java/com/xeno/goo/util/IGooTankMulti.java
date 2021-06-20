@@ -1,5 +1,6 @@
 package com.xeno.goo.util;
 
+import com.xeno.goo.GooMod;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
@@ -62,7 +63,7 @@ public abstract class IGooTankMulti extends IGooTank {
 
 		for (int i = 0; (i < inSize) & (count < maxSize); ++i) {
 			FluidStack tank = tankReader.apply(i);
-			if (!contents.containsKey(tank.getRawFluid()) && filter.test(tank)) {
+			if (!contents.containsKey(tank.getRawFluid()) && filterCheck(i, tank)) {
 				contents.put(tank.getRawFluid(), tank);
 				tanks.add(tank);
 				amt += tank.getAmount();

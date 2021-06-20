@@ -1,5 +1,5 @@
 {
-  "name": "block.goo.degrader",
+  "name": "block.goo.crucible",
   "icon": "goo:crucible",
   "category": "goo:machines",
   "pages": [
@@ -9,7 +9,7 @@
     },
     {
       "type": "crafting",
-      "recipe": "goo:degrader"
+      "recipe": "goo:crucible"
     },
     {
       "type": "multiblock",
@@ -18,7 +18,7 @@
       "multiblock": {
         "mapping": {
           "B": "goo:goo_bulb",
-          "0": "goo:degrader",
+          "0": "goo:crucible",
           "N": "goo:goo_pump[facing=north]",
           "S": "goo:goo_pump[facing=south]"
         },

@@ -29,7 +29,7 @@ public class ItemsProvider extends ItemModelProvider {
     protected void registerModels() {
         registerGasket();
         registerGauntlet();
-        registerBasin();
+        registerVessel();
         registerGooAndYou();
         registerCrystalComb();
         registerDegrader();
@@ -41,6 +41,26 @@ public class ItemsProvider extends ItemModelProvider {
         registerPad();
         registerSnail();
         registerBuckets();
+        registerStygianWeepings();
+        registerNetheriteAsh();
+        registerPassivatedMetal();
+    }
+
+    private void registerPassivatedMetal() {
+        singleTexture(ItemsRegistry.PASSIVATED_INGOT.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/passivated_ingot"));
+        singleTexture(ItemsRegistry.PASSIVATED_NUGGET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/passivated_nugget"));
+    }
+
+    private void registerNetheriteAsh() {
+        singleTexture(ItemsRegistry.NETHERITE_ASH.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/netherite_ash"));
+    }
+
+    private void registerStygianWeepings() {
+        singleTexture(ItemsRegistry.STYGIAN_WEEPINGS.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/stygian_weepings"));
     }
 
     private void registerBuckets() {
@@ -59,9 +79,6 @@ public class ItemsProvider extends ItemModelProvider {
 
         ItemModelBuilder model = withExistingParent(itemRegistryObject.get().getRegistryName().getPath(), mcLoc("item/handheld"))
                 .texture("layer0", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath()));
-//        if (resourceLocation.getPath().startsWith("chromatic")) {
-//            model.texture("layer1", new ResourceLocation(GooMod.MOD_ID, "item/crystals/" + resourceLocation.getPath() + "_overlay"));
-//        }
     }
 
     private void registerTrough()
@@ -88,9 +105,9 @@ public class ItemsProvider extends ItemModelProvider {
         withExistingParent(ItemsRegistry.DEGRADER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
-    private void registerBasin()
+    private void registerVessel()
     {
-        withExistingParent(ItemsRegistry.BASIN.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_basin"));
+        withExistingParent(ItemsRegistry.VESSEL.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_vessel"));
     }
 
     private void registerGauntlet()

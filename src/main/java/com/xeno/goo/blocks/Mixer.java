@@ -17,9 +17,11 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.server.ServerWorld;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 import static net.minecraft.util.Direction.*;
@@ -35,24 +37,27 @@ public class Mixer extends BlockWithConnections
                 .hardnessAndResistance(1.0f)
                 .notSolid()
         );
+        setDefaultState(this.getDefaultState()
+                .with(HORIZONTAL_FACING, Direction.NORTH)
+                .with(BlockStateProperties.POWERED, true)
+        );
         shapes = makeShapes();
     }
 
     private VoxelShape[] makeShapes()
     {
-        Vector3d rcs = new Vector3d(0d, 4d, 2d);
-        Vector3d rce = new Vector3d(6d, 16d, 14d);
-        Vector3d lcs = new Vector3d(10d, 4d, 2d);
-        Vector3d lce = new Vector3d(16d, 16d, 14d);
-        Vector3d rps = new Vector3d(1d, 0d, 6d);
-        Vector3d rpe = new Vector3d(5d, 4d, 10d);
-        Vector3d lps = new Vector3d(11d, 0d, 6d);
-        Vector3d lpe = new Vector3d(15d, 4d, 10d);
-        Vector3d ccs = new Vector3d(5d, 0d, 5d);
-        Vector3d cce = new Vector3d(11d, 4d, 11d);
+        Vector3d leftTankStart = new Vector3d(0d, 6d, 0d);
+        Vector3d leftTankEnd = new Vector3d(6d, 16d, 16d);
+
+        Vector3d rightTankStart = new Vector3d(10d, 6d, 0d);
+        Vector3d rightTankEnd = new Vector3d(16d, 16d, 16d);
+
+        Vector3d bottomTankStart = new Vector3d(0d, 0d, 0d);
+        Vector3d bottomTankEnd = new Vector3d(16d, 6d, 16d);
+
         // x aligned orientation
-        VoxelShape[] zShapes = getZCombo(rcs, rce, lcs, lce, rps, rpe, lps, lpe, ccs, cce);
-        VoxelShape[] xShapes = getXCombo(rcs, rce, lcs, lce, rps, rpe, lps, lpe, ccs, cce);
+        VoxelShape[] zShapes = getZCombo(leftTankStart, leftTankEnd, rightTankStart, rightTankEnd, bottomTankStart, bottomTankEnd);
+        VoxelShape[] xShapes = getXCombo(leftTankStart, leftTankEnd, rightTankStart, rightTankEnd, bottomTankStart, bottomTankEnd);
 
         return new VoxelShape[] {fabricateAlignedShape(xShapes), fabricateAlignedShape(zShapes)};
     }
@@ -74,24 +79,20 @@ public class Mixer extends BlockWithConnections
         return combo;
     }
 
-    private VoxelShape[] getXCombo(Vector3d rcs, Vector3d rce, Vector3d lcs, Vector3d lce, Vector3d rps, Vector3d rpe, Vector3d lps, Vector3d lpe, Vector3d ccs, Vector3d cce)
+    private VoxelShape[] getXCombo(Vector3d leftTankStart, Vector3d leftTankEnd, Vector3d rightTankStart, Vector3d rightTankEnd, Vector3d bottomTankStart, Vector3d bottomTankEnd)
     {
-        VoxelShape vs = Block.makeCuboidShape(rcs.x, rcs.y, rcs.z, rce.x, rce.y, rce.z);
-        VoxelShape vs1 = Block.makeCuboidShape(lcs.x, lcs.y, lcs.z, lce.x, lce.y, lce.z);
-        VoxelShape vs2 = Block.makeCuboidShape(rps.x, rps.y, rps.z, rpe.x, rpe.y, rpe.z);
-        VoxelShape vs3 = Block.makeCuboidShape(lps.x, lps.y, lps.z, lpe.x, lpe.y, lpe.z);
-        VoxelShape vs4 = Block.makeCuboidShape(ccs.x, ccs.y, ccs.z, cce.x, cce.y, cce.z);
-        return new VoxelShape[] {vs, vs1, vs2, vs3, vs4};
+        VoxelShape vs = Block.makeCuboidShape(leftTankStart.x, leftTankStart.y, leftTankStart.z, leftTankEnd.x, leftTankEnd.y, leftTankEnd.z);
+        VoxelShape vs1 = Block.makeCuboidShape(rightTankStart.x, rightTankStart.y, rightTankStart.z, rightTankEnd.x, rightTankEnd.y, rightTankEnd.z);
+        VoxelShape vs2 = Block.makeCuboidShape(bottomTankStart.x, bottomTankStart.y, bottomTankStart.z, bottomTankEnd.x, bottomTankEnd.y, bottomTankEnd.z);
+        return new VoxelShape[] {vs, vs1, vs2};
     }
 
-    private VoxelShape[] getZCombo(Vector3d rcs, Vector3d rce, Vector3d lcs, Vector3d lce, Vector3d rps, Vector3d rpe, Vector3d lps, Vector3d lpe, Vector3d ccs, Vector3d cce)
+    private VoxelShape[] getZCombo(Vector3d leftTankStart, Vector3d leftTankEnd, Vector3d rightTankStart, Vector3d rightTankEnd, Vector3d bottomTankStart, Vector3d bottomTankEnd)
     {
-        VoxelShape vs = Block.makeCuboidShape(rcs.z, rcs.y, rcs.x, rce.z, rce.y, rce.x);
-        VoxelShape vs1 = Block.makeCuboidShape(lcs.z, lcs.y, lcs.x, lce.z, lce.y, lce.x);
-        VoxelShape vs2 = Block.makeCuboidShape(rps.z, rps.y, rps.x, rpe.z, rpe.y, rpe.x);
-        VoxelShape vs3 = Block.makeCuboidShape(lps.z, lps.y, lps.x, lpe.z, lpe.y, lpe.x);
-        VoxelShape vs4 = Block.makeCuboidShape(ccs.z, ccs.y, ccs.x, cce.z, cce.y, cce.x);
-        return new VoxelShape[] {vs, vs1, vs2, vs3, vs4};
+        VoxelShape vs = Block.makeCuboidShape(leftTankStart.z, leftTankStart.y, leftTankStart.x, leftTankEnd.z, leftTankEnd.y, leftTankEnd.x);
+        VoxelShape vs1 = Block.makeCuboidShape(rightTankStart.z, rightTankStart.y, rightTankStart.x, rightTankEnd.z, rightTankEnd.y, rightTankEnd.x);
+        VoxelShape vs2 = Block.makeCuboidShape(bottomTankStart.z, bottomTankStart.y, bottomTankStart.x, bottomTankEnd.z, bottomTankEnd.y, bottomTankEnd.x);
+        return new VoxelShape[] {vs, vs1, vs2};
     }
 
     @SuppressWarnings("deprecation")
@@ -116,12 +117,20 @@ public class Mixer extends BlockWithConnections
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
-                .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
+                .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
+                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
+
+    }
+
+    @Override
+    public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
+    {
+        return !state.get(BlockStateProperties.POWERED) ? 12 : 0;
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING);
+        builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED);
     }
 
     public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
@@ -144,5 +153,13 @@ public class Mixer extends BlockWithConnections
     protected Direction[] relevantConnectionDirections(BlockState state)
     {
         return RELEVANT_DIRECTIONS.get(state.get(HORIZONTAL_FACING).getAxis());
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void tick(BlockState state, ServerWorld worldIn, BlockPos pos, Random rand) {
+        if (state.get(BlockStateProperties.POWERED) && !worldIn.isBlockPowered(pos)) {
+            worldIn.setBlockState(pos, state.cycleValue(BlockStateProperties.POWERED), 2);
+        }
     }
 }

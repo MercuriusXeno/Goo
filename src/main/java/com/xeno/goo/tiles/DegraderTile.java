@@ -121,7 +121,7 @@ public class DegraderTile extends GooContainerAbstraction implements ITickableTi
 	@Override
 	protected IGooTank createGooTank() {
 
-		return new GooTank(this::getStorageCapacity).setFilter(DegraderRecipes::isAnyRecipe).setChangeCallback(this::onContentsChanged);
+		return new GooTank(this::getStorageCapacity).setUniversalFilter(DegraderRecipes::isAnyRecipe).setChangeCallback(this::onContentsChanged);
 	}
 
 	@Override

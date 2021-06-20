@@ -1,19 +1,14 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.client.render.PumpRenderMode;
-import com.xeno.goo.items.ItemsRegistry;
+import com.xeno.goo.client.render.block.PumpRenderMode;
 import com.xeno.goo.tiles.GooPumpTile;
-import com.xeno.goo.tiles.GooifierTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.SlabBlock;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
@@ -36,10 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static net.minecraft.state.properties.BlockStateProperties.FACING;
-import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
-import static net.minecraft.util.Direction.*;
-import static net.minecraft.util.Direction.DOWN;
-import static net.minecraft.util.Direction.UP;
 
 public class GooPump extends BlockWithConnections
 {

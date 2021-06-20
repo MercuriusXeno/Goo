@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "sos",
+    "sgs",
+    "fos"
+  ],
+  "key": {
+    "s": {
+      "item": "goo:passivated_ingot"
+    },
+    "o": {
+      "item": "goo:gasket"
+    },
+    "f": {
+      "item": "minecraft:blast_furnace"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    }
+  },
+  "result": {
+    "item": "goo:crucible"
+  }
+}

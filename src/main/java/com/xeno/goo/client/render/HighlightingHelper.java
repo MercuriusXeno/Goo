@@ -2,7 +2,7 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import com.xeno.goo.items.Basin;
+import com.xeno.goo.items.Vessel;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
@@ -97,7 +97,7 @@ public class HighlightingHelper
 
         // don't render highlights unless the player is
         // 1) a player lol
-        // 2) sneaking or holding gauntlet/basin
+        // 2) sneaking or holding gauntlet/vessel
         if (!(e instanceof PlayerEntity)) {
             return false;
         }
@@ -107,7 +107,7 @@ public class HighlightingHelper
 
     private static boolean needsHighlight(ItemStack stack)
     {
-        return stack.getItem() instanceof Basin || stack.getItem() instanceof Gauntlet;
+        return stack.getItem() instanceof Vessel || stack.getItem() instanceof Gauntlet;
     }
 
     public static void renderHighlightAsNeeded(Fluid goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn, Vector3f from, float fromY, Vector3f to, float toY) {

@@ -1,10 +1,10 @@
 {
   "variants": {
     "triggered=false": {
-      "model": "goo:block/goo_pad"
+      "model": "goo:block/pad"
     },
     "triggered=true": {
-      "model": "goo:block/goo_pad_triggered"
+      "model": "goo:block/pad_triggered"
     }
   }
 }

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "nnn",
+    "nnn",
+    "nnn"
+  ],
+  "key": {
+    "n": {
+      "item": "goo:passivated_nugget"
+    }
+  },
+  "result": {
+    "item": "goo:passivated_ingot"
+  }
+}

@@ -81,8 +81,8 @@ public class GooConfig
     private ForgeConfigSpec.IntValue GOO_PUMP_TRANSFER_RATE;
     public int pumpAmountPerCycle() { return GOO_PUMP_TRANSFER_RATE.get(); }
 
-    private ForgeConfigSpec.IntValue BASIN_CAPACITY;
-    public int basinCapacity() { return BASIN_CAPACITY.get(); }
+    private ForgeConfigSpec.IntValue VESSEL_CAPACITY;
+    public int vesselCapacity() { return VESSEL_CAPACITY.get(); }
 
     private ForgeConfigSpec.IntValue GAUNTLET_CAPACITY;
     public int gauntletCapacity() { return GAUNTLET_CAPACITY.get(); }
@@ -90,8 +90,8 @@ public class GooConfig
     private ForgeConfigSpec.IntValue BULB_CONTAINMENT_MULTIPLIER;
     public int bulbContainmentMultiplier() { return BULB_CONTAINMENT_MULTIPLIER.get(); }
 
-    private ForgeConfigSpec.IntValue BASIN_CONTAINMENT_MULTIPLIER;
-    public int basinContainmentMultiplier() { return BASIN_CONTAINMENT_MULTIPLIER.get(); }
+    private ForgeConfigSpec.IntValue VESSEL_CONTAINMENT_MULTIPLIER;
+    public int vesselContainmentMultiplier() { return VESSEL_CONTAINMENT_MULTIPLIER.get(); }
 
     private ForgeConfigSpec.IntValue GAUNTLET_CONTAINMENT_MULTIPLIER;
     public int gauntletContainmentMultiplier() { return GAUNTLET_CONTAINMENT_MULTIPLIER.get(); }
@@ -348,8 +348,8 @@ public class GooConfig
         private static final int MIXER_INPUT_CAPACITY = 16000;
         private static final int DEGRADER_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
-        private static final int BASIN_CAPACITY = 8000;
-        private static final int BASIN_CONTAINMENT_MULTIPLIER = 4;
+        private static final int VESSEL_CAPACITY = 8000;
+        private static final int VESSEL_CONTAINMENT_MULTIPLIER = 4;
         private static final int GAUNTLET_CAPACITY = 400;
         private static final int GAUNTLET_CONTAINMENT_MULTIPLIER = 4;
         private static final int TROUGH_CAPACITY = 1000;
@@ -391,10 +391,10 @@ public class GooConfig
                 .defineInRange("maxPadCapacity", Defaults.PAD_CAPACITY, 0, 100000);
         GOO_PUMP_TRANSFER_RATE = serverBuilder.comment("Max quantity of fluid pumped per tick, default: " + Defaults.PUMP_TRANSFER_RATE)
                 .defineInRange("pumpTransferRate", Defaults.PUMP_TRANSFER_RATE, 0, 10000);
-        BASIN_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a basin, default: " + Defaults.BASIN_CAPACITY)
-                .defineInRange("basinCapacity", Defaults.BASIN_CAPACITY, 0, 100000);
-        BASIN_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of basins is multiplied by this, per level, default: " + Defaults.BASIN_CONTAINMENT_MULTIPLIER)
-                .defineInRange("basinContainmentMultiplier", Defaults.BASIN_CONTAINMENT_MULTIPLIER, 0, 10);
+        VESSEL_CAPACITY = serverBuilder.comment("Max quantity of fluid held in a vessel, default: " + Defaults.VESSEL_CAPACITY)
+                .defineInRange("vesselCapacity", Defaults.VESSEL_CAPACITY, 0, 100000);
+        VESSEL_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of vessels is multiplied by this, per level, default: " + Defaults.VESSEL_CONTAINMENT_MULTIPLIER)
+                .defineInRange("vesselContainmentMultiplier", Defaults.VESSEL_CONTAINMENT_MULTIPLIER, 0, 10);
         GAUNTLET_CAPACITY = serverBuilder.comment("Max quantity of fluid held on a gauntlet, default: " + Defaults.GAUNTLET_CAPACITY)
                 .defineInRange("gauntletCapacity", Defaults.GAUNTLET_CAPACITY, 0, 1000000);
         GAUNTLET_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of gauntlets is multiplied by this, per level, default: " + Defaults.GAUNTLET_CONTAINMENT_MULTIPLIER)

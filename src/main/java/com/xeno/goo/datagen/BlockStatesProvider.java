@@ -3,9 +3,8 @@ package com.xeno.goo.datagen;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalNest;
-import com.xeno.goo.blocks.GooBulb;
 import com.xeno.goo.blocks.GooPump;
-import com.xeno.goo.client.render.PumpRenderMode;
+import com.xeno.goo.client.render.block.PumpRenderMode;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
@@ -30,7 +29,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        registerGooBulbGeneric(BlocksRegistry.Bulb.get());
+        registerGooBulb();
         registerGooPump();
         registerGooifier();
         registerSolidifier();
@@ -43,6 +42,21 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerCrystalNest();
         registerDecorativeBlocks();
         registerPad();
+        registerPassivatedBlock();
+    }
+
+    private void registerPassivatedBlock() {
+        ResourceLocation texture = new ResourceLocation(GooMod.MOD_ID, "block/passivated_block");
+        BlockModelBuilder model = models().cubeAll("passivated_block", texture);
+        simpleBlock(BlocksRegistry.PassivatedBlock.get(), model);
+        simpleBlockItem(BlocksRegistry.PassivatedBlock.get(), model);
+    }
+
+    private void registerGooBulb() {
+        BlockModelBuilder model = models()
+                .withExistingParent("bulb", new ResourceLocation(GooMod.MOD_ID, "prefab_bulb"));
+
+        simpleBlock(BlocksRegistry.Bulb.get(), model);
     }
 
     private void registerDecorativeBlocks() {
@@ -195,23 +209,24 @@ public class BlockStatesProvider extends BlockStateProvider {
     private void registerDegrader()
     {
         BlockModelBuilder modelInactive = models()
-                .withExistingParent("degrader", new ResourceLocation(GooMod.MOD_ID, "template_degrader"));
+                .withExistingParent("degrader_inactive", new ResourceLocation(GooMod.MOD_ID, "prefab_degrader_inactive"));
         BlockModelBuilder modelActive = models()
-                .withExistingParent("degrader_active", new ResourceLocation(GooMod.MOD_ID, "template_degrader_active"));
+                .withExistingParent("degrader_active", new ResourceLocation(GooMod.MOD_ID, "prefab_degrader_active"));
 
         getVariantBuilder(BlocksRegistry.Degrader.get())
                 .forAllStates(
                         (s) -> ConfiguredModel.builder()
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
+                                .rotationY(s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
                                 .build()
                 );
     }
 
     private void registerPad() {
         BlockModelBuilder model = models()
-                .withExistingParent("goo_pad", new ResourceLocation(GooMod.MOD_ID, "template_goo_pad"));
+                .withExistingParent("pad", new ResourceLocation(GooMod.MOD_ID, "prefab_pad"));
         BlockModelBuilder modelTriggered = models()
-                .withExistingParent("goo_pad_triggered", new ResourceLocation(GooMod.MOD_ID, "template_goo_pad_triggered"));
+                .withExistingParent("pad_triggered", new ResourceLocation(GooMod.MOD_ID, "prefab_pad_triggered"));
 
         getVariantBuilder(BlocksRegistry.Pad.get())
                 .forAllStates(s ->
@@ -219,41 +234,6 @@ public class BlockStatesProvider extends BlockStateProvider {
                         .modelFile(s.get(BlockStateProperties.TRIGGERED) ? modelTriggered : model)
                         .build()
                 );
-    }
-
-    private void registerGooBulbGeneric(GooBulb base) {
-        ResourceLocation end = new ResourceLocation(GooMod.MOD_ID, "block/bulb/bulb_end");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/bulb/bulb_side");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        float gasketThickness = 0.25f;
-        BlockModelBuilder model = models()
-                .withExistingParent(base.getRegistryName().getPath(), "block/block")
-                .texture("particle", side)
-                .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side")
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .element()
-                .from(15.99f - gasketThickness, 15.99f - gasketThickness, 15.99f - gasketThickness)
-                .to(0.01f + gasketThickness, 0.01f + gasketThickness, 0.01f + gasketThickness)
-                .shade(false)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#end" : "#side")
-                        .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        addGasket(model, Direction.UP, gasketThickness);
-        addGasket(model, Direction.DOWN, gasketThickness);
-        addGasket(model, Direction.EAST, gasketThickness);
-        addGasket(model, Direction.WEST, gasketThickness);
-        addGasket(model, Direction.SOUTH, gasketThickness);
-        addGasket(model, Direction.NORTH, gasketThickness);
-        model.texture("end", end);
-        model.texture("side", side);
-        simpleBlock(base, model);
     }
 
     private void registerGooifier() {
@@ -399,113 +379,18 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     private void registerMixer()
     {
-        ResourceLocation chamber_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_side");
-        ResourceLocation chamber_inner = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_inner");
-        ResourceLocation chamber_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_end");
-        ResourceLocation chamber_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_chamber_bottom");
-        ResourceLocation channel_end = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_channel_end");
-        ResourceLocation merger_top = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_top");
-        ResourceLocation merger_bottom = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_bottom");
-        ResourceLocation merger_side = new ResourceLocation(GooMod.MOD_ID, "block/mixer_old/mixer_merger_side");
         BlockModelBuilder model = models()
-                .withExistingParent("mixer", "block/block")
-                .texture("particle", chamber_inner)
-                // right chamber
-                .element()
-                .from(0, 4, 2)
-                .to(6, 16, 14)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.UP || t.getAxis() == Direction.Axis.Z ? "#chamber_end" :
-                                (t == Direction.DOWN ? "#chamber_bottom" :
-                                        (t == Direction.WEST ? "#chamber_side" : "#chamber_inner")))
-                                .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
-                                        0f,
-                                        t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
-                                        12f))
-                .end()
-                // right chamber innards
-                .element()
-                .from(5.99f, 15.99f, 13.99f)
-                .to(0.01f, 4.01f, 2.01f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN || t.getAxis() == Direction.Axis.Z ? "#chamber_end" :
-                                (t == Direction.UP ? "#chamber_bottom" :
-                                        (t == Direction.EAST ? "#chamber_side" : "#chamber_inner")))
-                                .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
-                                        12f,
-                                        t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
-                                        0f))
-                .end()
-                // left chamber
-                .element()
-                .from(10, 4, 2)
-                .to(16, 16, 14)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.UP || t.getAxis() == Direction.Axis.Z ? "#chamber_end" :
-                                (t == Direction.DOWN ? "#chamber_bottom" :
-                                        (t == Direction.EAST ? "#chamber_side" : "#chamber_inner")))
-                                .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
-                                        0f,
-                                        t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
-                                        12f))
-                .end()
-                // left chamber innards
-                .element()
-                .from(15.99f, 15.99f, 13.99f)
-                .to(10.01f, 4.01f, 2.01f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN || t.getAxis() == Direction.Axis.Z ? "#chamber_end" :
-                                (t == Direction.UP ? "#chamber_bottom" :
-                                        (t == Direction.WEST ? "#chamber_side" : "#chamber_inner")))
-                                .uvs(t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 11f : 14f,
-                                        12f,
-                                        t.getAxis() == Direction.Axis.Y || t.getAxis() == Direction.Axis.Z ? 5f : 2f,
-                                        0f))
-                .end()
-                // left channel
-                .element()
-                .from(1, 0, 6)
-                .to(5, 4, 10)
-                .allFaces((t, u) -> u.texture("#channel_end").uvs(6f, 6f, 10f, 10f))
-                .end()
-                .element()
-                .from(4.99f, 3.99f, 9.99f)
-                .to(1.01f, 0.01f, 6.01f)
-                .allFaces((t, u) -> u.texture("#channel_end").uvs(10f, 10f, 6f, 6f))
-                .end()
-                // right channel
-                .element()
-                .from(11, 0, 6)
-                .to(15, 4, 10)
-                .allFaces((t, u) -> u.texture("#channel_end").uvs(6f, 6f, 10f, 10f))
-                .end()
-                .element()
-                .from(14.99f, 3.99f, 9.99f)
-                .to(11.01f, 0.01f, 6.01f)
-                .allFaces((t, u) -> u.texture("#channel_end").uvs(10f, 10f, 6f, 6f))
-                .end()
-                // merger
-                .element()
-                .from(5, 0, 5)
-                .to(11, 4, 11)
-                .allFaces((t, u) -> u.texture(t == Direction.UP ? "#merger_top" :(t == Direction.DOWN ? "#merger_bottom" : "#merger_side"))
-                        .uvs(
-                                5f,
-                                t.getAxis().isVertical() ? 5f : 6f,
-                                11f,
-                                t.getAxis().isVertical() ? 11f : 10f
-                        ))
-                .end()
-                .texture("chamber_end", chamber_end)
-                .texture("chamber_bottom", chamber_bottom)
-                .texture("chamber_side", chamber_side)
-                .texture("chamber_inner", chamber_inner)
-                .texture("channel_end", channel_end)
-                .texture("merger_top", merger_top)
-                .texture("merger_bottom", merger_bottom)
-                .texture("merger_side", merger_side);
+                .withExistingParent("mixer_inactive", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_inactive"));
+        BlockModelBuilder modelActive = models()
+                .withExistingParent("mixer_active", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_active"));
 
-        horizontalBlock(BlocksRegistry.Mixer.get(), model);
+        getVariantBuilder(BlocksRegistry.Mixer.get())
+                .forAllStates(s ->
+                        ConfiguredModel.builder()
+                                .modelFile(s.get(BlockStateProperties.POWERED) ? model : modelActive)
+                                .rotationY(s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
+                                .build()
+                );
     }
 
     private void registerRadiantLight() {

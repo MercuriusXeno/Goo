@@ -4,7 +4,7 @@ public enum RayTraceTargetSource
 {
     UNSPECIFIED,
 
-    BASIN,
+	VESSEL,
 
     GAUNTLET,
 
