@@ -16,7 +16,12 @@ public class GooTank extends IGooTank {
 
 	public GooTank(IntSupplier capacity) {
 
-		super(capacity, true);
+		super(capacity, false);
+	}
+
+	public GooTank(IntSupplier capacity, boolean locked) {
+
+		super(capacity, locked);
 	}
 
 	@Override
@@ -118,7 +123,7 @@ public class GooTank extends IGooTank {
 		{
 			final FluidStack tank = getFluidInTankInternal(0);
 			tankAmt = tank.getAmount();
-			if (resource == null || resource.isEmpty() || (tankAmt != 0 && !resource.isFluidEqual(tank)) || !filterCheck(0, tank))
+			if (resource == null || resource.isEmpty() || (tankAmt != 0 && !resource.isFluidEqual(tank)) || !filter.test(resource))
 				return 0;
 		}
 

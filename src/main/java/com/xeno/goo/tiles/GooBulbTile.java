@@ -681,7 +681,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     protected IGooTank createGooTank() {
 
         return new MultiGooTank(this::getStorageCapacity)
-                .setUniversalFilter(f -> f.getRawFluid() == Fluids.EMPTY || f.getFluid() instanceof GooFluid)
+                .setFilter(GooFluid.IS_GOO_FLUID)
                 .setChangeCallback(this::onContentsChanged);
     }
 

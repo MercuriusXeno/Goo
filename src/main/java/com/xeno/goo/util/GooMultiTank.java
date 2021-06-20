@@ -185,9 +185,10 @@ public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 	 * <p>
 	 * {@inheritDoc}
 	 */
+	@Override
 	public int fill(FluidStack resource, FluidAction action) {
 
-		if (resource == null || resource.isEmpty() || !filterCheck(0, resource))
+		if (resource == null || resource.isEmpty() || !filter.test(resource))
 			return 0;
 
 		return fill(contents.get(resource.getRawFluid()), resource, action);
@@ -201,20 +202,28 @@ public class GooMultiTank extends IGooTankMulti implements ISidedFluidHandler {
 	@Override
 	public int fill(int tankIn, FluidStack resource, FluidAction action) {
 
-		if (resource == null || resource.isEmpty() || !filterCheck(tankIn, resource))
+		if (resource == null || resource.isEmpty() || !filter.test(resource))
 			return 0;
 
-		FluidStack fluidInTank = this.getFluidInTankInternal(tankIn);
-		// tank fluid isn't empty and isn't a match
-		if (!fluidInTank.isEmpty() && fluidInTank.getRawFluid() != resource.getRawFluid()) {
-			return 0;
+		FluidStack tank = getFluidInTankInternal(tankIn);
+
+		updateTank:
+		{
+			if (tank.getRawFluid() != resource.getRawFluid()) { // not already a match
+				if (!tank.isEmpty())
+					return 0; // if it's not empty and doesn't match, fail
+				else if (!contents.getOrDefault(resource.getRawFluid(), FluidStack.EMPTY).isEmpty())
+					return 0; // if it IS empty but we already contain it, fail (it's in another tank)
+				// else, fall through to tank update logic
+			} else if (contents.get(resource.getRawFluid()) != tank) { // if we are not the 'main' tank for this fluid
+				if (!contents.getOrDefault(resource.getRawFluid(), FluidStack.EMPTY).isEmpty())
+					return 0; // if we are not the 'main' tank and the 'main' tank is not empty, fail
+				// else, fall through to tank update logic
+			} else
+				break updateTank; // *don't* update the tank since everything is valid here
+			tank = setTank(tankIn, tank, resource, 0); // update the tank state
 		}
 
-		// set the tank fluid resource to an initialized stack, otherwise it's the matching type and we just want to grow the stack.
-		if (fluidInTank.isEmpty()) {
-			fluidInTank = setTank(tankIn, fluidInTank, resource, 0);
-		}
-
-		return fill(fluidInTank, resource, action);
+		return fill(tank, resource, action);
 	}
 }

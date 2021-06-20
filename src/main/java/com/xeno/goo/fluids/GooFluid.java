@@ -5,9 +5,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
-import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -17,12 +15,19 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorldReader;
 import net.minecraftforge.fluids.FluidAttributes;
+import net.minecraftforge.fluids.FluidStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Predicate;
 
 public class GooFluid extends Fluid
 {
+    public static final Predicate<FluidStack> IS_GOO_FLUID = GooFluid::isGooFluid;
+
+    public static boolean isGooFluid(FluidStack fluid) {
+
+        return fluid == null || fluid.getRawFluid() instanceof GooFluid;
+    }
+
     private final int lightLevel;
     private static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
             // alpha
