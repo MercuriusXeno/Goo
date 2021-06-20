@@ -9,6 +9,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.inventory.container.PlayerContainer;
 import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
 
@@ -58,6 +60,16 @@ public class FluidCuboidHelper
         putTexturedQuad(renderer, matrix, flowing, x2 - x1, y2 - y1, z2 - z1, Direction.WEST, color, combinedLight, true);
         putTexturedQuad(renderer, matrix, still, x2 - x1, y2 - y1, z2 - z1, Direction.UP, color, combinedLight, false);
         matrices.pop();
+    }
+
+    public static void renderGlass(ResourceLocation resourceLocation, Vector3f startVec, Vector3f endVec, Direction face, Direction facing, MatrixStack matrixStack, IVertexBuilder buffer, int light) {
+        TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(resourceLocation);
+
+        matrixStack.push();
+        matrixStack.translate(startVec.getX(), startVec.getY(), startVec.getZ());
+        putTexturedQuad(buffer, matrixStack.getLast().getMatrix(), sprite, endVec.getX() - startVec.getX(), endVec.getY() - startVec.getY(), endVec.getZ() - startVec.getZ(),
+                face, 0xfffffff, light, false);
+        matrixStack.pop();
     }
 
     private static final int COLOR_PHASE_DURATION_IN_SECONDS = 2;

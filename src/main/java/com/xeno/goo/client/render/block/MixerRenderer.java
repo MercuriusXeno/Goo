@@ -6,12 +6,15 @@ import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
+import com.xeno.goo.setup.Resources.Glass;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
@@ -43,6 +46,16 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
 
     private static final float MAX_FLUID_HEIGHT_INPUT = 9.94f;
     private static final float MAX_FLUID_HEIGHT_OUTPUT = 5.94f;
+
+    private static final float TOP_GLASS_Y_START = 15.98f;
+    private static final float TOP_GLASS_Y_END = 15.981f;
+    private static final float TOP_GLASS_X_START = 0.02f;
+    private static final float TOP_GLASS_X_END = 15.98f;
+    private static final float TOP_GLASS_Z_START = 0.02f;
+    private static final float TOP_GLASS_Z_END = 15.98f;
+
+    private static final Vector3f topGlassStartVec = new Vector3f(TOP_GLASS_X_START, TOP_GLASS_Y_START, TOP_GLASS_Z_START);
+    private static final Vector3f topGlassEndVec = new Vector3f(TOP_GLASS_X_END, TOP_GLASS_Y_END, TOP_GLASS_Z_END);
 
     public MixerRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -76,6 +89,12 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
         renderTankFluid(tile.getPos(), false, facing, leftCap, leftGoo, matrixStack, builder, combinedLightIn);
         renderTankFluid(tile.getPos(), true, facing, rightCap, rightGoo, matrixStack, builder, combinedLightIn);
         renderOutputFluid(tile.getPos(), facing, bottomGoo, matrixStack, builder, combinedLightIn);
+        renderGlass(tile.getPos(), facing, matrixStack, builder, combinedLightIn);
+    }
+
+    private ResourceLocation glass_front = Resources.Glass.MIXER_FRONT;
+    private void renderGlass(BlockPos pos, Direction facing, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn) {
+        FluidCuboidHelper.renderGlass(Glass.MIXER_TOP, topGlassStartVec, topGlassEndVec, Direction.UP, facing, matrixStack, builder, combinedLightIn);
     }
 
     private void renderTankFluid(BlockPos pos, boolean isRight, Direction facing, int capacity, FluidStack goo, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn)

@@ -13,6 +13,7 @@ import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
+import com.xeno.goo.setup.Resources.Glass;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
@@ -118,12 +119,12 @@ public class ModClientEvents
     }
 
     private static void addMixerGlassTextures(Pre event) {
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_back_glass"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_front_glass"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_internals_glass"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_middle_glass"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_side_glass"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_top_glass"));
+        event.addSprite(Glass.MIXER_FRONT);
+        event.addSprite(Glass.MIXER_BACK);
+        event.addSprite(Glass.MIXER_INTERNALS);
+        event.addSprite(Glass.MIXER_SIDE);
+        event.addSprite(Glass.MIXER_MIDDLE);
+        event.addSprite(Glass.MIXER_TOP);
     }
 
     private static void addGuiTexture(Pre event) {

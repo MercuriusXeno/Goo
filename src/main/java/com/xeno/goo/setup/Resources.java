@@ -79,4 +79,13 @@ public class Resources
         public static final ResourceLocation VITAL_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/vital.png");
         public static final ResourceLocation WEIRD_GOO = new ResourceLocation(GooMod.MOD_ID, "textures/icons/weird.png");
     }
+
+	public static class Glass {
+        public static final ResourceLocation MIXER_BACK = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_back_glass");
+        public static final ResourceLocation MIXER_FRONT = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_front_glass");
+        public static final ResourceLocation MIXER_INTERNALS = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_internals_glass");
+        public static final ResourceLocation MIXER_MIDDLE = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_middle_glass");
+        public static final ResourceLocation MIXER_SIDE = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_side_glass");
+        public static final ResourceLocation MIXER_TOP = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_top_glass");
+    }
 }
