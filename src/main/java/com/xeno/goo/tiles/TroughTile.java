@@ -170,7 +170,7 @@ public class TroughTile extends GooContainerAbstraction implements ITickableTile
     @Override
     protected IGooTank createGooTank() {
 
-        return new GooTank(this::getStorageCapacity).setUniversalFilter(stack -> stack.getFluid() instanceof GooFluid).setChangeCallback(this::onContentsChanged);
+        return new GooTank(this::getStorageCapacity).setFilter(GooFluid.IS_GOO_FLUID).setChangeCallback(this::onContentsChanged);
     }
 
     @Override

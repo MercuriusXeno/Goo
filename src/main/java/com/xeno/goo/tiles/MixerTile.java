@@ -34,6 +34,8 @@ import static net.minecraft.util.Direction.*;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
+    private static Predicate<FluidStack> RECIPE_FILTER = MixerRecipes::isAnyRecipe;
+
     private final FluidHandlerTankWrapper rightHandler = createHandler(0);
     private final LazyOptional<FluidHandlerTankWrapper> rightLazy = LazyOptional.of(() -> rightHandler);
 
@@ -42,6 +44,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     private final FluidHandlerTankWrapper bottomHandler = createHandler(2);
     private final LazyOptional<FluidHandlerTankWrapper> bottomLazy = LazyOptional.of(() -> bottomHandler);
+
+    private GooMultiTank gooMultiTank;
 
     @Override
     protected void invalidateCaps() {
@@ -201,14 +205,14 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     private void pushRecipeResult(MixerRecipe recipe)
     {
-        int sentResult = bottomHandler.fill(recipe.output(), IFluidHandler.FluidAction.SIMULATE);
+        int sentResult = gooMultiTank.fill(2, recipe.output(), IFluidHandler.FluidAction.SIMULATE);
         if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
             return;
         }
 
         deductInputQuantities(recipe.inputs());
 
-        bottomHandler.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+        gooMultiTank.fill(2, recipe.output(), IFluidHandler.FluidAction.EXECUTE);
     }
 
     private boolean deductInputQuantities(List<FluidStack> inputs)
@@ -251,11 +255,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     @Override
     protected IGooTank createGooTank() {
-        Predicate<FluidStack> recipe = MixerRecipes::isAnyRecipe;
-        return new GooMultiTank(this::getStorageCapacity, 3)
-                .setSpecificTankFilter(0, recipe.or(s -> s == null || s.isEmpty()))
-                .setSpecificTankFilter(1, recipe.or(s -> s == null || s.isEmpty()))
-                .setSpecificTankFilter(2, s -> s.getFluid() instanceof GooFluid)
+        return gooMultiTank = new GooMultiTank(this::getStorageCapacity, 3)
+                .setFilter(GooFluid.IS_GOO_FLUID)
                 .setChangeCallback(this::onContentsChanged);
     }
 
@@ -288,17 +289,24 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return super.getCapability(cap, side);
     }
 
-    private FluidHandlerTankWrapper createHandler(int side) {
-        return new FluidHandlerTankWrapper(goo, side) {
+    private FluidHandlerTankWrapper createHandler(int tankIn) {
+        // bottom tank
+        if (tankIn == 2)
+            return new FluidHandlerTankWrapper(goo, tankIn) {
+
+                @Override // block fills to the bottom tank
+                public int fill(FluidStack resource, FluidAction action) {
+
+                    return 0;
+                }
+            };
+        // left and right sides
+        return new FluidHandlerTankWrapper(goo, tankIn) {
 
             @Override
             public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
 
-                if (super.isFluidValid(tank, stack)) {
-
-                    if (this.tank > 1) {
-                        return true;
-                    }
+                if (tank == 0 && RECIPE_FILTER.test(stack)) {
                     int otherTank = this.tank == 0 ? 1 : 0;
                     if (handler.getFluidInTank(this.tank).isEmpty() && !handler.getFluidInTank(otherTank).isEmpty())
                         return MixerRecipes.getRecipe(handler.getFluidInTank(otherTank), stack) != null;

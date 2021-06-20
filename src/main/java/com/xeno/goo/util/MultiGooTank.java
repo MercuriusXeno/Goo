@@ -121,7 +121,7 @@ public class MultiGooTank extends IGooTankMulti {
 	@Override
 	public int fill(FluidStack resource, FluidAction action) {
 
-		if (resource == null || resource.isEmpty() || !filterCheck(0, resource))
+		if (resource == null || resource.isEmpty() || !filter.test(resource))
 			return 0;
 
 		final int accept = Math.min(resource.getAmount(), capacity.getAsInt() - amount);

@@ -63,7 +63,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
 
 
     // actual properties of the splat
-    private GooTank goo = new GooTank(() -> 1000).setUniversalFilter(f -> f.getFluid() instanceof GooFluid).setChangeCallback(this::contentsChanged);
+    private GooTank goo = new GooTank(() -> 1000).setFilter(GooFluid.IS_GOO_FLUID).setChangeCallback(this::contentsChanged);
     private final LazyOptional<IFluidHandler> lazyHandler = LazyOptional.of(() -> goo);
 
     private Entity owner;
