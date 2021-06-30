@@ -101,6 +101,16 @@ public class Networking {
 				SplatInteractionPacket.class,
 				SplatInteractionPacket::new
 		);
+
+		registerPacket(
+				MixerAnimationPacket.class,
+				MixerAnimationPacket::new
+		);
+
+		registerPacket(
+				MixerRecipePacket.class,
+				MixerRecipePacket::new
+		);
 	}
 
 	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {

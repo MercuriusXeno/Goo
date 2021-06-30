@@ -2,6 +2,10 @@ package com.xeno.goo.client.render;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
+import com.xeno.goo.client.models.Model3d;
+import com.xeno.goo.client.models.Model3d.SpriteInfo;
+import com.xeno.goo.client.render.RenderHelper.FluidType;
 import com.xeno.goo.items.Vessel;
 import com.xeno.goo.items.Gauntlet;
 import com.xeno.goo.overlay.RayTraceTargetSource;
@@ -25,20 +29,25 @@ import net.minecraft.util.math.vector.Vector3f;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class HighlightingHelper
 {
-    private static int TRANSPARENCY_TIMER = 25;
-    private static float TRANSPARENCY_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
+    private static final int TRANSPARENCY_TIMER = 25;
+    private static final float TRANSPARENCY_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)TRANSPARENCY_TIMER;
 
-    private static int COLORIZER_TIMER = 25;
-    private static float COLORIZER_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)COLORIZER_TIMER;
+    private static final int COLORIZER_TIMER = 25;
+    private static final float COLORIZER_TIMER_OVER_SINE_WAVE = (float)Math.PI / (float)COLORIZER_TIMER;
+
+    private static final int HIGHLIGHT_FREQUENCY = 5;
     public static int getTransparencyFromWorldTime()
     {
         if (Minecraft.getInstance().world == null) {
             return 0;
         }
 
-        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getDayTime() % TRANSPARENCY_TIMER) * TRANSPARENCY_TIMER_OVER_SINE_WAVE))) + 80;
+        return (int)Math.floor(80 * (MathHelper.sin((Minecraft.getInstance().world.getGameTime() % TRANSPARENCY_TIMER) * TRANSPARENCY_TIMER_OVER_SINE_WAVE))) + 80;
 
     }
 
@@ -48,7 +57,7 @@ public class HighlightingHelper
             return 0;
         }
 
-        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getDayTime() % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
+        int c = 255 - (int)Math.floor(192 * MathHelper.sin((Minecraft.getInstance().world.getGameTime() % COLORIZER_TIMER) * COLORIZER_TIMER_OVER_SINE_WAVE));
         return c << 16 | c << 8 | c;
     }
 
@@ -110,19 +119,33 @@ public class HighlightingHelper
         return stack.getItem() instanceof Vessel || stack.getItem() instanceof Gauntlet;
     }
 
-    public static void renderHighlightAsNeeded(Fluid goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int combinedLightIn, Vector3f from, float fromY, Vector3f to, float toY) {
-        if (goo.equals(Fluids.EMPTY)) {
+    public static void renderHighlightAsNeeded(Fluid goo, BlockPos pos, MatrixStack matrixStack, IVertexBuilder builder, int light, int overlay, Model3d model) {
+        if (goo.equals(Fluids.EMPTY) || !HighlightingHelper.isTargeted(goo, pos)) {
             return;
         }
-        if (HighlightingHelper.isTargeted(goo, pos)) {
-            int transparency = HighlightingHelper.getTransparencyFromWorldTime();
-            int overlayColor = HighlightingHelper.getColorFromWorldTime();
-            int overlayColorizer = overlayColor | transparency << 24;
-            ResourceLocation hoverFlowing = Resources.Flowing.OVERLAY;
-            ResourceLocation hoverStill = Resources.Still.OVERLAY;
-            TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverStill);
-            TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverFlowing);
-            FluidCuboidHelper.renderFluidCuboid(still, flowing, overlayColorizer, matrixStack, builder, combinedLightIn, (from.getX() / 16f) - 0.0001f, (fromY / 16f) - 0.0001f, (from.getZ() / 16f) - 0.0001f, (to.getX() / 16f) + 0.0001f, (toY / 16f) + 0.0001f, (to.getZ() / 16f) + 0.0001f);
+        int color = HighlightingHelper.getColorFromWorldTime() | HighlightingHelper.getTransparencyFromWorldTime() << 24;
+        RenderHelper.renderCube(getHighlightModel(model), matrixStack, builder, color, light, overlay, false);
+    }
+
+    private static final ResourceLocation hoverFlowing = Resources.Flowing.OVERLAY;
+    private static final ResourceLocation hoverStill = Resources.Still.OVERLAY;
+    private static final TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverStill);
+    private static final TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(hoverFlowing);
+    private static final SpriteInfo[] spriteCache = new SpriteInfo[] { new SpriteInfo(still, 16), new SpriteInfo(still, 16),
+            new SpriteInfo(flowing, 16), new SpriteInfo(flowing, 16), new SpriteInfo(flowing, 16), new SpriteInfo(flowing, 16) };
+    private static Model3d getHighlightModel(Model3d fluidModel) {
+        Model3d model = new Model3d();
+        model.setTextures(spriteCache[0], spriteCache[1], spriteCache[2], spriteCache[3], spriteCache[4], spriteCache[5]);
+
+        if (still != null) {
+            model.minX = fluidModel.minX - 0.0001f;
+            model.minY = fluidModel.minY - 0.0001f;
+            model.minZ = fluidModel.minZ - 0.0001f;
+
+            model.maxX = fluidModel.maxX + 0.0001f;
+            model.maxY = fluidModel.maxY + 0.0001f;
+            model.maxZ = fluidModel.maxZ + 0.0001f;
         }
+        return model;
     }
 }

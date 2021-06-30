@@ -22,12 +22,12 @@
       "type": "goo:crystal"
     },
     {
-      "amount": 12.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
+    },
+    {
+      "amount": 12.0,
+      "type": "goo:earthen"
     }
   ]
 }

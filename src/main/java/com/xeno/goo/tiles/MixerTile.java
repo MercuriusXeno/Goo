@@ -5,13 +5,15 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
+import com.xeno.goo.network.MixerAnimationPacket;
+import com.xeno.goo.network.MixerRecipePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.util.FluidHandlerTankWrapper;
-import com.xeno.goo.util.GooMultiTank;
+import com.xeno.goo.util.GooTank;
 import com.xeno.goo.util.IGooTank;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
@@ -20,72 +22,35 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nonnull;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static net.minecraft.util.Direction.*;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
-    private static Predicate<FluidStack> RECIPE_FILTER = MixerRecipes::isAnyRecipe;
-
-    private final FluidHandlerTankWrapper rightHandler = createHandler(0);
-    private final LazyOptional<FluidHandlerTankWrapper> rightLazy = LazyOptional.of(() -> rightHandler);
-
-    private final FluidHandlerTankWrapper leftHandler = createHandler(1);
-    private final LazyOptional<FluidHandlerTankWrapper> leftLazy = LazyOptional.of(() -> leftHandler);
-
-    private final FluidHandlerTankWrapper bottomHandler = createHandler(2);
-    private final LazyOptional<FluidHandlerTankWrapper> bottomLazy = LazyOptional.of(() -> bottomHandler);
-
-    private GooMultiTank gooMultiTank;
+    private static final int RECIPE_COOLDOWN = 20;
+    private float spinnerDegrees = 0;
+    private float spinnerSpeed = 0f;
+    private boolean isActive = false;
+    private int changeRecipeCooldown = 0;
+    private MixerRecipe currentRecipe = null;
+    private boolean isFirstInputLeftInput = false;
 
     @Override
     protected void invalidateCaps() {
         super.invalidateCaps();
-        leftLazy.invalidate();
-        rightLazy.invalidate();
-        bottomLazy.invalidate();
     }
 
     public MixerTile()
     {
         super(Registry.MIXER_TILE.get());
-    }
-
-    public Direction orientedRight() {
-        switch(this.facing()) {
-            case NORTH:
-                return Direction.EAST;
-            case SOUTH:
-                return Direction.WEST;
-            case EAST:
-                return SOUTH;
-            case WEST:
-                return NORTH;
-        }
-        return Direction.EAST;
-    }
-
-    public Direction orientedLeft() {
-        switch(this.facing()) {
-            case NORTH:
-                return Direction.WEST;
-            case SOUTH:
-                return Direction.EAST;
-            case EAST:
-                return NORTH;
-            case WEST:
-                return SOUTH;
-        }
-        return Direction.WEST;
     }
 
     public Direction facing()
@@ -94,6 +59,29 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             return NORTH;
         }
         return this.getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
+    }
+
+    private boolean isValid(LazyOptional<IFluidHandler> lazyOptionalHandler) {
+        return lazyOptionalHandler.isPresent() && lazyOptionalHandler.resolve().isPresent();
+    }
+
+    private LazyOptional<IFluidHandler> cacheLeft = LazyOptional.empty();
+    public LazyOptional<IFluidHandler> leftHandler() {
+        if (isValid(cacheLeft)) {
+            return cacheLeft;
+        }
+        cacheLeft = fluidHandlerInDirection(facing().rotateY());
+
+        return cacheLeft;
+    }
+
+    private LazyOptional<IFluidHandler> cacheRight = LazyOptional.empty();
+    public LazyOptional<IFluidHandler> rightHandler() {
+        if (isValid(cacheRight)) {
+            return cacheRight;
+        }
+        cacheRight = fluidHandlerInDirection(facing().rotateYCCW());
+        return cacheRight;
     }
 
     @Override
@@ -105,17 +93,81 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     public void tick()
     {
+        handleAnimation();
         if (world == null || world.isRemote) {
             return;
         }
 
-        tryPushingRecipeResult();
+        if (hasRecipe()) {
+            if (!tryDoingRecipe()) {
+                setRecipe(null);
+                setRecipeCooldown();
+                stopAnimation();
+            }
+        } else {
+            if (hasRecipeCooldown()) {
+                decrementRecipeCooldown();
+            } else {
+                findRecipe();
+            }
+        }
         tryVerticalDrain();
+    }
+
+    private void handleAnimation() {
+        if (this.isActive) {
+            accelerateSpinner();
+            if (this.currentRecipe != null) {
+                    Vector3d center = Vector3d.copyCentered(this.pos);
+                    Vector3d leftOffset = Vector3d.copy(this.facing().rotateY().getDirectionVec()).scale(0.4d).add(center);
+                    Vector3d rightOffset = Vector3d.copy(this.facing().rotateYCCW().getDirectionVec()).scale(0.4d).add(center);
+                    Vector3d leftSpeed = center.subtract(leftOffset).normalize();
+                    Vector3d rightSpeed = center.subtract(rightOffset).normalize();
+                    world.addParticle(Registry.sprayParticleFromFluid(currentRecipe.inputs().get(isFirstInputLeftInput ? 0 : 1).getFluid()),
+                            leftOffset.x, leftOffset.y, leftOffset.z,
+                            leftSpeed.x, leftSpeed.y, leftSpeed.z);
+                    world.addParticle(Registry.sprayParticleFromFluid(currentRecipe.inputs().get(isFirstInputLeftInput ? 1 : 0).getFluid()),
+                            rightOffset.x, rightOffset.y, rightOffset.z,
+                            rightSpeed.x, rightSpeed.y, rightSpeed.z);
+            }
+        } else {
+            decelerateSpinner();
+        }
+        this.spinnerDegrees = (spinnerDegrees + spinnerSpeed) % 360;
+    }
+
+    private void decelerateSpinner() {
+        this.spinnerSpeed = Math.min(0.0f, spinnerSpeed * .94f);
+    }
+
+    private void accelerateSpinner() {
+        this.spinnerSpeed = Math.max(0.1f, Math.min(30.0f, spinnerSpeed * 1.06f));
+    }
+
+    private void decrementRecipeCooldown() {
+        changeRecipeCooldown--;
+    }
+
+    private boolean hasRecipeCooldown() {
+        return changeRecipeCooldown > 0;
+    }
+
+    private void setRecipeCooldown() {
+        changeRecipeCooldown = RECIPE_COOLDOWN;
+
+    }
+
+    public void setRecipe(MixerRecipe r) {
+        currentRecipe = r;
+    }
+
+    private boolean hasRecipe() {
+        return currentRecipe != null;
     }
 
     // if placed above another bulb, the bulb above will drain everything downward.
     private boolean tryVerticalDrain() {
-        if (this.goo.getFluidInTankInternal(2).isEmpty()) {
+        if (this.goo.getFluidInTankInternal(0).isEmpty()) {
             return false;
         }
 
@@ -184,58 +236,104 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return GooMod.config.gooTransferRate() * getStorageMultiplier();
     }
 
-    private MixerRecipe getRecipeFromInputs()
-    {
-        return MixerRecipes.getRecipe(goo.getFluidInTankInternal(0), goo.getFluidInTankInternal(1));
+    private void findRecipe() {
+        leftHandler().ifPresent((l) -> {
+            rightHandler().ifPresent((r) -> {
+                MixerRecipes.recipes().forEach((m) -> checkRecipeForValidity(l, r, m));
+            });
+        });
     }
 
-    private void tryPushingRecipeResult() {
-        MixerRecipe recipe = getRecipeFromInputs();
-        if (recipe == null) {
+    private void checkRecipeForValidity(IFluidHandler l, IFluidHandler r, MixerRecipe m) {
+        if (hasRecipe()) {
             return;
         }
-
-        // check to make sure the recipe inputs amounts are satisfied.
-        if (!isRecipeSatisfied(recipe)) {
+        // make sure we have room in the tank before we try anything
+        if (!hasRoomForResult(m)) {
             return;
         }
-
-        pushRecipeResult(recipe);
-    }
-
-    private void pushRecipeResult(MixerRecipe recipe)
-    {
-        int sentResult = gooMultiTank.fill(2, recipe.output(), IFluidHandler.FluidAction.SIMULATE);
-        if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
+        if (tryDrainingRecipe(l, r, m, FluidAction.SIMULATE)) {
+            setRecipeInverted(false);
+        } else if(tryDrainingRecipe(r, l, m, FluidAction.SIMULATE)) {
+            setRecipeInverted(true);
+        } else {
             return;
         }
-
-        deductInputQuantities(recipe.inputs());
-
-        gooMultiTank.fill(2, recipe.output(), IFluidHandler.FluidAction.EXECUTE);
+        currentRecipe = m;
+        sendRecipePacket();
     }
 
-    private boolean deductInputQuantities(List<FluidStack> inputs)
-    {
-        for(FluidStack input : inputs) {
-            // try deducting from either tank. it doesn't really matter which we check first
-            // simulate will tell us that it contains it or doesn't.
-            if (leftHandler.drain(input, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
-                // east handler doesn't have it.
-                rightHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
-            } else {
-                leftHandler.drain(input, IFluidHandler.FluidAction.EXECUTE);
-            }
+    private void setRecipeInverted(boolean b) {
+        this.isFirstInputLeftInput = b;
+    }
+
+    private boolean tryDoingRecipe() {
+        if (currentRecipe == null) {
+            return false;
         }
-        return true;
+        // if we can't hold what the output produces, abort.
+        int simulatedFill = goo.fill(currentRecipe.output(), FluidAction.SIMULATE);
+        if (simulatedFill != currentRecipe.output().getAmount()) {
+            return false;
+        }
+        AtomicReference<Boolean> isSuccessful = new AtomicReference<>();
+        isSuccessful.set(false);
+        leftHandler().ifPresent(l -> {
+            rightHandler().ifPresent(r -> {
+                if (tryDrainingRecipe(l, r, currentRecipe, FluidAction.SIMULATE)) {
+                    tryDrainingRecipe(l, r, currentRecipe, FluidAction.EXECUTE);
+                    isSuccessful.set(true);
+                } else if (tryDrainingRecipe(r, l, currentRecipe, FluidAction.SIMULATE)) {
+                    tryDrainingRecipe(r, l, currentRecipe, FluidAction.EXECUTE);
+                    isSuccessful.set(true);
+                }
+                if (isSuccessful.get()) {
+                    goo.fill(currentRecipe.output(), FluidAction.EXECUTE);
+                }
+            });
+        });
+        startAnimation();
+        return isSuccessful.get();
     }
 
-    private boolean isRecipeSatisfied(MixerRecipe recipe)
-    {
-        for(FluidStack e : recipe.inputs()) {
-            if (!goo.getFluidInTankInternal(0).containsFluid(e) && !goo.getFluidInTankInternal(1).containsFluid(e)) {
-                return false;
-            }
+    public void startAnimation() {
+        if (world.isRemote()) {
+            this.isActive = true;
+        } else {
+            Networking.sendToClientsAround(new MixerAnimationPacket(this.pos, this.world.getDimensionKey(), true), (ServerWorld) this.world, this.pos);
+        }
+    }
+
+    public void stopAnimation() {
+        if (world.isRemote()) {
+            this.isActive = false;
+        } else {
+            Networking.sendToClientsAround(new MixerAnimationPacket(this.pos, this.world.getDimensionKey(), false), (ServerWorld) this.world, this.pos);
+        }
+    }
+
+    private void sendRecipePacket() {
+        Networking.sendToClientsAround(new MixerRecipePacket(this.pos, this.world.getDimensionKey(), currentRecipe), (ServerWorld)this.world, this.pos);
+    }
+
+    private boolean tryDrainingRecipe(IFluidHandler i1, IFluidHandler i2, MixerRecipe m, FluidAction simulate) {
+        FluidStack r1 = m.inputs().get(0);
+        if (!r1.isFluidStackIdentical(i1.drain(r1, simulate))) {
+            return false;
+        }
+        FluidStack r2 = m.inputs().get(1);
+        return r2.isFluidStackIdentical(i2.drain(r2, simulate));
+    }
+
+    private boolean hasRoomForResult(MixerRecipe m) {
+        // temporarily sets the current recipe so that the fill check "works"
+        // the fill won't accept any fluid unless it's the output of the current recipe.
+        // at the time this fires, the recipe isn't determined. We set it, try it, and nullify it immediately.
+        currentRecipe = m;
+        int sentResult = goo.fill(m.output(), IFluidHandler.FluidAction.SIMULATE);
+        currentRecipe = null;
+        if (sentResult < m.output().getAmount()) {
+            return false;
         }
         return true;
     }
@@ -253,11 +351,41 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return this.write(new CompoundNBT());
     }
 
+    @Nonnull
+    @Override
+    public CompoundNBT write(CompoundNBT tag) {
+        super.write(tag);
+        tag.putBoolean("is_active", isActive);
+        tag.putInt("recipe_cooldown", changeRecipeCooldown);
+        if (currentRecipe != null) {
+            tag.put("recipe", currentRecipe.serializeNbt(new CompoundNBT()));
+        }
+        return tag;
+    }
+
+    @Override
+    public void read(BlockState state, CompoundNBT tag) {
+        super.read(state, tag);
+        if (tag.contains("is_active")) {
+            isActive = tag.getBoolean("is_active");
+        }
+        if (tag.contains("recipe_cooldown")) {
+            changeRecipeCooldown = tag.getInt("recipe_cooldown");
+        }
+        if (tag.contains("recipe")) {
+            currentRecipe = MixerRecipe.deserializeNbt(tag.getCompound("recipe"));
+        }
+    }
+
     @Override
     protected IGooTank createGooTank() {
-        return gooMultiTank = new GooMultiTank(this::getStorageCapacity, 3)
-                .setFilter(GooFluid.IS_GOO_FLUID)
+        return new GooTank(this::getStorageCapacity)
+                .setFilter(this::isRecipeOutput)
                 .setChangeCallback(this::onContentsChanged);
+    }
+
+    private boolean isRecipeOutput(FluidStack fluidStack) {
+        return currentRecipe != null && currentRecipe.output().isFluidEqual(fluidStack);
     }
 
     @Override
@@ -270,52 +398,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     public int getStorageMultiplier() {
 
         return 1;
-    }
-
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, Direction side) {
-        if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-            if (side == orientedLeft()) {
-                return leftLazy.cast();
-            }
-            if (side == orientedRight()) {
-                return rightLazy.cast();
-            }
-            if (side == DOWN) {
-                return bottomLazy.cast();
-            }
-        }
-        return super.getCapability(cap, side);
-    }
-
-    private FluidHandlerTankWrapper createHandler(int tankIn) {
-        // bottom tank
-        if (tankIn == 2)
-            return new FluidHandlerTankWrapper(goo, tankIn) {
-
-                @Override // block fills to the bottom tank
-                public int fill(FluidStack resource, FluidAction action) {
-
-                    return 0;
-                }
-            };
-        // left and right sides
-        return new FluidHandlerTankWrapper(goo, tankIn) {
-
-            @Override
-            public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-
-                if (tank == 0 && RECIPE_FILTER.test(stack)) {
-                    int otherTank = this.tank == 0 ? 1 : 0;
-                    if (handler.getFluidInTank(this.tank).isEmpty() && !handler.getFluidInTank(otherTank).isEmpty())
-                        return MixerRecipes.getRecipe(handler.getFluidInTank(otherTank), stack) != null;
-
-                    return true;
-                }
-                return  false;
-            }
-        };
     }
 
     public ItemStack mixerStack(Block block) {
@@ -340,51 +422,16 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (goo.isEmpty()) {
             return FluidStack.EMPTY;
         }
-        // try to handle the bottom tank
-        if (hitVector.y <= this.getPos().getY() + 0.375f) {
-            if (face == facing() || isOverMechanism(hitVector)) {
-                return FluidStack.EMPTY;
-            }
-            return goo.getFluidInTankInternal(2);
-        }
-        return goo.getFluidInTankInternal(isRightSideMostly(hitVector, face) ? 0 : 1);
-    }
-
-    private boolean isOverMechanism(Vector3d hitVector) {
-        switch (facing()) {
-            case SOUTH:
-                return hitVector.z >= this.getPos().getZ() + 0.625f;
-            case NORTH:
-                return hitVector.z <= this.getPos().getZ() + 0.375f;
-            case EAST:
-                return hitVector.x >= this.getPos().getX() + 0.625f;
-            case WEST:
-                return hitVector.x <= this.getPos().getX() + 0.375f;
-        }
-        return false;
-    }
-
-    private boolean isRightSideMostly(Vector3d hitVec, Direction face)
-    {
-        boolean isRight;
-        if (this.facing().getAxis() == Direction.Axis.Z) {
-            isRight = (facing() == NORTH) == (hitVec.getX() >= this.getPos().getX() + 0.5f);
-        } else {
-            isRight = (facing() == Direction.EAST) == (hitVec.getZ() >= this.getPos().getZ() + 0.5f);
-        }
-        return isRight;
+        return goo.getFluidInTankInternal(0);
     }
 
     @Override
     public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource)
     {
-        // try to handle the bottom tank
-        if (hitVec.y <= this.getPos().getY() + 0.375f) {
-            if (face == facing() || isOverMechanism(hitVec)) {
-                return null;
-            }
-            return bottomHandler;
-        }
-        return isRightSideMostly(hitVec, face) ? rightHandler : leftHandler;
+        return goo;
+    }
+
+    public float spinnerDegrees() {
+        return spinnerDegrees;
     }
 }

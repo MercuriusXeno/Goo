@@ -1,14 +1,11 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "so ",
-    "pg ",
-    "bof"
+    " o ",
+    "gpg",
+    "nfn"
   ],
   "key": {
-    "s": {
-      "item": "minecraft:polished_blackstone_slab"
-    },
     "o": {
       "item": "goo:gasket"
     },
@@ -16,13 +13,13 @@
       "item": "minecraft:piston"
     },
     "g": {
-      "item": "minecraft:glass"
+      "tag": "forge:glass_panes"
     },
     "f": {
       "item": "minecraft:item_frame"
     },
-    "b": {
-      "item": "minecraft:polished_basalt"
+    "n": {
+      "item": "goo:passivated_ingot"
     }
   },
   "result": {

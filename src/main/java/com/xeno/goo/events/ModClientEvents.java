@@ -15,6 +15,7 @@ import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
 import com.xeno.goo.setup.Resources.Glass;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -80,11 +81,11 @@ public class ModClientEvents
 
     private static void setRenderLayers()
     {
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Bulb.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Bulb.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pump.get(), RenderType.getCutoutMipped());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Degrader.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pump.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Degrader.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Lobber.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Gooifier.get(), RenderType.getCutoutMipped());
@@ -113,23 +114,7 @@ public class ModClientEvents
             addVesselMaskingTexture(event);
             addGauntletMaskingTexture(event);
             addUnmappedOverlayTextures(event);
-            addMixerGlassTextures(event);
-            // addGuiTexture(event);
         }
-    }
-
-    private static void addMixerGlassTextures(Pre event) {
-        event.addSprite(Glass.MIXER_FRONT);
-        event.addSprite(Glass.MIXER_BACK);
-        event.addSprite(Glass.MIXER_INTERNALS);
-        event.addSprite(Glass.MIXER_SIDE);
-        event.addSprite(Glass.MIXER_MIDDLE);
-        event.addSprite(Glass.MIXER_TOP);
-    }
-
-    private static void addGuiTexture(Pre event) {
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "gui/gui_sheet"));
-
     }
 
     private static void addGauntletMaskingTexture(TextureStitchEvent.Pre event)

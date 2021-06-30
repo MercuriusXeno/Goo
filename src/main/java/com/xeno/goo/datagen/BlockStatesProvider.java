@@ -4,7 +4,8 @@ import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalNest;
 import com.xeno.goo.blocks.GooPump;
-import com.xeno.goo.client.render.block.PumpRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
@@ -53,10 +54,62 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerGooBulb() {
-        BlockModelBuilder model = models()
-                .withExistingParent("bulb", new ResourceLocation(GooMod.MOD_ID, "prefab_bulb"));
+        BlockModelBuilder model = models().withExistingParent("bulb", new ResourceLocation(GooMod.MOD_ID, "prefab_bulb"));
 
         simpleBlock(BlocksRegistry.Bulb.get(), model);
+
+        simpleBlockItem(BlocksRegistry.Bulb.get(), model);
+    }
+
+    private void registerGooPump() {
+        BlockModelBuilder base = models().withExistingParent("pump", new ResourceLocation(GooMod.MOD_ID, "prefab_pump"));
+        BlockModelBuilder actuator = models().withExistingParent("pump_actuator", new ResourceLocation(GooMod.MOD_ID, "prefab_pump_actuator"));
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Pump.get());
+        for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
+            int rotationX = getRotationXFromDirection(d);
+            int rotationY = getRotationYFromDirection(d);
+            bld.part().modelFile(base)
+                    .rotationX(rotationX).rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.FACING, d)
+                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
+
+            bld.part().modelFile(actuator)
+                    .rotationX(rotationX).rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.FACING, d)
+                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
+        }
+
+        simpleBlockItem(BlocksRegistry.Pump.get(), base);
+    }
+
+    private void registerMixer()
+    {
+        BlockModelBuilder model = models()
+                .withExistingParent("mixer", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer"));
+        BlockModelBuilder spinner = models()
+                .withExistingParent("mixer_spinner", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_spinner"));
+
+        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Mixer.get());
+        for(Direction d : BlockStateProperties.HORIZONTAL_FACING.getAllowedValues()) {
+            int rotationY = getRotationYFromDirection(d);
+            bld.part().modelFile(model)
+                    .rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.HORIZONTAL_FACING, d)
+                    .condition(BlockStateProperties.POWERED, true, false)
+                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
+
+            bld.part().modelFile(spinner)
+                    .rotationY(rotationY)
+                    .addModel()
+                    .condition(BlockStateProperties.HORIZONTAL_FACING, d)
+                    .condition(BlockStateProperties.POWERED, true, false)
+                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
+        }
+
+        simpleBlockItem(BlocksRegistry.Mixer.get(), model);
     }
 
     private void registerDecorativeBlocks() {
@@ -64,6 +117,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         // loop over fluid variants and generate a variant for each fluid + variant composite (and two for the pillars, they are special)
         Registry.FluidSuppliers.forEach(this::proceduralGooBlockVariant);
     }
+
     private void proceduralGooBlockVariant(ResourceLocation k, Supplier<GooFluid> v) {
         String prefix = k.getPath();
         String textureDir = "block/crystal_blocks/";
@@ -220,6 +274,8 @@ public class BlockStatesProvider extends BlockStateProvider {
                                 .rotationY(s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
                                 .build()
                 );
+
+        simpleBlockItem(BlocksRegistry.Degrader.get(), modelInactive);
     }
 
     private void registerPad() {
@@ -234,6 +290,8 @@ public class BlockStatesProvider extends BlockStateProvider {
                         .modelFile(s.get(BlockStateProperties.TRIGGERED) ? modelTriggered : model)
                         .build()
                 );
+
+        simpleBlockItem(BlocksRegistry.Pad.get(), model);
     }
 
     private void registerGooifier() {
@@ -377,22 +435,6 @@ public class BlockStatesProvider extends BlockStateProvider {
         simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
     }
 
-    private void registerMixer()
-    {
-        BlockModelBuilder model = models()
-                .withExistingParent("mixer_inactive", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_inactive"));
-        BlockModelBuilder modelActive = models()
-                .withExistingParent("mixer_active", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_active"));
-
-        getVariantBuilder(BlocksRegistry.Mixer.get())
-                .forAllStates(s ->
-                        ConfiguredModel.builder()
-                                .modelFile(s.get(BlockStateProperties.POWERED) ? model : modelActive)
-                                .rotationY(s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
-                                .build()
-                );
-    }
-
     private void registerRadiantLight() {
         ResourceLocation lightTop = new ResourceLocation(GooMod.MOD_ID, "block/radiant_light/radiant_top");
         ResourceLocation lightSide = new ResourceLocation(GooMod.MOD_ID, "block/radiant_light/radiant_side");
@@ -424,96 +466,6 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .condition(BlockStateProperties.FACING, d);
         }
         simpleBlockItem(BlocksRegistry.RadiantLight.get(), light);
-    }
-
-    private void registerGooPump() {
-        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_top");
-        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_side");
-        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_bottom");
-        ResourceLocation baseInner = new ResourceLocation(GooMod.MOD_ID, "block/pump/pump_base_inner");
-        ResourceLocation baseInnerBottom = new ResourceLocation("minecraft", "block/polished_basalt_top");
-        ResourceLocation stemTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_stem_top");
-        ResourceLocation stemSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_stem_side");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        ResourceLocation actuatorTop = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_top");
-        ResourceLocation actuatorSide = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_side");
-        ResourceLocation actuatorInner = new  ResourceLocation(GooMod.MOD_ID, "block/pump/pump_actuator_inner");
-        BlockModelBuilder base = models()
-                .withExistingParent("goo_pump", "block/block")
-                .texture("particle", baseBottom)
-                .element()
-                .from(0, 0, 0)
-                .to(16, 8, 16)
-                .allFaces((t, u) -> u.texture(t == Direction.DOWN ? "#base_bottom" :
-                        (t == Direction.UP ? "#base_top" : "#base_side")))
-                .end()
-                .element()
-                .from(12, 8, 12)
-                .to(4, 0.1f, 4)
-                .allFaces((t, u) -> u.texture(t == Direction.UP ? "#base_inner_bottom" : ( t == Direction.DOWN ? "#empty" : "#base_inner")))
-                .end()
-                .element()
-                .from(5, 0.1f, 5)
-                .to(11, 16, 11)
-                .allFaces((t, u) -> u.texture(t.getAxis().isVertical() ? "#stem_top" : "#stem_side"))
-                .end()
-                .element()
-                .from(10.9f, 15.9f, 10.9f)
-                .to(5.1f, 0.2f, 5.1f)
-                .allFaces((t, u) -> u.texture(t.getAxis().isVertical() ? "#stem_top" : "#stem_side"))
-                .shade(false)
-                .end();
-        base.texture("base_top", baseTop);
-        base.texture("base_side", baseSide);
-        base.texture("base_bottom", baseBottom);
-        base.texture("base_inner", baseInner);
-        base.texture("base_inner_bottom", baseInnerBottom);
-        base.texture("stem_top", stemTop);
-        base.texture("stem_side", stemSide);
-        base.texture("empty", empty);
-
-        // actuator model
-        BlockModelBuilder actuator = models()
-                .withExistingParent("goo_pump_actuator", "block/block")
-                .element()
-                .from(4.01f, 4.1f, 4.01f).to(11.99f, 8.1f, 11.99f)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#actuator_top" : "#actuator_side")
-                        .uvs(4f,
-                                t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
-                                12f,
-                                t == Direction.UP || t == Direction.DOWN ? 12f : 10f))
-                .end()
-                .element()
-                .from(11.99f, 8.1f, 11.99f).to(4.01f, 4.1f, 4.01f)
-                .allFaces((t, u) -> u.texture(t == Direction.UP || t == Direction.DOWN ? "#empty" : "#actuator_inner")
-                        .uvs(5f,
-                                t == Direction.UP || t == Direction.DOWN ? 4f : 6f,
-                                11f,
-                                t == Direction.UP || t == Direction.DOWN ? 12f : 10f))
-                .end();
-        actuator.texture("actuator_top", actuatorTop);
-        actuator.texture("actuator_side", actuatorSide);
-        actuator.texture("actuator_inner", actuatorInner);
-        actuator.texture("empty", empty);
-
-        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Pump.get());
-        for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
-            int rotationX = getRotationXFromDirection(d);
-            int rotationY = getRotationYFromDirection(d);
-            bld.part().modelFile(base)
-                    .rotationX(rotationX).rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.FACING, d)
-                    .condition(GooPump.RENDER, PumpRenderMode.STATIC);
-
-            bld.part().modelFile(actuator)
-                    .rotationX(rotationX).rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.FACING, d)
-                    .condition(GooPump.RENDER, PumpRenderMode.DYNAMIC);
-        }
-
-        simpleBlockItem(BlocksRegistry.Pump.get(), base);
     }
 
     private int getRotationYFromDirection(Direction d)
@@ -613,5 +565,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         model.texture("fixture_face", fixtureFace);
         model.texture("particle", baseBottom);
         horizontalBlock(BlocksRegistry.Trough.get(), state -> model);
+
+        simpleBlockItem(BlocksRegistry.Trough.get(), model);
     }
 }

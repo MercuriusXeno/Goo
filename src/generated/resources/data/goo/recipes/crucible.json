@@ -2,8 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "sos",
-    "sgs",
-    "fos"
+    "gfg",
+    "sos"
   ],
   "key": {
     "s": {
@@ -16,7 +16,7 @@
       "item": "minecraft:blast_furnace"
     },
     "g": {
-      "item": "minecraft:glass"
+      "tag": "forge:glass_panes"
     }
   },
   "result": {

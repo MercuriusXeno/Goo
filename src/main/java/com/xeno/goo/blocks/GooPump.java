@@ -1,6 +1,6 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.client.render.block.PumpRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode;
 import com.xeno.goo.tiles.GooPumpTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -10,7 +10,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.state.EnumProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
@@ -35,7 +34,6 @@ import static net.minecraft.state.properties.BlockStateProperties.FACING;
 public class GooPump extends BlockWithConnections
 {
     VoxelShape[] shapes;
-    public static final EnumProperty<PumpRenderMode> RENDER = EnumProperty.create("render", PumpRenderMode.class);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -74,40 +72,40 @@ public class GooPump extends BlockWithConnections
     private VoxelShape[] makeShapes()
     {
         // up
-        Vector3d ubs = new Vector3d(0d, 0d, 0d);
-        Vector3d ube = new Vector3d(16d, 8d, 16d);
-        Vector3d ups = new Vector3d(5d, 8d, 5d);
+        Vector3d ubs = new Vector3d(1d, 0d, 1d);
+        Vector3d ube = new Vector3d(15d, 7d, 15d);
+        Vector3d ups = new Vector3d(5d, 7d, 5d);
         Vector3d upe = new Vector3d(11d, 16d, 11d);
         VoxelShape[] upShapes = combo(ubs, ube, ups, upe);
         // down
-        Vector3d dbs = new Vector3d(0d, 8d, 0d);
-        Vector3d dbe = new Vector3d(16d, 16d, 16d);
+        Vector3d dbs = new Vector3d(1d, 9d, 1d);
+        Vector3d dbe = new Vector3d(15d, 16d, 15d);
         Vector3d dps = new Vector3d(5d, 0d, 5d);
-        Vector3d dpe = new Vector3d(11d, 8d, 11d);
+        Vector3d dpe = new Vector3d(11d, 9d, 11d);
         VoxelShape[] downShapes = combo(dbs, dbe, dps, dpe);
         // west
-        Vector3d wbs = new Vector3d(0d, 0d, 0d);
-        Vector3d wbe = new Vector3d(8d, 16d, 16d);
-        Vector3d wps = new Vector3d(8d, 5d, 5d);
+        Vector3d wbs = new Vector3d(0d, 1d, 1d);
+        Vector3d wbe = new Vector3d(7d, 15d, 15d);
+        Vector3d wps = new Vector3d(7d, 5d, 5d);
         Vector3d wpe = new Vector3d(16d, 11d, 11d);
         VoxelShape[] westShapes = combo(wbs, wbe, wps, wpe);
         // east
-        Vector3d ebs = new Vector3d(8d, 0d, 0d);
-        Vector3d ebe = new Vector3d(16d, 16d, 16d);
+        Vector3d ebs = new Vector3d(9d, 1d, 1d);
+        Vector3d ebe = new Vector3d(16d, 15d, 15d);
         Vector3d eps = new Vector3d(0d, 5d, 5d);
-        Vector3d epe = new Vector3d(8d, 11d, 11d);
+        Vector3d epe = new Vector3d(9d, 11d, 11d);
         VoxelShape[] eastShapes = combo(ebs, ebe, eps, epe);
         // south
-        Vector3d sbs = new Vector3d(0d, 0d, 0d);
-        Vector3d sbe = new Vector3d(16d, 16d, 8d);
-        Vector3d sps = new Vector3d(5d, 5d, 8d);
+        Vector3d sbs = new Vector3d(1d, 1d, 0d);
+        Vector3d sbe = new Vector3d(15d, 15d, 7d);
+        Vector3d sps = new Vector3d(5d, 5d, 7d);
         Vector3d spe = new Vector3d(11d, 11d, 16d);
         VoxelShape[] southShapes = combo(sbs, sbe, sps, spe);
         // north
-        Vector3d nbs = new Vector3d(0d, 0d, 8d);
-        Vector3d nbe = new Vector3d(16d, 16d, 16d);
+        Vector3d nbs = new Vector3d(1d, 1d, 9d);
+        Vector3d nbe = new Vector3d(15d, 15d, 16d);
         Vector3d nps = new Vector3d(5d, 5d, 0d);
-        Vector3d npe = new Vector3d(11d, 11d, 8d);
+        Vector3d npe = new Vector3d(11d, 11d, 9d);
         VoxelShape[] northShapes = combo(nbs, nbe, nps, npe);
         return new VoxelShape[] {
                 fabricateAlignedShape(upShapes),
@@ -162,12 +160,12 @@ public class GooPump extends BlockWithConnections
         return getDefaultState()
                 .with(FACING, context.getFace().getOpposite())
                 .with(BlockStateProperties.POWERED, true)
-                .with(RENDER, PumpRenderMode.STATIC);
+                .with(DynamicRenderMode.RENDER, DynamicRenderMode.DynamicRenderTypes.STATIC);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(FACING, BlockStateProperties.POWERED, RENDER);
+        builder.add(FACING, BlockStateProperties.POWERED, DynamicRenderMode.RENDER);
     }
 
     @SuppressWarnings("deprecation")

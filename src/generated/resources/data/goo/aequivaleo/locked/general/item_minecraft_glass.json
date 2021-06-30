@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 24.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 3.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 24.0,
+      "type": "goo:earthen"
     }
   ]
 }

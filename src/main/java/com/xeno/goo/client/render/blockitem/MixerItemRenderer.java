@@ -29,7 +29,8 @@ public class MixerItemRenderer extends ItemStackTileEntityRenderer
         super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
         IBakedModel mixerModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
 
-        Minecraft.getInstance().getItemRenderer().renderModel(mixerModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));
+        Minecraft.getInstance().getItemRenderer().renderModel(mixerModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
+        Minecraft.getInstance().getItemRenderer().renderModel(mixerModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
 
         CompoundNBT stackTag = stack.getTag();
         if (stackTag == null || !stackTag.contains("BlockEntityTag")) {

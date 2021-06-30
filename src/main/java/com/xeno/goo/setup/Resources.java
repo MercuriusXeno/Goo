@@ -85,6 +85,7 @@ public class Resources
         public static final ResourceLocation MIXER_FRONT = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_front_glass");
         public static final ResourceLocation MIXER_INTERNALS = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_internals_glass");
         public static final ResourceLocation MIXER_MIDDLE = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_middle_glass");
+        public static final ResourceLocation MIXER_BOTTOM = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_bottom_glass");
         public static final ResourceLocation MIXER_SIDE = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_side_glass");
         public static final ResourceLocation MIXER_TOP = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_top_glass");
     }

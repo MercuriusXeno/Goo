@@ -131,26 +131,25 @@ public class RecipesProvider extends RecipeProvider {
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Bulb.get())
                 .patternLine("non")
-                .patternLine(" g ")
+                .patternLine("g g")
                 .patternLine("non")
-                .key('n', ItemsRegistry.PASSIVATED_NUGGET.get())
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
-                .key('g', Tags.Items.GLASS)
+                .key('g', Tags.Items.GLASS_PANES)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
 
     private void registerGooPumpRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Pump.get())
-                .patternLine("so ")
-                .patternLine("pg ")
-                .patternLine("bof")
-                .key('s', Items.POLISHED_BLACKSTONE_SLAB)
+                .patternLine(" o ")
+                .patternLine("gpg")
+                .patternLine("nfn")
                 .key('o', ItemsRegistry.GASKET.get())
                 .key('p', Items.PISTON)
-                .key('g', Items.GLASS)
+                .key('g', Tags.Items.GLASS_PANES)
                 .key('f', Items.ITEM_FRAME)
-                .key('b', Items.POLISHED_BASALT)
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -186,15 +185,13 @@ public class RecipesProvider extends RecipeProvider {
 
     private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Mixer.get())
-                .patternLine("gsg")
+                .patternLine("sgs")
                 .patternLine("obo")
-                .patternLine("fgp")
-                .key('g', Items.GLASS)
+                .patternLine("sgs")
+                .key('g', Tags.Items.GLASS_PANES)
                 .key('s', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
                 .key('b', BlocksRegistry.PassivatedBlock.get())
-                .key('f', Items.BLAST_FURNACE)
-                .key('p', Items.PISTON)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -202,12 +199,12 @@ public class RecipesProvider extends RecipeProvider {
     private void registerDegraderRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Degrader.get())
                 .patternLine("sos")
-                .patternLine("sgs")
-                .patternLine("fos")
+                .patternLine("gfg")
+                .patternLine("sos")
                 .key('s', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
                 .key('f', Items.BLAST_FURNACE)
-                .key('g', Items.GLASS)
+                .key('g', Tags.Items.GLASS_PANES)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }

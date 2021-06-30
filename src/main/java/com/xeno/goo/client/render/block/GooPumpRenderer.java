@@ -1,24 +1,28 @@
 package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.models.FluidCuboid;
-import com.xeno.goo.client.render.FluidCuboidHelper;
+import com.xeno.goo.client.models.Model3d;
+import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.RenderHelper;
+import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooPumpTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
@@ -42,26 +46,19 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
     private final BlockRendererDispatcher blockRenderer = Minecraft.getInstance().getBlockRendererDispatcher();
 
     @Override
-    public void render(GooPumpTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+    public void render(GooPumpTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
         if (!tile.verticalFillFluid().isEmpty()) {
             Direction face = tile.facing();
             float intensity = tile.verticalFillIntensity();
-            FluidStack fluid = tile.verticalFillFluid();
-            TextureAtlasSprite still = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getStillTexture(fluid));
-            TextureAtlasSprite flowing = Minecraft.getInstance().getAtlasSpriteGetter(PlayerContainer.LOCATION_BLOCKS_TEXTURE).apply(fluid.getFluid().getAttributes().getFlowingTexture(fluid));
-
-            FluidCuboid cuboid = new FluidCuboid(fillFromVector(intensity, face), fillToVector(intensity, face),
-                    flowingFacesByDirection(face));
+            Model3d fluidModel = getFluidModel(tile.verticalFillFluid(), intensity, face);
             if (tile.isVerticallyFilled()) {
-                FluidCuboidHelper.renderCuboid(matrixStack, buffer.getBuffer(RenderHelper.GOO_CUBE), cuboid, still, flowing,
-                        fillFromVector(intensity, face), fillToVector(intensity, face),
-                        0xffffffff, combinedLightIn, false);
+                RenderHelper.renderCube(fluidModel, matrixStack, buffer.getBuffer(RenderType.getTranslucent()), 0xffffffff, light, overlay, false);
             }
         }
 
-        renderActuator(tile, matrixStack, buffer, combinedLightIn, combinedOverlayIn, partialTicks);
+        renderActuator(tile, matrixStack, buffer, light, overlay, partialTicks);
 
-        renderItem(tile, matrixStack, buffer, combinedLightIn, combinedOverlayIn, partialTicks);
+        renderItem(tile, matrixStack, buffer, light, overlay, partialTicks);
     }
 
     private void renderItem(GooPumpTile tile, MatrixStack matrices, IRenderTypeBuffer buffer, int light, int overlay, float partialTicks)
@@ -152,93 +149,51 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             Map<Direction, Vector3f> passResult = new HashMap<>();
             switch (flow) {
                 case UP:
-                    passResult.put(Direction.NORTH, new Vector3f(0f, -0.25f, -0.5001f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.25f, 0.5001f));
-                    passResult.put(Direction.EAST, new Vector3f(0.5001f, -0.25f, 0f));
-                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, -0.25f, 0f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, -0.25f, -0.4376f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.25f, 0.4376f));
+                    passResult.put(Direction.EAST, new Vector3f(0.4376f, -0.25f, 0f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.4376f, -0.25f, 0f));
                     break;
                 case DOWN:
-                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.25f, -0.5001f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0f, 0.25f, 0.5001f));
-                    passResult.put(Direction.EAST, new Vector3f(0.5001f, 0.25f, 0f));
-                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, 0.25f, 0f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.25f, -0.4376f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, 0.25f, 0.4376f));
+                    passResult.put(Direction.EAST, new Vector3f(0.4376f, 0.25f, 0f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.4376f, 0.25f, 0f));
                     break;
                 case SOUTH:
-                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.5001f, -0.25f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.5001f, -0.25f));
-                    passResult.put(Direction.EAST, new Vector3f(0.5001f, 0f, -0.25f));
-                    passResult.put(Direction.WEST, new Vector3f(-0.5001f, 0f, -0.25f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.4376f, -0.25f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.4376f, -0.25f));
+                    passResult.put(Direction.EAST, new Vector3f(0.4376f, 0f, -0.25f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.4376f, 0f, -0.25f));
                     break;
                 case NORTH:
-                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.5001f, 0.25f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.5001f, 0.25f));
-                    passResult.put(Direction.EAST, new Vector3f(-0.5001f, 0f, 0.25f));
-                    passResult.put(Direction.WEST, new Vector3f(0.5001f, 0f, 0.25f));
+                    passResult.put(Direction.NORTH, new Vector3f(0f, 0.4376f, 0.25f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0f, -0.4376f, 0.25f));
+                    passResult.put(Direction.EAST, new Vector3f(-0.4376f, 0f, 0.25f));
+                    passResult.put(Direction.WEST, new Vector3f(0.4376f, 0f, 0.25f));
                     break;
                 case WEST:
-                    passResult.put(Direction.NORTH, new Vector3f(0.25f, 0.5001f, 0f));
-                    passResult.put(Direction.SOUTH, new Vector3f(0.25f, -0.5001f, 0f));
-                    passResult.put(Direction.EAST, new Vector3f(0.25f, 0f, 0.5001f));
-                    passResult.put(Direction.WEST, new Vector3f(0.25f, 0f, -0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(0.25f, 0.4376f, 0f));
+                    passResult.put(Direction.SOUTH, new Vector3f(0.25f, -0.4376f, 0f));
+                    passResult.put(Direction.EAST, new Vector3f(0.25f, 0f, 0.4376f));
+                    passResult.put(Direction.WEST, new Vector3f(0.25f, 0f, -0.4376f));
                     break;
                 case EAST:
-                    passResult.put(Direction.NORTH, new Vector3f(-0.25f, 0.5001f, 0f));
-                    passResult.put(Direction.SOUTH, new Vector3f(-0.25f, -0.5001f, 0f));
-                    passResult.put(Direction.EAST, new Vector3f(-0.25f, 0f, -0.5001f));
-                    passResult.put(Direction.WEST, new Vector3f(-0.25f, 0f, 0.5001f));
+                    passResult.put(Direction.NORTH, new Vector3f(-0.25f, 0.4376f, 0f));
+                    passResult.put(Direction.SOUTH, new Vector3f(-0.25f, -0.4376f, 0f));
+                    passResult.put(Direction.EAST, new Vector3f(-0.25f, 0f, -0.4376f));
+                    passResult.put(Direction.WEST, new Vector3f(-0.25f, 0f, 0.4376f));
                     break;
             }
             offsetVectors.put(flow, passResult);
         }
     }
 
-//
-//    private static final Map<Direction, Map<Direction, Vector3i>> rotationVectors = new HashMap<>();
-//    static {
-//        for(Direction flow : Direction.values()) {
-//            Map<Direction, Vector3i> passResult = new HashMap<>();
-//            switch (flow) {
-//                case UP:
-//                case DOWN:
-//                    passResult.put(Direction.NORTH, new Vector3i(0, 90, 0));
-//                    passResult.put(Direction.SOUTH, new Vector3i(0, 270, 0));
-//                    passResult.put(Direction.EAST, new Vector3i(0, 0, 0));
-//                    passResult.put(Direction.WEST, new Vector3i(0, 180, 0));
-//                    break;
-//                case SOUTH:
-//                    passResult.put(Direction.DOWN, new Vector3i(270, 90, 90));
-//                    passResult.put(Direction.UP, new Vector3i(270, 90, 90));
-//                    passResult.put(Direction.EAST, new Vector3i(0, 90, 90));
-//                    passResult.put(Direction.WEST, new Vector3i(0, 90, 90));
-//                    break;
-//                case NORTH:
-//                    passResult.put(Direction.DOWN, new Vector3i(90, 90, 270));
-//                    passResult.put(Direction.UP, new Vector3i(90, 90, 270));
-//                    passResult.put(Direction.EAST, new Vector3i(0, 90, 270));
-//                    passResult.put(Direction.WEST, new Vector3i(0, 90, 270));
-//                    break;
-//                case WEST:
-//                    passResult.put(Direction.DOWN, new Vector3i(90, 0, 90));
-//                    passResult.put(Direction.UP, new Vector3i(90, 0, 90));
-//                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 90));
-//                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 90));
-//                    break;
-//                case EAST:
-//                    passResult.put(Direction.DOWN, new Vector3i(270, 0, 270));
-//                    passResult.put(Direction.UP, new Vector3i(270, 0, 270));
-//                    passResult.put(Direction.NORTH, new Vector3i(0, 0, 270));
-//                    passResult.put(Direction.SOUTH, new Vector3i(0, 0, 270));
-//                    break;
-//            }
-//            rotationVectors.put(flow, passResult);
-//        }
-//    }
-
     private void renderActuator(GooPumpTile tile, MatrixStack matrices, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn, float partialTicks) {
         matrices.push();
         final BlockState dynamicState = tile.getBlockState()
                 .with(BlockStateProperties.FACING, tile.facing())
-                .with(GooPump.RENDER, PumpRenderMode.DYNAMIC);
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
         // translate the position of the actuator sleeve as a function of animation time on a sine wave
         // float heightOffset = (float)Math.min(0.95, smoothStep(0, 1, MathHelper.sin(GooPumpTile.PROGRESS_PER_FRAME * (tile.animationFrames() + partialTicks)))) * 0.25f;
         float frames = tile.animationFrames();
@@ -371,6 +326,62 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
         }
         // default
         return new Vector3f(lateralTo(intensity), TO_VERTICAL, lateralTo(intensity));
+    }
+
+    private static final Map<Direction, Map<Fluid, SpriteInfo[]>> spriteCache = new HashMap<>();
+    static {
+        setSpriteCacheForAllDirections();
+    }
+
+    private static void setSpriteCacheForAllDirections() {
+        for(Direction d : Direction.values()) {
+            spriteCache.put(d, new HashMap<>());
+        }
+    }
+
+    private static SpriteInfo[] flowingSpriteByFluidAndDirection(FluidStack f, Direction d) {
+        if (!spriteCache.get(d).containsKey(f.getFluid())) {
+            spriteCache.get(d).put(f.getFluid(), generateSpritesForFluidAndDirection(f, d));
+        }
+        return spriteCache.get(d).get(f.getFluid());
+    }
+
+    private static SpriteInfo[] generateSpritesForFluidAndDirection(FluidStack f, Direction d) {
+        Map<Direction, FluidCuboid.FluidFace> faceInfo = getFacesForFlowingDirection(d);
+        TextureAtlasSprite still =  RenderHelper.getFluidTexture(f, FluidType.STILL);
+        TextureAtlasSprite flow =  RenderHelper.getFluidTexture(f, FluidType.FLOWING);
+        SpriteInfo[] result = new SpriteInfo[] {
+                new SpriteInfo(faceInfo.get(Direction.DOWN).isFlowing() ? flow : still, faceInfo.get(Direction.DOWN).isFlowing() ? 8 : 16),
+                new SpriteInfo(faceInfo.get(Direction.UP).isFlowing() ? flow : still, faceInfo.get(Direction.UP).isFlowing() ? 8 : 16),
+                new SpriteInfo(faceInfo.get(Direction.NORTH).isFlowing() ? flow : still, faceInfo.get(Direction.NORTH).isFlowing() ? 8 : 16),
+                new SpriteInfo(faceInfo.get(Direction.SOUTH).isFlowing() ? flow : still, faceInfo.get(Direction.SOUTH).isFlowing() ? 8 : 16),
+                new SpriteInfo(faceInfo.get(Direction.WEST).isFlowing() ? flow : still, faceInfo.get(Direction.WEST).isFlowing() ? 8 : 16),
+                new SpriteInfo(faceInfo.get(Direction.EAST).isFlowing() ? flow : still, faceInfo.get(Direction.EAST).isFlowing() ? 8 : 16)
+        };
+        return result;
+    }
+
+    private static Model3d getFluidModel(FluidStack fluid, float intensity, Direction d) {
+        Model3d model = new Model3d();
+        SpriteInfo[] sprites = flowingSpriteByFluidAndDirection(fluid, d);
+        Vector3f from = fillFromVector(intensity, d);
+        Vector3f to = fillToVector(intensity, d);
+        Map<Direction, FluidCuboid.FluidFace> flowMap = cachedFaces.get(d);
+        model.setTextures(sprites[0], sprites[1], sprites[2], sprites[3], sprites[4], sprites[5]);
+        model.setRotations(flowMap.get(Direction.DOWN).rotation(), flowMap.get(Direction.UP).rotation(), flowMap.get(Direction.NORTH).rotation(),
+                flowMap.get(Direction.SOUTH).rotation(), flowMap.get(Direction.WEST).rotation(), flowMap.get(Direction.EAST).rotation());
+        model.setFlowingSides(flowMap.get(Direction.DOWN).isFlowing(), flowMap.get(Direction.UP).isFlowing(), flowMap.get(Direction.NORTH).isFlowing(),
+                flowMap.get(Direction.SOUTH).isFlowing(), flowMap.get(Direction.WEST).isFlowing(), flowMap.get(Direction.EAST).isFlowing());
+        if (fluid.getFluid().getAttributes().getStillTexture(fluid) != null) {
+            model.minX = from.getX();
+            model.minY = from.getY();
+            model.minZ = from.getZ();
+
+            model.maxX = to.getX();
+            model.maxY = to.getY();
+            model.maxZ = to.getZ();
+        }
+        return model;
     }
 
     public static void register() {

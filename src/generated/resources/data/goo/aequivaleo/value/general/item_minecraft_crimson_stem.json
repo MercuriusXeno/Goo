@@ -19,11 +19,11 @@
   "compounds": [
     {
       "amount": 64.0,
-      "type": "goo:fungal"
+      "type": "goo:chromatic"
     },
     {
       "amount": 64.0,
-      "type": "goo:chromatic"
+      "type": "goo:fungal"
     },
     {
       "amount": 16.0,

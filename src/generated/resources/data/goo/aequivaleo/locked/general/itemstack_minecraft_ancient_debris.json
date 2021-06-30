@@ -18,12 +18,12 @@
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:primordial"
-    },
-    {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:primordial"
     },
     {
       "amount": 960.0,

@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "gsg",
+    "sgs",
     "obo",
-    "fgp"
+    "sgs"
   ],
   "key": {
     "g": {
-      "item": "minecraft:glass"
+      "tag": "forge:glass_panes"
     },
     "s": {
       "item": "goo:passivated_ingot"
@@ -17,12 +17,6 @@
     },
     "b": {
       "item": "goo:passivated_block"
-    },
-    "f": {
-      "item": "minecraft:blast_furnace"
-    },
-    "p": {
-      "item": "minecraft:piston"
     }
   },
   "result": {

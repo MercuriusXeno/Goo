@@ -2,18 +2,18 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "non",
-    " g ",
+    "g g",
     "non"
   ],
   "key": {
     "n": {
-      "item": "goo:passivated_nugget"
+      "item": "goo:passivated_ingot"
     },
     "o": {
       "item": "goo:gasket"
     },
     "g": {
-      "tag": "forge:glass"
+      "tag": "forge:glass_panes"
     }
   },
   "result": {
