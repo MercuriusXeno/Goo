@@ -308,6 +308,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         save(specFor(items).withCompounds(instances));
     }
 
+    private LinkedHashSet<Object> newLinkedHashSet(final Object... internal) {
+        return new LinkedHashSet<>(Arrays.asList(internal));
+    }
+
     private void registerLockedInfoForCrystallizedGoo(ResourceLocation resourceLocation, RegistryObject<CrystallizedGooAbstract> crystallizedGooAbstractRegistryObject) {
         Fluid f = crystallizedGooAbstractRegistryObject.get().gooType();
 
@@ -316,10 +320,6 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
             return;
 
         saveData(newLinkedHashSet(crystallizedGooAbstractRegistryObject.get(), new ItemStack(crystallizedGooAbstractRegistryObject.get())), instance);
-    }
-
-    private LinkedHashSet<Object> newLinkedHashSet(final Object... internal) {
-        return new LinkedHashSet<>(Arrays.asList(internal));
     }
 
     @Nullable

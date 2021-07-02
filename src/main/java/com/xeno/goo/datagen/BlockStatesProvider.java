@@ -233,29 +233,19 @@ public class BlockStatesProvider extends BlockStateProvider {
     private void registerLobber() {
         ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_front");
         ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_side");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        float gasketThickness = 0.25f;
         BlockModelBuilder model = models()
                 .withExistingParent("lobber", "block/block")
                 .element()
-                .from(gasketThickness, gasketThickness, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
+                .from(0, 0, 0)
+                .to(16f, 16f, 16f)
                 .allFaces((t, u) ->
                         u.texture(t ==  Direction.UP ? "#front" :
                                 "#side")
                         .uvs(1f, 1f, 15f, 15f))
                 .end();
-        addGasket(model, Direction.DOWN, gasketThickness);
-        addGasket(model, Direction.EAST, gasketThickness);
-        addGasket(model, Direction.WEST, gasketThickness);
-        addGasket(model, Direction.SOUTH, gasketThickness);
-        addGasket(model, Direction.NORTH, gasketThickness);
         model.texture("particle", front);
         model.texture("front", front);
         model.texture("side", side);
-        model.texture("gasket", gasket);
-        model.texture("empty", empty);
         directionalBlock(BlocksRegistry.Lobber.get(), model);
         simpleBlockItem(BlocksRegistry.Lobber.get(), model);
     }

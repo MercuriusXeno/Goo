@@ -25,8 +25,6 @@ import java.util.Random;
 
 public class Lobber extends BlockWithConnections
 {
-    VoxelShape[] shapes;
-
     public Lobber()
     {
         super(Properties.create(Material.ROCK)
@@ -38,54 +36,6 @@ public class Lobber extends BlockWithConnections
                 .with(BlockStateProperties.TRIGGERED, false)
                 .with(BlockStateProperties.FACING, Direction.UP)
         );
-        shapes = makeShapes();
-    }
-
-    double gasketThickness = 0.25d;
-    double borderLimit = 16f - gasketThickness;
-    double gasketStart = 6d;
-    double gasketEnd = 16d - gasketStart;
-
-    private VoxelShape[] makeShapes()
-    {
-        Vector3d cs = new Vector3d(gasketThickness, gasketThickness, gasketThickness);
-        Vector3d ce = new Vector3d(borderLimit, borderLimit, borderLimit);
-        Vector3d bs = new Vector3d (gasketStart, 0d, gasketStart);
-        Vector3d be = new Vector3d (gasketEnd, gasketThickness, gasketEnd);
-        Vector3d ts = new Vector3d (gasketStart, borderLimit, gasketStart);
-        Vector3d te = new Vector3d (gasketEnd, 16d, gasketEnd);
-        Vector3d es = new Vector3d(borderLimit, gasketStart, gasketStart);
-        Vector3d ee = new Vector3d(16d, gasketEnd, gasketEnd);
-        Vector3d ws = new Vector3d(0d, gasketStart, gasketStart);
-        Vector3d we = new Vector3d(gasketThickness, gasketEnd, gasketEnd);
-        Vector3d ss = new Vector3d(gasketStart, gasketStart, borderLimit);
-        Vector3d se = new Vector3d(gasketEnd, gasketEnd, 16d);
-        Vector3d ns = new Vector3d(gasketStart, gasketStart, 0d);
-        Vector3d ne = new Vector3d(gasketEnd, gasketEnd, gasketThickness);
-
-        VoxelShape central = VoxelHelper.cuboid(cs, ce);
-        VoxelShape bottom = VoxelHelper.cuboid(bs, be);
-        VoxelShape top = VoxelHelper.cuboid(ts, te);
-        VoxelShape east = VoxelHelper.cuboid(es, ee);
-        VoxelShape west = VoxelHelper.cuboid(ws, we);
-        VoxelShape south = VoxelHelper.cuboid(ss, se);
-        VoxelShape north = VoxelHelper.cuboid(ns, ne);
-
-        return
-                new VoxelShape[] {
-                        // down
-                        VoxelHelper.mergeAll(central, top, east, west, south, north),
-                        // up
-                        VoxelHelper.mergeAll(central, bottom, east, west, south, north),
-                        // north
-                        VoxelHelper.mergeAll(central, bottom, top, east, west, south),
-                        // south
-                        VoxelHelper.mergeAll(central, bottom, top, east, west, north),
-                        // east
-                        VoxelHelper.mergeAll(central, bottom, top, west, south, north),
-                        // west
-                        VoxelHelper.mergeAll(central, bottom, top, east, south, north),
-                };
     }
 
     /**
@@ -105,7 +55,7 @@ public class Lobber extends BlockWithConnections
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
-        return shapes[state.get(BlockStateProperties.FACING).getIndex()];
+        return VoxelShapes.fullCube();
     }
 
     /**
