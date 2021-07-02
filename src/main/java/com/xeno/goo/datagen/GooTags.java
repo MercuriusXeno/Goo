@@ -10,7 +10,11 @@ import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ITag;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class GooTags extends EntityTypeTagsProvider {
 	public static class Entities {
@@ -24,7 +28,7 @@ public class GooTags extends EntityTypeTagsProvider {
 	public GooTags(DataGenerator g, ExistingFileHelper existingFileHelper) {
 		super(g, GooMod.MOD_ID, existingFileHelper);
 	}
-	private static final HashSet<EntityType<?>> primordialImmuneMobs = Sets.newHashSet(EntityType.WITHER, EntityType.ENDER_DRAGON, EntityType.ELDER_GUARDIAN);
+	private static final HashSet<EntityType<?>> primordialImmuneMobs = Sets.newLinkedHashSet(Arrays.asList(EntityType.ELDER_GUARDIAN, EntityType.ENDER_DRAGON, EntityType.WITHER));
 	@Override
 	protected void registerTags() {
 		registerWaterHatingMobs();
@@ -43,8 +47,8 @@ public class GooTags extends EntityTypeTagsProvider {
 	}
 
 	private void registerPrimordialSpawnEggEntities() {
-		Iterable<SpawnEggItem> eggs = SpawnEggItem.getEggs();
-		for(SpawnEggItem egg : eggs) {
+		Stream<SpawnEggItem> eggs = StreamSupport.stream(SpawnEggItem.getEggs().spliterator(), false).sorted(this::sortSpawnEggs);
+		for(SpawnEggItem egg : eggs.collect(Collectors.toList())) {
 			EntityType<?> eType = egg.getType(null);
 			// don't allow spawn egg production of mobs that are immune to primordial, that would be weird.
 			if (primordialImmuneMobs.contains(eType)) {
@@ -55,25 +59,29 @@ public class GooTags extends EntityTypeTagsProvider {
 		}
 	}
 
+	private int sortSpawnEggs(SpawnEggItem spawnEggItem, SpawnEggItem spawnEggItem1) {
+		return spawnEggItem.getType(null).getRegistryName().compareNamespaced(spawnEggItem1.getType(null).getRegistryName());
+	}
+
 	private void registerWaterHatingMobs() {
 		this.getOrCreateBuilder(Entities.WATER_HATING_MOBS)
 				.add(EntityType.BLAZE)
+				.add(EntityType.ENDERMAN)
 				.add(EntityType.IRON_GOLEM)
-				.add(EntityType.MAGMA_CUBE)
-				.add(EntityType.ENDERMAN);
+				.add(EntityType.MAGMA_CUBE);
 	}
 
 	private void registerColdHatingMobs() {
 		this.getOrCreateBuilder(Entities.COLD_HATING_MOBS)
-				.add(EntityType.BLAZE)
-				.add(EntityType.PIGLIN)
-				.add(EntityType.MAGMA_CUBE)
-				.add(EntityType.ZOMBIFIED_PIGLIN)
 				.add(EntityType.BEE)
-				.add(EntityType.SPIDER)
+				.add(EntityType.BLAZE)
 				.add(EntityType.CAVE_SPIDER)
-				.add(EntityType.STRIDER)
 				.add(EntityType.GHAST)
-				.add(EntityType.HOGLIN);
+				.add(EntityType.HOGLIN)
+				.add(EntityType.MAGMA_CUBE)
+				.add(EntityType.PIGLIN)
+				.add(EntityType.SPIDER)
+				.add(EntityType.STRIDER)
+				.add(EntityType.ZOMBIFIED_PIGLIN);
 	}
 }
