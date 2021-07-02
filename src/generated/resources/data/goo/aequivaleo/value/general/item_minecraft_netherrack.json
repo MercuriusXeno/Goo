@@ -5,25 +5,29 @@
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
-        "item": "minecraft:dead_brain_coral_fan"
+        "item": "minecraft:netherrack"
       }
     },
     {
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:dead_brain_coral_fan\",Count:1b}"
+        "stack": "{id:\"minecraft:netherrack\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
       "amount": 5.0,
-      "type": "goo:faunal"
+      "type": "goo:decay"
+    },
+    {
+      "amount": 60.0,
+      "type": "goo:earthen"
     },
     {
       "amount": 5.0,
-      "type": "goo:decay"
+      "type": "goo:molten"
     }
   ]
 }

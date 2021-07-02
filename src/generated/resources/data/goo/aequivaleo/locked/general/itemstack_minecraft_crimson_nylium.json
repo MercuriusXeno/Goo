@@ -2,21 +2,25 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:crimson_nylium\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:crimson_nylium"
       }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:crimson_nylium\",Count:1b}"
+      }
     }
   ],
   "compounds": [
+    {
+      "amount": 60.0,
+      "type": "goo:chromatic"
+    },
     {
       "amount": 60.0,
       "type": "goo:earthen"
@@ -24,10 +28,6 @@
     {
       "amount": 15.0,
       "type": "goo:fungal"
-    },
-    {
-      "amount": 60.0,
-      "type": "goo:chromatic"
     }
   ]
 }

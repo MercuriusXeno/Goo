@@ -26,7 +26,7 @@ public class FluidCuboidHelper
         }
         // cycle timer
 
-        int ticks = (int)(Minecraft.getInstance().world.getDayTime() % FULL_CYCLE_TIME);
+        int ticks = (int)(Minecraft.getInstance().world.getGameTime() % FULL_CYCLE_TIME);
         return getChromaFromTime(ticks);
     }
 

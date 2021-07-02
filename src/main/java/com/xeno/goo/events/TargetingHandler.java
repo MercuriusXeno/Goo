@@ -61,7 +61,6 @@ public class TargetingHandler
     private static final float TEXT_SCALE = 0.5f;
     private static final int ICONS_BEFORE_ONE_LINE_LOOKS_LIKE_POO = 5;
     private static final float Z_LEVEL_OF_MODAL = 500;
-    // private static final Supplier<Float> PATCHOULI_Z_LEVEL = () -> (float)Minecraft.getInstance().world.getDayTime() % 1000;
 
     public static ItemStack PATCHOULI_BOOK = ItemStack.EMPTY;
     public static boolean lastHitIsGooContainer = false;

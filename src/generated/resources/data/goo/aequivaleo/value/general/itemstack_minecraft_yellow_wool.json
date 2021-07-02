@@ -2,28 +2,28 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:yellow_wool\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:yellow_wool"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:yellow_wool\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
       "amount": 15.0,
-      "type": "goo:faunal"
+      "type": "goo:chromatic"
     },
     {
       "amount": 15.0,
-      "type": "goo:chromatic"
+      "type": "goo:faunal"
     }
   ]
 }

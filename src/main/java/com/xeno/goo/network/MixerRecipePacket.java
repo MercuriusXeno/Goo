@@ -20,11 +20,13 @@ public class MixerRecipePacket implements IGooModPacket {
 	private RegistryKey<World> worldRegistryKey;
 	private BlockPos pos;
 	private MixerRecipe recipe;
+	private boolean isRecipeInputZeroLeftInput;
 
-	public MixerRecipePacket(BlockPos pos, RegistryKey<World> worldRegistryKey, MixerRecipe recipe) {
+	public MixerRecipePacket(BlockPos pos, RegistryKey<World> worldRegistryKey, MixerRecipe recipe, boolean isFirstInputLeftInput) {
 		this.pos = pos;
 		this.worldRegistryKey = worldRegistryKey;
 		this.recipe = recipe;
+		this.isRecipeInputZeroLeftInput = isFirstInputLeftInput;
 	}
 
 	public MixerRecipePacket(PacketBuffer buf) {
@@ -38,6 +40,7 @@ public class MixerRecipePacket implements IGooModPacket {
 		buf.writeBoolean(this.recipe != null);
 		if (this.recipe != null) {
 			buf.writeCompoundTag(this.recipe.serializeNbt(new CompoundNBT()));
+			buf.writeBoolean(this.isRecipeInputZeroLeftInput);
 		}
 	}
 
@@ -54,6 +57,7 @@ public class MixerRecipePacket implements IGooModPacket {
 				TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
 				if (te instanceof MixerTile) {
 					((MixerTile) te).setRecipe(this.recipe);
+					((MixerTile)te).setRecipeInverted(!this.isRecipeInputZeroLeftInput);
 				}
 			}
 		});
@@ -68,8 +72,10 @@ public class MixerRecipePacket implements IGooModPacket {
 		boolean hasRecipe = buf.readBoolean();
 		if (hasRecipe) {
 			this.recipe = MixerRecipe.deserializeNbt(buf.readCompoundTag());
+			this.isRecipeInputZeroLeftInput = buf.readBoolean();
 		} else {
 			this.recipe = null;
+			this.isRecipeInputZeroLeftInput = false;
 		}
 	}
 }

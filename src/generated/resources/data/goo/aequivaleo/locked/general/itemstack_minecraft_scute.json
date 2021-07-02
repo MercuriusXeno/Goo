@@ -2,28 +2,28 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:scute\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:scute"
       }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:scute\",Count:1b}"
+      }
     }
   ],
   "compounds": [
     {
-      "amount": 3.0,
-      "type": "goo:primordial"
-    },
-    {
       "amount": 60.0,
       "type": "goo:faunal"
+    },
+    {
+      "amount": 3.0,
+      "type": "goo:primordial"
     },
     {
       "amount": 1.0,

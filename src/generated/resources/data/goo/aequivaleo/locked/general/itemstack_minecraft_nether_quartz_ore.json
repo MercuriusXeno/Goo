@@ -2,17 +2,17 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:nether_quartz_ore\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:nether_quartz_ore"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:nether_quartz_ore\",Count:1b}"
       }
     }
   ],
@@ -22,12 +22,12 @@
       "type": "goo:crystal"
     },
     {
-      "amount": 1.0,
-      "type": "goo:logic_forbidden"
-    },
-    {
       "amount": 12.0,
       "type": "goo:earthen"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:logic_forbidden"
     }
   ]
 }

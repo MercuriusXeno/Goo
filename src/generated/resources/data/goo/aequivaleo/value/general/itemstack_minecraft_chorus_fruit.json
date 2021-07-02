@@ -2,21 +2,25 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:chorus_fruit\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:chorus_fruit"
       }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:chorus_fruit\",Count:1b}"
+      }
     }
   ],
   "compounds": [
+    {
+      "amount": 15.0,
+      "type": "goo:floral"
+    },
     {
       "amount": 1.0,
       "type": "goo:vital"
@@ -24,10 +28,6 @@
     {
       "amount": 4.0,
       "type": "goo:weird"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:floral"
     }
   ]
 }

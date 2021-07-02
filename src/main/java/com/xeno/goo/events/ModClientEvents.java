@@ -83,7 +83,7 @@ public class ModClientEvents
     {
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Bulb.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Mixer.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
-        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Pad.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Pump.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Degrader.get(), (layer) -> layer == RenderType.getCutoutMipped() || layer == RenderType.getTranslucent());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Lobber.get(), RenderType.getCutoutMipped());

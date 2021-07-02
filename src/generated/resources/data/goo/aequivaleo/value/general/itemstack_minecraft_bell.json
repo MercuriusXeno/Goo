@@ -2,21 +2,25 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:bell\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:bell"
       }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:bell\",Count:1b}"
+      }
     }
   ],
   "compounds": [
+    {
+      "amount": 120.0,
+      "type": "goo:earthen"
+    },
     {
       "amount": 128.0,
       "type": "goo:floral"
@@ -24,10 +28,6 @@
     {
       "amount": 180.0,
       "type": "goo:metal"
-    },
-    {
-      "amount": 120.0,
-      "type": "goo:earthen"
     },
     {
       "amount": 216.0,

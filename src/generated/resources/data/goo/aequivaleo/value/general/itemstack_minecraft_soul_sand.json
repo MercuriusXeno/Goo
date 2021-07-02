@@ -2,28 +2,28 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:soul_sand\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:soul_sand"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:soul_sand\",Count:1b}"
       }
     }
   ],
   "compounds": [
     {
       "amount": 60.0,
-      "type": "goo:earthen"
+      "type": "goo:decay"
     },
     {
       "amount": 60.0,
-      "type": "goo:decay"
+      "type": "goo:earthen"
     },
     {
       "amount": 15.0,

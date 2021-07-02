@@ -2,17 +2,17 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:sea_pickle\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:sea_pickle"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:sea_pickle\",Count:1b}"
       }
     }
   ],
@@ -22,16 +22,16 @@
       "type": "goo:aquatic"
     },
     {
+      "amount": 48.0,
+      "type": "goo:chromatic"
+    },
+    {
       "amount": 30.0,
       "type": "goo:faunal"
     },
     {
       "amount": 30.0,
       "type": "goo:radiant"
-    },
-    {
-      "amount": 48.0,
-      "type": "goo:chromatic"
     }
   ]
 }

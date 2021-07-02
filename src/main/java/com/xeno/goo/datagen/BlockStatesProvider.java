@@ -513,57 +513,8 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerTrough() {
-        ResourceLocation baseSide = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_side_outer");
-        ResourceLocation baseTop = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_top");
-        ResourceLocation baseBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_bottom_outer");
-        ResourceLocation baseSideInner = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_side_inner");
-        ResourceLocation baseBottomInner = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_bottom_inner");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        ResourceLocation fixtureBottom = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_bottom");
-        ResourceLocation fixtureTop = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_top");
-        ResourceLocation fixtureSide = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_side");
-        ResourceLocation fixtureFace = new ResourceLocation(GooMod.MOD_ID, "block/trough/trough_fixture_face");
-        BlockModelBuilder model = models()
-                .withExistingParent("goo_trough", "block/block")
-                .element()
-                .from(1f, 0f, 1f).to(15f, 4f, 15f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#bottom" :
-                                (t == Direction.UP ? "#top" :
-                                        "#side_outer"))
-                ).end()
-                .element()
-                .from(14f, 4f, 14f).to(2f, 1f, 2f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#empty" :
-                                (t == Direction.UP ? "#bottom_inner" :
-                                        "#side_inner"))
-                ).end()
-                .element()
-                .from(4f, 0.01f, 0f).to(12f, 12f, 4f)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#fixture_bottom" :
-                                (t == Direction.UP ? "#fixture_top" :
-                                        t.getAxis() == Direction.Axis.X ? "#fixture_side" :
-                                                "#fixture_face"))
-                                .uvs(
-                                        t.getAxis() == Direction.Axis.X ? 6f : 4f,
-                                        t.getAxis() == Direction.Axis.Y ? 6f : 2f,
-                                        t.getAxis() == Direction.Axis.X ? 10f : 12f,
-                                        t.getAxis() == Direction.Axis.Y ? 10f : 14f
-                                )
-                ).end();
-        model.texture("bottom", baseBottom);
-        model.texture("top", baseTop);
-        model.texture("side_outer", baseSide);
-        model.texture("empty", empty);
-        model.texture("bottom_inner", baseBottomInner);
-        model.texture("side_inner", baseSideInner);
-        model.texture("fixture_bottom", fixtureBottom);
-        model.texture("fixture_top", fixtureTop);
-        model.texture("fixture_side", fixtureSide);
-        model.texture("fixture_face", fixtureFace);
-        model.texture("particle", baseBottom);
+        BlockModelBuilder model = models().withExistingParent("trough", new ResourceLocation(GooMod.MOD_ID, "prefab_trough"));
+
         horizontalBlock(BlocksRegistry.Trough.get(), state -> model);
 
         simpleBlockItem(BlocksRegistry.Trough.get(), model);

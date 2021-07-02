@@ -2,17 +2,17 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:ancient_debris\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:ancient_debris"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:ancient_debris\",Count:1b}"
       }
     }
   ],
@@ -22,16 +22,16 @@
       "type": "goo:logic_forbidden"
     },
     {
-      "amount": 15.0,
-      "type": "goo:primordial"
-    },
-    {
       "amount": 960.0,
       "type": "goo:metal"
     },
     {
       "amount": 120.0,
       "type": "goo:molten"
+    },
+    {
+      "amount": 15.0,
+      "type": "goo:primordial"
     }
   ]
 }

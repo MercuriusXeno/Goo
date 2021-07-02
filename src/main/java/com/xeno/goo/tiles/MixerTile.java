@@ -117,19 +117,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     private void handleAnimation() {
         if (this.isActive) {
             accelerateSpinner();
-            if (this.currentRecipe != null) {
-                    Vector3d center = Vector3d.copyCentered(this.pos);
-                    Vector3d leftOffset = Vector3d.copy(this.facing().rotateY().getDirectionVec()).scale(0.4d).add(center);
-                    Vector3d rightOffset = Vector3d.copy(this.facing().rotateYCCW().getDirectionVec()).scale(0.4d).add(center);
-                    Vector3d leftSpeed = center.subtract(leftOffset).normalize();
-                    Vector3d rightSpeed = center.subtract(rightOffset).normalize();
-                    world.addParticle(Registry.sprayParticleFromFluid(currentRecipe.inputs().get(isFirstInputLeftInput ? 0 : 1).getFluid()),
-                            leftOffset.x, leftOffset.y, leftOffset.z,
-                            leftSpeed.x, leftSpeed.y, leftSpeed.z);
-                    world.addParticle(Registry.sprayParticleFromFluid(currentRecipe.inputs().get(isFirstInputLeftInput ? 1 : 0).getFluid()),
-                            rightOffset.x, rightOffset.y, rightOffset.z,
-                            rightSpeed.x, rightSpeed.y, rightSpeed.z);
-            }
         } else {
             decelerateSpinner();
         }
@@ -137,7 +124,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     }
 
     private void decelerateSpinner() {
-        this.spinnerSpeed = Math.min(0.0f, spinnerSpeed * .94f);
+        this.spinnerSpeed = (spinnerSpeed <= 0.01f ? 0.0f : spinnerSpeed * .94f);
     }
 
     private void accelerateSpinner() {
@@ -263,8 +250,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         sendRecipePacket();
     }
 
-    private void setRecipeInverted(boolean b) {
-        this.isFirstInputLeftInput = b;
+    public void setRecipeInverted(boolean b) {
+        this.isFirstInputLeftInput = !b;
     }
 
     private boolean tryDoingRecipe() {
@@ -313,7 +300,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     }
 
     private void sendRecipePacket() {
-        Networking.sendToClientsAround(new MixerRecipePacket(this.pos, this.world.getDimensionKey(), currentRecipe), (ServerWorld)this.world, this.pos);
+        Networking.sendToClientsAround(new MixerRecipePacket(this.pos, this.world.getDimensionKey(), currentRecipe, isFirstInputLeftInput), (ServerWorld)this.world, this.pos);
     }
 
     private boolean tryDrainingRecipe(IFluidHandler i1, IFluidHandler i2, MixerRecipe m, FluidAction simulate) {
@@ -433,5 +420,17 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     public float spinnerDegrees() {
         return spinnerDegrees;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public MixerRecipe currentRecipe() {
+        return currentRecipe;
+    }
+
+    public boolean isRecipeFirstInputClockwise() {
+        return isFirstInputLeftInput;
     }
 }

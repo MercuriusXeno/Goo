@@ -2,17 +2,17 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:prismarine_shard\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:prismarine_shard"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:prismarine_shard\",Count:1b}"
       }
     }
   ],
@@ -22,12 +22,12 @@
       "type": "goo:aquatic"
     },
     {
-      "amount": 4.0,
-      "type": "goo:radiant"
-    },
-    {
       "amount": 2.0,
       "type": "goo:crystal"
+    },
+    {
+      "amount": 4.0,
+      "type": "goo:radiant"
     }
   ]
 }

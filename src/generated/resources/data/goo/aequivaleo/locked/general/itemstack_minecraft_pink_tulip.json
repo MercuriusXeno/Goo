@@ -2,25 +2,21 @@
   "mode": "ADDITIVE",
   "targets": [
     {
-      "type": "aequivaleo:itemstack",
-      "data": {
-        "count": 1.0,
-        "stack": "{id:\"minecraft:pink_tulip\",Count:1b}"
-      }
-    },
-    {
       "type": "aequivaleo:item",
       "data": {
         "count": 1.0,
         "item": "minecraft:pink_tulip"
       }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"minecraft:pink_tulip\",Count:1b}"
+      }
     }
   ],
   "compounds": [
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    },
     {
       "amount": 48.0,
       "type": "goo:chromatic"
@@ -28,6 +24,10 @@
     {
       "amount": 5.0,
       "type": "goo:floral"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:vital"
     }
   ]
 }
