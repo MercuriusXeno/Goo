@@ -1,0 +1,22 @@
+{
+	"parent": "minecraft:block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "goo:block/lobber/lobber_simple",
+		"particle": "goo:block/lobber/lobber_simple"
+	},
+	"elements": [
+		{
+			"from": [3, 3, 6],
+			"to": [13, 13, 16],
+			"faces": {
+				"north": {"uv": [1.5, 1.5, 6.5, 6.5], "texture": "#0"},
+				"east": {"uv": [1.5, 9.5, 6.5, 14.5], "texture": "#0"},
+				"south": {"uv": [9.5, 1.5, 14.5, 6.5], "texture": "#0"},
+				"west": {"uv": [1.5, 9.5, 6.5, 14.5], "texture": "#0"},
+				"up": {"uv": [1.5, 9.5, 6.5, 14.5], "texture": "#0"},
+				"down": {"uv": [1.5, 9.5, 6.5, 14.5], "texture": "#0"}
+			}
+		}
+	]
+}

@@ -120,7 +120,7 @@ public class Degrader extends BlockWithConnections {
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
-                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
+                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing());
     }
 
     @Override

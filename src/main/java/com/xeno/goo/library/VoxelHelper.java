@@ -11,20 +11,24 @@ import net.minecraft.util.math.vector.Vector3f;
 public class VoxelHelper {
     // just uses "north" as the default
     public static VoxelShape cuboid(Vector3d start, Vector3d end) {
-        return cuboidWithHorizontalRotation(Direction.NORTH, start, end);
+        return cuboidWithRotation(Direction.NORTH, start, end);
     }
 
     // create a cuboid from a direction using two 3d vectors
-    public static VoxelShape cuboidWithHorizontalRotation(Direction facing, Vector3d start, Vector3d end)
+    public static VoxelShape cuboidWithRotation(Direction facing, Vector3d start, Vector3d end)
     {
-        return cuboidWithHorizontalRotation(facing, start.x, start.y, start.z, end.x, end.y, end.z);
+        return cuboidWithRotation(facing, start.x, start.y, start.z, end.x, end.y, end.z);
     }
 
     // returns a horizontally rotated variant of the cuboid dimensions given to it assuming NORTH is the normal variant.
-    public static VoxelShape cuboidWithHorizontalRotation(Direction facing, double x1, double y1, double z1, double x2, double y2, double z2)
+    public static VoxelShape cuboidWithRotation(Direction facing, double x1, double y1, double z1, double x2, double y2, double z2)
     {
         switch (facing)
         {
+            case DOWN:
+                return makeCuboidShape(y1, z1, x1, y2, z2, x2);
+            case UP:
+                return makeCuboidShape(16 - y2, 16 - z2, 16 - x2, 16 - y1, 16 - z1, 16 - x1);
             case NORTH:
                 return makeCuboidShape(x1, y1, z1, x2, y2, z2);
             case EAST:

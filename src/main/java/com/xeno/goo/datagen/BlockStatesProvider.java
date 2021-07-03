@@ -11,6 +11,8 @@ import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Direction.Axis;
+import net.minecraft.util.Direction.AxisDirection;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.client.model.generators.*;
@@ -231,22 +233,19 @@ public class BlockStatesProvider extends BlockStateProvider {
 
 
     private void registerLobber() {
-        ResourceLocation front = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_front");
-        ResourceLocation side = new ResourceLocation(GooMod.MOD_ID, "block/lobber/lobber_side");
         BlockModelBuilder model = models()
-                .withExistingParent("lobber", "block/block")
-                .element()
-                .from(0, 0, 0)
-                .to(16f, 16f, 16f)
-                .allFaces((t, u) ->
-                        u.texture(t ==  Direction.UP ? "#front" :
-                                "#side")
-                        .uvs(1f, 1f, 15f, 15f))
-                .end();
-        model.texture("particle", front);
-        model.texture("front", front);
-        model.texture("side", side);
-        directionalBlock(BlocksRegistry.Lobber.get(), model);
+                .withExistingParent("lobber", new ResourceLocation(GooMod.MOD_ID, "prefab_lobber"));
+
+        getVariantBuilder(BlocksRegistry.Lobber.get())
+                .forAllStates(
+                        (s) -> ConfiguredModel.builder()
+                                .modelFile(model)
+                                .rotationY(s.get(BlockStateProperties.FACING).getAxis() == Axis.Y ? 0 : (180 + s.get(BlockStateProperties.FACING).getHorizontalIndex() * 90))
+                                .rotationX(s.get(BlockStateProperties.FACING).getAxis() != Axis.Y ? 0 :
+                                        (s.get(BlockStateProperties.FACING).getAxisDirection() == AxisDirection.NEGATIVE ? 90 : 270)
+                                    )
+                                .build()
+                );
         simpleBlockItem(BlocksRegistry.Lobber.get(), model);
     }
 
@@ -261,7 +260,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .forAllStates(
                         (s) -> ConfiguredModel.builder()
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
-                                .rotationY(s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
+                                .rotationY(180 - s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
                                 .build()
                 );
 

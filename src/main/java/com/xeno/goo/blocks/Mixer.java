@@ -30,8 +30,6 @@ import static net.minecraft.util.Direction.*;
 
 public class Mixer extends BlockWithConnections
 {
-    // VoxelShape[] shapes;
-
     public Mixer()
     {
         super(Properties.create(Material.ROCK)

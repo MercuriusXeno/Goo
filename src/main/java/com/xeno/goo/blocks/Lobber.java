@@ -12,30 +12,46 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.VoxelShapes;
+import net.minecraft.util.math.shapes.*;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class Lobber extends BlockWithConnections
 {
+    private VoxelShape[] shapes;
     public Lobber()
     {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
+        super(Properties.create(Material.IRON)
+                .sound(SoundType.METAL)
                 .hardnessAndResistance(1.0f)
-                .notSolid()
         );
-        setDefaultState(this.stateContainer.getBaseState()
+        setDefaultState(this.getDefaultState()
                 .with(BlockStateProperties.TRIGGERED, false)
                 .with(BlockStateProperties.FACING, Direction.UP)
         );
+        shapes = makeShapes();
+    }
+
+    private VoxelShape[] makeShapes() {
+        VoxelShape[] result = new VoxelShape[6];
+        // north facing default
+        Vector3d min = new Vector3d(3, 3, 6);
+        Vector3d max = new Vector3d(13, 13, 16);
+
+        for(int i = 0; i < 6; i++) {
+            // figure out the fixture by rotation and then mash it together with the base. Slap that in result.
+            Direction d = Direction.byIndex(i);
+            VoxelShape shape = VoxelHelper.cuboidWithRotation(d, min, max);
+            result[i] = shape;
+        }
+        return result;
     }
 
     /**
@@ -45,7 +61,7 @@ public class Lobber extends BlockWithConnections
     @Override
     @SuppressWarnings("deprecation")
     public VoxelShape getCollisionShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
-        return this.canCollide ? VoxelShapes.fullCube() : VoxelShapes.empty();
+        return shapes[state.get(BlockStateProperties.FACING).getIndex()];
     }
 
     /**
@@ -55,7 +71,7 @@ public class Lobber extends BlockWithConnections
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
-        return VoxelShapes.fullCube();
+        return getCollisionShape(state, worldIn, pos, context);
     }
 
     /**
@@ -74,7 +90,7 @@ public class Lobber extends BlockWithConnections
     @Override
     @SuppressWarnings("deprecation")
     public VoxelShape getRaytraceShape(BlockState state, IBlockReader worldIn, BlockPos pos) {
-        return VoxelShapes.fullCube();
+        return shapes[state.get(BlockStateProperties.FACING).getIndex()];
     }
 
     @Override
@@ -104,7 +120,7 @@ public class Lobber extends BlockWithConnections
         if (!(te instanceof LobberTile)) {
             return;
         }
-        ((LobberTile) te).cycleInputsForLob();
+        ((LobberTile) te).tryPushingFluid(worldIn.getBlockState(pos).get(BlockStateProperties.FACING).getOpposite());
     }
 
     @Override
@@ -123,7 +139,7 @@ public class Lobber extends BlockWithConnections
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(BlockStateProperties.TRIGGERED, false)
-                .with(BlockStateProperties.FACING, context.getNearestLookingDirection().getOpposite());
+                .with(BlockStateProperties.FACING, context.getFace());
     }
 
     @Override
@@ -133,15 +149,6 @@ public class Lobber extends BlockWithConnections
 
     @Override
     protected Direction[] relevantConnectionDirections(BlockState state) {
-        Direction[] result = new Direction[5];
-        int i = 0;
-        for(Direction d : Direction.values()) {
-            if (state.get(BlockStateProperties.FACING) == d) {
-                continue;
-            }
-            result[i] = d;
-            i++;
-        }
-        return result;
+        return new Direction[] { state.get(BlockStateProperties.FACING).getOpposite() };
     }
 }

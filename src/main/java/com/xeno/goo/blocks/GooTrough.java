@@ -71,10 +71,10 @@ public class GooTrough extends BlockWithConnections
 
         // the base is always the same, no matter what direction the block is facing, no need to rotate the voxel more.
         VoxelShape base = VoxelHelper.cuboid(baseBottomStart, baseBottomEnd);
-        VoxelShape northWall = VoxelHelper.cuboidWithHorizontalRotation(Direction.NORTH, baseSideStart, baseSideEnd);
-        VoxelShape eastWall = VoxelHelper.cuboidWithHorizontalRotation(Direction.EAST, baseSideStart, baseSideEnd);
-        VoxelShape southWall = VoxelHelper.cuboidWithHorizontalRotation(Direction.SOUTH, baseSideStart, baseSideEnd);
-        VoxelShape westWall = VoxelHelper.cuboidWithHorizontalRotation(Direction.WEST, baseSideStart, baseSideEnd);
+        VoxelShape northWall = VoxelHelper.cuboidWithRotation(Direction.NORTH, baseSideStart, baseSideEnd);
+        VoxelShape eastWall = VoxelHelper.cuboidWithRotation(Direction.EAST, baseSideStart, baseSideEnd);
+        VoxelShape southWall = VoxelHelper.cuboidWithRotation(Direction.SOUTH, baseSideStart, baseSideEnd);
+        VoxelShape westWall = VoxelHelper.cuboidWithRotation(Direction.WEST, baseSideStart, baseSideEnd);
 
         // mash the base together, it's always the same shape.
         VoxelShape wholeBase = VoxelHelper.mergeAll(base, northWall, eastWall, southWall, westWall);
@@ -83,7 +83,7 @@ public class GooTrough extends BlockWithConnections
         for(int i = 0; i < 4; i++) {
             // figure out the fixture by rotation and then mash it together with the base. Slap that in result.
             Direction d = Direction.byHorizontalIndex(i);
-            VoxelShape rotatedFixture = VoxelHelper.cuboidWithHorizontalRotation(d, fixtureStart, fixtureEnd);
+            VoxelShape rotatedFixture = VoxelHelper.cuboidWithRotation(d, fixtureStart, fixtureEnd);
             result[i] = VoxelHelper.mergeAll(wholeBase, rotatedFixture);
         }
 
@@ -116,37 +116,7 @@ public class GooTrough extends BlockWithConnections
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(HORIZONTAL_FACING);
     }
-//
-//    @SuppressWarnings("deprecation")
-//    @Override
-//    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
-//    {
-//        if (state.get(FACING).getAxis() == hit.getFace().getAxis()) {
-//            return ActionResultType.PASS;
-//        }
-//        boolean isClient = false;
-//        if (worldIn != null && worldIn.isRemote()) {
-//            isClient = true;
-//        }
-//
-//        if (worldIn != null) {
-//            TileEntity tile = worldIn.getTileEntity(pos);
-//            if (!(tile instanceof GooPumpTile)) {
-//                return ActionResultType.func_233537_a_(worldIn.isRemote);
-//            }
-//
-//            Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
-//            if(!isClient) {
-//                ((GooPumpTile) tile).changeTargetItem(itemToSwap);
-//            }
-//
-//            return ActionResultType.func_233537_a_(worldIn.isRemote);
-//        }
-//        if (!player.isSneaking()) {
-//            return ActionResultType.PASS;
-//        }
-//        return ActionResultType.func_233537_a_(worldIn.isRemote);
-//    }
+
 
     public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
     static {

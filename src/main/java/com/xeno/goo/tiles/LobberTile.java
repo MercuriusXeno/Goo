@@ -24,55 +24,7 @@ public class LobberTile extends TileEntity
         super(Registry.LOBBER_TILE.get());
     }
 
-    public void cycleInputsForLob() {
-        // figure out where our last fire input came from and attempt to fire from the next input
-        int tryFireDirection = lastFiredDirection + 1;
-        // reset to 0 if we're "fresh" or we're at the end of the array
-        if (tryFireDirection > 4) {
-            tryFireDirection = 0;
-        }
-        Direction[] tryDirections = directionsWeAreNotFacing(tryFireDirection);
-        for(Direction d : tryDirections) {
-            if (tryPushingFluid(d)) {
-                lastFiredDirection = tryFireDirection;
-                return;
-            }
-        }
-    }
-
-    private Direction[] cachedPullDirections;
-    private Direction[] directionsWeAreNotFacing(int tryFireDirection) {
-        if (cachedPullDirections == null) {
-            int index = 0;
-            Direction[] directionsToCache = new Direction[5];
-            for (Direction d : Direction.values()) {
-                if (d == facing()) {
-                    continue;
-                }
-                directionsToCache[index] = d;
-                index++;
-            }
-            cachedPullDirections = directionsToCache;
-        }
-
-        // sort our directions to prefer the one we're trying first, so that it has a deterministic order.
-        Direction[] result = new Direction[5];
-        int resultIndex = 0;
-        for (int i = tryFireDirection; i < cachedPullDirections.length; i++) {
-            result[resultIndex] = cachedPullDirections[i];
-            resultIndex++;
-        }
-        if (tryFireDirection > 0) {
-            for (int i = 0; i < tryFireDirection; i++) {
-                result[resultIndex] = cachedPullDirections[i];
-                resultIndex++;
-            }
-        }
-
-        return result;
-    }
-
-    private boolean tryPushingFluid(Direction d)
+    public boolean tryPushingFluid(Direction d)
     {
         TileEntity source = tileAtSource(d);
 
@@ -81,10 +33,7 @@ public class LobberTile extends TileEntity
         }
 
         Optional<IFluidHandler> sourceHandler = FluidHandlerHelper.capabilityOfNeighbor(this, d).resolve();
-        if (sourceHandler.isPresent()) {
-            return lobFluid(sourceHandler.get());
-        }
-        return false;
+        return sourceHandler.filter(this::lobFluid).isPresent();
     }
 
     private boolean lobFluid(IFluidHandler cap) {
