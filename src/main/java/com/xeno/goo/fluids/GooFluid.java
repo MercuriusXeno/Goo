@@ -22,16 +22,17 @@ import java.util.function.Predicate;
 public class GooFluid extends Fluid
 {
     public static final Predicate<FluidStack> IS_GOO_FLUID = GooFluid::isGooFluid;
+	public static final int FULL_OPACITY = 0xffffffff;
 
-    public static boolean isGooFluid(FluidStack fluid) {
+	public static boolean isGooFluid(FluidStack fluid) {
 
         return fluid == null || fluid.getRawFluid() instanceof GooFluid;
     }
 
     private final int lightLevel;
-    private static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
+    public static final int UNCOLORED_WITH_PARTIAL_TRANSPARENCY =
             // alpha
-            192 << 24 |
+            224 << 24 |
             255 << 16 |
             255 << 8 |
             255;

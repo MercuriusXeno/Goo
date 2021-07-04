@@ -3,7 +3,6 @@ package com.xeno.goo.datagen;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalNest;
-import com.xeno.goo.blocks.GooPump;
 import com.xeno.goo.client.render.block.DynamicRenderMode;
 import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.fluids.GooFluid;
@@ -57,10 +56,7 @@ public class BlockStatesProvider extends BlockStateProvider {
 
     private void registerGooBulb() {
         BlockModelBuilder model = models().withExistingParent("bulb", new ResourceLocation(GooMod.MOD_ID, "prefab_bulb"));
-
         simpleBlock(BlocksRegistry.Bulb.get(), model);
-
-        simpleBlockItem(BlocksRegistry.Bulb.get(), model);
     }
 
     private void registerGooPump() {
@@ -82,8 +78,6 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .condition(BlockStateProperties.FACING, d)
                     .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
         }
-
-        simpleBlockItem(BlocksRegistry.Pump.get(), base);
     }
 
     private void registerMixer()
@@ -110,8 +104,6 @@ public class BlockStatesProvider extends BlockStateProvider {
                     .condition(BlockStateProperties.POWERED, true, false)
                     .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
         }
-
-        simpleBlockItem(BlocksRegistry.Mixer.get(), model);
     }
 
     private void registerDecorativeBlocks() {
@@ -264,7 +256,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                                 .build()
                 );
 
-        simpleBlockItem(BlocksRegistry.Degrader.get(), modelInactive);
+        //simpleBlockItem(BlocksRegistry.Degrader.get(), modelInactive);
     }
 
     private void registerPad() {

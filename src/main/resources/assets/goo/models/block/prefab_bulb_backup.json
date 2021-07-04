@@ -26,7 +26,7 @@
 					}
 				},
 				{
-					"name": "inner",
+					"name": "bulb_inner",
 					"from": [15.9, 15.9, 15.9],
 					"to": [0.1, 0.1, 0.1],
 					"faces": {
@@ -34,8 +34,8 @@
 						"east": {"uv": [8, 8, 16, 0], "texture": "#0"},
 						"south": {"uv": [8, 8, 16, 0], "texture": "#0"},
 						"west": {"uv": [8, 8, 16, 0], "texture": "#0"},
-						"up": {"uv": [0, 0, 8, 8], "texture": "#0"},
-						"down": {"uv": [0, 0, 8, 8], "texture": "#0"}
+						"up": {"uv": [8, 0, 0, 8], "texture": "#0"},
+						"down": {"uv": [8, 0, 0, 8], "texture": "#0"}
 					}
 				}
 			]
@@ -47,7 +47,7 @@
 			},
 			"elements": [
 				{
-					"name": "glass",
+					"name": "bulb",
 					"from": [0, 0, 0],
 					"to": [16, 16, 16],
 					"faces": {
@@ -60,14 +60,14 @@
 					}
 				},
 				{
-					"name": "glass_inner",
+					"name": "bulb_inner",
 					"from": [15.9, 15.9, 15.9],
 					"to": [0.1, 0.1, 0.1],
 					"faces": {
-						"north": {"uv": [8, 16, 16, 8], "texture": "#0"},
-						"east": {"uv": [8, 16, 16, 8], "texture": "#0"},
-						"south": {"uv": [8, 16, 16, 8], "texture": "#0"},
-						"west": {"uv": [8, 16, 16, 8], "texture": "#0"},
+						"north": {"uv": [8, 8, 16, 16], "texture": "#0"},
+						"east": {"uv": [8, 8, 16, 16], "texture": "#0"},
+						"south": {"uv": [8, 8, 16, 16], "texture": "#0"},
+						"west": {"uv": [8, 8, 16, 16], "texture": "#0"},
 						"up": {"uv": [0, 8, 8, 16], "texture": "#0"},
 						"down": {"uv": [0, 8, 8, 16], "texture": "#0"}
 					}

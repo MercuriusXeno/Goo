@@ -4,19 +4,17 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.library.AudioHelper.PitchFormulas;
-import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.BulbTile;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
+import net.minecraft.state.StateContainer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
@@ -26,7 +24,6 @@ import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.FluidStack;
@@ -92,7 +89,7 @@ public class GooBulb extends BlockWithConnections
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world)
     {
-        return new GooBulbTile();
+        return new BulbTile();
     }
 
     @Override
@@ -100,7 +97,7 @@ public class GooBulb extends BlockWithConnections
     {
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
         int containment = GooBulbItem.containment(stack);
-        GooBulbTile tile = (GooBulbTile)worldIn.getTileEntity(pos);
+        BulbTile tile = (BulbTile)worldIn.getTileEntity(pos);
         tile.setContainmentLevel(containment);
     }
 
@@ -115,8 +112,8 @@ public class GooBulb extends BlockWithConnections
     public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.matchesBlock(newState.getBlock())) {
             TileEntity tileentity = worldIn.getTileEntity(pos);
-            if (tileentity instanceof GooBulbTile) {
-                ((GooBulbTile) tileentity).spewItems();
+            if (tileentity instanceof BulbTile) {
+                ((BulbTile) tileentity).spewItems();
                 worldIn.updateComparatorOutputLevel(pos, this);
             }
 
@@ -135,19 +132,19 @@ public class GooBulb extends BlockWithConnections
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit)
     {
         TileEntity tile = worldIn.getTileEntity(pos);
-        if (!(tile instanceof GooBulbTile)) {
+        if (!(tile instanceof BulbTile)) {
             return ActionResultType.FAIL;
         }
 
-        GooBulbTile bulb = ((GooBulbTile) tile);
+        BulbTile bulb = ((BulbTile) tile);
         ActionResultType bucketInteracted = tryBucketInteraction(bulb, state, worldIn, pos, player, handIn, hit);
         if (bucketInteracted != ActionResultType.FAIL) {
             return bucketInteracted;
         }
-        return tryBidirectionalCrystalInteraction(worldIn, player, handIn, hit, (GooBulbTile) tile, bulb);
+        return tryBidirectionalCrystalInteraction(worldIn, player, handIn, hit, (BulbTile) tile, bulb);
     }
 
-    private ActionResultType tryBucketInteraction(GooBulbTile bulb, BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn,
+    private ActionResultType tryBucketInteraction(BulbTile bulb, BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn,
             BlockRayTraceResult hit) {
 
         ActionResultType emptyBucketFill = tryFillingEmptyBucket(bulb, player, handIn, hit);
@@ -159,7 +156,7 @@ public class GooBulb extends BlockWithConnections
 
     }
 
-    private ActionResultType tryEmptyingFilledBucket(GooBulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+    private ActionResultType tryEmptyingFilledBucket(BulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
 
         if (!(player.getHeldItem(handIn).getItem() instanceof BucketItem)) {
             return ActionResultType.FAIL;
@@ -190,7 +187,7 @@ public class GooBulb extends BlockWithConnections
     }
 
     @NotNull
-    private ActionResultType tryFillingEmptyBucket(GooBulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+    private ActionResultType tryFillingEmptyBucket(BulbTile bulb, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
 
         if (player.getHeldItem(handIn).getItem() != Items.BUCKET) {
             return ActionResultType.FAIL;
@@ -220,7 +217,7 @@ public class GooBulb extends BlockWithConnections
     }
 
     @NotNull
-    private ActionResultType tryBidirectionalCrystalInteraction(World worldIn, PlayerEntity player, Hand handIn, BlockRayTraceResult hit, GooBulbTile tile, GooBulbTile bulb) {
+    private ActionResultType tryBidirectionalCrystalInteraction(World worldIn, PlayerEntity player, Hand handIn, BlockRayTraceResult hit, BulbTile tile, BulbTile bulb) {
 
         if (bulb.hasCrystal()) {
             if (!worldIn.isRemote) {
@@ -233,7 +230,7 @@ public class GooBulb extends BlockWithConnections
     }
 
     @NotNull
-    private ActionResultType tryFeedingBulbCrystal(World worldIn, PlayerEntity player, Hand handIn, GooBulbTile tile) {
+    private ActionResultType tryFeedingBulbCrystal(World worldIn, PlayerEntity player, Hand handIn, BulbTile tile) {
         // bulb is empty so it can take a crystal if you're holding one.
         Item item = player.getHeldItem(handIn).getItem();
         if (!item.equals(Items.QUARTZ) && !(item instanceof CrystallizedGooAbstract)) {

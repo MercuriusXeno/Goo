@@ -8,6 +8,7 @@ import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.DegraderTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -73,7 +74,7 @@ public class DegraderRenderer extends TileEntityRenderer<DegraderTile> {
         fromY = minY + yOffset;
         toY = fromY + height;
         Model3d fluidModel = getFluidModel(goo, scaledHeight);
-        RenderHelper.renderObject(fluidModel, matrixStack, builder, 0xffffffff, light, overlay);
+        RenderHelper.renderObject(fluidModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, light, overlay, fluidModel);
     }
 

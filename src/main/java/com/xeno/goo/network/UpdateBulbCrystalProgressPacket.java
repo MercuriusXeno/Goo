@@ -1,6 +1,6 @@
 package com.xeno.goo.network;
 
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.BulbTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
@@ -67,8 +67,8 @@ public class UpdateBulbCrystalProgressPacket implements IGooModPacket {
                     return;
                 }
                 TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
-                if (te instanceof GooBulbTile) {
-                    ((GooBulbTile) te).updateCrystalProgress(this.crystal, this.lastIncrement,
+                if (te instanceof BulbTile) {
+                    ((BulbTile) te).updateCrystalProgress(this.crystal, this.lastIncrement,
                             this.crystalFluid, this.crystalProgress);
                 }
             }

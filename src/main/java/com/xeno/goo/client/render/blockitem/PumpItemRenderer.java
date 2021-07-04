@@ -1,8 +1,7 @@
 package com.xeno.goo.client.render.blockitem;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.client.render.RenderHelper;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -16,10 +15,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 
-public class GooBulbItemRenderer extends ItemStackTileEntityRenderer
+public class PumpItemRenderer extends ItemStackTileEntityRenderer
 {
-    public static final GooBulbItemRenderer instance = new GooBulbItemRenderer();
-    public GooBulbItemRenderer() {
+    public PumpItemRenderer() {
         super();
     }
 
@@ -28,22 +26,22 @@ public class GooBulbItemRenderer extends ItemStackTileEntityRenderer
     {
         Block block = ((BlockItem)stack.getItem()).getBlock();
         super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
-        IBakedModel bulbModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
+        IBakedModel pumpModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
 
-        Minecraft.getInstance().getItemRenderer().renderModel(bulbModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));
-
+        Minecraft.getInstance().getItemRenderer().renderModel(pumpModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
+        // Minecraft.getInstance().getItemRenderer().renderModel(pumpModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
         CompoundNBT stackTag = stack.getTag();
         if (stackTag == null || !stackTag.contains("BlockEntityTag")) {
             return;
         }
 
-        CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
+        CompoundNBT mixerTag = stackTag.getCompound("BlockEntityTag");
 
-        TileEntity tileEntity = GooBulbTile.readTileEntity(block.getDefaultState(), bulbTag);
+        TileEntity tileEntity = MixerTile.readTileEntity(block.getDefaultState(), mixerTag);
         if (tileEntity == null) {
             return;
         }
 
-        TileEntityRendererDispatcher.instance.renderItem(tileEntity, matrixStack, buffer, RenderHelper.FULL_BRIGHT, combinedOverlay);
+        TileEntityRendererDispatcher.instance.renderItem(tileEntity, matrixStack, buffer, combinedLight, combinedOverlay);
     }
 }

@@ -3,13 +3,12 @@ package com.xeno.goo.blocks;
 import com.xeno.goo.enchantments.Containment;
 import com.xeno.goo.events.TargetingHandler;
 import com.xeno.goo.setup.Registry;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.BulbTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -57,7 +56,7 @@ public class GooBulbItem extends BlockItem
         if (worldIn == null) {
             return;
         }
-        int holdsAmount = GooBulbTile.storageForDisplay(containment(stack));
+        int holdsAmount = BulbTile.storageForDisplay(containment(stack));
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(new TranslationTextComponent("goo.common.holds_amount", TargetingHandler.getGooAmountForDisplay(holdsAmount)));
     }

@@ -8,6 +8,7 @@ import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.TroughTile;
@@ -79,7 +80,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
         fromY = minY + yOffset;
         toY = fromY + height;
         Model3d fluidModel = getFluidModel(goo, fromY, toY);
-        RenderHelper.renderObject(fluidModel, matrixStack, builder, 0xffffffff, light, overlay);
+        RenderHelper.renderObject(fluidModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, light, overlay, fluidModel);
 
         if (isVerticallyFilled) {
@@ -90,7 +91,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
             float streamWidth = FROM_VERTICAL_FILL_PORT_WIDTH_BASE * verticalFillIntensity;
             float vertToY = TO_SCALED_VERTICAL_FIXTURE - (16f * (FROM_VERTICAL_FILL_PORT_WIDTH_BASE - streamWidth));
             Model3d fillModel = getVerticalFillModel(verticalFillFluid, vertFrom.getX(), toY, vertFrom.getZ(), vertTo.getX(), vertToY, vertTo.getZ());
-            RenderHelper.renderObject(fillModel, matrixStack, builder, 0xffffffff, light, overlay);
+            RenderHelper.renderObject(fillModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         }
     }
 

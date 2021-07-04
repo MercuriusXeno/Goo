@@ -8,6 +8,7 @@ import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.PadTile;
@@ -90,7 +91,7 @@ public class PadRenderer extends TileEntityRenderer<PadTile> {
         fromY = minY + yOffset;
         toY = fromY + height;
         Model3d fluidModel = getFluidModel(goo, fromY, toY);
-        RenderHelper.renderObject(fluidModel, matrixStack, builder, 0xffffffff, light, overlay);
+        RenderHelper.renderObject(fluidModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, light, overlay, fluidModel);
     }
 

@@ -2,12 +2,14 @@ package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
 import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -74,7 +76,7 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
         IVertexBuilder highlightVertex = buffer.getBuffer(RenderHelper.GOO_CUBE);
 
         Model3d model = getFluidModel(goo, goo.getAmount() / (float)cap);
-        RenderHelper.renderObject(model, matrixStack, builder, 0xffffffff, light, overlay);
+        RenderHelper.renderObject(model, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), tile.getPos(), matrixStack, builder, light, overlay, model);
 
         if (tile.isActive() && tile.currentRecipe() != null && model.maxY < 0.44f) {
@@ -92,6 +94,7 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
         float variance = MathHelper.sin(gameTimeFactor * (float)Math.PI) * (inputWidth / 4f);
         return inputWidth + variance;
     }
+
     private void renderInputFluids(BlockPos pos, Direction facing, MixerRecipe currentRecipe, boolean recipeInputZeroTheClockwiseInput, float minY, float height,
             MatrixStack matrixStack, IVertexBuilder builder, IVertexBuilder highlightVertex, int light, int overlay) {
         FluidStack leftGoo = currentRecipe.inputs().get(recipeInputZeroTheClockwiseInput ? 0 : 1);
@@ -112,9 +115,10 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
         Vector3f rightMax = new Vector3f((float)rightOffset.x + xMaxOffset, minY + height, (float)rightOffset.z + zMaxOffset);
         Model3d leftModel = getInputFluidModel(leftGoo, leftMin, leftMax);
         Model3d rightModel = getInputFluidModel(rightGoo, rightMin, rightMax);
-        RenderHelper.renderObject(leftModel, matrixStack, builder, 0xffffffff, light, overlay);
-        RenderHelper.renderObject(rightModel, matrixStack, builder, 0xffffffff, light, overlay);
+        RenderHelper.renderObject(leftModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
+        RenderHelper.renderObject(rightModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
     }
+
     private Model3d getInputFluidModel(FluidStack fluid, Vector3f min, Vector3f max) {
         Model3d model = new Model3d();
         if (spriteCache.containsKey(fluid.getFluid())) {
@@ -147,7 +151,7 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
 
     private void renderSpinner(MixerTile tile, MatrixStack matrices, IRenderTypeBuffer bufferIn, int light, int overlay, float partialTicks) {
         matrices.push();
-        final BlockState dynamicState = tile.getBlockState()
+        final BlockState dynamicState = BlocksRegistry.Mixer.get().getDefaultState()
                 .with(BlockStateProperties.HORIZONTAL_FACING, tile.facing())
                 .with(BlockStateProperties.POWERED, true)
                 .with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);

@@ -1,12 +1,14 @@
 package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.FluidCuboid;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
 import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.GooPumpTile;
 import net.minecraft.block.BlockState;
@@ -22,7 +24,6 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3f;
@@ -33,13 +34,13 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
+public class PumpRenderer extends TileEntityRenderer<GooPumpTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.0575f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
     private static final float FLUID_HORIZONTAL_OFFSET = 0.325f;
     private static final float FROM_VERTICAL = (FLUID_VERTICAL_OFFSET);
     private static final float TO_VERTICAL = (1 - FLUID_VERTICAL_OFFSET);
 
-    public GooPumpRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
+    public PumpRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
     }
 
@@ -52,7 +53,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
             float intensity = tile.verticalFillIntensity();
             Model3d fluidModel = getFluidModel(tile.verticalFillFluid(), intensity, face);
             if (tile.isVerticallyFilled()) {
-                RenderHelper.renderCube(fluidModel, matrixStack, buffer.getBuffer(RenderType.getTranslucent()), 0xffffffff, light, overlay, false);
+                RenderHelper.renderCube(fluidModel, matrixStack, buffer.getBuffer(RenderType.getTranslucent()), GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay, false);
             }
         }
 
@@ -191,7 +192,7 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
 
     private void renderActuator(GooPumpTile tile, MatrixStack matrices, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn, float partialTicks) {
         matrices.push();
-        final BlockState dynamicState = tile.getBlockState()
+        final BlockState dynamicState = BlocksRegistry.Pump.get().getDefaultState()
                 .with(BlockStateProperties.FACING, tile.facing())
                 .with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
         // translate the position of the actuator sleeve as a function of animation time on a sine wave
@@ -385,6 +386,6 @@ public class GooPumpRenderer extends TileEntityRenderer<GooPumpTile> {
     }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_PUMP_TILE.get(), GooPumpRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_PUMP_TILE.get(), PumpRenderer::new);
     }
 }

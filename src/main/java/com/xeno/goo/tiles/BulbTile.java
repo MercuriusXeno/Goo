@@ -44,8 +44,8 @@ import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Supplier;
 
-public class GooBulbTile extends GooContainerAbstraction implements ITickableTileEntity,
-        FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
+public class BulbTile extends GooContainerAbstraction implements ITickableTileEntity,
+                                                                 FluidUpdatePacket.IFluidPacketReceiver, GooFlowPacket.IGooFlowReceiver
 {
     // it only takes 9 ticks to tier up because of the goo already in the object.
     // at level 1 this is also negligible
@@ -75,7 +75,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         }
     });
 
-    public GooBulbTile() {
+    public BulbTile() {
         super(Registry.GOO_BULB_TILE.get());
     }
 
@@ -272,7 +272,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
     }
 
     private static void initializeTransformations() {
-        Registry.FluidSuppliers.forEach(GooBulbTile::buildAndPushTransformationMapping);
+        Registry.FluidSuppliers.forEach(BulbTile::buildAndPushTransformationMapping);
     }
 
     private static void buildAndPushTransformationMapping(ResourceLocation k, Supplier<GooFluid> v) {
@@ -576,7 +576,7 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         float total = gooStacks.stream().mapToInt(FluidStack::getAmount).sum();
         total -= crystalProgress.getAmount();
         if (crystalProgress.getAmount() > 0 && progressTicks < TICKS_PER_PROGRESS_TICK) {
-            total -= (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
+            total -= (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) BulbTile.TICKS_PER_PROGRESS_TICK));
         }
         if (total < 0) {
             return new Object2FloatOpenHashMap<>();
@@ -592,8 +592,8 @@ public class GooBulbTile extends GooContainerAbstraction implements ITickableTil
         for (FluidStack g : gooStacks) {
             int totalGooInThisStack = g.getAmount();
             totalGooInThisStack -= crystalProgress.isFluidEqual(g) ? crystalProgress.getAmount() : 0;
-            if (g.isFluidEqual(crystalProgress) && progressTicks < GooBulbTile.TICKS_PER_PROGRESS_TICK) {
-                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) GooBulbTile.TICKS_PER_PROGRESS_TICK));
+            if (g.isFluidEqual(crystalProgress) && progressTicks < BulbTile.TICKS_PER_PROGRESS_TICK) {
+                int increment = (int)Math.floor(lastAmount * ((progressTicks + partialTicks) / (float) BulbTile.TICKS_PER_PROGRESS_TICK));
                 totalGooInThisStack -= increment;
                 if (totalGooInThisStack < 0) {
                     totalGooInThisStack = 0;

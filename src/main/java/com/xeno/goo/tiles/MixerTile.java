@@ -347,6 +347,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (currentRecipe != null) {
             tag.put("recipe", currentRecipe.serializeNbt(new CompoundNBT()));
         }
+        tag.putBoolean("is_input_inverted", !isFirstInputLeftInput);
         return tag;
     }
 
@@ -361,6 +362,9 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         }
         if (tag.contains("recipe")) {
             currentRecipe = MixerRecipe.deserializeNbt(tag.getCompound("recipe"));
+        }
+        if (tag.contains("is_input_inverted")) {
+            isFirstInputLeftInput = !tag.getBoolean("is_input_inverted");
         }
     }
 

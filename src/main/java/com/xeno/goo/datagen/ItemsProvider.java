@@ -32,9 +32,10 @@ public class ItemsProvider extends ItemModelProvider {
         registerVessel();
         registerGooAndYou();
         registerCrystalComb();
-        // registerDegrader();
-        // registerMixer();
-        // registerBulbs();
+        registerDegrader();
+        registerMixer();
+        registerBulbs();
+        registerPump();
         registerGooCrystals();
         registerSpawnEggs();
         registerTrough();
@@ -90,20 +91,24 @@ public class ItemsProvider extends ItemModelProvider {
         withExistingParent(ItemsRegistry.PAD.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
-//    private void registerBulbs()
-//    {
-//        withExistingParent(ItemsRegistry.GOO_BULB.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-//    }
+    private void registerBulbs()
+    {
+        withExistingParent(ItemsRegistry.GOO_BULB.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
 
-    // private void registerMixer()
-    //{
-    //    withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-    //}
+    private void registerPump() {
+        withExistingParent(ItemsRegistry.GOO_PUMP.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
 
-//    private void registerDegrader()
-//    {
-//        withExistingParent(ItemsRegistry.DEGRADER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
-//    }
+     private void registerMixer()
+    {
+        withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
+
+    private void registerDegrader()
+    {
+        withExistingParent(ItemsRegistry.DEGRADER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
 
     private void registerVessel()
     {

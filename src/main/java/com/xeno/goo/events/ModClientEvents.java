@@ -6,16 +6,13 @@ import com.xeno.goo.client.models.VesselModel;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.SprayParticle;
 import com.xeno.goo.client.particle.VaporParticle;
-import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.block.*;
 import com.xeno.goo.client.render.entity.*;
 import com.xeno.goo.items.GauntletAbstraction;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
-import com.xeno.goo.setup.Resources.Glass;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.inventory.container.PlayerContainer;
@@ -27,7 +24,6 @@ import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.client.event.TextureStitchEvent.Pre;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -94,8 +90,8 @@ public class ModClientEvents
 
     private static void setTileEntityRenderers()
     {
-        GooBulbRenderer.register();
-        GooPumpRenderer.register();
+        BulbRenderer.register();
+        PumpRenderer.register();
         MixerRenderer.register();
         DegraderRenderer.register();
         SolidifierRenderer.register();

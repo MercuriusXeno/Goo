@@ -1,7 +1,7 @@
 package com.xeno.goo.client.render.blockitem;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.xeno.goo.tiles.GooBulbTile;
+import com.xeno.goo.tiles.BulbTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -17,7 +17,6 @@ import net.minecraft.tileentity.TileEntity;
 
 public class PadItemRenderer extends ItemStackTileEntityRenderer
 {
-    public static final PadItemRenderer instance = new PadItemRenderer();
     public PadItemRenderer() {
         super();
     }
@@ -38,7 +37,7 @@ public class PadItemRenderer extends ItemStackTileEntityRenderer
 
         CompoundNBT bulbTag = stackTag.getCompound("BlockEntityTag");
 
-        TileEntity tileEntity = GooBulbTile.readTileEntity(block.getDefaultState(), bulbTag);
+        TileEntity tileEntity = BulbTile.readTileEntity(block.getDefaultState(), bulbTag);
         if (tileEntity == null) {
             return;
         }

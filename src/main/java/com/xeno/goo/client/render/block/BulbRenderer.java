@@ -4,18 +4,17 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
-import com.xeno.goo.client.render.FluidCuboidHelper;
 import com.xeno.goo.client.render.HighlightingHelper;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.BulbTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.GooBulbTile;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
@@ -32,21 +31,21 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
+public class BulbRenderer extends TileEntityRenderer<BulbTile> {
     private static final float FLUID_HORIZONTAL_OFFSET = 0.11f;
-    private static final float FROM_SCALED_VERTICAL = GooBulbTile.FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - (GooBulbTile.FLUID_VERTICAL_MAX * 16);
+    private static final float FROM_SCALED_VERTICAL = BulbTile.FLUID_VERTICAL_OFFSET * 16;
+    private static final float TO_SCALED_VERTICAL = 16 - (BulbTile.FLUID_VERTICAL_MAX * 16);
     private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
     private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
     private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
     private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
 
-    public GooBulbRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
+    public BulbRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
     }
 
     @Override
-    public void render(GooBulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
+    public void render(BulbTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLightIn, int combinedOverlayIn) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
         cap.ifPresent((c) -> render(tile, partialTicks, tile.crystal(),
                 tile.isVerticallyFilled(), tile.verticalFillFluid(),
@@ -56,10 +55,11 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
 
-    public static void render(GooBulbTile tile, float partialTicks, ItemStack crystal,
+    public static void render(BulbTile tile, float partialTicks, ItemStack crystal,
                               boolean isVerticallyFilled, FluidStack verticalFillFluid, float verticalFillIntensity,
                               MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
         IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
+        // IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
 
         float yOffset = 0;
 
@@ -86,14 +86,14 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
             toY = fromY + (entry * heightScale);
             highestToY = toY;
             Model3d model = getFluidModel(goo, fromY, toY);
-            RenderHelper.renderObject(model, matrixStack, builder, 0xffffffff, light, overlay);
+            RenderHelper.renderObject(model, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
             HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), tile.getPos(), matrixStack, builder, light, overlay, model);
             yOffset += (entry * heightScale);
         }
 
         if (isVerticallyFilled) {
             Model3d model = getVerticalFillModel(verticalFillFluid, highestToY, verticalFillIntensity, maxY);
-            RenderHelper.renderObject(model, matrixStack, builder, 0xffffffff, light, overlay);
+            RenderHelper.renderObject(model, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
         }
 
         if (crystal.isEmpty()) {
@@ -183,6 +183,6 @@ public class GooBulbRenderer extends TileEntityRenderer<GooBulbTile> {
     private static Vector3f verticalFillToVector(float intensity) { return new Vector3f(verticalFillHorizontalTo(intensity), TO_SCALED_VERTICAL, verticalFillHorizontalTo(intensity)); }
 
     public static void register() {
-        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE.get(), GooBulbRenderer::new);
+        ClientRegistry.bindTileEntityRenderer(Registry.GOO_BULB_TILE.get(), BulbRenderer::new);
     }
 }
