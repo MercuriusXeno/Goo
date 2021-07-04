@@ -40,7 +40,7 @@ public class BulbItemRenderer extends ItemStackTileEntityRenderer
     public void func_239207_a_(ItemStack stack, ItemCameraTransforms.TransformType transforms, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay)
     {
         Block block = ((BlockItem)stack.getItem()).getBlock();
-        super.func_239207_a_(stack, transforms, matrixStack, buffer, light, overlay);
+        // super.func_239207_a_(stack, transforms, matrixStack, buffer, light, overlay);
         IBakedModel bulbModel = Minecraft.getInstance().getBlockRendererDispatcher()
                 .getModelForState(block.getDefaultState());
 

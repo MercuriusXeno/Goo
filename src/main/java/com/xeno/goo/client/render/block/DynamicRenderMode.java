@@ -10,7 +10,8 @@ public class DynamicRenderMode {
 
     public enum DynamicRenderTypes implements IStringSerializable {
         STATIC,
-        DYNAMIC;
+        DYNAMIC,
+        ITEM;
 
         @Override
         public String getString() {

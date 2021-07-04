@@ -104,7 +104,7 @@ public class PumpRenderer extends TileEntityRenderer<GooPumpTile> {
                 }
 
                 // scale
-                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.001f);
+                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.05f);
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 

@@ -1,92 +1,100 @@
 {
-  "multipart": [
-    {
-      "when": {
-        "facing": "north",
-        "powered": "true|false",
-        "render": "static"
-      },
-      "apply": {
-        "model": "goo:block/mixer",
-        "y": 180
-      }
+  "variants": {
+    "facing=north,powered=false,render=static": {
+      "model": "goo:block/mixer",
+      "y": 360
     },
-    {
-      "when": {
-        "facing": "north",
-        "powered": "true|false",
-        "render": "dynamic"
-      },
-      "apply": {
-        "model": "goo:block/mixer_spinner",
-        "y": 180
-      }
+    "facing=south,powered=false,render=static": {
+      "model": "goo:block/mixer",
+      "y": 180
     },
-    {
-      "when": {
-        "facing": "south",
-        "powered": "true|false",
-        "render": "static"
-      },
-      "apply": {
-        "model": "goo:block/mixer",
-        "y": 180
-      }
+    "facing=west,powered=false,render=static": {
+      "model": "goo:block/mixer",
+      "y": 270
     },
-    {
-      "when": {
-        "facing": "south",
-        "powered": "true|false",
-        "render": "dynamic"
-      },
-      "apply": {
-        "model": "goo:block/mixer_spinner",
-        "y": 180
-      }
+    "facing=east,powered=false,render=static": {
+      "model": "goo:block/mixer",
+      "y": 450
     },
-    {
-      "when": {
-        "facing": "west",
-        "powered": "true|false",
-        "render": "static"
-      },
-      "apply": {
-        "model": "goo:block/mixer",
-        "y": 270
-      }
+    "facing=north,powered=true,render=static": {
+      "model": "goo:block/mixer",
+      "y": 360
     },
-    {
-      "when": {
-        "facing": "west",
-        "powered": "true|false",
-        "render": "dynamic"
-      },
-      "apply": {
-        "model": "goo:block/mixer_spinner",
-        "y": 270
-      }
+    "facing=south,powered=true,render=static": {
+      "model": "goo:block/mixer",
+      "y": 180
     },
-    {
-      "when": {
-        "facing": "east",
-        "powered": "true|false",
-        "render": "static"
-      },
-      "apply": {
-        "model": "goo:block/mixer",
-        "y": 90
-      }
+    "facing=west,powered=true,render=static": {
+      "model": "goo:block/mixer",
+      "y": 270
     },
-    {
-      "when": {
-        "facing": "east",
-        "powered": "true|false",
-        "render": "dynamic"
-      },
-      "apply": {
-        "model": "goo:block/mixer_spinner",
-        "y": 90
-      }
+    "facing=east,powered=true,render=static": {
+      "model": "goo:block/mixer",
+      "y": 450
+    },
+    "facing=north,powered=false,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 360
+    },
+    "facing=south,powered=false,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 180
+    },
+    "facing=west,powered=false,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 270
+    },
+    "facing=east,powered=false,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 450
+    },
+    "facing=north,powered=true,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 360
+    },
+    "facing=south,powered=true,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 180
+    },
+    "facing=west,powered=true,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 270
+    },
+    "facing=east,powered=true,render=dynamic": {
+      "model": "goo:block/mixer_spinner",
+      "y": 450
+    },
+    "facing=north,powered=false,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 360
+    },
+    "facing=south,powered=false,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 180
+    },
+    "facing=west,powered=false,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 270
+    },
+    "facing=east,powered=false,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 450
+    },
+    "facing=north,powered=true,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 360
+    },
+    "facing=south,powered=true,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 180
+    },
+    "facing=west,powered=true,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 270
+    },
+    "facing=east,powered=true,render=item": {
+      "model": "goo:block/mixer_full",
+      "y": 450
     }
-  ]
+  }
 }

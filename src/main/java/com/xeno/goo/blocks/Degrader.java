@@ -30,9 +30,9 @@ import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FAC
 
 public class Degrader extends BlockWithConnections {
     public Degrader() {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
-                .hardnessAndResistance(4.0f)
+        super(Properties.create(Material.IRON)
+                .sound(SoundType.METAL)
+                .hardnessAndResistance(1.0f)
                 .notSolid()
         );
         setDefaultState(this.getDefaultState()
@@ -120,7 +120,7 @@ public class Degrader extends BlockWithConnections {
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
-                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing());
+                .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
     }
 
     @Override

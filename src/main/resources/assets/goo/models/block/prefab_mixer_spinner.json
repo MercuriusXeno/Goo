@@ -1,6 +1,5 @@
 {
 	"parent": "goo:item/template_held_block",
-	"texture_size": [64, 64],
 	"textures": {
 		"0": "goo:block/mixer/mixer_simple",
 		"particle": "goo:block/mixer/mixer_simple"

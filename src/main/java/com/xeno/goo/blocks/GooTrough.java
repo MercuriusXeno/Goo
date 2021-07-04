@@ -27,8 +27,8 @@ public class GooTrough extends BlockWithConnections
 
     public GooTrough()
     {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
+        super(Properties.create(Material.IRON)
+                .sound(SoundType.METAL)
                 .hardnessAndResistance(1.0f)
                 .notSolid()
         );

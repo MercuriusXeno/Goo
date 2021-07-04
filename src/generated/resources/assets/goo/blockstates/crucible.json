@@ -1,7 +1,8 @@
 {
   "variants": {
     "facing=north,powered=false": {
-      "model": "goo:block/degrader_active"
+      "model": "goo:block/degrader_active",
+      "y": 360
     },
     "facing=south,powered=false": {
       "model": "goo:block/degrader_active",
@@ -9,14 +10,15 @@
     },
     "facing=west,powered=false": {
       "model": "goo:block/degrader_active",
-      "y": 90
+      "y": 270
     },
     "facing=east,powered=false": {
       "model": "goo:block/degrader_active",
-      "y": -90
+      "y": 450
     },
     "facing=north,powered=true": {
-      "model": "goo:block/degrader_inactive"
+      "model": "goo:block/degrader_inactive",
+      "y": 360
     },
     "facing=south,powered=true": {
       "model": "goo:block/degrader_inactive",
@@ -24,11 +26,11 @@
     },
     "facing=west,powered=true": {
       "model": "goo:block/degrader_inactive",
-      "y": 90
+      "y": 270
     },
     "facing=east,powered=true": {
       "model": "goo:block/degrader_inactive",
-      "y": -90
+      "y": 450
     }
   }
 }

@@ -62,22 +62,18 @@ public class BlockStatesProvider extends BlockStateProvider {
     private void registerGooPump() {
         BlockModelBuilder base = models().withExistingParent("pump", new ResourceLocation(GooMod.MOD_ID, "prefab_pump"));
         BlockModelBuilder actuator = models().withExistingParent("pump_actuator", new ResourceLocation(GooMod.MOD_ID, "prefab_pump_actuator"));
-        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Pump.get());
-        for (Direction d : BlockStateProperties.FACING.getAllowedValues()) {
-            int rotationX = getRotationXFromDirection(d);
-            int rotationY = getRotationYFromDirection(d);
-            bld.part().modelFile(base)
-                    .rotationX(rotationX).rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.FACING, d)
-                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
+        BlockModelBuilder fullModel = models()
+                .withExistingParent("pump_full", new ResourceLocation(GooMod.MOD_ID, "prefab_pump_full"));
 
-            bld.part().modelFile(actuator)
-                    .rotationX(rotationX).rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.FACING, d)
-                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
-        }
+        getVariantBuilder(BlocksRegistry.Pump.get())
+                .forAllStates(
+                        (s) -> ConfiguredModel.builder()
+                                .modelFile(s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.STATIC ? base :
+                                        (s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.DYNAMIC ? actuator : fullModel))
+                                .rotationX(getRotationXFromDirection(s.get(BlockStateProperties.FACING)))
+                                .rotationY(getRotationYFromDirection(s.get(BlockStateProperties.FACING)))
+                                .build()
+                );
     }
 
     private void registerMixer()
@@ -86,24 +82,17 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .withExistingParent("mixer", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer"));
         BlockModelBuilder spinner = models()
                 .withExistingParent("mixer_spinner", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_spinner"));
+        BlockModelBuilder fullModel = models()
+                .withExistingParent("mixer_full", new ResourceLocation(GooMod.MOD_ID, "prefab_mixer_full"));
 
-        MultiPartBlockStateBuilder bld = getMultipartBuilder(BlocksRegistry.Mixer.get());
-        for(Direction d : BlockStateProperties.HORIZONTAL_FACING.getAllowedValues()) {
-            int rotationY = getRotationYFromDirection(d);
-            bld.part().modelFile(model)
-                    .rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.HORIZONTAL_FACING, d)
-                    .condition(BlockStateProperties.POWERED, true, false)
-                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
-
-            bld.part().modelFile(spinner)
-                    .rotationY(rotationY)
-                    .addModel()
-                    .condition(BlockStateProperties.HORIZONTAL_FACING, d)
-                    .condition(BlockStateProperties.POWERED, true, false)
-                    .condition(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
-        }
+        getVariantBuilder(BlocksRegistry.Mixer.get())
+                .forAllStates(
+                        (s) -> ConfiguredModel.builder()
+                                .modelFile(s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.STATIC ? model :
+                                    (s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.DYNAMIC ? spinner : fullModel))
+                                .rotationY(180 + s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
+                                .build()
+                );
     }
 
     private void registerDecorativeBlocks() {
@@ -252,7 +241,7 @@ public class BlockStatesProvider extends BlockStateProvider {
                 .forAllStates(
                         (s) -> ConfiguredModel.builder()
                                 .modelFile(s.get(BlockStateProperties.POWERED) ? modelInactive : modelActive)
-                                .rotationY(180 - s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
+                                .rotationY(180 + s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
                                 .build()
                 );
 

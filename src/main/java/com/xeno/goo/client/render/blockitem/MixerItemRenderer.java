@@ -2,6 +2,7 @@ package com.xeno.goo.client.render.blockitem;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.datafixers.util.Pair;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.RenderHelper;
@@ -13,12 +14,15 @@ import com.xeno.goo.tiles.BulbTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.model.MultipartBakedModel;
 import net.minecraft.client.renderer.tileentity.ItemStackTileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
@@ -26,6 +30,12 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
+import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.client.ForgeRenderTypes;
+import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.client.extensions.IForgeBakedModel;
+import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -33,28 +43,34 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class MixerItemRenderer extends ItemStackTileEntityRenderer
 {
+    private static Random r = new Random();
     public MixerItemRenderer() {
         super();
     }
-
+    private static ItemRenderer itemRenderer() {
+        return Minecraft.getInstance().getItemRenderer();
+    }
     @Override
     public void func_239207_a_(ItemStack stack, ItemCameraTransforms.TransformType transforms, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay)
     {
+        RenderType previousLayer = MinecraftForgeClient.getRenderLayer();
         Block block = ((BlockItem)stack.getItem()).getBlock();
-        super.func_239207_a_(stack, transforms, matrixStack, buffer, light, overlay);
-        IBakedModel mixerModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
-        IBakedModel spinnerModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState().with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC));
-        Minecraft.getInstance().getItemRenderer().renderModel(mixerModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
-        Minecraft.getInstance().getItemRenderer().renderModel(spinnerModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
+        BlockState state = block.getDefaultState().with(DynamicRenderMode.RENDER, DynamicRenderTypes.ITEM);
+        IBakedModel itemModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(state);
+
+        // frame and spinner
+        Minecraft.getInstance().getItemRenderer().renderModel(itemModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
+        // fluid, but cutout mipped and not translucent
         renderTileSafely(stack, 0f, matrixStack, buffer, light, overlay, block);
-        Minecraft.getInstance().getItemRenderer().renderModel(mixerModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
+        // glass, translucent, last
+        Minecraft.getInstance().getItemRenderer().renderModel(itemModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
     }
 
     private void renderTileSafely(ItemStack stack, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay, Block block) {
-
         CompoundNBT stackTag = stack.getTag();
         if (stackTag != null && stackTag.contains("BlockEntityTag")) {
             CompoundNBT tileTag = stackTag.getCompound("BlockEntityTag");
@@ -76,8 +92,7 @@ public class MixerItemRenderer extends ItemStackTileEntityRenderer
         int cap = lazy.resolve().get().getTankCapacity(0);
         FluidStack goo = lazy.resolve().get().getFluidInTank(0);
 
-        IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
-        IVertexBuilder highlightVertex = buffer.getBuffer(RenderHelper.GOO_CUBE);
+        IVertexBuilder builder = buffer.getBuffer(RenderType.getCutoutMipped());
 
         Model3d model = getFluidModel(goo, goo.getAmount() / (float)cap);
         RenderHelper.renderObject(model, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);

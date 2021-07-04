@@ -35,6 +35,16 @@ public class GooPump extends BlockWithConnections
 {
     VoxelShape[] shapes;
 
+    public GooPump()
+    {
+        super(Properties.create(Material.IRON)
+                .sound(SoundType.METAL)
+                .hardnessAndResistance(1.0f)
+                .notSolid()
+        );
+        shapes = makeShapes();
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
@@ -131,16 +141,6 @@ public class GooPump extends BlockWithConnections
             combo = VoxelShapes.combine(combo, shapes[i], IBooleanFunction.OR);
         }
         return combo;
-    }
-
-    public GooPump()
-    {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
-                .hardnessAndResistance(1.0f)
-                .notSolid()
-        );
-        shapes = makeShapes();
     }
 
     @Override

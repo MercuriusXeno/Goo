@@ -16,7 +16,7 @@ public class Crucible extends Block {
 	public Crucible() {
 		super(
 				Properties.create(Material.IRON)
-						.hardnessAndResistance(2.0f)
+						.hardnessAndResistance(1.0f)
 						.sound(SoundType.METAL)
 		);
 	}

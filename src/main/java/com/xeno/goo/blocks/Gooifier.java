@@ -36,7 +36,7 @@ public class Gooifier extends BlockWithConnections {
     public Gooifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
-                .hardnessAndResistance(4.0f));
+                .hardnessAndResistance(1.0f));
         setDefaultState(this.getDefaultState()
                 .with(BlockStateProperties.POWERED, true)
                 .with(BlockStateProperties.HORIZONTAL_FACING, NORTH)

@@ -40,8 +40,8 @@ public class GooBulb extends BlockWithConnections
 
     public GooBulb()
     {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
+        super(Properties.create(Material.GLASS)
+                .sound(SoundType.GLASS)
                 .hardnessAndResistance(1.0f)
                 .notSolid()
         );
