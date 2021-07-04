@@ -16,11 +16,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -103,11 +105,11 @@ public class PumpRenderer extends TileEntityRenderer<GooPumpTile> {
                     // matrices.rotate(Vector3f.XP.rotationDegrees(180f - (d.getHorizontalIndex() - flow.getHorizontalIndex()) * 90));
                 }
 
+
                 // scale
-                Vector3f scaleVec = new Vector3f(0.375F, 0.375F, 0.05f);
+                Vector3f scaleVec = item.getItem() instanceof BlockItem ? new Vector3f(0.375F, 0.375F, 0.05f) : new Vector3f(0.375F, 0.375F, 0.08f);
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
-
                 Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, light, overlay, matrices, buffer);
                 matrices.pop();
             }

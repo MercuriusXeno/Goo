@@ -81,36 +81,23 @@ public class Mixer extends BlockWithConnections
     }
 
     @Override
-    public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
-    {
-        return !state.get(BlockStateProperties.POWERED) ? 12 : 0;
-    }
-
-    @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(HORIZONTAL_FACING, BlockStateProperties.POWERED, DynamicRenderMode.RENDER);
     }
 
-    public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
     static {
-        for(Direction.Axis a : Direction.Axis.values()) {
-            switch (a) {
-                case Y:
-                    break;
-                case X:
-                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, DOWN});
-                    break;
-                case Z:
-                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, DOWN});
-                    break;
-            }
+        for(Direction a : Direction.values()) {
+            RELEVANT_DIRECTIONS.put(a, new Direction[] {
+                a.getOpposite(), a.rotateY(), a.rotateYCCW(), DOWN
+            });
         }
     }
 
     @Override
     protected Direction[] relevantConnectionDirections(BlockState state)
     {
-        return RELEVANT_DIRECTIONS.get(state.get(HORIZONTAL_FACING).getAxis());
+        return RELEVANT_DIRECTIONS.get(state.get(HORIZONTAL_FACING));
     }
 
     @SuppressWarnings("deprecation")
