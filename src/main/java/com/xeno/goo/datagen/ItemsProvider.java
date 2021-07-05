@@ -39,6 +39,7 @@ public class ItemsProvider extends ItemModelProvider {
         registerGooCrystals();
         registerSpawnEggs();
         registerTrough();
+        registerCrucible();
         registerPad();
         registerSnail();
         registerBuckets();
@@ -103,6 +104,11 @@ public class ItemsProvider extends ItemModelProvider {
      private void registerMixer()
     {
         withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
+
+    private void registerCrucible()
+    {
+        withExistingParent(ItemsRegistry.CRUCIBLE.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerDegrader()

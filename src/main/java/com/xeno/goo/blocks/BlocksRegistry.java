@@ -24,6 +24,7 @@ public class BlocksRegistry {
 
     public static final RegistryObject<PassivatedBlock> PassivatedBlock = Blocks.register("passivated_block", PassivatedBlock::new);
     public static final RegistryObject<GooBulb> Bulb = Blocks.register("goo_bulb", GooBulb::new);
+    public static final RegistryObject<Crucible> Crucible = Blocks.register("melter", Crucible::new);
     public static final RegistryObject<GooPump> Pump = Blocks.register("goo_pump", GooPump::new);
     public static final RegistryObject<Gooifier> Gooifier = Blocks.register("gooifier", Gooifier::new);
     public static final RegistryObject<Mixer> Mixer = Blocks.register("mixer", Mixer::new);

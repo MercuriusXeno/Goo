@@ -18,11 +18,11 @@
   ],
   "compounds": [
     {
-      "amount": 90.0,
+      "amount": 96.0,
       "type": "goo:crystal"
     },
     {
-      "amount": 60.0,
+      "amount": 64.0,
       "type": "goo:molten"
     },
     {
@@ -30,7 +30,7 @@
       "type": "goo:primordial"
     },
     {
-      "amount": 60.0,
+      "amount": 64.0,
       "type": "goo:weird"
     }
   ]

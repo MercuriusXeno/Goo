@@ -1,9 +1,9 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "non",
-    "g g",
-    "non"
+    " o ",
+    "ngn",
+    " o "
   ],
   "key": {
     "n": {
@@ -13,7 +13,7 @@
       "item": "goo:gasket"
     },
     "g": {
-      "tag": "forge:glass_panes"
+      "tag": "forge:glass"
     }
   },
   "result": {

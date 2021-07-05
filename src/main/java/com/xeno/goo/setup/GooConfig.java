@@ -58,6 +58,11 @@ public class GooConfig
         return GOO_BULB_TOTAL_CAPACITY.get();
     }
 
+    private ForgeConfigSpec.IntValue CRUCIBLE_TOTAL_CAPACITY;
+    public int crucibleCapacity() {
+        return CRUCIBLE_TOTAL_CAPACITY.get();
+    }
+
     private ForgeConfigSpec.IntValue MIXER_INPUT_CAPACITY;
     public int mixerInputCapacity() {
         return MIXER_INPUT_CAPACITY.get();
@@ -89,6 +94,9 @@ public class GooConfig
 
     private ForgeConfigSpec.IntValue BULB_CONTAINMENT_MULTIPLIER;
     public int bulbContainmentMultiplier() { return BULB_CONTAINMENT_MULTIPLIER.get(); }
+
+    private ForgeConfigSpec.IntValue CRUCIBLE_CONTAINMENT_MULTIPLIER;
+    public int crucibleContainmentMultiplier() { return CRUCIBLE_CONTAINMENT_MULTIPLIER.get(); }
 
     private ForgeConfigSpec.IntValue VESSEL_CONTAINMENT_MULTIPLIER;
     public int vesselContainmentMultiplier() { return VESSEL_CONTAINMENT_MULTIPLIER.get(); }
@@ -256,6 +264,8 @@ public class GooConfig
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
         private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
+        private static final int CRUCIBLE_CAPACITY = 8000;
+        private static final int CRUCIBLE_CONTAINMENT_MULTIPLIER = 4;
         private static final int MIXER_INPUT_CAPACITY = 16000;
         private static final int DEGRADER_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
@@ -292,6 +302,10 @@ public class GooConfig
                 .defineInRange("maxBulbCapacity", Defaults.BULB_CAPACITY, 0, 100000);
         BULB_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of bulbs is multiplied by this, per level, default: " + Defaults.BULB_CONTAINMENT_MULTIPLIER)
                 .defineInRange("bulbContainmentMultiplier", Defaults.BULB_CONTAINMENT_MULTIPLIER, 0, 10);
+        CRUCIBLE_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a crucible, default: " + Defaults.CRUCIBLE_CAPACITY)
+                .defineInRange("maxCrucibleCapacity", Defaults.CRUCIBLE_CAPACITY, 0, 100000);
+        CRUCIBLE_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of crucibles is multiplied by this, per level, default: " + Defaults.CRUCIBLE_CONTAINMENT_MULTIPLIER)
+                .defineInRange("crucibleContainmentMultiplier", Defaults.CRUCIBLE_CONTAINMENT_MULTIPLIER, 0, 10);
         MIXER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single mixer input tank, default: " + Defaults.MIXER_INPUT_CAPACITY)
                 .defineInRange("maxMixerInputCapacity", Defaults.MIXER_INPUT_CAPACITY, 0, 100000);
         DEGRADER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a degrader tank, default: " + Defaults.DEGRADER_INPUT_CAPACITY)

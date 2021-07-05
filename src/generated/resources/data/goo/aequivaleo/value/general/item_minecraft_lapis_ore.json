@@ -26,6 +26,10 @@
       "type": "goo:crystal"
     },
     {
+      "amount": 32.0,
+      "type": "goo:earthen"
+    },
+    {
       "amount": 1.0,
       "type": "goo:logic_forbidden"
     },

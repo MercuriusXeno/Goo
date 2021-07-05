@@ -87,6 +87,7 @@ public class ModClientEvents
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Solidifier.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Gooifier.get(), RenderType.getCutoutMipped());
         RenderTypeLookup.setRenderLayer(BlocksRegistry.Trough.get(), RenderType.getCutoutMipped());
+        RenderTypeLookup.setRenderLayer(BlocksRegistry.Crucible.get(), RenderType.getCutoutMipped());
     }
 
     private static void setTileEntityRenderers()
@@ -97,6 +98,7 @@ public class ModClientEvents
         DegraderRenderer.register();
         SolidifierRenderer.register();
         TroughRenderer.register();
+        CrucibleRenderer.register();
         PadRenderer.register();
     }
 

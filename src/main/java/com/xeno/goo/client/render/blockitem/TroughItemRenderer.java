@@ -25,7 +25,7 @@ public class TroughItemRenderer extends ItemStackTileEntityRenderer
     public void func_239207_a_(ItemStack stack, ItemCameraTransforms.TransformType transforms, MatrixStack matrixStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay)
     {
         Block block = ((BlockItem)stack.getItem()).getBlock();
-        super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
+        //super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
         IBakedModel bulbModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
 
         Minecraft.getInstance().getItemRenderer().renderModel(bulbModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));

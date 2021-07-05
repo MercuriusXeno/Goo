@@ -44,7 +44,6 @@ public class Mixer extends BlockWithConnections
         );
     }
 
-
     @SuppressWarnings("deprecation")
     @Override
     public VoxelShape getCollisionShape(BlockState state, IBlockReader reader, BlockPos pos)
@@ -87,7 +86,7 @@ public class Mixer extends BlockWithConnections
 
     public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
     static {
-        for(Direction a : Direction.values()) {
+        for(Direction a : BlockStateProperties.HORIZONTAL_FACING.getAllowedValues()) {
             RELEVANT_DIRECTIONS.put(a, new Direction[] {
                 a.getOpposite(), a.rotateY(), a.rotateYCCW(), DOWN
             });

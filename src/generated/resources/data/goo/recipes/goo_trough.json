@@ -1,16 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "  w",
-    "w g",
-    "ddd"
+    "  n",
+    "n g",
+    "nnn"
   ],
   "key": {
-    "w": {
-      "item": "minecraft:diorite_wall"
-    },
-    "d": {
-      "item": "minecraft:diorite_slab"
+    "n": {
+      "item": "goo:passivated_ingot"
     },
     "g": {
       "item": "goo:gasket"

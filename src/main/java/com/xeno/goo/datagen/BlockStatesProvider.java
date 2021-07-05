@@ -36,6 +36,7 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerGooifier();
         registerSolidifier();
         registerMixer();
+        registerCrucible();
         registerDegrader();
         registerLobber();
         registerDrain();
@@ -45,6 +46,11 @@ public class BlockStatesProvider extends BlockStateProvider {
         registerDecorativeBlocks();
         registerPad();
         registerPassivatedBlock();
+    }
+
+    private void registerCrucible() {
+        BlockModelBuilder model = models().withExistingParent("melter", new ResourceLocation(GooMod.MOD_ID, "prefab_crucible"));
+        simpleBlock(BlocksRegistry.Crucible.get(), model);
     }
 
     private void registerPassivatedBlock() {

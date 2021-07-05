@@ -18,11 +18,11 @@
   ],
   "compounds": [
     {
-      "amount": 60.0,
+      "amount": 32.0,
       "type": "goo:earthen"
     },
     {
-      "amount": 15.0,
+      "amount": 5.0,
       "type": "goo:floral"
     }
   ]

@@ -12,6 +12,7 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.TroughTile;
+import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
@@ -60,7 +61,7 @@ public class TroughRenderer extends TileEntityRenderer<TroughTile> {
         if (goo.isEmpty()) {
             return;
         }
-        IVertexBuilder builder = buffer.getBuffer(RenderHelper.GOO_CUBE);
+        IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
         float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
 
         // this is the total fill percentage of the container

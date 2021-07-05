@@ -23,6 +23,7 @@ public class LootTables extends BaseLootTableProvider {
         lootTables.put(BlocksRegistry.Lobber.get(), createMundaneTable("lobber", BlocksRegistry.Lobber.get()));
         lootTables.put(BlocksRegistry.Pump.get(), createMundaneTable("pump", BlocksRegistry.Pump.get()));
         lootTables.put(BlocksRegistry.Trough.get(), createGooContainerLootTable("trough", BlocksRegistry.Trough.get()));
+        lootTables.put(BlocksRegistry.Crucible.get(), createGooContainerLootTable("crucible", BlocksRegistry.Crucible.get()));
 
         BlocksRegistry.CrystalBlocks.forEach(this::createLootTableForDecorativeBlock);
     }

@@ -13,7 +13,7 @@
       "item": "minecraft:piston"
     },
     "g": {
-      "tag": "forge:glass_panes"
+      "tag": "forge:glass"
     },
     "f": {
       "item": "minecraft:item_frame"

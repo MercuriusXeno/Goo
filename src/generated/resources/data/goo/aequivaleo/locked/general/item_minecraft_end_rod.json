@@ -16,8 +16,14 @@
       }
     }
   ],
-  "compounds": {
-    "amount": 20.0,
-    "type": "goo:radiant"
-  }
+  "compounds": [
+    {
+      "amount": 20.0,
+      "type": "goo:radiant"
+    },
+    {
+      "amount": 10.0,
+      "type": "goo:weird"
+    }
+  ]
 }

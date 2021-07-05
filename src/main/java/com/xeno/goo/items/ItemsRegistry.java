@@ -72,6 +72,9 @@ public class ItemsRegistry {
     public static final RegistryObject<Item> TROUGH = ITEMS
             .register("goo_trough", () -> new BlockItem(BlocksRegistry.Trough.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
                     .maxStackSize(64).setISTER(ISTERProvider::trough)));
+    public static final RegistryObject<Item> CRUCIBLE = ITEMS
+            .register("melter", () -> new BlockItem(BlocksRegistry.Crucible.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
+                    .maxStackSize(64).setISTER(ISTERProvider::crucible)));
     public static final RegistryObject<Item> PAD = ITEMS
             .register("goo_pad", () -> new BlockItem(BlocksRegistry.Pad.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
                     .maxStackSize(64).setISTER(ISTERProvider::pad)));

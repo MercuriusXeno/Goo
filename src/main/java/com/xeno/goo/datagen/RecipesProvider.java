@@ -6,6 +6,7 @@ import com.xeno.goo.blocks.CrystalBlock;
 import com.xeno.goo.items.CrystallizedGooAbstract;
 import com.xeno.goo.items.ItemsRegistry;
 import net.minecraft.advancements.criterion.InventoryChangeTrigger;
+import net.minecraft.block.Blocks;
 import net.minecraft.data.*;
 import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
@@ -44,6 +45,7 @@ public class RecipesProvider extends RecipeProvider {
         registerDrainRecipe(consumer);
         registerCrystalNestRecipe(consumer);
         registerTroughRecipe(consumer);
+        registerCrucibleRecipe(consumer);
         registerPadRecipe(consumer);
 
         registerDecorativeBlocks(consumer);
@@ -101,10 +103,11 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerVesselRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.VESSEL.get())
-                .addIngredient(Items.LAVA_BUCKET)
-                .addIngredient(ItemsRegistry.NETHERITE_ASH.get())
-                .addCriterion("netherite_ash", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.NETHERITE_ASH.get()))
+        ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.VESSEL.get())
+                .patternLine("n n")
+                .patternLine(" n ")
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
+                .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
 
@@ -130,12 +133,12 @@ public class RecipesProvider extends RecipeProvider {
 
     private void registerGooBulbRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Bulb.get())
-                .patternLine("non")
-                .patternLine("g g")
-                .patternLine("non")
+                .patternLine(" o ")
+                .patternLine("ngn")
+                .patternLine(" o ")
                 .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
-                .key('g', Tags.Items.GLASS_PANES)
+                .key('g', Tags.Items.GLASS)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -147,7 +150,7 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("nfn")
                 .key('o', ItemsRegistry.GASKET.get())
                 .key('p', Items.PISTON)
-                .key('g', Tags.Items.GLASS_PANES)
+                .key('g', Tags.Items.GLASS)
                 .key('f', Items.ITEM_FRAME)
                 .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
@@ -186,12 +189,12 @@ public class RecipesProvider extends RecipeProvider {
     private void registerMixerRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Mixer.get())
                 .patternLine("sgs")
-                .patternLine("obo")
-                .patternLine("sgs")
-                .key('g', Tags.Items.GLASS_PANES)
+                .patternLine("oso")
+                .patternLine("sps")
+                .key('g', Tags.Items.GLASS)
                 .key('s', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
-                .key('b', BlocksRegistry.PassivatedBlock.get())
+                .key('p', Blocks.PISTON)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -204,18 +207,17 @@ public class RecipesProvider extends RecipeProvider {
                 .key('s', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('o', ItemsRegistry.GASKET.get())
                 .key('f', Items.BLAST_FURNACE)
-                .key('g', Tags.Items.GLASS_PANES)
+                .key('g', Tags.Items.GLASS)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
 
     private void registerDrainRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Drain.get())
-                .patternLine("ibi")
+                .patternLine("nnn")
                 .patternLine("bgb")
-                .patternLine("ibi")
                 .key('b', Items.IRON_BARS)
-                .key('i', Items.IRON_INGOT)
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('g', ItemsRegistry.GASKET.get())
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
@@ -223,13 +225,11 @@ public class RecipesProvider extends RecipeProvider {
 
     private void registerLobberRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Lobber.get())
-                .patternLine("sgs")
-                .patternLine("gdg")
-                .patternLine("grg")
+                .patternLine("gs")
+                .patternLine("sd")
                 .key('d', Items.DISPENSER)
-                .key('s', Items.NETHERITE_SCRAP)
+                .key('s', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('g', ItemsRegistry.GASKET.get())
-                .key('r', Items.REDSTONE)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -248,12 +248,21 @@ public class RecipesProvider extends RecipeProvider {
 
     private void registerTroughRecipe(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Trough.get())
-                .patternLine("  w")
-                .patternLine("w g")
-                .patternLine("ddd")
-                .key('w', Items.DIORITE_WALL)
-                .key('d', Items.DIORITE_SLAB)
+                .patternLine("  n")
+                .patternLine("n g")
+                .patternLine("nnn")
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .key('g', ItemsRegistry.GASKET.get())
+                .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
+                .build(consumer);
+    }
+
+    private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
+        ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Crucible.get())
+                .patternLine("n n")
+                .patternLine("n n")
+                .patternLine("nnn")
+                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }

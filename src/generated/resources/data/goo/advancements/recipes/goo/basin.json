@@ -6,12 +6,12 @@
     ]
   },
   "criteria": {
-    "netherite_ash": {
+    "passivated_ingot": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "item": "goo:netherite_ash"
+            "item": "goo:passivated_ingot"
           }
         ]
       }
@@ -25,7 +25,7 @@
   },
   "requirements": [
     [
-      "netherite_ash",
+      "passivated_ingot",
       "has_the_recipe"
     ]
   ]

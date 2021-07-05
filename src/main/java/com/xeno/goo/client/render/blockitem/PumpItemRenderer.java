@@ -1,6 +1,8 @@
 package com.xeno.goo.client.render.blockitem;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.xeno.goo.client.render.block.DynamicRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.tiles.MixerTile;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -26,10 +28,9 @@ public class PumpItemRenderer extends ItemStackTileEntityRenderer
     {
         Block block = ((BlockItem)stack.getItem()).getBlock();
         super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
-        IBakedModel pumpModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
+        IBakedModel pumpModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState().with(DynamicRenderMode.RENDER, DynamicRenderTypes.ITEM));
 
         Minecraft.getInstance().getItemRenderer().renderModel(pumpModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
-        // Minecraft.getInstance().getItemRenderer().renderModel(pumpModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
         CompoundNBT stackTag = stack.getTag();
         if (stackTag == null || !stackTag.contains("BlockEntityTag")) {
             return;

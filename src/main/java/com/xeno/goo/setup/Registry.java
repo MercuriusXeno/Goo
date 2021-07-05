@@ -14,6 +14,7 @@ import com.xeno.goo.entities.*;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.*;
+import com.xeno.goo.util.LinkedHashList;
 import net.minecraft.block.DispenserBlock;
 import net.minecraft.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.dispenser.IBlockSource;
@@ -46,7 +47,7 @@ public class Registry {
     public static final Map<ResourceLocation, Supplier<GooFluid>> FluidSuppliers = new TreeMap<>(Comparator.comparing(ResourceLocation::getPath));
     public static final Map<Supplier<GooFluid>, Supplier<Item>> BucketSuppliers = new HashMap<>();
 
-    private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
+	private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundType>      COMPOUNDS = DeferredRegister.create(ICompoundType.class, GooMod.MOD_ID);
     private static final DeferredRegister<ICompoundTypeGroup> COMPOUND_GROUPS = DeferredRegister.create(ICompoundTypeGroup.class, GooMod.MOD_ID);
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, GooMod.MOD_ID);
@@ -186,7 +187,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<BulbTile>> GOO_BULB_TILE = TILES.register("goo_bulb", () -> TileEntityType.Builder.create(BulbTile::new, BlocksRegistry.Bulb.get()).build(null));
     public static final RegistryObject<TileEntityType<GooPumpTile>> GOO_PUMP_TILE = TILES.register("goo_pump", () -> TileEntityType.Builder.create(GooPumpTile::new, BlocksRegistry.Pump.get()).build(null));
     public static final RegistryObject<TileEntityType<MixerTile>> MIXER_TILE = TILES.register("mixer", () -> TileEntityType.Builder.create(MixerTile::new, BlocksRegistry.Mixer.get()).build(null));
-    public static final RegistryObject<TileEntityType<DegraderTile>> DEGRADER_TILE = TILES.register("degrader", () -> TileEntityType.Builder.create(DegraderTile::new, BlocksRegistry.Degrader
+    public static final RegistryObject<TileEntityType<DegraderTile>> DEGRADER_TILE = TILES.register("crucible", () -> TileEntityType.Builder.create(DegraderTile::new, BlocksRegistry.Degrader
 			.get()).build(null));
     public static final RegistryObject<TileEntityType<GooifierTile>> GOOIFIER_TILE = TILES.register("gooifier", () -> TileEntityType.Builder.create(GooifierTile::new, BlocksRegistry.Gooifier.get()).build(null));
     public static final RegistryObject<TileEntityType<SolidifierTile>> SOLIDIFIER_TILE = TILES.register("solidifier", () -> TileEntityType.Builder.create(SolidifierTile::new, BlocksRegistry.Solidifier.get()).build(null));
@@ -195,6 +196,7 @@ public class Registry {
     public static final RegistryObject<TileEntityType<CrystalNestTile>> CRYSTAL_NEST_TILE = TILES.register("crystal_nest", () -> TileEntityType.Builder.create(CrystalNestTile::new, BlocksRegistry.CrystalNest.get()).build(null));
     public static final RegistryObject<TileEntityType<TroughTile>> TROUGH_TILE = TILES.register("goo_trough", () -> TileEntityType.Builder.create(TroughTile::new, BlocksRegistry.Trough.get()).build(null));
     public static final RegistryObject<TileEntityType<PadTile>> PAD_TILE = TILES.register("goo_pad", () -> TileEntityType.Builder.create(PadTile::new, BlocksRegistry.Pad.get()).build(null));
+    public static final RegistryObject<TileEntityType<CrucibleTile>> CRUCIBLE_TILE = TILES.register("melter", () -> TileEntityType.Builder.create(CrucibleTile::new, BlocksRegistry.Crucible.get()).build(null));
 
     // Points of interest
     public static final RegistryObject<PointOfInterestType> CRYSTAL_NEST_POI = POINTS_OF_INTEREST.register("crystal_nest",

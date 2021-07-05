@@ -1,22 +1,18 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "sgs",
-    "gdg",
-    "grg"
+    "gs",
+    "sd"
   ],
   "key": {
     "d": {
       "item": "minecraft:dispenser"
     },
     "s": {
-      "item": "minecraft:netherite_scrap"
+      "item": "goo:passivated_ingot"
     },
     "g": {
       "item": "goo:gasket"
-    },
-    "r": {
-      "item": "minecraft:redstone"
     }
   },
   "result": {

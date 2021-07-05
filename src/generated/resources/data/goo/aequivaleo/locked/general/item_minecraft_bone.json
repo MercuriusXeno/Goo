@@ -22,16 +22,12 @@
       "type": "goo:chromatic"
     },
     {
-      "amount": 60.0,
+      "amount": 15.0,
       "type": "goo:decay"
     },
     {
-      "amount": 30.0,
+      "amount": 15.0,
       "type": "goo:faunal"
-    },
-    {
-      "amount": 3.0,
-      "type": "goo:vital"
     }
   ]
 }

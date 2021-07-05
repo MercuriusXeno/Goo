@@ -16,8 +16,14 @@
       }
     }
   ],
-  "compounds": {
-    "amount": 30.0,
-    "type": "goo:earthen"
-  }
+  "compounds": [
+    {
+      "amount": 4.0,
+      "type": "goo:aquatic"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:earthen"
+    }
+  ]
 }

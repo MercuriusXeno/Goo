@@ -10,7 +10,9 @@ public class ISTERProvider
         return BulbItemRenderer::new;
     }
 
-    public static Callable<ItemStackTileEntityRenderer> mixer() { return MixerItemRenderer::new; }
+    public static Callable<ItemStackTileEntityRenderer> mixer() {
+        return MixerItemRenderer::new;
+    }
 
     public static Callable<ItemStackTileEntityRenderer> degrader() {
         return DegraderItemRenderer::new;
@@ -20,9 +22,15 @@ public class ISTERProvider
         return TroughItemRenderer::new;
     }
 
+    public static Callable<ItemStackTileEntityRenderer> crucible() {
+        return CrucibleItemRenderer::new;
+    }
+
     public static Callable<ItemStackTileEntityRenderer> pad() {
         return PadItemRenderer::new;
     }
 
-    public static Callable<ItemStackTileEntityRenderer> pump() { return PumpItemRenderer::new; }
+    public static Callable<ItemStackTileEntityRenderer> pump() {
+        return PumpItemRenderer::new;
+    }
 }

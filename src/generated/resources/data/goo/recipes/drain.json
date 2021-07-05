@@ -1,16 +1,15 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "ibi",
-    "bgb",
-    "ibi"
+    "nnn",
+    "bgb"
   ],
   "key": {
     "b": {
       "item": "minecraft:iron_bars"
     },
-    "i": {
-      "item": "minecraft:iron_ingot"
+    "n": {
+      "item": "goo:passivated_ingot"
     },
     "g": {
       "item": "goo:gasket"

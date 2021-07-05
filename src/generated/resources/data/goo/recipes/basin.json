@@ -1,13 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "minecraft:lava_bucket"
-    },
-    {
-      "item": "goo:netherite_ash"
-    }
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "n n",
+    " n "
   ],
+  "key": {
+    "n": {
+      "item": "goo:passivated_ingot"
+    }
+  },
   "result": {
     "item": "goo:basin"
   }
