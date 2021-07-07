@@ -83,7 +83,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerNetheriteAshRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.NETHERITE_ASH.get())
+        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.NETHERITE_ASH.get(), 4)
                 .addIngredient(Items.NETHERITE_SCRAP)
                 .addIngredient(ItemsRegistry.STYGIAN_WEEPINGS.get())
                 .addCriterion("netherite_scrap", InventoryChangeTrigger.Instance.forItems(Items.NETHERITE_SCRAP))

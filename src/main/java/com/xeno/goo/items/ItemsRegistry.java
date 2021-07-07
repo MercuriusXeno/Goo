@@ -33,6 +33,7 @@ public class ItemsRegistry {
     public static final RegistryObject<StygianWeepings> STYGIAN_WEEPINGS = ITEMS.register("stygian_weepings", StygianWeepings::new);
     public static final RegistryObject<PassivatedNugget> PASSIVATED_NUGGET = ITEMS.register("passivated_nugget", PassivatedNugget::new);
     public static final RegistryObject<PassivatedIngot> PASSIVATED_INGOT = ITEMS.register("passivated_ingot", PassivatedIngot::new);
+    public static final RegistryObject<PassivatedAmalgam> PASSIVATED_AMALGAM = ITEMS.register("passivated_amalgam", PassivatedAmalgam::new);
     public static final RegistryObject<CrystalComb> CRYSTAL_COMB = ITEMS.register("crystal_comb", CrystalComb::new);
     public static final RegistryObject<Vessel> VESSEL = ITEMS.register("basin", Vessel::new);
     public static final RegistryObject<Gauntlet> GAUNTLET = ITEMS.register("gauntlet", Gauntlet::new);

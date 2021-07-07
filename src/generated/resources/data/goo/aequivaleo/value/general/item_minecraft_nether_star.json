@@ -18,7 +18,7 @@
   ],
   "compounds": [
     {
-      "amount": 960.0,
+      "amount": 60.0,
       "type": "goo:decay"
     },
     {
@@ -26,7 +26,7 @@
       "type": "goo:logic_forbidden"
     },
     {
-      "amount": 15.0,
+      "amount": 32.0,
       "type": "goo:primordial"
     },
     {

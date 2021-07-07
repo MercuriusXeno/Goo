@@ -30,14 +30,8 @@ import java.util.Map;
 
 public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
     private static final float FLUID_VERTICAL_OFFSET = 0.126f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 15.75f;
+    private static final float FLUID_VERTICAL_MAX = 0.925f;
     private static final float FLUID_HORIZONTAL_OFFSET = 0.1876f;
-    private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - ((1f - FLUID_VERTICAL_MAX) * 16);
-    private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
-    private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
-    private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
-    private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
 
     public CrucibleRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -63,11 +57,8 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         float scaledHeight = Math.max(minHeight, totalGoo / (float)bulbCapacity);
         float yOffset = 0;
 
-        // determine where to draw the fluid based on the model
-        Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
-
-        float minY = from.getY();
-        float maxY = to.getY();
+        float minY = FLUID_VERTICAL_OFFSET;
+        float maxY = FLUID_VERTICAL_MAX;
         // this is the total fill of the goo in the tank of this particular goo, as a percentage
         float percentage = goo.getAmount() / totalGoo;
         float heightScale = percentage * scaledHeight;

@@ -23,7 +23,7 @@ public class SolidifierRecipeCategory implements IRecipeCategory<SolidifierRecip
 
 	public SolidifierRecipeCategory(IGuiHelper guiHelper) {
 		background = guiHelper.createBlankDrawable(180, 52);
-		localizedName = I18n.format("block.goo.solidifier");
+		localizedName = I18n.format(BlocksRegistry.Solidifier.get().getTranslationKey());
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
 		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
 				0, 0, 16, 16);

@@ -105,8 +105,8 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	// moved this from renderer to here so that both can utilize the same
 	// offset logic (and also renderer is client code, not the same in reverse)
-	public static final float FLUID_VERTICAL_OFFSET = 0.01626f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-	public static final float FLUID_VERTICAL_MAX = 0.01626f;
+	private static final float FLUID_VERTICAL_OFFSET = 0.126f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
+	private static final float FLUID_VERTICAL_MAX = 0.075f;
 	public static final float HEIGHT_SCALE = (1f - FLUID_VERTICAL_MAX) - FLUID_VERTICAL_OFFSET;
 	public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 1f / Registry.FluidSuppliers.size(); // percentile is a representation of all the fluid types in existence.
 

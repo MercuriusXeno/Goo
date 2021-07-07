@@ -163,6 +163,7 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.CRIMSON_NYLIUM, earthen(32), fungal(15), chromatic(32));
         saveData(Items.CRIMSON_FUNGUS, fungal(15));
         saveData(Items.CRYING_OBSIDIAN, weird(64), molten(64), crystal(96), primordial(3));
+        saveData(ItemsRegistry.STYGIAN_WEEPINGS.get(), weird(96), crystal(96));
         saveData(Items.EGG, faunal(15), vital(15));
         saveData(Items.END_ROD, radiant(20), weird(10));
         saveData(Items.END_STONE, earthen(32), weird(4));
@@ -289,13 +290,13 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.LAPIS_LAZULI, weird(4), chromatic(48), crystal(30));
         saveData(Items.NETHER_QUARTZ_ORE, earthen(44), crystal (12), forbidden(1));
         saveData(Items.QUARTZ, earthen(12), crystal (12));
-        saveData(Items.ANCIENT_DEBRIS, metal(960), molten(120), primordial(15), forbidden(1));
-        saveData(Items.NETHERITE_SCRAP, metal(960), molten(120), primordial(15));
+        saveData(Items.ANCIENT_DEBRIS, metal(960), molten(120), primordial(8), forbidden(1));
+        saveData(Items.NETHERITE_SCRAP, metal(960), molten(120), primordial(8));
 
         // controversial
-        saveData(Items.NETHER_STAR, weird(120), radiant(120), decay(960), primordial(15), forbidden(1));
-        saveData(Items.HEART_OF_THE_SEA, aquatic(120), weird(120), primordial(15), forbidden(1));
-        saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60), primordial(3));
+        saveData(Items.NETHER_STAR, weird(120), radiant(120), decay(60), primordial(32), forbidden(1));
+        saveData(Items.HEART_OF_THE_SEA, aquatic(120), weird(120), primordial(16), forbidden(1));
+        saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60), primordial(4));
 
         ItemsRegistry.CRYSTALLIZED_GOO.forEach(this::registerLockedInfoForCrystallizedGoo);
         saveData(ItemsRegistry.CRYSTAL_COMB.get(), crystal(32), forbidden(1));

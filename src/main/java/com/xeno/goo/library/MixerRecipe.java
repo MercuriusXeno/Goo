@@ -24,6 +24,8 @@ public class MixerRecipe
         return this.inputs;
     }
 
+    // mixer recipes are serialized and sent to clients because they're used to dictate
+    // animations happening client side. The other recipe systems don't, so that's what this is for.
     public CompoundNBT serializeNbt (CompoundNBT tag) {
         tag.put("output", output().writeToNBT(new CompoundNBT()));
         tag.putInt("input_count", inputs().size());;

@@ -13,17 +13,17 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 
-public class GooifierRecipeCategory implements IRecipeCategory<GooifierRecipe> {
-	public static final ResourceLocation UID = new ResourceLocation(GooMod.MOD_ID, "gooifier_jei_category");
+public class MelterRecipeCategory implements IRecipeCategory<GooifierRecipe> {
+	public static final ResourceLocation UID = new ResourceLocation(GooMod.MOD_ID, "melter_jei_category");
 	private final IDrawable background;
 	private final String localizedName;
 	private final IDrawable icon;
 	private final IDrawable arrow;
-	private final ItemStack renderStack = new ItemStack(BlocksRegistry.Gooifier.get());
+	private final ItemStack renderStack = new ItemStack(BlocksRegistry.Crucible.get());
 
-	public GooifierRecipeCategory(IGuiHelper guiHelper) {
+	public MelterRecipeCategory(IGuiHelper guiHelper) {
 		background = guiHelper.createBlankDrawable(180, 52);
-		localizedName = I18n.format(BlocksRegistry.Gooifier.get().getTranslationKey());
+		localizedName = I18n.format(BlocksRegistry.Crucible.get().getTranslationKey());
 		icon = guiHelper.createDrawableIngredient(renderStack.copy());
 		arrow = guiHelper.createDrawable(new ResourceLocation(GooMod.MOD_ID, "textures/gui/gui_sheet.png"),
 				0, 0, 16, 16);

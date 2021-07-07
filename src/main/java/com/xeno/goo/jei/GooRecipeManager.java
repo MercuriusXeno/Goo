@@ -3,6 +3,7 @@ package com.xeno.goo.jei;
 import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooConversionWrapper;
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.library.DegraderRecipe;
 import com.xeno.goo.library.DegraderRecipes;
 import com.xeno.goo.library.MixerRecipe;
@@ -13,8 +14,10 @@ import mezz.jei.api.recipe.IFocus.Mode;
 import mezz.jei.api.recipe.advanced.IRecipeManagerPlugin;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
@@ -41,6 +44,9 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		if (getRecipes(category(MixerRecipeCategory.UID), focus).size() > 0) {
 			validUids.add(MixerRecipeCategory.UID);
 		}
+		if (getRecipes(category(SoulFireRecipeCategory.UID), focus).size() > 0) {
+			validUids.add(SoulFireRecipeCategory.UID);
+		}
 		return validUids;
 	}
 
@@ -60,6 +66,10 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 
 		if (recipeCategory.getUid().equals(MixerRecipeCategory.UID)) {
 			return mixerRecipes(focus);
+		}
+
+		if (recipeCategory.getUid().equals(SoulFireRecipeCategory.UID)) {
+			return soulFireRecipes(focus);
 		}
 
 		return Collections.emptyList();
@@ -83,6 +93,48 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 			}
 		}
 		return mixerMatches;
+	}
+
+	List<SoulFireRecipe> soulFireRecipes = Arrays.asList(
+			new SoulFireRecipe(new ItemStack(Items.CRYING_OBSIDIAN), new ItemStack(ItemsRegistry.STYGIAN_WEEPINGS.get()))
+	);
+
+	public List<SoulFireRecipe> getJeiSoulFireRecipes() {
+		return soulFireRecipes;
+	}
+
+	private <T, V> List<T> soulFireRecipes(IFocus<V> focus) {
+		List<T> soulFireMatches = new ArrayList<>();
+		if (focus.getMode().equals(Mode.INPUT)) {
+			if (focus.getValue() instanceof ItemStack) {
+				ItemStack stack = ((ItemStack) focus.getValue());
+				soulFireMatches.addAll((List<T>) getJeiSoulFireRecipes()
+						.stream().filter(k -> k.input().isItemEqual(stack))
+						.collect(Collectors.toList()));
+			}
+			if (focus.getValue() instanceof Item) {
+				Item stack = ((Item) focus.getValue());
+				soulFireMatches.addAll((List<T>) getJeiSoulFireRecipes()
+						.stream().filter(k -> k.input().getItem().equals(stack))
+						.collect(Collectors.toList()));
+			}
+		}
+		if (focus.getMode().equals(Mode.OUTPUT)) {
+			if (focus.getValue() instanceof ItemStack) {
+				ItemStack stack = ((ItemStack) focus.getValue());
+				soulFireMatches.addAll((List<T>) getJeiSoulFireRecipes()
+						.stream().filter(k -> k.output().isItemEqual(stack))
+						.collect(Collectors.toList()));
+			}
+			if (focus.getValue() instanceof Item) {
+				Item stack = ((Item) focus.getValue());
+				soulFireMatches.addAll((List<T>) getJeiSoulFireRecipes()
+						.stream().filter(k -> k.output().getItem().equals(stack))
+						.collect(Collectors.toList()));
+			}
+		}
+
+		return soulFireMatches;
 	}
 
 	private <T, V> List<T> degraderRecipes(IFocus<V> focus) {
@@ -175,6 +227,9 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		}
 		if (recipeCategory.getUid().equals(MixerRecipeCategory.UID)) {
 			return convertMixerRecipesToJeiFormat(MixerRecipes.recipes());
+		}
+		if (recipeCategory.getUid().equals(SoulFireRecipeCategory.UID)) {
+			return (List<T>)getJeiSoulFireRecipes();
 		}
 		return new ArrayList<>();
 	}
