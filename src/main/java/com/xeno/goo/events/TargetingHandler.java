@@ -14,6 +14,7 @@ import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.overlay.RayTracing;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.GooContainerAbstraction;
 import com.xeno.goo.tiles.GooPumpTile;
@@ -632,17 +633,47 @@ public class TargetingHandler
         if( Minecraft.getInstance().world == null || Minecraft.getInstance().player == null )
             return;
 
-        FluidStack entry = e.getGooFromTargetRayTraceResult(target, RayTraceTargetSource.JUST_LOOKING);
+        if (e instanceof CrucibleTile && target.getFace() != Direction.UP) {
+            List<FluidStack> goo = ((CrucibleTile) e).getAllGooContentsFromTile();
+            renderCrucibleGooContents(goo, event);
+        } else {
+            FluidStack entry = e.getGooFromTargetRayTraceResult(target, RayTraceTargetSource.JUST_LOOKING);
 
-        int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
-        int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
+            int bx = (int) (event.getWindow().getScaledWidth() * 0.55f);
+            int by = (int) (event.getWindow().getScaledHeight() * 0.45f);
 
-        if (!(entry.getFluid() instanceof GooFluid)) {
-            return;
+            if (!(entry.getFluid() instanceof GooFluid)) {
+                return;
+            }
+            renderGooIcon(matrices, ((GooFluid) entry.getFluid()).icon(), bx, by, (int) Math.floor(entry.getAmount()));
         }
-        renderGooIcon(matrices, ((GooFluid)entry.getFluid()).icon(), bx, by, (int)Math.floor(entry.getAmount()));
     }
 
+    private static void renderCrucibleGooContents(List<FluidStack> goo, Post event) {
+        MatrixStack matrices = event.getMatrixStack();
+        int bx = (int)(event.getWindow().getScaledWidth() * 0.55f);
+        int by = (int)(event.getWindow().getScaledHeight() * 0.45f);
+        int xOff = -ICON_WIDTH;
+        int yOff = -ICON_HEIGHT;
+        int entriesPerRow = (int)Math.ceil(Math.sqrt(goo.size()));
+        int procCount = 0;
+
+        for(int i = 0; i < goo.size(); i++) {
+            procCount++;
+            Fluid fluid = goo.get(i).getFluid();
+            if (!(fluid instanceof GooFluid)) {
+                return;
+            }
+            xOff += ICON_WIDTH;
+
+            renderGooIcon(matrices, ((GooFluid)fluid).icon(), bx + xOff, by + yOff, goo.get(i).getAmount());
+            if(procCount >= entriesPerRow) {
+                xOff = -ICON_WIDTH;
+                yOff += ICON_HEIGHT;
+                procCount = 0;
+            }
+        }
+    }
 
     private static void renderGooFilter(Post event, GooEntry gooEntry) {
         MatrixStack matrices = event.getMatrixStack();
@@ -720,7 +751,8 @@ public class TargetingHandler
                 || state.getBlock() instanceof Degrader
                 || state.getBlock() instanceof Solidifier
                 || state.getBlock() instanceof Gooifier
-                || state.getBlock() instanceof GooTrough;
+                || state.getBlock() instanceof GooTrough
+                || state.getBlock() instanceof Crucible;
     }
 
     private static boolean hasGooContentsAsEntity(EntityRayTraceResult target)

@@ -32,21 +32,11 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	@Override
 	public <V> List<ResourceLocation> getRecipeCategoryUids(IFocus<V> focus) {
 		List<ResourceLocation> validUids = new ArrayList<>();
-		if (getRecipes(category(GooifierRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(GooifierRecipeCategory.UID);
-		}
-		if (getRecipes(category(SolidifierRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(SolidifierRecipeCategory.UID);
-		}
-		if (getRecipes(category(DegraderRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(DegraderRecipeCategory.UID);
-		}
-		if (getRecipes(category(MixerRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(MixerRecipeCategory.UID);
-		}
-		if (getRecipes(category(SoulFireRecipeCategory.UID), focus).size() > 0) {
-			validUids.add(SoulFireRecipeCategory.UID);
-		}
+		validUids.add(GooifierRecipeCategory.UID);
+		validUids.add(SolidifierRecipeCategory.UID);
+		validUids.add(DegraderRecipeCategory.UID);
+		validUids.add(MixerRecipeCategory.UID);
+		validUids.add(SoulFireRecipeCategory.UID);
 		return validUids;
 	}
 
@@ -96,7 +86,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	List<SoulFireRecipe> soulFireRecipes = Arrays.asList(
-			new SoulFireRecipe(new ItemStack(Items.CRYING_OBSIDIAN), new ItemStack(ItemsRegistry.STYGIAN_WEEPINGS.get()))
+		new SoulFireRecipe(new ItemStack(Items.CRYING_OBSIDIAN), new ItemStack(ItemsRegistry.STYGIAN_WEEPINGS.get()))
 	);
 
 	public List<SoulFireRecipe> getJeiSoulFireRecipes() {

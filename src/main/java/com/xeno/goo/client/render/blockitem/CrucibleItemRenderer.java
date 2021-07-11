@@ -48,6 +48,8 @@ public class CrucibleItemRenderer extends ItemStackTileEntityRenderer
         Minecraft.getInstance().getItemRenderer().renderModel(crucibleModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getCutout()));
 
         renderTileSafely(stack, matrixStack, buffer, light, overlay, block);
+
+        Minecraft.getInstance().getItemRenderer().renderModel(crucibleModel, stack, light, overlay, matrixStack, buffer.getBuffer(RenderType.getTranslucent()));
     }
 
     private void renderTileSafely(ItemStack stack, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay, Block block) {
@@ -64,26 +66,17 @@ public class CrucibleItemRenderer extends ItemStackTileEntityRenderer
         }
     }
 
-    private static final float FLUID_VERTICAL_OFFSET = 0.126f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 15.75f;
+    private static final float FLUID_VERTICAL_OFFSET = 0.376f;
+    private static final float FLUID_VERTICAL_MAX = (1f - 0.075f);
     private static final float FLUID_HORIZONTAL_OFFSET = 0.1876f;
-    private static final float FROM_SCALED_VERTICAL = FLUID_VERTICAL_OFFSET * 16;
-    private static final float TO_SCALED_VERTICAL = 16 - ((1f - FLUID_VERTICAL_MAX) * 16);
-    private static final float FROM_SCALED_HORIZONTAL = FLUID_HORIZONTAL_OFFSET * 16;
-    private static final float TO_SCALED_HORIZONTAL = 16 - FROM_SCALED_HORIZONTAL;
-    private static final Vector3f FROM_FALLBACK = new Vector3f(FROM_SCALED_HORIZONTAL, FROM_SCALED_VERTICAL, FROM_SCALED_HORIZONTAL);
-    private static final Vector3f TO_FALLBACK = new Vector3f(TO_SCALED_HORIZONTAL, TO_SCALED_VERTICAL, TO_SCALED_HORIZONTAL);
     public static void renderFluid(CrucibleTile tile, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
         IVertexBuilder builder = buffer.getBuffer(RenderType.getCutoutMipped());
         // IVertexBuilder builder = buffer.getBuffer(RenderType.getTranslucent());
 
         float yOffset = 0;
 
-        // determine where to draw the fluid based on the model
-        Vector3f from = FROM_FALLBACK, to = TO_FALLBACK;
-
-        float minY = from.getY();
-        float maxY = to.getY();
+        float minY = FLUID_VERTICAL_OFFSET;
+        float maxY = FLUID_VERTICAL_MAX;
         float heightScale = maxY - minY;
 
         Object2FloatMap<Fluid> entries = tile.calculateFluidHeights();
@@ -125,13 +118,13 @@ public class CrucibleItemRenderer extends ItemStackTileEntityRenderer
             model.setTextures(sprites[0], sprites[1], sprites[2], sprites[3], sprites[4], sprites[5]);
         }
         if (fluid.getFluid().getAttributes().getStillTexture(fluid) != null) {
-            model.minX = FLUID_HORIZONTAL_OFFSET / 16f;
-            model.minY = fromY / 16f;
-            model.minZ = FLUID_HORIZONTAL_OFFSET / 16f;
+            model.minX = FLUID_HORIZONTAL_OFFSET;
+            model.minY = fromY;
+            model.minZ = FLUID_HORIZONTAL_OFFSET;
 
-            model.maxX = (16f - FLUID_HORIZONTAL_OFFSET) / 16f;
-            model.maxY = toY / 16f;
-            model.maxZ = (16f - FLUID_HORIZONTAL_OFFSET) / 16f;
+            model.maxX = 1f - FLUID_HORIZONTAL_OFFSET;
+            model.maxY = toY;
+            model.maxZ = 1f - FLUID_HORIZONTAL_OFFSET;
         }
         return model;
     }

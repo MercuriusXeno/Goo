@@ -29,9 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
-    private static final float FLUID_VERTICAL_OFFSET = 0.126f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-    private static final float FLUID_VERTICAL_MAX = 0.925f;
-    private static final float FLUID_HORIZONTAL_OFFSET = 0.1876f;
+    private static final float FLUID_VERTICAL_OFFSET = 0.376f;
+    private static final float FLUID_VERTICAL_MAX = (1f - 0.075f);
+    private static final float FLUID_HORIZONTAL_OFFSET = 0.126f;
 
     public CrucibleRenderer(TileEntityRendererDispatcher rendererDispatcherIn) {
         super(rendererDispatcherIn);
@@ -91,11 +91,11 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         }
         if (fluid.getFluid().getAttributes().getStillTexture(fluid) != null) {
             model.minX = FLUID_HORIZONTAL_OFFSET;
-            model.minY = fromY / 16f;
+            model.minY = fromY;
             model.minZ = FLUID_HORIZONTAL_OFFSET;
 
             model.maxX = (1f - FLUID_HORIZONTAL_OFFSET);
-            model.maxY = toY / 16f;
+            model.maxY = toY;
             model.maxZ = (1f - FLUID_HORIZONTAL_OFFSET);
         }
         return model;

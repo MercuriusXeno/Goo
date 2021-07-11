@@ -1,8 +1,13 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
+import com.xeno.goo.aequivaleo.Equivalencies;
+import com.xeno.goo.aequivaleo.GooEntry;
+import com.xeno.goo.datagen.GooBlockTags;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
+import com.xeno.goo.network.CrucibleCurrentItemPacket;
+import com.xeno.goo.network.CrucibleMeltProgressPacket;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
 import com.xeno.goo.overlay.RayTraceTargetSource;
@@ -13,8 +18,13 @@ import com.xeno.goo.util.MultiGooTank;
 import it.unimi.dsi.fastutil.ints.Int2DoubleLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.particles.ItemParticleData;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -23,8 +33,8 @@ import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -34,11 +44,63 @@ import java.util.Map;
 public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity,
 																	 FluidUpdatePacket.IFluidPacketReceiver {
 
+	private static final int MAX_MELT_SPEED = 20;
+	// the itemstack currently being "held" by the crucible. If meltRate > 0, this item is also melting.
+	private ItemStack currentItem;
+
+	private int meltRate;
+
+	// the fluidstacks created when an item begins melting. These fluidstacks deplete into the crucible until empty,
+	// at which point melting is complete (melted item will become air, and this list will be empty)
+	private List<FluidStack> meltedProgress;
+
+	private float simplifiedMeltProgress;
+
 	public CrucibleTile() {
 
 		super(Registry.CRUCIBLE_TILE.get());
 	}
 
+	public void setSimplifiedMeltProgress(float f) {
+		simplifiedMeltProgress = f;
+	}
+
+	private void setSimplifiedMeltProgress() {
+		float f = getMeltProgressForItemAndMelting();
+		if (f != simplifiedMeltProgress) {
+			setSimplifiedMeltProgress(f);
+			sendMeltProgressUpdatePacket();
+		}
+	}
+
+	private void sendMeltProgressUpdatePacket() {
+		Networking.sendToClientsAround(new CrucibleMeltProgressPacket(this.world, this.pos, this.simplifiedMeltProgress, this.meltRate), (ServerWorld)this.world, this.pos);
+	}
+
+	private float getMeltProgressForItemAndMelting() {
+		if (currentItem == null || currentItem.isEmpty()) {
+			return 0f;
+		}
+
+		if (meltedProgress.size() == 0) {
+			return 0f;
+		}
+
+		GooEntry entry = Equivalencies.getEntry(this.world, currentItem.getItem());
+		if (entry.isUnusable()) {
+			return 0f;
+		}
+
+		List<FluidStack> stacks = entry.inputsAsFluidStacks();
+		int sumGoo = stacks.stream().mapToInt(FluidStack::getAmount).sum();
+		int sumProgress = meltedProgress.stream().mapToInt(FluidStack::getAmount).sum();
+
+		if (sumGoo == 0f) {
+			return 0f;
+		}
+
+		return 1f - ((float)sumProgress / sumGoo);
+	}
 
 	private final LazyOptional<IFluidHandler> crucibleHandler = LazyOptional.of(() -> new FluidHandlerWrapper(goo) {
 
@@ -105,9 +167,9 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	// moved this from renderer to here so that both can utilize the same
 	// offset logic (and also renderer is client code, not the same in reverse)
-	private static final float FLUID_VERTICAL_OFFSET = 0.126f; // this offset puts it slightly below/above the 1px line to seal up an ugly seam
-	private static final float FLUID_VERTICAL_MAX = 0.075f;
-	public static final float HEIGHT_SCALE = (1f - FLUID_VERTICAL_MAX) - FLUID_VERTICAL_OFFSET;
+	private static final float FLUID_VERTICAL_OFFSET = 0.376f;
+	private static final float FLUID_VERTICAL_MAX = (1f - 0.075f);
+	public static final float HEIGHT_SCALE = FLUID_VERTICAL_MAX - FLUID_VERTICAL_OFFSET;
 	public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 1f / Registry.FluidSuppliers.size(); // percentile is a representation of all the fluid types in existence.
 
 	public static final Int2DoubleLinkedOpenHashMap CAPACITY_LOGS = new Int2DoubleLinkedOpenHashMap();
@@ -177,10 +239,9 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		return (float)fluidStackHeights.values().stream().mapToDouble(v -> v).sum() * HEIGHT_SCALE;
 	}
 
-	private AxisAlignedBB getSpaceInBox() {
-		float fluidLevels = calculateFluidHeight();
-		return new AxisAlignedBB(this.pos.getX(), this.pos.getY() + fluidLevels, this.pos.getZ(),
-				this.pos.getX() + 1d, this.pos.getY() + 1d, this.pos.getZ() + 1d);
+	private AxisAlignedBB getSpaceInCrucible() {
+		return new AxisAlignedBB(this.pos.getX() + 0.1875d, this.pos.getY() + 0.125d, this.pos.getZ() + 0.1875d,
+				this.pos.getX() + 0.8125d, this.pos.getY() + 1d, this.pos.getZ() + 0.8125d);
 	}
 
 	@Override
@@ -213,6 +274,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		return last;
 	}
 
+	public List<FluidStack> getAllGooContentsFromTile() {
+		return goo.getFluidAsList();
+	}
+
 	@Override
 	public IFluidHandler getCapabilityFromRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource) {
 
@@ -221,6 +286,162 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	@Override
 	public void tick() {
+		if (world.isRemote()) {
+			if (hasHeatSource() && !currentItem().isEmpty() && meltRate > 0) {
+				spawnItemParticles();
+			}
+			return;
+		}
 
+		// try to grab an item from within the cauldron's inner hitbox if one exists.
+		if (currentItem().isEmpty()) {
+			tryGrabbingItem();
+		}
+
+		// try to turn goo + items into something first.
+		trySubstrateTransmutation();
+
+		// if there's no substrate transmuting to do, melt the item, if one exists
+		tryMeltingItemForGoo();
+	}
+
+	private void tryMeltingItemForGoo() {
+		if (!hasHeatSource() || currentItem().isEmpty()) {
+			meltRate = 0;
+			sendMeltProgressUpdatePacket();
+			return;
+		}
+
+		boolean hasMeltedProgressChanged = false;
+		if (meltRate < MAX_MELT_SPEED && world.getGameTime() % 5 == 0) {
+			meltRate++;
+			hasMeltedProgressChanged = true;
+		}
+
+		if (meltRate > 0) {
+			if (meltedProgress == null || meltedProgress.size() == 0) {
+				List<FluidStack> values = Equivalencies.getEntry(this.world, currentItem().getItem()).inputsAsFluidStacks();
+				meltedProgress = values;
+				hasMeltedProgressChanged = true;
+			}
+
+			int maxTransfer = meltRate;
+			for(FluidStack stack : meltedProgress) {
+				if (maxTransfer <= 0) {
+					break;
+				}
+				int minTransfer = Math.min(stack.getAmount(), maxTransfer);
+				if (stack.isEmpty()) {
+					continue;
+				}
+				FluidStack fillStack = stack.copy();
+				fillStack.setAmount(minTransfer);
+				int simulatedFill = goo.fill(fillStack, FluidAction.SIMULATE);
+				if (simulatedFill == 0) {
+					break;
+				} else {
+					if (simulatedFill < minTransfer) {
+						minTransfer = simulatedFill;
+					}
+				}
+				fillStack = stack.copy();
+				fillStack.setAmount(minTransfer);
+				goo.fill(fillStack, FluidAction.EXECUTE);
+				stack.shrink(minTransfer);
+				hasMeltedProgressChanged = true;
+			}
+			int previousSize = meltedProgress.size();
+			meltedProgress.removeIf(FluidStack::isEmpty);
+			if (previousSize != meltedProgress.size()) {
+				hasMeltedProgressChanged = true;
+			}
+			if (meltedProgress.size() == 0) {
+				currentItem.shrink(1);
+				sendCurrentItemUpdatedPacket();
+			}
+
+			if (hasMeltedProgressChanged) {
+				setSimplifiedMeltProgress();
+			}
+		}
+	}
+
+	private boolean trySubstrateTransmutation() {
+		if (goo.isEmpty()) {
+			return false;
+		}
+
+		if (currentItem == null || currentItem.isEmpty()) {
+			return false;
+		}
+
+		// don't try substrate transmutations if items are melting.
+		// since substrate tries first, we return true if substrate succeeds.
+		// if it does, melting doesn't fire until next tick (which gives substrate a chance to fire again)
+		if (meltRate > 0) {
+			return false;
+		}
+
+		return false;
+	}
+
+	private void tryGrabbingItem() {
+		AxisAlignedBB bb = getSpaceInCrucible();
+		List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, bb);
+		if (itemsInBox.isEmpty()) {
+			return;
+		}
+		ItemStack item = itemsInBox.get(0).getItem();
+		if (Equivalencies.getEntry(this.world, item.getItem()).isUnusable()) {
+			return;
+		}
+		setCurrentItem(item);
+		sendCurrentItemUpdatedPacket();
+		itemsInBox.get(0).remove();
+	}
+
+	private void sendCurrentItemUpdatedPacket() {
+		Networking.sendToClientsAround(new CrucibleCurrentItemPacket(this.world, this.pos, this.currentItem), (ServerWorld)this.world, this.pos);
+	}
+
+	private void spawnItemParticles() {
+		for(int i = 0; i < 4; ++i) {
+			// try to determine the item position, vaguely
+			// this is based on the fluid height, on top of the offset
+			float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
+			float dx = (world.rand.nextFloat() - 0.5f) / 8f;
+			float dy = (world.rand.nextFloat() - 0.5f) / 16f;
+			float dz = (world.rand.nextFloat() - 0.5f) / 8f;
+			Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz);
+			if (this.world instanceof ServerWorld)
+				((ServerWorld)this.world).spawnParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
+			else
+				this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 0d, 0d, 0d);
+		}
+
+	}
+
+	private ItemStack currentItem() {
+		if (currentItem != null && !currentItem.isEmpty()) {
+			return currentItem;
+		}
+
+		return ItemStack.EMPTY;
+	}
+
+	private boolean hasHeatSource() {
+		BlockState stateBelow = world.getBlockState(this.pos.offset(Direction.DOWN));
+		if (stateBelow.getBlock().isIn(GooBlockTags.HEAT_SOURCES_FOR_CRUCIBLE)) {
+			return true;
+		}
+		return false;
+	}
+
+	public void setCurrentItem(ItemStack currentItem) {
+		this.currentItem = currentItem;
+	}
+
+	public void setMeltRate(int meltRate) {
+		this.meltRate = meltRate;
 	}
 }

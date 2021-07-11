@@ -1,8 +1,6 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.datagen.GooTags;
-import com.xeno.goo.datagen.GooTags.Entities;
+import com.xeno.goo.datagen.GooEntityTags;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.library.AudioHelper.PitchFormulas;
@@ -35,7 +33,7 @@ public class Aquatic
     private static boolean hitEntity(BlobHitContext c) {
         boolean isUsed = false;
         // extinguish the entity if on fire and do not deal damage
-        if (Entities.WATER_HATING_MOBS.contains(c.victim().getType())) {
+        if (GooEntityTags.WATER_HATING_MOBS.contains(c.victim().getType())) {
             // knock the enemy back and deal some damage.
             // deal extra damage to water-haters.
             c.knockback(1.0f);

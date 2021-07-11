@@ -16,7 +16,8 @@ public class DataGenerators {
             generator.addProvider(new RecipesProvider(generator));
             generator.addProvider(new AequivaleoInformationsProvider(generator));
             generator.addProvider(new LootTables(generator));
-            generator.addProvider(new GooTags(generator, event.getExistingFileHelper()));
+            generator.addProvider(new GooEntityTags(generator, event.getExistingFileHelper()));
+            generator.addProvider(new GooBlockTags(generator, event.getExistingFileHelper()));
         }
         if (event.includeClient()) {
             generator.addProvider(new BlockStatesProvider(generator, event.getExistingFileHelper()));

@@ -111,6 +111,16 @@ public class Networking {
 				MixerRecipePacket.class,
 				MixerRecipePacket::new
 		);
+
+		registerPacket(
+				CrucibleCurrentItemPacket.class,
+				CrucibleCurrentItemPacket::new
+		);
+
+		registerPacket(
+				CrucibleMeltProgressPacket.class,
+				CrucibleMeltProgressPacket::new
+		);
 	}
 
 	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {

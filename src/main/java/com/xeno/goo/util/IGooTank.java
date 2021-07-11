@@ -10,6 +10,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
@@ -164,6 +166,18 @@ public abstract class IGooTank implements IFluidHandler {
 				throw new IllegalStateException("Can't modify the status stacks.");
 			}
 		};
+	}
+
+	public final List<FluidStack> getFluidAsList() {
+		final List<FluidStack> result = new ArrayList<>();
+		for(int i = 0; i < getTanks(); i++) {
+			FluidStack f = getFluidInTank(i);
+			if (f.isEmpty()) {
+				continue;
+			}
+			result.add(f);
+		}
+		return result;
 	}
 
 	/**

@@ -53,6 +53,8 @@ public class ItemsProvider extends ItemModelProvider {
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/passivated_ingot"));
         singleTexture(ItemsRegistry.PASSIVATED_NUGGET.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
                 "layer0", new ResourceLocation(GooMod.MOD_ID, "item/passivated_nugget"));
+        singleTexture(ItemsRegistry.PASSIVATED_AMALGAM.get().getRegistryName().getPath(), new ResourceLocation("item/handheld"),
+                "layer0", new ResourceLocation(GooMod.MOD_ID, "item/passivated_amalgam"));
     }
 
     private void registerNetheriteAsh() {

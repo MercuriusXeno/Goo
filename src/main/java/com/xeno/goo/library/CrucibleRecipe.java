@@ -3,18 +3,27 @@ package com.xeno.goo.library;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CrucibleRecipe {
-	private final FluidStack goo;
+	private final List<FluidStack> goo;
 	private final ItemStack catalyst;
 	private final ItemStack output;
 
-	public CrucibleRecipe(FluidStack goo, ItemStack catalyst, ItemStack output) {
+	public CrucibleRecipe(ItemStack catalyst, ItemStack output, List<FluidStack> goo) {
 		this.goo = goo;
 		this.catalyst = catalyst;
 		this.output = output;
 	}
 
-	public FluidStack gooInput() {
+	public CrucibleRecipe(ItemStack catalyst, ItemStack output, FluidStack... goo) {
+		this.goo = Arrays.asList(goo);
+		this.catalyst = catalyst;
+		this.output = output;
+	}
+
+	public List<FluidStack> gooInput() {
 		return goo;
 	}
 
@@ -24,14 +33,5 @@ public class CrucibleRecipe {
 
 	public ItemStack itemOutput() {
 		return output;
-	}
-
-	public ItemStack resultBasedOnFluidStack(FluidStack amountUsed) {
-		int cycles = amountUsed.getAmount() / goo.getAmount();
-		if (cycles <= 0) {
-			return ItemStack.EMPTY;
-		}
-
-		return new ItemStack(output.getItem(), cycles);
 	}
 }

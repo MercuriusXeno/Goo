@@ -1,7 +1,7 @@
 package com.xeno.goo.interactions;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.datagen.GooTags.Entities;
+import com.xeno.goo.datagen.GooEntityTags;
 import com.xeno.goo.effects.EggedEffect;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
@@ -52,8 +52,8 @@ public class Primordial
         if (c.victim().isPotionActive(Registry.EGGED_EFFECT.get())) {
             return false;
         }
-        boolean isImmuneToInstantDeath = Entities.PRIMORDIAL_INSTANT_DEATH_IMMUNE_MOBS.contains(c.victim().getType());
-        boolean isImmuneToEgging = !Entities.PRIMORDIAL_SPAWN_EGGS_ALLOWED.contains(c.victim().getType());
+        boolean isImmuneToInstantDeath = GooEntityTags.PRIMORDIAL_INSTANT_DEATH_IMMUNE_MOBS.contains(c.victim().getType());
+        boolean isImmuneToEgging = !GooEntityTags.PRIMORDIAL_SPAWN_EGGS_ALLOWED.contains(c.victim().getType());
         if (isImmuneToEgging && isImmuneToInstantDeath) {
             return false;
         }
