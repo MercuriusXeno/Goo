@@ -3,6 +3,7 @@ package com.xeno.goo.events;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.VesselModel;
+import com.xeno.goo.client.particle.BubbleParticle;
 import com.xeno.goo.client.particle.GooParticle;
 import com.xeno.goo.client.particle.SprayParticle;
 import com.xeno.goo.client.particle.VaporParticle;
@@ -224,5 +225,26 @@ public class ModClientEvents
         Minecraft.getInstance().particles.registerFactory(Registry.SNOW_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.SNOW_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.VITAL_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.VITAL_GOO.get()));
         Minecraft.getInstance().particles.registerFactory(Registry.WEIRD_SPRAY_PARTICLE.get(), (iAnimatedSprite) -> new SprayParticle.SprayGooFactory(iAnimatedSprite, Registry.WEIRD_GOO.get()));
+
+        Minecraft.getInstance().particles.registerFactory(Registry.AQUATIC_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.AQUATIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.CHROMATIC_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.CHROMATIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.CRYSTAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.CRYSTAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.DECAY_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.DECAY_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.EARTHEN_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.EARTHEN_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.ENERGETIC_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.ENERGETIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FAUNAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.FAUNAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FLORAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.FLORAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.FUNGAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.FUNGAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.HONEY_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.HONEY_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.LOGIC_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.LOGIC_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.METAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.METAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.MOLTEN_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.MOLTEN_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.PRIMORDIAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.PRIMORDIAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.RADIANT_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.RADIANT_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.REGAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.REGAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.SLIME_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.SLIME_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.SNOW_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.SNOW_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.VITAL_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.VITAL_GOO.get()));
+        Minecraft.getInstance().particles.registerFactory(Registry.WEIRD_BUBBLE_PARTICLE.get(), (iAnimatedSprite) -> new BubbleParticle.BubbleFactory(iAnimatedSprite, Registry.WEIRD_GOO.get()));
     }
 }

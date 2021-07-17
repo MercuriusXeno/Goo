@@ -12,6 +12,7 @@ import net.minecraft.item.Items;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.IItemProvider;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.datafix.fixes.FurnaceRecipes;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.fml.RegistryObject;
 
@@ -31,7 +32,6 @@ public class RecipesProvider extends RecipeProvider {
         registerPassivatedNuggetRecipe(consumer);
         registerPassivatedIngotRecipe(consumer);
         registerPassivatedBlockRecipe(consumer);
-        registerBookRecipe(consumer);
         registerGasketRecipe(consumer);
         registerGauntletRecipe(consumer);
         registerVesselRecipe(consumer);
@@ -45,7 +45,7 @@ public class RecipesProvider extends RecipeProvider {
         registerDrainRecipe(consumer);
         registerCrystalNestRecipe(consumer);
         registerTroughRecipe(consumer);
-        registerCrucibleRecipe(consumer);
+        registerCrucibleRecipes(consumer);
         registerPadRecipe(consumer);
 
         registerDecorativeBlocks(consumer);
@@ -70,6 +70,8 @@ public class RecipesProvider extends RecipeProvider {
                 .addIngredient(BlocksRegistry.PassivatedBlock.get())
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer, new ResourceLocation(GooMod.MOD_ID, "passivated_ingot_from_block"));
+
+        CookingRecipeBuilder.smeltingRecipe(Ingredient.fromItems(ItemsRegistry.PASSIVATED_AMALGAM.get()), ItemsRegistry.PASSIVATED_INGOT.get(), 0f, 200);
     }
 
     private void registerPassivatedBlockRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -107,16 +109,6 @@ public class RecipesProvider extends RecipeProvider {
                 .patternLine("n n")
                 .patternLine(" n ")
                 .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
-                .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
-                .build(consumer);
-    }
-
-    // doesn't work, needs a custom serializer to get the NBT on the stack to identify
-    // it isn't just any patchouli book, but goo's patchouli book. leaving this a manual recipe for the time being.
-    private void registerBookRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapelessRecipeBuilder.shapelessRecipe(ItemsRegistry.GOO_AND_YOU.get())
-                .addIngredient(ItemsRegistry.GASKET.get())
-                .addIngredient(Items.BOOK)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer);
     }
@@ -257,14 +249,22 @@ public class RecipesProvider extends RecipeProvider {
                 .build(consumer);
     }
 
-    private void registerCrucibleRecipe(Consumer<IFinishedRecipe> consumer) {
+    private void registerCrucibleRecipes(Consumer<IFinishedRecipe> consumer) {
         ShapedRecipeBuilder.shapedRecipe(BlocksRegistry.Crucible.get())
                 .patternLine("n n")
-                .patternLine("n n")
+                .patternLine("ncn")
                 .patternLine("nnn")
-                .key('n', ItemsRegistry.PASSIVATED_INGOT.get())
+                .key('n', ItemsRegistry.PASSIVATED_NUGGET.get())
+                .key('c', Items.CAULDRON)
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
-                .build(consumer);
+                .build(consumer, new ResourceLocation(GooMod.MOD_ID, "crucible_from_passivated_metal"));
+        ShapelessRecipeBuilder.shapelessRecipe(BlocksRegistry.Crucible.get())
+                .addIngredient(Items.CAULDRON)
+                .addIngredient(Items.LAVA_BUCKET)
+                .addIngredient(Items.IRON_INGOT)
+                .addIngredient(ItemsRegistry.NETHERITE_ASH.get())
+                .addCriterion("netherite_ash", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.NETHERITE_ASH.get()))
+                .build(consumer, new ResourceLocation(GooMod.MOD_ID, "crucible_from_cauldron"));
     }
 
     private void registerPadRecipe(Consumer<IFinishedRecipe> consumer) {

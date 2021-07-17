@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.BulbTile;
 import com.xeno.goo.tiles.CrucibleTile;
 import net.minecraft.block.Block;
@@ -7,6 +8,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.shapes.IBooleanFunction;
@@ -17,10 +19,29 @@ import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 
 public class Crucible extends Block {
-	// cloned from cauldron, it's the same shape
-	private static final VoxelShape INSIDE = makeCuboidShape(2.0D, 7.0D, 2.0D, 14.0D, 16.0D, 14.0D);
+	// cloned from cauldron, it's the same shape-ish
+	// counter-intuitively, the inside of the crucible is a 1/16th of a block wider in every direction so it's easier
+	// to dunk yourself into.
+	private static final VoxelShape INSIDE = makeCuboidShape(1.0D, 4.0D, 1.0D, 15.0D, 16.0D, 15.0D);
+	private static final VoxelShape INSIDE_VISUAL = makeCuboidShape(2.0D, 4.0D, 2.0D, 14.0D, 16.0D, 14.0D);
 	protected static final VoxelShape SHAPE = VoxelShapes
-			.combineAndSimplify(VoxelShapes.fullCube(), VoxelShapes.or(makeCuboidShape(0.0D, 0.0D, 4.0D, 16.0D, 3.0D, 12.0D), makeCuboidShape(4.0D, 0.0D, 0.0D, 12.0D, 3.0D, 16.0D), makeCuboidShape(2.0D, 0.0D, 2.0D, 14.0D, 3.0D, 14.0D), INSIDE), IBooleanFunction.ONLY_FIRST);
+			.combineAndSimplify(
+					VoxelShapes.fullCube(),
+					// feet exclusions (negative space) and inner space
+					VoxelShapes.or(makeCuboidShape(0.0D, 0.0D, 4.0D, 16.0D, 3.0D, 12.0D),
+							makeCuboidShape(4.0D, 0.0D, 0.0D, 12.0D, 3.0D, 16.0D),
+							makeCuboidShape(2.0D, 0.0D, 2.0D, 14.0D, 3.0D, 14.0D),
+							INSIDE),
+					IBooleanFunction.ONLY_FIRST);
+	protected static final VoxelShape SHAPE_VISUAL = VoxelShapes
+			.combineAndSimplify(
+					VoxelShapes.fullCube(),
+					// feet exclusions (negative space) and inner space
+					VoxelShapes.or(makeCuboidShape(0.0D, 0.0D, 4.0D, 16.0D, 3.0D, 12.0D),
+							makeCuboidShape(4.0D, 0.0D, 0.0D, 12.0D, 3.0D, 16.0D),
+							makeCuboidShape(2.0D, 0.0D, 2.0D, 14.0D, 3.0D, 14.0D),
+							INSIDE_VISUAL),
+					IBooleanFunction.ONLY_FIRST);
 
 
 	public Crucible() {
@@ -49,7 +70,22 @@ public class Crucible extends Block {
 	@SuppressWarnings("deprecation")
 	public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
 	{
-		return SHAPE;
+		if (isFluidItemHeld(context)) {
+			return VoxelShapes.fullCube();
+		}
+		return SHAPE_VISUAL;
+	}
+
+	private boolean isFluidItemHeld(ISelectionContext context) {
+		return context.hasItem(Items.BUCKET)
+				|| context.hasItem(ItemsRegistry.VESSEL.get())
+				|| context.hasItem(ItemsRegistry.GAUNTLET.get());
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public VoxelShape getRenderShape(BlockState state, IBlockReader worldIn, BlockPos pos) {
+		return SHAPE_VISUAL;
 	}
 
 	/**

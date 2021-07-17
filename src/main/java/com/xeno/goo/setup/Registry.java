@@ -261,7 +261,7 @@ public class Registry {
     public static final RegistryObject<Item> WEIRD_BUCKET = registerGooBucket("weird_goo", WEIRD_GOO);
 
     public static RegistryObject<Item> registerGooBucket(String name, Supplier<GooFluid> fluid) {
-        RegistryObject<Item> registeredBucket = ItemsRegistry.ITEMS.register(name + "_bucket", () -> new BucketItem(fluid, new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1)));
+        RegistryObject<Item> registeredBucket = ItemsRegistry.ITEMS.register(name + "_bucket", () -> new BucketItem(fluid, new Item.Properties().group(GooMod.ITEM_GROUP).maxStackSize(1).containerItem(Items.BUCKET)));
         BucketSuppliers.put(fluid, registeredBucket);
         return registeredBucket;
     }
@@ -389,6 +389,28 @@ public class Registry {
     public static final RegistryObject<BasicParticleType> VITAL_SPRAY_PARTICLE = PARTICLES.register("vital_spray",  () -> new BasicParticleType(false));
     public static final RegistryObject<BasicParticleType> WEIRD_SPRAY_PARTICLE = PARTICLES.register("weird_spray",  () -> new BasicParticleType(false));
 
+    // bubble particles
+    public static final RegistryObject<BasicParticleType> AQUATIC_BUBBLE_PARTICLE = PARTICLES.register("aquatic_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CHROMATIC_BUBBLE_PARTICLE = PARTICLES.register("chromatic_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> CRYSTAL_BUBBLE_PARTICLE = PARTICLES.register("crystal_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> DECAY_BUBBLE_PARTICLE = PARTICLES.register("decay_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> EARTHEN_BUBBLE_PARTICLE = PARTICLES.register("earthen_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> ENERGETIC_BUBBLE_PARTICLE = PARTICLES.register("energetic_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FAUNAL_BUBBLE_PARTICLE = PARTICLES.register("faunal_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FLORAL_BUBBLE_PARTICLE = PARTICLES.register("floral_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> FUNGAL_BUBBLE_PARTICLE = PARTICLES.register("fungal_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> HONEY_BUBBLE_PARTICLE = PARTICLES.register("honey_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> LOGIC_BUBBLE_PARTICLE = PARTICLES.register("logic_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> METAL_BUBBLE_PARTICLE = PARTICLES.register("metal_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> MOLTEN_BUBBLE_PARTICLE = PARTICLES.register("molten_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> PRIMORDIAL_BUBBLE_PARTICLE = PARTICLES.register("primordial_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> RADIANT_BUBBLE_PARTICLE = PARTICLES.register("radiant_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> REGAL_BUBBLE_PARTICLE = PARTICLES.register("regal_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SLIME_BUBBLE_PARTICLE = PARTICLES.register("slime_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> SNOW_BUBBLE_PARTICLE = PARTICLES.register("snow_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> VITAL_BUBBLE_PARTICLE = PARTICLES.register("vital_bubble",  () -> new BasicParticleType(false));
+    public static final RegistryObject<BasicParticleType> WEIRD_BUBBLE_PARTICLE = PARTICLES.register("weird_bubble",  () -> new BasicParticleType(false));
+
     private static final Map<Fluid, BasicParticleType> fallingParticleLookupCache = new HashMap<>();
     private static void initializeFallingParticleLookupCache() {
         fallingParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_FALLING_GOO_PARTICLE.get());
@@ -460,6 +482,30 @@ public class Registry {
         sprayParticleLookupCache.put(VITAL_GOO.get(), VITAL_SPRAY_PARTICLE.get());
         sprayParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_SPRAY_PARTICLE.get());
     }
+
+    private static final Map<Fluid, BasicParticleType> bubbleParticleLookupCache = new HashMap<>();
+    private static void initializeBubbleParticleLookupCache() {
+        bubbleParticleLookupCache.put(AQUATIC_GOO.get(), AQUATIC_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(CHROMATIC_GOO.get(), CHROMATIC_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(CRYSTAL_GOO.get(), CRYSTAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(DECAY_GOO.get(), DECAY_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(EARTHEN_GOO.get(), EARTHEN_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(ENERGETIC_GOO.get(), ENERGETIC_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(FAUNAL_GOO.get(), FAUNAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(FLORAL_GOO.get(), FLORAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(FUNGAL_GOO.get(), FUNGAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(HONEY_GOO.get(), HONEY_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(LOGIC_GOO.get(), LOGIC_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(METAL_GOO.get(), METAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(MOLTEN_GOO.get(), MOLTEN_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(PRIMORDIAL_GOO.get(), PRIMORDIAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(RADIANT_GOO.get(), RADIANT_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(REGAL_GOO.get(), REGAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(SLIME_GOO.get(), SLIME_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(SNOW_GOO.get(), SNOW_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(VITAL_GOO.get(), VITAL_BUBBLE_PARTICLE.get());
+        bubbleParticleLookupCache.put(WEIRD_GOO.get(), WEIRD_BUBBLE_PARTICLE.get());
+    }
     
     public static BasicParticleType fallingParticleFromFluid(Fluid fluid)
     {
@@ -494,6 +540,17 @@ public class Registry {
         }
 
         return sprayParticleLookupCache.get(fluid);
+    }
+
+    public static BasicParticleType bubbleParticleFromFluid(Fluid fluid) {
+        if (bubbleParticleLookupCache.size() == 0) {
+            initializeBubbleParticleLookupCache();
+        }
+        if (!bubbleParticleLookupCache.containsKey(fluid)) {
+            return null;
+        }
+
+        return bubbleParticleLookupCache.get(fluid);
     }
 
     public static String getFluidTranslationKey(String key)

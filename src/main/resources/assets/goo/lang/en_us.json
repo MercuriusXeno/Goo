@@ -20,6 +20,8 @@
 
   "goo.common.holds_amount": "Holds: %s mB",
 
+  "tooltip.goo.composition.goo_not_ready": "Goo values not loaded!",
+
   "entity.goo.goo_bee": "Crystal Bee",
   "entity.goo.mutant_bee": "Mutated Bee",
   "entity.goo.goo_snail": "Primordial Snail",
@@ -29,6 +31,7 @@
   "item.goo.netherite_ash": "Netherite Ash",
   "item.goo.passivated_nugget": "Passivated Nugget",
   "item.goo.passivated_ingot": "Passivated Ingot",
+  "item.goo.passivated_amalgam": "Passivated Amalgam",
   "item.goo.gauntlet": "Gauntlet",
   "item.goo.basin": "Vessel",
   "item.goo.crystal_comb": "Crystal Comb",

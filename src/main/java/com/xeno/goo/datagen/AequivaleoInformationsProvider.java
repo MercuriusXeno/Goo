@@ -9,10 +9,12 @@ import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,8 +164,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.COD, faunal(15), vital(1));
         saveData(Items.CRIMSON_NYLIUM, earthen(32), fungal(15), chromatic(32));
         saveData(Items.CRIMSON_FUNGUS, fungal(15));
-        saveData(Items.CRYING_OBSIDIAN, weird(64), molten(64), crystal(96), primordial(3));
-        saveData(ItemsRegistry.STYGIAN_WEEPINGS.get(), weird(96), crystal(96));
+
+        saveData(Items.CRYING_OBSIDIAN, weird(72), molten(72), crystal(72), primordial(8));
+        saveData(ItemsRegistry.STYGIAN_WEEPINGS.get(), weird(72), molten(72), crystal(72), primordial(8));
+
         saveData(Items.EGG, faunal(15), vital(15));
         saveData(Items.END_ROD, radiant(20), weird(10));
         saveData(Items.END_STONE, earthen(32), weird(4));
@@ -246,31 +250,35 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.WHEAT_SEEDS, floral(15), vital(1));
 
         // containers
-        saveData(Items.LAVA_BUCKET, molten(1000));
-        saveData(Items.MILK_BUCKET, faunal(15));
         saveData(Items.WATER_BUCKET, aquatic(60));
+        saveData(Items.LAVA_BUCKET, molten(1000));
+        // saveData(Fluids.LAVA, molten(1));
+        // saveData(Fluids.WATER, aquatic(.06d));
+        // milk isn't a proper fluid so it just gets the item treatment.
+        saveData(Items.MILK_BUCKET, faunal(15));
+
 
         // goo buckets already contain their respective goo so, they're just buckets and their contents
-        saveData(Registry.AQUATIC_BUCKET.get(), metal(216));
-        saveData(Registry.CHROMATIC_BUCKET.get(), metal(216));
-        saveData(Registry.CRYSTAL_BUCKET.get(), metal(216));
-        saveData(Registry.DECAY_BUCKET.get(), metal(216));
-        saveData(Registry.EARTHEN_BUCKET.get(), metal(216));
-        saveData(Registry.ENERGETIC_BUCKET.get(), metal(216));
-        saveData(Registry.FAUNAL_BUCKET.get(), metal(216));
-        saveData(Registry.FLORAL_BUCKET.get(), metal(216));
-        saveData(Registry.FUNGAL_BUCKET.get(), metal(216));
-        saveData(Registry.HONEY_BUCKET.get(), metal(216));
-        saveData(Registry.LOGIC_BUCKET.get(), metal(216));
-        saveData(Registry.METAL_BUCKET.get(), metal(216));
-        saveData(Registry.MOLTEN_BUCKET.get(), metal(216));
-        saveData(Registry.PRIMORDIAL_BUCKET.get(), metal(216));
-        saveData(Registry.RADIANT_BUCKET.get(), metal(216));
-        saveData(Registry.REGAL_BUCKET.get(), metal(216));
-        saveData(Registry.SLIME_BUCKET.get(), metal(216));
-        saveData(Registry.SNOW_BUCKET.get(), metal(216));
-        saveData(Registry.VITAL_BUCKET.get(), metal(216));
-        saveData(Registry.WEIRD_BUCKET.get(), metal(216));
+//        saveData(Registry.AQUATIC_BUCKET.get());
+//        saveData(Registry.CHROMATIC_BUCKET.get());
+//        saveData(Registry.CRYSTAL_BUCKET.get());
+//        saveData(Registry.DECAY_BUCKET.get());
+//        saveData(Registry.EARTHEN_BUCKET.get());
+//        saveData(Registry.ENERGETIC_BUCKET.get());
+//        saveData(Registry.FAUNAL_BUCKET.get());
+//        saveData(Registry.FLORAL_BUCKET.get());
+//        saveData(Registry.FUNGAL_BUCKET.get());
+//        saveData(Registry.HONEY_BUCKET.get());
+//        saveData(Registry.LOGIC_BUCKET.get());
+//        saveData(Registry.METAL_BUCKET.get());
+//        saveData(Registry.MOLTEN_BUCKET.get());
+//        saveData(Registry.PRIMORDIAL_BUCKET.get());
+//        saveData(Registry.RADIANT_BUCKET.get());
+//        saveData(Registry.REGAL_BUCKET.get());
+//        saveData(Registry.SLIME_BUCKET.get());
+//        saveData(Registry.SNOW_BUCKET.get());
+//        saveData(Registry.VITAL_BUCKET.get());
+//        saveData(Registry.WEIRD_BUCKET.get());
 
         // ore blocks
         saveData(Items.COAL_ORE, molten(80), earthen(48), forbidden(1));
@@ -290,13 +298,13 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.LAPIS_LAZULI, weird(4), chromatic(48), crystal(30));
         saveData(Items.NETHER_QUARTZ_ORE, earthen(44), crystal (12), forbidden(1));
         saveData(Items.QUARTZ, earthen(12), crystal (12));
-        saveData(Items.ANCIENT_DEBRIS, metal(960), molten(120), primordial(8), forbidden(1));
-        saveData(Items.NETHERITE_SCRAP, metal(960), molten(120), primordial(8));
+        saveData(Items.ANCIENT_DEBRIS, metal(720), molten(720), primordial(28), forbidden(1));
+        saveData(Items.NETHERITE_SCRAP, metal(720), molten(720), primordial(28));
 
         // controversial
-        saveData(Items.NETHER_STAR, weird(120), radiant(120), decay(60), primordial(32), forbidden(1));
-        saveData(Items.HEART_OF_THE_SEA, aquatic(120), weird(120), primordial(16), forbidden(1));
-        saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60), primordial(4));
+        saveData(Items.NETHER_STAR, weird(600), radiant(1200), decay(600), primordial(60), forbidden(1));
+        saveData(Items.HEART_OF_THE_SEA, aquatic(1200), weird(600), primordial(48), forbidden(1));
+        saveData(Items.NAUTILUS_SHELL, aquatic(320), weird(60), primordial(6));
 
         ItemsRegistry.CRYSTALLIZED_GOO.forEach(this::registerLockedInfoForCrystallizedGoo);
         saveData(ItemsRegistry.CRYSTAL_COMB.get(), crystal(32), forbidden(1));
@@ -304,6 +312,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
 
     private void saveData(Item item, CompoundInstance... instances) {
         saveData(newLinkedHashSet(item, new ItemStack(item)), instances);
+    }
+
+    private void saveData(Fluid fluid, CompoundInstance... instances) {
+        saveData(newLinkedHashSet(fluid), instances);
     }
 
     private void saveData(LinkedHashSet<Object> items, CompoundInstance... instances) {

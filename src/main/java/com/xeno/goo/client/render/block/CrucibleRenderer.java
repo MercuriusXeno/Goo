@@ -2,6 +2,7 @@ package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.xeno.goo.GooMod;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.HighlightingHelper;
@@ -12,13 +13,18 @@ import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
 import com.xeno.goo.tiles.TroughTile;
+import com.xeno.goo.util.IGooTank;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -26,10 +32,11 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
-    private static final float FLUID_VERTICAL_OFFSET = 0.376f;
+    private static final float FLUID_VERTICAL_OFFSET = 0.3126f;
     private static final float FLUID_VERTICAL_MAX = (1f - 0.075f);
     private static final float FLUID_HORIZONTAL_OFFSET = 0.126f;
 
@@ -40,35 +47,57 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
     @Override
     public void render(CrucibleTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfSelf(tile, null);
-        cap.ifPresent((c) -> render(c.getTankCapacity(0), c.getFluidInTank(0), tile.getPos(), matrixStack, buffer, light, overlay));
+        cap.ifPresent((c) -> render(tile, matrixStack, buffer, light, overlay));
     }
 
     // makes it so that a really small amount of goo still has a substantial enough bulb presence that you can see it.
     private static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 0.01f;
-    public static void render(int bulbCapacity, FluidStack goo, BlockPos pos, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
-        float totalGoo = goo.getAmount();
-        if (goo.isEmpty()) {
-            return;
-        }
-        IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
-        float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
+    public static void render(CrucibleTile tile, MatrixStack matrixStack, IRenderTypeBuffer buffer, int light, int overlay) {
 
-        // this is the total fill percentage of the container
-        float scaledHeight = Math.max(minHeight, totalGoo / (float)bulbCapacity);
+        List<FluidStack> allGoo = tile.getAllGooContentsFromTile();
+        float lastMaxY = FLUID_VERTICAL_OFFSET;
+        BlockPos pos = tile.getPos();
+        int crucibleCapacity = tile.getStorageCapacity();
         float yOffset = 0;
-
         float minY = FLUID_VERTICAL_OFFSET;
         float maxY = FLUID_VERTICAL_MAX;
-        // this is the total fill of the goo in the tank of this particular goo, as a percentage
-        float percentage = goo.getAmount() / totalGoo;
-        float heightScale = percentage * scaledHeight;
-        float height = (maxY - minY) * heightScale;
-        float fromY, toY;
-        fromY = minY + yOffset;
-        toY = fromY + height;
-        Model3d fluidModel = getFluidModel(goo, fromY, toY);
-        RenderHelper.renderObject(fluidModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
-        HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, light, overlay, fluidModel);
+        float gap = maxY - minY;
+        for(FluidStack goo : allGoo) {
+            float totalGoo = goo.getAmount();
+            if (goo.isEmpty()) {
+                continue;
+            }
+            IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
+            float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
+
+            // this is the total fill percentage of the container
+            float scaledHeight = Math.max(minHeight, totalGoo / (float) crucibleCapacity);
+
+            // this is the total fill of the goo in the tank of this particular goo, as a percentage
+            float percentage = goo.getAmount() / totalGoo;
+            float heightScale = percentage * scaledHeight;
+            float height = gap * heightScale;
+            float fromY, toY;
+            fromY = minY + yOffset;
+            toY = fromY + height;
+            lastMaxY = toY;
+            Model3d fluidModel = getFluidModel(goo, fromY, toY);
+            RenderHelper.renderObject(fluidModel, matrixStack, builder, GooFluid.UNCOLORED_WITH_PARTIAL_TRANSPARENCY, light, overlay);
+            HighlightingHelper.renderHighlightAsNeeded(goo.getFluid(), pos, matrixStack, builder, light, overlay, fluidModel);
+            yOffset += height;
+        }
+        float progressPercent = tile.simplifiedProgress();
+        ItemStack currentItem = tile.currentItem();
+        if (currentItem.isEmpty()) {
+            return;
+        }
+        matrixStack.push();
+        matrixStack.translate(0.5d, lastMaxY, 0.5d);
+        matrixStack.scale(1f, (1f - progressPercent), 1f);
+        matrixStack.rotate(new Quaternion(0f, 45f, 0f, true));
+        GooMod.debug("Item offset " + (lastMaxY + FLUID_VERTICAL_OFFSET));
+        Minecraft.getInstance().getItemRenderer().renderItem(currentItem, TransformType.GROUND, light, overlay, matrixStack, buffer);
+        matrixStack.pop();
     }
 
     private static final Map<Fluid, SpriteInfo[]> spriteCache = new HashMap();

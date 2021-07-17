@@ -18,7 +18,9 @@ public class GooAndYou extends Item
     {
         super(new Item.Properties()
             .maxStackSize(1)
-            .group(GooMod.ITEM_GROUP));
+            .group(GooMod.ITEM_GROUP)
+            .isImmuneToFire()
+        );
     }
 
     @Override

@@ -86,7 +86,8 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	List<SoulFireRecipe> soulFireRecipes = Arrays.asList(
-		new SoulFireRecipe(new ItemStack(Items.CRYING_OBSIDIAN), new ItemStack(ItemsRegistry.STYGIAN_WEEPINGS.get()))
+		new SoulFireRecipe(new ItemStack(Items.CRYING_OBSIDIAN), new ItemStack(ItemsRegistry.STYGIAN_WEEPINGS.get())),
+			new SoulFireRecipe(new ItemStack(Items.BOOK), new ItemStack(ItemsRegistry.GOO_AND_YOU.get()))
 	);
 
 	public List<SoulFireRecipe> getJeiSoulFireRecipes() {

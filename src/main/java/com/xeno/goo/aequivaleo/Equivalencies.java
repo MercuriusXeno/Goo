@@ -9,6 +9,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,8 +32,28 @@ public class Equivalencies
 
     public static GooEntry getEntry(RegistryKey<World> worldKey, ItemStack item)
     {
-        Set<CompoundInstance> results = cache(worldKey).getFor(item);
-        return new GooEntry(results);
+
+        List<CompoundInstance> finalResults = new ArrayList<>(cache(worldKey).getFor(item));
+        if (item.hasContainerItem() && !item.getContainerItem().isItemEqual(item)) {
+            Set<CompoundInstance> containerValues = cache(worldKey).getFor(item.getContainerItem());
+            for(CompoundInstance containerValue : containerValues) {
+                // try to figure out if the compound type (goo) is already present
+                // in the results list. If it is, merge them, otherwise add it.
+                Optional<CompoundInstance> existingValue = finalResults.stream()
+                        .filter(r -> r.getType().equals(containerValue.getType()))
+                        .findFirst();
+                if (existingValue.isPresent()) {
+                    CompoundInstance replacement = new CompoundInstance(containerValue.getType(),
+                            containerValue.getAmount() + existingValue.get().getAmount());
+                    finalResults.remove(existingValue.get());
+                    finalResults.add(replacement);
+                } else {
+                    finalResults.add(containerValue);
+                }
+            }
+        }
+
+        return new GooEntry(Sets.newHashSet(finalResults));
     }
 
     // used to be used to restrict solidification of furnace products but now all it does is power molten goo

@@ -121,6 +121,11 @@ public class Networking {
 				CrucibleMeltProgressPacket.class,
 				CrucibleMeltProgressPacket::new
 		);
+
+		registerPacket(
+				CrucibleBoilProgressPacket.class,
+				CrucibleBoilProgressPacket::new
+		);
 	}
 
 	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {

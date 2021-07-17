@@ -6,10 +6,7 @@ import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.datagen.GooBlockTags;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.Compare;
-import com.xeno.goo.network.CrucibleCurrentItemPacket;
-import com.xeno.goo.network.CrucibleMeltProgressPacket;
-import com.xeno.goo.network.FluidUpdatePacket;
-import com.xeno.goo.network.Networking;
+import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.util.FluidHandlerWrapper;
@@ -22,12 +19,17 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ItemParticleData;
 import net.minecraft.particles.ParticleTypes;
+import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
@@ -44,11 +46,13 @@ import java.util.Map;
 public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity,
 																	 FluidUpdatePacket.IFluidPacketReceiver {
 
-	private static final int MAX_MELT_SPEED = 20;
+	private static final int MAX_MELT_SPEED = 5;
+	private static final int MAX_BOIL_RATE = 100;
 	// the itemstack currently being "held" by the crucible. If meltRate > 0, this item is also melting.
 	private ItemStack currentItem;
 
 	private int meltRate;
+	private int boilRate;
 
 	// the fluidstacks created when an item begins melting. These fluidstacks deplete into the crucible until empty,
 	// at which point melting is complete (melted item will become air, and this list will be empty)
@@ -75,6 +79,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	private void sendMeltProgressUpdatePacket() {
 		Networking.sendToClientsAround(new CrucibleMeltProgressPacket(this.world, this.pos, this.simplifiedMeltProgress, this.meltRate), (ServerWorld)this.world, this.pos);
+	}
+
+	private void sendBoilRateUpdatePacket() {
+		Networking.sendToClientsAround(new CrucibleBoilProgressPacket(this.world, this.pos, this.boilRate), (ServerWorld)this.world, this.pos);
 	}
 
 	private float getMeltProgressForItemAndMelting() {
@@ -245,6 +253,54 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 	}
 
 	@Override
+	public CompoundNBT getUpdateTag()
+	{
+		return this.write(new CompoundNBT());
+	}
+
+	@Override
+	public CompoundNBT write(CompoundNBT tag) {
+		if (currentItem != null) {
+			CompoundNBT currentItemTag = currentItem.write(new CompoundNBT());
+			tag.put("current_item", currentItemTag);
+		}
+		if (meltedProgress != null) {
+			int count = meltedProgress.size();
+			CompoundNBT meltProgress = new CompoundNBT();
+			meltProgress.putInt("tag_count", count);
+			for(int i = 0; i < count; i++) {
+				meltProgress.put("fluid_" + i, meltedProgress.get(i).writeToNBT(new CompoundNBT()));
+			}
+			tag.put("melt_progress", meltProgress);
+		}
+		tag.putInt("melt_rate", meltRate);
+		tag.putInt("boil_rate", boilRate);
+		return super.write(tag);
+	}
+
+	public void read(BlockState state, CompoundNBT tag)
+	{
+		super.read(state, tag);
+		// old holding data fixer
+		if (tag.contains("current_item")) {
+			currentItem = ItemStack.read(tag.getCompound("current_item"));
+		}
+		if (tag.contains("melt_progress")) {
+			CompoundNBT meltProgress = tag.getCompound("melt_progress");
+			meltedProgress = new ArrayList<>();
+			int count = meltProgress.getInt("tag_count");
+			for(int i = 0; i < count; i++) {
+				meltedProgress.add(FluidStack.loadFluidStackFromNBT(meltProgress.getCompound("fluid_" + i)));
+			}
+		}
+		meltRate = tag.getInt("melt_rate");
+		if (tag.contains("boil_rate")) {
+			boilRate = tag.getInt("boil_rate");
+		}
+		onContentsChanged();
+	}
+
+	@Override
 	public FluidStack getGooFromTargetRayTraceResult(Vector3d hitVec, Direction face, RayTraceTargetSource targetSource) {
 
 		if (goo.isEmpty()) {
@@ -287,10 +343,24 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 	@Override
 	public void tick() {
 		if (world.isRemote()) {
+			if (hasHeatSource() && boilRate > 0) {
+				spawnBoilingParticles();
+			}
 			if (hasHeatSource() && !currentItem().isEmpty() && meltRate > 0) {
 				spawnItemParticles();
 			}
 			return;
+		}
+
+		// check to see if we have a heat source that should make us boil.
+		if (hasHeatSource()) {
+			if (boilRate < MAX_BOIL_RATE && world.getGameTime() % 4 == 0) {
+				boilRate++;
+				sendBoilRateUpdatePacket();
+			}
+		} else {
+			boilRate = 0;
+			sendBoilRateUpdatePacket();;
 		}
 
 		// try to grab an item from within the cauldron's inner hitbox if one exists.
@@ -305,15 +375,48 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		tryMeltingItemForGoo();
 	}
 
+	private void tryGrabbingItem() {
+		AxisAlignedBB bb = getSpaceInCrucible();
+		List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, bb);
+		if (itemsInBox.isEmpty()) {
+			return;
+		}
+		for (ItemEntity itemEntity : itemsInBox) {
+			ItemStack item = itemEntity.getItem();
+			if (Equivalencies.getEntry(this.world, item.getItem()).isUnusable()) {
+				continue;
+			}
+			setCurrentItem(item);
+			sendCurrentItemUpdatedPacket();
+			itemEntity.remove();
+		}
+	}
+
 	private void tryMeltingItemForGoo() {
-		if (!hasHeatSource() || currentItem().isEmpty()) {
-			meltRate = 0;
-			sendMeltProgressUpdatePacket();
+		// if we're not boiling abort. Don't mess with the boil rate here, we do that in another method.
+		if (boilRate == 0) {
+			return;
+		}
+		// the idea here is that as the cauldron heats up, the melt ticks become more frequent
+		// starting at every 5th tick and gradually approaching every tick.
+		int baseRate = 5;
+		int gradualRate = baseRate - 1;
+		float progressionOnBaseRate = ((float)boilRate / MAX_BOIL_RATE);
+		int tickRate = baseRate - (int)Math.floor(progressionOnBaseRate * gradualRate);
+		if (world.getGameTime() % tickRate > 0) {
+			return;
+		}
+
+		if (!hasHeatSource() || currentItem().isEmpty() || goo.getRemainingCapacity() == 0) {
+			if (meltRate > 0) {
+				meltRate = 0;
+				sendMeltProgressUpdatePacket();
+			}
 			return;
 		}
 
 		boolean hasMeltedProgressChanged = false;
-		if (meltRate < MAX_MELT_SPEED && world.getGameTime() % 5 == 0) {
+		if (meltRate < MAX_MELT_SPEED) {
 			meltRate++;
 			hasMeltedProgressChanged = true;
 		}
@@ -338,6 +441,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 				fillStack.setAmount(minTransfer);
 				int simulatedFill = goo.fill(fillStack, FluidAction.SIMULATE);
 				if (simulatedFill == 0) {
+					meltRate = 0;
 					break;
 				} else {
 					if (simulatedFill < minTransfer) {
@@ -385,43 +489,67 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		return false;
 	}
 
-	private void tryGrabbingItem() {
-		AxisAlignedBB bb = getSpaceInCrucible();
-		List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, bb);
-		if (itemsInBox.isEmpty()) {
-			return;
-		}
-		ItemStack item = itemsInBox.get(0).getItem();
-		if (Equivalencies.getEntry(this.world, item.getItem()).isUnusable()) {
-			return;
-		}
-		setCurrentItem(item);
-		sendCurrentItemUpdatedPacket();
-		itemsInBox.get(0).remove();
-	}
-
 	private void sendCurrentItemUpdatedPacket() {
 		Networking.sendToClientsAround(new CrucibleCurrentItemPacket(this.world, this.pos, this.currentItem), (ServerWorld)this.world, this.pos);
 	}
 
 	private void spawnItemParticles() {
-		for(int i = 0; i < 4; ++i) {
-			// try to determine the item position, vaguely
-			// this is based on the fluid height, on top of the offset
-			float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
-			float dx = (world.rand.nextFloat() - 0.5f) / 8f;
-			float dy = (world.rand.nextFloat() - 0.5f) / 16f;
-			float dz = (world.rand.nextFloat() - 0.5f) / 8f;
-			Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz);
-			if (this.world instanceof ServerWorld)
-				((ServerWorld)this.world).spawnParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
-			else
-				this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 0d, 0d, 0d);
+		float itemDepletion = 1f - simplifiedProgress();
+		float curveDepletion = (float)Math.cbrt(itemDepletion);
+		if (curveDepletion < world.rand.nextFloat()) {
+			return;
 		}
+		int gameTimeDegrees = (int)(world.getGameTime() % 20);
+		float gameTimeRadians = (float)((Math.PI * 2f) / (float)gameTimeDegrees);
+		float bob = (float) MathHelper.sin(gameTimeRadians) * 0.125f;
+		// do this if you want a linear reduction in particles over time, experiment with modulo
+//		if (this.world.getGameTime() % 2 > 0) {
+//			return;
+//		}
+		// try to determine the item position, vaguely
+		// this is based on the fluid height, on top of the offset
+		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
+		float dx = ((world.rand.nextFloat() - 0.5f) / 3f) * curveDepletion;
+		float dy = ((world.rand.nextFloat() / 8f) * curveDepletion) + bob;
+		float dz = ((world.rand.nextFloat() - 0.5f) / 3f) * curveDepletion;
+		// copy centered is because I'm lazy, it shifts to the middle of the block, we add fluid height, then subtract
+		// half height from the y, or the particles will be weirdly floating
+		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
+		if (this.world instanceof ServerWorld)
+			((ServerWorld)this.world).spawnParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
+		else
+			this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 0d, 0d, 0d);
 
 	}
 
-	private ItemStack currentItem() {
+	private void spawnBoilingParticles() {
+		if (goo.isEmpty()) {
+			return;
+		}
+		// cuts the particle density in half, increase the modulo for less particles
+		if (world.getGameTime() % 3 > 0) {
+			return;
+		}
+		if (boilRate / (float)MAX_BOIL_RATE < world.rand.nextFloat()) {
+			return;
+		}
+		List<FluidStack> allFluids = goo.getFluidAsList();
+		FluidStack f = allFluids.get(allFluids.size() - 1);
+		BasicParticleType t = Registry.bubbleParticleFromFluid(f.getFluid());
+		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
+		float dx = (world.rand.nextFloat() - 0.5f) * 0.5f;
+		float dy = -0.1f;
+		float dz = (world.rand.nextFloat() - 0.5f) * 0.5f;
+		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
+		if (t != null) {
+			if (this.world instanceof ServerWorld)
+				((ServerWorld)this.world).spawnParticle(t, center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
+			else
+				this.world.addParticle(t, center.x, center.y, center.z, 0d, 0d, 0d);
+		}
+	}
+
+	public ItemStack currentItem() {
 		if (currentItem != null && !currentItem.isEmpty()) {
 			return currentItem;
 		}
@@ -432,6 +560,9 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 	private boolean hasHeatSource() {
 		BlockState stateBelow = world.getBlockState(this.pos.offset(Direction.DOWN));
 		if (stateBelow.getBlock().isIn(GooBlockTags.HEAT_SOURCES_FOR_CRUCIBLE)) {
+			if (stateBelow.getBlock().isIn(BlockTags.CAMPFIRES)) {
+				return stateBelow.get(BlockStateProperties.LIT);
+			}
 			return true;
 		}
 		return false;
@@ -443,5 +574,13 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	public void setMeltRate(int meltRate) {
 		this.meltRate = meltRate;
+	}
+
+	public float simplifiedProgress() {
+		return this.simplifiedMeltProgress;
+	}
+
+	public void setBoilRate(int boilRate) {
+		this.boilRate = boilRate;
 	}
 }

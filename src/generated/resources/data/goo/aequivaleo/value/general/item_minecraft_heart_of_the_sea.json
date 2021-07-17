@@ -18,7 +18,7 @@
   ],
   "compounds": [
     {
-      "amount": 120.0,
+      "amount": 1200.0,
       "type": "goo:aquatic"
     },
     {
@@ -26,11 +26,11 @@
       "type": "goo:logic_forbidden"
     },
     {
-      "amount": 16.0,
+      "amount": 48.0,
       "type": "goo:primordial"
     },
     {
-      "amount": 120.0,
+      "amount": 600.0,
       "type": "goo:weird"
     }
   ]

@@ -15,8 +15,10 @@ import net.minecraft.block.OreBlock;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.CallbackI.P;
 
 import java.util.*;
 import java.util.function.Function;
@@ -72,22 +74,9 @@ public class GooCompoundTypeGroup extends ForgeRegistryEntry<ICompoundTypeGroup>
 
     public boolean isValidFor(final ICompoundContainer<?> iCompoundContainer, final CompoundInstance compoundInstance)
     {
-        if  (iCompoundContainer.getContents() instanceof ItemStack && isInvalidStack((ItemStack) iCompoundContainer.getContents())) {
-            return false;
-        }
-        return !(iCompoundContainer.getContents() instanceof Item) || !isInvalidStack((Item) iCompoundContainer.getContents());
+        Object contents = iCompoundContainer.getContents();
+        return contents instanceof ItemStack || contents instanceof Item || contents instanceof FluidStack;
     }
-
-    private boolean isInvalidStack(Item contents) {
-        return false;
-                // ore block invalidation, obviated by "forbidden" objects
-                // contents instanceof BlockItem && ((BlockItem) contents).getBlock() instanceof OreBlock;
-    }
-
-    private boolean isInvalidStack(ItemStack stack) {
-        return isInvalidStack(stack.getItem());
-    }
-
 
     @Override
     public int compareTo(@NotNull final ICompoundTypeGroup iCompoundTypeGroup)
