@@ -598,7 +598,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		BasicParticleType t = Registry.bubbleParticleFromFluid(f.getFluid());
 		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
 		float dx = (world.rand.nextFloat() - 0.5f) * 0.5f;
-		float dy = -0.2f;
+		float dy = -0.22f;
 		float dz = (world.rand.nextFloat() - 0.5f) * 0.5f;
 		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
 		if (t != null) {

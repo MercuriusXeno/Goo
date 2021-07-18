@@ -16,9 +16,6 @@ public class BubbleParticle extends SpriteTexturedParticle {
     private final Fluid fluid;
     private final boolean isChromatic;
     protected boolean brightnessThingy;
-    public float initScale = 0;
-    public float initAlpha = 0;
-    private final float initialParticleGravity = -0.25f;
     public BubbleParticle(ClientWorld world, double x, double y, double z, Fluid f, IAnimatedSprite spriteSet) {
         super(world, x, y, z, 0D, 0D, 0D);
         this.spriteSet = spriteSet;
