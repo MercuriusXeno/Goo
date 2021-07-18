@@ -7,27 +7,21 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CrucibleRecipe {
-	private final List<FluidStack> goo;
+	private final FluidStack goo;
 	private final ItemStack catalyst;
 	private final ItemStack output;
 
-	public CrucibleRecipe(ItemStack catalyst, ItemStack output, List<FluidStack> goo) {
+	public CrucibleRecipe(ItemStack catalyst, ItemStack output, FluidStack goo) {
 		this.goo = goo;
 		this.catalyst = catalyst;
 		this.output = output;
 	}
 
-	public CrucibleRecipe(ItemStack catalyst, ItemStack output, FluidStack... goo) {
-		this.goo = Arrays.asList(goo);
-		this.catalyst = catalyst;
-		this.output = output;
-	}
-
-	public List<FluidStack> gooInput() {
+	public FluidStack gooInput() {
 		return goo;
 	}
 
-	public ItemStack catalyst() {
+	public ItemStack substrateItem() {
 		return catalyst;
 	}
 

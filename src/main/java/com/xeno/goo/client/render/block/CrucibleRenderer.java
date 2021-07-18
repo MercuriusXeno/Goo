@@ -12,8 +12,6 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
-import com.xeno.goo.tiles.TroughTile;
-import com.xeno.goo.util.IGooTank;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -22,10 +20,8 @@ import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Quaternion;
-import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -95,7 +91,6 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         matrixStack.translate(0.5d, lastMaxY, 0.5d);
         matrixStack.scale(1f, (1f - progressPercent), 1f);
         matrixStack.rotate(new Quaternion(0f, 45f, 0f, true));
-        GooMod.debug("Item offset " + (lastMaxY + FLUID_VERTICAL_OFFSET));
         Minecraft.getInstance().getItemRenderer().renderItem(currentItem, TransformType.GROUND, light, overlay, matrixStack, buffer);
         matrixStack.pop();
     }

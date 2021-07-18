@@ -301,6 +301,10 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
         saveData(Items.ANCIENT_DEBRIS, metal(720), molten(720), primordial(28), forbidden(1));
         saveData(Items.NETHERITE_SCRAP, metal(720), molten(720), primordial(28));
 
+        // netherite ash + metal, amalgam is forbidden (like ore)
+        saveData(ItemsRegistry.PASSIVATED_AMALGAM.get(), metal(252), molten(198), primordial(9), weird(18), crystal(18), forbidden(1));
+        saveData(ItemsRegistry.PASSIVATED_INGOT.get(), metal(252), molten(198), primordial(9), weird(18), crystal(18));
+
         // controversial
         saveData(Items.NETHER_STAR, weird(600), radiant(1200), decay(600), primordial(60), forbidden(1));
         saveData(Items.HEART_OF_THE_SEA, aquatic(1200), weird(600), primordial(48), forbidden(1));
@@ -308,6 +312,8 @@ public class AequivaleoInformationsProvider extends ForcedInformationProvider
 
         ItemsRegistry.CRYSTALLIZED_GOO.forEach(this::registerLockedInfoForCrystallizedGoo);
         saveData(ItemsRegistry.CRYSTAL_COMB.get(), crystal(32), forbidden(1));
+
+        saveData(ItemsRegistry.GOO_AND_YOU.get(), faunal(60), floral(45));
     }
 
     private void saveData(Item item, CompoundInstance... instances) {

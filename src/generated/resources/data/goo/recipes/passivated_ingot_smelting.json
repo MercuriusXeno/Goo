@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "goo:passivated_amalgam"
+  },
+  "result": "goo:passivated_ingot",
+  "experience": 0.0,
+  "cookingtime": 200
+}

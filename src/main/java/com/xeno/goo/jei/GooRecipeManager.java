@@ -4,10 +4,7 @@ import com.ldtteam.aequivaleo.api.compound.container.ICompoundContainer;
 import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooConversionWrapper;
 import com.xeno.goo.items.ItemsRegistry;
-import com.xeno.goo.library.DegraderRecipe;
-import com.xeno.goo.library.DegraderRecipes;
-import com.xeno.goo.library.MixerRecipe;
-import com.xeno.goo.library.MixerRecipes;
+import com.xeno.goo.library.*;
 import com.xeno.goo.setup.Registry;
 import mezz.jei.api.recipe.IFocus;
 import mezz.jei.api.recipe.IFocus.Mode;
@@ -37,6 +34,7 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		validUids.add(DegraderRecipeCategory.UID);
 		validUids.add(MixerRecipeCategory.UID);
 		validUids.add(SoulFireRecipeCategory.UID);
+		validUids.add(CrucibleRecipeCategory.UID);
 		return validUids;
 	}
 
@@ -60,6 +58,10 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 
 		if (recipeCategory.getUid().equals(SoulFireRecipeCategory.UID)) {
 			return soulFireRecipes(focus);
+		}
+
+		if (recipeCategory.getUid().equals(CrucibleRecipeCategory.UID)) {
+			return crucibleRecipes(focus);
 		}
 
 		return Collections.emptyList();
@@ -183,6 +185,40 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 	}
 
 	@NotNull
+	private <T, V> List<T> crucibleRecipes(IFocus<V> focus) {
+
+		List<T> crucibleMatches = new ArrayList<>();
+		if (focus.getMode().equals(Mode.INPUT)) {
+			if (focus.getValue() instanceof GooIngredient) {
+				GooIngredient stack = ((GooIngredient) focus.getValue());
+				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+						.stream().filter(k -> ((JeiCrucibleRecipe)k).gooInput().fluidKey().equals(stack.fluidKey()))
+						.collect(Collectors.toList()));
+			}
+			if (focus.getValue() instanceof ItemStack) {
+				ItemStack stack = ((ItemStack) focus.getValue());
+				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+						.stream().filter(k -> ((JeiCrucibleRecipe)k).itemInput().isItemEqual(stack))
+						.collect(Collectors.toList()));
+			}
+		} else if (focus.getMode().equals(Mode.OUTPUT)) {
+			if (focus.getValue() instanceof ItemStack) {
+				ItemStack stack = ((ItemStack) focus.getValue());
+				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+						.stream().filter(k -> ((JeiCrucibleRecipe)k).output().isItemEqual(stack))
+						.collect(Collectors.toList()));
+			}
+			if (focus.getValue() instanceof Item) {
+				Item stack = ((Item) focus.getValue());
+				crucibleMatches.addAll((List<T>) getRecipes(category(CrucibleRecipeCategory.UID))
+						.stream().filter(k -> ((JeiCrucibleRecipe)k).output().getItem().equals(stack))
+						.collect(Collectors.toList()));
+			}
+		}
+		return crucibleMatches;
+	}
+
+	@NotNull
 	private <T, V> List<T> gooifierRecipes(IFocus<V> focus) {
 
 		List<T> gooifierMatches = new ArrayList<>();
@@ -221,6 +257,9 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 		}
 		if (recipeCategory.getUid().equals(SoulFireRecipeCategory.UID)) {
 			return (List<T>)getJeiSoulFireRecipes();
+		}
+		if (recipeCategory.getUid().equals(CrucibleRecipeCategory.UID)) {
+			return convertCrucibleRecipesToJeiFormat(CrucibleRecipes.recipes());
 		}
 		return new ArrayList<>();
 	}
@@ -262,6 +301,19 @@ public class GooRecipeManager implements IRecipeManagerPlugin {
 				new GooIngredient(r.inputs().get(0).getAmount(), r.inputs().get(0).getFluid().getRegistryName()),
 				new GooIngredient(r.inputs().get(1).getAmount(), r.inputs().get(1).getFluid().getRegistryName()),
 				new GooIngredient(r.output().getAmount(), r.output().getFluid().getRegistryName())
+		);
+	}
+
+	private <T> List<T> convertCrucibleRecipesToJeiFormat(List<CrucibleRecipe> recipes) {
+		List<T> result = new ArrayList<>();
+		recipes.forEach(r -> result.add((T) convertCrucibleRecipeToJei(r)));
+		return result;
+	}
+
+	private JeiCrucibleRecipe convertCrucibleRecipeToJei(CrucibleRecipe r) {
+		return new JeiCrucibleRecipe(
+				r.substrateItem(), new GooIngredient(r.gooInput().getAmount(), r.gooInput().getFluid().getRegistryName()),
+				r.itemOutput()
 		);
 	}
 

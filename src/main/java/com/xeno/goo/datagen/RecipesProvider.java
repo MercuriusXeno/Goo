@@ -71,7 +71,10 @@ public class RecipesProvider extends RecipeProvider {
                 .addCriterion("passivated_ingot", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_INGOT.get()))
                 .build(consumer, new ResourceLocation(GooMod.MOD_ID, "passivated_ingot_from_block"));
 
-        CookingRecipeBuilder.smeltingRecipe(Ingredient.fromItems(ItemsRegistry.PASSIVATED_AMALGAM.get()), ItemsRegistry.PASSIVATED_INGOT.get(), 0f, 200);
+        CookingRecipeBuilder
+                .smeltingRecipe(Ingredient.fromItems(ItemsRegistry.PASSIVATED_AMALGAM.get()), ItemsRegistry.PASSIVATED_INGOT.get(), 0f, 200)
+                .addCriterion("passivated_amalgam", InventoryChangeTrigger.Instance.forItems(ItemsRegistry.PASSIVATED_AMALGAM.get()))
+                .build(consumer, new ResourceLocation(GooMod.MOD_ID, "passivated_ingot_smelting"));
     }
 
     private void registerPassivatedBlockRecipe(Consumer<IFinishedRecipe> consumer) {
@@ -114,7 +117,7 @@ public class RecipesProvider extends RecipeProvider {
     }
 
     private void registerGasketRecipe(Consumer<IFinishedRecipe> consumer) {
-        ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.GASKET.get(), 6)
+        ShapedRecipeBuilder.shapedRecipe(ItemsRegistry.GASKET.get(), 4)
                 .patternLine(" n ")
                 .patternLine("n n")
                 .patternLine(" n ")

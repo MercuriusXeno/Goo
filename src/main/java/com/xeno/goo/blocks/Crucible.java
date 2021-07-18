@@ -8,9 +8,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.shapes.IBooleanFunction;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
@@ -123,5 +128,21 @@ public class Crucible extends Block {
 	public void onEntityCollision(BlockState state, World worldIn, BlockPos pos, Entity entityIn) {
 
 		super.onEntityCollision(state, worldIn, pos, entityIn);
+	}
+
+	@Override
+	public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+		TileEntity t = worldIn.getTileEntity(pos);
+		if (!(t instanceof CrucibleTile)) {
+			return ActionResultType.FAIL;
+		}
+		ItemStack currentItem = ((CrucibleTile) t).currentItem();
+		if (currentItem == null || currentItem.isEmpty()) {
+			return ActionResultType.FAIL;
+		}
+		if (!worldIn.isRemote()) {
+			((CrucibleTile) t).tryTakingItemFromCrucible(player);
+		}
+		return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
 	}
 }

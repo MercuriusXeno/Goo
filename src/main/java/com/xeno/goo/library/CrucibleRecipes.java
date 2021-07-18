@@ -34,9 +34,7 @@ public class CrucibleRecipes {
 		addRecipe(new CrucibleRecipe(
 				new ItemStack(ItemsRegistry.NETHERITE_ASH.get()),
 				new ItemStack(ItemsRegistry.PASSIVATED_AMALGAM.get()),
-				fluid(Registry.METAL_GOO, 144),
-				fluid(Registry.RADIANT_GOO, 30),
-				fluid(Registry.LOGIC_GOO, 64)
+				fluid(Registry.METAL_GOO, 72)
 		));
 	}
 

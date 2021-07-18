@@ -5,7 +5,11 @@ import com.xeno.goo.aequivaleo.Equivalencies;
 import com.xeno.goo.aequivaleo.GooEntry;
 import com.xeno.goo.datagen.GooBlockTags;
 import com.xeno.goo.fluids.GooFluid;
+import com.xeno.goo.library.AudioHelper;
+import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.library.Compare;
+import com.xeno.goo.library.CrucibleRecipe;
+import com.xeno.goo.library.CrucibleRecipes;
 import com.xeno.goo.network.*;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
@@ -17,6 +21,7 @@ import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
@@ -28,6 +33,7 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Vector3d;
@@ -42,6 +48,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity,
 																	 FluidUpdatePacket.IFluidPacketReceiver {
@@ -363,19 +370,35 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 			sendBoilRateUpdatePacket();;
 		}
 
-		// try to grab an item from within the cauldron's inner hitbox if one exists.
-		if (currentItem().isEmpty()) {
-			tryGrabbingItem();
+		// only melt if we have a heat source.
+		// only solidify if we don't.
+		if (hasHeatSource()) {
+			// try to grab an item from within the cauldron's inner hitbox if one exists.
+			if (currentItem().isEmpty()) {
+				tryGrabbingItem(false);
+			}
+			tryMeltingItemForGoo();
+		} else {
+			trySubstrateTransmutation();
 		}
-
-		// try to turn goo + items into something first.
-		trySubstrateTransmutation();
-
-		// if there's no substrate transmuting to do, melt the item, if one exists
-		tryMeltingItemForGoo();
 	}
 
-	private void tryGrabbingItem() {
+	public void tryTakingItemFromCrucible (PlayerEntity e) {
+		if (currentItem() == null || currentItem().isEmpty()) {
+			return;
+		}
+
+		if (!meltedProgress.isEmpty()) {
+			return;
+		}
+
+		if (e.inventory.addItemStackToInventory(currentItem().copy())) {
+			setCurrentItem(ItemStack.EMPTY);
+			sendCurrentItemUpdatedPacket();
+		}
+	}
+
+	private void tryGrabbingItem(boolean isCrucibleSubstrateMatchOnly) {
 		AxisAlignedBB bb = getSpaceInCrucible();
 		List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, bb);
 		if (itemsInBox.isEmpty()) {
@@ -383,7 +406,11 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		}
 		for (ItemEntity itemEntity : itemsInBox) {
 			ItemStack item = itemEntity.getItem();
-			if (Equivalencies.getEntry(this.world, item.getItem()).isUnusable()) {
+			if (isCrucibleSubstrateMatchOnly) {
+				if (CrucibleRecipes.recipes().stream().map(CrucibleRecipe::substrateItem).noneMatch(i -> i.isItemEqual(item))) {
+					continue;
+				}
+			} else if (Equivalencies.getEntry(this.world, item.getItem()).isUnusable()) {
 				continue;
 			}
 			setCurrentItem(item);
@@ -470,22 +497,55 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		}
 	}
 
-	private boolean trySubstrateTransmutation() {
+	private void trySubstrateTransmutation() {
 		if (goo.isEmpty()) {
-			return false;
+			return;
+		}
+
+
+		// try to grab an item from within the cauldron's inner hitbox if one exists.
+		if (currentItem().isEmpty()) {
+			tryGrabbingItem(true);
 		}
 
 		if (currentItem == null || currentItem.isEmpty()) {
-			return false;
+			return;
 		}
 
-		// don't try substrate transmutations if items are melting.
-		// since substrate tries first, we return true if substrate succeeds.
-		// if it does, melting doesn't fire until next tick (which gives substrate a chance to fire again)
 		if (meltRate > 0) {
-			return false;
+			return;
 		}
 
+		// a substrate item cannot be partially melted. Once it's melted a bit, it's "ruined"
+		if (simplifiedProgress() > 0f) {
+			return;
+		}
+
+		for (CrucibleRecipe recipe : CrucibleRecipes.recipes()) {
+			if (checkAndMaybeDoRecipe(recipe)) {
+				break;
+			}
+		}
+	}
+
+	private boolean checkAndMaybeDoRecipe(CrucibleRecipe crucibleRecipe) {
+		if (!currentItem().equals(crucibleRecipe.substrateItem(), false)) {
+			return false;
+		}
+		FluidStack simulateDrain = goo.drain(crucibleRecipe.gooInput(), FluidAction.SIMULATE);
+		if (simulateDrain.isFluidStackIdentical(crucibleRecipe.gooInput())) {
+			goo.drain(crucibleRecipe.gooInput(), FluidAction.EXECUTE);
+			// current item is obliterated/replaced.
+			setCurrentItem(ItemStack.EMPTY);
+			sendCurrentItemUpdatedPacket();
+			Vector3d itemPos = Vector3d.copyCentered(this.pos).subtract(0d, 0.5d - calculateFluidHeight(), 0d);
+			ItemEntity product = new ItemEntity(this.world, itemPos.x, itemPos.y, itemPos.z, crucibleRecipe.itemOutput().copy());
+			world.addEntity(product);
+			world.addParticle(ParticleTypes.SMOKE, itemPos.x, itemPos.y, itemPos.z, 0d, 0.1d, 0d);
+			AudioHelper.headlessAudioEvent(world, this.pos, Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.NEUTRAL, 1.0f,
+					PitchFormulas.HalfToOneAndHalf);
+			return true;
+		}
 		return false;
 	}
 
@@ -538,7 +598,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		BasicParticleType t = Registry.bubbleParticleFromFluid(f.getFluid());
 		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
 		float dx = (world.rand.nextFloat() - 0.5f) * 0.5f;
-		float dy = -0.1f;
+		float dy = -0.2f;
 		float dz = (world.rand.nextFloat() - 0.5f) * 0.5f;
 		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
 		if (t != null) {

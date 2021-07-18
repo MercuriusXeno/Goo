@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "goo:passivated_ingot_smelting"
+    ]
+  },
+  "criteria": {
+    "passivated_amalgam": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "goo:passivated_amalgam"
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "goo:passivated_ingot_smelting"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "passivated_amalgam",
+      "has_the_recipe"
+    ]
+  ]
+}

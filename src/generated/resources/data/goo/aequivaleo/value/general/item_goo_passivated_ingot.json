@@ -1,0 +1,41 @@
+{
+  "mode": "ADDITIVE",
+  "targets": [
+    {
+      "type": "aequivaleo:item",
+      "data": {
+        "count": 1.0,
+        "item": "goo:passivated_ingot"
+      }
+    },
+    {
+      "type": "aequivaleo:itemstack",
+      "data": {
+        "count": 1.0,
+        "stack": "{id:\"goo:passivated_ingot\",Count:1b}"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "amount": 18.0,
+      "type": "goo:crystal"
+    },
+    {
+      "amount": 252.0,
+      "type": "goo:metal"
+    },
+    {
+      "amount": 198.0,
+      "type": "goo:molten"
+    },
+    {
+      "amount": 9.0,
+      "type": "goo:primordial"
+    },
+    {
+      "amount": 18.0,
+      "type": "goo:weird"
+    }
+  ]
+}

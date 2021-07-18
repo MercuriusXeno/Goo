@@ -23,7 +23,7 @@ public class BubbleParticle extends SpriteTexturedParticle {
         super(world, x, y, z, 0D, 0D, 0D);
         this.spriteSet = spriteSet;
         setSize(0.02F, 0.02F);
-        particleScale = 0.5F + (world.rand.nextFloat() - 0.5F) * 0.4F;
+        particleScale = 0.3F + (world.rand.nextFloat() - 0.5F) * 0.2F;
         motionX = 0D;
         motionY = 0D;
         motionZ = 0D;
