@@ -8,8 +8,10 @@
       "text": "patchouli.goo.goo_and_you.description"
     },
     {
-      "type": "crafting",
-      "recipe": "goo:goo_and_you"
+      "type": "spotlight",
+      "item": "goo:goo_and_you",
+      "title": "patchouli.goo.goo_and_you_soul_fire",
+      "text": "patchouli.goo.goo_and_you_soul_fire_description"
     }
   ]
 }

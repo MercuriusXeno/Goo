@@ -11,6 +11,21 @@
       "type": "crafting",
       "recipe": "goo:lobber",
       "text": "patchouli.goo.lobber.summary"
+    },
+    {
+      "type": "multiblock",
+      "enable_visualize": false,
+      "multiblock": {
+        "mapping": {
+          "B": "goo:goo_bulb",
+          "0": "goo:lobber"
+        },
+        "pattern": [
+          [
+            "B0"
+          ]
+        ]
+      }
     }
   ]
 }

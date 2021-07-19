@@ -1,0 +1,23 @@
+{
+	"name": "patchouli.goo.soul_fire",
+	"icon": "minecraft:soul_campfire",
+	"category": "goo:gateway_to_goo",
+	"pages": [
+		{
+			"type": "text",
+			"text": "patchouli.goo.soul_fire.description"
+		},
+		{
+			"type": "spotlight",
+			"item": "goo:stygian_weepings",
+			"title": "item.goo.stygian_weepings",
+			"text": "patchouli.goo.stygian_weepings_soul_fire_description"
+		},
+		{
+			"type": "spotlight",
+			"item": "goo:goo_and_you",
+			"title": "item.goo.goo_and_you",
+			"text": "patchouli.goo.goo_and_you_soul_fire_description"
+		}
+	]
+}

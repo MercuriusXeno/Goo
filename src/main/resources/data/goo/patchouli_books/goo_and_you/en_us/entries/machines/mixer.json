@@ -18,14 +18,11 @@
       "multiblock": {
         "mapping": {
           "B": "goo:goo_bulb",
-          "0": "goo:mixer[facing=west]",
-          "N": "goo:goo_pump[facing=north]",
-          "S": "goo:goo_pump[facing=south]"
+          "0": "goo:mixer[facing=west]"
         },
         "pattern": [
-          ["B   B"],
-          ["BS0NB"],
-          ["  B  "]
+          ["B0B"],
+          [" B "]
         ]
       }
     },
