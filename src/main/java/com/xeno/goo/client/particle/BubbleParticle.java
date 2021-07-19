@@ -36,7 +36,7 @@ public class BubbleParticle extends SpriteTexturedParticle {
 
     @Override
     public IParticleRenderType getRenderType() {
-        return IParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+        return IParticleRenderType.PARTICLE_SHEET_OPAQUE;
     }
 
     public static class BubbleFactory implements IParticleFactory<BasicParticleType> {

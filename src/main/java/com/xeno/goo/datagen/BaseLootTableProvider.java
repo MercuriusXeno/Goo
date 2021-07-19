@@ -12,7 +12,6 @@ import net.minecraft.data.LootTableProvider;
 import net.minecraft.loot.*;
 import net.minecraft.loot.functions.CopyName;
 import net.minecraft.loot.functions.CopyNbt;
-import net.minecraft.loot.functions.SetContents;
 import net.minecraft.util.ResourceLocation;
 
 import java.io.IOException;
@@ -25,7 +24,8 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     // Filled by subclasses
-    protected final Map<Block, LootTable.Builder> lootTables = new HashMap<>();
+    protected final Map<Block, LootTable.Builder> blockLootTables = new HashMap<>();
+    protected final Map<ResourceLocation, LootTable.Builder> advancementLootTables = new HashMap<>();
 
     private final DataGenerator generator;
 
@@ -84,8 +84,11 @@ public abstract class BaseLootTableProvider extends LootTableProvider {
         addTables();
 
         Map<ResourceLocation, LootTable> tables = new HashMap<>();
-        for (Map.Entry<Block, LootTable.Builder> entry : lootTables.entrySet()) {
+        for (Map.Entry<Block, LootTable.Builder> entry : blockLootTables.entrySet()) {
             tables.put(entry.getKey().getLootTable(), entry.getValue().setParameterSet(LootParameterSets.BLOCK).build());
+        }
+        for (Map.Entry<ResourceLocation, LootTable.Builder> entry : advancementLootTables.entrySet()) {
+            tables.put(entry.getKey(), entry.getValue().setParameterSet(LootParameterSets.ADVANCEMENT).build());
         }
         writeTables(cache, tables);
     }

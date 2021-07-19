@@ -12,6 +12,7 @@ import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.CrucibleTile;
 import com.xeno.goo.tiles.FluidHandlerHelper;
+import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Atlases;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -58,16 +59,16 @@ public class CrucibleRenderer extends TileEntityRenderer<CrucibleTile> {
         float minY = FLUID_VERTICAL_OFFSET;
         float maxY = FLUID_VERTICAL_MAX;
         float gap = maxY - minY;
+        Object2FloatMap<Fluid> entries = tile.calculateFluidHeights();
         for(FluidStack goo : allGoo) {
             float totalGoo = goo.getAmount();
             if (goo.isEmpty()) {
                 continue;
             }
             IVertexBuilder builder = buffer.getBuffer(Atlases.getTranslucentCullBlockType());
-            float minHeight = ARBITRARY_GOO_STACK_HEIGHT_MINIMUM;
 
             // this is the total fill percentage of the container
-            float scaledHeight = Math.max(minHeight, totalGoo / (float) crucibleCapacity);
+            float scaledHeight = entries.getFloat(goo.getFluid());
 
             // this is the total fill of the goo in the tank of this particular goo, as a percentage
             float percentage = goo.getAmount() / totalGoo;

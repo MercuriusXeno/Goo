@@ -37,95 +37,25 @@ public class Networking {
 				s -> true
 		);
 
-		registerPacket(
-				FluidUpdatePacket.class,
-				FluidUpdatePacket::new
-		);
-
-		registerPacket(
-				GooFlowPacket.class,
-				GooFlowPacket::new
-		);
-
-		registerPacket(
-				ChangeItemTargetPacket.class,
-				ChangeItemTargetPacket::new
-		);
-
-		registerPacket(
-				SolidifierPoppedPacket.class,
-				SolidifierPoppedPacket::new
-		);
-
-		registerPacket(
-				GooGauntletSwapPacket.class,
-				GooGauntletSwapPacket::new
-		);
-
-		registerPacket(
-				GooVesselSwapPacket.class,
-				GooVesselSwapPacket::new
-		);
-
-		registerPacket(
-				UpdateBulbCrystalProgressPacket.class,
-				UpdateBulbCrystalProgressPacket::new
-		);
-
-		registerPacket(
-				CrystalProgressTickPacket.class,
-				CrystalProgressTickPacket::new
-		);
-
-		registerPacket(
-				ShrinkPacket.class,
-				ShrinkPacket::new
-		);
-
-		registerPacket(
-				FertilizePacket.class,
-				FertilizePacket::new
-		);
-
-		registerPacket(
-				BlobHitInteractionPacket.class,
-				BlobHitInteractionPacket::new
-		);
-
-		registerPacket(
-				BlobInteractionPacket.class,
-				BlobInteractionPacket::new
-		);
-
-		registerPacket(
-				SplatInteractionPacket.class,
-				SplatInteractionPacket::new
-		);
-
-		registerPacket(
-				MixerAnimationPacket.class,
-				MixerAnimationPacket::new
-		);
-
-		registerPacket(
-				MixerRecipePacket.class,
-				MixerRecipePacket::new
-		);
-
-		registerPacket(
-				CrucibleCurrentItemPacket.class,
-				CrucibleCurrentItemPacket::new
-		);
-
-		registerPacket(
-				CrucibleMeltProgressPacket.class,
-				CrucibleMeltProgressPacket::new
-		);
-
-		registerPacket(
-				CrucibleBoilProgressPacket.class,
-				CrucibleBoilProgressPacket::new
-		);
+		registerPacket(FluidUpdatePacket.class, FluidUpdatePacket::new);
+		registerPacket(GooFlowPacket.class, GooFlowPacket::new);
+		registerPacket(ChangeItemTargetPacket.class, ChangeItemTargetPacket::new);
+		registerPacket(SolidifierPoppedPacket.class, SolidifierPoppedPacket::new);
+		registerPacket(GooGauntletSwapPacket.class, GooGauntletSwapPacket::new);
+		registerPacket(GooVesselSwapPacket.class, GooVesselSwapPacket::new);
+		registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
+		registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);
+		registerPacket(ShrinkPacket.class, ShrinkPacket::new);
+		registerPacket(FertilizePacket.class, FertilizePacket::new);
+		registerPacket(BlobHitInteractionPacket.class, BlobHitInteractionPacket::new);
+		registerPacket(BlobInteractionPacket.class, BlobInteractionPacket::new);
+		registerPacket(SplatInteractionPacket.class, SplatInteractionPacket::new);
+		registerPacket(MixerAnimationPacket.class, MixerAnimationPacket::new);
+		registerPacket(MixerRecipePacket.class, MixerRecipePacket::new);
+		registerPacket(CrucibleCurrentItemPacket.class, CrucibleCurrentItemPacket::new);
+		registerPacket(CrucibleMeltProgressPacket.class, CrucibleMeltProgressPacket::new);
+		registerPacket(CrucibleBoilProgressPacket.class, CrucibleBoilProgressPacket::new);
+		registerPacket(CrucibleWastingFluidPacket.class, CrucibleWastingFluidPacket::new);
 	}
 
 	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {

@@ -1,5 +1,6 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.items.ItemsRegistry;
 import com.xeno.goo.tiles.BulbTile;
 import com.xeno.goo.tiles.CrucibleTile;
@@ -13,6 +14,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -126,8 +128,10 @@ public class Crucible extends Block {
 
 	@Override
 	public void onEntityCollision(BlockState state, World worldIn, BlockPos pos, Entity entityIn) {
-
 		super.onEntityCollision(state, worldIn, pos, entityIn);
+		if (entityIn instanceof GooBlob) {
+			((GooBlob) entityIn).tryFluidHandlerInteraction(pos, Direction.UP);
+		}
 	}
 
 	@Override
@@ -144,5 +148,19 @@ public class Crucible extends Block {
 			((CrucibleTile) t).tryTakingItemFromCrucible(player);
 		}
 		return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
+	}
+
+	@Override
+	public boolean hasComparatorInputOverride(BlockState state) {
+		return true;
+	}
+
+	@Override
+	public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+		TileEntity t = worldIn.getTileEntity(pos);
+		if (t instanceof CrucibleTile) {
+			return ((CrucibleTile)t).getComparatorFullness();
+		}
+		return 0;
 	}
 }

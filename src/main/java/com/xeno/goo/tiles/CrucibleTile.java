@@ -48,13 +48,13 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CrucibleTile extends GooContainerAbstraction implements ITickableTileEntity,
 																	 FluidUpdatePacket.IFluidPacketReceiver {
 
 	private static final int MAX_MELT_SPEED = 5;
 	private static final int MAX_BOIL_RATE = 100;
+	private static final int WASTE_SPRAY_PARTICLE_COUNT = 6;
 	// the itemstack currently being "held" by the crucible. If meltRate > 0, this item is also melting.
 	private ItemStack currentItem;
 
@@ -64,7 +64,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 	// the fluidstacks created when an item begins melting. These fluidstacks deplete into the crucible until empty,
 	// at which point melting is complete (melted item will become air, and this list will be empty)
 	private List<FluidStack> meltedProgress;
-
+	private FluidStack wastedFluid;
 	private float simplifiedMeltProgress;
 
 	public CrucibleTile() {
@@ -84,6 +84,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		}
 	}
 
+	public void setWastedFluid(FluidStack f) {
+		this.wastedFluid = f;
+	}
+
 	private void sendMeltProgressUpdatePacket() {
 		Networking.sendToClientsAround(new CrucibleMeltProgressPacket(this.world, this.pos, this.simplifiedMeltProgress, this.meltRate), (ServerWorld)this.world, this.pos);
 	}
@@ -93,7 +97,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 	}
 
 	private float getMeltProgressForItemAndMelting() {
-		if (currentItem == null || currentItem.isEmpty()) {
+		if (!hasCurrentItem()) {
 			return 0f;
 		}
 
@@ -182,10 +186,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	// moved this from renderer to here so that both can utilize the same
 	// offset logic (and also renderer is client code, not the same in reverse)
-	private static final float FLUID_VERTICAL_OFFSET = 0.376f;
+	private static final float FLUID_VERTICAL_OFFSET = 0.3126f;
 	private static final float FLUID_VERTICAL_MAX = (1f - 0.075f);
 	public static final float HEIGHT_SCALE = FLUID_VERTICAL_MAX - FLUID_VERTICAL_OFFSET;
-	public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = 1f / Registry.FluidSuppliers.size(); // percentile is a representation of all the fluid types in existence.
+	public static final float ARBITRARY_GOO_STACK_HEIGHT_MINIMUM = (1f / Registry.FluidSuppliers.size()) * 0.1f; // percentile is a representation of all the fluid types in existence.
 
 	public static final Int2DoubleLinkedOpenHashMap CAPACITY_LOGS = new Int2DoubleLinkedOpenHashMap();
 
@@ -353,8 +357,14 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 			if (hasHeatSource() && boilRate > 0) {
 				spawnBoilingParticles();
 			}
-			if (hasHeatSource() && !currentItem().isEmpty() && meltRate > 0) {
+			if (isActivelyMeltingItem() && hasCurrentItem()) {
 				spawnItemParticles();
+			}
+			if (hasWastedFluid()) {
+				spawnWastedFluidParticles();
+				wastedFluid.shrink(Math.min(wastedFluid.getAmount(), Math.max(1, meltRate)));
+				AudioHelper.headlessAudioEvent(world, this.pos, Registry.GOO_SIZZLE_SOUND.get(),
+						SoundCategory.NEUTRAL, 0.7f, PitchFormulas.FlatOne);
 			}
 			return;
 		}
@@ -366,13 +376,16 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 				sendBoilRateUpdatePacket();
 			}
 		} else {
-			boilRate = 0;
-			sendBoilRateUpdatePacket();;
+			// if a melt is in progress, refuse to stop boiling, but allow the boiling to slow down.
+			if (boilRate > 0 && (!isActivelyMeltingItem() || boilRate > 1)) {
+				boilRate--;
+				sendBoilRateUpdatePacket();
+			}
 		}
 
 		// only melt if we have a heat source.
 		// only solidify if we don't.
-		if (hasHeatSource()) {
+		if (hasHeatSource() || isActivelyMeltingItem()) {
 			// try to grab an item from within the cauldron's inner hitbox if one exists.
 			if (currentItem().isEmpty()) {
 				tryGrabbingItem(false);
@@ -383,8 +396,21 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		}
 	}
 
+	private boolean hasCurrentItem() {
+		return currentItem != null && !currentItem.isEmpty();
+
+	}
+
+	private boolean hasWastedFluid() {
+		return wastedFluid != null && !wastedFluid.isEmpty();
+	}
+
+	private boolean isActivelyMeltingItem() {
+		return meltedProgress != null && meltedProgress.size() > 0;
+	}
+
 	public void tryTakingItemFromCrucible (PlayerEntity e) {
-		if (currentItem() == null || currentItem().isEmpty()) {
+		if (!hasCurrentItem()) {
 			return;
 		}
 
@@ -434,10 +460,12 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 			return;
 		}
 
-		if (!hasHeatSource() || currentItem().isEmpty() || goo.getRemainingCapacity() == 0) {
-			if (meltRate > 0) {
-				meltRate = 0;
-				sendMeltProgressUpdatePacket();
+		if (!hasHeatSource()) {
+			if (!isActivelyMeltingItem() || meltRate > 1) {
+				if (meltRate > 0) {
+					meltRate--;
+					sendMeltProgressUpdatePacket();
+				}
 			}
 			return;
 		}
@@ -467,18 +495,19 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 				FluidStack fillStack = stack.copy();
 				fillStack.setAmount(minTransfer);
 				int simulatedFill = goo.fill(fillStack, FluidAction.SIMULATE);
-				if (simulatedFill == 0) {
-					meltRate = 0;
-					break;
-				} else {
-					if (simulatedFill < minTransfer) {
-						minTransfer = simulatedFill;
-					}
+				if (simulatedFill < minTransfer) {
+					minTransfer = simulatedFill;
 				}
-				fillStack = stack.copy();
-				fillStack.setAmount(minTransfer);
-				goo.fill(fillStack, FluidAction.EXECUTE);
-				stack.shrink(minTransfer);
+
+				if (minTransfer > 0) {
+					fillStack = stack.copy();
+					fillStack.setAmount(minTransfer);
+					goo.fill(fillStack, FluidAction.EXECUTE);
+					stack.shrink(minTransfer);
+				} else {
+					sendCrucibleWastingFluidPacket(stack.copy());
+					stack.shrink(Math.min(stack.getAmount(), meltRate));
+				}
 				hasMeltedProgressChanged = true;
 			}
 			int previousSize = meltedProgress.size();
@@ -508,7 +537,7 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 			tryGrabbingItem(true);
 		}
 
-		if (currentItem == null || currentItem.isEmpty()) {
+		if (!hasCurrentItem()) {
 			return;
 		}
 
@@ -553,6 +582,10 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		Networking.sendToClientsAround(new CrucibleCurrentItemPacket(this.world, this.pos, this.currentItem), (ServerWorld)this.world, this.pos);
 	}
 
+	private void sendCrucibleWastingFluidPacket(FluidStack wastedFluid) {
+		Networking.sendToClientsAround(new CrucibleWastingFluidPacket(this.world, this.pos, wastedFluid), (ServerWorld)this.world, this.pos);
+	}
+
 	private void spawnItemParticles() {
 		float itemDepletion = 1f - simplifiedProgress();
 		float curveDepletion = (float)Math.cbrt(itemDepletion);
@@ -575,37 +608,58 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		// copy centered is because I'm lazy, it shifts to the middle of the block, we add fluid height, then subtract
 		// half height from the y, or the particles will be weirdly floating
 		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
-		if (this.world instanceof ServerWorld)
-			((ServerWorld)this.world).spawnParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
-		else
-			this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 0d, 0d, 0d);
-
+		this.world.addParticle(new ItemParticleData(ParticleTypes.ITEM, currentItem()), center.x, center.y, center.z, 0d, 0d, 0d);
 	}
 
 	private void spawnBoilingParticles() {
 		if (goo.isEmpty()) {
 			return;
 		}
-		// cuts the particle density in half, increase the modulo for less particles
-		if (world.getGameTime() % 3 > 0) {
-			return;
-		}
 		if (boilRate / (float)MAX_BOIL_RATE < world.rand.nextFloat()) {
 			return;
 		}
+		if (world.getGameTime() % 2 > 0) {
+			return;
+		}
+
 		List<FluidStack> allFluids = goo.getFluidAsList();
 		FluidStack f = allFluids.get(allFluids.size() - 1);
 		BasicParticleType t = Registry.bubbleParticleFromFluid(f.getFluid());
+		BasicParticleType v = Registry.vaporParticleFromFluid(f.getFluid());
 		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
 		float dx = (world.rand.nextFloat() - 0.5f) * 0.5f;
-		float dy = -0.22f;
 		float dz = (world.rand.nextFloat() - 0.5f) * 0.5f;
-		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, dy + fluidHeight, dz).subtract(0d, 0.5d, 0d);
+		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, fluidHeight, dz).subtract(0d, 0.50d, 0d);
+		GooMod.debug("particle position y " + center.y);
 		if (t != null) {
-			if (this.world instanceof ServerWorld)
-				((ServerWorld)this.world).spawnParticle(t, center.x, center.y, center.z, 1, 0d, 0d, 0d, 0.0D);
-			else
-				this.world.addParticle(t, center.x, center.y, center.z, 0d, 0d, 0d);
+			this.world.addParticle(t, center.x, center.y, center.z, 0d, 0d, 0d);
+		}
+		if (v != null) {
+			float scale = world.rand.nextFloat() / 6f + 0.25f;
+			this.world.addParticle(v, center.x, center.y + 0.22d, center.z, 0d, 0d, scale);
+		}
+	}
+
+	private void spawnWastedFluidParticles() {
+		if (wastedFluid == null || wastedFluid.isEmpty()) {
+			return;
+		}
+		BasicParticleType s = Registry.sprayParticleFromFluid(wastedFluid.getFluid());
+		BasicParticleType b = Registry.fallingParticleFromFluid(wastedFluid.getFluid());
+		float fluidHeight = calculateFluidHeight() + FLUID_VERTICAL_OFFSET;
+		for (int i = 0; i < WASTE_SPRAY_PARTICLE_COUNT; i++) {
+			float dx = (world.rand.nextFloat() - 0.5f) * 0.2f;
+			float dz = (world.rand.nextFloat() - 0.5f) * 0.2f;
+			float mx = ((world.rand.nextFloat() - 0.5f) * 0.5f) * 0.06f;
+			float my = 0.12f;
+			float mz = ((world.rand.nextFloat() - 0.5f) * 0.5f) * 0.06f;
+			Vector3d center = Vector3d.copyCentered(this.pos).add(dx, fluidHeight, dz).subtract(0d, 0.5d, 0d);
+			if (s != null) {
+				this.world.addParticle(s, center.x, center.y, center.z, mx, my, mz);
+			}
+			if (b != null && i == 0 && world.getGameTime() % 3 == 0) {
+				this.world.addParticle(b, center.x, center.y, center.z, dx * 0.2d, 0.09d, dz * 0.2d);
+			}
 		}
 	}
 
@@ -642,5 +696,9 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 
 	public void setBoilRate(int boilRate) {
 		this.boilRate = boilRate;
+	}
+
+	public int getComparatorFullness() {
+		return (int)Math.floor(4f * (float)goo.getTotalContents() / goo.getTotalCapacity());
 	}
 }

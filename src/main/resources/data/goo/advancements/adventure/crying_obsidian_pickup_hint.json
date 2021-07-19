@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:adventure/root",
+  "display": {
+    "icon": {
+      "item": "minecraft:crying_obsidian"
+    },
+    "title": {
+      "translate": "goo.advancement.crying_obsidian_pickup_hint"
+    },
+    "description": {
+      "translate": "goo.advancement.crying_obsidian_pickup_hint.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "loot": [
+      "goo:crying_obsidian_hint_advancement_loot_table"
+    ]
+  },
+  "criteria": {
+    "crying_obsidian": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "minecraft:crying_obsidian"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "crying_obsidian"
+    ]
+  ]
+}

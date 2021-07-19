@@ -22,6 +22,9 @@
 
   "tooltip.goo.composition.goo_not_ready": "Goo values not loaded!",
 
+  "goo.advancement.crying_obsidian_pickup_hint": "Goo: Mysteries",
+  "goo.advancement.crying_obsidian_pickup_hint.description":  "Crying Obsidian can be thrown into Soul Fire. This advancement rewards a book, Goo and You.",
+
   "entity.goo.goo_bee": "Crystal Bee",
   "entity.goo.mutant_bee": "Mutated Bee",
   "entity.goo.goo_snail": "Primordial Snail",
