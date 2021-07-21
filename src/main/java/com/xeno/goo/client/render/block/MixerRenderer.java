@@ -157,7 +157,12 @@ public class MixerRenderer extends TileEntityRenderer<MixerTile> {
                 .with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
         // rotate the spinner based on the tile's rotation properties
         matrices.translate(0.5d, 0d, 0.5d);
-        Quaternion rotationQuat = new Quaternion(0f, tile.spinnerDegrees(), 0f, true);
+        float moduloBreaker = 0f;
+        if (tile.spinnerDegrees() < tile.prevSpinnerDegrees()) {
+            moduloBreaker = 360f;
+        }
+        float gap = (tile.spinnerDegrees() + moduloBreaker - tile.prevSpinnerDegrees()) * partialTicks;
+        Quaternion rotationQuat = new Quaternion(0f, tile.prevSpinnerDegrees() + gap, 0f, true);
         matrices.rotate(rotationQuat);
         matrices.translate(-0.5d, 0d, -0.5d);
         blockRenderer.renderBlock(dynamicState, matrices, bufferIn, light, overlay, EmptyModelData.INSTANCE);

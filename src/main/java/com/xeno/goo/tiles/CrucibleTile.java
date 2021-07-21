@@ -630,7 +630,6 @@ public class CrucibleTile extends GooContainerAbstraction implements ITickableTi
 		float dx = (world.rand.nextFloat() - 0.5f) * 0.5f;
 		float dz = (world.rand.nextFloat() - 0.5f) * 0.5f;
 		Vector3d center = Vector3d.copyCentered(this.pos).add(dx, fluidHeight, dz).subtract(0d, 0.50d, 0d);
-		GooMod.debug("particle position y " + center.y);
 		if (t != null) {
 			this.world.addParticle(t, center.x, center.y, center.z, 0d, 0d, 0d);
 		}

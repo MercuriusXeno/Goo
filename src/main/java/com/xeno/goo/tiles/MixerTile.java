@@ -37,6 +37,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 {
     private static final int RECIPE_COOLDOWN = 20;
     private float spinnerDegrees = 0;
+    private float prevSpinnerDegrees = 0;
     private float spinnerSpeed = 0f;
     private boolean isActive = false;
     private int changeRecipeCooldown = 0;
@@ -120,6 +121,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         } else {
             decelerateSpinner();
         }
+        this.prevSpinnerDegrees = spinnerDegrees;
         this.spinnerDegrees = (spinnerDegrees + spinnerSpeed) % 360;
     }
 
@@ -424,6 +426,10 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
 
     public float spinnerDegrees() {
         return spinnerDegrees;
+    }
+
+    public float prevSpinnerDegrees() {
+        return prevSpinnerDegrees;
     }
 
     public boolean isActive() {

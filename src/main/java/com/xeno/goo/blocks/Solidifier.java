@@ -221,11 +221,11 @@ public class Solidifier extends BlockWithConnections {
 
         if (worldIn != null) {
             if (!isInItemFrameBounds(hit)) {
-                return ActionResultType.func_233537_a_(worldIn.isRemote);
+                return ActionResultType.PASS;
             }
             TileEntity tile = worldIn.getTileEntity(pos);
             if (!(tile instanceof SolidifierTile)) {
-                return ActionResultType.func_233537_a_(worldIn.isRemote);
+                return ActionResultType.PASS;
             }
 
             Item itemToSwap = player.getHeldItem(handIn).isEmpty() || player.isSneaking() ? Items.AIR : player.getHeldItem(handIn).getItem();
