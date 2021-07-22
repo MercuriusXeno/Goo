@@ -19,9 +19,9 @@ import net.minecraft.world.World;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class GooBulbItem extends BlockItem
+public class BulbItem extends BlockItem
 {
-    public GooBulbItem(Block blockIn, Properties builder)
+    public BulbItem(Block blockIn, Properties builder)
     {
         super(blockIn, builder);
     }

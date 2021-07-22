@@ -1,34 +1,132 @@
 {
   "variants": {
-    "facing=north,powered=false": {
-      "model": "goo:block/solidifier_powered"
+    "facing=north,powered=false,render=static": {
+      "model": "goo:block/solidifier",
+      "y": 360
     },
-    "facing=south,powered=false": {
-      "model": "goo:block/solidifier_powered",
-      "y": 180
-    },
-    "facing=west,powered=false": {
-      "model": "goo:block/solidifier_powered",
-      "y": 270
-    },
-    "facing=east,powered=false": {
-      "model": "goo:block/solidifier_powered",
-      "y": 90
-    },
-    "facing=north,powered=true": {
-      "model": "goo:block/solidifier"
-    },
-    "facing=south,powered=true": {
+    "facing=south,powered=false,render=static": {
       "model": "goo:block/solidifier",
       "y": 180
     },
-    "facing=west,powered=true": {
+    "facing=west,powered=false,render=static": {
       "model": "goo:block/solidifier",
       "y": 270
     },
-    "facing=east,powered=true": {
+    "facing=east,powered=false,render=static": {
       "model": "goo:block/solidifier",
-      "y": 90
+      "y": 450
+    },
+    "facing=north,powered=true,render=static": {
+      "model": "goo:block/solidifier",
+      "y": 360
+    },
+    "facing=south,powered=true,render=static": {
+      "model": "goo:block/solidifier",
+      "y": 180
+    },
+    "facing=west,powered=true,render=static": {
+      "model": "goo:block/solidifier",
+      "y": 270
+    },
+    "facing=east,powered=true,render=static": {
+      "model": "goo:block/solidifier",
+      "y": 450
+    },
+    "facing=north,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 360
+    },
+    "facing=south,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 180
+    },
+    "facing=west,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 270
+    },
+    "facing=east,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 450
+    },
+    "facing=north,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 360
+    },
+    "facing=south,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 180
+    },
+    "facing=west,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 270
+    },
+    "facing=east,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_east_chute",
+      "y": 450
+    },
+    "facing=north,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 360
+    },
+    "facing=south,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 180
+    },
+    "facing=west,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 270
+    },
+    "facing=east,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 450
+    },
+    "facing=north,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 360
+    },
+    "facing=south,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 180
+    },
+    "facing=west,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 270
+    },
+    "facing=east,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_west_chute",
+      "y": 450
+    },
+    "facing=north,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 360
+    },
+    "facing=south,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 180
+    },
+    "facing=west,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 270
+    },
+    "facing=east,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 450
+    },
+    "facing=north,powered=true,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 360
+    },
+    "facing=south,powered=true,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 180
+    },
+    "facing=west,powered=true,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 270
+    },
+    "facing=east,powered=true,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 450
     }
   }
 }

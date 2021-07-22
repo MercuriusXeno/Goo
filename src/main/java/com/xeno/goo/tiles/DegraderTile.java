@@ -14,12 +14,14 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
@@ -79,7 +81,7 @@ public class DegraderTile extends GooContainerAbstraction implements ITickableTi
 		if (sentResult == 0 || sentResult < recipe.output().getAmount()) {
 			return;
 		}
-
+		deductFuelQuantity(recipe.fuel(), fluidHandlerBehind());
 		deductInputQuantity(recipe.input());
 
 		cap.fill(recipe.output(), IFluidHandler.FluidAction.EXECUTE);
@@ -92,7 +94,34 @@ public class DegraderTile extends GooContainerAbstraction implements ITickableTi
 
 	private boolean isRecipeSatisfied(DegraderRecipe recipe) {
 
+		IFluidHandler backHandler = fluidHandlerBehind();
+		if (backHandler == null) {
+			return false;
+		}
+		FluidStack fuel = recipe.fuel();
+		if (backHandler.drain(fuel, FluidAction.SIMULATE).isEmpty()) {
+			return false;
+		}
 		return goo.getFluidInTankInternal(0).containsFluid(recipe.input());
+	}
+
+	private IFluidHandler fluidHandlerBehind() {
+
+		TileEntity te = world.getTileEntity(pos.offset(facing().getOpposite()));
+		if (te == null) { return null; }
+		LazyOptional<IFluidHandler> lazyHandler = te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
+		if (!lazyHandler.isPresent() || !lazyHandler.resolve().isPresent()) {
+			return null;
+		}
+		return lazyHandler.resolve().get();
+	}
+
+	private void deductFuelQuantity(FluidStack fuel, IFluidHandler fluidHandlerBehind) {
+		fluidHandlerBehind.drain(fuel, FluidAction.EXECUTE);
+	}
+
+	private Direction facing() {
+		return world.getBlockState(pos).get(BlockStateProperties.HORIZONTAL_FACING);
 	}
 
 	public void setGoo(FluidStack fluidStack) {

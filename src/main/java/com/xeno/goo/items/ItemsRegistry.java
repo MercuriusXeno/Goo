@@ -3,7 +3,7 @@ package com.xeno.goo.items;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.blocks.CrystalBlock;
-import com.xeno.goo.blocks.GooBulbItem;
+import com.xeno.goo.blocks.BulbItem;
 import com.xeno.goo.client.ISTERProvider;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
@@ -41,7 +41,7 @@ public class ItemsRegistry {
 
     // block items
     public static final RegistryObject<Item> GOO_BULB = ITEMS
-            .register("goo_bulb", () -> new GooBulbItem(BlocksRegistry.Bulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
+            .register("goo_bulb", () -> new BulbItem(BlocksRegistry.Bulb.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
                     .maxStackSize(64).setISTER(ISTERProvider::gooBulb)));
     public static final RegistryObject<Item> GOO_PUMP = ITEMS
             .register("goo_pump", () -> new BlockItem(BlocksRegistry.Pump.get(), new Item.Properties().group(GooMod.ITEM_GROUP)

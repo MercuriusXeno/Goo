@@ -7,14 +7,12 @@ import com.xeno.goo.library.AudioHelper.PitchFormulas;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.BulbTile;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
-import net.minecraft.state.StateContainer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
@@ -33,12 +31,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public class GooBulb extends BlockWithConnections
+public class Bulb extends BlockWithConnections
 {
 
     private static final int BUCKET_AMOUNT = 1000;
 
-    public GooBulb()
+    public Bulb()
     {
         super(Properties.create(Material.GLASS)
                 .sound(SoundType.GLASS)
@@ -96,7 +94,7 @@ public class GooBulb extends BlockWithConnections
     public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack)
     {
         super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
-        int containment = GooBulbItem.containment(stack);
+        int containment = BulbItem.containment(stack);
         BulbTile tile = (BulbTile)worldIn.getTileEntity(pos);
         tile.setContainmentLevel(containment);
     }

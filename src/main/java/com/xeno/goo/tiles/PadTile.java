@@ -1,7 +1,7 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.blocks.GooPad;
+import com.xeno.goo.blocks.Pad;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.network.FluidUpdatePacket;
 import com.xeno.goo.network.Networking;
@@ -95,7 +95,7 @@ public class PadTile extends GooContainerAbstraction implements ITickableTileEnt
         if (!goo.getFluidInTank(0).getFluid().equals(Registry.SLIME_GOO.get())) {
             return;
         }
-        AxisAlignedBB pressurePadBox = GooPad.PRESSURE_AABB.offset(this.getPos());
+        AxisAlignedBB pressurePadBox = Pad.PRESSURE_AABB.offset(this.getPos());
         AxisAlignedBB detectionField = pressurePadBox.grow(3d, 0d, 3d).expand(0d, 3d, 0d);
         // get entities in a healthy range (3 blocks)
         // project their motion and see if anything is coming at us.

@@ -556,7 +556,7 @@ public class TargetingHandler
             }
             return false;
         }
-        if (state.getBlock() instanceof GooPump) {
+        if (state.getBlock() instanceof Pump) {
             TileEntity t = world.getTileEntity(target.getPos());
             if (t instanceof GooPumpTile) {
                 GooEntry gooEntry = Equivalencies.getEntry(world.getDimensionKey(), ((GooPumpTile)t).getDisplayedItem());
@@ -746,12 +746,12 @@ public class TargetingHandler
 
     private static boolean hasGooContents(BlockState state)
     {
-        return state.getBlock() instanceof GooBulb
+        return state.getBlock() instanceof Bulb
                 || state.getBlock() instanceof Mixer
                 || state.getBlock() instanceof Degrader
                 || state.getBlock() instanceof Solidifier
                 || state.getBlock() instanceof Gooifier
-                || state.getBlock() instanceof GooTrough
+                || state.getBlock() instanceof Trough
                 || state.getBlock() instanceof Crucible;
     }
 

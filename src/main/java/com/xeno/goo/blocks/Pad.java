@@ -33,11 +33,11 @@ import net.minecraft.world.server.ServerWorld;
 import java.util.List;
 import java.util.Random;
 
-public class GooPad extends BlockWithConnections {
+public class Pad extends BlockWithConnections {
 	VoxelShape padShape;
 	VoxelShape shape;
 
-	public GooPad() {
+	public Pad() {
 
 		super(Properties.create(Material.IRON)
 				.sound(SoundType.METAL)

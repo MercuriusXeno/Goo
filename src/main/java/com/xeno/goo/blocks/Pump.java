@@ -31,11 +31,11 @@ import java.util.Map;
 
 import static net.minecraft.state.properties.BlockStateProperties.FACING;
 
-public class GooPump extends BlockWithConnections
+public class Pump extends BlockWithConnections
 {
     VoxelShape[] shapes;
 
-    public GooPump()
+    public Pump()
     {
         super(Properties.create(Material.IRON)
                 .sound(SoundType.METAL)

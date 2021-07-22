@@ -19,23 +19,27 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static net.minecraft.util.Direction.*;
 
 public class MixerTile extends GooContainerAbstraction implements ITickableTileEntity, FluidUpdatePacket.IFluidPacketReceiver
 {
     private static final int RECIPE_COOLDOWN = 20;
+    private static final Supplier<FluidStack> FUEL_FLUID = () -> new FluidStack(Registry.LOGIC_GOO.get(), 1);
     private float spinnerDegrees = 0;
     private float prevSpinnerDegrees = 0;
     private float spinnerSpeed = 0f;
@@ -113,6 +117,22 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             }
         }
         tryVerticalDrain();
+    }
+
+
+    private IFluidHandler fluidHandlerBehind() {
+
+        TileEntity te = world.getTileEntity(pos.offset(facing().getOpposite()));
+        if (te == null) { return null; }
+        LazyOptional<IFluidHandler> lazyHandler = te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
+        if (!lazyHandler.isPresent() || !lazyHandler.resolve().isPresent()) {
+            return null;
+        }
+        return lazyHandler.resolve().get();
+    }
+
+    private void deductFuelQuantity(FluidStack fuel, IFluidHandler fluidHandlerBehind) {
+        fluidHandlerBehind.drain(fuel, FluidAction.EXECUTE);
     }
 
     private void handleAnimation() {
@@ -260,6 +280,12 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (currentRecipe == null) {
             return false;
         }
+        if (fluidHandlerBehind() == null) {
+            return false;
+        }
+        if (fluidHandlerBehind().drain(fuel(), FluidAction.SIMULATE).isEmpty()) {
+            return false;
+        }
         // if we can't hold what the output produces, abort.
         int simulatedFill = goo.fill(currentRecipe.output(), FluidAction.SIMULATE);
         if (simulatedFill != currentRecipe.output().getAmount()) {
@@ -278,11 +304,17 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
                 }
                 if (isSuccessful.get()) {
                     goo.fill(currentRecipe.output(), FluidAction.EXECUTE);
+                    fluidHandlerBehind().drain(fuel(), FluidAction.EXECUTE);
                 }
             });
         });
         startAnimation();
         return isSuccessful.get();
+    }
+
+    private FluidStack fuel() {
+
+        return FUEL_FLUID.get();
     }
 
     public void startAnimation() {

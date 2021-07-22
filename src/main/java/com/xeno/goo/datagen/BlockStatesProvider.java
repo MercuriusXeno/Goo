@@ -352,63 +352,25 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerSolidifier() {
-        ResourceLocation top_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_top_off");
-        ResourceLocation top_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_top_on");
-        ResourceLocation bottom = new ResourceLocation("minecraft", "block/nether_bricks");
-        ResourceLocation side_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_side_off");
-        ResourceLocation side_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_side_on");
-        ResourceLocation front_off = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_front_off");
-        ResourceLocation front_on = new ResourceLocation(GooMod.MOD_ID, "block/solidifier_old/solidifier_front_on");
-        ResourceLocation gasket = new ResourceLocation(GooMod.MOD_ID, "block/gasket_filled");
-        ResourceLocation empty = new ResourceLocation(GooMod.MOD_ID, "block/empty");
-        float gasketThickness = 0.25f;
-        BlockModelBuilder modelInactive = models()
-                .withExistingParent("solidifier", "block/block")
-                .element()
-                .from(gasketThickness, 0, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#bottom" :
-                                (t == Direction.UP ? "#top_off" :
-                                        (t == Direction.NORTH ? "#front_off" : "#side_off"
-                                                        )))
-                                .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        addGasket(modelInactive, Direction.UP, gasketThickness);
-        addGasket(modelInactive, Direction.EAST, gasketThickness);
-        addGasket(modelInactive, Direction.WEST, gasketThickness);
-        modelInactive.texture("particle", front_off);
-        modelInactive.texture("bottom", bottom);
-        modelInactive.texture("top_off", top_off);
-        modelInactive.texture("side_off", side_off);
-        modelInactive.texture("front_off", front_off);
+        BlockModelBuilder model = models()
+                .withExistingParent("solidifier", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier"));
+        BlockModelBuilder eastChute = models()
+                .withExistingParent("solidifier_east_chute", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_hatch_east"));
+        BlockModelBuilder westChute = models()
+                .withExistingParent("solidifier_west_chute", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_hatch_west"));
+        BlockModelBuilder fullModel = models()
+                .withExistingParent("solidifier_full", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_full"));
 
-        BlockModelBuilder modelActive = models()
-                .withExistingParent("solidifier_powered", "block/block")
-                .element()
-                .from(gasketThickness, 0, gasketThickness)
-                .to(16f - gasketThickness, 16f - gasketThickness, 16f - gasketThickness)
-                .allFaces((t, u) ->
-                        u.texture(t == Direction.DOWN ? "#bottom" :
-                                (t == Direction.UP ? "#top_on" :
-                                        (t == Direction.NORTH ? "#front_on" : "#side_on"
-                                        )))
-                                .uvs(0f, 0f, 16f, 16f))
-                .end()
-                .texture("gasket", gasket)
-                .texture("empty", empty);
-        modelActive.texture("particle", front_on);
-        modelActive.texture("bottom", bottom);
-        modelActive.texture("top_on", top_on);
-        modelActive.texture("side_on", side_on);
-        modelActive.texture("front_on", front_on);
-        addGasket(modelActive, Direction.UP, gasketThickness);
-        addGasket(modelActive, Direction.EAST, gasketThickness);
-        addGasket(modelActive, Direction.WEST, gasketThickness);
-        horizontalBlock(BlocksRegistry.Solidifier.get(), state -> !state.get(BlockStateProperties.POWERED) ? modelActive : modelInactive);
-        simpleBlockItem(BlocksRegistry.Solidifier.get(), modelInactive);
+        getVariantBuilder(BlocksRegistry.Solidifier.get())
+                .forAllStates(
+                        (s) -> ConfiguredModel.builder()
+                                .modelFile(s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.STATIC ? model :
+                                        (s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.DYNAMIC ? eastChute :
+                                                (s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.DYNAMIC_2 ? westChute
+                                                : fullModel)))
+                                .rotationY(180 + s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
+                                .build()
+                );
     }
 
     private void registerRadiantLight() {

@@ -64,6 +64,38 @@
       "model": "goo:block/mixer_spinner",
       "y": 450
     },
+    "facing=north,powered=false,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 360
+    },
+    "facing=south,powered=false,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 180
+    },
+    "facing=west,powered=false,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 270
+    },
+    "facing=east,powered=false,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 450
+    },
+    "facing=north,powered=true,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 360
+    },
+    "facing=south,powered=true,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 180
+    },
+    "facing=west,powered=true,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 270
+    },
+    "facing=east,powered=true,render=dynamic_2": {
+      "model": "goo:block/mixer_full",
+      "y": 450
+    },
     "facing=north,powered=false,render=item": {
       "model": "goo:block/mixer_full",
       "y": 360

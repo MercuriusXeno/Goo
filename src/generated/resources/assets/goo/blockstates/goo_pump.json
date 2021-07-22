@@ -116,6 +116,64 @@
       "x": 90,
       "y": 90
     },
+    "facing=down,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 180,
+      "y": 180
+    },
+    "facing=up,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "y": 180
+    },
+    "facing=north,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 270,
+      "y": 180
+    },
+    "facing=south,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,powered=false,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 90
+    },
+    "facing=down,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 180,
+      "y": 180
+    },
+    "facing=up,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "y": 180
+    },
+    "facing=north,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 270,
+      "y": 180
+    },
+    "facing=south,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,powered=true,render=dynamic_2": {
+      "model": "goo:block/pump_full",
+      "x": 90,
+      "y": 90
+    },
     "facing=down,powered=false,render=item": {
       "model": "goo:block/pump_full",
       "x": 180,

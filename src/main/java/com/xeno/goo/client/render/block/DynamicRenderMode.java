@@ -11,6 +11,7 @@ public class DynamicRenderMode {
     public enum DynamicRenderTypes implements IStringSerializable {
         STATIC,
         DYNAMIC,
+        DYNAMIC_2,
         ITEM;
 
         @Override

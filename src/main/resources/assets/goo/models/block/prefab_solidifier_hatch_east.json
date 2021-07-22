@@ -1,0 +1,32 @@
+{
+	"texture_size": [64, 64],
+	"textures": {
+		"0": "goo:block/solidifier/solidifier_simple",
+		"particle": "goo:block/solidifier/solidifier_simple"
+	},
+	"loader": "forge:multi-layer",
+	"layers": {
+		"cutout_mipped": {
+			"textures": {
+				"0": "goo:block/solidifier/solidifier_simple",
+				"particle": "goo:block/solidifier/solidifier_simple"
+			},
+			"elements": [
+				{
+					"name": "east_hatch_door",
+					"from": [8, 4, 5.1],
+					"to": [10.9, 5, 10.9],
+					"rotation": {"angle": 0, "axis": "z", "origin": [11, 4, 8]},
+					"faces": {
+						"north": {"uv": [9.25, 4.75, 9.5, 4], "rotation": 90, "texture": "#0"},
+						"east": {"uv": [8, 4.5, 9.5, 4.75], "texture": "#0"},
+						"south": {"uv": [8, 4, 8.25, 4.75], "rotation": 270, "texture": "#0"},
+						"west": {"uv": [9.5, 4.5, 11, 4.75], "texture": "#0"},
+						"up": {"uv": [8, 4, 9.5, 4.75], "rotation": 270, "texture": "#0"},
+						"down": {"uv": [11, 4, 9.5, 4.75], "rotation": 270, "texture": "#0"}
+					}
+				}
+			]
+		}
+	}
+}

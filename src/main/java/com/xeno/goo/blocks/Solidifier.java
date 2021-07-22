@@ -1,5 +1,7 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.client.render.block.DynamicRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
@@ -33,11 +35,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static net.minecraft.util.Direction.*;
 
 public class Solidifier extends BlockWithConnections {
     VoxelShape[] shapes;
+    VoxelShape[] itemFrameShapes;
     public Solidifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -45,50 +49,51 @@ public class Solidifier extends BlockWithConnections {
                 .hardnessAndResistance(4.0f)
                 .notSolid());
         setDefaultState(this.getDefaultState()
-                .with(BlockStateProperties.POWERED, true)
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC)
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .with(BlockStateProperties.POWERED, true)
         );
         shapes = makeShapes();
+        itemFrameShapes = makeItemFrameShapes();
     }
-
-    double gasketThickness = 0.25d;
-    double borderLimit = 16f - gasketThickness;
-    double gasketStart = 6d;
-    double gasketEnd = 16d - gasketStart;
 
     private VoxelShape[] makeShapes()
     {
-        Vector3d cs = new Vector3d(gasketThickness, 0d, gasketThickness);
-        Vector3d ce = new Vector3d(borderLimit, borderLimit, borderLimit);
-        Vector3d ts = new Vector3d (gasketStart, borderLimit, gasketStart);
-        Vector3d te = new Vector3d (gasketEnd, 16d, gasketEnd);
-        Vector3d es = new Vector3d(borderLimit, gasketStart, gasketStart);
-        Vector3d ee = new Vector3d(16d, gasketEnd, gasketEnd);
-        Vector3d ws = new Vector3d(0d, gasketStart, gasketStart);
-        Vector3d we = new Vector3d(gasketThickness, gasketEnd, gasketEnd);
-        Vector3d ss = new Vector3d(gasketStart, gasketStart, borderLimit);
-        Vector3d se = new Vector3d(gasketEnd, gasketEnd, 16d);
-        Vector3d ns = new Vector3d(gasketStart, gasketStart, 0d);
-        Vector3d ne = new Vector3d(gasketEnd, gasketEnd, gasketThickness);
+        Vector3d cuboidStart = new Vector3d(4, 0, 4);
+        Vector3d cuboidEnd = new Vector3d(12, 16, 16);
+        Vector3d itemFrameTopStart = new Vector3d(0, 8.8d, 7.4d);
+        Vector3d itemFrameTopEnd = new Vector3d(4, 10.9d, 9.2d);
+        Vector3d itemFrameBottomStart = new Vector3d(0, 6.7d, 6.7d);
+        Vector3d itemFrameBottomEnd = new Vector3d(4, 8.8d, 8.5d);
 
-        VoxelShape central = VoxelHelper.cuboid(cs, ce);
-        VoxelShape top = VoxelHelper.cuboid(ts, te);
-        VoxelShape east = VoxelHelper.cuboid(es, ee);
-        VoxelShape west = VoxelHelper.cuboid(ws, we);
-        VoxelShape south = VoxelHelper.cuboid(ss, se);
-        VoxelShape north = VoxelHelper.cuboid(ns, ne);
+        VoxelShape[] result = new VoxelShape[4];
+        for(int i = 0; i < 4; i++) {
+            Direction d = Direction.byHorizontalIndex(i);
+            VoxelShape cuboid = VoxelHelper.cuboidWithRotation(d, cuboidStart, cuboidEnd);
+            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameTopStart, itemFrameTopEnd);
+            VoxelShape itemFrameBottom = VoxelHelper.cuboidWithRotation(d, itemFrameBottomStart, itemFrameBottomEnd);
+            result[i] = VoxelHelper.mergeAll(cuboid, itemFrameTop, itemFrameBottom);
+        }
 
-        return
-                new VoxelShape[] {
-                        // south
-                        VoxelHelper.mergeAll(central, top, east, west),
-                        // west
-                        VoxelHelper.mergeAll(central, top, south, north),
-                        // north
-                        VoxelHelper.mergeAll(central, top, east, west),
-                        // east
-                        VoxelHelper.mergeAll(central, top, south, north),
-                };
+        return result;
+    }
+
+    private VoxelShape[] makeItemFrameShapes()
+    {
+        Vector3d itemFrameTopStart = new Vector3d(0, 8.8d, 7.4d);
+        Vector3d itemFrameTopEnd = new Vector3d(4, 10.9d, 9.2d);
+        Vector3d itemFrameBottomStart = new Vector3d(0, 6.7d, 6.7d);
+        Vector3d itemFrameBottomEnd = new Vector3d(4, 8.8d, 8.5d);
+
+        VoxelShape[] result = new VoxelShape[4];
+        for(int i = 0; i < 4; i++) {
+            Direction d = Direction.byHorizontalIndex(i);
+            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameTopStart, itemFrameTopEnd);
+            VoxelShape itemFrameBottom = VoxelHelper.cuboidWithRotation(d, itemFrameBottomStart, itemFrameBottomEnd);
+            result[i] = VoxelHelper.mergeAll(itemFrameTop, itemFrameBottom);
+        }
+
+        return result;
     }
 
     /**
@@ -98,7 +103,7 @@ public class Solidifier extends BlockWithConnections {
     @Override
     @SuppressWarnings("deprecation")
     public VoxelShape getCollisionShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
-        return this.canCollide ? VoxelShapes.fullCube() : VoxelShapes.empty();
+        return this.canCollide ? getShape(state, worldIn, pos, context) : VoxelShapes.empty();
     }
 
     /**
@@ -127,7 +132,7 @@ public class Solidifier extends BlockWithConnections {
     @Override
     @SuppressWarnings("deprecation")
     public VoxelShape getRaytraceShape(BlockState state, IBlockReader worldIn, BlockPos pos) {
-        return VoxelShapes.fullCube();
+        return getShape(state, worldIn, pos, ISelectionContext.dummy());
     }
 
     @Override
@@ -168,26 +173,17 @@ public class Solidifier extends BlockWithConnections {
     }
 
 
-    public static final Map<Direction.Axis, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
+    public static final Map<Direction, Direction[]> RELEVANT_DIRECTIONS = new HashMap<>();
     static {
-        for(Direction.Axis a : Direction.Axis.values()) {
-            switch (a) {
-                case Y:
-                    break;
-                case X:
-                    RELEVANT_DIRECTIONS.put(a, new Direction[] {NORTH, SOUTH, UP});
-                    break;
-                case Z:
-                    RELEVANT_DIRECTIONS.put(a, new Direction[] {EAST, WEST, UP});
-                    break;
-            }
+        for(Direction a : BlockStateProperties.HORIZONTAL_FACING.getAllowedValues()) {
+            RELEVANT_DIRECTIONS.put(a, new Direction[] {a.getOpposite(), Direction.UP});
         }
     }
 
     @Override
     protected Direction[] relevantConnectionDirections(BlockState state)
     {
-        return RELEVANT_DIRECTIONS.get(state.get(BlockStateProperties.HORIZONTAL_FACING).getAxis());
+        return RELEVANT_DIRECTIONS.get(state.get(BlockStateProperties.HORIZONTAL_FACING));
     }
 
     @SuppressWarnings("deprecation")
@@ -202,12 +198,13 @@ public class Solidifier extends BlockWithConnections {
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         return getDefaultState()
                 .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
-                .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite());
+                .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite())
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED);
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED, DynamicRenderMode.RENDER);
     }
 
     @SuppressWarnings("deprecation")
@@ -220,7 +217,7 @@ public class Solidifier extends BlockWithConnections {
         }
 
         if (worldIn != null) {
-            if (!isInItemFrameBounds(hit)) {
+            if (!isInItemFrameBounds(hit, itemFrameShapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()])) {
                 return ActionResultType.PASS;
             }
             TileEntity tile = worldIn.getTileEntity(pos);
@@ -245,22 +242,39 @@ public class Solidifier extends BlockWithConnections {
     private static final float horizontalEnd = 0.6875f;
     private static final float verticalStart = 0f;
     private static final float verticalEnd = 0.3125f;
-    private boolean isInItemFrameBounds(BlockRayTraceResult hit) {
-        Direction side = hit.getFace();
-        if (side == Direction.UP || side == Direction.DOWN) {
+    private boolean isInItemFrameBounds(BlockRayTraceResult hit, VoxelShape itemFrameShape) {
+        // minecraft intersection logic is *exclusive* which is 1) mega dumb and 2) breaks this check
+        // for this reason we nudge the hit vector to be a very tiny box, which *should* intersect the AABB, if
+        // it's supposed to.
+        Vector3d hitMin = hit.getHitVec().subtract(0.01d, 0.01d, 0.01d);
+        Vector3d hitMax = hit.getHitVec().add(0.01d, 0.01d, 0.01d);
+        AtomicBoolean hitFrame = new AtomicBoolean(false);
+        itemFrameShape.toBoundingBoxList().forEach(
+                (b) -> {
+                    if (b.offset(hit.getPos()).intersects(hitMin.x, hitMin.y, hitMin.z, hitMax.x, hitMax.y, hitMax.z)) {
+                        hitFrame.set(true);
+                    }
+                }
+        );
+        if (!hitFrame.get()) {
             return false;
         }
-        // 'zero out' the hitvec so that we're comparing sort of raw unit values.
-        Vector3d adjustedHitVec = hit.getHitVec().add(-hit.getPos().getX(), -hit.getPos().getY(),
-                -hit.getPos().getZ());
-        // the item frame bounds are between width (x or z) of 0.3125 to 0.6875
-        // and height (y) of 0 to 0.3125
-        Direction.Axis axis = side.getAxis();
-        if (axis == Axis.Z) {
-            return isHitInBounds(adjustedHitVec.x, adjustedHitVec.y);
-        } else {
-            return isHitInBounds(adjustedHitVec.z, adjustedHitVec.y);
-        }
+//        Direction side = hit.getFace();
+//        if (side == Direction.UP || side == Direction.DOWN) {
+//            return false;
+//        }
+//        // 'zero out' the hitvec so that we're comparing sort of raw unit values.
+//        Vector3d adjustedHitVec = hit.getHitVec().add(-hit.getPos().getX(), -hit.getPos().getY(),
+//                -hit.getPos().getZ());
+//        // the item frame bounds are between width (x or z) of 0.3125 to 0.6875
+//        // and height (y) of 0 to 0.3125
+//        Direction.Axis axis = side.getAxis();
+//        if (axis == Axis.Z) {
+//            return isHitInBounds(adjustedHitVec.x, adjustedHitVec.y);
+//        } else {
+//            return isHitInBounds(adjustedHitVec.z, adjustedHitVec.y);
+//        }
+        return true;
     }
 
     private boolean isHitInBounds(double z, double y) {

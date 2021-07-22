@@ -21,11 +21,11 @@ import java.util.Map;
 
 import static net.minecraft.state.properties.BlockStateProperties.HORIZONTAL_FACING;
 
-public class GooTrough extends BlockWithConnections
+public class Trough extends BlockWithConnections
 {
     VoxelShape[] shapes;
 
-    public GooTrough()
+    public Trough()
     {
         super(Properties.create(Material.IRON)
                 .sound(SoundType.METAL)

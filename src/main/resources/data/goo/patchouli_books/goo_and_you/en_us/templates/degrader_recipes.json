@@ -1,56 +1,56 @@
 {
   "include": [
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "1",
       "using": {},
       "x": 0,
       "y": 0
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "2",
       "using": {},
       "x": 0,
       "y": 18
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "3",
       "using": {},
       "x": 0,
       "y": 36
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "4",
       "using": {},
       "x": 0,
       "y": 54
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "5",
       "using": {},
       "x": 0,
       "y": 72
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "6",
       "using": {},
       "x": 0,
       "y": 90
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "7",
       "using": {},
       "x": 0,
       "y": 108
     },
     {
-      "template": "goo:degrader_recipe",
+      "template": "goo:mixer_recipe",
       "as": "8",
       "using": {},
       "x": 0,

@@ -37,14 +37,38 @@ public class DegraderRecipes
     public static void init() {
         isInitialized = true;
         recipes.clear();
-        recipes.add(new DegraderRecipe(fluid(Registry.AQUATIC_GOO, 8), fluid(Registry.SNOW_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.CHROMATIC_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FAUNAL_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FUNGAL_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.DECAY_GOO, 1), fluid(Registry.FLORAL_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.LOGIC_GOO, 1), fluid(Registry.METAL_GOO)));
-        recipes.add(new DegraderRecipe(fluid(Registry.MOLTEN_GOO, 1), fluid(Registry.EARTHEN_GOO, 8)));
-        recipes.add(new DegraderRecipe(fluid(Registry.VITAL_GOO, 1), fluid(Registry.HONEY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.AQUATIC_GOO, 8),
+                fluid(Registry.SNOW_GOO),
+                fluid(Registry.MOLTEN_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.DECAY_GOO, 2),
+                fluid(Registry.CHROMATIC_GOO),
+                fluid(Registry.DECAY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.DECAY_GOO, 2),
+                fluid(Registry.FAUNAL_GOO),
+                fluid(Registry.DECAY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.DECAY_GOO, 2),
+                fluid(Registry.FUNGAL_GOO),
+                fluid(Registry.DECAY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.DECAY_GOO, 2),
+                fluid(Registry.FLORAL_GOO),
+                fluid(Registry.DECAY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.LOGIC_GOO, 2),
+                fluid(Registry.METAL_GOO),
+                fluid(Registry.DECAY_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.MOLTEN_GOO, 2),
+                fluid(Registry.EARTHEN_GOO, 8),
+                fluid(Registry.MOLTEN_GOO)));
+        recipes.add(new DegraderRecipe(
+                fluid(Registry.VITAL_GOO, 2),
+                fluid(Registry.HONEY_GOO),
+                fluid(Registry.DECAY_GOO)));
     }
 
     public static DegraderRecipe getRecipe(FluidStack input)

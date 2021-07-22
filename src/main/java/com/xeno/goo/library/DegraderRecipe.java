@@ -6,10 +6,12 @@ public class DegraderRecipe
 {
     private final FluidStack input;
     private final FluidStack output;
+    private final FluidStack fuel;
 
-    public DegraderRecipe(FluidStack output, FluidStack input) {
+    public DegraderRecipe(FluidStack output, FluidStack input, FluidStack fuel) {
         this.input = input;
         this.output = output;
+        this.fuel = fuel;
     }
 
     public FluidStack input() {
@@ -19,4 +21,6 @@ public class DegraderRecipe
     public FluidStack output() {
         return this.output;
     }
+
+    public FluidStack fuel() { return this.fuel; }
 }
