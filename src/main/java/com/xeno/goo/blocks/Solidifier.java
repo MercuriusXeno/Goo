@@ -42,6 +42,7 @@ import static net.minecraft.util.Direction.*;
 public class Solidifier extends BlockWithConnections {
     VoxelShape[] shapes;
     VoxelShape[] itemFrameShapes;
+    VoxelShape[] fuelTankShapes;
     public Solidifier() {
         super(Properties.create(Material.ROCK)
                 .sound(SoundType.STONE)
@@ -53,26 +54,23 @@ public class Solidifier extends BlockWithConnections {
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
                 .with(BlockStateProperties.POWERED, true)
         );
-        shapes = makeShapes();
         itemFrameShapes = makeItemFrameShapes();
+        fuelTankShapes = makeFuelTankShapes();
+        shapes = makeShapes();
     }
 
     private VoxelShape[] makeShapes()
     {
         Vector3d cuboidStart = new Vector3d(4, 0, 4);
-        Vector3d cuboidEnd = new Vector3d(12, 16, 16);
-        Vector3d itemFrameTopStart = new Vector3d(0, 8.8d, 7.4d);
-        Vector3d itemFrameTopEnd = new Vector3d(4, 10.9d, 9.2d);
-        Vector3d itemFrameBottomStart = new Vector3d(0, 6.7d, 6.7d);
-        Vector3d itemFrameBottomEnd = new Vector3d(4, 8.8d, 8.5d);
+        Vector3d cuboidEnd = new Vector3d(12, 16, 12);
 
         VoxelShape[] result = new VoxelShape[4];
         for(int i = 0; i < 4; i++) {
             Direction d = Direction.byHorizontalIndex(i);
             VoxelShape cuboid = VoxelHelper.cuboidWithRotation(d, cuboidStart, cuboidEnd);
-            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameTopStart, itemFrameTopEnd);
-            VoxelShape itemFrameBottom = VoxelHelper.cuboidWithRotation(d, itemFrameBottomStart, itemFrameBottomEnd);
-            result[i] = VoxelHelper.mergeAll(cuboid, itemFrameTop, itemFrameBottom);
+            VoxelShape fuel = fuelTankShapes[i];
+            VoxelShape itemFrame = itemFrameShapes[i];
+            result[i] = VoxelHelper.mergeAll(cuboid, fuel, itemFrame);
         }
 
         return result;
@@ -93,6 +91,17 @@ public class Solidifier extends BlockWithConnections {
             result[i] = VoxelHelper.mergeAll(itemFrameTop, itemFrameBottom);
         }
 
+        return result;
+    }
+
+    private VoxelShape[] makeFuelTankShapes() {
+        Vector3d fuelStart = new Vector3d(5, 0, 4);
+        Vector3d fuelEnd = new Vector3d(11, 14, 16);
+        VoxelShape[] result = new VoxelShape[4];
+        for (int i = 0; i < 4; i++) {
+            Direction d = Direction.byHorizontalIndex(i);
+            result[i] = VoxelHelper.cuboidWithRotation(d, fuelStart, fuelEnd);
+        }
         return result;
     }
 
@@ -217,7 +226,7 @@ public class Solidifier extends BlockWithConnections {
         }
 
         if (worldIn != null) {
-            if (!isInItemFrameBounds(hit, itemFrameShapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()])) {
+            if (!isInItemFrameBounds(hit, state)) {
                 return ActionResultType.PASS;
             }
             TileEntity tile = worldIn.getTileEntity(pos);
@@ -238,11 +247,8 @@ public class Solidifier extends BlockWithConnections {
         return ActionResultType.func_233537_a_(worldIn.isRemote);
     }
 
-    private static final float horizontalStart = 0.3125f;
-    private static final float horizontalEnd = 0.6875f;
-    private static final float verticalStart = 0f;
-    private static final float verticalEnd = 0.3125f;
-    private boolean isInItemFrameBounds(BlockRayTraceResult hit, VoxelShape itemFrameShape) {
+    private boolean isInItemFrameBounds(BlockRayTraceResult hit, BlockState state) {
+        VoxelShape itemFrameShape =itemFrameShapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
         // minecraft intersection logic is *exclusive* which is 1) mega dumb and 2) breaks this check
         // for this reason we nudge the hit vector to be a very tiny box, which *should* intersect the AABB, if
         // it's supposed to.
@@ -259,25 +265,6 @@ public class Solidifier extends BlockWithConnections {
         if (!hitFrame.get()) {
             return false;
         }
-//        Direction side = hit.getFace();
-//        if (side == Direction.UP || side == Direction.DOWN) {
-//            return false;
-//        }
-//        // 'zero out' the hitvec so that we're comparing sort of raw unit values.
-//        Vector3d adjustedHitVec = hit.getHitVec().add(-hit.getPos().getX(), -hit.getPos().getY(),
-//                -hit.getPos().getZ());
-//        // the item frame bounds are between width (x or z) of 0.3125 to 0.6875
-//        // and height (y) of 0 to 0.3125
-//        Direction.Axis axis = side.getAxis();
-//        if (axis == Axis.Z) {
-//            return isHitInBounds(adjustedHitVec.x, adjustedHitVec.y);
-//        } else {
-//            return isHitInBounds(adjustedHitVec.z, adjustedHitVec.y);
-//        }
         return true;
-    }
-
-    private boolean isHitInBounds(double z, double y) {
-        return z >= horizontalStart && z <= horizontalEnd && y >= verticalStart && y <= verticalEnd;
     }
 }
