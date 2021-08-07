@@ -69,13 +69,13 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(d));
                 matrices.push();
                 // translate to center
-                matrices.translate(0.5D, 0.15625D, 0.5D);
+                matrices.translate(0.5D, 0.75D, 0.5D);
                 // translate
                 Vector3d vecOrient = renderVec.get(d);
                 matrices.translate(vecOrient.getX(), vecOrient.getY(), vecOrient.getZ());
                 matrices.rotate(Vector3f.YP.rotationDegrees(180.0F - (float)(d.getHorizontalIndex() * 90)));
                 // scale
-                Vector3f scaleVec = new Vector3f(0.3125f, 0.3125f, 0.01f);
+                Vector3f scaleVec = new Vector3f(0.25f, 0.25f, 0.03f);
                 // special scaling that doesn't scale the normals, prevents weird lighting issues.
                 MatrixStack.Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
@@ -89,9 +89,9 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.485D));
-        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.485D));
-        renderVec.put(Direction.EAST, new Vector3d(0.485D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vector3d(-0.485D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.3125D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.3125D));
+        renderVec.put(Direction.EAST, new Vector3d(0.3125D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.3125D, 0D, 0D));
     }
 }

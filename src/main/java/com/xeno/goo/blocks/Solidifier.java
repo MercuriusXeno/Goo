@@ -2,6 +2,8 @@ package com.xeno.goo.blocks;
 
 import com.xeno.goo.client.render.block.DynamicRenderMode;
 import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
+import com.xeno.goo.client.render.block.HatchOpeningState;
+import com.xeno.goo.client.render.block.HatchOpeningState.HatchOpeningStates;
 import com.xeno.goo.library.VoxelHelper;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.Block;
@@ -22,6 +24,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.shapes.IBooleanFunction;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
@@ -42,35 +45,49 @@ import static net.minecraft.util.Direction.*;
 public class Solidifier extends BlockWithConnections {
     VoxelShape[] shapes;
     VoxelShape[] itemFrameShapes;
-    VoxelShape[] fuelTankShapes;
     public Solidifier() {
-        super(Properties.create(Material.ROCK)
-                .sound(SoundType.STONE)
-                .setOpaque(((p_test_1_, p_test_2_, p_test_3_) -> false))
-                .hardnessAndResistance(4.0f)
+        super(Properties.create(Material.IRON)
+                .sound(SoundType.METAL)
+                .hardnessAndResistance(2.0f)
                 .notSolid());
         setDefaultState(this.getDefaultState()
-                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC)
+                .with(HatchOpeningState.OPENING_STATE, HatchOpeningStates.CLOSED)
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
                 .with(BlockStateProperties.POWERED, true)
         );
-        itemFrameShapes = makeItemFrameShapes();
-        fuelTankShapes = makeFuelTankShapes();
         shapes = makeShapes();
+        itemFrameShapes = makeItemFrameShapes();
     }
 
     private VoxelShape[] makeShapes()
     {
-        Vector3d cuboidStart = new Vector3d(4, 0, 4);
-        Vector3d cuboidEnd = new Vector3d(12, 16, 12);
+        Vector3d mechanismStart = new Vector3d(3, 10, 3);
+        Vector3d mechanismEnd = new Vector3d(13, 14, 13);
+        VoxelShape mechanism = VoxelHelper.cuboid(mechanismStart, mechanismEnd);
+
+        Vector3d bellStart = new Vector3d(4, 4, 4);
+        Vector3d bellEnd = new Vector3d(12, 10, 12); // hahaha bell end
+        VoxelShape bell = VoxelHelper.cuboid(bellStart, bellEnd);
+
+        Vector3d sourceStart = new Vector3d(6, 14, 6);
+        Vector3d sourceEnd = new Vector3d(10, 16, 10);
+        VoxelShape source = VoxelHelper.cuboid(sourceStart, sourceEnd);
+
+        // rotaty bit is here
+        Vector3d fuelLineStart = new Vector3d(6, 6, 12);
+        Vector3d fuelLineEnd = new Vector3d(10, 10, 16);
+
+        Vector3d hollowStart = new Vector3d(4.01d, 4, 4.01d);
+        Vector3d hollowEnd = new Vector3d(11.99d, 9.99d, 11.99d);
+        VoxelShape hollow = VoxelHelper.cuboid(hollowStart, hollowEnd);
+
+        VoxelShape hollowBell = VoxelShapes.combineAndSimplify(bell, hollow, IBooleanFunction.ONLY_FIRST);
 
         VoxelShape[] result = new VoxelShape[4];
         for(int i = 0; i < 4; i++) {
             Direction d = Direction.byHorizontalIndex(i);
-            VoxelShape cuboid = VoxelHelper.cuboidWithRotation(d, cuboidStart, cuboidEnd);
-            VoxelShape fuel = fuelTankShapes[i];
-            VoxelShape itemFrame = itemFrameShapes[i];
-            result[i] = VoxelHelper.mergeAll(cuboid, fuel, itemFrame);
+            VoxelShape fuelLine = VoxelHelper.cuboidWithRotation(d, fuelLineStart, fuelLineEnd);
+            result[i] = VoxelHelper.mergeAll(mechanism, hollowBell, source, fuelLine);
         }
 
         return result;
@@ -78,30 +95,15 @@ public class Solidifier extends BlockWithConnections {
 
     private VoxelShape[] makeItemFrameShapes()
     {
-        Vector3d itemFrameTopStart = new Vector3d(0, 8.8d, 7.4d);
-        Vector3d itemFrameTopEnd = new Vector3d(4, 10.9d, 9.2d);
-        Vector3d itemFrameBottomStart = new Vector3d(0, 6.7d, 6.7d);
-        Vector3d itemFrameBottomEnd = new Vector3d(4, 8.8d, 8.5d);
-
+        Vector3d itemFrameStart = new Vector3d(6, 10, 2);
+        Vector3d itemFrameEnd = new Vector3d(10, 14, 3);
         VoxelShape[] result = new VoxelShape[4];
         for(int i = 0; i < 4; i++) {
             Direction d = Direction.byHorizontalIndex(i);
-            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameTopStart, itemFrameTopEnd);
-            VoxelShape itemFrameBottom = VoxelHelper.cuboidWithRotation(d, itemFrameBottomStart, itemFrameBottomEnd);
-            result[i] = VoxelHelper.mergeAll(itemFrameTop, itemFrameBottom);
+            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameStart, itemFrameEnd);
+            result[i] = itemFrameTop;
         }
 
-        return result;
-    }
-
-    private VoxelShape[] makeFuelTankShapes() {
-        Vector3d fuelStart = new Vector3d(5, 0, 4);
-        Vector3d fuelEnd = new Vector3d(11, 14, 16);
-        VoxelShape[] result = new VoxelShape[4];
-        for (int i = 0; i < 4; i++) {
-            Direction d = Direction.byHorizontalIndex(i);
-            result[i] = VoxelHelper.cuboidWithRotation(d, fuelStart, fuelEnd);
-        }
         return result;
     }
 
@@ -147,7 +149,7 @@ public class Solidifier extends BlockWithConnections {
     @Override
     public int getLightValue(BlockState state, IBlockReader world, BlockPos pos)
     {
-        return !state.get(BlockStateProperties.POWERED) ? 15 : 0;
+        return 0;
     }
 
     @Override
@@ -208,12 +210,12 @@ public class Solidifier extends BlockWithConnections {
         return getDefaultState()
                 .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
                 .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite())
-                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC);
+                .with(HatchOpeningState.OPENING_STATE, HatchOpeningStates.CLOSED);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED, DynamicRenderMode.RENDER);
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED, HatchOpeningState.OPENING_STATE);
     }
 
     @SuppressWarnings("deprecation")
@@ -248,20 +250,22 @@ public class Solidifier extends BlockWithConnections {
     }
 
     private boolean isInItemFrameBounds(BlockRayTraceResult hit, BlockState state) {
-        VoxelShape itemFrameShape =itemFrameShapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
-        // minecraft intersection logic is *exclusive* which is 1) mega dumb and 2) breaks this check
-        // for this reason we nudge the hit vector to be a very tiny box, which *should* intersect the AABB, if
-        // it's supposed to.
-        Vector3d hitMin = hit.getHitVec().subtract(0.01d, 0.01d, 0.01d);
-        Vector3d hitMax = hit.getHitVec().add(0.01d, 0.01d, 0.01d);
         AtomicBoolean hitFrame = new AtomicBoolean(false);
-        itemFrameShape.toBoundingBoxList().forEach(
-                (b) -> {
-                    if (b.offset(hit.getPos()).intersects(hitMin.x, hitMin.y, hitMin.z, hitMax.x, hitMax.y, hitMax.z)) {
-                        hitFrame.set(true);
+        for (int i = 0; i < 4; i++) {
+            VoxelShape itemFrameShape = itemFrameShapes[i];
+            // minecraft intersection logic is *exclusive* which is 1) mega dumb and 2) breaks this check
+            // for this reason we nudge the hit vector to be a very tiny box, which *should* intersect the AABB, if
+            // it's supposed to.
+            Vector3d hitMin = hit.getHitVec().subtract(0.01d, 0.01d, 0.01d);
+            Vector3d hitMax = hit.getHitVec().add(0.01d, 0.01d, 0.01d);
+            itemFrameShape.toBoundingBoxList().forEach(
+                    (b) -> {
+                        if (b.offset(hit.getPos()).intersects(hitMin.x, hitMin.y, hitMin.z, hitMax.x, hitMax.y, hitMax.z)) {
+                            hitFrame.set(true);
+                        }
                     }
-                }
-        );
+            );
+        }
         if (!hitFrame.get()) {
             return false;
         }

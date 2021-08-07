@@ -90,7 +90,7 @@ public class GooEntry
                             .filter(c -> ((GooCompoundType) c.getType()).fluidSupplier.get() != null) //Ensure that only goos which are none logical are used.
                             .filter(c -> Math.floor(c.getAmount()) > 0)
                             .map(c -> new GooValue(Objects.requireNonNull(((GooCompoundType) c.getType()).fluidSupplier.get().getRegistryName()).toString(),
-                              Math.floor(c.getAmount())))
+                                    (int)Math.floor(c.getAmount())))
                             .sorted(GooEntry::sortValues)
                             .collect(Collectors.toList()));
         }
@@ -109,7 +109,7 @@ public class GooEntry
 
     public List<GooValue> values() { return this.values; }
 
-    public double weight() { return values.stream().map(GooValue::amount).reduce(0d, Double::sum); }
+    public double weight() { return values.stream().map(GooValue::amount).reduce(0, Integer::sum); }
 
     public boolean isUnusable()
     {
@@ -138,8 +138,8 @@ public class GooEntry
 	}
 
     private GooValue scaleValue(GooValue v, double scale) {
-        double amount = Math.floor(v.amount() * scale);
-        if (amount <= 0d) {
+        int amount = (int)Math.floor(v.amount() * scale);
+        if (amount <= 0) {
             return null;
         }
         return new GooValue(v.getFluidResourceLocation(), amount);

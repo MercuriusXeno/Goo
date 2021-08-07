@@ -34,6 +34,7 @@ public class ItemsProvider extends ItemModelProvider {
         registerCrystalComb();
         registerDegrader();
         registerMixer();
+        registerSolidifier();
         registerBulbs();
         registerPump();
         registerGooCrystals();
@@ -106,6 +107,10 @@ public class ItemsProvider extends ItemModelProvider {
      private void registerMixer()
     {
         withExistingParent(ItemsRegistry.MIXER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
+    }
+
+    private void registerSolidifier() {
+        withExistingParent(ItemsRegistry.SOLIDIFIER.get().getRegistryName().getPath(), new ResourceLocation(GooMod.MOD_ID, "template_held_block"));
     }
 
     private void registerCrucible()

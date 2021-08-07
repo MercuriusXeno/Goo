@@ -57,7 +57,7 @@ public class ItemsRegistry {
                     .maxStackSize(64).setISTER(ISTERProvider::mixer)));
     public static final RegistryObject<Item> SOLIDIFIER = ITEMS
             .register("solidifier", () -> new BlockItem(BlocksRegistry.Solidifier.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
-                    .maxStackSize(64)));
+                    .maxStackSize(64).setISTER(ISTERProvider::pump)));
     public static final RegistryObject<Item> LOBBER = ITEMS
             .register("lobber", () -> new BlockItem(BlocksRegistry.Lobber.get(), new Item.Properties().group(GooMod.ITEM_GROUP)
                     .maxStackSize(64)));

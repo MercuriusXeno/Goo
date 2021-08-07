@@ -30,7 +30,7 @@ public class ISTERProvider
         return PadItemRenderer::new;
     }
 
-    public static Callable<ItemStackTileEntityRenderer> pump() {
-        return PumpItemRenderer::new;
-    }
+    public static Callable<ItemStackTileEntityRenderer> pump() { return PumpItemRenderer::new; }
+
+    public static Callable<ItemStackTileEntityRenderer> solidifier() { return SolidifierItemRenderer::new; }
 }

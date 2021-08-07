@@ -119,6 +119,9 @@ public class GooConfig
     private ForgeConfigSpec.IntValue SNAIL_SPAWN_WEIGHT;
     public int snailSpawnWeight() { return SNAIL_SPAWN_WEIGHT.get(); }
 
+    private ForgeConfigSpec.IntValue LOGIC_POWERS_SOLIDIFIER_TICKS;
+    public int logicPowersSolidifierTicks() { return LOGIC_POWERS_SOLIDIFIER_TICKS.get(); }
+
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
     private final Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.DoubleValue>> SPLAT_DRAIN_CHANCE = new HashMap<>();
@@ -261,6 +264,7 @@ public class GooConfig
         public static final boolean GOO_VALUES_VISIBLE_ALWAYS = false;
         public static final boolean DAMAGED_ITEMS_CAN_BE_GOOIFIED = true;
         private static final int GOO_TRANSFER_RATE = 30;
+        private static final int LOGIC_POWERS_SOLIDIFIER_TICKS = 8;
         private static final int GOO_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
         private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
@@ -280,7 +284,6 @@ public class GooConfig
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
         private static final int SNAIL_PRODUCTION_AMOUNT = 4;
         private static final int SNAIL_SPAWN_WEIGHT = 1;
-        private static final List<String> WATER_HATING_MOBS = Arrays.asList("minecraft:blaze", "minecraft:magma_cube", "minecraft:iron_golem");
     }
 
     private void setupClientConfig() {
@@ -296,6 +299,8 @@ public class GooConfig
                 .define("damagedItemsCanBeGooified", Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED);
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + Defaults.GOO_TRANSFER_RATE)
                 .defineInRange("maxTransferRate", Defaults.GOO_TRANSFER_RATE, 0, 10000);
+        LOGIC_POWERS_SOLIDIFIER_TICKS = serverBuilder.comment("Ticks of solidifier power from a single unit of logic goo, default: " + Defaults.LOGIC_POWERS_SOLIDIFIER_TICKS)
+                .defineInRange("logicPowersSolidifierTicks", Defaults.LOGIC_POWERS_SOLIDIFIER_TICKS, 1, 10000);
         GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + Defaults.GOO_PROCESSING_RATE)
                 .defineInRange("maxProcessingRate", Defaults.GOO_PROCESSING_RATE, 0, 10000);
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + Defaults.BULB_CAPACITY)

@@ -21,19 +21,15 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class GooifierTile extends FluidHandlerInteractionAbstraction implements ITickableTileEntity, ISidedInventory
 {
-    private Map<String, Double> fluidBuffer;
-    private NonNullList<ItemStack> slots = NonNullList.withSize(5, ItemStack.EMPTY);
+    private List<FluidStack> progressFromItem = new ArrayList<>();
+    private ItemStack slot = ItemStack.EMPTY;
     private boolean isDoingStuff;
     public GooifierTile() {
         super(Registry.GOOIFIER_TILE.get());
-        fluidBuffer = new TreeMap<>();
         isDoingStuff = false;
     }
 
@@ -58,17 +54,12 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
 
         // to make production seamless, return only if we are still pumping out goo. If we ran out of work, resume melting items.
         if (!hasBufferedOutput()) {
-            for (ItemStack s : slots) {
-                if (s.isEmpty()) {
-                    continue;
+            if (!slot.isEmpty()) {
+                GooEntry mapping = getEntryForItem(slot);
+                if (mapping != null) {
+                    bufferOutput(mapping);
+                    slot.shrink(1);
                 }
-                GooEntry mapping = getEntryForItem(s);
-                if (mapping == null) {
-                    continue;
-                }
-                bufferOutput(mapping);
-                s.setCount(s.getCount() - 1);
-                break;
             }
         }
     }
@@ -102,16 +93,6 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         }
 
         return mapping;
-    }
-
-    public double getTotalGoo() {
-        double[] total = {0d};
-        fluidBuffer.forEach((k, v) -> total[0] += v);
-        return total[0];
-    }
-
-    public Map<String, Double> fluidBuffer() {
-        return fluidBuffer;
     }
 
     private class DistributionState {
@@ -148,26 +129,21 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
         while(state.workRemaining > 0 && (state.workLastCycle > 0 || state.isFirstPass)) {
             state.setNextPass();
             state.workLastCycle = 0;
-            for (Map.Entry<String, Double> fluidInBuffer : fluidBuffer.entrySet()) {
-                if (fluidInBuffer.getValue() < 1f) {
+            for (FluidStack fluidInBuffer : progressFromItem) {
+                if (fluidInBuffer.getAmount() <= 0) {
                     continue;
                 }
 
-                Fluid f = Registry.getFluid(fluidInBuffer.getKey());
-                if (f == null) {
-                    continue;
-                }
-                FluidStack s = new FluidStack(f, Math.min(state.workRemaining, (int) Math.floor(fluidInBuffer.getValue())));
-                int fillResult = cap.fill(s, IFluidHandler.FluidAction.SIMULATE);
+                int fillResult = cap.fill(fluidInBuffer, IFluidHandler.FluidAction.SIMULATE);
                 if (fillResult > 0) {
-                    fillResult = cap.fill(s, IFluidHandler.FluidAction.EXECUTE);
+                    fillResult = cap.fill(fluidInBuffer, IFluidHandler.FluidAction.EXECUTE);
                 } else {
                     continue;
                 }
                 state.addWork(fillResult);
-                fluidBuffer.put(fluidInBuffer.getKey(), fluidInBuffer.getValue() - fillResult);
+                fluidInBuffer.setAmount(fluidInBuffer.getAmount() - fillResult);
 
-                if (state.workRemaining <= 0) break; // fastpath
+                if (state.workRemaining <= 0) break;
             }
         }
         return state;
@@ -192,18 +168,25 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
     private void bufferOutput(GooEntry mapping)
     {
         for(GooValue v : mapping.values()) {
-            String key = v.getFluidResourceLocation();
-            if (fluidBuffer.containsKey(key)) {
-                fluidBuffer.put(key, fluidBuffer.get(key) + v.amount());
+            Fluid f = Registry.getFluid(v.getFluidResourceLocation());
+            FluidStack fluidBuffer = fluidInBuffer(f);
+            if (!fluidBuffer.isEmpty()) {
+                fluidBuffer.setAmount(fluidBuffer.getAmount() + v.amount());
             } else {
-                fluidBuffer.put(key, v.amount());
+                progressFromItem.add(new FluidStack(f, v.amount()));
             }
         }
     }
 
+    private FluidStack fluidInBuffer(Fluid fluid) {
+        Optional<FluidStack> existingStack = progressFromItem.stream().filter(f -> f.getFluid().equals(fluid)).findFirst();
+
+        return existingStack.orElse(FluidStack.EMPTY);
+    }
+
     private boolean hasBufferedOutput()
     {
-        return fluidBuffer.size() > 0 && fluidBuffer.entrySet().stream().anyMatch(b -> b.getValue() >= 1d);
+        return !progressFromItem.isEmpty() && progressFromItem.stream().anyMatch(f -> !f.isEmpty());
     }
 
     @Override
@@ -232,16 +215,8 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
             return false;
         }
 
-        for(ItemStack s : slots) {
-            if (s.isEmpty()) {
-                return true;
-            }
-            if (!s.equals(itemStackIn, false)) {
-                continue;
-            }
-            if (s.getMaxStackSize() > s.getCount()) {
-                return true;
-            }
+        if (slot.isEmpty()) {
+            return true;
         }
         return false;
     }
@@ -249,50 +224,43 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
     @Override
     public boolean canExtractItem(int i, ItemStack stack, Direction direction)
     {
-        if (direction == Direction.DOWN) {
-            return slots.get(i).equals(stack, false);
-        }
-
-        return false;
+        return !isEmpty();
     }
 
     @Override
     public int getSizeInventory()
     {
-        return 5;
+        return 1;
     }
 
     @Override
     public boolean isEmpty()
     {
-        for(ItemStack s : slots) {
-            if (!s.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
+        return slot.isEmpty();
     }
 
     @Override
     public ItemStack getStackInSlot(int index)
     {
-        return slots.get(index);
+        if (index > 0) {
+            return ItemStack.EMPTY;
+        }
+        return slot;
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count)
     {
-        if (slots.get(index).isEmpty()) {
+        if (isEmpty()) {
             return ItemStack.EMPTY;
         }
 
-        if (slots.get(index).getCount() <= count) {
-            return removeStackFromSlot(index);
+        if (slot.getCount() <= count) {
+            return removeStackFromSlot(0);
         }
-
-        slots.get(index).setCount(slots.get(index).getCount() - count);
-        ItemStack result = slots.get(index).copy();
+        ItemStack result = slot.copy();
         result.setCount(count);
+        slot.shrink(count);
         return result;
 
     }
@@ -300,15 +268,21 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
     @Override
     public ItemStack removeStackFromSlot(int index)
     {
-        ItemStack result = slots.get(index).copy();
-        slots.set(index, ItemStack.EMPTY);
+        if (index > 0) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack result = slot.copy();
+        slot = ItemStack.EMPTY;
         return result;
     }
 
     @Override
     public void setInventorySlotContents(int i, ItemStack stack)
     {
-        slots.set(i, stack);
+        if (i > 0) {
+            return;
+        }
+        slot = stack.copy();
     }
 
     @Override
@@ -331,46 +305,42 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
 
     private CompoundNBT serializeGoo()  {
         CompoundNBT tag = new CompoundNBT();
-        tag.putInt("count", fluidBuffer.size());
+        tag.putInt("count", progressFromItem.size());
         int index = 0;
-        for(Map.Entry<String, Double> e : fluidBuffer.entrySet()) {
-            CompoundNBT gooTag = new CompoundNBT();
-            gooTag.putString("key", e.getKey());
-            gooTag.putDouble("value", e.getValue());
-            tag.put("goo" + index, gooTag);
+        for(FluidStack f : progressFromItem) {
+            CompoundNBT gooTag = f.writeToNBT(new CompoundNBT());
+            tag.put("goo_" + index, gooTag);
             index++;
         }
         return tag;
     }
 
-    private CompoundNBT serializeItems()
+    private CompoundNBT serializeItem()
     {
-        CompoundNBT itemTag = new CompoundNBT();
-        ItemStackHelper.saveAllItems(itemTag, slots);
-        return itemTag;
+        return slot.write(new CompoundNBT());
     }
 
     private void deserializeGoo(CompoundNBT tag) {
         int size = tag.getInt("count");
         for(int i = 0; i < size; i++) {
-            CompoundNBT gooTag = tag.getCompound("goo" + i);
-            String key = gooTag.getString("key");
-            double value = gooTag.getDouble("value");
-            fluidBuffer.put(key, value);
+            if (tag.contains("goo_" + i)) {
+                CompoundNBT gooTag = tag.getCompound("goo_" + i);
+                progressFromItem.add(FluidStack.loadFluidStackFromNBT(gooTag));
+            }
         }
     }
 
     private void deserializeItems(CompoundNBT tag)
     {
-        CompoundNBT itemTag = tag.getCompound("items");
-        this.slots = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
-        ItemStackHelper.loadAllItems(itemTag, this.slots);
+        if (tag.contains("item")) {
+            this.slot = ItemStack.read(tag.getCompound("item"));
+        }
     }
 
     @Override
     public CompoundNBT write(CompoundNBT tag)
     {
-        tag.put("items", serializeItems());
+        tag.put("item", serializeItem());
         tag.put("goo", serializeGoo());
         tag.putBoolean("is_doing_stuff", isDoingStuff);
         return super.write(tag);
@@ -387,10 +357,8 @@ public class GooifierTile extends FluidHandlerInteractionAbstraction implements 
 
     public void spewItems()
     {
-        for (ItemStack s : slots) {
-            ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), s);
-            itemEntity.setDefaultPickupDelay();
-            world.addEntity(itemEntity);
-        }
+        ItemEntity itemEntity = new ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), slot);
+        itemEntity.setDefaultPickupDelay();
+        world.addEntity(itemEntity);
     }
 }

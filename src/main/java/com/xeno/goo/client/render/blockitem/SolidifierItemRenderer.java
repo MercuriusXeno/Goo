@@ -17,9 +17,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 
-public class PumpItemRenderer extends ItemStackTileEntityRenderer
+public class SolidifierItemRenderer extends ItemStackTileEntityRenderer
 {
-    public PumpItemRenderer() {
+    public SolidifierItemRenderer() {
         super();
     }
 
@@ -36,9 +36,9 @@ public class PumpItemRenderer extends ItemStackTileEntityRenderer
             return;
         }
 
-        CompoundNBT pumpTag = stackTag.getCompound("BlockEntityTag");
+        CompoundNBT solidifierTag = stackTag.getCompound("BlockEntityTag");
 
-        TileEntity tileEntity = MixerTile.readTileEntity(block.getDefaultState(), pumpTag);
+        TileEntity tileEntity = MixerTile.readTileEntity(block.getDefaultState(), solidifierTag);
         if (tileEntity == null) {
             return;
         }

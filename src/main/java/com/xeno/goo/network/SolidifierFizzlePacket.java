@@ -1,5 +1,6 @@
 package com.xeno.goo.network;
 
+import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.particles.ParticleTypes;
@@ -11,15 +12,15 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.network.NetworkEvent;
+
 import java.util.function.Supplier;
 
-public class SolidifierPoppedPacket implements IGooModPacket
+public class SolidifierFizzlePacket implements IGooModPacket
 {
     private RegistryKey<World> worldRegistryKey;
-    private Vector3d vector;
-    private Vector3d nozzle;
+    private BlockPos blockPos;
 
-    public SolidifierPoppedPacket(PacketBuffer buf) {
+    public SolidifierFizzlePacket(PacketBuffer buf) {
         read(buf);
     }
 
@@ -27,24 +28,17 @@ public class SolidifierPoppedPacket implements IGooModPacket
     public void read(PacketBuffer buf)
     {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
-        this.vector = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
-        this.nozzle = new Vector3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        this.blockPos = buf.readBlockPos();
     }
 
-    public SolidifierPoppedPacket(RegistryKey<World> k, Vector3d v, Vector3d n) {
+    public SolidifierFizzlePacket(RegistryKey<World> k, BlockPos pos) {
         worldRegistryKey = k;
-        vector = v;
-        nozzle = n;
+        blockPos = pos;
     }
 
     public void toBytes(PacketBuffer buf) {
         buf.writeResourceLocation(worldRegistryKey.getLocation());
-        buf.writeDouble(vector.x);
-        buf.writeDouble(vector.y);
-        buf.writeDouble(vector.z);
-        buf.writeDouble(nozzle.x);
-        buf.writeDouble(nozzle.y);
-        buf.writeDouble(nozzle.z);
+        buf.writeBlockPos(blockPos);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -56,7 +50,10 @@ public class SolidifierPoppedPacket implements IGooModPacket
                 if (Minecraft.getInstance().world.getDimensionKey() != worldRegistryKey) {
                     return;
                 }
-                Minecraft.getInstance().world.addParticle(ParticleTypes.SMOKE, nozzle.x, nozzle.y, nozzle.z, vector.x, vector.y, vector.z);
+                TileEntity e = Minecraft.getInstance().world.getTileEntity(blockPos);
+                if (e instanceof SolidifierTile) {
+                    ((SolidifierTile)e).playFizzleOfLostProgress();
+                }
             }
         });
 
