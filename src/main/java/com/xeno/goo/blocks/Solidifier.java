@@ -1,7 +1,5 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.client.render.block.DynamicRenderMode;
-import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.client.render.block.HatchOpeningState;
 import com.xeno.goo.client.render.block.HatchOpeningState.HatchOpeningStates;
 import com.xeno.goo.library.VoxelHelper;
@@ -40,10 +38,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static net.minecraft.util.Direction.*;
-
 public class Solidifier extends BlockWithConnections {
-    VoxelShape[] shapes;
+    VoxelShape[] closedShapes;
+    VoxelShape[] openedShapes;
     VoxelShape[] itemFrameShapes;
     public Solidifier() {
         super(Properties.create(Material.IRON)
@@ -55,39 +52,37 @@ public class Solidifier extends BlockWithConnections {
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
                 .with(BlockStateProperties.POWERED, true)
         );
-        shapes = makeShapes();
+        closedShapes = makeShapes(false);
+        openedShapes = makeShapes(true);
         itemFrameShapes = makeItemFrameShapes();
     }
 
-    private VoxelShape[] makeShapes()
+    private VoxelShape[] makeShapes(boolean isOpen)
     {
-        Vector3d mechanismStart = new Vector3d(3, 10, 3);
-        Vector3d mechanismEnd = new Vector3d(13, 14, 13);
-        VoxelShape mechanism = VoxelHelper.cuboid(mechanismStart, mechanismEnd);
-
-        Vector3d bellStart = new Vector3d(4, 4, 4);
-        Vector3d bellEnd = new Vector3d(12, 10, 12); // hahaha bell end
-        VoxelShape bell = VoxelHelper.cuboid(bellStart, bellEnd);
+        Vector3d chamberStart = new Vector3d(2, 0, 2);
+        Vector3d chamberEnd = new Vector3d(14, 14, 14);
+        VoxelShape chamber = VoxelHelper.cuboid(chamberStart, chamberEnd);
 
         Vector3d sourceStart = new Vector3d(6, 14, 6);
         Vector3d sourceEnd = new Vector3d(10, 16, 10);
         VoxelShape source = VoxelHelper.cuboid(sourceStart, sourceEnd);
 
         // rotaty bit is here
-        Vector3d fuelLineStart = new Vector3d(6, 6, 12);
+        Vector3d fuelLineStart = new Vector3d(6, 6, 14);
         Vector3d fuelLineEnd = new Vector3d(10, 10, 16);
 
-        Vector3d hollowStart = new Vector3d(4.01d, 4, 4.01d);
-        Vector3d hollowEnd = new Vector3d(11.99d, 9.99d, 11.99d);
+        // the difference between open and closed is whether this bit has collision
+        Vector3d hollowStart = new Vector3d(2.01d, isOpen ? 0.00d : 0.01d, 2.01d);
+        Vector3d hollowEnd = new Vector3d(13.99d, 9.99d, 13.99d);
         VoxelShape hollow = VoxelHelper.cuboid(hollowStart, hollowEnd);
 
-        VoxelShape hollowBell = VoxelShapes.combineAndSimplify(bell, hollow, IBooleanFunction.ONLY_FIRST);
+        VoxelShape hollowChamber = VoxelShapes.combineAndSimplify(chamber, hollow, IBooleanFunction.ONLY_FIRST);
 
         VoxelShape[] result = new VoxelShape[4];
         for(int i = 0; i < 4; i++) {
             Direction d = Direction.byHorizontalIndex(i);
             VoxelShape fuelLine = VoxelHelper.cuboidWithRotation(d, fuelLineStart, fuelLineEnd);
-            result[i] = VoxelHelper.mergeAll(mechanism, hollowBell, source, fuelLine);
+            result[i] = VoxelHelper.mergeAll(hollowChamber, source, fuelLine);
         }
 
         return result;
@@ -124,7 +119,11 @@ public class Solidifier extends BlockWithConnections {
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context)
     {
-        return shapes[state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex()];
+        int facing = state.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex();
+        if (state.get(HatchOpeningState.OPENING_STATE) == HatchOpeningStates.CLOSED) {
+            return closedShapes[facing];
+        }
+        return openedShapes[facing];
     }
 
     /**

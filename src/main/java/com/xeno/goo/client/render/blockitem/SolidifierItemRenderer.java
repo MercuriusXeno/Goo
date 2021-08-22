@@ -28,9 +28,9 @@ public class SolidifierItemRenderer extends ItemStackTileEntityRenderer
     {
         Block block = ((BlockItem)stack.getItem()).getBlock();
         super.func_239207_a_(stack, transforms, matrixStack, buffer, combinedLight, combinedOverlay);
-        IBakedModel pumpModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState().with(DynamicRenderMode.RENDER, DynamicRenderTypes.ITEM));
-
-        Minecraft.getInstance().getItemRenderer().renderModel(pumpModel, stack, combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
+        IBakedModel solidifierModel = Minecraft.getInstance().getBlockRendererDispatcher().getModelForState(block.getDefaultState());
+        Minecraft.getInstance().getItemRenderer().renderModel(solidifierModel, stack,
+                combinedLight, combinedOverlay, matrixStack, buffer.getBuffer(RenderType.getCutoutMipped()));
         CompoundNBT stackTag = stack.getTag();
         if (stackTag == null || !stackTag.contains("BlockEntityTag")) {
             return;

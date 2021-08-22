@@ -13,13 +13,12 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class SolidifierFueledPacket implements IGooModPacket
+public class SolidifierHatchOpeningPacket implements IGooModPacket
 {
     private RegistryKey<World> worldRegistryKey;
     private BlockPos blockPos;
-    private int fuelTime;
 
-    public SolidifierFueledPacket(PacketBuffer buf) {
+    public SolidifierHatchOpeningPacket(PacketBuffer buf) {
         read(buf);
     }
 
@@ -28,19 +27,16 @@ public class SolidifierFueledPacket implements IGooModPacket
     {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
         this.blockPos = buf.readBlockPos();
-        this.fuelTime = buf.readInt();
     }
 
-    public SolidifierFueledPacket(RegistryKey<World> k, BlockPos pos, int fuel) {
+    public SolidifierHatchOpeningPacket(RegistryKey<World> k, BlockPos pos) {
         worldRegistryKey = k;
         blockPos = pos;
-        fuelTime = fuel;
     }
 
     public void toBytes(PacketBuffer buf) {
         buf.writeResourceLocation(worldRegistryKey.getLocation());
         buf.writeBlockPos(blockPos);
-        buf.writeInt(fuelTime);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -54,7 +50,7 @@ public class SolidifierFueledPacket implements IGooModPacket
                 }
                 TileEntity e = Minecraft.getInstance().world.getTileEntity(blockPos);
                 if (e instanceof SolidifierTile) {
-                    ((SolidifierTile)e).setFuelTime(fuelTime);
+                    ((SolidifierTile)e).startOpeningHatch();
                 }
             }
         });

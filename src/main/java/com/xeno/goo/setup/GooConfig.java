@@ -63,9 +63,9 @@ public class GooConfig
         return CRUCIBLE_TOTAL_CAPACITY.get();
     }
 
-    private ForgeConfigSpec.IntValue MIXER_INPUT_CAPACITY;
-    public int mixerInputCapacity() {
-        return MIXER_INPUT_CAPACITY.get();
+    private ForgeConfigSpec.IntValue MIXER_CAPACITY;
+    public int mixerCapacity() {
+        return MIXER_CAPACITY.get();
     }
 
     private ForgeConfigSpec.IntValue DEGRADER_INPUT_CAPACITY;
@@ -121,6 +121,11 @@ public class GooConfig
 
     private ForgeConfigSpec.IntValue LOGIC_POWERS_SOLIDIFIER_TICKS;
     public int logicPowersSolidifierTicks() { return LOGIC_POWERS_SOLIDIFIER_TICKS.get(); }
+
+    private ForgeConfigSpec.IntValue MIXER_FUEL_RATIO;
+    public int mixerFuelRatio() {
+        return MIXER_FUEL_RATIO.get();
+    }
 
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
     private final Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_RESOLVER_COSTS = new HashMap<>();
@@ -270,7 +275,7 @@ public class GooConfig
         private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
         private static final int CRUCIBLE_CAPACITY = 8000;
         private static final int CRUCIBLE_CONTAINMENT_MULTIPLIER = 4;
-        private static final int MIXER_INPUT_CAPACITY = 16000;
+        private static final int MIXER_CAPACITY = 16000;
         private static final int DEGRADER_INPUT_CAPACITY = 16000;
         private static final int PUMP_TRANSFER_RATE = 30;
         private static final int VESSEL_CAPACITY = 8000;
@@ -284,6 +289,7 @@ public class GooConfig
         private static final int RADIAL_HELD_THRESHOLD_TICKS = 10;
         private static final int SNAIL_PRODUCTION_AMOUNT = 4;
         private static final int SNAIL_SPAWN_WEIGHT = 1;
+        private static final int MIXER_FUEL_RATIO = 8;
     }
 
     private void setupClientConfig() {
@@ -311,8 +317,10 @@ public class GooConfig
                 .defineInRange("maxCrucibleCapacity", Defaults.CRUCIBLE_CAPACITY, 0, 100000);
         CRUCIBLE_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of crucibles is multiplied by this, per level, default: " + Defaults.CRUCIBLE_CONTAINMENT_MULTIPLIER)
                 .defineInRange("crucibleContainmentMultiplier", Defaults.CRUCIBLE_CONTAINMENT_MULTIPLIER, 0, 10);
-        MIXER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single mixer input tank, default: " + Defaults.MIXER_INPUT_CAPACITY)
-                .defineInRange("maxMixerInputCapacity", Defaults.MIXER_INPUT_CAPACITY, 0, 100000);
+        MIXER_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a mixer tank, default: " + Defaults.MIXER_CAPACITY)
+                .defineInRange("maxMixerCapacity", Defaults.MIXER_CAPACITY, 0, 100000);
+        MIXER_FUEL_RATIO = serverBuilder.comment("Amount of processing ticks from a single unit of Logic Goo: " + Defaults.MIXER_CAPACITY)
+                .defineInRange("mixerFuelRatio", Defaults.MIXER_FUEL_RATIO, 1, 100000);
         DEGRADER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a degrader tank, default: " + Defaults.DEGRADER_INPUT_CAPACITY)
                 .defineInRange("maxDegraderInputCapacity", Defaults.DEGRADER_INPUT_CAPACITY, 0, 100000);
         TROUGH_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a trough, default: " + Defaults.TROUGH_CAPACITY)

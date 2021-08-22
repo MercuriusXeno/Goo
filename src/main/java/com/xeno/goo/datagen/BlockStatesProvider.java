@@ -354,25 +354,9 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerSolidifier() {
-        BlockModelBuilder open = models()
+        BlockModelBuilder model = models()
                 .withExistingParent("solidifier", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier"));
-        BlockModelBuilder waning = models()
-                .withExistingParent("solidifier_waning", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_waning"));
-        BlockModelBuilder waxing = models()
-                .withExistingParent("solidifier_waxing", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_waxing"));
-        BlockModelBuilder closed = models()
-                .withExistingParent("solidifier_closed", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_closed"));
-
-        getVariantBuilder(BlocksRegistry.Solidifier.get())
-                .forAllStates(
-                        (s) -> ConfiguredModel.builder()
-                                .modelFile(s.get(HatchOpeningState.OPENING_STATE) == HatchOpeningStates.CLOSED ? closed :
-                                        (s.get(HatchOpeningState.OPENING_STATE) == HatchOpeningStates.WAXING ? waxing :
-                                                (s.get(HatchOpeningState.OPENING_STATE) == HatchOpeningStates.WANING ? waning
-                                                : open)))
-                                .rotationY(180 + s.get(BlockStateProperties.HORIZONTAL_FACING).getHorizontalIndex() * 90)
-                                .build()
-                );
+        horizontalBlock(BlocksRegistry.Solidifier.get(), model);
     }
 
     private void registerRadiantLight() {

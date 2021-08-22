@@ -58,7 +58,6 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     // timer that counts down after a change of target request. Failing to confirm the change reverts the selection.
     private int changeTargetTimer;
     private int fuelTime;
-    private int previousFuelTime;
 
     // default timer span of 5 seconds should be plenty of time to swap an input?
     private static final int CHANGE_TARGET_TIMER_DURATION = 100;
@@ -81,41 +80,23 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         lastItem = null;
     }
 
-    // 13, 12 - CLOSED
-    // 11, 10 - WAXING
-    // 9, 8 - WANING
-    // 7, 6 - OPEN
-    // 5, 4 - WANING
-    // 3, 2 - WAXING
-    // 1, 0 - CLOSED
-    private static int HATCH_OPENING_FULL_CYCLE = 13;
-    private static int HATCH_FRAME_TIMING = 2;
     private int hatchOpeningFrames = 0;
     public void updateHatchState() {
-        BlockState state = getBlockState();
-        HatchOpeningStates openness = state.get(HatchOpeningState.OPENING_STATE);
         if (hatchOpeningFrames > 0) {
             hatchOpeningFrames--;
         }
-
-        HatchOpeningStates shouldBe;
-        if (hatchOpeningFrames > HATCH_OPENING_FULL_CYCLE - HATCH_FRAME_TIMING
-                || hatchOpeningFrames < HATCH_FRAME_TIMING) {
-            shouldBe = HatchOpeningStates.CLOSED;
-        } else if (hatchOpeningFrames > HATCH_OPENING_FULL_CYCLE - 2 * HATCH_FRAME_TIMING
-                || hatchOpeningFrames < 2 * HATCH_FRAME_TIMING) {
-            shouldBe = HatchOpeningStates.WAXING;
-        } else if (hatchOpeningFrames > HATCH_OPENING_FULL_CYCLE - 3 * HATCH_FRAME_TIMING
-                || hatchOpeningFrames < 3 * HATCH_FRAME_TIMING) {
-            shouldBe = HatchOpeningStates.WANING;
-        } else {
-            shouldBe = HatchOpeningStates.OPEN;
-        }
+        HatchOpeningState.HatchOpeningStates openness = getBlockState().get(HatchOpeningState.OPENING_STATE);
+        HatchOpeningState.HatchOpeningStates shouldBe = hatchOpeningFrames > 3 && hatchOpeningFrames < 12 ? HatchOpeningStates.OPENED : HatchOpeningStates.CLOSED;
         if (shouldBe != openness) {
-            world.setBlockState(this.pos, state.with(HatchOpeningState.OPENING_STATE, shouldBe), 2);
+            world.setBlockState(this.pos, getBlockState().with(HatchOpeningState.OPENING_STATE, shouldBe), 2);
         }
     }
+
     public void startOpeningHatch() {
+        if (this.world != null && !this.world.isRemote()) {
+            Networking.sendToClientsAround(new SolidifierHatchOpeningPacket(world.getDimensionKey(), this.pos),
+                    (ServerWorld)world, this.pos);
+        }
         hatchOpeningFrames = 14;
     }
 
@@ -125,10 +106,10 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (world == null) {
             return;
         }
+
         updateHatchState();
         
         if (world.isRemote()) {
-            logicVaporVisuals();
             decayVerticalFillVisuals();
             return;
         }
@@ -150,17 +131,14 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     }
 
     private void logicVaporVisuals() {
-        if (fuelTime > 0 && fuelTime != previousFuelTime) {
-            for (int i = 0; i < 4; i++) {
-                double dx = world.rand.nextGaussian() * 0.1d;
-                double dy = world.rand.nextGaussian() * 0.1d;
-                double dz = world.rand.nextGaussian() * 0.1d;
-                world.addParticle(Registry.vaporParticleFromFluid(Registry.LOGIC_GOO.get()),
-                        bellPos().x + dx, bellPos().y + dy, bellPos().z + dz,
-                        0d, 0.02d, 0d);
-            }
+        for (int i = 0; i < 4; i++) {
+            double dx = world.rand.nextGaussian() * 0.1d;
+            double dy = world.rand.nextGaussian() * 0.1d;
+            double dz = world.rand.nextGaussian() * 0.1d;
+            world.addParticle(Registry.vaporParticleFromFluid(Registry.LOGIC_GOO.get()),
+                    bellPos().x + dx, bellPos().y + dy, bellPos().z + dz,
+                    0d, 0.02d, 0d);
         }
-        previousFuelTime = fuelTime;
     }
 
     public void toggleVerticalFillVisuals(Fluid f)
@@ -281,22 +259,20 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         dropStack(world, stack);
     }
 
-    private ItemStack dropStack(World world, ItemStack stack)
+    private void dropStack(World world, ItemStack stack)
     {
         Vector3d bellLocation = bellPos();
         ItemEntity itemEntity = new ItemEntity(world, bellLocation.getX(), bellLocation.getY(), bellLocation.getZ(), stack);
 
         if (world == null) {
-            return stack;
+            return;
         }
         if (stack.isEmpty()) {
-            return stack;
+            return;
         }
         itemEntity.setMotion(dropVector.getX(), dropVector.getY(), dropVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
-        startOpeningHatch();
-        return EMPTY;
     }
 
     private Vector3d bellPos()
@@ -656,6 +632,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     }
 
     public void setFuelTime(int fuelTime) {
+        if (this.fuelTime > fuelTime && this.world != null && this.world.isRemote()) {
+            logicVaporVisuals();
+        }
         this.fuelTime = fuelTime;
         if (this.world != null && !this.world.isRemote()) {
             Networking.sendToClientsAround(new SolidifierFueledPacket(world.getDimensionKey(), this.pos, fuelTime),
@@ -665,5 +644,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
 
     public void decrFuelTime() {
         setFuelTime(fuelTime - 1);
+    }
+
+    public int hatchOpeningFrames() {
+        return hatchOpeningFrames;
     }
 }

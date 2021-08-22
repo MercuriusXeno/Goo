@@ -44,6 +44,7 @@ public class Networking {
 		registerPacket(GooVesselSwapPacket.class, GooVesselSwapPacket::new);
 		registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
 		registerPacket(SolidifierFizzlePacket.class, SolidifierFizzlePacket::new);
+		registerPacket(SolidifierHatchOpeningPacket.class, SolidifierHatchOpeningPacket::new);
 		registerPacket(SolidifierFueledPacket.class, SolidifierFueledPacket::new);
 		registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
 		registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);

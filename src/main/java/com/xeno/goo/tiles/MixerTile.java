@@ -1,7 +1,6 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.MixerRecipe;
 import com.xeno.goo.library.MixerRecipes;
 import com.xeno.goo.network.FluidUpdatePacket;
@@ -31,7 +30,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static net.minecraft.util.Direction.*;
@@ -45,8 +43,11 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     private float spinnerSpeed = 0f;
     private boolean isActive = false;
     private int changeRecipeCooldown = 0;
+    private int fuelTime = 0;
     private MixerRecipe currentRecipe = null;
     private boolean isFirstInputLeftInput = false;
+    private LazyOptional<IFluidHandler> cacheLeft = LazyOptional.empty();
+    private LazyOptional<IFluidHandler> cacheRight = LazyOptional.empty();
 
     @Override
     protected void invalidateCaps() {
@@ -70,7 +71,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return lazyOptionalHandler.isPresent() && lazyOptionalHandler.resolve().isPresent();
     }
 
-    private LazyOptional<IFluidHandler> cacheLeft = LazyOptional.empty();
     public LazyOptional<IFluidHandler> leftHandler() {
         if (isValid(cacheLeft)) {
             return cacheLeft;
@@ -80,7 +80,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         return cacheLeft;
     }
 
-    private LazyOptional<IFluidHandler> cacheRight = LazyOptional.empty();
     public LazyOptional<IFluidHandler> rightHandler() {
         if (isValid(cacheRight)) {
             return cacheRight;
@@ -103,17 +102,20 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
             return;
         }
 
-        if (hasRecipe()) {
-            if (!tryDoingRecipe()) {
-                setRecipe(null);
-                setRecipeCooldown();
-                stopAnimation();
-            }
-        } else {
-            if (hasRecipeCooldown()) {
-                decrementRecipeCooldown();
+        boolean isDisabled = getBlockState().get(BlockStateProperties.POWERED);
+        if (!isDisabled) {
+            if (hasRecipe()) {
+                if (!tryDoingRecipe()) {
+                    setRecipe(null);
+                    setRecipeCooldown();
+                    stopAnimation();
+                }
             } else {
-                findRecipe();
+                if (hasRecipeCooldown()) {
+                    decrementRecipeCooldown();
+                } else {
+                    findRecipe();
+                }
             }
         }
         tryVerticalDrain();
@@ -283,8 +285,13 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (fluidHandlerBehind() == null) {
             return false;
         }
-        if (fluidHandlerBehind().drain(fuel(), FluidAction.SIMULATE).isEmpty()) {
+        boolean isFueled = fuelTime > 0;
+        if (!isFueled && fluidHandlerBehind().drain(fuel(), FluidAction.SIMULATE).isEmpty()) {
             return false;
+        }
+        if (!isFueled) {
+            fluidHandlerBehind().drain(fuel(), FluidAction.EXECUTE);
+            fuelTime += GooMod.config.mixerFuelRatio();
         }
         // if we can't hold what the output produces, abort.
         int simulatedFill = goo.fill(currentRecipe.output(), FluidAction.SIMULATE);
@@ -304,7 +311,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
                 }
                 if (isSuccessful.get()) {
                     goo.fill(currentRecipe.output(), FluidAction.EXECUTE);
-                    fluidHandlerBehind().drain(fuel(), FluidAction.EXECUTE);
+                    fuelTime--;
                 }
             });
         });
@@ -313,7 +320,6 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     }
 
     private FluidStack fuel() {
-
         return FUEL_FLUID.get();
     }
 
@@ -416,7 +422,7 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     public int getBaseCapacity() {
 
-        return GooMod.config.mixerInputCapacity();
+        return GooMod.config.mixerCapacity();
     }
 
     @Override

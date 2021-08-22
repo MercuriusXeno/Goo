@@ -82,6 +82,9 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
                 Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
                 matrices.pop();
+
+                // draw the hatch based on the tile state
+                tile.hatchOpeningFrames();
             }
         }
 

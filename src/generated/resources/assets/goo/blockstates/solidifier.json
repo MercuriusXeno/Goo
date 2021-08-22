@@ -1,132 +1,64 @@
 {
   "variants": {
-    "facing=north,hatch_opening=open,powered=false": {
-      "model": "goo:block/solidifier",
-      "y": 360
-    },
-    "facing=south,hatch_opening=open,powered=false": {
-      "model": "goo:block/solidifier",
-      "y": 180
-    },
-    "facing=west,hatch_opening=open,powered=false": {
-      "model": "goo:block/solidifier",
-      "y": 270
-    },
-    "facing=east,hatch_opening=open,powered=false": {
-      "model": "goo:block/solidifier",
-      "y": 450
-    },
-    "facing=north,hatch_opening=waning,powered=false": {
-      "model": "goo:block/solidifier_waning",
-      "y": 360
-    },
-    "facing=south,hatch_opening=waning,powered=false": {
-      "model": "goo:block/solidifier_waning",
-      "y": 180
-    },
-    "facing=west,hatch_opening=waning,powered=false": {
-      "model": "goo:block/solidifier_waning",
-      "y": 270
-    },
-    "facing=east,hatch_opening=waning,powered=false": {
-      "model": "goo:block/solidifier_waning",
-      "y": 450
-    },
-    "facing=north,hatch_opening=waxing,powered=false": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 360
-    },
-    "facing=south,hatch_opening=waxing,powered=false": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 180
-    },
-    "facing=west,hatch_opening=waxing,powered=false": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 270
-    },
-    "facing=east,hatch_opening=waxing,powered=false": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 450
-    },
     "facing=north,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier_closed",
-      "y": 360
+      "model": "goo:block/solidifier"
     },
     "facing=south,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier_closed",
+      "model": "goo:block/solidifier",
       "y": 180
     },
     "facing=west,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier_closed",
+      "model": "goo:block/solidifier",
       "y": 270
     },
     "facing=east,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier_closed",
-      "y": 450
-    },
-    "facing=north,hatch_opening=open,powered=true": {
       "model": "goo:block/solidifier",
-      "y": 360
+      "y": 90
     },
-    "facing=south,hatch_opening=open,powered=true": {
+    "facing=north,hatch_opening=opened,powered=false": {
+      "model": "goo:block/solidifier"
+    },
+    "facing=south,hatch_opening=opened,powered=false": {
       "model": "goo:block/solidifier",
       "y": 180
     },
-    "facing=west,hatch_opening=open,powered=true": {
+    "facing=west,hatch_opening=opened,powered=false": {
       "model": "goo:block/solidifier",
       "y": 270
     },
-    "facing=east,hatch_opening=open,powered=true": {
+    "facing=east,hatch_opening=opened,powered=false": {
       "model": "goo:block/solidifier",
-      "y": 450
-    },
-    "facing=north,hatch_opening=waning,powered=true": {
-      "model": "goo:block/solidifier_waning",
-      "y": 360
-    },
-    "facing=south,hatch_opening=waning,powered=true": {
-      "model": "goo:block/solidifier_waning",
-      "y": 180
-    },
-    "facing=west,hatch_opening=waning,powered=true": {
-      "model": "goo:block/solidifier_waning",
-      "y": 270
-    },
-    "facing=east,hatch_opening=waning,powered=true": {
-      "model": "goo:block/solidifier_waning",
-      "y": 450
-    },
-    "facing=north,hatch_opening=waxing,powered=true": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 360
-    },
-    "facing=south,hatch_opening=waxing,powered=true": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 180
-    },
-    "facing=west,hatch_opening=waxing,powered=true": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 270
-    },
-    "facing=east,hatch_opening=waxing,powered=true": {
-      "model": "goo:block/solidifier_waxing",
-      "y": 450
+      "y": 90
     },
     "facing=north,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier_closed",
-      "y": 360
+      "model": "goo:block/solidifier"
     },
     "facing=south,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier_closed",
+      "model": "goo:block/solidifier",
       "y": 180
     },
     "facing=west,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier_closed",
+      "model": "goo:block/solidifier",
       "y": 270
     },
     "facing=east,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier_closed",
-      "y": 450
+      "model": "goo:block/solidifier",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=true": {
+      "model": "goo:block/solidifier"
+    },
+    "facing=south,hatch_opening=opened,powered=true": {
+      "model": "goo:block/solidifier",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=true": {
+      "model": "goo:block/solidifier",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=true": {
+      "model": "goo:block/solidifier",
+      "y": 90
     }
   }
 }

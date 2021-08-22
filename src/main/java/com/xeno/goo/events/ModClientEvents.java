@@ -26,6 +26,7 @@ import net.minecraftforge.client.event.ColorHandlerEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraftforge.client.event.TextureStitchEvent.Pre;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -114,13 +115,28 @@ public class ModClientEvents
             addVesselMaskingTexture(event);
             addGauntletMaskingTexture(event);
             addUnmappedOverlayTextures(event);
+            addSolidifierHatchTextures(event);
         }
+    }
+
+    private static void addSolidifierHatchTextures(Pre event) {
+        event.addSprite(Resources.Hatch.INNER_OPEN);
+        event.addSprite(Resources.Hatch.INNER_WANING);
+        event.addSprite(Resources.Hatch.INNER_HALF);
+        event.addSprite(Resources.Hatch.INNER_WAXING);
+        event.addSprite(Resources.Hatch.INNER_CLOSED);
+        event.addSprite(Resources.Hatch.OUTER_OPEN);
+        event.addSprite(Resources.Hatch.OUTER_WANING);
+        event.addSprite(Resources.Hatch.OUTER_HALF);
+        event.addSprite(Resources.Hatch.OUTER_WAXING);
+        event.addSprite(Resources.Hatch.OUTER_CLOSED);
+
     }
 
     private static void addGauntletMaskingTexture(TextureStitchEvent.Pre event)
     {
         // event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/gauntlet"));
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid"));
+        event.addSprite(Resources.Gauntlet.MASKING_TEXTURE);
     }
 
     private static void addUnmappedOverlayTextures(TextureStitchEvent.Pre event)
@@ -131,7 +147,7 @@ public class ModClientEvents
 
     private static void addVesselMaskingTexture(TextureStitchEvent.Pre event)
     {
-        event.addSprite(new ResourceLocation(GooMod.MOD_ID, "item/mask/vessel_fluid"));
+        event.addSprite(Resources.Vessel.MASKING_TEXTURE);
     }
 
     @SubscribeEvent

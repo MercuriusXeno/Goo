@@ -89,4 +89,25 @@ public class Resources
         public static final ResourceLocation MIXER_SIDE = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_side_glass");
         public static final ResourceLocation MIXER_TOP = new ResourceLocation(GooMod.MOD_ID, "block/mixer/mixer_top_glass");
     }
+
+	public static class Gauntlet {
+        public static final ResourceLocation MASKING_TEXTURE = new ResourceLocation(GooMod.MOD_ID, "item/mask/gauntlet_fluid");
+    }
+
+    public static class Vessel {
+        public static final ResourceLocation MASKING_TEXTURE = new ResourceLocation(GooMod.MOD_ID, "item/mask/vessel_fluid");
+    }
+
+    public static class Hatch {
+        public static final ResourceLocation OUTER_OPEN = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_outer_open");
+        public static final ResourceLocation OUTER_WANING = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_outer_waning");
+        public static final ResourceLocation OUTER_HALF = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_outer_half");
+        public static final ResourceLocation OUTER_WAXING = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_outer_waxing");
+        public static final ResourceLocation OUTER_CLOSED = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_outer_closed");
+        public static final ResourceLocation INNER_OPEN = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_inner_opened");
+        public static final ResourceLocation INNER_WANING = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_inner_waning");
+        public static final ResourceLocation INNER_HALF = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_inner_half");
+        public static final ResourceLocation INNER_WAXING = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_inner_waxing");
+        public static final ResourceLocation INNER_CLOSED = new ResourceLocation(GooMod.MOD_ID, "block/solidifier/solidifier_hatch_inner_closed");
+    }
 }

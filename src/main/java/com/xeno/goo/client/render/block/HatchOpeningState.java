@@ -9,10 +9,8 @@ public class HatchOpeningState {
     public static final EnumProperty<HatchOpeningStates> OPENING_STATE = EnumProperty.create("hatch_opening", HatchOpeningStates.class);
 
     public enum HatchOpeningStates implements IStringSerializable {
-        OPEN,
-        WANING,
-        WAXING,
-        CLOSED;
+        CLOSED,
+        OPENED;
 
         @Override
         public String getString() {
