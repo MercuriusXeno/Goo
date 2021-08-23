@@ -1,8 +1,16 @@
 package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.xeno.goo.client.models.Model3d;
+import com.xeno.goo.client.models.Model3d.SpriteInfo;
+import com.xeno.goo.client.render.RenderHelper;
+import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.client.render.block.HatchOpeningState.HatchOpeningStates;
 import com.xeno.goo.setup.Registry;
+import com.xeno.goo.setup.Resources;
+import com.xeno.goo.setup.Resources.Hatch;
 import com.xeno.goo.tiles.SolidifierTile;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.IBakedModel;
@@ -10,11 +18,14 @@ import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.HashMap;
@@ -22,6 +33,7 @@ import java.util.Map;
 
 public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 {
+    // vars holding the frame timing of hatch opening states
     private int lastItemLight;
     public SolidifierRenderer(TileEntityRendererDispatcher rendererDispatcherIn)
     {
@@ -40,6 +52,14 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
         }
 
         renderItem(tile, matrices, buffer);
+
+        renderHatch(tile, partialTicks, matrices, buffer, light, overlay);
+    }
+
+    private void renderHatch(SolidifierTile tile, float partialTicks, MatrixStack matrices, IRenderTypeBuffer buffer, int light, int overlay) {
+        int hatchState = getHatchOpeningStateFromFrames(tile.hatchOpeningFrames());
+        Model3d hatchModel = getHatchModel(hatchState);
+        RenderHelper.renderObject(hatchModel, matrices, buffer.getBuffer(RenderType.getCutoutMipped()), 0xffffffff, light, overlay);
     }
 
     private void renderItem(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer) {
@@ -82,9 +102,6 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
                 Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
                 matrices.pop();
-
-                // draw the hatch based on the tile state
-                tile.hatchOpeningFrames();
             }
         }
 
@@ -92,9 +109,85 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();
     static {
-        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.3125D));
-        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.3125D));
-        renderVec.put(Direction.EAST, new Vector3d(0.3125D, 0D, 0D));
-        renderVec.put(Direction.WEST, new Vector3d(-0.3125D, 0D, 0D));
+        renderVec.put(Direction.NORTH, new Vector3d(0D, 0D, -0.375D));
+        renderVec.put(Direction.SOUTH, new Vector3d(0D, 0D, 0.375D));
+        renderVec.put(Direction.EAST, new Vector3d(0.375D, 0D, 0D));
+        renderVec.put(Direction.WEST, new Vector3d(-0.375D, 0D, 0D));
+    }
+
+    private static final Map<Integer, SpriteInfo[]> spriteCache = new HashMap();
+    private static int getHatchOpeningStateFromFrames(int hatchOpeningFrames) {
+        if (hatchOpeningFrames > SolidifierTile.HATCH_CLOSED_UPPER ||
+                hatchOpeningFrames < SolidifierTile.HATCH_CLOSED_LOWER) {
+            return SolidifierTile.HATCH_CLOSED_STATE;
+        } else if (hatchOpeningFrames > SolidifierTile.HATCH_WAXING_UPPER ||
+                hatchOpeningFrames < SolidifierTile.HATCH_WAXING_LOWER) {
+            return SolidifierTile.HATCH_WAXING_STATE;
+        } else if (hatchOpeningFrames > SolidifierTile.HATCH_HALF_UPPER ||
+                hatchOpeningFrames < SolidifierTile.HATCH_HALF_LOWER) {
+            return SolidifierTile.HATCH_HALF_STATE;
+        } else if (hatchOpeningFrames > SolidifierTile.HATCH_WANING_UPPER ||
+                hatchOpeningFrames < SolidifierTile.HATCH_WANING_LOWER) {
+            return SolidifierTile.HATCH_WANING_STATE;
+        } else {
+            return SolidifierTile.HATCH_OPEN_STATE;
+        }
+    }
+    private static Model3d getHatchModel(int hatchOpeningState) {
+        Model3d model = new Model3d();
+        if (spriteCache.containsKey(hatchOpeningState)) {
+            SpriteInfo[] cache = spriteCache.get(hatchOpeningState);
+            model.setTextures(cache[0], cache[1], cache[2], cache[2], cache[2], cache[2]);
+        } else {
+           ResourceLocation[] hatchStateSprites = getHatchStateSpritesFromState(hatchOpeningState);
+            SpriteInfo[] sprites = new SpriteInfo[] {
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[0]), 16),
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[1]), 16),
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[2]), 16),
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[2]), 16),
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[2]), 16),
+                    new SpriteInfo(RenderHelper.getSprite(hatchStateSprites[2]), 16)
+            };
+            spriteCache.put(hatchOpeningState, sprites);
+            model.setTextures(sprites[0], sprites[1], sprites[2], sprites[3], sprites[4], sprites[5]);
+        }
+
+        model.minX = .125f;
+        model.minY = .001f;
+        model.minZ = .125f;
+
+        model.maxX = .875f;
+        model.maxY = .002f;
+        model.maxZ = .875f;
+
+        return model;
+    }
+
+    private static ResourceLocation[] getHatchStateSpritesFromState(int hatchOpeningState) {
+        ResourceLocation[] results = new ResourceLocation[3];
+        switch(hatchOpeningState) {
+            case SolidifierTile.HATCH_CLOSED_STATE:
+                results[0] = Hatch.OUTER_CLOSED;
+                results[1] = Hatch.INNER_CLOSED;
+                break;
+            case SolidifierTile.HATCH_WAXING_STATE:
+                results[0] = Hatch.OUTER_WAXING;
+                results[1] = Hatch.INNER_WAXING;
+                break;
+            case SolidifierTile.HATCH_HALF_STATE:
+                results[0] = Hatch.OUTER_HALF;
+                results[1] = Hatch.INNER_HALF;
+                break;
+            case SolidifierTile.HATCH_WANING_STATE:
+                results[0] = Hatch.OUTER_WANING;
+                results[1] = Hatch.INNER_WANING;
+                break;
+            case SolidifierTile.HATCH_OPEN_STATE:
+                results[0] = Hatch.OUTER_OPEN;
+                results[1] = Hatch.INNER_OPEN;
+                break;
+        }
+        results[2] = Resources.EMPTY;
+        return results;
     }
 }

@@ -50,10 +50,11 @@ public class MixerAnimationPacket implements IGooModPacket {
 				}
 				TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
 				if (te instanceof MixerTile) {
-					if (this.isActive) {
-						((MixerTile) te).startAnimation();
-					} else {
-						((MixerTile)te).stopAnimation();
+					MixerTile t = (MixerTile)te;
+					if (this.isActive && !t.isActive()) {
+						t.startAnimation();
+					} else if (!this.isActive && t.isActive()){
+						t.stopAnimation();
 					}
 				}
 			}

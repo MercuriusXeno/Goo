@@ -80,13 +80,29 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         lastItem = null;
     }
 
+    // frame timings
+    public static final int HATCH_CLOSED_UPPER = 13;
+    public static final int HATCH_CLOSED_LOWER = 2;
+    public static final int HATCH_WAXING_UPPER = 12;
+    public static final int HATCH_WAXING_LOWER = 4;
+    public static final int HATCH_HALF_UPPER = 11;
+    public static final int HATCH_HALF_LOWER = 6;
+    public static final int HATCH_WANING_UPPER = 10;
+    public static final int HATCH_WANING_LOWER = 8;
+    // states
+    public static final int HATCH_CLOSED_STATE = 0;
+    public static final int HATCH_WAXING_STATE = 1;
+    public static final int HATCH_HALF_STATE = 2;
+    public static final int HATCH_WANING_STATE = 3;
+    public static final int HATCH_OPEN_STATE = 4;
     private int hatchOpeningFrames = 0;
     public void updateHatchState() {
         if (hatchOpeningFrames > 0) {
             hatchOpeningFrames--;
         }
         HatchOpeningState.HatchOpeningStates openness = getBlockState().get(HatchOpeningState.OPENING_STATE);
-        HatchOpeningState.HatchOpeningStates shouldBe = hatchOpeningFrames > 3 && hatchOpeningFrames < 12 ? HatchOpeningStates.OPENED : HatchOpeningStates.CLOSED;
+        HatchOpeningState.HatchOpeningStates shouldBe = hatchOpeningFrames > HATCH_WAXING_LOWER
+                && hatchOpeningFrames < HATCH_WAXING_UPPER ? HatchOpeningStates.OPENED : HatchOpeningStates.CLOSED;
         if (shouldBe != openness) {
             world.setBlockState(this.pos, getBlockState().with(HatchOpeningState.OPENING_STATE, shouldBe), 2);
         }
@@ -105,6 +121,14 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         handleTargetChangingCountdown();
         if (world == null) {
             return;
+        }
+
+        if (world.getGameTime() % 60 == 0) {
+            // check to see if box contains items
+            List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, getRenderBoundingBox(), null);
+            if (itemsInBox.size() > 0) {
+                startOpeningHatch();
+            }
         }
 
         updateHatchState();

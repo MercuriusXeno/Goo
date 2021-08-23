@@ -97,12 +97,12 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
     @Override
     public void tick()
     {
-        handleAnimation();
+        boolean isDisabled = getBlockState().get(BlockStateProperties.POWERED);
+        handleAnimation(isDisabled);
         if (world == null || world.isRemote) {
             return;
         }
 
-        boolean isDisabled = getBlockState().get(BlockStateProperties.POWERED);
         if (!isDisabled) {
             if (hasRecipe()) {
                 if (!tryDoingRecipe()) {
@@ -137,8 +137,8 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         fluidHandlerBehind.drain(fuel, FluidAction.EXECUTE);
     }
 
-    private void handleAnimation() {
-        if (this.isActive) {
+    private void handleAnimation(boolean isDisabled) {
+        if (this.isActive && !isDisabled) {
             accelerateSpinner();
         } else {
             decelerateSpinner();
@@ -285,13 +285,10 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         if (fluidHandlerBehind() == null) {
             return false;
         }
+        // if we're out of fuel, abort.
         boolean isFueled = fuelTime > 0;
         if (!isFueled && fluidHandlerBehind().drain(fuel(), FluidAction.SIMULATE).isEmpty()) {
             return false;
-        }
-        if (!isFueled) {
-            fluidHandlerBehind().drain(fuel(), FluidAction.EXECUTE);
-            fuelTime += GooMod.config.mixerFuelRatio();
         }
         // if we can't hold what the output produces, abort.
         int simulatedFill = goo.fill(currentRecipe.output(), FluidAction.SIMULATE);
@@ -303,9 +300,11 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         leftHandler().ifPresent(l -> {
             rightHandler().ifPresent(r -> {
                 if (tryDrainingRecipe(l, r, currentRecipe, FluidAction.SIMULATE)) {
+                    drainFuelIfNeeded(isFueled);
                     tryDrainingRecipe(l, r, currentRecipe, FluidAction.EXECUTE);
                     isSuccessful.set(true);
                 } else if (tryDrainingRecipe(r, l, currentRecipe, FluidAction.SIMULATE)) {
+                    drainFuelIfNeeded(isFueled);
                     tryDrainingRecipe(r, l, currentRecipe, FluidAction.EXECUTE);
                     isSuccessful.set(true);
                 }
@@ -317,6 +316,13 @@ public class MixerTile extends GooContainerAbstraction implements ITickableTileE
         });
         startAnimation();
         return isSuccessful.get();
+    }
+
+    private void drainFuelIfNeeded(boolean isFueled) {
+        if (!isFueled) {
+            fluidHandlerBehind().drain(fuel(), FluidAction.EXECUTE);
+            fuelTime += GooMod.config.mixerFuelRatio();
+        }
     }
 
     private FluidStack fuel() {

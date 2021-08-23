@@ -19,7 +19,9 @@ import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,6 +79,21 @@ public class Mixer extends BlockWithConnections
                 .with(HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite())
                 .with(DynamicRenderMode.RENDER, DynamicRenderMode.DynamicRenderTypes.STATIC);
 
+    }
+
+    @Override
+    public boolean canConnectRedstone(BlockState state, IBlockReader world, BlockPos pos, @Nullable Direction side) {
+        return true;
+    }
+
+    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        boolean isPowered = worldIn.isBlockPowered(pos);
+        boolean isAlreadyPowered = state.get(BlockStateProperties.POWERED);
+        if (isPowered && !isAlreadyPowered) {
+            worldIn.setBlockState(pos, state.with(BlockStateProperties.POWERED, Boolean.TRUE), 2);
+        } else if (!isPowered && isAlreadyPowered) {
+            worldIn.setBlockState(pos, state.with(BlockStateProperties.POWERED, Boolean.FALSE), 2);
+        }
     }
 
     @Override
