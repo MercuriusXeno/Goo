@@ -46,6 +46,7 @@ public class Networking {
 		registerPacket(SolidifierFizzlePacket.class, SolidifierFizzlePacket::new);
 		registerPacket(SolidifierHatchOpeningPacket.class, SolidifierHatchOpeningPacket::new);
 		registerPacket(SolidifierFueledPacket.class, SolidifierFueledPacket::new);
+		registerPacket(SolidifierProgressPacket.class, SolidifierProgressPacket::new);
 		registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
 		registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);
 		registerPacket(ShrinkPacket.class, ShrinkPacket::new);
@@ -62,7 +63,6 @@ public class Networking {
 	}
 
 	private static <M extends IGooModPacket> void registerPacket(Class<M> clazz, Function<PacketBuffer, M> constructor) {
-
 		registerPacket(clazz, constructor, () -> IGooModPacket::handle);
 	}
 

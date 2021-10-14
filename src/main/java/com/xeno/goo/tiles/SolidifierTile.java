@@ -35,7 +35,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static net.minecraft.item.ItemStack.EMPTY;
@@ -58,6 +57,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     // timer that counts down after a change of target request. Failing to confirm the change reverts the selection.
     private int changeTargetTimer;
     private int fuelTime;
+    private int cooldown;
+    private boolean isOn;
+    private int flipSwitchDelay;
 
     // default timer span of 5 seconds should be plenty of time to swap an input?
     private static final int CHANGE_TARGET_TIMER_DURATION = 100;
@@ -66,9 +68,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     private Fluid verticalFillFluid = Fluids.EMPTY;
     private int verticalFillDelay = 0;
 
+    private float itemProgress = 0f;
+    private float itemProgressLastTick = 0f;
+
     // the internal buffer gets filled when the machine is in the process of solidifying an item
     private List<FluidStack> progressToItem = new ArrayList<>();
-    private ItemEntity lastItem;
 
     public SolidifierTile() {
         super(Registry.SOLIDIFIER_TILE.get());
@@ -77,7 +81,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         newTarget = Items.AIR;
         newTargetStack = EMPTY;
         changeTargetTimer = 0;
-        lastItem = null;
+        cooldown = 0;
     }
 
     // frame timings
@@ -95,8 +99,13 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     public static final int HATCH_HALF_STATE = 2;
     public static final int HATCH_WANING_STATE = 3;
     public static final int HATCH_OPEN_STATE = 4;
+
     private int hatchOpeningFrames = 0;
     public void updateHatchState() {
+        List<ItemEntity> itemsInBox = world.getEntitiesWithinAABB(ItemEntity.class, getRenderBoundingBox(), null);
+        if (itemsInBox.size() > 0 && hatchOpeningFrames == HATCH_OPEN_STATE) {
+            return;
+        }
         if (hatchOpeningFrames > 0) {
             hatchOpeningFrames--;
         }
@@ -106,6 +115,44 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (shouldBe != openness) {
             world.setBlockState(this.pos, getBlockState().with(HatchOpeningState.OPENING_STATE, shouldBe), 2);
         }
+    }
+
+    public void flipSwitch() {
+        if (this.world.isRemote()) {
+            isOn = !isOn;
+            flipSwitchDelay = HALF_SECOND_TICKS;
+        } else {
+            sendFlipSwitchPacket();
+        }
+    }
+
+    private void sendFlipSwitchPacket() {
+
+    }
+
+    private float visualItemProgress() {
+        GooEntry e = getItemEntry(target);
+        if (e.isEmpty() || e.isUnusable()) {
+            return 0f;
+        }
+
+        int sumOfTemplate = e.inputsAsFluidStacks().stream().mapToInt(FluidStack::getAmount).sum();
+
+        if (sumOfTemplate == 0) {
+            return 0f;
+        }
+        int sumOfProgress = progressToItem.stream().mapToInt(FluidStack::getAmount).sum();
+        int delta = sumOfTemplate - sumOfProgress;
+
+        return 1f - (delta / sumOfTemplate);
+    }
+
+    public float progress() {
+        return itemProgress;
+    }
+
+    public float previousProgress() {
+        return itemProgressLastTick;
     }
 
     public void startOpeningHatch() {
@@ -122,6 +169,8 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (world == null) {
             return;
         }
+
+        updateProgressVisuals(visualItemProgress());
 
         if (world.getGameTime() % 60 == 0) {
             // check to see if box contains items
@@ -144,24 +193,30 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
             return;
         }
 
-        // go on a brief cooldown while the hatch is open
-        if (hatchOpeningFrames > 0) {
-            return;
-        }
-
-        if (hasValidTarget()) {
+        if (hasValidTarget() && cooldown <= 0) {
             handleSolidifying();
+        } else {
+            cooldown--;
+        }
+    }
+
+    public void updateProgressVisuals(float f) {
+        if (this.world.isRemote()) {
+            itemProgressLastTick = itemProgress;
+            itemProgress = f;
+        } else {
+            Networking.sendToClientsAround(new SolidifierProgressPacket(this.world.getDimensionKey(), this.pos, f), (ServerWorld)this.world, this.pos);
         }
     }
 
     private void logicVaporVisuals() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             double dx = world.rand.nextGaussian() * 0.1d;
             double dy = world.rand.nextGaussian() * 0.1d;
             double dz = world.rand.nextGaussian() * 0.1d;
             world.addParticle(Registry.vaporParticleFromFluid(Registry.LOGIC_GOO.get()),
-                    bellPos().x + dx, bellPos().y + dy, bellPos().z + dz,
-                    0d, 0.02d, 0d);
+                    vaporPos().x + dx, vaporPos().y + dy, vaporPos().z + dz,
+                    0d, 0d, 0.5d);
         }
     }
 
@@ -269,7 +324,12 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (hasBufferedEnough(mapping)) {
             progressToItem.clear();
             produceItem();
+            setCooldown();
         }
+    }
+
+    private void setCooldown() {
+        cooldown = ONE_SECOND_TICKS;
     }
 
     private void produceItem()
@@ -302,12 +362,20 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     private Vector3d bellPos()
     {
         double d0 = pos.getX() + 0.5D;
+        double d1 = pos.getY()+ 0.25D;
+        double d2 = pos.getZ() + 0.5D;
+        return new Vector3d(d0, d1, d2);
+    }
+
+    private Vector3d vaporPos()
+    {
+        double d0 = pos.getX() + 0.5D;
         double d1 = pos.getY()+ 0.28D;
         double d2 = pos.getZ() + 0.5D;
         return new Vector3d(d0, d1, d2);
     }
 
-    private static Vector3d dropVector = new Vector3d(0f, -0.08f, 0f);
+    private static Vector3d dropVector = new Vector3d(0f, 0f, 0f);
 
     private boolean hasBufferedEnough(GooEntry mapping)
     {
@@ -320,23 +388,27 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         return false;
     }
 
+    // numbers carefully tuned
+    // 0.8335 a second [loss coefficient], over 20 ticks results in .02618~ remaining in the source
+    // *on* the twentieth tick, scoop the rest.
+    // result: produce one item per second, consistently, regardless of what it is.
+    // since this math is wimbly, we have to approximate and *track* the drainage on a given item.
+    // since this is counted as progress towards the item, it ultimately cannot exceed the full value of the item.
     private boolean tryDrainingSources(GooEntry mapping)
     {
         if (world == null) {
             return false;
         }
 
-        AtomicInteger potentialWork = new AtomicInteger(GooMod.config.gooProcessingRate());
         AtomicBoolean didStuff = new AtomicBoolean(false);
         LazyOptional<IFluidHandler> cap = FluidHandlerHelper.capabilityOfNeighbor(this, Direction.UP);
         cap.ifPresent((c) ->
                 {
                     for (GooValue v : mapping.values()) {
-                        int suctionLeft = tryDrainingFluid(potentialWork.get(), c, v);
-                        if (suctionLeft != potentialWork.get()) {
+                        boolean progressHappened = tryDrainingFluid(c, v);
+                        if (progressHappened) {
                             didStuff.set(true);
                         }
-                        potentialWork.set(suctionLeft);
                     }
                 }
         );
@@ -365,28 +437,25 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         return true;
     }
 
-    private int tryDrainingFluid(int workLeftThisGasket, IFluidHandler cap, GooValue v)
+    private final double DRAIN_CONSTANT = 1d / 6d;
+    private boolean tryDrainingFluid(IFluidHandler cap, GooValue v)
     {
-        if (workLeftThisGasket == 0) {
-            return 0;
-        }
-
         Fluid f = Registry.getFluid(v.getFluidResourceLocation());
         int absentFluid = getAbsentFluid(f, v.amount());
-        int maxDrain = (int)Math.min(Math.ceil(absentFluid), workLeftThisGasket);
+
+        int maxDrain = (int)Math.ceil(absentFluid * DRAIN_CONSTANT);
 
         FluidStack drainTarget = getDrainTarget(v, maxDrain);
         if (drainTarget.isEmpty()) {
-            return workLeftThisGasket;
+            return false;
         }
 
         // simulate
         if (cap.drain(drainTarget, IFluidHandler.FluidAction.SIMULATE).isEmpty()) {
-            return workLeftThisGasket;
+            return false;
         }
 
         FluidStack result = cap.drain(drainTarget, IFluidHandler.FluidAction.EXECUTE);
-        workLeftThisGasket -= result.getAmount();
 
         FluidStack existingFluid = fluidInBuffer(result.getFluid());
         if (existingFluid.isEmpty()) {
@@ -395,7 +464,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
             existingFluid.setAmount(existingFluid.getAmount() + result.getAmount());
         }
         toggleVerticalFillVisuals(result.getFluid());
-        return workLeftThisGasket;
+        return true;
     }
 
     private FluidStack getDrainTarget(GooValue v, int maxDrain)
@@ -527,6 +596,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         tag.put("items", serializeItems());
         tag.putInt("fuelTime", fuelTime);
         tag.putInt("hatchFrames", hatchOpeningFrames);
+        tag.putInt("cooldown", cooldown);
         return super.write(tag);
     }
 
@@ -541,6 +611,9 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         }
         if (tag.contains("hatchFrames")) {
             hatchOpeningFrames = tag.getInt("hatchFrames");
+        }
+        if (tag.contains("cooldown")) {
+            cooldown = tag.getInt("cooldown");
         }
     }
 

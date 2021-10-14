@@ -338,7 +338,8 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         TileEntity e = world.getTileEntity(below);
         if (e instanceof DrainTile) {
             if (((DrainTile) e).canFill(goo.getFluidInTankInternal(0))) {
-                ((DrainTile)e).fill(goo.drain(1, FluidAction.EXECUTE), this.owner);
+                int amountToDrain = (int)Math.ceil(Math.sqrt(goo.getFluidInTankInternal(0).getAmount()));
+                ((DrainTile)e).fill(goo.drain(amountToDrain, FluidAction.EXECUTE), this.owner);
             }
         }
     }
@@ -359,7 +360,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
         if (approachVector.length() <= 0.1d) {
             this.setMotion(approachVector);
         } else {
-            this.setMotion(approachVector.normalize().scale(0.05d));
+            this.setMotion(approachVector.normalize().scale(0.33d));
         }
     }
 
@@ -517,7 +518,7 @@ public class GooSplat extends Entity implements IEntityAdditionalSpawnData, IGoo
     @Override
     public boolean canRenderOnFire()
     {
-        return false;
+        return true;
     }
 
     @Override

@@ -50,8 +50,11 @@ public class GooConfig
     private ForgeConfigSpec.IntValue GOO_MAX_TRANSFER_RATE;
     public int gooTransferRate() { return GOO_MAX_TRANSFER_RATE.get(); }
 
-    private ForgeConfigSpec.IntValue GOO_MAX_PROCESSING_RATE;
-    public int gooProcessingRate() { return GOO_MAX_PROCESSING_RATE.get(); }
+    private ForgeConfigSpec.IntValue GOOIFIER_PROCESSING_RATE;
+    public int gooProcessingRate() { return GOOIFIER_PROCESSING_RATE.get(); }
+
+    private ForgeConfigSpec.IntValue SOLIDIFIER_PROCESSING_RATE;
+    public int solidifierProcessingRate() { return SOLIDIFIER_PROCESSING_RATE.get(); }
 
     private ForgeConfigSpec.IntValue GOO_BULB_TOTAL_CAPACITY;
     public int bulbCapacity() {
@@ -122,9 +125,9 @@ public class GooConfig
     private ForgeConfigSpec.IntValue LOGIC_POWERS_SOLIDIFIER_TICKS;
     public int logicPowersSolidifierTicks() { return LOGIC_POWERS_SOLIDIFIER_TICKS.get(); }
 
-    private ForgeConfigSpec.IntValue MIXER_FUEL_RATIO;
+    private ForgeConfigSpec.IntValue LOGIC_POWERS_MIXER_TICKS;
     public int mixerFuelRatio() {
-        return MIXER_FUEL_RATIO.get();
+        return LOGIC_POWERS_MIXER_TICKS.get();
     }
 
     // -1 means disabled, 0 means free??! or just don't ever be free, and unallowed values are disabled.
@@ -268,9 +271,10 @@ public class GooConfig
 	private static class Defaults {
         public static final boolean GOO_VALUES_VISIBLE_ALWAYS = false;
         public static final boolean DAMAGED_ITEMS_CAN_BE_GOOIFIED = true;
+        public static final int SOLIDIFIER_PROCESSING_RATE = 5;
         private static final int GOO_TRANSFER_RATE = 30;
         private static final int LOGIC_POWERS_SOLIDIFIER_TICKS = 8;
-        private static final int GOO_PROCESSING_RATE = 15;
+        private static final int GOOIFIER_PROCESSING_RATE = 15;
         private static final int BULB_CAPACITY = 16000;
         private static final int BULB_CONTAINMENT_MULTIPLIER = 4;
         private static final int CRUCIBLE_CAPACITY = 8000;
@@ -307,8 +311,10 @@ public class GooConfig
                 .defineInRange("maxTransferRate", Defaults.GOO_TRANSFER_RATE, 0, 10000);
         LOGIC_POWERS_SOLIDIFIER_TICKS = serverBuilder.comment("Ticks of solidifier power from a single unit of logic goo, default: " + Defaults.LOGIC_POWERS_SOLIDIFIER_TICKS)
                 .defineInRange("logicPowersSolidifierTicks", Defaults.LOGIC_POWERS_SOLIDIFIER_TICKS, 1, 10000);
-        GOO_MAX_PROCESSING_RATE = serverBuilder.comment("Maximum total processing rate of gooifiers and solidifiers, default: " + Defaults.GOO_PROCESSING_RATE)
-                .defineInRange("maxProcessingRate", Defaults.GOO_PROCESSING_RATE, 0, 10000);
+        GOOIFIER_PROCESSING_RATE = serverBuilder.comment("Maximum processing rate of gooifiers, default: " + Defaults.GOOIFIER_PROCESSING_RATE)
+                .defineInRange("maxProcessingRate", Defaults.GOOIFIER_PROCESSING_RATE, 1, 10000);
+        SOLIDIFIER_PROCESSING_RATE = serverBuilder.comment("Max processing rate of solidifiers, default: " + Defaults.SOLIDIFIER_PROCESSING_RATE)
+                .defineInRange("solidifierProcessingRate", Defaults.SOLIDIFIER_PROCESSING_RATE, 1, 10000);
         GOO_BULB_TOTAL_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a single bulb, default: " + Defaults.BULB_CAPACITY)
                 .defineInRange("maxBulbCapacity", Defaults.BULB_CAPACITY, 0, 100000);
         BULB_CONTAINMENT_MULTIPLIER = serverBuilder.comment("Enchanted capacity of bulbs is multiplied by this, per level, default: " + Defaults.BULB_CONTAINMENT_MULTIPLIER)
@@ -319,7 +325,7 @@ public class GooConfig
                 .defineInRange("crucibleContainmentMultiplier", Defaults.CRUCIBLE_CONTAINMENT_MULTIPLIER, 0, 10);
         MIXER_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a mixer tank, default: " + Defaults.MIXER_CAPACITY)
                 .defineInRange("maxMixerCapacity", Defaults.MIXER_CAPACITY, 0, 100000);
-        MIXER_FUEL_RATIO = serverBuilder.comment("Amount of processing ticks from a single unit of Logic Goo: " + Defaults.MIXER_CAPACITY)
+        LOGIC_POWERS_MIXER_TICKS = serverBuilder.comment("Amount of processing ticks from a single unit of Logic Goo: " + Defaults.MIXER_CAPACITY)
                 .defineInRange("mixerFuelRatio", Defaults.MIXER_FUEL_RATIO, 1, 100000);
         DEGRADER_INPUT_CAPACITY = serverBuilder.comment("Maximum total amount of goo in a degrader tank, default: " + Defaults.DEGRADER_INPUT_CAPACITY)
                 .defineInRange("maxDegraderInputCapacity", Defaults.DEGRADER_INPUT_CAPACITY, 0, 100000);

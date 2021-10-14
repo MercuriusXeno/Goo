@@ -354,9 +354,19 @@ public class BlockStatesProvider extends BlockStateProvider {
     }
 
     private void registerSolidifier() {
-        BlockModelBuilder model = models()
-                .withExistingParent("solidifier", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier"));
-        horizontalBlock(BlocksRegistry.Solidifier.get(), model);
+        BlockModelBuilder modelOn = models()
+                .withExistingParent("solidifier_on", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_on"));
+        BlockModelBuilder modelOff = models()
+                .withExistingParent("solidifier_off", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_off"));
+        BlockModelBuilder modelFull = models()
+                .withExistingParent("solidifier_full", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_full"));
+        BlockModelBuilder button = models()
+                .withExistingParent("solidifier_button", new ResourceLocation(GooMod.MOD_ID, "prefab_solidifier_button"));
+        horizontalBlock(BlocksRegistry.Solidifier.get(), s ->
+                s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.DYNAMIC
+                        ? button : s.get(BlockStateProperties.POWERED)
+                        ? modelOn : s.get(DynamicRenderMode.RENDER) == DynamicRenderTypes.ITEM
+                        ? modelFull : modelOff);
     }
 
     private void registerRadiantLight() {

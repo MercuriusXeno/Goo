@@ -1,6 +1,7 @@
 package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.matrix.MatrixStack.Entry;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.RenderHelper;
@@ -15,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.model.ItemCameraTransforms;
+import net.minecraft.client.renderer.model.ItemCameraTransforms.TransformType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
@@ -23,6 +25,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
 import net.minecraftforge.fluids.FluidStack;
@@ -74,6 +77,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
         }
 
         // ItemFrameRenderer
+        int maxLight = 0;
         ItemStack item = tile.getDisplayedItem();
         if (!item.isEmpty()) {
             IBakedModel model = Minecraft.getInstance().getItemRenderer().getItemModelMesher().getItemModel(item.getItem());
@@ -85,8 +89,6 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                     continue;
                 }
 
-                // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
-                int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(d));
                 matrices.push();
                 // translate to center
                 matrices.translate(0.5D, 0.75D, 0.5D);
@@ -97,14 +99,31 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 // scale
                 Vector3f scaleVec = new Vector3f(0.25f, 0.25f, 0.03f);
                 // special scaling that doesn't scale the normals, prevents weird lighting issues.
-                MatrixStack.Entry last = matrices.getLast();
+                Entry last = matrices.getLast();
                 last.getMatrix().mul(Matrix4f.makeScale(scaleVec.getX(), scaleVec.getY(), scaleVec.getZ()));
 
-                Minecraft.getInstance().getItemRenderer().renderItem(item, ItemCameraTransforms.TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+                // the light value of the block is 0; we want the light value of the area the item is rendering in, which is just offset a bit from the block.
+                int itemLight = WorldRenderer.getCombinedLight(tile.getWorld(), tile.getPos().offset(d));
+                if (itemLight > maxLight) {
+                    maxLight = itemLight;
+                }
+                Minecraft.getInstance().getItemRenderer().renderItem(item, TransformType.FIXED, itemLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
                 matrices.pop();
             }
         }
 
+
+        float progressPercent = tile.progress();
+        ItemStack currentItem = tile.getDisplayedItem();
+        if (currentItem.isEmpty()) {
+            return;
+        }
+        matrices.push();
+        matrices.translate(0.5d, 0.25d, 0.5d);
+        matrices.scale(1f, (1f - progressPercent), 1f);
+        matrices.rotate(new Quaternion(0f, 45f, 0f, true));
+        Minecraft.getInstance().getItemRenderer().renderItem(currentItem, TransformType.GROUND, maxLight, OverlayTexture.NO_OVERLAY, matrices, buffer);
+        matrices.pop();
     }
 
     private static final Map<Direction, Vector3d> renderVec = new HashMap<>();

@@ -8,6 +8,7 @@ import com.xeno.goo.setup.Registry;
 import com.xeno.goo.jei.GooIngredient;
 import com.xeno.goo.util.LinkedHashList;
 import net.minecraft.item.Item;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.RegistryKey;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
