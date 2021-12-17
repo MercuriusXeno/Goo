@@ -406,7 +406,7 @@ public class HexController extends Entity implements IEntityAdditionalSpawnData,
 
     private void handleFriction()
     {
-        this.setMotion(this.getMotion().scale(GENERAL_FRICTION));
+        this.setMotion(this.getMotion().scale(generalFriction));
     }
 
     private void handleGravity()
@@ -606,7 +606,7 @@ public class HexController extends Entity implements IEntityAdditionalSpawnData,
     public void startQuivering()
     {
         if (this.quiverTimer < quiverTimerCycle) {
-            this.quiverTimer = QUIVER_TIMER_INITIALIZED_VALUE;
+            this.quiverTimer = quiverTimerInitializedValue;
         }
     }
 
