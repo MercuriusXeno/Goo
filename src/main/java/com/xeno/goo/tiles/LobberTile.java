@@ -1,13 +1,12 @@
 package com.xeno.goo.tiles;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Vector3d;
@@ -74,15 +73,17 @@ public class LobberTile extends TileEntity
             FluidStack result = cap.drain(simulatedDrain, IFluidHandler.FluidAction.EXECUTE);
             // throw that blob
             Vector3d offsetVec = Vector3d.copy(facing().getDirectionVec());
-            float cubicSizeHalf = GooBlob.cubicSize(result.getAmount()) / 2f;
+            float cubicSizeHalf = HexController.cubicSize(result.getAmount()) / 2f;
             Vector3d sizeOffset = offsetVec.add(offsetVec.scale(cubicSizeHalf));
             Vector3d spawnPos = Vector3d.copy(this.getPos()).add(0.5d, 0.5d, 0.5d) // move to center of block
                     .add(offsetVec.scale(0.52d)) // move to edge of block in facing
                     .add(sizeOffset); // move out based on half the edge length expected so it's pretty much out of the block
-            GooBlob blob = GooBlob.createLobbedBlob(world, result, spawnPos);
 
-            blob.setMotion(offsetVec);
-            world.addEntity(blob);
+            // TODO Fix this
+            // GooBlobController blob = GooBlobController.createLobbedBlob(world, result, spawnPos);
+
+            // blob.setMotion(offsetVec);
+            // world.addEntity(blob);
             return true;
         }
         return false;

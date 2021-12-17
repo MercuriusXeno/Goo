@@ -23,6 +23,7 @@ public class GooFluid extends Fluid
 {
     public static final Predicate<FluidStack> IS_GOO_FLUID = GooFluid::isGooFluid;
 	public static final int FULL_OPACITY = 0xffffffff;
+	public final int stickiness;
 
 	public static boolean isGooFluid(FluidStack fluid) {
 
@@ -40,12 +41,18 @@ public class GooFluid extends Fluid
     private final ResourceLocation shortIcon;
     private final FluidAttributes.Builder builder;
     private final float overrideIndex;
-    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon, float overrideIndex, int lightLevel)
+    public GooFluid(ResourceLocation still, ResourceLocation flowing, ResourceLocation icon,
+            float overrideIndex, int lightLevel, int temperature, int viscosity, int stickiness,
+            int density, int luminosity)
     {
         super();
+        this.stickiness = stickiness;
         this.builder = FluidAttributes
                 .builder(still, flowing)
-                .temperature(293)
+                .temperature(temperature)
+                .viscosity(viscosity)
+                .luminosity(luminosity)
+                .density(density)
                 .color(UNCOLORED_WITH_PARTIAL_TRANSPARENCY);
         this.icon = icon;
         String subpathWithoutExtension = icon.getPath().substring(0, icon.getPath().lastIndexOf(".png"));

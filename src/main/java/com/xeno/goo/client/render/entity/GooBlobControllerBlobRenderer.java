@@ -3,7 +3,7 @@ package com.xeno.goo.client.render.entity;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.client.render.RenderHelper;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -27,7 +27,7 @@ import java.util.Random;
 
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
-public class GooBlobRenderer extends EntityRenderer<GooBlob>
+public class GooBlobControllerBlobRenderer extends EntityRenderer<HexController>
 {
     private static final Vector3f[][] UNSCALED_QUADS = createQuads();
 
@@ -100,24 +100,24 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
         return result;
     }
 
-    public GooBlobRenderer(EntityRendererManager renderManager)
+    public GooBlobControllerBlobRenderer(EntityRendererManager renderManager)
     {
         super(renderManager);
     }
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BLOB.get(), GooBlobRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BLOB.get(), GooBlobControllerBlobRenderer::new);
     }
 
     @Override
-    public ResourceLocation getEntityTexture(GooBlob entity)
+    public ResourceLocation getEntityTexture(HexController entity)
     {
         return PlayerContainer.LOCATION_BLOCKS_TEXTURE;
     }
 
     @Override
-    public void render(GooBlob entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
+    public void render(HexController entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         stack.push();
         RenderType rType = RenderHelper.GOO_CUBE_BRIGHT;
@@ -158,7 +158,7 @@ public class GooBlobRenderer extends EntityRenderer<GooBlob>
     }
 
     @Override
-    protected int getBlockLight(GooBlob entityIn, BlockPos partialTicks)
+    protected int getBlockLight(HexController entityIn, BlockPos partialTicks)
     {
         if (isBrightFluid(entityIn.goo().getFluid(), entityIn.world.getGameTime())) {
             return 15;

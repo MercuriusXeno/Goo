@@ -13,31 +13,30 @@ import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class SolidifierProgressPacket implements IGooModPacket {
+public class SolidifierSwitchFlipPacket implements IGooModPacket
+{
     private RegistryKey<World> worldRegistryKey;
-    private BlockPos pos;
-    private float progress;
+    private BlockPos blockPos;
 
-    public SolidifierProgressPacket(PacketBuffer buf) {
+    public SolidifierSwitchFlipPacket(PacketBuffer buf) {
         read(buf);
     }
 
-    public void read(PacketBuffer buf) {
+    @Override
+    public void read(PacketBuffer buf)
+    {
         this.worldRegistryKey = RegistryKey.getOrCreateKey(Registry.WORLD_KEY, buf.readResourceLocation());
-        this.pos = buf.readBlockPos();
-        this.progress = buf.readFloat();
+        this.blockPos = buf.readBlockPos();
     }
 
-    public SolidifierProgressPacket(RegistryKey<World> registryKey, BlockPos pos, float progress) {
-        this.worldRegistryKey = registryKey;
-        this.pos = pos;
-        this.progress = progress;
+    public SolidifierSwitchFlipPacket(RegistryKey<World> k, BlockPos pos) {
+        worldRegistryKey = k;
+        blockPos = pos;
     }
 
     public void toBytes(PacketBuffer buf) {
         buf.writeResourceLocation(worldRegistryKey.getLocation());
-        buf.writeBlockPos(pos);
-        buf.writeFloat(progress);
+        buf.writeBlockPos(blockPos);
     }
 
     public void handle(Supplier<NetworkEvent.Context> supplier) {
@@ -49,9 +48,9 @@ public class SolidifierProgressPacket implements IGooModPacket {
                 if (Minecraft.getInstance().world.getDimensionKey() != worldRegistryKey) {
                     return;
                 }
-                TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
-                if (te instanceof SolidifierTile) {
-                    ((SolidifierTile) te).updateProgressVisuals(this.progress);
+                TileEntity e = Minecraft.getInstance().world.getTileEntity(blockPos);
+                if (e instanceof SolidifierTile) {
+                    ((SolidifierTile)e).flipSwitch();
                 }
             }
         });

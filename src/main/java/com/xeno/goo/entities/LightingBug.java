@@ -33,7 +33,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 import javax.annotation.Nullable;
@@ -58,7 +57,7 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 	private BlockPos darkPosition;
 
-	private GooSplat lightSplat;
+	private HexController lightGoo;
 
 	public LightingBug(EntityType<LightingBug> type, World worldIn) {
 
@@ -428,9 +427,9 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public boolean shouldExecute() {
 
-			if (lightSplat != null) {
-				if (!lightSplat.isAlive())
-					lightSplat = null;
+			if (lightGoo != null) {
+				if (!lightGoo.isAlive())
+					lightGoo = null;
 				else
 					return super.shouldExecute();
 			}
@@ -440,8 +439,8 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public void startExecuting() {
 
-			if (lightSplat != null) {
-				navigator.setPath(navigator.getPathToPos(lightSplat.getPosition(), 0), 1.0D);
+			if (lightGoo != null) {
+				navigator.setPath(navigator.getPathToPos(lightGoo.getPosition(), 0), 1.0D);
 			} else
 				navigator.setPath(navigator.getPathToPos(new BlockPos(darkPosition), 0), 1.0D);
 		}
@@ -464,11 +463,11 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public boolean shouldExecute() {
 
-			if (lightSplat != null) {
-				if (!lightSplat.isAlive())
-					lightSplat = null;
+			if (lightGoo != null) {
+				if (!lightGoo.isAlive())
+					lightGoo = null;
 				else
-					return getPosition().equals(lightSplat.getPosition());
+					return getPosition().equals(lightGoo.getPosition());
 			}
 			return (darkPosition != null && getPosition().equals(darkPosition));
 		}
@@ -476,16 +475,17 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 		@Override
 		public boolean shouldContinueExecuting() {
 
-			return lightSplat != null && lightSplat.isAlive();
+			return lightGoo != null && lightGoo.isAlive();
 		}
 
 		private void moveToSplat() {
 
-			// move near to the splat
-			Vector3d target = Vector3d.copyCentered(lightSplat.getPosition()).add(Vector3d.copy(lightSplat.sideWeLiveOn().getDirectionVec()).scale(0.25));
-			getMoveHelper().setMoveTo(target.getX(), target.getY(), target.getZ(), 0.7);
-			if (getPosition().equals(darkPosition))
-				darkPosition = null;
+//			// NOOP TODO
+//			// move near to the splat
+//			Vector3d target = lightGoo.closestBlockToEntity(this).getPosition();
+//			getMoveHelper().setMoveTo(target.getX(), target.getY(), target.getZ(), 0.7);
+//			if (getPosition().equals(darkPosition))
+//				darkPosition = null;
 		}
 
 		@Override
@@ -519,14 +519,15 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 				BlockPos pos = start.offset(dir);
 				BlockState state = world.getBlockState(pos);
 				if (state.isSolidSide(world, pos, dir.getOpposite())) {
-					lightSplat = new GooSplat(Registry.GOO_SPLAT.get(), LightingBug.this, world,
-							new FluidStack(Registry.RADIANT_GOO.get(), 1),
-							// add half the direction vector to the centered position to align to the center of the face
-							Vector3d.copyCentered(start).add(Vector3d.copy(dir.getDirectionVec()).scale(0.5)),
-							pos, dir.getOpposite(),
-							true, 0, false);
-					world.addEntity(lightSplat);
-					moveToSplat();
+					// NOOP TODO
+//					lightGoo = new GooBlobController(Registry.GOO_SPLAT.get(), LightingBug.this, world,
+//							new FluidStack(Registry.RADIANT_GOO.get(), 1),
+//							// add half the direction vector to the centered position to align to the center of the face
+//							Vector3d.copyCentered(start).add(Vector3d.copy(dir.getDirectionVec()).scale(0.5)),
+//							pos, dir.getOpposite(),
+//							true, 0, false);
+//					world.addEntity(lightGoo);
+//					moveToSplat();
 					return;
 				}
 			}
@@ -535,14 +536,14 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 		@Override
 		public void tick() {
-
-			if (lightSplat != null && lightSplat.isAtRest())
-				// validate our little splat
-				if (world.getBlockState(lightSplat.getPosition()).isAir(world, lightSplat.getPosition()))
-					GooSplat.getGoo(lightSplat).fill(new FluidStack(Registry.RADIANT_GOO.get(), 1), FluidAction.EXECUTE);
-				else
-					// and kill it if it's invalid
-					GooSplat.getGoo(lightSplat).drain(1, FluidAction.EXECUTE);
+// NOOP TODO
+//			if (lightGoo != null && lightGoo.isAtRest())
+//				// validate our little splat
+//				if (world.getBlockState(lightGoo.getPosition()).isAir(world, lightGoo.getPosition()))
+//					GooBlobController.getGoo(lightGoo).fill(new FluidStack(Registry.RADIANT_GOO.get(), 1), FluidAction.EXECUTE);
+//				else
+//					// and kill it if it's invalid
+//					GooBlobController.getGoo(lightGoo).drain(1, FluidAction.EXECUTE);
 		}
 
 		@Override
@@ -550,8 +551,8 @@ public class LightingBug extends AnimalEntity implements IFlyingAnimal, IEntityA
 
 			// re-enable movement (very important)
 			goalSelector.enableFlag(Flag.MOVE);
-			if (lightSplat != null && !lightSplat.isAlive())
-				lightSplat = null;
+			if (lightGoo != null && !lightGoo.isAlive())
+				lightGoo = null;
 		}
 	}
 

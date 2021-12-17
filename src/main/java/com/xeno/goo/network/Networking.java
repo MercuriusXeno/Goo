@@ -47,13 +47,13 @@ public class Networking {
 		registerPacket(SolidifierHatchOpeningPacket.class, SolidifierHatchOpeningPacket::new);
 		registerPacket(SolidifierFueledPacket.class, SolidifierFueledPacket::new);
 		registerPacket(SolidifierProgressPacket.class, SolidifierProgressPacket::new);
+		registerPacket(SolidifierSwitchFlipPacket.class, SolidifierSwitchFlipPacket::new);
 		registerPacket(UpdateBulbCrystalProgressPacket.class, UpdateBulbCrystalProgressPacket::new);
 		registerPacket(CrystalProgressTickPacket.class, CrystalProgressTickPacket::new);
 		registerPacket(ShrinkPacket.class, ShrinkPacket::new);
 		registerPacket(FertilizePacket.class, FertilizePacket::new);
+		registerPacket(BlobHitEntityInteractionPacket.class, BlobHitEntityInteractionPacket::new);
 		registerPacket(BlobHitInteractionPacket.class, BlobHitInteractionPacket::new);
-		registerPacket(BlobInteractionPacket.class, BlobInteractionPacket::new);
-		registerPacket(SplatInteractionPacket.class, SplatInteractionPacket::new);
 		registerPacket(MixerAnimationPacket.class, MixerAnimationPacket::new);
 		registerPacket(MixerRecipePacket.class, MixerRecipePacket::new);
 		registerPacket(CrucibleCurrentItemPacket.class, CrucibleCurrentItemPacket::new);

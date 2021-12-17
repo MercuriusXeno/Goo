@@ -43,7 +43,7 @@ public class Primordial
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "silk_touch_blast", Primordial::silkTouchBlast, (context) -> true);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "silk_touch_blast", Primordial::silkTouchBlast, (context) -> true);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "primordial_hit", Primordial::entityHit);
     }
@@ -74,7 +74,7 @@ public class Primordial
         return true;
     }
 
-    private static boolean silkTouchBlast(SplatContext context)
+    private static boolean silkTouchBlast(BlobHitContext context)
     {
         // in a radius centered around the block with a spherical distance of [configurable] or less
         // and a harvest level of wood (stone type blocks only) only
@@ -94,7 +94,7 @@ public class Primordial
         return true;
     }
 
-    private static void trySilkTouchBlast(BlockPos blockPos, SplatContext context)
+    private static void trySilkTouchBlast(BlockPos blockPos, BlobHitContext context)
     {
         BlockState state = context.world().getBlockState(blockPos);
         // we don't break blocks with tile entities, sorry not sorry
@@ -128,7 +128,7 @@ public class Primordial
         }
     }
 
-    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, SplatContext context) {
+    private static boolean isExplosionOccluded(Vector3d dropPos, BlockPos blockPos, BlockState state, BlobHitContext context) {
         // now also draw a line between the context center and the block position center. If it intersects *ANYTHING* abort.
         // context center in this case is the block we're touching, not the block we exist in.
         // if this changes, the block sorting function needs to match whatever this is doing.

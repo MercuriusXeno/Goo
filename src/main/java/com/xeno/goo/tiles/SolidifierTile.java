@@ -117,17 +117,38 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         }
     }
 
+    public int switchProgress() {
+        return flipSwitchDelay;
+    }
+
+    public boolean isOn() {
+        return isOn;
+    }
+
     public void flipSwitch() {
         if (this.world.isRemote()) {
-            isOn = !isOn;
             flipSwitchDelay = HALF_SECOND_TICKS;
         } else {
             sendFlipSwitchPacket();
         }
     }
 
-    private void sendFlipSwitchPacket() {
+    public void toggleSwitch() {
+        isOn = !isOn;
+        this.world.setBlockState(this.pos, this.getBlockState().with(BlockStateProperties.POWERED, isOn));
+    }
 
+    public void handleSwitchCountdown() {
+        if (flipSwitchDelay > 0) {
+            flipSwitchDelay--;
+            if (flipSwitchDelay == 0) {
+                toggleSwitch();
+            }
+        }
+    }
+
+    private void sendFlipSwitchPacket() {
+        Networking.sendToClientsAround(new SolidifierSwitchFlipPacket(this.world.getDimensionKey(), this.pos), (ServerWorld)this.world, this.pos);
     }
 
     private float visualItemProgress() {
@@ -135,6 +156,11 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (e.isEmpty() || e.isUnusable()) {
             return 0f;
         }
+
+        if (cooldown > 0) {
+            return 0f;
+        }
+        float cooldownInverted = cooldown < 0 ? -(float)cooldown / ONE_SECOND_TICKS : 1f;
 
         int sumOfTemplate = e.inputsAsFluidStacks().stream().mapToInt(FluidStack::getAmount).sum();
 
@@ -144,7 +170,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         int sumOfProgress = progressToItem.stream().mapToInt(FluidStack::getAmount).sum();
         int delta = sumOfTemplate - sumOfProgress;
 
-        return 1f - (delta / sumOfTemplate);
+        return Math.min(cooldownInverted, 1f - ((float)delta / sumOfTemplate));
     }
 
     public float progress() {
@@ -166,6 +192,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
     @Override
     public void tick() {
         handleTargetChangingCountdown();
+        handleSwitchCountdown();
         if (world == null) {
             return;
         }
@@ -189,7 +216,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
 
         resolveTargetChangingCountdown();
 
-        if (getBlockState().get(BlockStateProperties.POWERED)) {
+        if (!getBlockState().get(BlockStateProperties.POWERED)) {
             return;
         }
 
@@ -319,9 +346,15 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
             if (tryDrainingSources(mapping)) {
                 decrFuelTime();
             }
+
+            if (cooldown >= 0) {
+                cooldown = -ONE_SECOND_TICKS;
+            } else {
+                cooldown++;
+            }
         }
 
-        if (hasBufferedEnough(mapping)) {
+        if (hasBufferedEnough(mapping) && cooldown >= 0) {
             progressToItem.clear();
             produceItem();
             setCooldown();
@@ -354,6 +387,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         if (stack.isEmpty()) {
             return;
         }
+        itemEntity.setPositionAndRotation(bellLocation.getX(), bellLocation.getY(), bellLocation.getZ(), 45f, 0);
         itemEntity.setMotion(dropVector.getX(), dropVector.getY(), dropVector.getZ());
         itemEntity.setDefaultPickupDelay();
         world.addEntity(itemEntity);
@@ -492,7 +526,7 @@ public class SolidifierTile extends TileEntity implements ITickableTileEntity,
         return fluidAmount - fluidInBuffer.getAmount();
     }
 
-    private Direction facing() {
+    public Direction facing() {
         return getBlockState().get(BlockStateProperties.HORIZONTAL_FACING);
     }
 

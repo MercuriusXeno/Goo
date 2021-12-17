@@ -1,7 +1,5 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -19,7 +17,6 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fluids.FluidStack;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -35,7 +32,7 @@ public class Crystal
     }
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "crystal_breaker", Crystal::breaker, Crystal::canBreakBlock);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "crystal_hit", Crystal::hitEntity);
     }
@@ -46,13 +43,13 @@ public class Crystal
         return true;
     }
 
-    private static boolean canBreakBlock(SplatContext context) {
+    private static boolean canBreakBlock(BlobHitContext context) {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);
         return !state.getMaterial().isLiquid() && state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
     }
 
-    private static boolean breaker(SplatContext context)
+    private static boolean breaker(BlobHitContext context)
     {
         if ((context.world() instanceof ServerWorld)) {
             BlockPos blockPos = context.blockPos();
@@ -64,7 +61,7 @@ public class Crystal
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder
-                    .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
+                    .withNullableParameter(LootParameters.THIS_ENTITY, context.blob().owner())
                     .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
                     .withParameter(LootParameters.TOOL, mockPick)
             );

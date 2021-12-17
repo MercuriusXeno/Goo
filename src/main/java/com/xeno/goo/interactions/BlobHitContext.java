@@ -1,14 +1,19 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.particles.BasicParticleType;
-import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.Effect;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.LazyOptional;
@@ -16,15 +21,24 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class BlobHitContext {
-	private final World world;
-	private final IFluidHandler fluidHandler;
-	private final LivingEntity entityHit;
-	private final Fluid fluid;
-	private final GooBlob blob;
+	private World world;
+	private IFluidHandler fluidHandler;
+	private LivingEntity entityHit;
+	private Fluid fluid;
+	private HexController blob;
 	private String interactionKey;
-	private final LivingEntity owner;
+	// optional if fired intelligently
+	private LivingEntity owner;
+	// optional for non-empty hit results with blocks
+	private BlockRayTraceResult hitResult;
+	private BlockPos blockPos;
+	private Vector3d blockCenterVec;
+	private Direction sideHit;
+	private BlockState blockState;
 
-	public BlobHitContext(LivingEntity entityHit, LivingEntity owner, GooBlob gooBlob, Fluid fluid) {
+
+
+	public BlobHitContext(LivingEntity entityHit, LivingEntity owner, HexController gooBlob, Fluid fluid) {
 		this.world = entityHit.world;
 		LazyOptional<IFluidHandler> cap = gooBlob.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
 		if (cap.resolve().isPresent()) {
@@ -36,6 +50,10 @@ public class BlobHitContext {
 		this.blob = gooBlob;
 		this.entityHit = entityHit;
 		this.owner = owner;
+	}
+
+	public BlobHitContext(BlockPos blockHitPos, HexController e) {
+
 	}
 
 	public BlobHitContext withKey(String interactionKey) {
@@ -62,7 +80,7 @@ public class BlobHitContext {
 
 	public String interactionKey() { return this.interactionKey; }
 
-	public GooBlob blob()
+	public HexController blob()
 	{
 		return this.blob;
 	}
@@ -125,5 +143,70 @@ public class BlobHitContext {
 
 	public Vector3d victimCenterVec() {
 		return victim().getBoundingBox().getCenter();
+	}
+
+	public BlockState blockState()
+	{
+		return this.blockState;
+	}
+
+	public BlockRayTraceResult hitResult()
+	{
+		return this.hitResult;
+	}
+
+	public BlockPos blockPos()
+	{
+		return this.blockPos;
+	}
+
+	public Block block()
+	{
+		return this.blockState.getBlock();
+	}
+
+	public boolean setBlockState(BlockState newState)
+	{
+		return this.world.setBlockState(this.blockPos, newState);
+	}
+
+	public FluidState fluidState()
+	{
+		return this.blockState.getFluidState();
+	}
+
+	public Vector3d blockCenterVec()
+	{
+		return this.blockCenterVec;
+	}
+
+	public Direction sideHit()
+	{
+		return this.sideHit;
+	}
+
+	public boolean isBlockAboveAir() {
+		return world.getBlockState(blockPos().offset(Direction.UP)).isAir(world(), blockPos());
+	}
+
+	public boolean setBlockStateAbove(BlockState newState) {
+		return this.world.setBlockState(this.blockPos.offset(Direction.UP), newState);
+	}
+
+	public boolean isBlockBelowAir() {
+		return world.getBlockState(blockPos().offset(Direction.DOWN)).isAir(world(), blockPos());
+	}
+
+	public boolean setBlockStateBelow(BlockState newState) {
+		return this.world.setBlockState(this.blockPos.offset(Direction.DOWN), newState);
+	}
+
+	public boolean isBlock(Block... blocks) {
+		for(Block block : blocks) {
+			if (block().equals(block)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

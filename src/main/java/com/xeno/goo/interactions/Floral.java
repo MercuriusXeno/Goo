@@ -2,7 +2,7 @@ package com.xeno.goo.interactions;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.*;
@@ -23,26 +23,19 @@ public class Floral
     public static void registerInteractions()
     {
         // splat interactions
-        GooInteractions.registerSplat(fluidSupplier.get(), "grow_grass", Floral::growGrass, Floral::isDirt);
-        GooInteractions.registerSplat(fluidSupplier.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
-        GooInteractions.registerSplat(fluidSupplier.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
-        GooInteractions.registerSplat(fluidSupplier.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
-        GooInteractions.registerSplat(fluidSupplier.get(), "flourish", Floral::flourish, Floral::isGrassBlockButNotTallGrassBlock);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "grow_grass", Floral::growGrass, Floral::isDirt);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "grow_moss", Floral::growMoss, Floral::canSupportMoss);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "grow_lilypad", Floral::growLilypad, Floral::canSupportLilypad);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "grow_bark", Floral::growBark, Floral::isStrippedLog);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "flourish", Floral::flourish, Floral::isGrassBlockButNotTallGrassBlock);
 
         GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Floral::blobPassThroughPredicate);
 
         // blob interactions
-        GooInteractions.registerBlob(fluidSupplier.get(), "trigger_growable", Floral::growableTick);
-        GooInteractions.registerBlob(fluidSupplier.get(), "grow_vines", Floral::growVines);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "trigger_growable", Floral::growableTick);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "grow_vines", Floral::growVines);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "floral_hit", Floral::entityHit);
-
-        GooInteractions.registerFailureCallback(fluidSupplier.get(), Floral::failureCallback);
-    }
-
-    private static boolean failureCallback(SplatContext splatContext) {
-        doEffects(splatContext);
-        return true;
     }
 
     private static boolean entityHit(BlobHitContext c) {
@@ -51,7 +44,7 @@ public class Floral
         return true;
     }
 
-    private static boolean growVines(BlobContext blobContext) {
+    private static boolean growVines(BlobHitContext blobContext) {
         doEffects(blobContext);
         if (blobContext.block() instanceof LeavesBlock) {
             for (Direction face : Direction.values()) {
@@ -103,7 +96,7 @@ public class Floral
         return VineBlock.UP;
     }
 
-    private static boolean growableTick(BlobContext blobContext) {
+    private static boolean growableTick(BlobHitContext blobContext) {
         if (blobContext.block() instanceof IGrowable) {
             doEffects(blobContext);
             if (!((IGrowable)blobContext.block()).canGrow(blobContext.world(),
@@ -122,11 +115,11 @@ public class Floral
         return false;
     }
 
-    private static boolean isGrassBlockButNotTallGrassBlock(SplatContext context) {
+    private static boolean isGrassBlockButNotTallGrassBlock(BlobHitContext context) {
         return context.block() instanceof GrassBlock && !(context.block() instanceof TallGrassBlock);
     }
 
-    private static boolean flourish(SplatContext context) {
+    private static boolean flourish(BlobHitContext context) {
         doEffects(context);
         // grow needs a server world in scope, this one is weird.
         if (context.world() instanceof ServerWorld) {
@@ -136,12 +129,12 @@ public class Floral
         return true;
     }
 
-    private static boolean canSupportLilypad(SplatContext context) {
+    private static boolean canSupportLilypad(BlobHitContext context) {
         return context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)
                 && context.fluidState().isSource() && context.isBlockAboveAir();
     }
 
-    private static boolean growLilypad(SplatContext context) {
+    private static boolean growLilypad(BlobHitContext context) {
         // spawn lilypad
         doEffects(context);
         if (!context.isRemote()) {
@@ -153,7 +146,7 @@ public class Floral
         return true;
     }
 
-    private static boolean exchangeBlock(SplatContext context, Block target, Block... sources) {
+    private static boolean exchangeBlock(BlobHitContext context, Block target, Block... sources) {
         // spawn particles and stuff
         doEffects(context);
         // do conversion
@@ -177,36 +170,24 @@ public class Floral
         }
     }
 
-    private static void doEffects(SplatContext context) {
-        if (context.isRemote()) {
-            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
-        }
-    }
-
-    private static void doEffects(BlobContext context) {
-        if (context.isRemote()) {
-            BoneMealItem.spawnBonemealParticles(context.world(), context.blockPos(), 4);
-        }
-    }
-
-    private static boolean canSupportMoss(SplatContext splatContext) {
+    private static boolean canSupportMoss(BlobHitContext splatContext) {
         return splatContext.isBlock(Blocks.COBBLESTONE, Blocks.STONE_BRICKS);
     }
 
-    private static boolean growMoss(SplatContext context) {
+    private static boolean growMoss(BlobHitContext context) {
         return exchangeBlock(context, Blocks.MOSSY_COBBLESTONE, Blocks.COBBLESTONE)
                 || exchangeBlock(context, Blocks.MOSSY_STONE_BRICKS, Blocks.STONE_BRICKS);
     }
 
-    private static boolean isDirt(SplatContext splatContext) {
+    private static boolean isDirt(BlobHitContext splatContext) {
         return splatContext.isBlock(Blocks.DIRT);
     }
 
-    private static boolean growGrass(SplatContext context) {
+    private static boolean growGrass(BlobHitContext context) {
         return exchangeBlock(context, Blocks.GRASS_BLOCK, Blocks.DIRT);
     }
 
-    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
+    private static Boolean blobPassThroughPredicate(BlockState state, HexController gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }
@@ -214,7 +195,7 @@ public class Floral
     }
 
     // similar to exchange block but respect the state of the original log
-    private static boolean exchangeLog(SplatContext context, Block source, Block target) {
+    private static boolean exchangeLog(BlobHitContext context, Block source, Block target) {
         if (!context.block().equals(source)) {
             return false;
         }
@@ -250,12 +231,12 @@ public class Floral
         registerLogBarkPair(Blocks.SPRUCE_WOOD, Blocks.STRIPPED_SPRUCE_WOOD);
     }
 
-    private static boolean isStrippedLog(SplatContext splatContext) {
+    private static boolean isStrippedLog(BlobHitContext splatContext) {
         // inverse of logBarkPairs is strippedBarkPairs, essentially, where stripped bark is the key.
         return logBarkPairs.containsValue(splatContext.block());
     }
 
-    private static boolean growBark(SplatContext context) {
+    private static boolean growBark(BlobHitContext context) {
         return exchangeLog(context, logBarkPairs.inverse().get(context.block()), context.block());
     }
 }

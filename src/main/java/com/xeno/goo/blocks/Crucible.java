@@ -1,8 +1,7 @@
 package com.xeno.goo.blocks;
 
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.items.ItemsRegistry;
-import com.xeno.goo.tiles.BulbTile;
 import com.xeno.goo.tiles.CrucibleTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -129,8 +128,8 @@ public class Crucible extends Block {
 	@Override
 	public void onEntityCollision(BlockState state, World worldIn, BlockPos pos, Entity entityIn) {
 		super.onEntityCollision(state, worldIn, pos, entityIn);
-		if (entityIn instanceof GooBlob) {
-			((GooBlob) entityIn).tryFluidHandlerInteraction(pos, Direction.UP);
+		if (entityIn instanceof HexController) {
+			((HexController) entityIn).tryFluidHandlerInteraction(pos, Direction.UP);
 		}
 	}
 

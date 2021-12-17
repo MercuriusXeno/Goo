@@ -3,8 +3,7 @@ package com.xeno.goo.setup;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.io.WritingMode;
 import com.xeno.goo.interactions.GooInteractions;
-import com.xeno.goo.interactions.IBlobInteraction;
-import com.xeno.goo.interactions.ISplatInteraction;
+import com.xeno.goo.interactions.IBlobHitInteraction;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Tuple;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -14,7 +13,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 @Mod.EventBusSubscriber
-public class GooConfig
+public class Config
 {
     // config types and builders
     public ForgeConfigSpec server;
@@ -22,7 +21,7 @@ public class GooConfig
     private final ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
     private final ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
 
-    public GooConfig() {
+    public Config() {
         setupGeneralMachineConfig();
 
         setupClientConfig();
@@ -137,7 +136,7 @@ public class GooConfig
     private Map<Fluid, ForgeConfigSpec.IntValue> THROWN_GOO_AMOUNTS = new HashMap<>();
     private Map<Fluid, Map<String, ForgeConfigSpec.IntValue>> SPLAT_COOLDOWNS = new HashMap<>();
 
-    private void registerBlobInteractions(Fluid fluid, Map<Tuple<Integer, String>, IBlobInteraction> blobInteractions) {
+    private void registerBlobInteractions(Fluid fluid, Map<Tuple<Integer, String>, IBlobHitInteraction> blobInteractions) {
         int defaultCostForInteractions = 4;
         double defaultChanceOfDrain = 1.0d;
         HashMap<String, ForgeConfigSpec.IntValue> costMap = new HashMap<>();
@@ -160,93 +159,7 @@ public class GooConfig
         BLOB_RESOLVER_COSTS.put(fluid, costMap);
     }
 
-    private void registerSplatInteractions(Fluid fluid, Map<Tuple<Integer, String>, ISplatInteraction> splatInteractions)
-    {
-        int defaultCostForInteractions = 4;
-        double defaultChanceOfInteraction = 1.0d;
-        double defaultChanceOfDrain = 1.0d;
-        double defaultChanceofFail = 0d;
-        int defaultTickCooldown = 0;
-        HashMap<String, ForgeConfigSpec.IntValue> costMap = new HashMap<>();
-        HashMap<String, ForgeConfigSpec.DoubleValue> triggerMap = new HashMap<>();
-        HashMap<String, ForgeConfigSpec.DoubleValue> drainMap = new HashMap<>();
-        HashMap<String, ForgeConfigSpec.DoubleValue> failMap = new HashMap<>();
-        HashMap<String, ForgeConfigSpec.IntValue> cooldownMap = new HashMap<>();
-        serverBuilder.push(Objects.requireNonNull(fluid.getRegistryName()).toString());
-        splatInteractions.forEach((k, v) -> {
-            int amountToThrow = defaultCostForInteractions;
-            int interactionCost = defaultCostForInteractions;
-            double chanceToDrain = defaultChanceOfDrain;
-            int actualCooldown = defaultTickCooldown;
-            if (fluid.equals(Registry.HONEY_GOO.get()) || fluid.equals(Registry.LOGIC_GOO.get())) {
-                chanceToDrain = 0.06125d;
-                interactionCost = 1;
-            }
-            if (fluid.equals(Registry.SLIME_GOO.get())) {
-                chanceToDrain = 0.125d;
-                interactionCost = 1;
-            }
-            if (fluid.equals(Registry.VITAL_GOO.get())) {
-                chanceToDrain = 0.25d;
-                interactionCost = 1;
-            }
-            if (fluid.equals(Registry.WEIRD_GOO.get())) {
-                interactionCost = 1;
-                chanceToDrain = 0.125d;
-                actualCooldown = 100;
-            }
-            ForgeConfigSpec.IntValue costOfInteraction = serverBuilder.comment("Cost of block splat interaction " + k.getB() + ", -1 to consume all thrown, default: " + interactionCost)
-                    .defineInRange(k.getB(), interactionCost, -1, 1000);
-            ForgeConfigSpec.DoubleValue chanceOfDrain = serverBuilder.comment("Chance of block interaction costing goo " + k.getB() + ", 0 is never, default: " + chanceToDrain)
-                    .defineInRange(k.getB() + "_drain_chance", chanceToDrain, 0d, 1d);
-            ForgeConfigSpec.IntValue cooldownOfInteraction = serverBuilder.comment("Cooldown of block effect for interactions that use a cooldown " + k.getB() + ", default: " + actualCooldown)
-                    .defineInRange(k.getB() + "_cooldown", actualCooldown, 0, 1000);
-            ForgeConfigSpec.IntValue thrownAmount = serverBuilder.comment("Thrown amount of " + fluid.getRegistryName().toString() + ", -1 to disable, default: " + amountToThrow)
-                    .defineInRange("thrown_amount", amountToThrow, -1, 1000);
-            costMap.put(k.getB(), costOfInteraction);
-            drainMap.put(k.getB() + "_drain_chance", chanceOfDrain);
-            cooldownMap.put(k.getB() + "_cooldown", cooldownOfInteraction);
-            THROWN_GOO_AMOUNTS.put(fluid, thrownAmount);
-        });
-        serverBuilder.pop();
-        SPLAT_RESOLVER_COSTS.put(fluid, costMap);
-        SPLAT_DRAIN_CHANCE.put(fluid, drainMap);
-        SPLAT_COOLDOWNS.put(fluid, cooldownMap);
-    }
-
-    public int costOfSplatInteraction(Fluid fluid, String key) {
-        if (!SPLAT_RESOLVER_COSTS.containsKey(fluid)) {
-            return -1;
-        }
-        if (!SPLAT_RESOLVER_COSTS.get(fluid).containsKey(key)) {
-            return -1;
-        }
-        return SPLAT_RESOLVER_COSTS.get(fluid).get(key).get();
-    }
-
-    public int cooldownOfSplatInteraction(Fluid fluid, String key) {
-        key = key + "_cooldown";
-        if (!SPLAT_COOLDOWNS.containsKey(fluid)) {
-            return -1;
-        }
-        if (!SPLAT_COOLDOWNS.get(fluid).containsKey(key)) {
-            return -1;
-        }
-        return SPLAT_COOLDOWNS.get(fluid).get(key).get();
-    }
-
-    public double chanceOfSplatInteractionCost(Fluid fluid, String key) {
-        key = key + "_drain_chance";
-        if (!SPLAT_DRAIN_CHANCE.containsKey(fluid)) {
-            return 0d;
-        }
-        if (!SPLAT_DRAIN_CHANCE.get(fluid).containsKey(key)) {
-            return 0d;
-        }
-        return SPLAT_DRAIN_CHANCE.get(fluid).get(key).get();
-    }
-
-    public int costOfBlobInteraction(Fluid fluid, String key) {
+    public int costOfBlobHitInteraction(Fluid fluid, String key) {
         if (!BLOB_RESOLVER_COSTS.containsKey(fluid)) {
             return -1;
         }
@@ -305,7 +218,7 @@ public class GooConfig
 
     private void setupGeneralMachineConfig() {
         serverBuilder.comment("Goo Server Configs").push("general");
-        DAMAGED_ITEMS_CAN_BE_GOOIFIED = serverBuilder.comment("Damaged items can be gooified for a proportional fration of their worth, default: " + Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED)
+        DAMAGED_ITEMS_CAN_BE_GOOIFIED = serverBuilder.comment("Damaged items can be gooified for a proportional amount of their worth, default: " + Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED)
                 .define("damagedItemsCanBeGooified", Defaults.DAMAGED_ITEMS_CAN_BE_GOOIFIED);
         GOO_MAX_TRANSFER_RATE = serverBuilder.comment("Maximum total transfer rate between bulbs, default: " + Defaults.GOO_TRANSFER_RATE)
                 .defineInRange("maxTransferRate", Defaults.GOO_TRANSFER_RATE, 0, 10000);
@@ -353,8 +266,7 @@ public class GooConfig
                 .defineInRange("snailProductionAmount", Defaults.SNAIL_PRODUCTION_AMOUNT, 1, 1000000);
         SNAIL_SPAWN_WEIGHT = serverBuilder.comment("Weight relative to other mobs for snails spawning, default:" + Defaults.SNAIL_SPAWN_WEIGHT)
                 .defineInRange("snailSpawnWeight", Defaults.SNAIL_SPAWN_WEIGHT, 0, 100);
-        GooInteractions.splatRegistry.forEach(this::registerSplatInteractions);
-        GooInteractions.blobRegistry.forEach(this::registerBlobInteractions);
+        GooInteractions.blobHitRegistry.forEach(this::registerBlobInteractions);
         serverBuilder.pop();
     }
 

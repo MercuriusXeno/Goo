@@ -28,12 +28,12 @@ public class Metal
     private static final ItemStack mockPick = new ItemStack(Items.DIAMOND_PICKAXE, 1);
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "metal_breaker", Metal::breaker, Metal::isValidForHarvest);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "metal_breaker", Metal::breaker, Metal::isValidForHarvest);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "metal_hit", Metal::hitEntity);
     }
 
-    private static boolean isValidForHarvest(SplatContext context) {
+    private static boolean isValidForHarvest(BlobHitContext context) {
         BlockPos blockPos = context.blockPos();
         BlockState state = context.world().getBlockState(blockPos);
         return !state.getMaterial().isLiquid() && state.getHarvestLevel() <= diamondHarvestLevel && state.getBlockHardness(context.world(), blockPos) != bedrockHardness;
@@ -45,7 +45,7 @@ public class Metal
         return true;
     }
 
-    private static boolean breaker(SplatContext context)
+    private static boolean breaker(BlobHitContext context)
     {
         if ((context.world() instanceof ServerWorld)) {
             BlockPos blockPos = context.blockPos();
@@ -57,7 +57,7 @@ public class Metal
             ((ServerWorld)context.world()).spawnParticle(new BlockParticleData(ParticleTypes.BLOCK, state), dropPos.x, dropPos.y, dropPos.z, 12, 0d, 0d, 0d, 0.15d);
             LootContext.Builder lootBuilder = new LootContext.Builder((ServerWorld) context.world());
             List<ItemStack> drops = state.getDrops(lootBuilder
-                    .withNullableParameter(LootParameters.THIS_ENTITY, context.splat().owner())
+                    .withNullableParameter(LootParameters.THIS_ENTITY, context.blob().owner())
                     .withParameter(LootParameters.ORIGIN, context.blockCenterVec())
                     .withParameter(LootParameters.TOOL, mockPick)
             );

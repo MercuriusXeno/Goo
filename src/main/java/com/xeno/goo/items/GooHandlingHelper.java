@@ -1,8 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
-import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.overlay.RayTraceTargetSource;
 import com.xeno.goo.setup.Registry;
@@ -300,15 +299,17 @@ public class GooHandlingHelper {
             FluidStack splatStack = cap.drain(drainAmountPlaced, IFluidHandler.FluidAction.EXECUTE);
             int originalAmount = splatStack.getAmount();
             splatStack.setAmount(1);
-            GooSplat splat = GooSplat.createPlacedSplat(player, actualPos, side, hit, splatStack, !playedSoundYet, imperceptibleOffset, false);
-            playedSoundYet = true;
-            if (originalAmount > 1) {
-                FluidStack blobStack = splatStack.copy();
-                blobStack.setAmount(originalAmount - 1);
-                GooBlob blob = GooBlob.createSplattedBlob(player, splat, blobStack);
-                player.world.addEntity(blob);
-            }
-            player.world.addEntity(splat);
+
+            // todo fix this
+//            GooBlobController splat = new GooBlobController(player, actualPos, side, hit, splatStack, !playedSoundYet, imperceptibleOffset, false);
+//            playedSoundYet = true;
+//            if (originalAmount > 1) {
+//                FluidStack blobStack = splatStack.copy();
+//                blobStack.setAmount(originalAmount - 1);
+//                GooBlobController blob = GooBlobController.createSplattedBlob(player, splat, blobStack);
+//                player.world.addEntity(blob);
+//            }
+//            player.world.addEntity(splat);
         }
         if (didStuff) {
             player.swing(hand, true);
@@ -351,15 +352,8 @@ public class GooHandlingHelper {
         }
 
         FluidStack splatStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
-        int originalAmount = splatStack.getAmount();
         splatStack.setAmount(1);
-        GooSplat splat = GooSplat.createPlacedSplat(player, pos, side, hit, splatStack, true, 0f, false);
-        if (originalAmount > 1) {
-            FluidStack blobStack = splatStack.copy();
-            blobStack.setAmount(originalAmount - 1);
-            GooBlob blob = GooBlob.createSplattedBlob(player, splat, blobStack);
-            player.world.addEntity(blob);
-        }
+        HexController splat = HexController.createPlacedSplat(player, pos, side, hit, splatStack);
         player.world.addEntity(splat);
         player.swing(hand, true);
         return false;
