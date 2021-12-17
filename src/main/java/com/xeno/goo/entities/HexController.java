@@ -523,8 +523,8 @@ public class HexController extends Entity implements IEntityAdditionalSpawnData,
     {
         super.read(tag);
 
-        // NOOP TODO
-        //deserializeAttachment(tag);
+        deserializeAttachment(tag);
+        
         goo.readFromNBT(tag.getCompound("goo"));
         if (tag.hasUniqueId("owner")) {
             this.owner = world.getPlayerByUuid(tag.getUniqueId("owner"));
@@ -532,19 +532,18 @@ public class HexController extends Entity implements IEntityAdditionalSpawnData,
         this.isCollidingEntity = tag.getBoolean("LeftOwner");
     }
 
-    // NOOP TODO
-//    private void deserializeAttachment(CompoundNBT tag)
-//    {
-//        if (!tag.contains("attachment")) {
-//            this.isAttachedToBlock = false;
-//            return;
-//        }
-//        CompoundNBT at = tag.getCompound("attachment");
-//        this.blockAttached =
-//                new BlockPos(at.getInt("x"), at.getInt("y"), at.getInt("z"));
-//        this.sideWeLiveOn = Direction.byIndex(at.getInt("side"));
-//        this.isAttachedToBlock = true;
-//    }
+    private void deserializeAttachment(CompoundNBT tag)
+    {
+        if (!tag.contains("attachment")) {
+            this.isAttachedToBlock = false;
+            return;
+        }
+        CompoundNBT at = tag.getCompound("attachment");
+        this.blockAttached =
+                new BlockPos(at.getInt("x"), at.getInt("y"), at.getInt("z"));
+        this.sideWeLiveOn = Direction.byIndex(at.getInt("side"));
+        this.isAttachedToBlock = true;
+    }
 
     @Override
     public CompoundNBT writeWithoutTypeId(CompoundNBT compound) {
