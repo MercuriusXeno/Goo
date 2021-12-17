@@ -2,14 +2,17 @@ package com.xeno.goo.client.render.block;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.matrix.MatrixStack.Entry;
+import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
 import com.xeno.goo.client.render.RenderHelper;
 import com.xeno.goo.client.render.RenderHelper.FluidType;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.client.render.block.HatchOpeningState.HatchOpeningStates;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.setup.Resources;
 import com.xeno.goo.setup.Resources.Hatch;
+import com.xeno.goo.tiles.GooPumpTile;
 import com.xeno.goo.tiles.SolidifierTile;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
@@ -22,20 +25,26 @@ import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3f;
+import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
 {
+    private final BlockRendererDispatcher blockRenderer = Minecraft.getInstance().getBlockRendererDispatcher();
+
     // vars holding the frame timing of hatch opening states
     private int lastItemLight;
     public SolidifierRenderer(TileEntityRendererDispatcher rendererDispatcherIn)
@@ -54,7 +63,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
             return;
         }
 
-        renderItem(tile, matrices, buffer);
+        renderItem(tile, matrices, buffer, light, overlay, partialTicks);
 
         renderHatch(tile, partialTicks, matrices, buffer, light, overlay);
     }
@@ -65,15 +74,40 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
         RenderHelper.renderObject(hatchModel, matrices, buffer.getBuffer(RenderType.getCutoutMipped()), 0xffffffff, light, overlay);
     }
 
-    private void renderItem(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer) {
+    private void renderItem(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer, int originalLight, int overlay, float partialTicks) {
 
+        Integer maxLight = renderItemFrameItemAndReturnLight(tile, matrices, buffer);
+        if (maxLight == null) {
+            maxLight = originalLight;
+        } else {
+            maxLight = Math.max(maxLight, originalLight);
+        }
+        renderItemProgress(tile, matrices, buffer, maxLight);
+        renderButton(tile, matrices, buffer, maxLight, overlay, partialTicks);
+    }
 
+    private void renderButton(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer, Integer maxLight, int overlay, float partialTicks) {
+        matrices.push();
+        final BlockState dynamicState = BlocksRegistry.Solidifier.get().getDefaultState()
+                .with(BlockStateProperties.HORIZONTAL_FACING, tile.facing())
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.DYNAMIC);
+        float frames = tile.switchProgress();
+        if (frames > 0 && frames < 20) { frames -= partialTicks; }
+        if (frames < 0) { frames = 0; }
+        Vector3f positionOffset = tile.facing().toVector3f();
+        matrices.translate(positionOffset.getX(), positionOffset.getY(), positionOffset.getZ());
+        blockRenderer.renderBlock(dynamicState, matrices, buffer, maxLight, overlay, EmptyModelData.INSTANCE);
+        matrices.pop();
+    }
+
+    @Nullable
+    private Integer renderItemFrameItemAndReturnLight(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer) {
         // one function of the solidifier is a safety mechanism to prevent accidentally changing the item.
         // when you attempt to change it, you get a flashing indication that you're trying to alter the target
         // which you must then confirm. this is achieved by checking the tile change timer is nonzero, abstracted into shouldFlash()
         // shouldFlash() is also only true when the world timer is inside an interval where flashing should occur.
         if (tile.shouldFlashTargetItem()) {
-            return;
+            return null;
         }
 
         // ItemFrameRenderer
@@ -82,7 +116,7 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
         if (!item.isEmpty()) {
             IBakedModel model = Minecraft.getInstance().getItemRenderer().getItemModelMesher().getItemModel(item.getItem());
             if (model == null) {
-                return;
+                return null;
             }
             for (Direction d : Direction.values()) {
                 if (d == Direction.UP || d == Direction.DOWN) {
@@ -111,7 +145,10 @@ public class SolidifierRenderer extends TileEntityRenderer<SolidifierTile>
                 matrices.pop();
             }
         }
+        return maxLight;
+    }
 
+    private void renderItemProgress(SolidifierTile tile, MatrixStack matrices, IRenderTypeBuffer buffer, int maxLight) {
 
         float progressPercent = tile.progress();
         ItemStack currentItem = tile.getDisplayedItem();

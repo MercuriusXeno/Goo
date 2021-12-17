@@ -1,7 +1,6 @@
 package com.xeno.goo.interactions;
 
-import com.xeno.goo.effects.HarmlessEffect;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.fluids.GooFluid;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
@@ -17,7 +16,6 @@ import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
@@ -30,7 +28,7 @@ public class Logic
     private static final Supplier<GooFluid> fluidSupplier = Registry.LOGIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "logic_pulse", Logic::logicPulse, Logic::isValidForLogicPulse);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "logic_pulse", Logic::logicPulse, Logic::isValidForLogicPulse);
 
         GooInteractions.registerPassThroughPredicate(fluidSupplier.get(), Logic::blobPassThroughPredicate);
 
@@ -46,8 +44,8 @@ public class Logic
         return false;
     }
 
-    private static boolean isValidForLogicPulse(SplatContext context) {
-        BlockPos pos = context.splat().getPosition();
+    private static boolean isValidForLogicPulse(BlobHitContext context) {
+        BlockPos pos = context.blob().getPosition();
         BlockState state = context.world().getBlockState(pos);
         // once per second on game time
         return (context.world().getGameTime() % 20 == 0)
@@ -60,13 +58,13 @@ public class Logic
         return !(state.getBlock() instanceof LeverBlock) && state.get(BlockStateProperties.POWERED);
     }
 
-    private static boolean logicPulse(SplatContext context) {
-        BlockPos pos = context.splat().getPosition();
+    private static boolean logicPulse(BlobHitContext context) {
+        BlockPos pos = context.blob().getPosition();
         BlockState state = context.world().getBlockState(pos);
         // this is just particles lol
         if (context.world() instanceof ServerWorld) {
-            Vector3d particlePos = context.splat().getPositionVec();
-            AxisAlignedBB bounds = context.splat().getBoundingBox();
+            Vector3d particlePos = context.blob().getPositionVec();
+            AxisAlignedBB bounds = context.blob().getBoundingBox();
             // vec representing the "domain" of the bounding box.
             Vector3d rangeVec = new Vector3d(
                     bounds.maxX - bounds.minX,
@@ -95,7 +93,7 @@ public class Logic
         return true;
     }
 
-    private static boolean isLegalStateAndSideHitCombo(BlockState state, SplatContext context) {
+    private static boolean isLegalStateAndSideHitCombo(BlockState state, BlobHitContext context) {
         if (state.getBlock() instanceof AbstractButtonBlock || state.getBlock() instanceof LeverBlock) {
             // has to be "in" the logical switch to do something to it, for consistency/style.
             if (context.sideHit() != matchAttachmentFace(state.get(BlockStateProperties.HORIZONTAL_FACING),
@@ -139,9 +137,9 @@ public class Logic
         }
     }
 
-    private static void togglePressurePlate(BlockState state, World world, BlockPos pos, SplatContext context) {
+    private static void togglePressurePlate(BlockState state, World world, BlockPos pos, BlobHitContext context) {
         AbstractPressurePlateBlock plate = (AbstractPressurePlateBlock) state.getBlock();
-        plate.onEntityCollision(state, world, pos, context.splat());
+        plate.onEntityCollision(state, world, pos, context.blob());
     }
 
     private static void toggleLever(BlockState state, World world, BlockPos pos) {
@@ -178,7 +176,7 @@ public class Logic
         }
     }
 
-    private static Boolean blobPassThroughPredicate(BlockState state, GooBlob gooBlob) {
+    private static Boolean blobPassThroughPredicate(BlockState state, HexController gooBlob) {
         if (state.getBlock().hasTileEntity(state)) {
             return false;
         }

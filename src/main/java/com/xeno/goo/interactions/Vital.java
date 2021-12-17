@@ -20,7 +20,7 @@ public class Vital
     private static final Supplier<GooFluid> fluidSupplier = Registry.VITAL_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "vital_pulse", Vital::vitalPulse, Vital::isLivingInRangeAndHalfSecondPulse);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "vital_hit", Vital::hitEntity);
     }
@@ -44,20 +44,20 @@ public class Vital
         return true;
     }
 
-    private static boolean isLivingInRangeAndHalfSecondPulse(SplatContext splatContext) {
+    private static boolean isLivingInRangeAndHalfSecondPulse(BlobHitContext splatContext) {
         return (splatContext.world().getGameTime() % 10 == 0)
                 && splatContext.world()
-                .getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d),
+                .getEntitiesWithinAABB(LivingEntity.class, splatContext.blob().getBoundingBox().grow(1d),
                         (e) -> e.isEntityUndead() || e.getHealth() < e.getMaxHealth()).size() > 0;
     }
 
-    private static boolean vitalPulse(SplatContext splatContext) {
+    private static boolean vitalPulse(BlobHitContext splatContext) {
         List<LivingEntity> nearbyEntities = splatContext.world()
-                .getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox().grow(1d),
+                .getEntitiesWithinAABB(LivingEntity.class, splatContext.blob().getBoundingBox().grow(1d),
                         (e) -> e.isEntityUndead() || e.getHealth() < e.getMaxHealth());
         for(LivingEntity entity : nearbyEntities) {
             if (entity.isEntityUndead()) {
-                entity.attackEntityFrom(DamageSource.causeIndirectDamage(splatContext.splat(), entity), 1f);
+                entity.attackEntityFrom(DamageSource.causeIndirectDamage(splatContext.blob(), entity), 1f);
             } else {
                 entity.heal(1f);
                 doEffects(entity);

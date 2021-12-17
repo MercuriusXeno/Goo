@@ -1,63 +1,243 @@
 {
   "variants": {
-    "facing=north,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier"
+    "facing=north,hatch_opening=closed,powered=false,render=static": {
+      "model": "goo:block/solidifier_off"
     },
-    "facing=south,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=south,hatch_opening=closed,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 180
     },
-    "facing=west,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=west,hatch_opening=closed,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 270
     },
-    "facing=east,hatch_opening=closed,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=east,hatch_opening=closed,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 90
     },
-    "facing=north,hatch_opening=opened,powered=false": {
-      "model": "goo:block/solidifier"
+    "facing=north,hatch_opening=opened,powered=false,render=static": {
+      "model": "goo:block/solidifier_off"
     },
-    "facing=south,hatch_opening=opened,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=south,hatch_opening=opened,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 180
     },
-    "facing=west,hatch_opening=opened,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=west,hatch_opening=opened,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 270
     },
-    "facing=east,hatch_opening=opened,powered=false": {
-      "model": "goo:block/solidifier",
+    "facing=east,hatch_opening=opened,powered=false,render=static": {
+      "model": "goo:block/solidifier_off",
       "y": 90
     },
-    "facing=north,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier"
+    "facing=north,hatch_opening=closed,powered=true,render=static": {
+      "model": "goo:block/solidifier_on"
     },
-    "facing=south,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=south,hatch_opening=closed,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
       "y": 180
     },
-    "facing=west,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=west,hatch_opening=closed,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
       "y": 270
     },
-    "facing=east,hatch_opening=closed,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=east,hatch_opening=closed,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
       "y": 90
     },
-    "facing=north,hatch_opening=opened,powered=true": {
-      "model": "goo:block/solidifier"
+    "facing=north,hatch_opening=opened,powered=true,render=static": {
+      "model": "goo:block/solidifier_on"
     },
-    "facing=south,hatch_opening=opened,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=south,hatch_opening=opened,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
       "y": 180
     },
-    "facing=west,hatch_opening=opened,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=west,hatch_opening=opened,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
       "y": 270
     },
-    "facing=east,hatch_opening=opened,powered=true": {
-      "model": "goo:block/solidifier",
+    "facing=east,hatch_opening=opened,powered=true,render=static": {
+      "model": "goo:block/solidifier_on",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button"
+    },
+    "facing=south,hatch_opening=closed,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button"
+    },
+    "facing=south,hatch_opening=opened,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=false,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button"
+    },
+    "facing=south,hatch_opening=closed,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button"
+    },
+    "facing=south,hatch_opening=opened,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=true,render=dynamic": {
+      "model": "goo:block/solidifier_button",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off"
+    },
+    "facing=south,hatch_opening=closed,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off"
+    },
+    "facing=south,hatch_opening=opened,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=false,render=dynamic_2": {
+      "model": "goo:block/solidifier_off",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on"
+    },
+    "facing=south,hatch_opening=closed,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on"
+    },
+    "facing=south,hatch_opening=opened,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=true,render=dynamic_2": {
+      "model": "goo:block/solidifier_on",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=false,render=item": {
+      "model": "goo:block/solidifier_full"
+    },
+    "facing=south,hatch_opening=closed,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=false,render=item": {
+      "model": "goo:block/solidifier_full"
+    },
+    "facing=south,hatch_opening=opened,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=false,render=item": {
+      "model": "goo:block/solidifier_full",
+      "y": 90
+    },
+    "facing=north,hatch_opening=closed,powered=true,render=item": {
+      "model": "goo:block/solidifier_on"
+    },
+    "facing=south,hatch_opening=closed,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
+      "y": 180
+    },
+    "facing=west,hatch_opening=closed,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
+      "y": 270
+    },
+    "facing=east,hatch_opening=closed,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
+      "y": 90
+    },
+    "facing=north,hatch_opening=opened,powered=true,render=item": {
+      "model": "goo:block/solidifier_on"
+    },
+    "facing=south,hatch_opening=opened,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
+      "y": 180
+    },
+    "facing=west,hatch_opening=opened,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
+      "y": 270
+    },
+    "facing=east,hatch_opening=opened,powered=true,render=item": {
+      "model": "goo:block/solidifier_on",
       "y": 90
     }
   }

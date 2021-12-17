@@ -1,7 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.library.AudioHelper;
 import com.xeno.goo.setup.Registry;
 import com.xeno.goo.tiles.FluidHandlerHelper;
@@ -64,7 +64,7 @@ public class GauntletAbstraction extends ItemFluidContainer
         }
 
         FluidStack thrownStack = cap.drain(drainAmountThrown, IFluidHandler.FluidAction.EXECUTE);
-        player.getEntityWorld().addEntity(new GooBlob(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
+        player.getEntityWorld().addEntity(new HexController(Registry.GOO_BLOB.get(), player.getEntityWorld(), player, thrownStack));
         AudioHelper.playerAudioEvent(player, Registry.GOO_LOB_SOUND.get(), 1.0f);
         player.swing(hand, true);
 

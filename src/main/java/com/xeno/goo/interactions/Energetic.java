@@ -36,7 +36,7 @@ public class Energetic
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
+        GooInteractions.registerBlobHit(Registry.ENERGETIC_GOO.get(), "mining_blast", Energetic::miningBlast, (context) -> true);
 
         GooInteractions.registerBlobHit(Registry.ENERGETIC_GOO.get(), "energetic_hit", Energetic::hitEntity);
     }
@@ -47,7 +47,7 @@ public class Energetic
         return miningBlast(c.blob().getPosition(), c.world(), c.victimCenterVec(), c.owner());
     }
 
-    private static boolean miningBlast(SplatContext c)
+    private static boolean miningBlast(BlobHitContext c)
     {
         return miningBlast(c.blockPos(), c.world(), c.blockCenterVec(), c.owner());
     }

@@ -3,7 +3,7 @@ package com.xeno.goo.client.render.entity;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.client.render.RenderHelper;
-import com.xeno.goo.entities.GooSplat;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
@@ -25,7 +25,7 @@ import net.minecraftforge.fml.client.registry.RenderingRegistry;
 
 import static net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
 
-public class GooSplatRenderer extends EntityRenderer<GooSplat>
+public class GooBlobControllerSplatRenderer extends EntityRenderer<HexController>
 {
     private static final Vector3f[][] UNSCALED_QUADS = createQuads();
 
@@ -100,24 +100,24 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
         return result;
     }
 
-    public GooSplatRenderer(EntityRendererManager renderManager)
+    public GooBlobControllerSplatRenderer(EntityRendererManager renderManager)
     {
         super(renderManager);
     }
 
     public static void register()
     {
-        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_SPLAT.get(), GooSplatRenderer::new);
+        RenderingRegistry.registerEntityRenderingHandler(Registry.GOO_BLOB.get(), GooBlobControllerSplatRenderer::new);
     }
 
     @Override
-    public ResourceLocation getEntityTexture(GooSplat entity)
+    public ResourceLocation getEntityTexture(HexController entity)
     {
         return PlayerContainer.LOCATION_BLOCKS_TEXTURE;
     }
 
     @Override
-    public void render(GooSplat entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
+    public void render(HexController entity, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer bufferType, int light)
     {
         if (entity.goo().isEmpty()) {
             return;
@@ -136,15 +136,16 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
                 .getAtlasTexture(PlayerContainer.LOCATION_BLOCKS_TEXTURE)
                 .getSprite(entity.goo().getFluid().getAttributes().getStillTexture());
 
-        Vector3d scale = entity.shape();
-        Vector3f[][] scaledQuads = scale(UNSCALED_QUADS, scale);
+        // TODO NOOP
+        // Vector3d scale = entity.shape();
+        //Vector3f[][] scaledQuads = scale(UNSCALED_QUADS, scale);
         stack.push();
         Matrix4f matrix = stack.getLast().getMatrix();
         int color = 0xCCFFFFFF;
 //        if (entity.goo().getFluid().equals(Registry.CHROMATIC_GOO.get())) {
 //            color = FluidCuboidHelper.colorizeChromaticGoo();
 //        }
-        renderCube(matrix, buffer, scaledQuads, color, light, sprite);
+        //renderCube(matrix, buffer, scaledQuads, color, light, sprite);
         stack.pop();
     }
 
@@ -155,7 +156,7 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
     }
 
     @Override
-    protected int getBlockLight(GooSplat entityIn, BlockPos partialTicks)
+    protected int getBlockLight(HexController entityIn, BlockPos partialTicks)
     {
         if (isBrightFluid(entityIn.goo().getFluid(), entityIn.world.getGameTime())) {
             return 15;
@@ -236,8 +237,8 @@ public class GooSplatRenderer extends EntityRenderer<GooSplat>
     }
 
     @Override
-    public boolean shouldRender(GooSplat livingEntityIn, ClippingHelper camera, double camX, double camY, double camZ) {
+    public boolean shouldRender(HexController entity, ClippingHelper camera, double camX, double camY, double camZ) {
         // boolean isExpected =
-        return super.shouldRender(livingEntityIn, camera, camX, camY, camZ);
+        return super.shouldRender(entity, camera, camX, camY, camZ);
     }
 }

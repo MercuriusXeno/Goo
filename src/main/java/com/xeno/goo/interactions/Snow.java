@@ -20,12 +20,12 @@ public class Snow
     private static final Supplier<GooFluid> fluidSupplier = Registry.SNOW_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "freeze_water", Snow::freezeWater, Snow::isWaterSource);
-        GooInteractions.registerSplat(fluidSupplier.get(), "cool_lava", Snow::coolLava, Snow::isLavaSource);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "freeze_water", Snow::freezeWater, Snow::isWaterSource);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "cool_lava", Snow::coolLava, Snow::isLavaSource);
 
         // outrageously, this is allowed
-        GooInteractions.registerBlob(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire); // aquatic lolol
-        GooInteractions.registerBlob(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire); // aquatic lolol
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "snow_hit", Snow::hitEntity);
     }
@@ -52,12 +52,12 @@ public class Snow
         return true;
     }
 
-    private static boolean isWaterSource(SplatContext context) {
+    private static boolean isWaterSource(BlobHitContext context) {
         return context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)
                 && context.fluidState().isSource() && context.isBlockAboveAir();
     }
 
-    public static boolean freezeWater(SplatContext context)
+    public static boolean freezeWater(BlobHitContext context)
     {
         // freeze water
         if (!context.isRemote()) {
@@ -70,12 +70,12 @@ public class Snow
         return true;
     }
 
-    private static boolean isLavaSource(SplatContext context) {
+    private static boolean isLavaSource(BlobHitContext context) {
         return context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)
                 && context.fluidState().isSource();
     }
 
-    public static boolean coolLava(SplatContext context)
+    public static boolean coolLava(BlobHitContext context)
     {
         // spawn some sizzly smoke and sounds
         if (!context.isRemote()) {

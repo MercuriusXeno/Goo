@@ -2,7 +2,6 @@ package com.xeno.goo;
 
 import com.xeno.goo.blocks.BlocksRegistry;
 import com.xeno.goo.setup.*;
-import com.xeno.goo.shrink.ShrinkImpl;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.DistExecutor;
@@ -16,7 +15,7 @@ public class GooMod
 {
     public static final String MOD_ID = "goo";
     public static final Logger logger = Logger.getLogger(MOD_ID);
-    public static GooConfig config;
+    public static Config config;
     public static CommonProxy proxy = DistExecutor.safeRunForDist(() -> ClientProxy::new,
             () -> CommonProxy::new);
 

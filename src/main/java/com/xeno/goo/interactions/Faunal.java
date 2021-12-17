@@ -18,7 +18,7 @@ public class Faunal
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "breed_animals", Faunal::makeAnimalsBreed, Faunal::isBreedingAnimalInRange);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "breed_animals", Faunal::makeAnimalsBreed, Faunal::isBreedingAnimalInRange);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "faunal_hit", Faunal::hitEntity);
     }
@@ -40,8 +40,8 @@ public class Faunal
         return false;
     }
 
-    private static boolean isBreedingAnimalInRange(SplatContext splatContext) {
-        return splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.splat().getBoundingBox().grow(2d, 1d, 2d),
+    private static boolean isBreedingAnimalInRange(BlobHitContext splatContext) {
+        return splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.blob().getBoundingBox().grow(2d, 1d, 2d),
                 Faunal::breedingAnimalPredicate).size() > 1;
     }
 
@@ -49,14 +49,14 @@ public class Faunal
         return !e.isInLove() && e.getGrowingAge() == 0;
     }
 
-    private static boolean makeAnimalsBreed(SplatContext splatContext) {
+    private static boolean makeAnimalsBreed(BlobHitContext splatContext) {
 
-        List<AnimalEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.splat().getBoundingBox().grow(2d, 1d, 2d),
+        List<AnimalEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(AnimalEntity.class, splatContext.blob().getBoundingBox().grow(2d, 1d, 2d),
                 (e) -> !e.isInLove() && e.getGrowingAge() == 0);
         for(AnimalEntity entity : nearbyEntities) {
             if (!splatContext.isRemote()) {
-                if (splatContext.splat().owner() instanceof ServerPlayerEntity) {
-                    entity.setInLove(((ServerPlayerEntity) splatContext.splat().owner()));
+                if (splatContext.blob().owner() instanceof ServerPlayerEntity) {
+                    entity.setInLove(((ServerPlayerEntity) splatContext.blob().owner()));
                 } else {
                     entity.setInLove(600);
                     splatContext.world().setEntityState(entity, (byte) 18);

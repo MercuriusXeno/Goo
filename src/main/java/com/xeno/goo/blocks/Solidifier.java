@@ -1,5 +1,7 @@
 package com.xeno.goo.blocks;
 
+import com.xeno.goo.client.render.block.DynamicRenderMode;
+import com.xeno.goo.client.render.block.DynamicRenderMode.DynamicRenderTypes;
 import com.xeno.goo.client.render.block.HatchOpeningState;
 import com.xeno.goo.client.render.block.HatchOpeningState.HatchOpeningStates;
 import com.xeno.goo.library.VoxelHelper;
@@ -42,6 +44,7 @@ public class Solidifier extends BlockWithConnections {
     VoxelShape[] closedShapes;
     VoxelShape[] openedShapes;
     VoxelShape[] itemFrameShapes;
+    VoxelShape[] buttonShapes;
     public Solidifier() {
         super(Properties.create(Material.IRON)
                 .sound(SoundType.METAL)
@@ -50,11 +53,13 @@ public class Solidifier extends BlockWithConnections {
         setDefaultState(this.getDefaultState()
                 .with(HatchOpeningState.OPENING_STATE, HatchOpeningStates.CLOSED)
                 .with(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC)
                 .with(BlockStateProperties.POWERED, true)
         );
         closedShapes = makeShapes(false);
         openedShapes = makeShapes(true);
         itemFrameShapes = makeItemFrameShapes();
+        buttonShapes = makeButtonShapes();
     }
 
     private VoxelShape[] makeShapes(boolean isOpen)
@@ -96,6 +101,19 @@ public class Solidifier extends BlockWithConnections {
         for(int i = 0; i < 4; i++) {
             Direction d = Direction.byHorizontalIndex(i);
             VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, itemFrameStart, itemFrameEnd);
+            result[i] = itemFrameTop;
+        }
+
+        return result;
+    }
+
+    private VoxelShape[] makeButtonShapes() {
+        Vector3d buttonStart = new Vector3d(6, 10, 2);
+        Vector3d buttonEnd = new Vector3d(10, 14, 3);
+        VoxelShape[] result = new VoxelShape[4];
+        for(int i = 0; i < 4; i++) {
+            Direction d = Direction.byHorizontalIndex(i);
+            VoxelShape itemFrameTop = VoxelHelper.cuboidWithRotation(d, buttonStart, buttonEnd);
             result[i] = itemFrameTop;
         }
 
@@ -209,12 +227,13 @@ public class Solidifier extends BlockWithConnections {
         return getDefaultState()
                 .with(BlockStateProperties.POWERED, context.getWorld().isBlockPowered(context.getPos()))
                 .with(BlockStateProperties.HORIZONTAL_FACING, context.getPlacementHorizontalFacing().getOpposite())
+                .with(DynamicRenderMode.RENDER, DynamicRenderTypes.STATIC)
                 .with(HatchOpeningState.OPENING_STATE, HatchOpeningStates.CLOSED);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED, HatchOpeningState.OPENING_STATE);
+        builder.add(BlockStateProperties.HORIZONTAL_FACING, BlockStateProperties.POWERED, HatchOpeningState.OPENING_STATE, DynamicRenderMode.RENDER);
     }
 
     @SuppressWarnings("deprecation")
@@ -258,6 +277,29 @@ public class Solidifier extends BlockWithConnections {
             Vector3d hitMin = hit.getHitVec().subtract(0.01d, 0.01d, 0.01d);
             Vector3d hitMax = hit.getHitVec().add(0.01d, 0.01d, 0.01d);
             itemFrameShape.toBoundingBoxList().forEach(
+                    (b) -> {
+                        if (b.offset(hit.getPos()).intersects(hitMin.x, hitMin.y, hitMin.z, hitMax.x, hitMax.y, hitMax.z)) {
+                            hitFrame.set(true);
+                        }
+                    }
+            );
+        }
+        if (!hitFrame.get()) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isInButtonBounds(BlockRayTraceResult hit, BlockState state) {
+        AtomicBoolean hitFrame = new AtomicBoolean(false);
+        for (int i = 0; i < 4; i++) {
+            VoxelShape buttonShape = buttonShapes[i];
+            // minecraft intersection logic is *exclusive* which is 1) mega dumb and 2) breaks this check
+            // for this reason we nudge the hit vector to be a very tiny box, which *should* intersect the AABB, if
+            // it's supposed to.
+            Vector3d hitMin = hit.getHitVec().subtract(0.01d, 0.01d, 0.01d);
+            Vector3d hitMax = hit.getHitVec().add(0.01d, 0.01d, 0.01d);
+            buttonShape.toBoundingBoxList().forEach(
                     (b) -> {
                         if (b.offset(hit.getPos()).intersects(hitMin.x, hitMin.y, hitMin.z, hitMax.x, hitMax.y, hitMax.z)) {
                             hitFrame.set(true);

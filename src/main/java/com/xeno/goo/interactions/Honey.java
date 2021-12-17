@@ -16,13 +16,13 @@ public class Honey
     private static int EFFECT_POTENCY = 4;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "trap_living", Honey::trapLiving, Honey::hasLivingTarget);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "trap_living", Honey::trapLiving, Honey::hasLivingTarget);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "honey_hit", Honey::entityHit);
     }
 
-    private static boolean hasLivingTarget(SplatContext splatContext) {
-        return splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.splat().getBoundingBox()).size() > 0;
+    private static boolean hasLivingTarget(BlobHitContext splatContext) {
+        return splatContext.world().getEntitiesWithinAABB(LivingEntity.class, splatContext.blob().getBoundingBox()).size() > 0;
     }
 
     private static boolean entityHit(BlobHitContext c) {
@@ -30,9 +30,9 @@ public class Honey
         return true;
     }
 
-    private static boolean trapLiving(SplatContext splatContext) {
+    private static boolean trapLiving(BlobHitContext splatContext) {
         List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
-                splatContext.splat().getBoundingBox());
+                splatContext.blob().getBoundingBox());
         // affect every living entity in BB on the same dime, essentially. One "tick" of effect costs, not per entity.
         for(LivingEntity entity : nearbyEntities) {
             entity.addPotionEffect(new EffectInstance(Effects.SLOWNESS, EFFECT_DURATION, EFFECT_POTENCY));

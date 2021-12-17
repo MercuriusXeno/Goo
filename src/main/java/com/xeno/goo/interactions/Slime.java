@@ -44,7 +44,7 @@ public class Slime
 
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "bounce_living", Slime::bounceLiving, Slime::isLivingInBounceArea);
         GooInteractions.registerBlobHit(fluidSupplier.get(), "slime_hit", Slime::entityHit);
     }
 
@@ -54,14 +54,14 @@ public class Slime
         return true;
     }
 
-    private static boolean isLivingInBounceArea(SplatContext splatContext) {
+    private static boolean isLivingInBounceArea(BlobHitContext splatContext) {
         return splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
-                splatContext.splat().getBoundingBox().grow(0.45d, 1.9d, 0.45d), e -> !e.isOnGround()).size() > 0;
+                splatContext.blob().getBoundingBox().grow(0.45d, 1.9d, 0.45d), e -> !e.isOnGround()).size() > 0;
     }
 
-    private static boolean bounceLiving(SplatContext splatContext) {
+    private static boolean bounceLiving(BlobHitContext splatContext) {
         List<LivingEntity> nearbyEntities = splatContext.world().getEntitiesWithinAABB(LivingEntity.class,
-                splatContext.splat().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround());
+                splatContext.blob().getBoundingBox().grow(0.25d, 0.9d, 0.25d), e -> !e.isOnGround());
         boolean didThings = false;
         for(LivingEntity entity : nearbyEntities) {
             if (splatContext.sideHit() == Direction.UP) {
@@ -95,12 +95,12 @@ public class Slime
         return didThings;
     }
 
-    private static void doEffects(SplatContext context) {
-        AudioHelper.entityAudioEvent(context.splat(), SoundEvents.ENTITY_SLIME_SQUISH, SoundCategory.AMBIENT,
+    private static void doEffects(BlobHitContext context) {
+        AudioHelper.entityAudioEvent(context.blob(), SoundEvents.ENTITY_SLIME_SQUISH, SoundCategory.AMBIENT,
                 1f, () -> 1f);
         if (context.world() instanceof ServerWorld) {
-            Vector3d particlePos = context.splat().getPositionVec();
-            AxisAlignedBB bounds = context.splat().getBoundingBox();
+            Vector3d particlePos = context.blob().getPositionVec();
+            AxisAlignedBB bounds = context.blob().getBoundingBox();
             // vec representing the "domain" of the bounding box.
             Vector3d rangeVec = new Vector3d(
                     bounds.maxX - bounds.minX,

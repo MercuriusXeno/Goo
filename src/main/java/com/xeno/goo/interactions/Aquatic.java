@@ -20,12 +20,11 @@ public class Aquatic
     private static final Supplier<GooFluid> fluidSupplier = Registry.AQUATIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "cool_lava", Aquatic::waterCoolLava, Aquatic::isHittingSourceLava);
-
-        GooInteractions.registerBlob(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
-        GooInteractions.registerBlob(fluidSupplier.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
-        GooInteractions.registerBlob(fluidSupplier.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
-        GooInteractions.registerBlob(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "cool_lava", Aquatic::waterCoolLava, Aquatic::isHittingSourceLava);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "cool_flowing_lava", Aquatic::waterCoolFlowingLava);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "edify_flowing_water", Aquatic::edifyNonSourceWater);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "hydrate_farmland", Aquatic::hydrateFarmland);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "extinguish_fire", Aquatic::extinguishFire);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "aquatic_hit", Aquatic::hitEntity);
     }
@@ -52,7 +51,7 @@ public class Aquatic
         return isUsed;
     }
 
-    public static boolean hydrateFarmland(BlobContext context)
+    public static boolean hydrateFarmland(BlobHitContext context)
     {
         // hydrate farmland
         if (context.block().equals(Blocks.FARMLAND)) {
@@ -69,11 +68,11 @@ public class Aquatic
         return false;
     }
 
-    public static boolean isHittingSourceLava(SplatContext context) {
+    public static boolean isHittingSourceLava(BlobHitContext context) {
         return context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA) && context.fluidState().isSource();
     }
 
-    public static boolean waterCoolLava(SplatContext context)
+    public static boolean waterCoolLava(BlobHitContext context)
     {
         // cool lava
         if (!context.isRemote()) {
@@ -88,7 +87,7 @@ public class Aquatic
         return true;
     }
 
-    public static boolean waterCoolFlowingLava(BlobContext context) {
+    public static boolean waterCoolFlowingLava(BlobHitContext context) {
         // cool lava
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.LAVA)) {
             // spawn some sizzly smoke and sounds
@@ -104,7 +103,7 @@ public class Aquatic
         return false;
     }
 
-    private static boolean edifyNonSourceWater(BlobContext context) {
+    private static boolean edifyNonSourceWater(BlobHitContext context) {
         // edify non-source water to source water
         if (context.fluidState().getFluid().isEquivalentTo(Fluids.WATER)) {
             if (!context.isRemote()) {
@@ -117,7 +116,7 @@ public class Aquatic
         return false;
     }
 
-    public static boolean extinguishFire(BlobContext context)
+    public static boolean extinguishFire(BlobHitContext context)
     {
         // extinguish fires
         if (context.blockState().getBlock().equals(Blocks.FIRE)) {

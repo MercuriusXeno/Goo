@@ -7,7 +7,7 @@ import com.mojang.blaze3d.vertex.IVertexBuilder;
 import com.xeno.goo.GooMod;
 import com.xeno.goo.client.models.Model3d;
 import com.xeno.goo.client.models.Model3d.SpriteInfo;
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.IParticleRenderType;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -27,7 +27,6 @@ import net.minecraft.util.math.vector.*;
 import net.minecraftforge.fluids.FluidStack;
 import org.lwjgl.opengl.GL11;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -141,7 +140,7 @@ public class RenderHelper extends RenderState
         return GUI_RENDER_TYPES.get(texture);
     }
 
-    public static Vector3d lerpEntityPosition(float partialTicks, GooBlob entity)
+    public static Vector3d lerpEntityPosition(float partialTicks, HexController entity)
     {
         return entity.getPositionVec().subtract(
                 new Vector3d(MathHelper.lerp(partialTicks, entity.lastTickPosX, entity.getPosX()),

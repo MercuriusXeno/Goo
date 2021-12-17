@@ -1,6 +1,6 @@
 package com.xeno.goo.tiles;
 
-import com.xeno.goo.entities.GooBlob;
+import com.xeno.goo.entities.HexController;
 import com.xeno.goo.setup.Registry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -9,10 +9,7 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class DrainTile extends TileEntity implements ITickableTileEntity
 {
@@ -77,7 +74,7 @@ public class DrainTile extends TileEntity implements ITickableTileEntity
         if (this.world == null) {
             return;
         }
-        this.world.addEntity(new GooBlob(Registry.GOO_BLOB.get(), this.world, proxySender, goo.copy(), this.pos));
+        this.world.addEntity(new HexController(Registry.GOO_BLOB.get(), this.world, proxySender, goo.copy(), this.pos));
         this.goo = FluidStack.EMPTY;
     }
 

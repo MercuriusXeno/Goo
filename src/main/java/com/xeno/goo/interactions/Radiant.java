@@ -20,7 +20,7 @@ public class Radiant
     private static final Supplier<GooFluid> fluidSupplier = Registry.RADIANT_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "radiant_light", Radiant::radiantLight, Radiant::isValidForLightLocation);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "radiant_light", Radiant::radiantLight, Radiant::isValidForLightLocation);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "radiant_hit", Radiant::entityHit);
     }
@@ -42,13 +42,13 @@ public class Radiant
         return true;
     }
 
-    private static boolean radiantLight(SplatContext context) {
+    private static boolean radiantLight(BlobHitContext context) {
         BlockPos blockPos = context.blockPos().offset(context.sideHit());
         return context.world().setBlockState(blockPos, BlocksRegistry.RadiantLight.get().getDefaultState()
             .with(BlockStateProperties.FACING, context.sideHit()));
     }
 
-    private static boolean isValidForLightLocation(SplatContext context) {
+    private static boolean isValidForLightLocation(BlobHitContext context) {
         BlockPos blockPos = context.blockPos().offset(context.sideHit());
         BlockState state = context.world().getBlockState(blockPos);
         boolean isAir = state.isAir(context.world(), blockPos);

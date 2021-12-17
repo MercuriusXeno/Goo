@@ -7,26 +7,13 @@ import com.xeno.goo.entities.LightingBug;
 import com.xeno.goo.entities.MutantBee;
 import com.xeno.goo.interactions.GooInteractions;
 import com.xeno.goo.network.Networking;
-import net.minecraft.entity.EntityClassification;
-import net.minecraft.entity.EntitySpawnPlacementRegistry;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.village.PointOfInterestType;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.gen.Heightmap;
-import net.minecraft.world.gen.Heightmap.Type;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.spawner.WorldEntitySpawner;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.loading.FMLPaths;
-
-import static net.minecraft.world.spawner.WorldEntitySpawner.func_234967_a_;
 
 public class CommonSetup
 {
@@ -60,7 +47,7 @@ public class CommonSetup
 
     private static void loadConfig()
     {
-        GooMod.config = new GooConfig();
+        GooMod.config = new Config();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, GooMod.config.server);
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, GooMod.config.client);
         GooMod.config.loadConfig(GooMod.config.server, FMLPaths.CONFIGDIR.get().resolve("goo-server.toml"));

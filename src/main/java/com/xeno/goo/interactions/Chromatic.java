@@ -21,13 +21,13 @@ public class Chromatic
     private static final Supplier<GooFluid> fluidSupplier = Registry.CHROMATIC_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_wool", Chromatic::dyeWool,Chromatic::isWool);
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder, Chromatic::isConcretePowder);
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_concrete", Chromatic::dyeConcrete, Chromatic::isConcrete);
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_terracotta", Chromatic::dyeTerracotta, Chromatic::isTerracotta);
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
-        GooInteractions.registerSplat(fluidSupplier.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
-        GooInteractions.registerSplat(fluidSupplier.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_wool", Chromatic::dyeWool,Chromatic::isWool);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_concrete_powder", Chromatic::dyeConcretePowder, Chromatic::isConcretePowder);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_concrete", Chromatic::dyeConcrete, Chromatic::isConcrete);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_terracotta", Chromatic::dyeTerracotta, Chromatic::isTerracotta);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_glazed_terracotta", Chromatic::dyeGlazedTerracotta, Chromatic::isGlazedTerracotta);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "dye_glass", Chromatic::dyeGlass, Chromatic::isGlass);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "sand_color", Chromatic::colorSand, Chromatic::isSand);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "chromatic_hit", Chromatic::hitEntity);
     }
@@ -214,7 +214,7 @@ public class Chromatic
         return terracottaCycleMap.get(originalColor);
     }
 
-    private static boolean dyeTerracotta(SplatContext context)
+    private static boolean dyeTerracotta(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor;
@@ -229,13 +229,13 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isTerracotta(SplatContext context)
+    private static boolean isTerracotta(BlobHitContext context)
     {
         // in the colored map or the uncolored variant
         return terracottaMap.containsValue(context.block()) || context.block().equals(Blocks.TERRACOTTA);
     }
 
-    private static boolean dyeGlass(SplatContext context)
+    private static boolean dyeGlass(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor;
@@ -250,13 +250,13 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isGlass(SplatContext context)
+    private static boolean isGlass(BlobHitContext context)
     {
         // in the colored map or the uncolored variant
         return glassMap.containsValue(context.block()) || context.block().equals(Blocks.GLASS);
     }
 
-    private static boolean dyeConcrete(SplatContext context)
+    private static boolean dyeConcrete(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
@@ -266,7 +266,7 @@ public class Chromatic
         return true;
     }
 
-    private static boolean dyeGlazedTerracotta(SplatContext context)
+    private static boolean dyeGlazedTerracotta(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
@@ -276,17 +276,17 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isGlazedTerracotta(SplatContext context)
+    private static boolean isGlazedTerracotta(BlobHitContext context)
     {
         return glazedTerracottaMap.containsValue(context.block());
     }
 
-    private static boolean isConcrete(SplatContext context)
+    private static boolean isConcrete(BlobHitContext context)
     {
         return concreteMap.containsValue(context.block());
     }
 
-    private static boolean dyeConcretePowder(SplatContext context)
+    private static boolean dyeConcretePowder(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
@@ -296,12 +296,12 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isConcretePowder(SplatContext context)
+    private static boolean isConcretePowder(BlobHitContext context)
     {
         return concretePowderMap.containsValue(context.block());
     }
 
-    private static boolean dyeWool(SplatContext context)
+    private static boolean dyeWool(BlobHitContext context)
     {
         if (!context.isRemote()) {
             MaterialColor newColor = cycleDyeColor(context.world(), context.blockState(), context.blockPos());
@@ -311,12 +311,12 @@ public class Chromatic
         return true;
     }
 
-    private static boolean isWool(SplatContext context)
+    private static boolean isWool(BlobHitContext context)
     {
         return woolMap.containsValue(context.block());
     }
 
-    private static boolean isSand(SplatContext splatContext) {
+    private static boolean isSand(BlobHitContext splatContext) {
         return sandEquivalents.containsKey(splatContext.block()) || sandEquivalents.containsValue(splatContext.block());
     }
 
@@ -333,7 +333,7 @@ public class Chromatic
         sandEquivalents.put(sand, otherSand);
     }
 
-    private static boolean colorSand(SplatContext context) {
+    private static boolean colorSand(BlobHitContext context) {
         if (!context.isRemote()) {
             Block changeToSand;
             if (sandEquivalents.containsKey(context.block())) {

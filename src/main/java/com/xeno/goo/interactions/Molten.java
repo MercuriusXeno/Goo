@@ -27,8 +27,8 @@ public class Molten
     private static final Supplier<GooFluid> fluidSupplier = Registry.MOLTEN_GOO;
     public static void registerInteractions()
     {
-        GooInteractions.registerSplat(fluidSupplier.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
-        GooInteractions.registerSplat(fluidSupplier.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "melt_obsidian",  Molten::meltObsidian, Molten::isObsidian);
+        GooInteractions.registerBlobHit(fluidSupplier.get(), "cook_block", Molten::cookBlock, Molten::isCookable);
 
         GooInteractions.registerBlobHit(fluidSupplier.get(), "molten_hit", Molten::hitEntity);
     }
@@ -44,14 +44,14 @@ public class Molten
         return true;
     }
 
-    private static boolean isCookable(SplatContext context) {
+    private static boolean isCookable(BlobHitContext context) {
         Optional<IRecipe<?>> matchRecipe = Equivalencies.furnaceRecipes(context.world()).stream()
                 .filter((r) -> soleIngredient(r, context.block()))
                 .findFirst();
         return matchRecipe.isPresent();
     }
 
-    private static boolean cookBlock(SplatContext context)
+    private static boolean cookBlock(BlobHitContext context)
     {
         Optional<IRecipe<?>> matchRecipe = Equivalencies.furnaceRecipes(context.world()).stream()
                 .filter((r) -> soleIngredient(r, context.block()))
@@ -61,7 +61,7 @@ public class Molten
         return result[0];
     }
 
-    private static boolean cookBlock(IRecipe<?> c, SplatContext context)
+    private static boolean cookBlock(IRecipe<?> c, BlobHitContext context)
     {
         if (!context.isRemote()) {
             Item output = c.getRecipeOutput().getItem();
@@ -86,10 +86,10 @@ public class Molten
         return true;
     }
 
-    private static void doEffects(SplatContext context) {
+    private static void doEffects(BlobHitContext context) {
         if (context.world() instanceof ServerWorld) {
-            Vector3d particlePos = context.splat().getPositionVec();
-            AxisAlignedBB bounds = context.splat().getBoundingBox();
+            Vector3d particlePos = context.blob().getPositionVec();
+            AxisAlignedBB bounds = context.blob().getBoundingBox();
             // vec representing the "domain" of the bounding box.
             Vector3d rangeVec = new Vector3d(
                     bounds.maxX - bounds.minX,
@@ -111,7 +111,7 @@ public class Molten
                 ((ServerWorld) context.world()).spawnParticle(ParticleTypes.SMOKE,
                         finalPos2.x, finalPos2.y, finalPos2.z, 1, 0d, 0d, 0d, 0d);
             }
-            AudioHelper.entityAudioEvent(context.splat(), Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.BLOCKS,
+            AudioHelper.entityAudioEvent(context.blob(), Registry.GOO_SIZZLE_SOUND.get(), SoundCategory.BLOCKS,
                     1f, AudioHelper.PitchFormulas.HalfToOne);
         }
     }
@@ -140,11 +140,11 @@ public class Molten
         return false;
     }
 
-    private static boolean isObsidian(SplatContext context) {
+    private static boolean isObsidian(BlobHitContext context) {
         return context.block().equals(Blocks.OBSIDIAN);
     }
 
-    private static boolean meltObsidian(SplatContext context)
+    private static boolean meltObsidian(BlobHitContext context)
     {
         if (!context.isRemote()) {
             return context.setBlockState(Blocks.LAVA.getDefaultState());
