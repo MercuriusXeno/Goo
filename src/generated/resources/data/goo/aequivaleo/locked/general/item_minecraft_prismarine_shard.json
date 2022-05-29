@@ -12,22 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:prismarine_shard\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:prismarine_shard\"}"
       }
     }
   ],
   "compounds": [
-    {
-      "amount": 8.0,
-      "type": "goo:aquatic"
-    },
     {
       "amount": 2.0,
       "type": "goo:crystal"
     },
     {
       "amount": 4.0,
-      "type": "goo:radiant"
+      "type": "goo:light"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:water"
     }
   ]
 }

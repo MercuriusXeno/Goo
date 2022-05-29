@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:string\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:string\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 15.0,
-    "type": "goo:faunal"
+    "amount": 1.0,
+    "type": "goo:nature"
   }
 }

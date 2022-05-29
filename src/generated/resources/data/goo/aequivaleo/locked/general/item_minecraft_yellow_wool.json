@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:yellow_wool\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:yellow_wool\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 15.0,
-      "type": "goo:chromatic"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:faunal"
-    }
-  ]
+  "compounds": {
+    "amount": 4.0,
+    "type": "goo:nature"
+  }
 }

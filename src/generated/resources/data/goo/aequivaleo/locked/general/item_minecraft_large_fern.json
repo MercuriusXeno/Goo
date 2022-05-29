@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:large_fern\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:large_fern\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 10.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 2.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 2.0,
+    "type": "goo:nature"
+  }
 }

@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:emerald\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:emerald\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 120.0,
-      "type": "goo:crystal"
-    },
-    {
-      "amount": 120.0,
-      "type": "goo:regal"
-    }
-  ]
+  "compounds": {
+    "amount": 64.0,
+    "type": "goo:crystal"
+  }
 }

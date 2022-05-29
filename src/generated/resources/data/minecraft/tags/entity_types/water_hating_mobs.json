@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "minecraft:blaze",
-    "minecraft:enderman",
-    "minecraft:iron_golem",
-    "minecraft:magma_cube"
-  ]
-}

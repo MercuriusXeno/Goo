@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:end_rod\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:end_rod\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 20.0,
-      "type": "goo:radiant"
+      "amount": 1.0,
+      "type": "goo:ender"
     },
     {
-      "amount": 10.0,
-      "type": "goo:weird"
+      "amount": 4.0,
+      "type": "goo:light"
     }
   ]
 }

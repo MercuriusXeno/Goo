@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:twisting_vines\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:twisting_vines\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 5.0,
-    "type": "goo:fungal"
+    "amount": 1.0,
+    "type": "goo:nature"
   }
 }

@@ -12,22 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:bone\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:bone\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 144.0,
-      "type": "goo:chromatic"
+      "amount": 12.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 15.0,
-      "type": "goo:decay"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:faunal"
+      "amount": 48.0,
+      "type": "goo:nether"
     }
   ]
 }

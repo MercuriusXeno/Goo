@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:dead_bubble_coral_block\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:dead_bubble_coral_block\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 20.0,
-      "type": "goo:decay"
+      "amount": 4.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 20.0,
-      "type": "goo:faunal"
+      "amount": 4.0,
+      "type": "goo:water"
     }
   ]
 }

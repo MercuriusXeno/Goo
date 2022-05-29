@@ -12,26 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:diamond_ore\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:diamond_ore\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 240.0,
+      "amount": 320.0,
       "type": "goo:crystal"
     },
     {
-      "amount": 32.0,
-      "type": "goo:earthen"
+      "amount": 4.0,
+      "type": "goo:earth"
     },
     {
       "amount": 1.0,
-      "type": "goo:logic_forbidden"
-    },
-    {
-      "amount": 6.0,
-      "type": "goo:primordial"
+      "type": "goo:forbidden"
     }
   ]
 }

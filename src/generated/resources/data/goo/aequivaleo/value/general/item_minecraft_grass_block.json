@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:grass_block\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:grass_block\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 32.0,
-      "type": "goo:earthen"
+      "amount": 4.0,
+      "type": "goo:earth"
     },
     {
-      "amount": 5.0,
-      "type": "goo:floral"
+      "amount": 1.0,
+      "type": "goo:nature"
     }
   ]
 }

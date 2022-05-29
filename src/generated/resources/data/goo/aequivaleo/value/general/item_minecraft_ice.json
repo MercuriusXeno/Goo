@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:ice\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:ice\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 60.0,
-    "type": "goo:snow"
+    "amount": 16.0,
+    "type": "goo:ice"
   }
 }

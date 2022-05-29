@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:poisonous_potato\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:poisonous_potato\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:floral"
+      "amount": 4.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 3.0,
-      "type": "goo:weird"
+      "amount": 4.0,
+      "type": "goo:nether"
     }
   ]
 }

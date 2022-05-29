@@ -12,22 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:shulker_shell\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:shulker_shell\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:faunal"
+      "amount": 640.0,
+      "type": "goo:air"
     },
     {
-      "amount": 1.0,
-      "type": "goo:primordial"
-    },
-    {
-      "amount": 15.0,
-      "type": "goo:weird"
+      "amount": 64.0,
+      "type": "goo:ender"
     }
   ]
 }

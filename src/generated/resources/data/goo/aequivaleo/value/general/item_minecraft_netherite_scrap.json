@@ -12,22 +12,26 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:netherite_scrap\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:netherite_scrap\"}"
       }
     }
   ],
   "compounds": [
     {
       "amount": 720.0,
+      "type": "goo:dark"
+    },
+    {
+      "amount": 600.0,
+      "type": "goo:fire"
+    },
+    {
+      "amount": 720.0,
       "type": "goo:metal"
     },
     {
       "amount": 720.0,
-      "type": "goo:molten"
-    },
-    {
-      "amount": 28.0,
-      "type": "goo:primordial"
+      "type": "goo:nether"
     }
   ]
 }

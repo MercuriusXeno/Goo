@@ -12,22 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:lilac\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:lilac\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 96.0,
-      "type": "goo:chromatic"
-    },
-    {
-      "amount": 10.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 2.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 8.0,
+    "type": "goo:nature"
+  }
 }

@@ -1,54 +1,44 @@
 package com.xeno.goo;
 
-import com.xeno.goo.blocks.BlocksRegistry;
-import com.xeno.goo.setup.*;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.logging.Logger;
+// The value here should match an entry in the META-INF/mods.toml file
+@Mod(GooMod.MOD_ID)
+public class GooMod {
+	public static final String MOD_ID = "goo";
+	// Directly reference a log4j logger.
+	private static final Logger LOGGER = LogManager.getLogger();
 
-@Mod("goo")
-public class GooMod
-{
-    public static final String MOD_ID = "goo";
-    public static final Logger logger = Logger.getLogger(MOD_ID);
-    public static Config config;
-    public static CommonProxy proxy = DistExecutor.safeRunForDist(() -> ClientProxy::new,
-            () -> CommonProxy::new);
+	public GooMod() {
+		Registry.init();
+	}
 
-    public GooMod() {
-        Registry.init();
+	public static ResourceLocation location(String objectName) {
+		return new ResourceLocation(MOD_ID, objectName);
+	}
 
-        initializeEventListeners();
-    }
+	@Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+	public static class ClientEvents {
 
-    public static void warn(String s) {
-        logger.warning(s);
-    }
+		@SubscribeEvent
+		public static void init(final FMLClientSetupEvent event)
+		{
+			// rendering stuff
+			setRenderLayers();
+		}
 
-    public static void error(String s) {
-        logger.severe(s);
-    }
+		private static void setRenderLayers() {
+			// ItemBlockRenderTypes.setRenderLayer(BlocksRegistry.MORTAR.get(), RenderType.cutoutMipped());
+		}
+	}
 
-    public static void debug(String s) {
-        logger.info(s);
-    }
-
-    private void initializeEventListeners()
-    {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::init);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::entityAttributeCreation);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::loadComplete);
-    }
-
-    public static final ItemGroup ITEM_GROUP = new GooCreativeTab(MOD_ID)
-    {
-        @Override
-        public ItemStack createIcon() {
-            return new ItemStack(BlocksRegistry.Solidifier.get());
-        }
-    };
+	public static final CreativeModeTab ITEM_GROUP = new GooCreativeTab(MOD_ID);
 }

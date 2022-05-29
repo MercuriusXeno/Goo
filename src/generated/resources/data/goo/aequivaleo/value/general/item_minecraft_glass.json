@@ -12,18 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:glass\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:glass\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 3.0,
+      "amount": 1.0,
       "type": "goo:crystal"
     },
     {
-      "amount": 24.0,
-      "type": "goo:earthen"
+      "amount": 4.0,
+      "type": "goo:earth"
+    },
+    {
+      "amount": 1.0,
+      "type": "goo:fire"
     }
   ]
 }

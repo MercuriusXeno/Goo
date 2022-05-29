@@ -12,22 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:chorus_fruit\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:chorus_fruit\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    },
-    {
       "amount": 4.0,
-      "type": "goo:weird"
+      "type": "goo:ender"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:nature"
     }
   ]
 }

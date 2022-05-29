@@ -12,26 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:heart_of_the_sea\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:heart_of_the_sea\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 1200.0,
-      "type": "goo:aquatic"
-    },
-    {
       "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "type": "goo:forbidden"
     },
     {
-      "amount": 48.0,
-      "type": "goo:primordial"
-    },
-    {
-      "amount": 600.0,
-      "type": "goo:weird"
+      "amount": 1600.0,
+      "type": "goo:water"
     }
   ]
 }

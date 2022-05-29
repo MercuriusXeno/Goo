@@ -1,6 +1,0 @@
-{
-	"parent": "goo:item/template_gauntlet_held",
-	"textures": {
-		"7": "goo:block/fluid/decay_still"
-	}
-}

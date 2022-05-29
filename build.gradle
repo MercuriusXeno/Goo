@@ -1,59 +1,55 @@
 buildscript {
     repositories {
-        maven { url 'https://files.minecraftforge.net/maven' }
-        maven { url 'https://plugins.gradle.org/m2/' }
-        jcenter()
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://maven.minecraftforge.net/' }
+        // maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        // classpath 'org.parchmentmc:librarian:1.+'
     }
 }
+
 apply plugin: 'net.minecraftforge.gradle'
-// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+// apply plugin: 'org.parchmentmc.librarian.forgegradle'
+// edit below here
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
 repositories {
-    maven { url 'https://files.minecraftforge.net/maven' }
-    maven { url 'https://plugins.gradle.org/m2/' }
-    jcenter()
+    maven { url = 'https://maven.minecraftforge.net/' }
+    // maven { url 'https://plugins.gradle.org/m2/' }
     mavenCentral()
-    maven {
-        name 'Jareds for Patchouli'
-        url 'https://maven.blamejared.com'
-    }
-    maven {
-        name 'LDTTeam for Aequivaleo'
-        url 'https://ldtteam.jfrog.io/ldtteam/modding'
-    }
+    maven { url = 'https://maven.blamejared.com' }
+    maven { url = 'https://ldtteam.jfrog.io/ldtteam/modding' }
+    maven { url = "https://dvs1.progwml6.com/files/maven/" }
 }
 
 version = "${goo_version}"
 group = mod_group
-archivesBaseName = mod_name + "-" + minecraft_target_version
 
-sourceSets.main {
-    resources {
-        include '**/**'
-        srcDirs += "$rootDir/src/generated/resources"
-        exclude '.cache'
-    }
+java {
+    archivesBaseName = 'goo'
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 minecraft {
-    // The mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   Snapshot are built nightly.
-    // stable_#            Stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
+    // The mappings can be changed at any time and must be in the following format.
+    // Channel:   Version:
+    // snapshot   YYYYMMDD   Snapshot are built nightly.
+    // stable     #          Stables are built at the discretion of the MCP team.
+    // official   MCVersion  Official field/method names from Mojang mapping files
+    //
+    // You must be aware of the Mojang license when using the 'official' mappings.
+    // See more information here: https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
+    //
+    // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: "${mcp_channel}", version: "${mcp_version}"
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
-    
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    mappings channel: 'official', version: '1.18.2'
 
-    // Default run configurations.
-    // These can be tweaked, removed, or duplicated as needed.
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
@@ -61,16 +57,20 @@ minecraft {
             workingDirectory project.file('run')
 
             // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', ''
+            // The markers can be added/removed as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
 
-            // disable ref map so patchouli doesn't poop itself
-            properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
-                    source(sourceSets.main)
+                    source sourceSets.main
                 }
             }
         }
@@ -79,16 +79,20 @@ minecraft {
             workingDirectory project.file('run')
 
             // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', ''
+            // The markers can be added/removed as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
-            property 'forge.logging.console.level', 'info'
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
 
-            // disable ref map so patchouli doesn't poop itself
-            properties 'mixin.env.disableRefMap': 'true'
             mods {
                 goo {
-                    source(sourceSets.main)
+                    source sourceSets.main
                 }
             }
         }
@@ -97,95 +101,55 @@ minecraft {
             workingDirectory project.file('run')
 
             // Recommended logging data for a userdev environment
-            property 'forge.logging.markers', ''
+            // The markers can be added/removed as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
 
             // Recommended logging level for the console
-            property 'forge.logging.console.level', 'info'
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
 
-            // disable ref map so patchouli doesn't poop itself
-            properties 'mixin.env.disableRefMap': 'true'
-            args '--all', '--output', file('src/generated/resources/'),
-                    '--reports',
-                    '--mod', 'goo', '--existing', sourceSets.main.resources.srcDirs[0]
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            args '--mod', 'goo', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
             mods {
                 goo {
-                    source(sourceSets.main)
+                    source sourceSets.main
                 }
             }
         }
     }
 }
 
-dependencies {
-    // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
-    // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
-    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft "net.minecraftforge:forge:${minecraft_target_version}-${forge_version}"
-    implementation 'org.jetbrains:annotations:15.0'
+// Include resources generated by data generators.
+sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-    compileOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${soft_deps_minecraft_version}:${jei_version}")
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_target_version}-${forge_version}"
+
+    compileOnly fg.deobf("${jei_location}${soft_deps_minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("${jei_location}${soft_deps_minecraft_version}:${jei_version}")
 
     runtimeOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:universal")
     compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:api")
-    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanilla-api")
-
-    compileOnly fg.deobf("${patchouli_location}:${patchouli_version}:api")
-    runtimeOnly fg.deobf("${patchouli_location}:${patchouli_version}")
+    compileOnly fg.deobf("${aequivaleo_location}:${aequivaleo_version}:vanillaapi")
 }
 
-// Example for how to get properties into the manifest for reading by the runtime..
 jar {
     manifest {
         attributes([
-                "Specification-Title": mod_name.toLowerCase(),
-                "Specification-Vendor": "xeno",
-                "Specification-Version": "1", // We are version 1 of ourselves
-                "Implementation-Title": mod_name,
-                "Implementation-Version": "${goo_version}",
-                "Implementation-Vendor" :"xeno",
+                "Specification-Title"     : "goo",
+                "Specification-Vendor"    : "Xeno",
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : "${goo_version}",
+                "Implementation-Vendor"   : "Xeno",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
 
-processResources {
-    inputs.property "goo_version", goo_version
-    inputs.property "soft_deps_minecraft_version", soft_deps_minecraft_version
-    inputs.property "min_forge_version", min_forge_version
-    inputs.property "loader_version", loader_version
-    inputs.property "aequivaleo_version", aequivaleo_version
-    inputs.property "patchouli_version", patchouli_version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include 'META-INF/mods.toml'
-
-        expand "goo_version": goo_version, "soft_deps_minecraft_version": soft_deps_minecraft_version,
-                "min_forge_version": min_forge_version, "loader_version": loader_version,
-                "aequivaleo_version": aequivaleo_version, "patchouli_version": patchouli_version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'META-INF/mods.toml'
-    }
-}
-
-// Example configuration to allow publishing using the maven-publish task
-// This is the preferred method to reobfuscate your jar file
 jar.finalizedBy('reobfJar')
-// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
-//publish.dependsOn('reobfJar')
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file:///${project.projectDir}/mcmodsrepo"
-        }
-    }
-}

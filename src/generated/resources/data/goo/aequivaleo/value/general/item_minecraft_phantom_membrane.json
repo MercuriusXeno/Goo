@@ -12,22 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:phantom_membrane\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:phantom_membrane\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:decay"
+      "amount": 256.0,
+      "type": "goo:air"
     },
     {
-      "amount": 1.0,
-      "type": "goo:vital"
-    },
-    {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "amount": 64.0,
+      "type": "goo:ender"
     }
   ]
 }

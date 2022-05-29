@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:slime_ball\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:slime_ball\"}"
       }
     }
   ],
   "compounds": {
     "amount": 32.0,
-    "type": "goo:slime"
+    "type": "goo:nature"
   }
 }

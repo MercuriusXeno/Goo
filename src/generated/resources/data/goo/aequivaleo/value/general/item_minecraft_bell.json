@@ -12,26 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:bell\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:bell\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 120.0,
-      "type": "goo:earthen"
-    },
-    {
       "amount": 128.0,
-      "type": "goo:floral"
+      "type": "goo:earth"
     },
     {
-      "amount": 180.0,
+      "amount": 192.0,
       "type": "goo:metal"
     },
     {
-      "amount": 216.0,
-      "type": "goo:regal"
+      "amount": 128.0,
+      "type": "goo:nature"
     }
   ]
 }

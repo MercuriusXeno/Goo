@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:stripped_birch_log\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:stripped_birch_log\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 32.0,
-    "type": "goo:floral"
+    "amount": 16.0,
+    "type": "goo:nature"
   }
 }

@@ -12,12 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:blaze_rod\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:blaze_rod\"}"
       }
     }
   ],
-  "compounds": {
-    "amount": 120.0,
-    "type": "goo:molten"
-  }
+  "compounds": [
+    {
+      "amount": 12.0,
+      "type": "goo:fire"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:nether"
+    }
+  ]
 }

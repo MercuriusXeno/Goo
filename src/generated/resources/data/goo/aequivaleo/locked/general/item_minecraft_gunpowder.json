@@ -12,12 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:gunpowder\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:gunpowder\"}"
       }
     }
   ],
-  "compounds": {
-    "amount": 60.0,
-    "type": "goo:energetic"
-  }
+  "compounds": [
+    {
+      "amount": 64.0,
+      "type": "goo:fire"
+    },
+    {
+      "amount": 64.0,
+      "type": "goo:lightning"
+    }
+  ]
 }

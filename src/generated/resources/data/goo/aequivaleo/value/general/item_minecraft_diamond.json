@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:diamond\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:diamond\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 240.0,
-      "type": "goo:crystal"
-    },
-    {
-      "amount": 6.0,
-      "type": "goo:primordial"
-    }
-  ]
+  "compounds": {
+    "amount": 320.0,
+    "type": "goo:crystal"
+  }
 }

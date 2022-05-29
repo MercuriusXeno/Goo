@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:glowstone_dust\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:glowstone_dust\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 10.0,
-    "type": "goo:radiant"
+    "amount": 16.0,
+    "type": "goo:light"
   }
 }

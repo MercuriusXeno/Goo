@@ -12,12 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:feather\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:feather\"}"
       }
     }
   ],
-  "compounds": {
-    "amount": 15.0,
-    "type": "goo:faunal"
-  }
+  "compounds": [
+    {
+      "amount": 64.0,
+      "type": "goo:air"
+    },
+    {
+      "amount": 16.0,
+      "type": "goo:nature"
+    }
+  ]
 }

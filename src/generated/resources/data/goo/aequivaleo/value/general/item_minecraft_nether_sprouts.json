@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:nether_sprouts\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:nether_sprouts\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 5.0,
-      "type": "goo:fungal"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 1.0,
+    "type": "goo:nature"
+  }
 }

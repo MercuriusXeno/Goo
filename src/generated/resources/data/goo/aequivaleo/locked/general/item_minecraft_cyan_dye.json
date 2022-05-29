@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:cyan_dye\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:cyan_dye\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 48.0,
-    "type": "goo:chromatic"
+    "amount": 4.0,
+    "type": "goo:nature"
   }
 }

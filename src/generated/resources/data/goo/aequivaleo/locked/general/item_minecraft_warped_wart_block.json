@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:warped_wart_block\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:warped_wart_block\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 45.0,
-      "type": "goo:fungal"
+      "amount": 36.0,
+      "type": "goo:ender"
     },
     {
-      "amount": 9.0,
-      "type": "goo:weird"
+      "amount": 36.0,
+      "type": "goo:nature"
     }
   ]
 }

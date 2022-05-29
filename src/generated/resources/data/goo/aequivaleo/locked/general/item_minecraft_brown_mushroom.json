@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:brown_mushroom\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:brown_mushroom\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 15.0,
-      "type": "goo:fungal"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 4.0,
+    "type": "goo:nature"
+  }
 }

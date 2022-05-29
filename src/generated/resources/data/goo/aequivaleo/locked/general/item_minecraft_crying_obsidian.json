@@ -12,26 +12,26 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:crying_obsidian\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:crying_obsidian\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 72.0,
+      "amount": 32.0,
       "type": "goo:crystal"
     },
     {
-      "amount": 72.0,
-      "type": "goo:molten"
+      "amount": 32.0,
+      "type": "goo:earth"
     },
     {
-      "amount": 8.0,
-      "type": "goo:primordial"
+      "amount": 64.0,
+      "type": "goo:nether"
     },
     {
-      "amount": 72.0,
-      "type": "goo:weird"
+      "amount": 16.0,
+      "type": "goo:water"
     }
   ]
 }

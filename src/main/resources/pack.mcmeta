@@ -1,7 +1,6 @@
 {
-    "pack": {
-        "description": "Things are made of Goo!",
-        "pack_format": 6,
-        "_comment": ""
-    }
+	"pack": {
+		"description": "goo resources",
+		"pack_format": 8
+	}
 }

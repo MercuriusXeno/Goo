@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:dead_bush\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:dead_bush\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 5.0,
-      "type": "goo:decay"
-    },
-    {
-      "amount": 5.0,
-      "type": "goo:floral"
-    }
-  ]
+  "compounds": {
+    "amount": 1.0,
+    "type": "goo:nature"
+  }
 }

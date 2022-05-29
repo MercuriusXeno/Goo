@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:dead_brain_coral\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:dead_brain_coral\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 5.0,
-      "type": "goo:decay"
+      "amount": 1.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 5.0,
-      "type": "goo:faunal"
+      "amount": 1.0,
+      "type": "goo:water"
     }
   ]
 }

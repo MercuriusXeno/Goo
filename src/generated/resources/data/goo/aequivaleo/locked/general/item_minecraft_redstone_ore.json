@@ -12,22 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:redstone_ore\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:redstone_ore\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 32.0,
-      "type": "goo:earthen"
-    },
-    {
-      "amount": 32.0,
-      "type": "goo:logic"
+      "amount": 4.0,
+      "type": "goo:earth"
     },
     {
       "amount": 1.0,
-      "type": "goo:logic_forbidden"
+      "type": "goo:forbidden"
+    },
+    {
+      "amount": 32.0,
+      "type": "goo:lightning"
     }
   ]
 }

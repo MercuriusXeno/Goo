@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:vine\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:vine\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 15.0,
-    "type": "goo:floral"
+    "amount": 1.0,
+    "type": "goo:nature"
   }
 }

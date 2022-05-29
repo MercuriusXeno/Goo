@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:kelp\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:kelp\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 5.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 1.0,
+    "type": "goo:nature"
+  }
 }

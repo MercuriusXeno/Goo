@@ -12,26 +12,22 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:wet_sponge\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:wet_sponge\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 60.0,
-      "type": "goo:aquatic"
+      "amount": 64.0,
+      "type": "goo:air"
     },
     {
-      "amount": 30.0,
-      "type": "goo:faunal"
+      "amount": 32.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 15.0,
-      "type": "goo:vital"
-    },
-    {
-      "amount": 6.0,
-      "type": "goo:weird"
+      "amount": 64.0,
+      "type": "goo:water"
     }
   ]
 }

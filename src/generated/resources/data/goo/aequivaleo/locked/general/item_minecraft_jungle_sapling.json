@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:jungle_sapling\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:jungle_sapling\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 16.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 16.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 16.0,
+    "type": "goo:nature"
+  }
 }

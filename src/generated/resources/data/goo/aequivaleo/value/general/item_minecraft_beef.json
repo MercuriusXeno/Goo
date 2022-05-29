@@ -12,18 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:beef\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:beef\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 15.0,
-      "type": "goo:faunal"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 4.0,
+    "type": "goo:nature"
+  }
 }

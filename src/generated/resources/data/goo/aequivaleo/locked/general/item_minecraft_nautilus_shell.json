@@ -12,22 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:nautilus_shell\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:nautilus_shell\"}"
       }
     }
   ],
   "compounds": [
     {
+      "amount": 32.0,
+      "type": "goo:nature"
+    },
+    {
       "amount": 320.0,
-      "type": "goo:aquatic"
-    },
-    {
-      "amount": 6.0,
-      "type": "goo:primordial"
-    },
-    {
-      "amount": 60.0,
-      "type": "goo:weird"
+      "type": "goo:water"
     }
   ]
 }

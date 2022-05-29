@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:spider_eye\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:spider_eye\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 15.0,
-      "type": "goo:faunal"
+      "amount": 64.0,
+      "type": "goo:dark"
     },
     {
-      "amount": 5.0,
-      "type": "goo:weird"
+      "amount": 4.0,
+      "type": "goo:nature"
     }
   ]
 }

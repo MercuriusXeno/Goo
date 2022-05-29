@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:water_bucket\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:water_bucket\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 60.0,
-    "type": "goo:aquatic"
+    "amount": 64.0,
+    "type": "goo:water"
   }
 }

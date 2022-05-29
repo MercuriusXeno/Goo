@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:brain_coral\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:brain_coral\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 5.0,
-      "type": "goo:faunal"
+      "amount": 1.0,
+      "type": "goo:nature"
     },
     {
       "amount": 1.0,
-      "type": "goo:vital"
+      "type": "goo:water"
     }
   ]
 }

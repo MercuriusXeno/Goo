@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:coal\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:coal\"}"
       }
     }
   ],
   "compounds": [
     {
       "amount": 16.0,
-      "type": "goo:earthen"
+      "type": "goo:earth"
     },
     {
-      "amount": 80.0,
-      "type": "goo:molten"
+      "amount": 8.0,
+      "type": "goo:fire"
     }
   ]
 }

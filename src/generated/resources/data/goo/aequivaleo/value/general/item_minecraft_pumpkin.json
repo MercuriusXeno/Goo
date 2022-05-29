@@ -12,12 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:pumpkin\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:pumpkin\"}"
       }
     }
   ],
   "compounds": {
-    "amount": 60.0,
-    "type": "goo:floral"
+    "amount": 64.0,
+    "type": "goo:nature"
   }
 }

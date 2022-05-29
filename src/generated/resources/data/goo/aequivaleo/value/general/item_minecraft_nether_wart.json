@@ -12,18 +12,18 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:nether_wart\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:nether_wart\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 5.0,
-      "type": "goo:fungal"
+      "amount": 1.0,
+      "type": "goo:nature"
     },
     {
-      "amount": 1.0,
-      "type": "goo:weird"
+      "amount": 4.0,
+      "type": "goo:nether"
     }
   ]
 }

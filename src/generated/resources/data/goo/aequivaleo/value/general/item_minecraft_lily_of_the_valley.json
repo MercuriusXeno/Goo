@@ -12,22 +12,12 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:lily_of_the_valley\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:lily_of_the_valley\"}"
       }
     }
   ],
-  "compounds": [
-    {
-      "amount": 48.0,
-      "type": "goo:chromatic"
-    },
-    {
-      "amount": 5.0,
-      "type": "goo:floral"
-    },
-    {
-      "amount": 1.0,
-      "type": "goo:vital"
-    }
-  ]
+  "compounds": {
+    "amount": 4.0,
+    "type": "goo:nature"
+  }
 }

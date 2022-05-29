@@ -12,26 +12,26 @@
       "type": "aequivaleo:itemstack",
       "data": {
         "count": 1.0,
-        "stack": "{id:\"minecraft:sea_pickle\",Count:1b}"
+        "stack": "{Count:1b,id:\"minecraft:sea_pickle\"}"
       }
     }
   ],
   "compounds": [
     {
-      "amount": 30.0,
-      "type": "goo:aquatic"
+      "amount": 4.0,
+      "type": "goo:light"
+    },
+    {
+      "amount": 4.0,
+      "type": "goo:nature"
     },
     {
       "amount": 48.0,
-      "type": "goo:chromatic"
+      "type": "goo:water"
     },
     {
-      "amount": 30.0,
-      "type": "goo:faunal"
-    },
-    {
-      "amount": 30.0,
-      "type": "goo:radiant"
+      "amount": 16.0,
+      "type": "goo:water"
     }
   ]
 }
