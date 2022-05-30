@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/handheld",
   "textures": {
-    "layer0": "minecraft:item/redstone"
+    "layer0": "goo:item/water_blob"
   }
 }
