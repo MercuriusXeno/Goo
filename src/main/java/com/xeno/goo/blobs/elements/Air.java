@@ -1,9 +1,23 @@
 package com.xeno.goo.blobs.elements;
 
 import com.xeno.goo.blobs.WeaponizedBlobHitContext;
+import com.xeno.goo.effects.AbstractGooEffect;
 
-public class Air {
-	public static boolean hitEntity(WeaponizedBlobHitContext c) {
-		return false;
+import java.util.function.Supplier;
+
+public class Air extends AbstractElement {
+
+	public Air(Supplier<AbstractGooEffect> effectSupplier, int debuffDuration, int debuffMaxStacks) {
+
+		super(effectSupplier, debuffDuration, debuffMaxStacks);
+	}
+
+	public void hitEntity(WeaponizedBlobHitContext c) {
+		super.hitEntity(c);
+	}
+
+	@Override
+	void tryMaxStackEffect(WeaponizedBlobHitContext c) {
+
 	}
 }

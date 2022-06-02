@@ -1,9 +1,23 @@
 package com.xeno.goo.blobs.elements;
 
 import com.xeno.goo.blobs.WeaponizedBlobHitContext;
+import com.xeno.goo.effects.AbstractGooEffect;
 
-public class Lightning {
-	public static boolean hitEntity(WeaponizedBlobHitContext c) {
-		return false;
+import java.util.function.Supplier;
+
+public class Lightning extends AbstractElement {
+
+	public Lightning(Supplier<AbstractGooEffect> effectSupplier, int debuffDuration, int debuffMaxStacks) {
+
+		super(effectSupplier, debuffDuration, debuffMaxStacks);
+	}
+
+	public void hitEntity(WeaponizedBlobHitContext c) {
+		super.hitEntity(c);
+	}
+
+	@Override
+	void tryMaxStackEffect(WeaponizedBlobHitContext c) {
+
 	}
 }

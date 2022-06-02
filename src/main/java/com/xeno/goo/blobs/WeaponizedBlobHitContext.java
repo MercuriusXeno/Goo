@@ -15,4 +15,8 @@ public class WeaponizedBlobHitContext {
 		this.owner = owner;
 		this.element = element;
 	}
+
+	public LivingEntity entityHit() {
+		return this.entityHit;
+	}
 }

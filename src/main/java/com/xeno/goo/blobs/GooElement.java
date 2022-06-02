@@ -1,36 +1,41 @@
 package com.xeno.goo.blobs;
 
+import com.xeno.goo.Registry;
 import com.xeno.goo.blobs.elements.*;
 import com.xeno.goo.entities.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 public enum GooElement {
-	EARTH("earth", Earth::hitEntity),
-	AIR("air", Air::hitEntity),
-	FIRE("fire", Fire::hitEntity),
-	WATER("water", Water::hitEntity),
-	ICE("ice", Ice::hitEntity),
-	LIGHTNING("lightning", Lightning::hitEntity),
-	METAL("metal", Metal::hitEntity),
-	CRYSTAL("crystal", Crystal::hitEntity),
-	DARK("dark", Dark::hitEntity),
-	LIGHT("light", Light::hitEntity),
-	NATURE("nature", Nature::hitEntity),
-	ENDER("ender", Ender::hitEntity),
-	NETHER("nether", Nether::hitEntity),
-	FORBIDDEN("forbidden", (c) -> false);
+	EARTH("earth", new Earth(Registry.PETRIFICATION_EFFECT, 600, 2)),
+	AIR("air", new Air(() -> null, 0, 0)),
+	FIRE("fire", new Fire(() -> null, 0, 0)),
+	WATER("water", new Water(() -> null, 0, 0)),
+	ICE("ice", new Ice(() -> null, 0, 0)),
+	LIGHTNING("lightning", new Lightning(() -> null, 0, 0)),
+	METAL("metal", new Metal(() -> null, 0, 0)),
+	CRYSTAL("crystal", new Crystal(() -> null, 0, 0)),
+	DARK("dark", new Dark(() -> null, 0, 0)),
+	LIGHT("light", new Light(() -> null, 0, 0)),
+	NATURE("nature", new Nature(() -> null, 0, 0)),
+	ENDER("ender", new Ender(() -> null, 0, 0)),
+	NETHER("nether", new Nether(() -> null, 0, 0)),
+	FORBIDDEN("forbidden", null);
 
 	private final String name;
-	private final IWeaponizedBlobEffect weaponizedEffect;
+	private final AbstractElement elementImpl;
 
-	GooElement(String name, IWeaponizedBlobEffect weaponizedEffect) {
+	GooElement(String name, AbstractElement element) {
 		this.name = name;
-		this.weaponizedEffect = weaponizedEffect;
+		this.elementImpl = element;
+	}
+
+	public AbstractElement element() {
+		return this.elementImpl;
 	}
 
 	public IWeaponizedBlobEffect getWeaponizedEffect() {
-		return this.weaponizedEffect;
+		return this.elementImpl::hitEntity;
 	}
 
 	public String elementName() {
