@@ -27,7 +27,7 @@ public class PetrificationLayer<T extends LivingEntity, M extends EntityModel<T>
 			float pAgeInTicks, float pNetHeadYaw, float pHeadPitch) {
 		if (pLivingEntity.getActiveEffectsMap().containsKey(Registry.PETRIFICATION_EFFECT.get())) {
 			var amp = pLivingEntity.getActiveEffectsMap().get(Registry.PETRIFICATION_EFFECT.get()).getAmplifier();
-			var opacity = amp > 0 ? (amp > 1 ? 0.9f : 0.7f) : 0.4f; // 0.4, 0.7 and 0.9
+			var opacity = 0.01f * amp;
 			var darkness = 1F;
 			EntityModel<T> entityModel = this.model;
 			this.getParentModel().copyPropertiesTo(entityModel);

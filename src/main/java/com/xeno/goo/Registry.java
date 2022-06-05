@@ -4,7 +4,7 @@ import com.ldtteam.aequivaleo.api.compound.type.ICompoundType;
 import com.ldtteam.aequivaleo.api.compound.type.group.ICompoundTypeGroup;
 import com.xeno.goo.aequivaleo.compound.GooCompoundType;
 import com.xeno.goo.aequivaleo.compound.GooCompoundTypeGroup;
-import com.xeno.goo.blobs.GooElement;
+import com.xeno.goo.elements.ElementEnum;
 import com.xeno.goo.effects.AbstractGooEffect;
 import com.xeno.goo.effects.PetrificationEffect;
 import com.xeno.goo.entities.*;
@@ -35,20 +35,20 @@ public class Registry {
 	public static final DeferredRegister<ICompoundType> TYPES = DeferredRegister.create(AEQ_COMPOUND_TYPES_LOC, GooMod.MOD_ID);
 	public static final DeferredRegister<ICompoundTypeGroup> TYPE_GROUPS = DeferredRegister.create(AEQ_COMPOUND_TYPE_GROUPS_LOC, GooMod.MOD_ID);
 	public static final RegistryObject<GooCompoundTypeGroup> GOO_TYPES = TYPE_GROUPS.register("goo_types", GooCompoundTypeGroup::new);
-	public static final RegistryObject<ICompoundType> EARTH = TYPES.register("earth", () -> new GooCompoundType(GooElement.EARTH, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> AIR = TYPES.register("air", () -> new GooCompoundType(GooElement.AIR, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> FIRE = TYPES.register("fire", () -> new GooCompoundType(GooElement.FIRE, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> WATER = TYPES.register("water", () -> new GooCompoundType(GooElement.WATER, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> ICE = TYPES.register("ice", () -> new GooCompoundType(GooElement.ICE, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> LIGHTNING = TYPES.register("lightning", () -> new GooCompoundType(GooElement.LIGHTNING, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> METAL = TYPES.register("metal", () -> new GooCompoundType(GooElement.METAL, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> CRYSTAL = TYPES.register("crystal", () -> new GooCompoundType(GooElement.CRYSTAL, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> DARK = TYPES.register("dark", () -> new GooCompoundType(GooElement.DARK, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> LIGHT = TYPES.register("light", () -> new GooCompoundType(GooElement.LIGHT, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> NATURE = TYPES.register("nature", () -> new GooCompoundType(GooElement.NATURE, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> ENDER = TYPES.register("ender", () -> new GooCompoundType(GooElement.ENDER, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> NETHER = TYPES.register("nether", () -> new GooCompoundType(GooElement.NETHER, GOO_TYPES));
-	public static final RegistryObject<ICompoundType> FORBIDDEN = TYPES.register("forbidden", () -> new GooCompoundType(GooElement.FORBIDDEN, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> EARTH = TYPES.register("earth", () -> new GooCompoundType(ElementEnum.EARTH, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> AIR = TYPES.register("air", () -> new GooCompoundType(ElementEnum.AIR, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> FIRE = TYPES.register("fire", () -> new GooCompoundType(ElementEnum.FIRE, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> WATER = TYPES.register("water", () -> new GooCompoundType(ElementEnum.WATER, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> ICE = TYPES.register("ice", () -> new GooCompoundType(ElementEnum.ICE, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> LIGHTNING = TYPES.register("lightning", () -> new GooCompoundType(ElementEnum.LIGHTNING, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> METAL = TYPES.register("metal", () -> new GooCompoundType(ElementEnum.METAL, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> CRYSTAL = TYPES.register("crystal", () -> new GooCompoundType(ElementEnum.CRYSTAL, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> DARK = TYPES.register("dark", () -> new GooCompoundType(ElementEnum.DARK, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> LIGHT = TYPES.register("light", () -> new GooCompoundType(ElementEnum.LIGHT, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> NATURE = TYPES.register("nature", () -> new GooCompoundType(ElementEnum.NATURE, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> ENDER = TYPES.register("ender", () -> new GooCompoundType(ElementEnum.ENDER, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> NETHER = TYPES.register("nether", () -> new GooCompoundType(ElementEnum.NETHER, GOO_TYPES));
+	public static final RegistryObject<ICompoundType> FORBIDDEN = TYPES.register("forbidden", () -> new GooCompoundType(ElementEnum.FORBIDDEN, GOO_TYPES));
 	public static void init() {
 		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 		BLOCKS.register(bus);
@@ -60,19 +60,19 @@ public class Registry {
 	}
 
 	// TEST ITEMS FOR LOBBING THE GOO
-	public static final RegistryObject<Item> EARTH_BLOB_ITEM = ITEMS.register("earth_blob_item", () -> new BlobOfGooItem(GooElement.EARTH));
-	public static final RegistryObject<Item> AIR_BLOB_ITEM = ITEMS.register("air_blob_item", () -> new BlobOfGooItem(GooElement.AIR));
-	public static final RegistryObject<Item> FIRE_BLOB_ITEM = ITEMS.register("fire_blob_item", () -> new BlobOfGooItem(GooElement.FIRE));
-	public static final RegistryObject<Item> WATER_BLOB_ITEM = ITEMS.register("water_blob_item", () -> new BlobOfGooItem(GooElement.WATER));
-	public static final RegistryObject<Item> ICE_BLOB_ITEM = ITEMS.register("ice_blob_item", () -> new BlobOfGooItem(GooElement.ICE));
-	public static final RegistryObject<Item> LIGHTNING_BLOB_ITEM = ITEMS.register("lightning_blob_item", () -> new BlobOfGooItem(GooElement.LIGHTNING));
-	public static final RegistryObject<Item> METAL_BLOB_ITEM = ITEMS.register("metal_blob_item", () -> new BlobOfGooItem(GooElement.METAL));
-	public static final RegistryObject<Item> CRYSTAL_BLOB_ITEM = ITEMS.register("crystal_blob_item", () -> new BlobOfGooItem(GooElement.CRYSTAL));
-	public static final RegistryObject<Item> LIGHT_BLOB_ITEM = ITEMS.register("light_blob_item", () -> new BlobOfGooItem(GooElement.LIGHT));
-	public static final RegistryObject<Item> DARK_BLOB_ITEM = ITEMS.register("dark_blob_item", () -> new BlobOfGooItem(GooElement.DARK));
-	public static final RegistryObject<Item> NATURE_BLOB_ITEM = ITEMS.register("nature_blob_item", () -> new BlobOfGooItem(GooElement.NATURE));
-	public static final RegistryObject<Item> ENDER_BLOB_ITEM = ITEMS.register("ender_blob_item", () -> new BlobOfGooItem(GooElement.ENDER));
-	public static final RegistryObject<Item> NETHER_BLOB_ITEM = ITEMS.register("nether_blob_item", () -> new BlobOfGooItem(GooElement.NETHER));
+	public static final RegistryObject<Item> EARTH_BLOB_ITEM = ITEMS.register("earth_blob_item", () -> new BlobOfGooItem(ElementEnum.EARTH));
+	public static final RegistryObject<Item> AIR_BLOB_ITEM = ITEMS.register("air_blob_item", () -> new BlobOfGooItem(ElementEnum.AIR));
+	public static final RegistryObject<Item> FIRE_BLOB_ITEM = ITEMS.register("fire_blob_item", () -> new BlobOfGooItem(ElementEnum.FIRE));
+	public static final RegistryObject<Item> WATER_BLOB_ITEM = ITEMS.register("water_blob_item", () -> new BlobOfGooItem(ElementEnum.WATER));
+	public static final RegistryObject<Item> ICE_BLOB_ITEM = ITEMS.register("ice_blob_item", () -> new BlobOfGooItem(ElementEnum.ICE));
+	public static final RegistryObject<Item> LIGHTNING_BLOB_ITEM = ITEMS.register("lightning_blob_item", () -> new BlobOfGooItem(ElementEnum.LIGHTNING));
+	public static final RegistryObject<Item> METAL_BLOB_ITEM = ITEMS.register("metal_blob_item", () -> new BlobOfGooItem(ElementEnum.METAL));
+	public static final RegistryObject<Item> CRYSTAL_BLOB_ITEM = ITEMS.register("crystal_blob_item", () -> new BlobOfGooItem(ElementEnum.CRYSTAL));
+	public static final RegistryObject<Item> LIGHT_BLOB_ITEM = ITEMS.register("light_blob_item", () -> new BlobOfGooItem(ElementEnum.LIGHT));
+	public static final RegistryObject<Item> DARK_BLOB_ITEM = ITEMS.register("dark_blob_item", () -> new BlobOfGooItem(ElementEnum.DARK));
+	public static final RegistryObject<Item> NATURE_BLOB_ITEM = ITEMS.register("nature_blob_item", () -> new BlobOfGooItem(ElementEnum.NATURE));
+	public static final RegistryObject<Item> ENDER_BLOB_ITEM = ITEMS.register("ender_blob_item", () -> new BlobOfGooItem(ElementEnum.ENDER));
+	public static final RegistryObject<Item> NETHER_BLOB_ITEM = ITEMS.register("nether_blob_item", () -> new BlobOfGooItem(ElementEnum.NETHER));
 
 	// GOO BLOB ENTITY FOR THE LOBBING
 	public static final RegistryObject<EntityType<ThrownEarthBlob>> THROWN_EARTH_BLOB = ENTITIES.register("thrown_earth_blob",
@@ -117,8 +117,8 @@ public class Registry {
 
 	// STATUS EFFECTS, AILMENTS, BUFFS ETC
 	public static final PetrificationEffect PETRIFICATION_EFFECT_SINGLETON = (PetrificationEffect)new PetrificationEffect()
-			.addAttributeModifier(Attributes.MOVEMENT_SPEED, "530806B2-4908-433E-8728-46D920B2A796", (double)-0.333333F, AttributeModifier.Operation.MULTIPLY_TOTAL)
-			.addAttributeModifier(Attributes.ATTACK_SPEED, "AD42B3CC-5EE3-41FC-A81C-3B544202CA6F", (double)-0.333333F, AttributeModifier.Operation.MULTIPLY_TOTAL);
+			.addAttributeModifier(Attributes.MOVEMENT_SPEED, "530806B2-4908-433E-8728-46D920B2A796", (double)-0.01F, AttributeModifier.Operation.MULTIPLY_TOTAL)
+			.addAttributeModifier(Attributes.ATTACK_SPEED, "AD42B3CC-5EE3-41FC-A81C-3B544202CA6F", (double)-0.01F, AttributeModifier.Operation.MULTIPLY_TOTAL);
 	public static final RegistryObject<AbstractGooEffect> PETRIFICATION_EFFECT = EFFECTS.register("petrification", () -> PETRIFICATION_EFFECT_SINGLETON);
 
 }

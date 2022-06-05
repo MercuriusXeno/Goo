@@ -1,7 +1,7 @@
 package com.xeno.goo.items;
 
 import com.xeno.goo.GooMod;
-import com.xeno.goo.blobs.GooElement;
+import com.xeno.goo.elements.ElementEnum;
 import com.xeno.goo.blobs.WeaponizedBlobHitContext;
 import com.xeno.goo.entities.AbstractThrownBlob;
 import net.minecraft.sounds.SoundEvents;
@@ -18,8 +18,8 @@ import net.minecraft.world.level.Level;
 
 public class BlobOfGooItem extends Item {
 
-	private final GooElement element;
-	public BlobOfGooItem(GooElement element) {
+	private final ElementEnum element;
+	public BlobOfGooItem(ElementEnum element) {
 		super(new Item.Properties()
 				.tab(GooMod.ITEM_GROUP)
 				.stacksTo(64)
@@ -42,15 +42,15 @@ public class BlobOfGooItem extends Item {
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
 		ItemStack itemstack = player.getItemInHand(hand);
 		level.playSound((Player)null, player.getX(), player.getY(), player.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
-
-		AbstractThrownBlob thrownBlob = element.createThrownBlob(level, player);
-		if (thrownBlob == null) {
-			return InteractionResultHolder.fail(itemstack);
+		if (!level.isClientSide) {
+			AbstractThrownBlob thrownBlob = element.createThrownBlob(level, player);
+			if (thrownBlob == null) {
+				return InteractionResultHolder.fail(itemstack);
+			}
+			thrownBlob.setItem(itemstack);
+			thrownBlob.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 1.5F, 1.0F);
+			level.addFreshEntity(thrownBlob);
 		}
-		thrownBlob.setItem(itemstack);
-		thrownBlob.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 1.5F, 1.0F);
-		level.addFreshEntity(thrownBlob);
-
 
 		player.awardStat(Stats.ITEM_USED.get(this));
 		if (!player.getAbilities().instabuild) {

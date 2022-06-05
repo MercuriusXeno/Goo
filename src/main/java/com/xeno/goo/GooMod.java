@@ -1,16 +1,21 @@
 package com.xeno.goo;
 
 import com.xeno.goo.client.render.PetrificationLayer;
+import com.xeno.goo.effects.PetrificationEffect;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -32,6 +37,25 @@ public class GooMod {
 
 	public static ResourceLocation location(String objectName) {
 		return new ResourceLocation(MOD_ID, objectName);
+	}
+
+	@Mod.EventBusSubscriber(modid = GooMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+	public static class ForgeEvents {
+		@SubscribeEvent
+		public static void onLivingUpdate(final LivingUpdateEvent event) {
+			PetrificationEffect.handlePetrificationTicks(event);
+		}
+
+//		@SubscribeEvent
+//		public static void onLivingHurt(final LivingHurtEvent event) {
+//			PetrificationEffect.handlePetrificationResistance(event);
+//		}
+
+		// this event is stupidly named. It's not firing when the target of the event sends an attack. It's on receipt.
+		@SubscribeEvent
+		public static void onLivingAttacked(final LivingAttackEvent event) {
+			PetrificationEffect.handlePetrificationResistance(event);
+		}
 	}
 
 	@Mod.EventBusSubscriber(modid = GooMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)

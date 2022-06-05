@@ -16,8 +16,8 @@ public class DataGenerators {
 			// generator.addProvider(new GooEquivalencyDb(generator));
 			// generator.addProvider(new GooRecipes(generator));
 			// generator.addProvider(new GooLootTables(generator));
-			GooBlockTags blockTags = new GooBlockTags(generator, event.getExistingFileHelper());
-			generator.addProvider(blockTags);
+			generator.addProvider(new GooBlockTags(generator, event.getExistingFileHelper()));
+			generator.addProvider(new GooEntityTags(generator, event.getExistingFileHelper()));
 			// generator.addProvider(new GooItemTags(generator, blockTags, event.getExistingFileHelper()));
 		}
 		if (event.includeClient()) {
