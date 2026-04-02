@@ -1,0 +1,48 @@
+{
+  "textures": {
+    "glove": "goo:block/glove_body",
+    "particle": "goo:block/glove_body"
+  },
+  "elements": [
+    {
+      "name": "body",
+      "from": [5, 0, 5],
+      "to": [11, 10, 11],
+      "faces": {
+        "north": {"uv": [0, 0, 6, 10], "texture": "#glove"},
+        "south": {"uv": [0, 0, 6, 10], "texture": "#glove"},
+        "east":  {"uv": [6, 0, 12, 10], "texture": "#glove"},
+        "west":  {"uv": [6, 0, 12, 10], "texture": "#glove"},
+        "up":    {"uv": [0, 10, 6, 16], "texture": "#glove"},
+        "down":  {"uv": [6, 10, 12, 16], "texture": "#glove"}
+      }
+    },
+    {
+      "name": "cuff",
+      "from": [4.5, 9, 4.5],
+      "to": [11.5, 11, 11.5],
+      "faces": {
+        "north": {"uv": [8, 11, 10, 12], "texture": "#glove"},
+        "south": {"uv": [8, 11, 10, 12], "texture": "#glove"},
+        "east":  {"uv": [8, 11, 10, 12], "texture": "#glove"},
+        "west":  {"uv": [8, 11, 10, 12], "texture": "#glove"},
+        "up":    {"uv": [12, 4, 16, 8], "texture": "#glove"},
+        "down":  {"uv": [12, 4, 16, 8], "texture": "#glove"}
+      }
+    },
+    {
+      "name": "finger_plate",
+      "from": [6, -1, 4],
+      "to": [10, 1, 8],
+      "rotation": {"angle": 0, "axis": "y", "origin": [0.5, 0, 0]},
+      "faces": {
+        "north": {"uv": [12, 8, 16, 10], "texture": "#glove"},
+        "south": {"uv": [12, 8, 16, 10], "texture": "#glove"},
+        "east":  {"uv": [12, 10, 16, 12], "texture": "#glove"},
+        "west":  {"uv": [12, 10, 16, 12], "texture": "#glove"},
+        "up":    {"uv": [12, 12, 16, 16], "texture": "#glove"},
+        "down":  {"uv": [12, 12, 16, 16], "texture": "#glove"}
+      }
+    }
+  ]
+}

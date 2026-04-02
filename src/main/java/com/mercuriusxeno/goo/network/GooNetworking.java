@@ -1,0 +1,63 @@
+package com.mercuriusxeno.goo.network;
+
+import com.mercuriusxeno.goo.Goo;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
+/**
+ * Registers all network payloads for the Goo mod.
+ * Uses mod event bus via {@code @EventBusSubscriber} to handle payload registration.
+ */
+@EventBusSubscriber(modid = Goo.MODID)
+public final class GooNetworking {
+
+    private GooNetworking() {}
+
+    /** Registers all network payloads for both directions. */
+    @SubscribeEvent
+    public static void registerPayloads(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(Goo.MODID).versioned("1");
+        registrar.playToClient(
+                GooValueSyncPayload.TYPE,
+                GooValueSyncPayload.STREAM_CODEC,
+                GooValueSyncHandler::handle
+        );
+        registrar.playToClient(
+                OpenNamingScreenPayload.TYPE,
+                OpenNamingScreenPayload.STREAM_CODEC,
+                OpenNamingScreenHandler::handle
+        );
+        registrar.playToClient(
+                TunerFeedbackPayload.TYPE,
+                TunerFeedbackPayload.STREAM_CODEC,
+                TunerFeedbackHandler::handle
+        );
+        registrar.playToServer(
+                CanisterRenamePayload.TYPE,
+                CanisterRenamePayload.STREAM_CODEC,
+                CanisterRenameHandler::handle
+        );
+        registrar.playToServer(
+                CanisterPunchPayload.TYPE,
+                CanisterPunchPayload.STREAM_CODEC,
+                CanisterPunchHandler::handle
+        );
+        registrar.playToServer(
+                CanisterUnlinkPayload.TYPE,
+                CanisterUnlinkPayload.STREAM_CODEC,
+                CanisterUnlinkHandler::handle
+        );
+        registrar.playToServer(
+                BlobThrowPayload.TYPE,
+                BlobThrowPayload.STREAM_CODEC,
+                BlobThrowHandler::handle
+        );
+        registrar.playToClient(
+                BlobFlightPayload.TYPE,
+                BlobFlightPayload.STREAM_CODEC,
+                BlobFlightHandler::handle
+        );
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": ["gui", "ground", "fixed"],
+        "model": {
+          "type": "minecraft:model",
+          "model": "goo:item/goo_gauntlet"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:special",
+      "base": "goo:item/goo_gauntlet",
+      "model": {
+        "type": "goo:glove_goo"
+      }
+    }
+  }
+}

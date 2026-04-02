@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=south,has_gasket=false,open=true":  { "model": "goo:block/tap" },
+    "facing=south,has_gasket=false,open=false": { "model": "goo:block/tap_closed" },
+    "facing=south,has_gasket=true,open=true":   { "model": "goo:block/tap_gasket" },
+    "facing=south,has_gasket=true,open=false":  { "model": "goo:block/tap_gasket_closed" },
+    "facing=north,has_gasket=false,open=true":  { "model": "goo:block/tap", "y": 180 },
+    "facing=north,has_gasket=false,open=false": { "model": "goo:block/tap_closed", "y": 180 },
+    "facing=north,has_gasket=true,open=true":   { "model": "goo:block/tap_gasket", "y": 180 },
+    "facing=north,has_gasket=true,open=false":  { "model": "goo:block/tap_gasket_closed", "y": 180 },
+    "facing=east,has_gasket=false,open=true":   { "model": "goo:block/tap", "y": 270 },
+    "facing=east,has_gasket=false,open=false":  { "model": "goo:block/tap_closed", "y": 270 },
+    "facing=east,has_gasket=true,open=true":    { "model": "goo:block/tap_gasket", "y": 270 },
+    "facing=east,has_gasket=true,open=false":   { "model": "goo:block/tap_gasket_closed", "y": 270 },
+    "facing=west,has_gasket=false,open=true":   { "model": "goo:block/tap", "y": 90 },
+    "facing=west,has_gasket=false,open=false":  { "model": "goo:block/tap_closed", "y": 90 },
+    "facing=west,has_gasket=true,open=true":    { "model": "goo:block/tap_gasket", "y": 90 },
+    "facing=west,has_gasket=true,open=false":   { "model": "goo:block/tap_gasket_closed", "y": 90 }
+  }
+}

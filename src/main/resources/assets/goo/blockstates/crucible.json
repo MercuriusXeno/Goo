@@ -1,0 +1,43 @@
+{
+  "multipart": [
+    {
+      "apply": { "model": "goo:block/crucible_frame" }
+    },
+    {
+      "apply": { "model": "goo:block/crucible_wall_south" }
+    },
+    {
+      "apply": { "model": "goo:block/crucible_wall_east" }
+    },
+    {
+      "apply": { "model": "goo:block/crucible_wall_north" }
+    },
+    {
+      "apply": { "model": "goo:block/crucible_wall_west" }
+    },
+    {
+      "when": { "has_gasket": "false" },
+      "apply": { "model": "goo:block/crucible_floor" }
+    },
+    {
+      "when": { "has_gasket": "true" },
+      "apply": { "model": "goo:block/crucible_floor_gasket" }
+    },
+    {
+      "when": { "plate_north": "true" },
+      "apply": { "model": "goo:block/crucible_plate", "y": 0 }
+    },
+    {
+      "when": { "plate_south": "true" },
+      "apply": { "model": "goo:block/crucible_plate", "y": 180 }
+    },
+    {
+      "when": { "plate_east": "true" },
+      "apply": { "model": "goo:block/crucible_plate", "y": 90 }
+    },
+    {
+      "when": { "plate_west": "true" },
+      "apply": { "model": "goo:block/crucible_plate", "y": 270 }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/block",
+	"textures": {
+		"0": "goo:block/choral_gasket",
+		"1": "goo:block/canister_side",
+		"particle": "goo:block/choral_gasket"
+	}
+}

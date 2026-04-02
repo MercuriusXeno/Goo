@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "minecraft:cauldron",
+    "F": "minecraft:blast_furnace",
+    "I": "minecraft:copper_ingot",
+    "N": "minecraft:netherite_scrap"
+  },
+  "pattern": [
+    "I I",
+    "NCN",
+    "IFI"
+  ],
+  "result": {
+    "count": 1,
+    "id": "goo:crucible"
+  }
+}

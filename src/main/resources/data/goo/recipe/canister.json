@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "G": "minecraft:glass_pane",
+    "Q": "minecraft:quartz"
+  },
+  "pattern": [
+    "QCQ",
+    "G G",
+    "QCQ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "goo:canister"
+  }
+}

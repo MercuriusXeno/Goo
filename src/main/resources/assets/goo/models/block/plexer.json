@@ -1,0 +1,85 @@
+{
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/block",
+	"render_type": "minecraft:cutout",
+	"texture_size": [32, 32],
+	"textures": {
+		"top": "goo:block/plexer_top",
+		"bottom": "goo:block/plexer_bottom",
+		"center": "goo:block/plexer_center",
+		"face": "goo:block/plexer_face",
+		"particle": "goo:block/plexer_top"
+	},
+	"elements": [
+		{
+			"name": "top",
+			"from": [0, 13, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, 0, 1]},
+			"faces": {
+				"north": {"uv": [8, 4.5, 16, 6], "texture": "#top"},
+				"east": {"uv": [8, 0, 16, 1.5], "texture": "#top"},
+				"south": {"uv": [8, 1.5, 16, 3], "texture": "#top"},
+				"west": {"uv": [8, 3, 16, 4.5], "texture": "#top"},
+				"up": {"uv": [8, 8, 0, 0], "rotation": 180, "texture": "#top"},
+				"down": {"uv": [16, 6, 8, 14], "texture": "#top"}
+			}
+		},
+		{
+			"name": "base",
+			"from": [0, 0, 0],
+			"to": [16, 8, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, -10, 1]},
+			"faces": {
+				"north": {"uv": [0, 4, 8, 8], "texture": "#bottom"},
+				"east": {"uv": [8, 8, 16, 12], "texture": "#bottom"},
+				"south": {"uv": [8, 0, 16, 4], "texture": "#bottom"},
+				"west": {"uv": [8, 12, 16, 16], "texture": "#bottom"},
+				"up": {"uv": [8, 8, 0, 0], "texture": "#bottom"},
+				"down": {"uv": [8, 8, 0, 16], "texture": "#bottom"}
+			}
+		},
+		{
+			"name": "middle",
+			"from": [0, 8, 0],
+			"to": [16, 13, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, -6, 1]},
+			"faces": {
+				"north": {"uv": [8, 0, 16, 2.5], "texture": "#center"},
+				"east": {"uv": [10, 0, 16, 2.5], "texture": "#center"},
+				"south": {"uv": [8, 2.5, 16, 5], "texture": "#center"},
+				"west": {"uv": [8, 0, 14, 2.5], "texture": "#center"},
+				"up": {"uv": [8, 6, 0, 0], "texture": "#center"},
+				"down": {"uv": [8, 6, 0, 12], "texture": "#center"}
+			}
+		},
+		{
+			"name": "cheek_west",
+			"from": [0, 8, 12],
+			"to": [5, 13, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, -6, 12]},
+			"faces": {
+				"north": {"uv": [0, 0, 5, 5], "texture": "#face"},
+				"east": {"uv": [5, 0, 9, 5], "texture": "#face"},
+				"south": {"uv": [0, 5, 5, 10], "texture": "#face"},
+				"west": {"uv": [5, 5, 9, 10], "texture": "#face"},
+				"up": {"uv": [14, 4, 9, 0], "texture": "#face"},
+				"down": {"uv": [14, 4, 9, 8], "texture": "#face"}
+			}
+		},
+		{
+			"name": "cheek_east",
+			"from": [11, 8, 12],
+			"to": [16, 13, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [13, -6, 12]},
+			"faces": {
+				"north": {"uv": [0, 0, 1, 1], "texture": "#face"},
+				"east": {"uv": [9, 5, 5, 10], "texture": "#face"},
+				"south": {"uv": [5, 5, 0, 10], "texture": "#face"},
+				"west": {"uv": [9, 0, 5, 5], "texture": "#face"},
+				"up": {"uv": [14, 4, 9, 0], "texture": "#face"},
+				"down": {"uv": [14, 4, 9, 8], "texture": "#face"}
+			}
+		}
+	]
+}

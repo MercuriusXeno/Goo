@@ -1,0 +1,52 @@
+{
+  "multipart": [
+    {
+      "when": { "vat_above": "false", "vat_below": "false" },
+      "apply": { "model": "goo:block/vat_body" }
+    },
+    {
+      "when": { "vat_above": "false", "vat_below": "true" },
+      "apply": { "model": "goo:block/vat_body_top" }
+    },
+    {
+      "when": { "vat_above": "true", "vat_below": "true" },
+      "apply": { "model": "goo:block/vat_body_middle" }
+    },
+    {
+      "when": { "vat_above": "true", "vat_below": "false" },
+      "apply": { "model": "goo:block/vat_body_bottom" }
+    },
+    {
+      "when": { "vat_above": "false", "gasket_cap": "false" },
+      "apply": { "model": "goo:block/vat_cap" }
+    },
+    {
+      "when": { "vat_above": "false", "gasket_cap": "true" },
+      "apply": { "model": "goo:block/vat_cap_gasket" }
+    },
+    {
+      "when": { "vat_below": "false", "gasket_base": "false" },
+      "apply": { "model": "goo:block/vat_base" }
+    },
+    {
+      "when": { "vat_below": "false", "gasket_base": "true" },
+      "apply": { "model": "goo:block/vat_base_gasket" }
+    },
+    {
+      "when": { "vat_above": "false", "vat_below": "false" },
+      "apply": { "model": "goo:block/vat_inner" }
+    },
+    {
+      "when": { "vat_above": "true", "vat_below": "false" },
+      "apply": { "model": "goo:block/vat_inner_bottom" }
+    },
+    {
+      "when": { "vat_above": "false", "vat_below": "true" },
+      "apply": { "model": "goo:block/vat_inner_top" }
+    },
+    {
+      "when": { "vat_above": "true", "vat_below": "true" },
+      "apply": { "model": "goo:block/vat_inner_middle" }
+    }
+  ]
+}

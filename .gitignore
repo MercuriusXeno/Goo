@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+out/
+src/generated/
+htmlReport/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Mod run directories
+run/
+runs/
+logs/
+__pycache__/

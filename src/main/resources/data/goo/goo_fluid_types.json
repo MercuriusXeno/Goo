@@ -1,0 +1,343 @@
+[
+  {
+    "id": "aeon",
+    "seed": 40975,
+    "genParams": {
+      "viscosity": 2.5,
+      "decayRate": 0.015,
+      "ignitionChance": 0.003,
+      "ignitionStrength": 0.7,
+      "potHeatRate": 0.005,
+      "potInfluence": 0.9,
+      "neighborhoodReach": 1
+    },
+    "frametime": 5,
+    "shadowHue": -1,
+    "palette": [
+      { "position": 0.0, "color": "#E898B8" },
+      { "position": 0.15, "color": "#F0E0B0" },
+      { "position": 0.3, "color": "#88D0F0" },
+      { "position": 0.45, "color": "#F8E0D0" },
+      { "position": 0.6, "color": "#A0F0C0" },
+      { "position": 0.75, "color": "#D8B8F8" },
+      { "position": 0.9, "color": "#F8D898" },
+      { "position": 1.0, "color": "#F8F0E8" }
+    ]
+  },
+  {
+    "id": "blaze",
+    "seed": 40967,
+    "genParams": {
+      "viscosity": 0.8,
+      "decayRate": 0.06,
+      "ignitionChance": 0.02,
+      "ignitionStrength": 2.2,
+      "potHeatRate": 0.04,
+      "potInfluence": 0.45,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.0,
+    "palette": [
+      { "position": 0.0, "color": "#8B0A00" },
+      { "position": 0.2, "color": "#CC2000" },
+      { "position": 0.45, "color": "#F05000" },
+      { "position": 0.65, "color": "#FF8800" },
+      { "position": 0.85, "color": "#FFB020" },
+      { "position": 1.0, "color": "#FFD050" }
+    ]
+  },
+  {
+    "id": "crystal",
+    "seed": 40962,
+    "genParams": {
+      "viscosity": 0.9,
+      "decayRate": 0.06,
+      "ignitionChance": 0.015,
+      "ignitionStrength": 1.6,
+      "potHeatRate": 0.03,
+      "potInfluence": 0.55,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#0E70AA" },
+      { "position": 0.2, "color": "#28A8D8" },
+      { "position": 0.5, "color": "#5CD4F0" },
+      { "position": 0.8, "color": "#9AEAFA" },
+      { "position": 1.0, "color": "#D0FFFF" }
+    ]
+  },
+  {
+    "id": "ender",
+    "seed": 40974,
+    "genParams": {
+      "viscosity": 1.3,
+      "decayRate": 0.06,
+      "ignitionChance": 0.008,
+      "ignitionStrength": 1.5,
+      "potHeatRate": 0.015,
+      "potInfluence": 0.7,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#083830" },
+      { "position": 0.2, "color": "#105848" },
+      { "position": 0.4, "color": "#188068" },
+      { "position": 0.6, "color": "#20A888" },
+      { "position": 0.8, "color": "#30D0A8" },
+      { "position": 1.0, "color": "#50F0C8" }
+    ]
+  },
+  {
+    "id": "frost",
+    "seed": 40968,
+    "genParams": {
+      "viscosity": 1.3,
+      "decayRate": 0.035,
+      "ignitionChance": 0.006,
+      "ignitionStrength": 0.9,
+      "potHeatRate": 0.012,
+      "potInfluence": 0.85,
+      "neighborhoodReach": 1
+    },
+    "frametime": 3,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#4888CC" },
+      { "position": 0.3, "color": "#68B0E8" },
+      { "position": 0.6, "color": "#90D0F8" },
+      { "position": 1.0, "color": "#C8EEFF" }
+    ]
+  },
+  {
+    "id": "glow",
+    "seed": 40970,
+    "genParams": {
+      "viscosity": 0.9,
+      "decayRate": 0.05,
+      "ignitionChance": 0.02,
+      "ignitionStrength": 1.8,
+      "potHeatRate": 0.04,
+      "potInfluence": 0.5,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.2,
+    "palette": [
+      { "position": 0.0, "color": "#B08020" },
+      { "position": 0.2, "color": "#D0A040" },
+      { "position": 0.4, "color": "#E0C060" },
+      { "position": 0.6, "color": "#EEDC90" },
+      { "position": 0.85, "color": "#F8F0C0" },
+      { "position": 1.0, "color": "#FFFDF5" }
+    ]
+  },
+  {
+    "id": "hex",
+    "seed": 40971,
+    "genParams": {
+      "viscosity": 1.1,
+      "decayRate": 0.07,
+      "ignitionChance": 0.02,
+      "ignitionStrength": 1.8,
+      "potHeatRate": 0.03,
+      "potInfluence": 0.5,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#380868" },
+      { "position": 0.2, "color": "#5810A0" },
+      { "position": 0.4, "color": "#7018D0" },
+      { "position": 0.6, "color": "#5030E0" },
+      { "position": 0.8, "color": "#2858F0" },
+      { "position": 1.0, "color": "#1890FF" }
+    ]
+  },
+  {
+    "id": "leaf",
+    "seed": 40963,
+    "genParams": {
+      "viscosity": 1.2,
+      "decayRate": 0.04,
+      "ignitionChance": 0.014,
+      "ignitionStrength": 1.3,
+      "potHeatRate": 0.025,
+      "potInfluence": 0.6,
+      "neighborhoodReach": 2
+    },
+    "frametime": 3,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#0A6008" },
+      { "position": 0.2, "color": "#18A812" },
+      { "position": 0.5, "color": "#38D428" },
+      { "position": 0.75, "color": "#60F040" },
+      { "position": 0.9, "color": "#8CFF5A" },
+      { "position": 1.0, "color": "#B4FF78" }
+    ]
+  },
+  {
+    "id": "metal",
+    "seed": 40961,
+    "genParams": {
+      "viscosity": 1.2,
+      "decayRate": 0.06,
+      "ignitionChance": 0.008,
+      "ignitionStrength": 1.5,
+      "potHeatRate": 0.015,
+      "potInfluence": 0.75,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#5A5A5F" },
+      { "position": 0.3, "color": "#8C8C91" },
+      { "position": 0.7, "color": "#C3C3C8" },
+      { "position": 0.9, "color": "#DCDCE1" },
+      { "position": 1.0, "color": "#F0F2F5" }
+    ]
+  },
+  {
+    "id": "nether",
+    "seed": 40973,
+    "genParams": {
+      "viscosity": 1.5,
+      "decayRate": 0.04,
+      "ignitionChance": 0.006,
+      "ignitionStrength": 1.2,
+      "potHeatRate": 0.01,
+      "potInfluence": 0.85,
+      "neighborhoodReach": 1
+    },
+    "frametime": 3,
+    "shadowHue": 0.0,
+    "palette": [
+      { "position": 0.0, "color": "#501214" },
+      { "position": 0.25, "color": "#7C1C20" },
+      { "position": 0.5, "color": "#A4262C" },
+      { "position": 0.75, "color": "#C03434" },
+      { "position": 0.9, "color": "#D44C42" },
+      { "position": 1.0, "color": "#E4685A" }
+    ]
+  },
+  {
+    "id": "pulse",
+    "seed": 40972,
+    "genParams": {
+      "viscosity": 0.8,
+      "decayRate": 0.10,
+      "ignitionChance": 0.025,
+      "ignitionStrength": 2.0,
+      "potHeatRate": 0.05,
+      "potInfluence": 0.35,
+      "neighborhoodReach": 1
+    },
+    "frametime": 1,
+    "shadowHue": 0.0,
+    "palette": [
+      { "position": 0.0, "color": "#600008" },
+      { "position": 0.2, "color": "#900010" },
+      { "position": 0.45, "color": "#C00018" },
+      { "position": 0.7, "color": "#E80020" },
+      { "position": 0.9, "color": "#FF0828" },
+      { "position": 1.0, "color": "#FF2030" }
+    ]
+  },
+  {
+    "id": "rock",
+    "seed": 40966,
+    "genParams": {
+      "viscosity": 2.2,
+      "decayRate": 0.02,
+      "ignitionChance": 0.003,
+      "ignitionStrength": 0.8,
+      "potHeatRate": 0.005,
+      "potInfluence": 0.95,
+      "neighborhoodReach": 1
+    },
+    "frametime": 4,
+    "shadowHue": 0.0,
+    "palette": [
+      { "position": 0.0, "color": "#4A2008" },
+      { "position": 0.3, "color": "#703010" },
+      { "position": 0.6, "color": "#984818" },
+      { "position": 0.85, "color": "#C47830" },
+      { "position": 1.0, "color": "#B86828" }
+    ]
+  },
+  {
+    "id": "shroom",
+    "seed": 40965,
+    "genParams": {
+      "viscosity": 1.8,
+      "decayRate": 0.03,
+      "ignitionChance": 0.008,
+      "ignitionStrength": 1.4,
+      "potHeatRate": 0.012,
+      "potInfluence": 0.8,
+      "neighborhoodReach": 1
+    },
+    "frametime": 4,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#500838" },
+      { "position": 0.2, "color": "#880858" },
+      { "position": 0.5, "color": "#C01880" },
+      { "position": 0.75, "color": "#E838A0" },
+      { "position": 0.9, "color": "#FF60C0" },
+      { "position": 1.0, "color": "#FF98D8" }
+    ]
+  },
+  {
+    "id": "typhoon",
+    "seed": 40969,
+    "genParams": {
+      "viscosity": 0.6,
+      "decayRate": 0.08,
+      "ignitionChance": 0.025,
+      "ignitionStrength": 1.4,
+      "potHeatRate": 0.05,
+      "potInfluence": 0.35,
+      "neighborhoodReach": 2
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#304878" },
+      { "position": 0.2, "color": "#4868A8" },
+      { "position": 0.45, "color": "#6888C8" },
+      { "position": 0.7, "color": "#88A8E0" },
+      { "position": 0.9, "color": "#A8C4F0" },
+      { "position": 1.0, "color": "#C8DAFA" }
+    ]
+  },
+  {
+    "id": "vital",
+    "seed": 40964,
+    "genParams": {
+      "viscosity": 1.1,
+      "decayRate": 0.05,
+      "ignitionChance": 0.012,
+      "ignitionStrength": 1.4,
+      "potHeatRate": 0.025,
+      "potInfluence": 0.7,
+      "neighborhoodReach": 1
+    },
+    "frametime": 2,
+    "shadowHue": 0.7,
+    "palette": [
+      { "position": 0.0, "color": "#B01040" },
+      { "position": 0.25, "color": "#E01858" },
+      { "position": 0.5, "color": "#FF3878" },
+      { "position": 0.8, "color": "#FF70A0" },
+      { "position": 1.0, "color": "#FFA0C0" }
+    ]
+  }
+]

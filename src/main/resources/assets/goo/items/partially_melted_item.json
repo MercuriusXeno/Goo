@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "goo:item/partially_melted_item"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.mercuriusxeno.goo.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "OmniblobQuickCraftMixin"
+  ],
+  "client": [
+    "OmniblobQuickCraftScreenMixin"
+  ]
+}

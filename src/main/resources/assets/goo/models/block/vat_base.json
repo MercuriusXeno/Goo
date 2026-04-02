@@ -1,0 +1,24 @@
+{
+	"parent": "minecraft:block/block",
+	"ambientocclusion": false,
+	"texture_size": [64, 64],
+	"textures": {
+		"1": "goo:block/vat_base",
+		"particle": "goo:block/vat_base"
+	},
+	"elements": [
+		{
+			"name": "vat_base",
+			"from": [1, 0, 1],
+			"to": [15, 2, 15],
+			"faces": {
+				"north": {"uv": [7, 0, 14, 1], "texture": "#1"},
+				"east": {"uv": [7, 1, 14, 2], "texture": "#1"},
+				"south": {"uv": [7, 2, 14, 3], "texture": "#1"},
+				"west": {"uv": [7, 3, 14, 4], "texture": "#1"},
+				"up": {"uv": [7, 7, 0, 0], "texture": "#1"},
+				"down": {"uv": [7, 7, 0, 14], "texture": "#1"}
+			}
+		}
+	]
+}

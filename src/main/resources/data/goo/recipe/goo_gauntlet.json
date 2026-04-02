@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "minecraft:netherite_scrap",
+  "base": "goo:goo_glove",
+  "template": "minecraft:netherite_upgrade_smithing_template",
+  "result": {
+    "count": 1,
+    "id": "goo:goo_gauntlet"
+  }
+}

@@ -1,0 +1,6 @@
+{
+	"parent": "goo:block/plexer",
+	"textures": {
+		"top": "goo:block/plexer_top_triggered"
+	}
+}

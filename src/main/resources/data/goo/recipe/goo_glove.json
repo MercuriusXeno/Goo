@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "L": "minecraft:leather"
+  },
+  "pattern": [
+    " LL",
+    "LCL"
+  ],
+  "result": {
+    "count": 1,
+    "id": "goo:goo_glove"
+  }
+}

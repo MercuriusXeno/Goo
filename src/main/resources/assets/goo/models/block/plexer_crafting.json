@@ -1,0 +1,7 @@
+{
+	"parent": "goo:block/plexer",
+	"textures": {
+		"top": "goo:block/plexer_top_crafting",
+		"bottom": "goo:block/plexer_bottom_crafting"
+	}
+}

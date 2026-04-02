@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "Q": "minecraft:quartz_block",
+    "B": [
+      "minecraft:copper_block",
+      "minecraft:waxed_copper_block"
+    ],
+    "G": "minecraft:glass"
+  },
+  "pattern": [
+    "QBQ",
+    "G G",
+    "QBQ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "goo:vat"
+  }
+}

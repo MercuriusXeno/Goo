@@ -1,0 +1,28 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "goo:item/glove_exorite"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [90, 0, 0],
+      "translation": [0, -2, 5.25],
+      "scale": [0.675, 0.675, 0.675]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [90, 0, 0],
+      "translation": [0, -2, 5.25],
+      "scale": [0.675, 0.675, 0.675]
+    },
+    "firstperson_righthand": {
+      "rotation": [90, 0, 0],
+      "translation": [0, 0, 2],
+      "scale": [0.675, 0.5, 0.5]
+    },
+    "firstperson_lefthand": {
+      "rotation": [90, 0, 0],
+      "translation": [0, 0, 2],
+      "scale": [0.675, 0.5, 0.5]
+    }
+  }
+}

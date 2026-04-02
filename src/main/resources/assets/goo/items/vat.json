@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "goo:item/vat",
+    "model": {
+      "type": "goo:vat_goo"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "minecraft:block/block",
+	"ambientocclusion": false,
+	"texture_size": [64, 64],
+	"textures": {
+		"0": "goo:block/vat_cap",
+		"1": "goo:block/vat_base",
+		"2": "goo:block/vat_body",
+		"particle": "goo:block/vat_cap_gasket"
+	},
+	"elements": [
+		{
+			"name": "vat_cap",
+			"from": [1, 14, 1],
+			"to": [15, 16, 15],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 14, 0]},
+			"faces": {
+				"north": {"uv": [7, 0, 14, 1], "texture": "#0"},
+				"east": {"uv": [7, 1, 14, 2], "texture": "#0"},
+				"south": {"uv": [7, 0, 14, 1], "texture": "#0"},
+				"west": {"uv": [7, 1, 14, 2], "texture": "#0"},
+				"up": {"uv": [0, 0, 7, 7], "texture": "#0"},
+				"down": {"uv": [0, 7, 7, 14], "texture": "#0"}
+			}
+		},
+		{
+			"name": "vat_body",
+			"from": [1, 2, 1],
+			"to": [15, 14, 15],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 2, 0]},
+			"faces": {
+				"north": {"uv": [3.5, 0, 7, 3], "texture": "#2"},
+				"east": {"uv": [7, 3, 3.5, 6], "texture": "#2"},
+				"south": {"uv": [3.5, 6, 7, 9], "texture": "#2"},
+				"west": {"uv": [3.5, 7, 0, 10], "texture": "#2"},
+				"up": {"uv": [3.5, 3.5, 0, 0], "texture": "#2"},
+				"down": {"uv": [3.5, 3.5, 0, 7], "texture": "#2"}
+			}
+		},
+		{
+			"name": "vat_base",
+			"from": [1, 0, 1],
+			"to": [15, 2, 15],
+			"faces": {
+				"north": {"uv": [7, 0, 14, 1], "texture": "#1"},
+				"east": {"uv": [7, 1, 14, 2], "texture": "#1"},
+				"south": {"uv": [7, 2, 14, 3], "texture": "#1"},
+				"west": {"uv": [7, 3, 14, 4], "texture": "#1"},
+				"up": {"uv": [7, 7, 0, 0], "texture": "#1"},
+				"down": {"uv": [7, 7, 0, 14], "texture": "#1"}
+			}
+		}
+	]
+}

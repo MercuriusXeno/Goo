@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "include": [
+                "minecraft:enchantments"
+              ],
+              "source": "block_entity"
+            }
+          ],
+          "name": "goo:vat"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ]
+}

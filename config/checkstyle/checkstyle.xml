@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+    Goo Checkstyle configuration. Enforces SMELL.md conventions that are
+    mechanical enough to check at source level. Complements ArchUnit
+    (bytecode-level).
+
+    Philosophy: warnings, not errors. Smells are heuristics, not laws.
+-->
+<module name="Checker">
+    <property name="severity" value="warning"/>
+    <property name="charset" value="UTF-8"/>
+
+    <module name="TreeWalker">
+
+        <!-- Dead imports -->
+        <module name="UnusedImports"/>
+
+        <!-- IMPORT_DISORDER: group ordering per repo SMELL.md -->
+        <module name="ImportOrder">
+            <property name="groups"
+                value="/^com\.google/,/^com\.mercuriusxeno/,/^com\.mojang/,/^io\./,/^net\.minecraft/,/^net\.neoforged/,/^org\./,/^java\./,/^javax\./"/>
+            <property name="staticGroups" value="*"/>
+            <property name="separated" value="false"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+            <property name="ordered" value="true"/>
+            <property name="option" value="bottom"/>
+        </module>
+
+        <!-- LONG_METHOD: 10-line hard limit per SMELL.md -->
+        <module name="MethodLength">
+            <property name="max" value="10"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+
+        <!-- MAGIC: named constants for literals with semantic meaning -->
+        <module name="MagicNumber">
+            <property name="ignoreNumbers" value="0, 1"/>
+            <property name="ignoreHashCodeMethod" value="true"/>
+            <property name="ignoreAnnotation" value="true"/>
+            <property name="ignoreFieldDeclaration" value="true"/>
+        </module>
+
+        <!-- MAGIC: all string literals in method bodies need named constants -->
+        <module name="MatchXpath">
+            <property name="query"
+                value="//METHOD_DEF//EXPR//STRING_LITERAL"/>
+            <message key="matchxpath.match"
+                value="String literal in method body - extract to a named constant"/>
+        </module>
+
+        <!-- MISSING_DOCS: classes need javadoc -->
+        <module name="JavadocType">
+            <property name="scope" value="public"/>
+        </module>
+
+        <!-- Cyclomatic complexity: tripwire for tangled control flow -->
+        <module name="CyclomaticComplexity">
+            <property name="max" value="5"/>
+        </module>
+
+        <!-- Parameter count: tripwire for greedy signatures -->
+        <module name="ParameterNumber">
+            <property name="max" value="4"/>
+        </module>
+
+        <!-- Boolean expression complexity: tripwire for raw predicates -->
+        <module name="BooleanExpressionComplexity">
+            <property name="max" value="3"/>
+        </module>
+
+        <!-- Nesting depth: readability signal -->
+        <module name="NestedIfDepth">
+            <property name="max" value="2"/>
+        </module>
+
+    </module>
+</module>

@@ -1,0 +1,397 @@
+package com.mercuriusxeno.goo.block;
+
+import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.PlayerUtils;
+import com.mercuriusxeno.goo.item.BlobStacks;
+import com.mercuriusxeno.goo.item.BucketOfGooItem;
+import com.mercuriusxeno.goo.item.GooContents;
+import com.mercuriusxeno.goo.item.GasketRole;
+import com.mercuriusxeno.goo.item.GooInteractionType;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import com.mercuriusxeno.goo.registry.GooBlockEntities;
+import com.mercuriusxeno.goo.registry.GooItems;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * Hub block: central hub with 8 radial pipes for attaching canisters.
+ * Canisters are inserted/removed via right-click on a specific slot.
+ * Radially symmetrical: N, NE, E, SE, S, SW, W, NW.
+ */
+public class HubBlock extends BaseEntityBlock {
+
+    /** Codec for serialization. */
+    public static final MapCodec<HubBlock> CODEC = simpleCodec(HubBlock::new);
+
+    /** Whether a choral gasket is installed on the hub's intake. */
+    public static final BooleanProperty HAS_GASKET = BooleanProperty.create("has_gasket");
+
+    /** Base slab: full-width, 2px tall. */
+    private static final VoxelShape BASE = Block.box(0, 0, 0, 16, 2, 16);
+
+    /** Central spindle: 2x13x2 column. */
+    private static final VoxelShape SPINDLE = Block.box(7, 2, 7, 9, 15, 9);
+
+    /** Intake gasket at top of spindle. */
+    private static final VoxelShape INTAKE = Block.box(6, 15, 6, 10, 16, 10);
+
+    /** Canister slot 0 (north). */
+    private static final VoxelShape SLOT_0 = Block.box(6, 2, 0, 10, 14, 4);
+
+    /** Canister slot 1 (northeast). */
+    private static final VoxelShape SLOT_1 = Block.box(11, 2, 1, 15, 14, 5);
+
+    /** Canister slot 2 (east). */
+    private static final VoxelShape SLOT_2 = Block.box(12, 2, 6, 16, 14, 10);
+
+    /** Canister slot 3 (southeast). */
+    private static final VoxelShape SLOT_3 = Block.box(11, 2, 11, 15, 14, 15);
+
+    /** Canister slot 4 (south). */
+    private static final VoxelShape SLOT_4 = Block.box(6, 2, 12, 10, 14, 16);
+
+    /** Canister slot 5 (southwest). */
+    private static final VoxelShape SLOT_5 = Block.box(1, 2, 11, 5, 14, 15);
+
+    /** Canister slot 6 (west). */
+    private static final VoxelShape SLOT_6 = Block.box(0, 2, 6, 4, 14, 10);
+
+    /** Canister slot 7 (northwest). */
+    private static final VoxelShape SLOT_7 = Block.box(1, 2, 1, 5, 14, 5);
+
+    /** Single cuboid enclosing all pipe geometry (y=14-15). Prevents collision jitter. */
+    private static final VoxelShape PIPES = Block.box(1, 14, 1, 15, 15, 15);
+
+    /** Canister slot center positions in pixel coordinates (XZ only), indexed by slot. */
+    public static final double[][] SLOT_CENTERS = {
+        { 8.0,  2.0},  // slot 0 (N)
+        {13.0,  3.0},  // slot 1 (NE)
+        {14.0,  8.0},  // slot 2 (E)
+        {13.0, 13.0},  // slot 3 (SE)
+        { 8.0, 14.0},  // slot 4 (S)
+        { 3.0, 13.0},  // slot 5 (SW)
+        { 2.0,  8.0},  // slot 6 (W)
+        { 3.0,  3.0},  // slot 7 (NW)
+    };
+
+    /** Max XZ pixel distance from a slot center to count as a hit (4px covers 4x4 canister). */
+    private static final double MAX_SLOT_DISTANCE = 4.0;
+
+    /** Per-slot shapes, indexed 0-7. */
+    private static final VoxelShape[] SLOT_SHAPES = {
+        SLOT_0, SLOT_1, SLOT_2, SLOT_3, SLOT_4, SLOT_5, SLOT_6, SLOT_7
+    };
+
+    /** Base structure shape (always visible): base slab + spindle + intake + pipes. */
+    private static final VoxelShape FRAME = Shapes.or(BASE, SPINDLE, INTAKE, PIPES);
+
+    /** Number of canister slots on the hub. */
+    public static final int SLOT_COUNT = SLOT_SHAPES.length;
+
+    /** Creates a new hub block. */
+    public HubBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any()
+            .setValue(HAS_GASKET, false));
+    }
+
+    /** Registers the has_gasket blockstate property. */
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(HAS_GASKET);
+    }
+
+    @Override
+    protected @NonNull MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) { return RenderShape.MODEL; }
+
+    /** Returns the VoxelShape for a specific canister slot. */
+    public static VoxelShape slotShape(int slot) {
+        if (slot < 0 || slot >= SLOT_SHAPES.length) return Shapes.empty();
+        return SLOT_SHAPES[slot];
+    }
+
+    /** Returns the frame shape (base + spindle + intake + pipes). */
+    public static VoxelShape frameShape() {
+        return FRAME;
+    }
+
+    /**
+     * Selection shape: frame + occupied canister slots only.
+     * Custom outline rendering is handled by {@link com.mercuriusxeno.goo.client.SlotOutlineRenderer}.
+     */
+    @Override
+    protected @NonNull VoxelShape getShape(
+            @NonNull BlockState state, @NonNull BlockGetter level,
+            @NonNull BlockPos pos, @NonNull CollisionContext context) {
+        if (level.getBlockEntity(pos) instanceof HubBlockEntity be) {
+            return be.getCachedShape();
+        }
+        return FRAME;
+    }
+
+    /**
+     * Pick block: if a canister slot is targeted, returns a copy of that canister.
+     * Otherwise returns the hub block item.
+     */
+    @Override
+    protected @NonNull ItemStack getCloneItemStack(
+            @NonNull LevelReader level, @NonNull BlockPos pos,
+            @NonNull BlockState state, boolean includeData) {
+        if (level.getBlockEntity(pos) instanceof HubBlockEntity hub) {
+            var hit = com.mercuriusxeno.goo.ISidedProxy.get().getCrosshairHit();
+            if (hit instanceof BlockHitResult blockHit && blockHit.getBlockPos().equals(pos)) {
+                int slot = hitSlot(blockHit, pos);
+                if (slot >= 0) {
+                    ItemStack canister = hub.getCanister(slot);
+                    if (!canister.isEmpty()) return canister.copy();
+                }
+            }
+        }
+        return super.getCloneItemStack(level, pos, state, includeData);
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
+        return new HubBlockEntity(pos, state);
+    }
+
+    /** Registers the server-side tick dispatcher for per-slot gasket push. */
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            @NonNull Level level, @NonNull BlockState state, @NonNull BlockEntityType<T> type) {
+        if (level.isClientSide()) return null;
+        return createTickerHelper(type, GooBlockEntities.HUB.get(), HubBlockEntity::serverTick);
+    }
+
+    // --- Interactions ---
+
+    /** Classifies the held item and dispatches to the appropriate hub interaction handler. */
+    @Override
+    protected @NonNull InteractionResult useItemOn(
+            @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos,
+            @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+        return GooBlockInteraction.handleItemInteraction(
+                stack, level, pos, player, hand, hitResult,
+                HubBlockEntity.class,
+                t -> t == null,
+                this::dispatchHub);
+    }
+
+    /** Dispatches a validated interaction to the appropriate handler method. */
+    private InteractionResult dispatchHub(
+            GooInteractionType interaction, HubBlockEntity hub, ItemStack stack,
+            Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
+        return switch (interaction) {
+            case TUNER_PASS       -> throw new IllegalStateException("TUNER_PASS handled in validate");
+            case CANISTER_INSERT  -> handleCanisterInsert(hub, hitResult, pos, stack, player, level);
+            case BLOB_INSERT      -> handleBlobInsert(hub, hitResult, pos, stack, player, level);
+            case BUCKET_INSERT    -> handleBucketInsert(hub, hitResult, pos, stack, player, hand, level);
+            case BUCKET_EXTRACT   -> handleBucketExtract(hub, hitResult, pos, stack, player, level);
+        };
+    }
+
+    /** Empty-hand interaction: sneak removes gasket, otherwise removes targeted canister. */
+    @Override
+    protected @NonNull InteractionResult useWithoutItem(
+            @NonNull BlockState state, Level level, @NonNull BlockPos pos,
+            @NonNull Player player, @NonNull BlockHitResult hitResult) {
+        InteractionResult earlyOut = GooBlockInteraction.validateEmptyHand(level, pos, player);
+        if (earlyOut != null) return earlyOut;
+        if (!(level.getBlockEntity(pos) instanceof HubBlockEntity hub)) return InteractionResult.PASS;
+
+        // Sneak + empty hand with intake gasket → remove gasket
+        if (player.isShiftKeyDown() && state.getValue(HAS_GASKET)) {
+            GasketInstallation.popGasket(level, pos, hub.getGasketId(GasketRole.RECEIVER));
+            hub.clearGasket(GasketRole.RECEIVER);
+            return InteractionResult.SUCCESS;
+        }
+
+        int slot = hitSlot(hitResult, pos);
+        if (slot < 0) return InteractionResult.PASS;
+
+        ItemStack removed = hub.removeCanister(slot);
+        if (!removed.isEmpty()) {
+            PlayerUtils.addOrDrop(player, removed);
+            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+            InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
+            return InteractionResult.SUCCESS;
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    // --- Handlers ---
+
+    /** Inserts a canister item into the best slot resolved from the hit result. */
+    private static InteractionResult handleCanisterInsert(
+            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
+            ItemStack stack, Player player, Level level) {
+        if (!tryInsertCanister(hub, hitResult, pos, stack)) {
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
+        }
+        stack.consume(1, player);
+        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Attempts to insert a canister, preferring the hit slot then falling back to first empty.
+     *
+     * @param hub the hub block entity
+     * @param hitResult the block hit result for slot targeting
+     * @param pos the block position
+     * @param stack the canister item stack
+     * @return true if the canister was inserted
+     */
+    private static boolean tryInsertCanister(
+            HubBlockEntity hub, BlockHitResult hitResult,
+            BlockPos pos, ItemStack stack) {
+        int slot = hitSlot(hitResult, pos);
+        if (slot >= 0 && hub.insertCanister(slot, stack.copy())) return true;
+        return hub.insertCanister(stack.copy());
+    }
+
+    /** Inserts goo from a blob or omniblob item into the first accepting hub slot. */
+    private static InteractionResult handleBlobInsert(
+            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
+            ItemStack stack, Player player, Level level) {
+        GooType type = BlobStacks.gooTypeOf(stack);
+        if (type == null) return InteractionResult.PASS;
+        long volume = BlobStacks.volumeOf(stack);
+        int slot = GooBlockInteraction.findSlot(
+                hitSlot(hitResult, pos), HubBlockEntity.MAX_CANISTERS, hub::canAccept);
+        if (slot < 0) return InteractionResult.PASS;
+
+        long accepted = hub.insertGoo(slot, type, volume);
+        if (accepted <= 0) return InteractionResult.PASS;
+
+        BlobStacks.deplete(stack, accepted, player);
+        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Pours goo from a bucket of goo into matching hub canister slots. */
+    private static InteractionResult handleBucketInsert(
+            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
+            ItemStack stack, Player player, InteractionHand hand, Level level) {
+        GooContents bucketGoo = BucketOfGooItem.getContents(stack);
+        if (bucketGoo.isEmpty()) return InteractionResult.PASS;
+
+        int hitSlotIdx = hitSlot(hitResult, pos);
+        boolean inserted = false;
+        for (var entry : bucketGoo.getAll().entrySet()) {
+            GooType type = entry.getKey();
+            long volume = entry.getValue();
+            int slot = GooBlockInteraction.findSlot(
+                    hitSlotIdx, HubBlockEntity.MAX_CANISTERS, hub::canAccept);
+            if (slot < 0) continue;
+            long accepted = hub.insertGoo(slot, type, volume);
+            if (accepted > 0) {
+                bucketGoo = bucketGoo.withRemoved(type, accepted);
+                inserted = true;
+            }
+        }
+        if (!inserted) return InteractionResult.PASS;
+
+        BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
+        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Extracts goo from the first non-empty hub slot into an empty bucket. */
+    private static InteractionResult handleBucketExtract(
+            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
+            ItemStack stack, Player player, Level level) {
+        int slot = GooBlockInteraction.findSlot(hitSlot(hitResult, pos),
+                HubBlockEntity.MAX_CANISTERS,
+                i -> !hub.getSlotGooContents(i).isEmpty());
+        if (slot < 0) return InteractionResult.PASS;
+
+        GooContents slotGoo = hub.getSlotGooContents(slot);
+        GooType type = slotGoo.largestType();
+        if (type == null) return InteractionResult.PASS;
+        long extracted = hub.extractGoo(slot, type, slotGoo.getVolume(type));
+        if (extracted <= 0) return InteractionResult.PASS;
+
+        ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
+        stack.shrink(1);
+        PlayerUtils.addOrDrop(player, filledBucket);
+        level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Drops the intake gasket item on break if one is installed. */
+    @Override
+    public @NonNull BlockState playerWillDestroy(
+            @NonNull Level level, @NonNull BlockPos pos,
+            @NonNull BlockState state, @NonNull Player player) {
+        if (!level.isClientSide() && state.getValue(HAS_GASKET)) {
+            popResource(level, pos, new ItemStack(GooItems.CHORAL_GASKET.get()));
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * Determines which canister slot the player clicked by nearest-center detection.
+     * Converts the hit position to block-local pixel coords and finds the closest slot.
+     *
+     * @param hit the block hit result from the interaction
+     * @param pos the block position
+     * @return slot index 0-7, or -1 if click was too far from any slot
+     */
+    public static int hitSlot(BlockHitResult hit, BlockPos pos) {
+        double pixelX = (hit.getLocation().x - pos.getX()) * ShapeHitCheck.PIXELS_PER_BLOCK;
+        double pixelZ = (hit.getLocation().z - pos.getZ()) * ShapeHitCheck.PIXELS_PER_BLOCK;
+        return nearestSlot(pixelX, pixelZ);
+    }
+
+    /**
+     * Finds the nearest canister slot to the given pixel coordinates.
+     *
+     * @param pixelX x position in block-local pixel space (0-16)
+     * @param pixelZ z position in block-local pixel space (0-16)
+     * @return slot index 0-7, or -1 if beyond {@link #MAX_SLOT_DISTANCE}
+     */
+    public static int nearestSlot(double pixelX, double pixelZ) {
+        int best = -1;
+        double bestDist = MAX_SLOT_DISTANCE * MAX_SLOT_DISTANCE;
+        for (int i = 0; i < SLOT_CENTERS.length; i++) {
+            double dx = pixelX - SLOT_CENTERS[i][0];
+            double dz = pixelZ - SLOT_CENTERS[i][1];
+            double distSq = dx * dx + dz * dz;
+            if (distSq < bestDist) {
+                bestDist = distSq;
+                best = i;
+            }
+        }
+        return best;
+    }
+}

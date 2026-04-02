@@ -1,0 +1,44 @@
+{
+	"parent": "minecraft:block/block",
+	"render_type": "minecraft:cutout",
+	"ambientocclusion": false,
+	"texture_size": [64, 64],
+	"textures": {
+		"2": "goo:block/vat_body",
+		"particle": "goo:block/vat_body"
+	},
+	"elements": [
+		{
+			"name": "inner_north",
+			"from": [1, 0, 1],
+			"to": [15, 14, 2],
+			"faces": {
+				"south": {"uv": [3.5, 0, 7, 3.5], "texture": "#2"}
+			}
+		},
+		{
+			"name": "inner_south",
+			"from": [1, 0, 14],
+			"to": [15, 14, 15],
+			"faces": {
+				"north": {"uv": [3.5, 6, 7, 9.5], "texture": "#2"}
+			}
+		},
+		{
+			"name": "inner_west",
+			"from": [1, 0, 2],
+			"to": [2, 14, 14],
+			"faces": {
+				"east": {"uv": [7, 3, 3.5, 6.5], "texture": "#2"}
+			}
+		},
+		{
+			"name": "inner_east",
+			"from": [14, 0, 2],
+			"to": [15, 14, 14],
+			"faces": {
+				"west": {"uv": [3.5, 7, 0, 10.5], "texture": "#2"}
+			}
+		}
+	]
+}

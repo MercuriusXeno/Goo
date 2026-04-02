@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "has_gasket=false": {
+      "model": "goo:block/hub"
+    },
+    "has_gasket=true": {
+      "model": "goo:block/hub_gasket"
+    }
+  }
+}
