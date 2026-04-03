@@ -102,12 +102,11 @@
   "item.goo.partially_melted_item": "Partially Melted Item",
   "item.goo.depleted_blaze_rod": "Depleted Blaze Rod",
 
-  "entity.goo.thrown_blob": "Thrown Blob",
-  "entity.goo.chain_marker": "Chain Marker",
-  "entity.goo.goo_world_effect": "World Effect",
-
   "item.goo.choral_tuner": "Choral Tuner",
   "goo.tuner.naming_header": "Canister Label:",
 
-  "enchantment.goo.compression": "Compression"
+  "enchantment.goo.compression": "Compression",
+
+  "block.goo.chain_marker": "Chain Marker",
+  "block.goo.frost_field": "Frost Field"
 }

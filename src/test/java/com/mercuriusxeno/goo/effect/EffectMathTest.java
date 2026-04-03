@@ -36,24 +36,55 @@ class EffectMathTest {
         }
     }
 
-    // ── Frost: freeze radius = 3 + 2n ─────────────────────────────────────
+    // ── Frost: freeze radius = 2 + n ──────────────────────────────────────
 
     @Nested
     class FreezeRadius {
 
         @Test
-        void stack1Is5() {
-            assertEquals(5, EffectMath.computeFreezeRadius(1));
+        void stack1Is3() {
+            assertEquals(3, EffectMath.computeFreezeRadius(1));
         }
 
         @Test
-        void stack2Is7() {
-            assertEquals(7, EffectMath.computeFreezeRadius(2));
+        void stack2Is4() {
+            assertEquals(4, EffectMath.computeFreezeRadius(2));
         }
 
         @Test
-        void stack3Is9() {
-            assertEquals(9, EffectMath.computeFreezeRadius(3));
+        void stack3Is5() {
+            assertEquals(5, EffectMath.computeFreezeRadius(3));
+        }
+
+        @Test
+        void stack4Is6() {
+            assertEquals(6, EffectMath.computeFreezeRadius(4));
+        }
+    }
+
+    // ── Frost: duration = 4 * radius * 20 ticks ────────────────────────────
+
+    @Nested
+    class FrostDuration {
+
+        @Test
+        void radius3Is240() {
+            assertEquals(240, EffectMath.computeFrostDuration(3));
+        }
+
+        @Test
+        void radius4Is320() {
+            assertEquals(320, EffectMath.computeFrostDuration(4));
+        }
+
+        @Test
+        void radius5Is400() {
+            assertEquals(400, EffectMath.computeFrostDuration(5));
+        }
+
+        @Test
+        void radius6Is480() {
+            assertEquals(480, EffectMath.computeFrostDuration(6));
         }
     }
 

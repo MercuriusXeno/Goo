@@ -18,8 +18,8 @@ public final class RadialTextures {
 
     private RadialTextures() {}
 
-    /** Texture resolution - high enough to look smooth at any GUI scale. */
-    static final int TEX_SIZE = 256;
+    /** Texture resolution - matches OUTER_RADIUS * 2 so blit UV maps 1:1. */
+    static final int TEX_SIZE = 200;
 
     /** Number of wedges (one per goo type). */
     private static final int WEDGE_COUNT = GooType.values().length;

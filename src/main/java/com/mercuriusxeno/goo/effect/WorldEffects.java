@@ -1,7 +1,9 @@
 package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.registry.GooEntities;
+import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.FrostFieldBlockEntity;
+import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -39,8 +41,8 @@ public class WorldEffects {
             case VITAL -> vitalLivingBlob(level, pos);
             case SHROOM -> shroomSpores(level, pos);
             case ROCK -> rockImplosion(level, pos);
-            case BLAZE -> blazeExplosion(level, pos);
-            case FROST -> frostFreeze(level, pos);
+            case BLAZE -> blazeExplosion(level, pos, targetFace);
+            case FROST -> frostFreeze(level, pos, targetFace);
             case TYPHOON -> typhoonJet(level, pos);
             case GLOW -> glowDome(level, pos);
             case HEX -> hexEnsorcelled(level, pos);
@@ -172,46 +174,103 @@ public class WorldEffects {
     }
 
     /**
-     * Blaze: chain explosion. First blob spawns a fuse marker; additional
-     * blobs during the fuse window stack up to 4 for 3/5/7/9 radius.
+     * Blaze: chain explosion. Places a chain marker on the hit face.
+     * Additional blobs during the fuse window stack up to 4 for 3/5/7/9 radius.
      */
-    private static void blazeExplosion(Level level, BlockPos pos) {
+    private static void blazeExplosion(Level level, BlockPos pos, @Nullable Direction targetFace) {
         if (!(level instanceof ServerLevel)) return;
-        var existing = EffectStackFinder.findAt(level, pos, ChainMarkerEffect.class)
-                .filter(e -> e.getGooType() == GooType.BLAZE);
-        if (existing.isPresent()) {
-            existing.get().tryStack();
-        } else {
-            ChainMarkerEffect marker = new ChainMarkerEffect(GooEntities.CHAIN_MARKER.get(), level);
-            marker.initChain(pos, GooType.BLAZE);
-            level.addFreshEntity(marker);
+        placeOrStackChain(level, pos, targetFace, GooType.BLAZE);
+    }
+
+    /**
+     * Stacks onto an existing chain marker if the hit block (or the
+     * face-adjacent block) already has one of the same type. Otherwise
+     * places a new marker on the hit face. Shared by all chain effects.
+     */
+    private static void placeOrStackChain(Level level, BlockPos hitBlock,
+            @Nullable Direction face, GooType type) {
+        // Hit block itself is a matching marker: stack directly
+        if (tryStackExisting(level, hitBlock, type)) return;
+
+        // Resolve placement on the hit face
+        if (face == null) face = Direction.UP;
+        BlockPos placePos = hitBlock.relative(face);
+
+        // Face-adjacent block is a matching marker: stack onto it
+        if (tryStackExisting(level, placePos, type)) return;
+
+        // Place new marker in air
+        if (!level.getBlockState(placePos).isAir()) return;
+        level.setBlock(placePos, GooBlocks.CHAIN_MARKER.get().defaultBlockState(), 3);
+        if (level.getBlockEntity(placePos) instanceof ChainMarkerBlockEntity be) {
+            be.initChain(type);
         }
     }
 
-    // Frost: Freeze water→ice, lava→obsidian in radius
-    private static void frostFreeze(Level level, BlockPos pos) {
-        if (!(level instanceof ServerLevel serverLevel)) return;
-        int radius = 5;
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
-                    BlockPos target = pos.offset(dx, dy, dz);
-                    BlockState state = level.getBlockState(target);
-                    if (state.is(Blocks.WATER)) {
-                        level.setBlock(target, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
-                    } else if (state.is(Blocks.LAVA)) {
-                        level.setBlock(target, Blocks.OBSIDIAN.defaultBlockState(), Block.UPDATE_ALL);
-                    } else if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) {
-                        level.setBlock(target, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-                    }
-                }
-            }
+    /** Tries to stack onto an existing same-type chain marker. */
+    private static boolean tryStackExisting(Level level, BlockPos pos, GooType type) {
+        if (!level.getBlockState(pos).is(GooBlocks.CHAIN_MARKER.get())) return false;
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be
+                && be.getGooType() == type) {
+            be.tryStack();
+            return true;
         }
-        level.playSound(null, pos, SoundEvents.GLASS_BREAK, SoundSource.BLOCKS, 1.0f, 0.5f);
-        serverLevel.sendParticles(ParticleTypes.SNOWFLAKE,
-            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-            40, 3.0, 3.0, 3.0, 0.0);
+        return false;
+    }
+
+    /**
+     * Frost: instant freeze + persistent melt-resist field. Executes the
+     * freeze immediately, then places (or stacks onto) a FrostFieldBlock
+     * that prevents packed ice from being swapped back to regular ice
+     * until the field duration expires.
+     */
+    private static void frostFreeze(Level level, BlockPos pos,
+                                    @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+
+        // Resolve field placement position
+        if (targetFace == null) targetFace = Direction.UP;
+        BlockPos fieldPos = pos.relative(targetFace);
+
+        // Stack onto existing frost field if present
+        if (tryStackFrostField(level, pos)) {
+            refreeze(serverLevel, pos);
+            return;
+        }
+        if (tryStackFrostField(level, fieldPos)) {
+            refreeze(serverLevel, fieldPos);
+            return;
+        }
+
+        // Compute radius for initial placement
+        int radius = EffectMath.computeFreezeRadius(1);
+
+        // Execute freeze immediately at the hit block
+        FrostExecutor.execute(serverLevel, pos, radius);
+
+        // Place the frost field in air
+        BlockPos placePos = level.getBlockState(fieldPos).isAir() ? fieldPos : pos;
+        if (!level.getBlockState(placePos).isAir()) return;
+        level.setBlock(placePos, GooBlocks.FROST_FIELD.get().defaultBlockState(), 3);
+        if (level.getBlockEntity(placePos) instanceof FrostFieldBlockEntity be) {
+            be.initField(1);
+        }
+    }
+
+    /** Tries to stack onto an existing frost field at the given position. */
+    private static boolean tryStackFrostField(Level level, BlockPos pos) {
+        if (!level.getBlockState(pos).is(GooBlocks.FROST_FIELD.get())) return false;
+        if (level.getBlockEntity(pos) instanceof FrostFieldBlockEntity be) {
+            return be.tryStack();
+        }
+        return false;
+    }
+
+    /** Re-executes the freeze at the field's updated radius after stacking. */
+    private static void refreeze(ServerLevel level, BlockPos fieldPos) {
+        if (level.getBlockEntity(fieldPos) instanceof FrostFieldBlockEntity be) {
+            FrostExecutor.execute(level, fieldPos, be.getRadius());
+        }
     }
 
     // Typhoon: Persistent jet stream  - launch entities upward

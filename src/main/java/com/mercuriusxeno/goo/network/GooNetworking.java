@@ -54,6 +54,11 @@ public final class GooNetworking {
                 BlobThrowPayload.STREAM_CODEC,
                 BlobThrowHandler::handle
         );
+        registrar.playToServer(
+                GloveSelectPayload.TYPE,
+                GloveSelectPayload.STREAM_CODEC,
+                GloveSelectHandler::handle
+        );
         registrar.playToClient(
                 BlobFlightPayload.TYPE,
                 BlobFlightPayload.STREAM_CODEC,

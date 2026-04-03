@@ -59,13 +59,26 @@ public final class EffectMath {
     }
 
     /**
-     * Frost freeze radius. Formula: 3 + 2n.
+     * Frost freeze radius. Formula: 2 + n.
      *
      * @param stackCount 1-based stack level
-     * @return spherical freeze radius (5, 7, 9)
+     * @return spherical freeze radius (3, 4, 5, 6)
      */
     public static int computeFreezeRadius(int stackCount) {
-        return 3 + 2 * stackCount;
+        return 2 + stackCount;
+    }
+
+    /** Ticks per second, used by duration formulas. */
+    private static final int TICKS_PER_SECOND = 20;
+
+    /**
+     * Frost field duration in ticks. Formula: 4 * radius * 20.
+     *
+     * @param radius the freeze radius (from computeFreezeRadius)
+     * @return duration in ticks (240, 320, 400, 480)
+     */
+    public static int computeFrostDuration(int radius) {
+        return 4 * radius * TICKS_PER_SECOND;
     }
 
     /**

@@ -6,8 +6,11 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * Shared rendering utilities for block entity renderers (BERs).
@@ -30,6 +33,17 @@ public final class GooRenderUtil {
 
     /** Fully opaque white in ARGB. */
     public static final int OPAQUE_WHITE = 0xFFFFFFFF;
+
+    /**
+     * Returns true if the player's crosshair is currently on the given
+     * block position. Used by BERs to highlight when aimed at.
+     */
+    public static boolean isBlockTargeted(BlockPos pos) {
+        HitResult hit = Minecraft.getInstance().hitResult;
+        return hit instanceof BlockHitResult bhr
+                && bhr.getType() == HitResult.Type.BLOCK
+                && bhr.getBlockPos().equals(pos);
+    }
 
     /** Emits a vertex with an explicit ARGB color. */
     public static void vertexColored(PoseStack.Pose pose, VertexConsumer c,
