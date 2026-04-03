@@ -13,7 +13,8 @@ import org.jspecify.annotations.NonNull;
  * The server validates goo availability and range before executing the throw.
  */
 public record BlobThrowPayload(String gooTypeId, int targetEntityId,
-                               BlockPos targetPos, int targetFace)
+                               BlockPos targetPos, int targetFace,
+                               boolean grannyArc)
         implements CustomPacketPayload {
 
     /** Payload type ID for registration. */
@@ -35,6 +36,7 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         buf.writeVarInt(payload.targetEntityId);
         buf.writeBlockPos(payload.targetPos);
         buf.writeVarInt(payload.targetFace);
+        buf.writeBoolean(payload.grannyArc);
     }
 
     /** Reads the payload from the buffer. */
@@ -43,6 +45,7 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         int targetEntityId = buf.readVarInt();
         BlockPos targetPos = buf.readBlockPos();
         int targetFace = buf.readVarInt();
-        return new BlobThrowPayload(gooTypeId, targetEntityId, targetPos, targetFace);
+        boolean grannyArc = buf.readBoolean();
+        return new BlobThrowPayload(gooTypeId, targetEntityId, targetPos, targetFace, grannyArc);
     }
 }

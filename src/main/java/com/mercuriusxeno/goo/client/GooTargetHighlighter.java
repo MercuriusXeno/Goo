@@ -164,7 +164,8 @@ public final class GooTargetHighlighter {
 
     /**
      * Resolves what the player is aiming at within throw range.
-     * Entity hits take priority over block hits.
+     * Entity hits take priority over block hits unless sneaking,
+     * which forces block-only targeting with no aim assist.
      *
      * @param player the local player
      * @param partialTick interpolation factor for smooth rendering
@@ -175,9 +176,11 @@ public final class GooTargetHighlighter {
         Vec3 lookVec = player.getViewVector(partialTick);
         Vec3 reach = eyePos.add(lookVec.scale(MAX_RANGE));
 
-        Entity entityHit = findClosestEntity(player, eyePos, reach);
-        if (entityHit != null) {
-            return TargetResult.entity(entityHit);
+        if (!player.isShiftKeyDown()) {
+            Entity entityHit = findClosestEntity(player, eyePos, reach);
+            if (entityHit != null) {
+                return TargetResult.entity(entityHit);
+            }
         }
 
         BlockHitResult blockHit = player.level().clip(new ClipContext(

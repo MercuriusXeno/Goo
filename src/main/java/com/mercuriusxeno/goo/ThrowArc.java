@@ -19,10 +19,10 @@ public final class ThrowArc {
     public static final double GRAVITY = 0.08;
 
     /** Flat boost added to arc peak height, in blocks. */
-    public static final double ARC_FLAT_BOOST = 2.0;
+    public static final double ARC_FLAT_BOOST = 1.0;
 
-    /** Multiplier on the gravity-based arc component (1.25 = +25%). */
-    public static final double ARC_GRAVITY_SCALE = 1.25;
+    /** Multiplier on the gravity-based arc component (1.15 = +15%). */
+    public static final double ARC_GRAVITY_SCALE = 1.15;
 
     /** Blob travel speed in blocks per tick. */
     public static final double BLOCKS_PER_TICK = 1.5;

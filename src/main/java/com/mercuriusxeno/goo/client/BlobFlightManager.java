@@ -41,7 +41,8 @@ public final class BlobFlightManager {
         Vec3 blockEnd = (targetEntityId < 0) ? resolveBlockTargetPos(payload) : start;
         int travelTicks = payload.travelTicks();
 
-        FLIGHTS.put(nextId++, new BlobFlight(start, blockEnd, targetEntityId, type, travelTicks));
+        boolean grannyArc = payload.grannyArc();
+        FLIGHTS.put(nextId++, new BlobFlight(start, blockEnd, targetEntityId, type, travelTicks, grannyArc));
     }
 
     /** Called each client tick to advance flights and remove arrivals. */
@@ -93,15 +94,17 @@ public final class BlobFlightManager {
         public final int targetEntityId;
         public final GooType gooType;
         public final int travelTicks;
+        public final boolean grannyArc;
         public int ticksElapsed;
 
         public BlobFlight(Vec3 start, Vec3 blockEnd, int targetEntityId,
-                          GooType gooType, int travelTicks) {
+                          GooType gooType, int travelTicks, boolean grannyArc) {
             this.start = start;
             this.blockEnd = blockEnd;
             this.targetEntityId = targetEntityId;
             this.gooType = gooType;
             this.travelTicks = travelTicks;
+            this.grannyArc = grannyArc;
             this.ticksElapsed = 0;
         }
 
@@ -117,20 +120,27 @@ public final class BlobFlightManager {
         /** Velocity finite-difference step size. */
         private static final float VELOCITY_DT = 0.01f;
 
+        /** Returns the arc peak height for this flight. */
+        private double peak() {
+            return grannyArc
+                    ? ThrowArc.grannyPeak(travelTicks)
+                    : ThrowArc.basePeak(travelTicks);
+        }
+
         /** Returns interpolated position at the given partial tick. */
         public Vec3 getPosition(float partialTick) {
             float t = Math.min(1.0f, (ticksElapsed + partialTick) / travelTicks);
-            return ThrowArc.arcPoint(start, getEnd(), t, ThrowArc.basePeak(travelTicks));
+            return ThrowArc.arcPoint(start, getEnd(), t, peak());
         }
 
         /** Returns normalized velocity direction for tail orientation. */
         public Vec3 getVelocity(float partialTick) {
             float t = Math.min(1.0f, (ticksElapsed + partialTick) / travelTicks);
             Vec3 end = getEnd();
-            double peak = ThrowArc.basePeak(travelTicks);
-            Vec3 posNow = ThrowArc.arcPoint(start, end, t, peak);
+            double p = peak();
+            Vec3 posNow = ThrowArc.arcPoint(start, end, t, p);
             Vec3 posNext = ThrowArc.arcPoint(start, end,
-                    Math.min(1.0, t + VELOCITY_DT), peak);
+                    Math.min(1.0, t + VELOCITY_DT), p);
             Vec3 diff = posNext.subtract(posNow);
             double len = diff.length();
             return len > 1e-6 ? diff.scale(1.0 / len) : new Vec3(0, 1, 0);

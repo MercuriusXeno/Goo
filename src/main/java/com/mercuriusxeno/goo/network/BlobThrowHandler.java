@@ -106,7 +106,8 @@ public final class BlobThrowHandler {
                 payload.targetEntityId(),
                 payload.targetPos(),
                 payload.targetFace(),
-                travelTicks
+                travelTicks,
+                payload.grannyArc()
         );
 
         // Broadcast to tracking players and the thrower
