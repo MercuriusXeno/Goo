@@ -815,19 +815,45 @@ public class GooValueRegistry implements IGooValueLookup {
     public ScaffoldGenerator.ScaffoldResult generateScaffoldFresh(MinecraftServer server) {
         HolderLookup.Provider registries = server.registryAccess();
         List<RecipeInput> recipes = adaptRecipes(server.getRecipeManager().getRecipes(), registries);
+        // Include conversion targets as valued so they don't appear as roots
+        Map<Identifier, GooValue> holistic = holisticValuedItems();
         List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
-                recipes, baseValues, deniedItems);
+                recipes, holistic, deniedItems);
         return ScaffoldGenerator.generateScaffold(roots, recipes);
     }
 
     /**
      * Generates scaffold from cached recipes (requires a prior regen or load).
      * Shows only roots that are still missing after the last derivation pass.
+     * Uses effective values (post-derivation, post-conversion) for completeness.
      */
     public ScaffoldGenerator.ScaffoldResult generateScaffoldMissing() {
         List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
-                lastRecipes, baseValues, deniedItems);
+                lastRecipes, effectiveValues, deniedItems);
         return ScaffoldGenerator.generateScaffold(roots, lastRecipes);
+    }
+
+    /**
+     * Builds a holistic valued-items map: base values plus all items that will
+     * receive values from conversion assignments (parallel copies, additives).
+     * Used by scaffold to avoid flagging conversion targets as missing.
+     */
+    private Map<Identifier, GooValue> holisticValuedItems() {
+        Map<Identifier, GooValue> valued = new HashMap<>(baseValues);
+        collectConversionTargets(preConversions, valued);
+        collectConversionTargets(postConversions, valued);
+        return valued;
+    }
+
+    /** Adds placeholder values for all conversion assignment targets. */
+    private void collectConversionTargets(GooConversion.ParsedConversions parsed,
+                                           Map<Identifier, GooValue> valued) {
+        if (parsed == null) return;
+        for (GooConversion.Assignment assignment : parsed.assignments()) {
+            for (Identifier item : resolveConversionTarget(assignment.target())) {
+                valued.putIfAbsent(item, GooValue.EMPTY);
+            }
+        }
     }
 
     /** Copies base values into effective values. For test use after parseBaseValuesFromStream. */
@@ -889,23 +915,67 @@ public class GooValueRegistry implements IGooValueLookup {
             }
             knownItems.add(itemKey);
         }
-        // Validate _groups
+        // Validate _groups (new format: arrays of item IDs)
         if (json.has("_groups")) {
             JsonObject groups = json.getAsJsonObject("_groups");
             for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
-                JsonObject groupObj = group.getValue().getAsJsonObject();
-                JsonElement valueElem = groupObj.get("value");
-                String ctx = "_groups." + group.getKey();
-                if (valueElem.isJsonObject()) {
-                    validateValueObject(valueElem.getAsJsonObject(), knownConstants, knownItems, ctx, warnings);
-                } else if (valueElem.isJsonPrimitive() && valueElem.getAsJsonPrimitive().isString()
-                           && !"denied".equals(valueElem.getAsString())) {
-                    validateExprTokens(valueElem.getAsString(), knownConstants, knownItems, ctx, warnings);
+                if (!group.getValue().isJsonArray()) {
+                    warnings.add("_groups." + group.getKey() + ": expected an array of item IDs");
+                    continue;
                 }
-                // Group items are targets, not sources; add them so later groups can reference
-                com.google.gson.JsonArray items = groupObj.getAsJsonArray("items");
+                com.google.gson.JsonArray items = group.getValue().getAsJsonArray();
                 for (JsonElement item : items) {
                     knownItems.add(item.getAsString());
+                }
+            }
+        }
+        // Validate _conversions and _post_conversions
+        validateConversionBlock(json, "_conversions", knownConstants, warnings);
+        validateConversionBlock(json, "_post_conversions", knownConstants, warnings);
+    }
+
+    /** Validates a conversion block for unknown @refs and malformed formulas. */
+    private void validateConversionBlock(JsonObject json, String blockKey,
+                                          Set<String> knownConstants, List<String> warnings) {
+        if (!json.has(blockKey)) return;
+        JsonObject block = json.getAsJsonObject(blockKey);
+        Set<String> knownRefs = new LinkedHashSet<>();
+        for (Map.Entry<String, JsonElement> entry : block.entrySet()) {
+            String key = entry.getKey();
+            if (!entry.getValue().isJsonPrimitive()) {
+                warnings.add(blockKey + "." + key + ": expected a string value");
+                continue;
+            }
+            String value = entry.getValue().getAsString();
+            if ("denied".equals(value)) continue;
+            String ctx = blockKey + "." + key;
+            if (value.contains("->")) {
+                // Formula: validate types
+                try {
+                    GooConversion.parseFormula(value);
+                } catch (IllegalArgumentException e) {
+                    warnings.add(ctx + ": invalid formula: " + e.getMessage());
+                }
+                knownRefs.add(key);
+            } else if (value.startsWith("+")) {
+                // Additive: validate constant ref
+                String ref = value.substring(1).trim();
+                if (ref.startsWith("$") && !knownConstants.contains(ref.substring(1))) {
+                    warnings.add(ctx + ": unknown constant " + ref);
+                }
+                knownRefs.add(key);
+            } else if (value.contains("@")) {
+                // Stack or assignment: validate @refs exist
+                for (String part : value.trim().split("\\s+")) {
+                    if (part.startsWith("@")) {
+                        String refName = part.substring(1).replaceAll("^\\d+\\s*", "");
+                        if (!knownRefs.contains(refName)) {
+                            warnings.add(ctx + ": unknown conversion reference @" + refName);
+                        }
+                    }
+                }
+                if (!key.startsWith("#") && !key.contains(":")) {
+                    knownRefs.add(key);
                 }
             }
         }
