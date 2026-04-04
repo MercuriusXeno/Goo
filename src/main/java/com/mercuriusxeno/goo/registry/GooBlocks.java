@@ -3,6 +3,8 @@ package com.mercuriusxeno.goo.registry;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
+import com.mercuriusxeno.goo.block.ChainMarkerBlock;
+import com.mercuriusxeno.goo.block.FrostFieldBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
@@ -110,4 +112,26 @@ public class GooBlocks {
 
     public static final DeferredBlock<CanisterBlock> CANISTER = BLOCKS.registerBlock("canister",
             CanisterBlock::new, CanisterPropertySupplier);
+
+    // --- Effect blocks ---
+
+    /** Chain marker: short-lived fuse block for chain world effects. */
+    public static final DeferredBlock<ChainMarkerBlock> CHAIN_MARKER = BLOCKS.registerBlock(
+            "chain_marker", ChainMarkerBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .noCollision()
+                    .instabreak()
+                    .noLootTable()
+                    .noOcclusion()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
+
+    /** Frost field: invisible melt-resist zone placed by frost goo. */
+    public static final DeferredBlock<FrostFieldBlock> FROST_FIELD = BLOCKS.registerBlock(
+            "frost_field", FrostFieldBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .noCollision()
+                    .instabreak()
+                    .noLootTable()
+                    .noOcclusion()
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
 }

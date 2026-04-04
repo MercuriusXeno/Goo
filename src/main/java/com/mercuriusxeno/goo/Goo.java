@@ -70,7 +70,7 @@ public class Goo {
 
         NeoForge.EVENT_BUS.register(this);
 
-        GOO_VALUES.setDerivedCachePath(
+        GOO_VALUES.setEffectiveCachePath(
             FMLPaths.CONFIGDIR.get().resolve("goo_derived_values.json"));
 
         LOGGER.info("Goo mod initialized");
@@ -188,10 +188,9 @@ public class Goo {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        GOO_VALUES.loadBaseValues();
-        GOO_VALUES.loadDerivedCache();
-        LOGGER.info("Goo values loaded: {} base, {} derived",
-            GOO_VALUES.baseSize(), GOO_VALUES.derivedSize());
+        GOO_VALUES.loadEffectiveCache();
+        LOGGER.info("Goo values loaded: {} effective values from cache",
+            GOO_VALUES.size());
     }
 
     @SubscribeEvent

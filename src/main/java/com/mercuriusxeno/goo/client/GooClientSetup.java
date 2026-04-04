@@ -62,6 +62,10 @@ public class GooClientSetup {
             PlexerBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.TAP.get(),
             TapBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(GooBlockEntities.CHAIN_MARKER.get(),
+            ChainMarkerBER::new);
+        event.registerBlockEntityRenderer(GooBlockEntities.FROST_FIELD.get(),
+            FrostFieldBER::new);
     }
 
     /** Registers the goo type icon decorator for all blob and omniblob items. */

@@ -19,10 +19,10 @@ public final class ThrowArc {
     public static final double GRAVITY = 0.08;
 
     /** Flat boost added to arc peak height, in blocks. */
-    public static final double ARC_FLAT_BOOST = 2.0;
+    public static final double ARC_FLAT_BOOST = 1.0;
 
-    /** Multiplier on the gravity-based arc component (1.25 = +25%). */
-    public static final double ARC_GRAVITY_SCALE = 1.25;
+    /** Multiplier on the gravity-based arc component (1.15 = +15%). */
+    public static final double ARC_GRAVITY_SCALE = 1.15;
 
     /** Blob travel speed in blocks per tick. */
     public static final double BLOCKS_PER_TICK = 1.5;
@@ -47,7 +47,7 @@ public final class ThrowArc {
      * Computes the base gravity peak height for a given travel time.
      *
      * @param travelTicks total flight time in ticks
-     * @return peak height in blocks at t=0.5
+     * @return peak height in blocks
      */
     public static double basePeak(double travelTicks) {
         return GRAVITY * travelTicks * travelTicks / 8.0;
@@ -64,20 +64,50 @@ public final class ThrowArc {
     }
 
     /**
-     * Interpolates a point on the parabolic arc with a given peak height.
+     * Where the arc peaks as a fraction of total flight [0..1].
+     * Values below 0.5 front-load the climb: the blob rises steeply
+     * in the first portion then glides down more gently. 0.5 = symmetric.
+     */
+    public static final double ARC_PEAK_T = 0.5;
+
+    /**
+     * Interpolates a point on an asymmetric arc with a given peak height.
+     * The arc peaks at {@link #ARC_PEAK_T} instead of the midpoint,
+     * producing a steep initial climb and a shallower descent. Two
+     * parabolic segments are joined at the peak for C0 continuity.
      *
-     * @param start       arc origin (hand position)
-     * @param end         arc destination (target center)
-     * @param t           normalized progress [0..1]
-     * @param peak        peak height in blocks (at t=0.5)
+     * @param start arc origin (hand position)
+     * @param end   arc destination (target center)
+     * @param t     normalized progress [0..1]
+     * @param peak  peak height in blocks (at t = ARC_PEAK_T)
      * @return world-space position on the arc
      */
     public static Vec3 arcPoint(Vec3 start, Vec3 end, double t, double peak) {
         double x = start.x + (end.x - start.x) * t;
         double y = start.y + (end.y - start.y) * t;
         double z = start.z + (end.z - start.z) * t;
-        double arcY = 4.0 * peak * t * (1.0 - t);
+        double arcY = skewedArc(t, peak, ARC_PEAK_T);
         return new Vec3(x, y + arcY, z);
+    }
+
+    /**
+     * Piecewise parabolic arc: rises from 0 to peak over [0..tPeak],
+     * falls from peak to 0 over [tPeak..1]. Each segment is a separate
+     * quadratic so the climb rate and descent rate are independent.
+     *
+     * @param t     normalized progress [0..1]
+     * @param peak  maximum height
+     * @param tPeak where the peak occurs [0..1]
+     * @return arc height at t
+     */
+    static double skewedArc(double t, double peak, double tPeak) {
+        if (t <= tPeak) {
+            double s = t / tPeak;
+            return peak * s * (2.0 - s);
+        } else {
+            double s = (t - tPeak) / (1.0 - tPeak);
+            return peak * (1.0 - s * s);
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -69,6 +70,35 @@ public final class TestRecipeBuilder {
         Map<Identifier, Identifier> map = new HashMap<>();
         containers.forEach((k, v) -> map.put(Identifier.parse(k), Identifier.parse(v)));
         return map;
+    }
+
+    /**
+     * Creates a RecipeInput with explicit per-slot tag IDs.
+     * Each entry in {@code slotTags} is either a tag ID string or null (no tag).
+     * The number of entries must match the number of ingredient slots.
+     *
+     * @param output      output item ID
+     * @param count       number of items produced
+     * @param slotTags    per-slot tag IDs (null entries mean no tag)
+     * @param ingredients varargs of ingredient alternatives
+     * @return a RecipeInput with tag metadata
+     */
+    @SafeVarargs
+    public static RecipeInput tagRecipe(String output, int count,
+            List<String> slotTags, String[]... ingredients) {
+        Identifier outputId = Identifier.parse(output);
+        List<Set<Identifier>> slots = buildSlots(ingredients);
+        List<Optional<Identifier>> tagIds = buildTagIds(slotTags);
+        return new RecipeInput(outputId, count, slots, Map.of(), tagIds);
+    }
+
+    /** Converts nullable tag strings into Optional Identifier list. */
+    private static List<Optional<Identifier>> buildTagIds(List<String> slotTags) {
+        List<Optional<Identifier>> tagIds = new ArrayList<>();
+        for (String tag : slotTags) {
+            tagIds.add(tag == null ? Optional.empty() : Optional.of(Identifier.parse(tag)));
+        }
+        return tagIds;
     }
 
     /**

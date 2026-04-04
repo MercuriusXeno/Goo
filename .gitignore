@@ -20,6 +20,9 @@ bin/
 .DS_Store
 Thumbs.db
 
+# Wiki (separate git repo)
+wiki/
+
 # Mod run directories
 run/
 runs/

@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
 import com.mercuriusxeno.goo.data.RecipeInput;
+import com.mercuriusxeno.goo.data.ScaffoldGenerator;
 import com.mercuriusxeno.goo.network.GooValueSync;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -20,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.fml.loading.FMLPaths;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -54,6 +56,15 @@ public class GooCommand {
             .then(Commands.literal("audit")
                 .requires(GooCommand::requiresOp)
                 .executes(GooCommand::audit))
+            .then(Commands.literal("scaffold")
+                .requires(GooCommand::requiresOp)
+                .then(Commands.literal("fresh")
+                    .executes(GooCommand::scaffoldFresh))
+                .then(Commands.literal("missing")
+                    .executes(GooCommand::scaffoldMissing)))
+            .then(Commands.literal("init")
+                .requires(GooCommand::requiresOp)
+                .executes(GooCommand::init))
         );
     }
 
@@ -101,26 +112,108 @@ public class GooCommand {
         return msg;
     }
 
-    /** Reloads base values and derived cache from disk, then syncs to all clients. */
+    /** Reloads effective values from cache, then syncs to all clients. */
     private static int reload(CommandContext<CommandSourceStack> ctx) {
         Goo.GOO_VALUES.reload();
         GooValueSync.sendToAll(ctx.getSource().getServer());
-        int count = Goo.GOO_VALUES.size();
         ctx.getSource().sendSuccess(() ->
-            Component.literal("Reloaded goo values. " + Goo.GOO_VALUES.baseSize() +
-                " base + " + Goo.GOO_VALUES.derivedSize() + " derived = " + count + " total"), true);
+            Component.literal("Reloaded " + Goo.GOO_VALUES.size() +
+                " effective values from cache."), true);
         return 1;
     }
 
     /** Regenerates all derived values from recipes, then syncs to all clients. */
     private static int regen(CommandContext<CommandSourceStack> ctx) {
-        Goo.GOO_VALUES.loadBaseValues();
+        Goo.GOO_VALUES.loadBaseValuesFromPacks(ctx.getSource().getServer());
         int derived = Goo.GOO_VALUES.deriveFromRecipes(ctx.getSource().getServer());
-        Goo.GOO_VALUES.saveDerivedCache();
+        Goo.GOO_VALUES.saveEffectiveValues();
         GooValueSync.sendToAll(ctx.getSource().getServer());
         ctx.getSource().sendSuccess(() ->
             Component.literal("Regenerated goo values. Derived " + derived +
                 " new values from recipes. Total: " + Goo.GOO_VALUES.size()), true);
+        return 1;
+    }
+
+    /** Creates a goo_overrides datapack in the current world for base value customization. */
+    private static int init(CommandContext<CommandSourceStack> ctx) {
+        Path datapacks = ctx.getSource().getServer().getWorldPath(LevelResource.DATAPACK_DIR);
+        Path packRoot = datapacks.resolve("goo_overrides");
+        Path valuesFile = packRoot.resolve("data/goo/goo_values/base_values.json");
+
+        if (Files.exists(valuesFile)) {
+            ctx.getSource().sendSuccess(() ->
+                Component.literal("Datapack already exists at " + packRoot)
+                    .withStyle(ChatFormatting.YELLOW), false);
+            ctx.getSource().sendSuccess(() ->
+                Component.literal("Edit base_values.json, then /reload and /goo regen")
+                    .withStyle(ChatFormatting.GRAY), false);
+            return 1;
+        }
+
+        try {
+            Files.createDirectories(valuesFile.getParent());
+            Files.writeString(packRoot.resolve("pack.mcmeta"), PACK_MCMETA, StandardCharsets.UTF_8);
+            Files.writeString(valuesFile, STARTER_BASE_VALUES, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            ctx.getSource().sendFailure(Component.literal("Failed to create datapack: " + e.getMessage()));
+            return 0;
+        }
+
+        ctx.getSource().sendSuccess(() ->
+            Component.literal("Created goo_overrides datapack at " + packRoot)
+                .withStyle(ChatFormatting.GREEN), true);
+        ctx.getSource().sendSuccess(() ->
+            Component.literal("Edit base_values.json, then /reload and /goo regen")
+                .withStyle(ChatFormatting.GRAY), false);
+        return 1;
+    }
+
+    private static final String PACK_MCMETA = """
+            {
+                "pack": {
+                    "description": "Goo value overrides",
+                    "pack_format": 61
+                }
+            }
+            """;
+
+    private static final String STARTER_BASE_VALUES = """
+            {
+                "_constants": {
+                },
+
+                "_groups": {
+                }
+            }
+            """;
+
+    /** Collects recipes fresh from the server and generates a full scaffold. */
+    private static int scaffoldFresh(CommandContext<CommandSourceStack> ctx) {
+        ScaffoldGenerator.ScaffoldResult result =
+                Goo.GOO_VALUES.generateScaffoldFresh(ctx.getSource().getServer());
+        return writeScaffoldAndReport(ctx, result, "fresh");
+    }
+
+    /** Generates scaffold from cached recipes, showing only still-missing roots. */
+    private static int scaffoldMissing(CommandContext<CommandSourceStack> ctx) {
+        if (Goo.GOO_VALUES.derivedSize() == 0) {
+            ctx.getSource().sendFailure(
+                Component.literal("No cached recipes. Run /goo regen first, or use /goo scaffold fresh."));
+            return 0;
+        }
+        ScaffoldGenerator.ScaffoldResult result = Goo.GOO_VALUES.generateScaffoldMissing();
+        return writeScaffoldAndReport(ctx, result, "missing");
+    }
+
+    /** Writes scaffold lines to disk and reports the result to chat. */
+    private static int writeScaffoldAndReport(CommandContext<CommandSourceStack> ctx,
+                                               ScaffoldGenerator.ScaffoldResult result,
+                                               String mode) {
+        writeDiagnosticFile("goo_scaffold.txt", result.lines());
+        int rootCount = result.rootCount();
+        ctx.getSource().sendSuccess(() ->
+            Component.literal("Scaffold (" + mode + ") written to config/goo_scaffold.txt ("
+                + rootCount + " root(s))").withStyle(ChatFormatting.GREEN), false);
         return 1;
     }
 
@@ -140,6 +233,7 @@ public class GooCommand {
         report.add("");
 
         int issues = 0;
+        issues += appendExpressionWarningsSection(report);
         issues += appendPhantomIdsSection(report);
         issues += appendCyclesSection(report);
         issues += appendConflictsSection(report);
@@ -166,6 +260,7 @@ public class GooCommand {
 
     /** Sends per-section summaries and the file location to chat. */
     private static void sendSectionSummaries(CommandContext<CommandSourceStack> ctx) {
+        sendExpressionWarningsSummary(ctx);
         sendPhantomIdsSummary(ctx);
         sendCyclesSummary(ctx);
         sendConflictsSummary(ctx);
@@ -175,6 +270,35 @@ public class GooCommand {
         ctx.getSource().sendSuccess(() ->
             Component.literal("Full report: config/goo_audit.txt")
                 .withStyle(ChatFormatting.GRAY), false);
+    }
+
+    // --- Expression Warnings ---
+
+    /** Appends expression validation warnings (bad constants, out-of-order refs). */
+    private static int appendExpressionWarningsSection(List<String> report) {
+        List<String> warnings = Goo.GOO_VALUES.validateBaseValues();
+
+        report.add("EXPRESSION WARNINGS (" + warnings.size() + " issues in base_values.json expressions)");
+        report.add("-".repeat(50));
+
+        if (warnings.isEmpty()) {
+            report.add("  All expressions are valid.");
+        } else {
+            for (String warning : warnings) {
+                report.add("  " + warning);
+            }
+        }
+        report.add("");
+        return warnings.size();
+    }
+
+    /** Sends expression warnings summary to chat. */
+    private static void sendExpressionWarningsSummary(CommandContext<CommandSourceStack> ctx) {
+        List<String> warnings = Goo.GOO_VALUES.validateBaseValues();
+        if (warnings.isEmpty()) return;
+        ctx.getSource().sendSuccess(() ->
+            Component.literal("  Expression warnings: " + warnings.size() + " issue(s)")
+                .withStyle(ChatFormatting.YELLOW), false);
     }
 
     // --- Phantom IDs ---
@@ -241,17 +365,15 @@ public class GooCommand {
         return (int) deadCount;
     }
 
-    /** Sends a cycle count summary to chat. */
+    /** Sends a cycle count summary to chat. Only shown when unanchored cycles exist. */
     private static void sendCyclesSummary(CommandContext<CommandSourceStack> ctx) {
         List<GooValueRegistry.RecipeCycle> cycles = Goo.GOO_VALUES.getLastCycles();
-        if (cycles.isEmpty()) return;
-
         long deadCount = cycles.stream().filter(c -> !c.hasAnchor()).count();
-        long anchoredCount = cycles.size() - deadCount;
+        if (deadCount == 0) return;
 
         ctx.getSource().sendSuccess(() ->
-            Component.literal("  Cycles: " + cycles.size() + " (" + deadCount + " dead, " + anchoredCount + " anchored)")
-                .withStyle(deadCount > 0 ? ChatFormatting.RED : ChatFormatting.GREEN), false);
+            Component.literal("  Cycles: " + deadCount + " unanchored (need base values to resolve)")
+                .withStyle(ChatFormatting.RED), false);
     }
 
     /** Formats a single cycle as a plain-text line. */
@@ -454,7 +576,7 @@ public class GooCommand {
             report.add("  All registered items have goo values.");
         } else {
             for (Identifier id : noValue) {
-                report.add("  " + id);
+                report.add("\"" + id + "\",");
             }
         }
         report.add("");
@@ -500,4 +622,5 @@ public class GooCommand {
         return SharedSuggestionProvider.suggestResource(
             BuiltInRegistries.ITEM.keySet(), builder);
     }
+
 }

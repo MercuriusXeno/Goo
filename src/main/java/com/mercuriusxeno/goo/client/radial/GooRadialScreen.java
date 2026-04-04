@@ -4,6 +4,8 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
+import com.mercuriusxeno.goo.network.GloveSelectPayload;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -92,7 +94,8 @@ public class GooRadialScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         RadialTextures.ensureInitialized();
 
         int centerX = width / 2;
@@ -103,8 +106,6 @@ public class GooRadialScreen extends Screen {
         renderWedges(graphics, centerX, centerY);
         renderCancelZone(graphics, centerX, centerY);
         renderLabels(graphics, centerX, centerY);
-
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     /** Determines which wedge the mouse hovers based on angle and distance from center. */
@@ -287,7 +288,7 @@ public class GooRadialScreen extends Screen {
                 ItemStack glove = findGloveStack();
                 if (glove != null) {
                     GooGloveItem.setSelectedType(glove, selected);
-                    // Phase 5: send C2S selection sync packet here
+                    sendSelectionToServer(selected.getId());
                 }
             }
         } else if (hoveredIndex == -1) {
@@ -295,6 +296,7 @@ public class GooRadialScreen extends Screen {
             ItemStack glove = findGloveStack();
             if (glove != null) {
                 GooGloveItem.setSelectedType(glove, null);
+                sendSelectionToServer("");
             }
         }
         onClose();
@@ -316,5 +318,14 @@ public class GooRadialScreen extends Screen {
         if (off.getItem() instanceof GooGloveItem) return off;
 
         return null;
+    }
+
+    /** Sends the goo type selection to the server for persistence. */
+    private static void sendSelectionToServer(String gooTypeId) {
+        var connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            connection.send(new ServerboundCustomPayloadPacket(
+                    new GloveSelectPayload(gooTypeId)));
+        }
     }
 }

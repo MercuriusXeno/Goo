@@ -35,10 +35,10 @@ public final class GloveThrowSender {
         BlobThrowPayload payload = switch (target) {
             case TargetResult.EntityTarget et ->
                     new BlobThrowPayload(gooType.getId(), et.entity().getId(),
-                            BlockPos.ZERO, -1);
+                            BlockPos.ZERO, -1, false);
             case TargetResult.BlockTarget bt ->
                     new BlobThrowPayload(gooType.getId(), -1,
-                            bt.pos(), bt.face().ordinal());
+                            bt.pos(), bt.face().ordinal(), bt.grannyArc());
             case TargetResult.None ignored -> null;
         };
 

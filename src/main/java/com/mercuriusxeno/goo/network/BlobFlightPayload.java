@@ -15,7 +15,7 @@ import org.jspecify.annotations.NonNull;
 public record BlobFlightPayload(double startX, double startY, double startZ,
                                 String gooTypeId, int targetEntityId,
                                 BlockPos targetPos, int targetFace,
-                                int travelTicks)
+                                int travelTicks, boolean grannyArc)
         implements CustomPacketPayload {
 
     /** Payload type ID for registration. */
@@ -41,6 +41,7 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         buf.writeBlockPos(payload.targetPos);
         buf.writeVarInt(payload.targetFace);
         buf.writeVarInt(payload.travelTicks);
+        buf.writeBoolean(payload.grannyArc);
     }
 
     /** Reads the payload from the buffer. */
@@ -53,7 +54,8 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         BlockPos targetPos = buf.readBlockPos();
         int targetFace = buf.readVarInt();
         int travelTicks = buf.readVarInt();
+        boolean grannyArc = buf.readBoolean();
         return new BlobFlightPayload(startX, startY, startZ, gooTypeId,
-                targetEntityId, targetPos, targetFace, travelTicks);
+                targetEntityId, targetPos, targetFace, travelTicks, grannyArc);
     }
 }
