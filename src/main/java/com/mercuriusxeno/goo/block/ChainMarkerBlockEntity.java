@@ -6,6 +6,7 @@ import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.protocol.Packet;
@@ -32,11 +33,13 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_STACK_COUNT = "StackCount";
     private static final String TAG_MAX_STACKS = "MaxStacks";
     private static final String TAG_FUSE_REMAINING = "FuseRemaining";
+    private static final String TAG_PLACED_FACE = "PlacedFace";
 
     private GooType gooType = GooType.ROCK;
     private int stackCount = 1;
     private int maxStacks = 1;
     private int fuseRemaining = 0;
+    private Direction placedFace = Direction.UP;
 
     public ChainMarkerBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.CHAIN_MARKER.get(), pos, state);
@@ -49,10 +52,12 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * placement via {@code level.setBlock()}.
      *
      * @param type the goo type (determines chain behavior)
+     * @param face the face of the block this marker was placed on
      */
-    public void initChain(GooType type) {
+    public void initChain(GooType type, Direction face) {
         ChainProfile profile = ChainProfile.forType(type);
         this.gooType = type;
+        this.placedFace = face;
         this.stackCount = 1;
         this.maxStacks = profile.maxStacks();
         this.fuseRemaining = profile.fuseTicks();
@@ -104,7 +109,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         ChainProfile profile = ChainProfile.forType(gooType);
         if (profile != null) {
             int range = profile.rangeFormula().applyAsInt(stackCount);
-            profile.executor().execute(level, pos, range, stackCount);
+            profile.executor().execute(level, pos, range, stackCount, placedFace);
         }
         level.removeBlock(pos, false);
     }
@@ -127,6 +132,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return fuseRemaining;
     }
 
+    public Direction getPlacedFace() {
+        return placedFace;
+    }
+
     // ── Persistence ───────────────────────────────────────────────────────
 
     @Override
@@ -137,6 +146,9 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
         maxStacks = input.getIntOr(TAG_MAX_STACKS, 1);
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
+        String faceName = input.getStringOr(TAG_PLACED_FACE, "up");
+        placedFace = Direction.byName(faceName) != null
+                ? Direction.byName(faceName) : Direction.UP;
     }
 
     @Override
@@ -146,6 +158,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_STACK_COUNT, stackCount);
         output.putInt(TAG_MAX_STACKS, maxStacks);
         output.putInt(TAG_FUSE_REMAINING, fuseRemaining);
+        output.putString(TAG_PLACED_FACE, placedFace.getName());
     }
 
     // ── Client sync ───────────────────────────────────────────────────────

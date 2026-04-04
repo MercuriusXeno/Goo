@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -22,6 +23,8 @@ public final class ChainProfiles {
 
     private static final int BLAZE_FUSE_TICKS = 30;
     private static final int BLAZE_MAX_STACKS = 4;
+    private static final int ROCK_FUSE_TICKS = 30;
+    private static final int ROCK_MAX_STACKS = 5;
 
     private ChainProfiles() {}
 
@@ -33,13 +36,20 @@ public final class ChainProfiles {
                 stacks -> (int) EffectMath.computeExplosionRadius(stacks),
                 ChainProfiles::blazeExecutor
         ));
+        ChainProfile.register(GooType.ROCK, new ChainProfile(
+                ROCK_FUSE_TICKS,
+                ROCK_MAX_STACKS,
+                EffectMath::computeImplosionDepth,
+                RockExecutor::execute
+        ));
     }
 
     // ── Blaze executor ──────────────────────────────────────────────────
 
     /** Explosion + fiery aftermath scaled by stack count. */
     private static void blazeExecutor(ServerLevel level, BlockPos pos,
-                                      int range, int stackCount) {
+                                      int range, int stackCount,
+                                      Direction placedFace) {
         double cx = pos.getX() + 0.5;
         double cy = pos.getY() + 0.5;
         double cz = pos.getZ() + 0.5;
@@ -117,7 +127,8 @@ public final class ChainProfiles {
 
     /**
      * Functional interface for the chain effect's execute behavior.
-     * Receives the server level, anchor position, computed range, and stack count.
+     * Receives the server level, anchor position, computed range, stack
+     * count, and the face the marker was placed on.
      */
     @FunctionalInterface
     public interface ChainExecutor {
@@ -128,7 +139,9 @@ public final class ChainProfiles {
          * @param pos        the anchor block position
          * @param range      computed from rangeFormula(stackCount)
          * @param stackCount the raw stack count
+         * @param placedFace the face the marker was attached to
          */
-        void execute(ServerLevel level, BlockPos pos, int range, int stackCount);
+        void execute(ServerLevel level, BlockPos pos, int range,
+                     int stackCount, Direction placedFace);
     }
 }

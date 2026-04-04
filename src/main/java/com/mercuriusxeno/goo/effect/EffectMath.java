@@ -1,5 +1,11 @@
 package com.mercuriusxeno.goo.effect;
 
+import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.data.GooValue;
+
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Pure math functions for world effect calculations. Framework-free so
  * they can be unit tested without bootstrapping Minecraft.
@@ -7,6 +13,9 @@ package com.mercuriusxeno.goo.effect;
 public final class EffectMath {
 
     private EffectMath() {}
+
+    /** Goo types counted toward rock majority (rock and crystal from quartz ancestry). */
+    private static final Set<GooType> ROCK_FAMILY = EnumSet.of(GooType.ROCK, GooType.CRYSTAL);
 
     /** Base pulse interval in ticks (16 seconds). */
     private static final int BASE_PULSE_INTERVAL = 320;
@@ -44,6 +53,26 @@ public final class EffectMath {
     public static int computePulseInterval(int stackCount) {
         int clamped = Math.min(stackCount, MAX_PULSE_STACKS);
         return BASE_PULSE_INTERVAL >> (clamped - 1);
+    }
+
+    // ── Rock majority predicate ─────────────────────────────────────────────
+
+    /**
+     * Returns true if rock + crystal make up strictly more than half of
+     * the block's total goo blobs. This lets mixed-composition blocks
+     * like bricks or polished stone qualify while keeping metal-heavy
+     * or organic blocks out.
+     *
+     * @param value the block's goo composition, or null if unknown
+     * @return true if rock family is the majority
+     */
+    public static boolean isRockCompatible(GooValue value) {
+        if (value == null || value.isEmpty()) return false;
+        int rockTotal = 0;
+        for (GooType type : ROCK_FAMILY) {
+            rockTotal += value.get(type);
+        }
+        return rockTotal * 2 > value.totalBlobs();
     }
 
     // ── Chain effect range formulas ───────────────────────────────────────

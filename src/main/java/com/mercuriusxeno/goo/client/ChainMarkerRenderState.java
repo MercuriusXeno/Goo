@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client;
 
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.core.Direction;
 
 /**
  * Render state snapshot for the chain marker BER. Captures goo type,
@@ -29,4 +30,7 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
 
     /** True when the player's crosshair is on this block. */
     public boolean targeted = false;
+
+    /** The face this marker was placed on (for directional rendering). */
+    public Direction placedFace = Direction.UP;
 }

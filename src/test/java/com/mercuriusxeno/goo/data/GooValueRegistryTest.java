@@ -1,13 +1,24 @@
 package com.mercuriusxeno.goo.data;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import static com.mercuriusxeno.goo.data.TestRecipeBuilder.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -700,6 +711,809 @@ class GooValueRegistryTest {
             Identifier result = GooValueRegistry.findCheapestAmong(
                 Set.of(id("a"), id("b")), id -> null);
             assertNull(result);
+        }
+    }
+
+    // ── Group parsing ────────────────────────────────────────────────────
+
+    @Nested
+    class GroupParsing {
+
+        /** Helper: parse a JSON string through the registry's base value loader. */
+        private void loadJson(String json) throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            registry.copyBaseToEffective();
+        }
+
+        /** A _groups entry assigns the same value to all items in the array. */
+        @Test
+        void groupAssignsValueToAllItems() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": {
+                            "value": { "leaf": 384 },
+                            "items": ["minecraft:oak_log", "minecraft:spruce_log", "minecraft:birch_log"]
+                        }
+                    }
+                }
+                """);
+            assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
+            assertEquals(384, registry.lookup(id("minecraft:spruce_log")).get(GooType.LEAF));
+            assertEquals(384, registry.lookup(id("minecraft:birch_log")).get(GooType.LEAF));
+        }
+
+        /** A denied group marks all items as denied. */
+        @Test
+        void groupDeniedMarksAllItems() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "ores": {
+                            "value": "denied",
+                            "items": ["minecraft:coal_ore", "minecraft:iron_ore"]
+                        }
+                    }
+                }
+                """);
+            assertTrue(registry.isDenied(id("minecraft:coal_ore")));
+            assertTrue(registry.isDenied(id("minecraft:iron_ore")));
+        }
+
+        /** Group values support $constant expressions. */
+        @Test
+        void groupValuesResolveConstants() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": 384 },
+                    "_groups": {
+                        "logs": {
+                            "value": { "leaf": "$log" },
+                            "items": ["minecraft:oak_log", "minecraft:spruce_log"]
+                        }
+                    }
+                }
+                """);
+            assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
+            assertEquals(384, registry.lookup(id("minecraft:spruce_log")).get(GooType.LEAF));
+        }
+
+        /** Multiple groups in the same _groups object all parse. */
+        @Test
+        void multipleGroupsAllParse() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": {
+                            "value": { "leaf": 384 },
+                            "items": ["minecraft:oak_log"]
+                        },
+                        "stones": {
+                            "value": { "rock": 240 },
+                            "items": ["minecraft:stone", "minecraft:cobblestone"]
+                        }
+                    }
+                }
+                """);
+            assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
+            assertEquals(240, registry.lookup(id("minecraft:stone")).get(GooType.ROCK));
+            assertEquals(240, registry.lookup(id("minecraft:cobblestone")).get(GooType.ROCK));
+        }
+
+        /** Groups coexist with individual entries. */
+        @Test
+        void groupsAndIndividualEntriesCoexist() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:diamond": { "crystal": 12000 },
+                    "_groups": {
+                        "logs": {
+                            "value": { "leaf": 384 },
+                            "items": ["minecraft:oak_log"]
+                        }
+                    }
+                }
+                """);
+            assertEquals(12000, registry.lookup(id("minecraft:diamond")).get(GooType.CRYSTAL));
+            assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
+        }
+    }
+
+    // ── Item reference expressions ───────────────────────────────────────
+
+    @Nested
+    class ItemReferenceExpressions {
+
+        private void loadJson(String json) throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            registry.copyBaseToEffective();
+        }
+
+        /** Adding two items merges their goo types. */
+        @Test
+        void addTwoItems() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:copper_block": { "metal": 1440, "pulse": 1440 },
+                    "minecraft:carved_pumpkin": { "leaf": 480, "vital": 120 },
+                    "minecraft:copper_golem": "minecraft:copper_block + minecraft:carved_pumpkin"
+                }
+                """);
+            GooValue golem = registry.lookup(id("minecraft:copper_golem"));
+            assertEquals(1440, golem.get(GooType.METAL));
+            assertEquals(1440, golem.get(GooType.PULSE));
+            assertEquals(480, golem.get(GooType.LEAF));
+            assertEquals(120, golem.get(GooType.VITAL));
+        }
+
+        /** Subtracting items does per-type subtraction. */
+        @Test
+        void subtractItems() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_block": { "metal": 90 },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:leftover": "minecraft:iron_block - minecraft:iron_ingot"
+                }
+                """);
+            assertEquals(80, registry.lookup(id("minecraft:leftover")).get(GooType.METAL));
+        }
+
+        /** Multiplying an item by a scalar scales all types. */
+        @Test
+        void multiplyItemByScalar() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "minecraft:iron_ingot * 9"
+                }
+                """);
+            assertEquals(90, registry.lookup(id("minecraft:iron_block")).get(GooType.METAL));
+        }
+
+        /** Dividing an item by a scalar divides all types. */
+        @Test
+        void divideItemByScalar() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_block": { "metal": 90 },
+                    "minecraft:iron_ingot": "minecraft:iron_block / 9"
+                }
+                """);
+            assertEquals(10, registry.lookup(id("minecraft:iron_ingot")).get(GooType.METAL));
+        }
+
+        /** Scalar on the left side of multiplication works. */
+        @Test
+        void scalarTimesItem() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "9 * minecraft:iron_ingot"
+                }
+                """);
+            assertEquals(90, registry.lookup(id("minecraft:iron_block")).get(GooType.METAL));
+        }
+
+        /** Parenthesized sub-expressions work. */
+        @Test
+        void parenthesizedExpression() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:copper_block": { "metal": 100, "pulse": 50 },
+                    "minecraft:pumpkin": { "leaf": 200 },
+                    "minecraft:thing": "(minecraft:copper_block + minecraft:pumpkin) * 2"
+                }
+                """);
+            GooValue thing = registry.lookup(id("minecraft:thing"));
+            assertEquals(200, thing.get(GooType.METAL));
+            assertEquals(100, thing.get(GooType.PULSE));
+            assertEquals(400, thing.get(GooType.LEAF));
+        }
+
+        /** $constants can be used as scalars in item expressions. */
+        @Test
+        void constantsAsScalars() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "count": 9 },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "minecraft:iron_ingot * $count"
+                }
+                """);
+            assertEquals(90, registry.lookup(id("minecraft:iron_block")).get(GooType.METAL));
+        }
+
+        /** Operator precedence: multiply before add. */
+        @Test
+        void precedenceMultiplyBeforeAdd() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:a": { "metal": 10 },
+                    "minecraft:b": { "rock": 5 },
+                    "minecraft:c": "minecraft:a + minecraft:b * 3"
+                }
+                """);
+            GooValue c = registry.lookup(id("minecraft:c"));
+            assertEquals(10, c.get(GooType.METAL));
+            assertEquals(15, c.get(GooType.ROCK));
+        }
+
+        /** Dot notation pulls a single type as a scalar, usable in expressions. */
+        @Test
+        void dotNotationExtractsSingleType() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal": { "rock": 48, "blaze": 336 },
+                    "minecraft:thing": { "blaze": "minecraft:coal.blaze" }
+                }
+                """);
+            assertEquals(336, registry.lookup(id("minecraft:thing")).get(GooType.BLAZE));
+            assertEquals(0, registry.lookup(id("minecraft:thing")).get(GooType.ROCK));
+        }
+
+        /** Dot notation in arithmetic: minecraft:coal.blaze * 2. */
+        @Test
+        void dotNotationInArithmetic() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal": { "rock": 48, "blaze": 336 },
+                    "minecraft:thing": { "blaze": "minecraft:coal.blaze * 2" }
+                }
+                """);
+            assertEquals(672, registry.lookup(id("minecraft:thing")).get(GooType.BLAZE));
+        }
+
+        /** Dot notation as a scalar in item-level expression returns single-type GooValue. */
+        @Test
+        void dotNotationInItemExpression() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal": { "rock": 48, "blaze": 336 },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:thing": "minecraft:iron_ingot + minecraft:coal.blaze"
+                }
+                """);
+            GooValue thing = registry.lookup(id("minecraft:thing"));
+            assertEquals(10, thing.get(GooType.METAL));
+            assertEquals(336, thing.get(GooType.BLAZE));
+            assertEquals(0, thing.get(GooType.ROCK));
+        }
+
+        /** Bare word item ref (no namespace) defaults to minecraft: and resolves. */
+        @Test
+        void bareWordItemRef() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "iron_ingot * 9"
+                }
+                """);
+            assertEquals(90, registry.lookup(id("minecraft:iron_block")).get(GooType.METAL));
+        }
+
+        /** Tree constant added to item produces merged GooValue. */
+        @Test
+        void treeConstantAddedToItem() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "stripped": { "nether": 50 } },
+                    "minecraft:dark_oak_log": { "leaf": 384 },
+                    "minecraft:stripped_dark_oak_log": "dark_oak_log + $stripped"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:stripped_dark_oak_log"));
+            assertEquals(384, val.get(GooType.LEAF));
+            assertEquals(50, val.get(GooType.NETHER));
+        }
+
+        /** Tree constant multiplied then added to item. */
+        @Test
+        void treeConstantMultipliedThenAdded() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "bonus": { "crystal": 100 } },
+                    "minecraft:obsidian": { "rock": 500, "nether": 200 },
+                    "minecraft:fancy_obsidian": "obsidian + $bonus * 2"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:fancy_obsidian"));
+            assertEquals(500, val.get(GooType.ROCK));
+            assertEquals(200, val.get(GooType.NETHER));
+            assertEquals(200, val.get(GooType.CRYSTAL));
+        }
+
+        /** Tree constant in parenthesized expression. */
+        @Test
+        void treeConstantInParens() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "bonus": { "crystal": 10 } },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:thing": "(iron_ingot + $bonus) * 3"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:thing"));
+            assertEquals(30, val.get(GooType.METAL));
+            assertEquals(30, val.get(GooType.CRYSTAL));
+        }
+
+        /** Implicit multiplication: "4 iron_ingot" == "iron_ingot * 4". */
+        @Test
+        void implicitMultiplication() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "9 iron_ingot"
+                }
+                """);
+            assertEquals(90, registry.lookup(id("minecraft:iron_block")).get(GooType.METAL));
+        }
+
+        /** Implicit multiplication with tree constant: "2 $bonus". */
+        @Test
+        void implicitMultiplicationWithTreeConstant() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "bonus": { "nether": 50 } },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:thing": "iron_ingot + 2 $bonus"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:thing"));
+            assertEquals(10, val.get(GooType.METAL));
+            assertEquals(100, val.get(GooType.NETHER));
+        }
+
+        /** Implicit multiplication in complex expression: "obsidian + 4 lapis_lazuli". */
+        @Test
+        void implicitMultiplicationInAddition() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:lapis_lazuli": { "crystal": 20, "aeon": 10 },
+                    "minecraft:obsidian": { "rock": 100 },
+                    "minecraft:crying_obsidian": "obsidian + 4 lapis_lazuli"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:crying_obsidian"));
+            assertEquals(100, val.get(GooType.ROCK));
+            assertEquals(80, val.get(GooType.CRYSTAL));
+            assertEquals(40, val.get(GooType.AEON));
+        }
+    }
+
+    // ── Effective Cache ───────────────────────────────────────────────────
+
+    @Nested
+    class EffectiveCache {
+
+        @TempDir
+        Path tempDir;
+
+        /** Loading a flat cache populates effective values without base values. */
+        @Test
+        void loadEffectiveCache_populatesWithoutBaseValues() throws IOException {
+            Path cacheFile = tempDir.resolve("cache.json");
+            Files.writeString(cacheFile,
+                    "{\"minecraft:iron_ingot\": {\"metal\": 10}}", StandardCharsets.UTF_8);
+            registry.setEffectiveCachePath(cacheFile);
+
+            registry.loadEffectiveCache();
+
+            GooValue val = registry.lookup(id("minecraft:iron_ingot"));
+            assertNotNull(val);
+            assertEquals(10, val.get(GooType.METAL));
+            assertEquals(0, registry.baseSize());
+        }
+
+        /** Missing cache file leaves effective values empty. */
+        @Test
+        void loadEffectiveCache_missingFileIsEmpty() {
+            registry.setEffectiveCachePath(tempDir.resolve("nonexistent.json"));
+
+            registry.loadEffectiveCache();
+
+            assertEquals(0, registry.size());
+        }
+
+        /** Round-trip: save effective values, clear, reload, and verify match. */
+        @Test
+        void saveAndLoadRoundTrip() {
+            Path cacheFile = tempDir.resolve("roundtrip.json");
+            registry.setEffectiveCachePath(cacheFile);
+
+            registry.setBaseValues(Map.of(
+                id("minecraft:iron_ingot"), goo(GooType.METAL, 10)
+            ));
+            List<RecipeInput> recipes = List.of(
+                recipe("minecraft:iron_block", 1,
+                    slot("minecraft:iron_ingot"), slot("minecraft:iron_ingot"),
+                    slot("minecraft:iron_ingot"), slot("minecraft:iron_ingot"),
+                    slot("minecraft:iron_ingot"), slot("minecraft:iron_ingot"),
+                    slot("minecraft:iron_ingot"), slot("minecraft:iron_ingot"),
+                    slot("minecraft:iron_ingot"))
+            );
+            registry.deriveFromRecipeInputs(recipes, false);
+
+            Map<Identifier, GooValue> before = Map.copyOf(registry.getEffectiveValues());
+            registry.saveEffectiveValues();
+
+            // Clear all state and reload from cache
+            registry.clearAll();
+            assertEquals(0, registry.size());
+
+            registry.setEffectiveCachePath(cacheFile);
+            registry.loadEffectiveCache();
+
+            assertEquals(before.size(), registry.size());
+            for (Map.Entry<Identifier, GooValue> entry : before.entrySet()) {
+                GooValue reloaded = registry.lookup(entry.getKey());
+                assertNotNull(reloaded, "Missing after reload: " + entry.getKey());
+                assertEquals(entry.getValue().totalBlobs(), reloaded.totalBlobs(),
+                        "Mismatch for " + entry.getKey());
+            }
+        }
+    }
+
+    // ── Expression validation ────────────────────────────────────────────
+
+    @Nested
+    class ExpressionValidation {
+
+        /** Forgotten $ prefix on a known constant is flagged. */
+        @Test
+        void forgottenDollarPrefix() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "_constants": { "iron": 100 },
+                    "minecraft:foo": { "metal": "iron * 3" }
+                }
+                """);
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("iron") && w.contains("$")),
+                    "Should warn about missing $ prefix: " + warnings);
+        }
+
+        /** Unknown constant reference is flagged. */
+        @Test
+        void unknownConstant() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "minecraft:foo": { "metal": "$nonexistent" }
+                }
+                """);
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("nonexistent")),
+                    "Should warn about unknown constant: " + warnings);
+        }
+
+        /** Out-of-order item reference is flagged. */
+        @Test
+        void outOfOrderReference() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "minecraft:thing": "minecraft:iron_ingot * 2",
+                    "minecraft:iron_ingot": { "metal": 10 }
+                }
+                """);
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("iron_ingot") && w.contains("not defined above")),
+                    "Should warn about out-of-order reference: " + warnings);
+        }
+
+        /** Valid expressions produce no warnings. */
+        @Test
+        void validExpressionsNoWarnings() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "_constants": { "iron": 100 },
+                    "minecraft:iron_ingot": { "metal": "$iron" },
+                    "minecraft:iron_block": "minecraft:iron_ingot * 9"
+                }
+                """);
+            assertTrue(warnings.isEmpty(), "Should have no warnings: " + warnings);
+        }
+
+        /** Tree constant ref in expression doesn't produce a warning. */
+        @Test
+        void treeConstantRefNoWarning() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "_constants": { "stripped": { "nether": 50 } },
+                    "minecraft:dark_oak_log": { "leaf": 384 },
+                    "minecraft:stripped_dark_oak_log": "minecraft:dark_oak_log + $stripped"
+                }
+                """);
+            assertTrue(warnings.isEmpty(), "Should have no warnings: " + warnings);
+        }
+
+        /** Bare word item ref in expression doesn't produce a warning. */
+        @Test
+        void bareWordItemRefNoWarning() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:iron_block": "iron_ingot * 9"
+                }
+                """);
+            assertTrue(warnings.isEmpty(), "Should have no warnings: " + warnings);
+        }
+
+        /** Dot notation referencing an item above is valid. */
+        @Test
+        void validDotNotation() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "minecraft:coal": { "rock": 48, "blaze": 336 },
+                    "minecraft:thing": { "blaze": "minecraft:coal.blaze * 2" }
+                }
+                """);
+            assertTrue(warnings.isEmpty(), "Should have no warnings: " + warnings);
+        }
+
+        /** Dot notation referencing an item below is flagged. */
+        @Test
+        void outOfOrderDotNotation() {
+            List<String> warnings = registry.validateJsonString("""
+                {
+                    "minecraft:thing": { "blaze": "minecraft:coal.blaze * 2" },
+                    "minecraft:coal": { "rock": 48, "blaze": 336 }
+                }
+                """);
+            assertTrue(warnings.stream().anyMatch(w -> w.contains("coal") && w.contains("not defined above")),
+                    "Should warn about out-of-order dot-notation reference: " + warnings);
+        }
+    }
+
+    // ── Datapack Merging ─────────────────────────────────────────────────
+
+    @Nested
+    class DatapackMerging {
+
+        /** Parses a JSON string into a JsonObject for layer construction. */
+        private JsonObject json(String raw) {
+            return JsonParser.parseString(raw).getAsJsonObject();
+        }
+
+        /** A later pack's item definition overwrites an earlier one. */
+        @Test
+        void laterPackOverridesItem() {
+            JsonObject base = json("""
+                { "minecraft:stick": { "vital": 5 } }
+                """);
+            JsonObject overlay = json("""
+                { "minecraft:stick": { "vital": 10 } }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+
+            assertEquals(10, merged.getAsJsonObject("minecraft:stick").get("vital").getAsInt());
+        }
+
+        /** A later pack can add items not present in the earlier pack. */
+        @Test
+        void laterPackAddsNewItem() {
+            JsonObject base = json("""
+                { "minecraft:stick": { "vital": 5 } }
+                """);
+            JsonObject overlay = json("""
+                { "minecraft:coal": { "blaze": 20 } }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+
+            assertTrue(merged.has("minecraft:stick"), "Base item should survive");
+            assertTrue(merged.has("minecraft:coal"), "Overlay item should appear");
+        }
+
+        /** Constants merge at inner key level: new keys add, existing keys overwrite. */
+        @Test
+        void constantsMergeAtKeyLevel() {
+            JsonObject base = json("""
+                { "_constants": { "base": 1000, "stone": 240 } }
+                """);
+            JsonObject overlay = json("""
+                { "_constants": { "base": 2000 } }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+
+            JsonObject constants = merged.getAsJsonObject("_constants");
+            assertEquals(2000, constants.get("base").getAsInt(), "Overridden constant");
+            assertEquals(240, constants.get("stone").getAsInt(), "Preserved constant");
+        }
+
+        /** Groups merge at inner key level: new groups add, existing groups overwrite. */
+        @Test
+        void groupsMergeAtKeyLevel() {
+            JsonObject base = json("""
+                {
+                    "_groups": {
+                        "logs": { "value": { "vital": 10 }, "items": ["minecraft:oak_log"] },
+                        "ores": { "value": "denied", "items": ["minecraft:iron_ore"] }
+                    }
+                }
+                """);
+            JsonObject overlay = json("""
+                {
+                    "_groups": {
+                        "logs": { "value": { "vital": 20 }, "items": ["minecraft:birch_log"] }
+                    }
+                }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+
+            JsonObject groups = merged.getAsJsonObject("_groups");
+            assertTrue(groups.has("ores"), "Preserved group from base");
+            assertEquals(20, groups.getAsJsonObject("logs")
+                    .getAsJsonObject("value").get("vital").getAsInt(), "Overridden group");
+        }
+
+        /** A single layer passes through unchanged. */
+        @Test
+        void singleLayerIdenticalToInput() {
+            JsonObject layer = json("""
+                {
+                    "_constants": { "base": 1000 },
+                    "minecraft:stick": { "vital": 5 }
+                }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(layer));
+
+            assertEquals(1000, merged.getAsJsonObject("_constants").get("base").getAsInt());
+            assertEquals(5, merged.getAsJsonObject("minecraft:stick").get("vital").getAsInt());
+        }
+
+        /** An empty layer list produces an empty JsonObject. */
+        @Test
+        void emptyLayerListProducesEmptyObject() {
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of());
+
+            assertEquals(0, merged.size());
+        }
+
+        /** A later pack can deny a previously valued item. */
+        @Test
+        void laterPackCanDenyPreviouslyValuedItem() {
+            JsonObject base = json("""
+                { "minecraft:iron_ore": { "metal": 100 } }
+                """);
+            JsonObject overlay = json("""
+                { "minecraft:iron_ore": "denied" }
+                """);
+            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+
+            assertEquals("denied", merged.get("minecraft:iron_ore").getAsString());
+        }
+    }
+
+    // ── Tag Expansion ────────────────────────────────────────────────────
+
+    @Nested
+    class TagExpansion {
+
+        /** Parses a JSON string into a JsonObject. */
+        private JsonObject json(String raw) {
+            return JsonParser.parseString(raw).getAsJsonObject();
+        }
+
+        /** Builds a tag resolver backed by a map of tag ID to member set. */
+        private Function<Identifier, Set<Identifier>> resolver(Map<Identifier, Set<Identifier>> tags) {
+            return tagId -> tags.getOrDefault(tagId, Collections.emptySet());
+        }
+
+        /** A tag key expands to all members with the tag's value. */
+        @Test
+        void tagExpandsToAllMembers() {
+            JsonObject input = json("""
+                { "#test:planks": { "leaf": 100 } }
+                """);
+            Map<Identifier, Set<Identifier>> tags = Map.of(
+                id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
+            );
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertTrue(result.has("minecraft:oak_planks"));
+            assertTrue(result.has("minecraft:birch_planks"));
+            assertFalse(result.has("#test:planks"));
+            assertEquals(100, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
+            assertEquals(100, result.getAsJsonObject("minecraft:birch_planks").get("leaf").getAsInt());
+        }
+
+        /** An explicit entry after a tag overwrites that member (last-in-wins). */
+        @Test
+        void explicitEntryAfterTagOverrides() {
+            JsonObject input = json("""
+                { "#test:planks": { "leaf": 100 }, "minecraft:oak_planks": { "leaf": 200 } }
+                """);
+            Map<Identifier, Set<Identifier>> tags = Map.of(
+                id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
+            );
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertEquals(200, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
+            assertEquals(100, result.getAsJsonObject("minecraft:birch_planks").get("leaf").getAsInt());
+        }
+
+        /** A tag after an explicit entry overwrites it (last-in-wins). */
+        @Test
+        void explicitEntryBeforeTagIsOverridden() {
+            JsonObject input = json("""
+                { "minecraft:oak_planks": { "leaf": 200 }, "#test:planks": { "leaf": 100 } }
+                """);
+            Map<Identifier, Set<Identifier>> tags = Map.of(
+                id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
+            );
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertEquals(100, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
+            assertEquals(100, result.getAsJsonObject("minecraft:birch_planks").get("leaf").getAsInt());
+        }
+
+        /** Multiple tags expand independently. */
+        @Test
+        void multipleTagsExpanded() {
+            JsonObject input = json("""
+                { "#test:planks": { "leaf": 100 }, "#test:ores": { "rock": 50 } }
+                """);
+            Map<Identifier, Set<Identifier>> tags = new HashMap<>();
+            tags.put(id("test:planks"), Set.of(id("minecraft:oak_planks")));
+            tags.put(id("test:ores"), Set.of(id("minecraft:iron_ore")));
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertEquals(100, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
+            assertEquals(50, result.getAsJsonObject("minecraft:iron_ore").get("rock").getAsInt());
+        }
+
+        /** An unknown tag (empty resolver result) adds no entries and does not crash. */
+        @Test
+        void unknownTagSkipped() {
+            JsonObject input = json("""
+                { "#test:nonexistent": { "leaf": 100 } }
+                """);
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(Map.of()));
+
+            assertEquals(0, result.size());
+        }
+
+        /** A tag value can be a string expression; expansion preserves it as-is for later evaluation. */
+        @Test
+        void tagValueCanBeExpression() {
+            JsonObject input = json("""
+                { "#test:planks": "stick * 2" }
+                """);
+            Map<Identifier, Set<Identifier>> tags = Map.of(
+                id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
+            );
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertEquals("stick * 2", result.get("minecraft:oak_planks").getAsString());
+            assertEquals("stick * 2", result.get("minecraft:birch_planks").getAsString());
+        }
+
+        /** _constants and _groups pass through unchanged; only # keys are expanded. */
+        @Test
+        void constantsAndGroupsUntouchedByTagExpansion() {
+            JsonObject input = json("""
+                {
+                    "_constants": { "iron": 10 },
+                    "_groups": { "ores": { "value": { "rock": 5 }, "items": ["minecraft:gold_ore"] } },
+                    "#test:planks": { "leaf": 100 }
+                }
+                """);
+            Map<Identifier, Set<Identifier>> tags = Map.of(
+                id("test:planks"), Set.of(id("minecraft:oak_planks"))
+            );
+
+            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+
+            assertTrue(result.has("_constants"));
+            assertTrue(result.has("_groups"));
+            assertEquals(10, result.getAsJsonObject("_constants").get("iron").getAsInt());
+            assertTrue(result.has("minecraft:oak_planks"));
+            assertFalse(result.has("#test:planks"));
         }
     }
 }

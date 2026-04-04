@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
+import net.minecraft.core.Direction;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.LightCoordsUtil;
@@ -76,6 +77,7 @@ public class ChainMarkerBER
         ChainProfile profile = ChainProfile.forType(be.getGooType());
         state.fuseTicks = profile != null ? profile.fuseTicks() : 1;
         state.targeted = GooRenderUtil.isBlockTargeted(be.getBlockPos());
+        state.placedFace = be.getPlacedFace();
     }
 
     @Override
@@ -103,7 +105,19 @@ public class ChainMarkerBER
         float v1 = sprite.getV(1f);
 
         poseStack.pushPose();
-        poseStack.translate(0.5f, 0.5f, 0.5f);
+        float cx = 0.5f;
+        float cy = 0.5f;
+        float cz = 0.5f;
+
+        // Rock markers render half-embedded in the face they're stuck to
+        if (type == GooType.ROCK) {
+            Direction face = state.placedFace;
+            cx -= face.getStepX() * 0.5f;
+            cy -= face.getStepY() * 0.5f;
+            cz -= face.getStepZ() * 0.5f;
+        }
+
+        poseStack.translate(cx, cy, cz);
 
         // Inner core: opaque fluid-textured cube
         float ch = coreHalf;

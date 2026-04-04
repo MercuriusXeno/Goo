@@ -97,18 +97,29 @@ public class ChainMarkerBlock extends BaseEntityBlock {
         double cz = pos.getZ() + 0.5;
         double spread = 0.25 + 0.1 * stacks;
 
-        if (type == GooType.BLAZE) {
-            for (int i = 0; i < 2 + stacks; i++) {
-                double ox = (random.nextDouble() - 0.5) * spread * 2;
-                double oy = (random.nextDouble() - 0.5) * spread * 2;
-                double oz = (random.nextDouble() - 0.5) * spread * 2;
-                level.addParticle(ParticleTypes.FLAME, cx + ox, cy + oy, cz + oz,
-                        0, 0.02, 0);
+        switch (type) {
+            case BLAZE -> {
+                for (int i = 0; i < 2 + stacks; i++) {
+                    double ox = (random.nextDouble() - 0.5) * spread * 2;
+                    double oy = (random.nextDouble() - 0.5) * spread * 2;
+                    double oz = (random.nextDouble() - 0.5) * spread * 2;
+                    level.addParticle(ParticleTypes.FLAME, cx + ox, cy + oy, cz + oz,
+                            0, 0.02, 0);
+                }
+                if (random.nextInt(3) == 0) {
+                    level.addParticle(ParticleTypes.LAVA, cx, cy, cz, 0, 0, 0);
+                }
             }
-            if (random.nextInt(3) == 0) {
-                level.addParticle(ParticleTypes.LAVA, cx, cy, cz, 0, 0, 0);
+            case ROCK -> {
+                for (int i = 0; i < 1 + stacks; i++) {
+                    double ox = (random.nextDouble() - 0.5) * spread * 2;
+                    double oy = (random.nextDouble() - 0.5) * spread * 2;
+                    double oz = (random.nextDouble() - 0.5) * spread * 2;
+                    level.addParticle(ParticleTypes.DUST_PLUME, cx + ox, cy + oy, cz + oz,
+                            0, -0.02, 0);
+                }
             }
+            default -> {}
         }
-        // Future: frost snowflakes, nether soul particles, rock dust, etc.
     }
 }

@@ -9,8 +9,11 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -23,6 +26,9 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SingleItemRecipe;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import org.jspecify.annotations.Nullable;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,8 +41,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -61,12 +69,21 @@ public class GooValueRegistry implements IGooValueLookup {
     private final Set<Identifier> deniedItems = new HashSet<>();
     /** Named constants from _constants block, resolved during value parsing. */
     private final Map<String, Integer> constants = new HashMap<>();
+    /** Tree constants from _constants block: GooValue objects keyed by name. */
+    private final Map<String, GooValue> treeConstants = new HashMap<>();
 
     /** Result of the last derivation or cache load. Null before first derivation. */
     @Nullable
     private DerivationResult lastDerivation;
 
-    private Path derivedCachePath;
+    /** Cached recipe inputs from the last derivation, for scaffold generation. */
+    private List<RecipeInput> lastRecipes = List.of();
+
+    /** Last merged base_values JSON from regen, retained for validation. */
+    @Nullable
+    private JsonObject lastMergedBaseValues;
+
+    private Path effectiveCachePath;
 
     /** A strongly connected component in the recipe dependency graph. */
     public record RecipeCycle(List<Identifier> items, boolean hasAnchor, @Nullable Identifier anchor) {}
@@ -81,9 +98,9 @@ public class GooValueRegistry implements IGooValueLookup {
     public record DivisibilityLoss(Identifier output, int outputCount, int inputTotal,
             int perItemValue, int lostBlobs, RecipeInput recipe) {}
 
-    /** Sets the path for the derived value cache file. */
-    public void setDerivedCachePath(Path path) {
-        this.derivedCachePath = path;
+    /** Sets the path for the effective value cache file. */
+    public void setEffectiveCachePath(Path path) {
+        this.effectiveCachePath = path;
     }
 
     // ── JSON loading / caching ──────────────────────────────────────────
@@ -95,6 +112,7 @@ public class GooValueRegistry implements IGooValueLookup {
         baseValues.clear();
         deniedItems.clear();
         effectiveValues.clear();
+        treeConstants.clear();
         try (InputStream is = GooValueRegistry.class.getResourceAsStream(BASE_VALUES_PATH)) {
             if (is == null) {
                 Goo.LOGGER.error("Could not find base_values.json");
@@ -108,8 +126,146 @@ public class GooValueRegistry implements IGooValueLookup {
         Goo.LOGGER.info("Loaded {} base goo values", baseValues.size());
     }
 
-    /** Parses constants and item entries (values + denials) from an input stream. */
-    private void parseBaseValuesFromStream(InputStream is) throws IOException {
+    /**
+     * Loads base values by merging all datapack layers via the server's ResourceManager.
+     * Each pack's base_values.json is parsed independently, then merged with last-in-wins
+     * semantics before applying constants and item values.
+     *
+     * @param server the running server whose resource manager provides the pack stack
+     */
+    public void loadBaseValuesFromPacks(MinecraftServer server) {
+        clearRegistryState();
+        ResourceManager resourceManager = server.getResourceManager();
+        Identifier location = Identifier.fromNamespaceAndPath("goo", "goo_values/base_values.json");
+        List<Resource> stack = resourceManager.getResourceStack(location);
+
+        if (stack.isEmpty()) {
+            Goo.LOGGER.error("No datapack provides goo_values/base_values.json");
+            return;
+        }
+
+        List<JsonObject> layers = parseResourceLayers(stack);
+        JsonObject merged = mergeBaseValueJsonLayers(layers);
+        merged = expandTagEntries(merged, GooValueRegistry::resolveItemTag);
+        lastMergedBaseValues = merged;
+        parseConstants(merged);
+        parseItemValues(merged);
+        effectiveValues.putAll(baseValues);
+        Goo.LOGGER.info("Loaded {} base goo values from {} pack(s)", baseValues.size(), layers.size());
+    }
+
+    /** Parses each resource in the stack into a JsonObject, skipping failures. */
+    private List<JsonObject> parseResourceLayers(List<Resource> stack) {
+        List<JsonObject> layers = new ArrayList<>();
+        for (Resource resource : stack) {
+            try (BufferedReader reader = resource.openAsReader()) {
+                layers.add(JsonParser.parseReader(reader).getAsJsonObject());
+            } catch (IOException e) {
+                Goo.LOGGER.warn("Failed to read base_values.json from pack {}: {}",
+                        resource.sourcePackId(), e.getMessage());
+            }
+        }
+        return layers;
+    }
+
+    /**
+     * Merges multiple JSON layers (one per datapack, in bottom-to-top order) into a single
+     * JsonObject using last-in-wins semantics. {@code _constants} and {@code _groups} merge
+     * at inner key level; all other keys overwrite entirely.
+     *
+     * @param layers parsed JSON objects in pack order (base first, overlays later)
+     * @return a single merged JsonObject ready for parseConstants + parseItemValues
+     */
+    static JsonObject mergeBaseValueJsonLayers(List<JsonObject> layers) {
+        JsonObject merged = new JsonObject();
+        for (JsonObject layer : layers) {
+            mergeOneLayer(merged, layer);
+        }
+        return merged;
+    }
+
+    /** Applies one layer's entries onto the merged result. */
+    private static void mergeOneLayer(JsonObject merged, JsonObject layer) {
+        for (Map.Entry<String, JsonElement> entry : layer.entrySet()) {
+            String key = entry.getKey();
+            if ("_constants".equals(key) || "_groups".equals(key)) {
+                mergeNestedObject(merged, key, entry.getValue().getAsJsonObject());
+            } else {
+                merged.add(key, entry.getValue());
+            }
+        }
+    }
+
+    /** Merges inner keys of a nested object (constants or groups) at key level. */
+    private static void mergeNestedObject(JsonObject merged, String outerKey, JsonObject incoming) {
+        JsonObject existing = merged.has(outerKey)
+                ? merged.getAsJsonObject(outerKey)
+                : new JsonObject();
+        for (Map.Entry<String, JsonElement> entry : incoming.entrySet()) {
+            existing.add(entry.getKey(), entry.getValue());
+        }
+        merged.add(outerKey, existing);
+    }
+
+    /**
+     * Expands tag keys (prefixed with {@code #}) in the merged JSON into individual item entries.
+     * Iterates entries top-to-bottom so last-in-wins ordering is preserved: a {@code #tag} paints
+     * all its members, and a later explicit entry overwrites a specific member (or vice versa).
+     *
+     * @param merged      the merged JSON from all datapack layers
+     * @param tagResolver resolves a tag identifier to the set of item identifiers it contains
+     * @return a new JsonObject with tag keys expanded and removed
+     */
+    static JsonObject expandTagEntries(JsonObject merged, Function<Identifier, Set<Identifier>> tagResolver) {
+        JsonObject result = new JsonObject();
+        for (Map.Entry<String, JsonElement> entry : merged.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("#")) {
+                expandOneTag(key, entry.getValue(), tagResolver, result);
+            } else {
+                result.add(key, entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    /** Expands a single tag key into per-member entries in the result object. */
+    private static void expandOneTag(String tagKey, JsonElement value,
+                                     Function<Identifier, Set<Identifier>> tagResolver,
+                                     JsonObject result) {
+        Identifier tagId = Identifier.parse(tagKey.substring(1));
+        Set<Identifier> members = tagResolver.apply(tagId);
+        if (members.isEmpty()) {
+            Goo.LOGGER.warn("Tag {} resolved to no members, skipping", tagKey);
+            return;
+        }
+        for (Identifier member : members) {
+            result.add(member.toString(), value);
+        }
+    }
+
+    /** Resolves an item tag to the set of item identifiers it contains. */
+    private static Set<Identifier> resolveItemTag(Identifier tagId) {
+        TagKey<Item> tagKey = TagKey.create(Registries.ITEM, tagId);
+        Set<Identifier> members = new HashSet<>();
+        for (Holder<Item> holder : BuiltInRegistries.ITEM.getTagOrEmpty(tagKey)) {
+            members.add(BuiltInRegistries.ITEM.getKey(holder.value()));
+        }
+        return members;
+    }
+
+    /** Clears all mutable registry state before a fresh load. */
+    private void clearRegistryState() {
+        baseValues.clear();
+        deniedItems.clear();
+        effectiveValues.clear();
+        constants.clear();
+        treeConstants.clear();
+        lastMergedBaseValues = null;
+    }
+
+    /** Parses constants, groups, and item entries (values + denials) from an input stream. */
+    void parseBaseValuesFromStream(InputStream is) throws IOException {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             parseConstants(json);
@@ -117,26 +273,70 @@ public class GooValueRegistry implements IGooValueLookup {
         }
     }
 
-    /** Parses the _constants object from the JSON root, if present. */
+    /**
+     * Parses the _constants object from the JSON root, if present.
+     * Constants can reference earlier constants via $name expressions,
+     * so parse order matters (JSON object iteration order).
+     */
     private void parseConstants(JsonObject json) {
         constants.clear();
+        treeConstants.clear();
         if (!json.has("_constants")) return;
         JsonObject obj = json.getAsJsonObject("_constants");
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            constants.put(entry.getKey(), entry.getValue().getAsInt());
+            if (entry.getValue().isJsonObject()) {
+                treeConstants.put(entry.getKey(),
+                        GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants));
+            } else {
+                constants.put(entry.getKey(),
+                        GooValueJsonFormat.resolveConstantValue(entry.getValue(), constants));
+            }
         }
-        Goo.LOGGER.info("Loaded {} constants", constants.size());
+        Goo.LOGGER.info("Loaded {} constants ({} scalar, {} tree)",
+                constants.size() + treeConstants.size(), constants.size(), treeConstants.size());
     }
 
-    /** Parses item entries from the JSON root: objects become values, "denied" strings become denials. */
+    /** Parses item entries and _groups from the JSON root. Skips meta keys (_ prefix) and tag keys (# prefix). */
     private void parseItemValues(JsonObject json) {
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-            if (entry.getKey().startsWith("_")) continue;
+            if (entry.getKey().startsWith("_") || entry.getKey().startsWith("#")) continue;
             Identifier itemId = Identifier.parse(entry.getKey());
             if (isDeniedEntry(entry.getValue())) {
                 deniedItems.add(itemId);
             } else {
-                baseValues.put(itemId, GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants));
+                baseValues.put(itemId, resolveItemEntry(entry.getValue()));
+            }
+        }
+        parseGroups(json);
+    }
+
+    /**
+     * Resolves a non-denied item entry: JSON object -> explicit GooValue,
+     * string -> item reference expression.
+     */
+    private GooValue resolveItemEntry(JsonElement value) {
+        if (value.isJsonObject()) {
+            return GooValueJsonFormat.parseGooValue(value.getAsJsonObject(), constants, baseValues);
+        }
+        // String expression referencing other items
+        return GooValueExpression.evaluate(value.getAsString().trim(), baseValues, constants, treeConstants);
+    }
+
+    /** Expands _groups: each group has a "value" and an "items" array. */
+    private void parseGroups(JsonObject json) {
+        if (!json.has("_groups")) return;
+        JsonObject groups = json.getAsJsonObject("_groups");
+        for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
+            JsonObject groupObj = group.getValue().getAsJsonObject();
+            JsonElement valueElem = groupObj.get("value");
+            com.google.gson.JsonArray items = groupObj.getAsJsonArray("items");
+            for (JsonElement item : items) {
+                Identifier itemId = Identifier.parse(item.getAsString());
+                if (isDeniedEntry(valueElem)) {
+                    deniedItems.add(itemId);
+                } else {
+                    baseValues.put(itemId, resolveItemEntry(valueElem));
+                }
             }
         }
     }
@@ -147,48 +347,45 @@ public class GooValueRegistry implements IGooValueLookup {
     }
 
     /**
-     * Loads previously derived values from the cache file.
+     * Loads effective values from the flat cache file. The cache contains
+     * pre-resolved integer values per goo type, so no expression evaluation
+     * or base value merging is needed.
      */
-    public void loadDerivedCache() {
-        if (derivedCachePath == null || !Files.exists(derivedCachePath)) return;
+    public void loadEffectiveCache() {
+        if (effectiveCachePath == null || !Files.exists(effectiveCachePath)) return;
 
-        try (Reader reader = Files.newBufferedReader(derivedCachePath, StandardCharsets.UTF_8)) {
+        try (Reader reader = Files.newBufferedReader(effectiveCachePath, StandardCharsets.UTF_8)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            Map<Identifier, GooValue> cached = new HashMap<>();
+            effectiveValues.clear();
             for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
                 Identifier itemId = Identifier.parse(entry.getKey());
-                cached.put(itemId, GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants));
+                effectiveValues.put(itemId, GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject()));
             }
-            boolean baseOverride = GooConfig.BASE_VALUES_OVERRIDE_RECIPES.get();
-            Map<Identifier, GooValue> rebuilt = GooValueDerivation.buildEffectiveValues(baseValues, cached, baseOverride);
-            lastDerivation = new DerivationResult(
-                Map.copyOf(cached), Map.of(), rebuilt, List.of(), List.of(), List.of());
-            effectiveValues.clear();
-            effectiveValues.putAll(rebuilt);
-            Goo.LOGGER.info("Loaded {} cached derived goo values", cached.size());
+            Goo.LOGGER.info("Loaded {} effective goo values from cache", effectiveValues.size());
         } catch (Exception e) {
-            Goo.LOGGER.warn("Failed to load derived goo value cache", e);
+            Goo.LOGGER.warn("Failed to load effective goo value cache", e);
         }
     }
 
     /**
-     * Saves derived values to the cache file.
+     * Saves the complete effective value map to the cache file.
+     * Written by /goo regen so startup can load a flat, pre-resolved file.
      */
-    public void saveDerivedCache() {
-        if (derivedCachePath == null || lastDerivation == null) return;
+    public void saveEffectiveValues() {
+        if (effectiveCachePath == null) return;
 
         try {
-            Files.createDirectories(derivedCachePath.getParent());
-            JsonObject json = serializeDerivedValues(lastDerivation.derivedValues());
-            Files.writeString(derivedCachePath, GSON.toJson(json), StandardCharsets.UTF_8);
-            Goo.LOGGER.info("Saved {} derived goo values to cache", lastDerivation.derivedValues().size());
+            Files.createDirectories(effectiveCachePath.getParent());
+            JsonObject json = serializeValues(effectiveValues);
+            Files.writeString(effectiveCachePath, GSON.toJson(json), StandardCharsets.UTF_8);
+            Goo.LOGGER.info("Saved {} effective goo values to cache", effectiveValues.size());
         } catch (IOException e) {
-            Goo.LOGGER.error("Failed to save derived goo value cache", e);
+            Goo.LOGGER.error("Failed to save effective goo value cache", e);
         }
     }
 
-    /** Serializes derived values to a sorted JSON object. */
-    private JsonObject serializeDerivedValues(Map<Identifier, GooValue> derivedValues) {
+    /** Serializes a value map to a sorted JSON object. */
+    private JsonObject serializeValues(Map<Identifier, GooValue> derivedValues) {
         JsonObject json = new JsonObject();
         derivedValues.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
@@ -204,9 +401,9 @@ public class GooValueRegistry implements IGooValueLookup {
      */
     public int deriveFromRecipes(MinecraftServer server) {
         HolderLookup.Provider registries = server.registryAccess();
-        List<RecipeInput> recipes = adaptRecipes(server.getRecipeManager().getRecipes(), registries);
+        lastRecipes = adaptRecipes(server.getRecipeManager().getRecipes(), registries);
         boolean baseOverride = GooConfig.BASE_VALUES_OVERRIDE_RECIPES.get();
-        int derived = deriveFromRecipeInputs(recipes, baseOverride);
+        int derived = deriveFromRecipeInputs(lastRecipes, baseOverride);
         Goo.LOGGER.info("Derived {} goo values from recipes", derived);
         return derived;
     }
@@ -231,9 +428,10 @@ public class GooValueRegistry implements IGooValueLookup {
         if (resultStack == null || resultStack.isEmpty()) return null;
 
         Identifier outputId = BuiltInRegistries.ITEM.getKey(resultStack.getItem());
-        List<Set<Identifier>> ingredients = adaptIngredients(recipe);
+        AdaptedIngredients adapted = adaptIngredients(recipe);
         Map<Identifier, Identifier> containers = adaptContainerItems(recipe);
-        return new RecipeInput(outputId, resultStack.getCount(), ingredients, containers);
+        return new RecipeInput(outputId, resultStack.getCount(),
+                adapted.slots(), containers, adapted.tagIds());
     }
 
     /** Builds a map of ingredient item ID to its crafting remainder item ID. */
@@ -259,17 +457,33 @@ public class GooValueRegistry implements IGooValueLookup {
         }
     }
 
-    /** Converts MC Ingredients to sets of item Identifiers. */
-    private List<Set<Identifier>> adaptIngredients(Recipe<?> recipe) {
-        List<Set<Identifier>> result = new ArrayList<>();
+    /** Ingredient slots paired with per-slot tag identity from the recipe's HolderSet. */
+    private record AdaptedIngredients(
+            List<Set<Identifier>> slots,
+            List<Optional<Identifier>> tagIds
+    ) {}
+
+    /** Converts MC Ingredients to sets of item Identifiers, capturing tag identity per slot. */
+    private AdaptedIngredients adaptIngredients(Recipe<?> recipe) {
+        List<Set<Identifier>> slots = new ArrayList<>();
+        List<Optional<Identifier>> tagIds = new ArrayList<>();
         for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
             if (ingredient.isEmpty()) continue;
             Set<Identifier> alternatives = adaptOneIngredient(ingredient);
             if (!alternatives.isEmpty()) {
-                result.add(alternatives);
+                slots.add(alternatives);
+                tagIds.add(extractTagId(ingredient));
             }
         }
-        return result;
+        return new AdaptedIngredients(slots, tagIds);
+    }
+
+    /** Extracts the tag identity from a standard ingredient's HolderSet, if present. */
+    private Optional<Identifier> extractTagId(Ingredient ingredient) {
+        if (ingredient.isCustom()) return Optional.empty();
+        HolderSet<Item> holderSet = ingredient.getValues();
+        return holderSet.unwrapKey()
+                .map(TagKey::location);
     }
 
     /** Resolves a single MC Ingredient to its set of item IDs. */
@@ -425,11 +639,10 @@ public class GooValueRegistry implements IGooValueLookup {
     }
 
     /**
-     * Full reload: base values + derived cache.
+     * Reloads effective values from the cache file.
      */
     public void reload() {
-        loadBaseValues();
-        loadDerivedCache();
+        loadEffectiveCache();
     }
 
     // ── Test support (package-private) ──────────────────────────────────
@@ -473,6 +686,166 @@ public class GooValueRegistry implements IGooValueLookup {
     }
 
     /**
+     * Generates scaffold by collecting recipes fresh from the server.
+     * Does not require a prior regen.
+     */
+    public ScaffoldGenerator.ScaffoldResult generateScaffoldFresh(MinecraftServer server) {
+        HolderLookup.Provider registries = server.registryAccess();
+        List<RecipeInput> recipes = adaptRecipes(server.getRecipeManager().getRecipes(), registries);
+        List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                recipes, baseValues, deniedItems);
+        return ScaffoldGenerator.generateScaffold(roots, recipes);
+    }
+
+    /**
+     * Generates scaffold from cached recipes (requires a prior regen or load).
+     * Shows only roots that are still missing after the last derivation pass.
+     */
+    public ScaffoldGenerator.ScaffoldResult generateScaffoldMissing() {
+        List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                lastRecipes, baseValues, deniedItems);
+        return ScaffoldGenerator.generateScaffold(roots, lastRecipes);
+    }
+
+    /** Copies base values into effective values. For test use after parseBaseValuesFromStream. */
+    void copyBaseToEffective() {
+        effectiveValues.putAll(baseValues);
+    }
+
+    /**
+     * Validates the last-loaded base_values.json for authoring mistakes.
+     * Uses the merged JSON from the most recent regen. Returns a warning
+     * if no regen has been run yet.
+     *
+     * @return list of validation warnings
+     */
+    public List<String> validateBaseValues() {
+        List<String> warnings = new ArrayList<>();
+        if (lastMergedBaseValues == null) {
+            warnings.add("No base values loaded. Run /goo regen first.");
+            return warnings;
+        }
+        validateJson(lastMergedBaseValues, warnings);
+        return warnings;
+    }
+
+    /** Validates a JSON string for expression mistakes. For testing. */
+    List<String> validateJsonString(String jsonString) {
+        List<String> warnings = new ArrayList<>();
+        JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
+        validateJson(json, warnings);
+        return warnings;
+    }
+
+    /** Walks the JSON checking expression tokens for mistakes. */
+    private void validateJson(JsonObject json, List<String> warnings) {
+        Set<String> knownConstants = new LinkedHashSet<>();
+        // Validate _constants block
+        if (json.has("_constants")) {
+            JsonObject obj = json.getAsJsonObject("_constants");
+            for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()) {
+                    validateExprTokens(entry.getValue().getAsString(), knownConstants,
+                            new LinkedHashSet<>(), "_constants." + entry.getKey(), warnings);
+                }
+                knownConstants.add(entry.getKey());
+            }
+        }
+        // Validate individual item entries
+        Set<String> knownItems = new LinkedHashSet<>();
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            if (entry.getKey().startsWith("_") || entry.getKey().startsWith("#")) continue;
+            String itemKey = entry.getKey();
+            JsonElement value = entry.getValue();
+            if (value.isJsonObject()) {
+                validateValueObject(value.getAsJsonObject(), knownConstants, knownItems, itemKey, warnings);
+            } else if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
+                       && !"denied".equals(value.getAsString())) {
+                validateExprTokens(value.getAsString(), knownConstants, knownItems, itemKey, warnings);
+            }
+            knownItems.add(itemKey);
+        }
+        // Validate _groups
+        if (json.has("_groups")) {
+            JsonObject groups = json.getAsJsonObject("_groups");
+            for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
+                JsonObject groupObj = group.getValue().getAsJsonObject();
+                JsonElement valueElem = groupObj.get("value");
+                String ctx = "_groups." + group.getKey();
+                if (valueElem.isJsonObject()) {
+                    validateValueObject(valueElem.getAsJsonObject(), knownConstants, knownItems, ctx, warnings);
+                } else if (valueElem.isJsonPrimitive() && valueElem.getAsJsonPrimitive().isString()
+                           && !"denied".equals(valueElem.getAsString())) {
+                    validateExprTokens(valueElem.getAsString(), knownConstants, knownItems, ctx, warnings);
+                }
+                // Group items are targets, not sources; add them so later groups can reference
+                com.google.gson.JsonArray items = groupObj.getAsJsonArray("items");
+                for (JsonElement item : items) {
+                    knownItems.add(item.getAsString());
+                }
+            }
+        }
+    }
+
+    /** Validates per-type expressions in a value object like { "metal": "$iron * 3" }. */
+    private void validateValueObject(JsonObject obj, Set<String> knownConstants,
+                                     Set<String> knownItems, String context,
+                                     List<String> warnings) {
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()) {
+                validateExprTokens(entry.getValue().getAsString(), knownConstants, knownItems,
+                        context + "." + entry.getKey(), warnings);
+            }
+        }
+    }
+
+    /** Checks expression tokens for forgotten $ prefixes, unknown constants, and out-of-order items. */
+    private void validateExprTokens(String expr, Set<String> knownConstants,
+                                    Set<String> knownItems, String context,
+                                    List<String> warnings) {
+        List<String> tokens = GooValueExpression.tokenize(expr);
+        for (String token : tokens) {
+            // Skip operators and parens
+            if (token.length() == 1 && "+-*/()".contains(token)) continue;
+
+            if (token.startsWith("$")) {
+                // Check unknown constant
+                String name = token.substring(1);
+                if (!knownConstants.contains(name)) {
+                    warnings.add(context + ": unknown constant $" + name);
+                }
+            } else if (token.contains(":")) {
+                // Namespaced item reference - check order
+                String itemId = token;
+                // Strip .type suffix for lookup
+                int colonIdx = token.indexOf(':');
+                int dotIdx = token.lastIndexOf('.');
+                if (dotIdx > colonIdx && dotIdx < token.length() - 1) {
+                    itemId = token.substring(0, dotIdx);
+                }
+                if (!knownItems.contains(itemId)) {
+                    warnings.add(context + ": references " + itemId + " which is not defined above it");
+                }
+            } else if (!Character.isDigit(token.charAt(0))) {
+                // Bare word: could be a minecraft: item ref, a dot-notation ref, or a forgotten $ prefix
+                String bareItem = token;
+                int dotIdx = token.lastIndexOf('.');
+                if (dotIdx > 0 && dotIdx < token.length() - 1) {
+                    bareItem = token.substring(0, dotIdx);
+                }
+                String qualifiedItem = bareItem.contains(":") ? bareItem : "minecraft:" + bareItem;
+                if (knownItems.contains(qualifiedItem) || knownItems.contains(bareItem)) {
+                    // Valid bare-word item reference (defaults to minecraft: namespace)
+                } else if (knownConstants.contains(token)) {
+                    warnings.add(context + ": '" + token + "' looks like a constant missing its $ prefix (should be $" + token + ")");
+                } else {
+                    warnings.add(context + ": unrecognized token '" + token + "'");
+                }
+            }
+        }
+    }
+
+    /**
      * Clears all internal state. Used on client disconnect to prevent stale data.
      */
     public void clearAll() {
@@ -480,7 +853,9 @@ public class GooValueRegistry implements IGooValueLookup {
         effectiveValues.clear();
         deniedItems.clear();
         constants.clear();
+        treeConstants.clear();
         lastDerivation = null;
+        lastMergedBaseValues = null;
     }
 
 }

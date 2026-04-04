@@ -19,8 +19,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import java.util.List;
+
 import org.jspecify.annotations.Nullable;
 
 public class WorldEffects {
@@ -40,7 +39,7 @@ public class WorldEffects {
             case LEAF -> leafGrowth(level, pos);
             case VITAL -> vitalLivingBlob(level, pos);
             case SHROOM -> shroomSpores(level, pos);
-            case ROCK -> rockImplosion(level, pos);
+            case ROCK -> rockImplosion(level, pos, targetFace);
             case BLAZE -> blazeExplosion(level, pos, targetFace);
             case FROST -> frostFreeze(level, pos, targetFace);
             case TYPHOON -> typhoonJet(level, pos);
@@ -146,31 +145,11 @@ public class WorldEffects {
             30, 2.0, 1.0, 2.0, 0.0);
     }
 
-    // Rock: Implosion  - break rock-type blocks in 3x3 column below
-    private static void rockImplosion(Level level, BlockPos pos) {
-        if (!(level instanceof ServerLevel serverLevel)) return;
-        int depth = 3; // base depth (n=1, n^2=1 so 3x3x1, but let's do 3 deep for fun)
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int dy = 0; dy < depth; dy++) {
-                    BlockPos target = pos.offset(dx, -dy, dz);
-                    BlockState state = level.getBlockState(target);
-                    if (isRockType(state)) {
-                        level.destroyBlock(target, true);
-                    }
-                }
-            }
-        }
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.5f, 1.2f);
-    }
-
-    private static boolean isRockType(BlockState state) {
-        return state.is(Blocks.STONE) || state.is(Blocks.COBBLESTONE)
-            || state.is(Blocks.DEEPSLATE) || state.is(Blocks.COBBLED_DEEPSLATE)
-            || state.is(Blocks.GRANITE) || state.is(Blocks.DIORITE) || state.is(Blocks.ANDESITE)
-            || state.is(Blocks.TUFF) || state.is(Blocks.CALCITE)
-            || state.is(Blocks.NETHERRACK) || state.is(Blocks.BASALT)
-            || state.is(Blocks.SANDSTONE) || state.is(Blocks.RED_SANDSTONE);
+    /** Rock: chain implosion. Places a chain marker on the hit face. */
+    private static void rockImplosion(Level level, BlockPos pos,
+                                      @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) return;
+        placeOrStackChain(level, pos, targetFace, GooType.ROCK);
     }
 
     /**
@@ -203,7 +182,7 @@ public class WorldEffects {
         if (!level.getBlockState(placePos).isAir()) return;
         level.setBlock(placePos, GooBlocks.CHAIN_MARKER.get().defaultBlockState(), 3);
         if (level.getBlockEntity(placePos) instanceof ChainMarkerBlockEntity be) {
-            be.initChain(type);
+            be.initChain(type, face);
         }
     }
 

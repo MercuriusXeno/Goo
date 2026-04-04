@@ -1,7 +1,11 @@
 package com.mercuriusxeno.goo.effect;
 
+import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.data.GooValue;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -111,6 +115,58 @@ class EffectMathTest {
         @Test
         void stack4Is9() {
             assertEquals(9, EffectMath.computeNetherRadius(4));
+        }
+    }
+
+    // ── Rock: isRockCompatible (majority rule) ────────────────────────────
+
+    @Nested
+    class RockCompatible {
+
+        @Test
+        void rockOnlyIsCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.ROCK, 3));
+            assertTrue(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void rockAndCrystalIsCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.ROCK, 2, GooType.CRYSTAL, 1));
+            assertTrue(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void crystalOnlyIsCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.CRYSTAL, 2));
+            assertTrue(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void rockMajorityWithMinorityMetalIsCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.ROCK, 3, GooType.METAL, 1));
+            assertTrue(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void rockMinorityIsNotCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.ROCK, 1, GooType.METAL, 3));
+            assertFalse(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void exactHalfIsNotCompatible() {
+            GooValue value = new GooValue(Map.of(GooType.ROCK, 2, GooType.METAL, 2));
+            assertFalse(EffectMath.isRockCompatible(value));
+        }
+
+        @Test
+        void emptyIsNotCompatible() {
+            assertFalse(EffectMath.isRockCompatible(GooValue.EMPTY));
+        }
+
+        @Test
+        void nullIsNotCompatible() {
+            assertFalse(EffectMath.isRockCompatible(null));
         }
     }
 
