@@ -1141,6 +1141,35 @@ class GooValueRegistryTest {
             assertEquals(60, weathered.get(GooType.METAL));  // 120 - 60
             assertEquals(50, weathered.get(GooType.AEON));    // 20 + 30
         }
+
+        /** Additive conversion: +$waxed adds flat vital to copied copper items. */
+        @Test
+        void additiveConversionAddsFlatValue() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "waxed": { "vital": 48 } },
+                    "_groups": {
+                        "copper": ["minecraft:copper_block", "minecraft:cut_copper"],
+                        "waxed": ["minecraft:waxed_copper_block", "minecraft:waxed_cut_copper"]
+                    },
+                    "minecraft:copper_block": { "metal": 160 },
+                    "minecraft:cut_copper": { "metal": 80 },
+                    "_post_conversions": {
+                        "waxed": "+$waxed",
+                        "#waxed": "#copper @waxed"
+                    }
+                }
+                """);
+            GooValue waxedBlock = registry.lookup(id("minecraft:waxed_copper_block"));
+            assertNotNull(waxedBlock);
+            assertEquals(160, waxedBlock.get(GooType.METAL)); // copied from copper_block
+            assertEquals(48, waxedBlock.get(GooType.VITAL));   // added by +$waxed
+
+            GooValue waxedCut = registry.lookup(id("minecraft:waxed_cut_copper"));
+            assertNotNull(waxedCut);
+            assertEquals(80, waxedCut.get(GooType.METAL));
+            assertEquals(48, waxedCut.get(GooType.VITAL));
+        }
     }
 
     // ── Item reference expressions ───────────────────────────────────────

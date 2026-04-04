@@ -52,6 +52,48 @@ class GooConversionTest {
         }
     }
 
+    // ── Additive parsing ────────────────────────────────────────────────
+
+    @Nested
+    class AdditiveParsing {
+
+        /** Additive modifier: "+$waxed" adds a flat GooValue. */
+        @Test
+        void parseAdditiveFromTreeConstant() {
+            Map<String, GooValue> treeConstants = Map.of(
+                    "waxed", goo(GooType.VITAL, 48));
+            Map<String, String> entries = new LinkedHashMap<>();
+            entries.put("waxed", "+$waxed");
+            entries.put("#waxed_copper", "#copper @waxed");
+
+            GooConversion.ParsedConversions parsed = GooConversion.parseBlock(entries, Map.of(), treeConstants);
+            assertNotNull(parsed.additives().get("waxed"));
+            assertEquals(48, parsed.additives().get("waxed").get(GooType.VITAL));
+        }
+
+        /** Additive applied via @ref adds the value to the item. */
+        @Test
+        void additiveAppliedToItem() {
+            GooValue copper = goo(GooType.METAL, 160);
+            GooValue waxBonus = goo(GooType.VITAL, 48);
+
+            GooValue result = copper.add(waxBonus, 1);
+            assertEquals(160, result.get(GooType.METAL));
+            assertEquals(48, result.get(GooType.VITAL));
+        }
+
+        /** Additive with multiplier: "2 @waxed" adds 2x the value. */
+        @Test
+        void additiveWithMultiplier() {
+            GooValue copper = goo(GooType.METAL, 160);
+            GooValue waxBonus = goo(GooType.VITAL, 48);
+
+            GooValue result = copper.add(waxBonus, 2);
+            assertEquals(160, result.get(GooType.METAL));
+            assertEquals(96, result.get(GooType.VITAL));
+        }
+    }
+
     // ── Application math ─────────────────────────────────────────────────
 
     @Nested
@@ -204,7 +246,7 @@ class GooConversionTest {
 
             GooConversion.Assignment assignment = new GooConversion.Assignment(
                     "#weathered", null, java.util.List.of(weatheredStack));
-            GooConversion.applyAssignment(effective, targets, null, assignment, formulas);
+            GooConversion.applyAssignment(effective, targets, null, assignment, formulas, Map.of());
 
             GooValue copper = effective.get(id("minecraft:weathered_copper"));
             assertEquals(80, copper.get(GooType.METAL));
@@ -233,7 +275,7 @@ class GooConversionTest {
             GooConversion.Assignment assignment = new GooConversion.Assignment(
                     "#exposed", "#originals",
                     java.util.List.of(new GooConversion.Stack("oxidation", 1)));
-            GooConversion.applyAssignment(effective, targets, sources, assignment, formulas);
+            GooConversion.applyAssignment(effective, targets, sources, assignment, formulas, Map.of());
 
             // copper_block (160 metal) copied to exposed_copper, then 1x oxidation
             GooValue exposed = effective.get(id("minecraft:exposed_copper"));
@@ -259,7 +301,7 @@ class GooConversionTest {
             GooConversion.applyAssignment(effective,
                     java.util.List.of(id("b"), id("c")),
                     java.util.List.of(id("a")),
-                    assignment, Map.of());
+                    assignment, Map.of(), Map.of());
 
             // Mismatch: 1 source, 2 targets. No copy happens.
             assertTrue(effective.get(id("b")).isEmpty());

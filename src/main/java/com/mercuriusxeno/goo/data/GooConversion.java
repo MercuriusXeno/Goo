@@ -42,6 +42,7 @@ public final class GooConversion {
     /** Result of parsing a _conversions block. */
     public record ParsedConversions(
             Map<String, Formula> formulas,
+            Map<String, GooValue> additives,
             Map<String, Stack> stacks,
             java.util.List<Assignment> assignments
     ) {}
@@ -82,9 +83,17 @@ public final class GooConversion {
 
     // ── Block parsing ────────────────────────────────────────────────────
 
-    /** Parses a _conversions block (order-dependent). */
+    /** Parses a _conversions block (order-dependent). No constant resolution. */
     public static ParsedConversions parseBlock(Map<String, String> entries) {
+        return parseBlock(entries, Map.of(), Map.of());
+    }
+
+    /** Parses a _conversions block with constant resolution for additive modifiers. */
+    public static ParsedConversions parseBlock(Map<String, String> entries,
+                                                Map<String, Integer> constants,
+                                                Map<String, GooValue> treeConstants) {
         Map<String, Formula> formulas = new LinkedHashMap<>();
+        Map<String, GooValue> additives = new LinkedHashMap<>();
         Map<String, Stack> stacks = new LinkedHashMap<>();
         java.util.List<Assignment> assignments = new java.util.ArrayList<>();
 
@@ -93,25 +102,49 @@ public final class GooConversion {
             String value = entry.getValue();
 
             if (isItemOrTag(key)) {
-                if ("denied".equals(value)) continue; // datapack noop override
+                if ("denied".equals(value)) continue;
                 assignments.add(parseAssignment(key, value, stacks));
             } else if ("denied".equals(value)) {
-                // Noop a named stack so downstream @refs become no-ops
                 stacks.remove(key);
                 formulas.remove(key);
+                additives.remove(key);
                 continue;
+            } else if (value.startsWith("+")) {
+                // Additive modifier: "+$waxed" or "+{ ... }"
+                GooValue additive = resolveAdditive(value.substring(1).trim(), constants, treeConstants);
+                if (additive != null && !additive.isEmpty()) {
+                    additives.put(key, additive);
+                } else {
+                    LOGGER.warn("Additive modifier {} resolved to empty", value);
+                }
             } else if (value.contains("->")) {
-                // Formula declaration
                 formulas.put(key, parseFormula(value));
             } else {
-                // Named stack (references a formula or another stack)
                 Stack raw = parseStack(value);
-                // Resolve chain: if the ref points to another stack, multiply through
                 Stack resolved = resolveChain(raw, stacks, formulas);
                 stacks.put(key, resolved);
             }
         }
-        return new ParsedConversions(formulas, stacks, assignments);
+        return new ParsedConversions(formulas, additives, stacks, assignments);
+    }
+
+    /** Resolves an additive expression like "$waxed" against tree constants. */
+    private static GooValue resolveAdditive(String expr, Map<String, Integer> constants,
+                                             Map<String, GooValue> treeConstants) {
+        if (expr.startsWith("$")) {
+            String name = expr.substring(1);
+            GooValue tree = treeConstants.get(name);
+            if (tree != null) return tree;
+            Integer scalar = constants.get(name);
+            if (scalar != null) {
+                LOGGER.warn("Additive +${} is a scalar, not a tree constant", name);
+                return null;
+            }
+            LOGGER.warn("Unknown additive constant: +${}", name);
+            return null;
+        }
+        LOGGER.warn("Unsupported additive expression: +{}", expr);
+        return null;
     }
 
     /** True if the key looks like an item ID or tag reference. */
@@ -219,7 +252,8 @@ public final class GooConversion {
                                         java.util.List<Identifier> targetItems,
                                         java.util.List<Identifier> sourceItems,
                                         Assignment assignment,
-                                        Map<String, Formula> formulas) {
+                                        Map<String, Formula> formulas,
+                                        Map<String, GooValue> additives) {
         // Parallel copy phase
         if (sourceItems != null) {
             if (sourceItems.size() != targetItems.size()) {
@@ -237,17 +271,28 @@ public final class GooConversion {
 
         // Conversion chain phase
         for (Stack stack : assignment.chain()) {
-            applyStack(effectiveValues, targetItems, stack, formulas);
+            applyStack(effectiveValues, targetItems, stack, formulas, additives);
         }
     }
 
-    /** Applies a single conversion stack to a list of items. */
+    /** Applies a single conversion stack (formula or additive) to a list of items. */
     private static void applyStack(Map<Identifier, GooValue> effectiveValues,
                                     java.util.List<Identifier> items, Stack stack,
-                                    Map<String, Formula> formulas) {
+                                    Map<String, Formula> formulas,
+                                    Map<String, GooValue> additives) {
+        // Check additive first
+        GooValue additive = additives.get(stack.formulaName());
+        if (additive != null) {
+            for (Identifier itemId : items) {
+                GooValue current = effectiveValues.get(itemId);
+                if (current == null) current = GooValue.EMPTY;
+                effectiveValues.put(itemId, current.add(additive, stack.multiplier()));
+            }
+            return;
+        }
         Formula formula = formulas.get(stack.formulaName());
         if (formula == null) {
-            LOGGER.error("Unknown formula @{} in conversion assignment", stack.formulaName());
+            LOGGER.error("Unknown formula or additive @{} in conversion assignment", stack.formulaName());
             return;
         }
         for (Identifier itemId : items) {

@@ -415,15 +415,15 @@ public class GooValueRegistry implements IGooValueLookup {
         postConversions = parseConversionBlock(json, "_post_conversions");
     }
 
-    /** Parses a single conversion block by key name. */
-    private static GooConversion.ParsedConversions parseConversionBlock(JsonObject json, String key) {
+    /** Parses a single conversion block by key name, with constant resolution. */
+    private GooConversion.ParsedConversions parseConversionBlock(JsonObject json, String key) {
         if (!json.has(key)) return null;
         JsonObject block = json.getAsJsonObject(key);
         Map<String, String> entries = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : block.entrySet()) {
             entries.put(entry.getKey(), entry.getValue().getAsString());
         }
-        return GooConversion.parseBlock(entries);
+        return GooConversion.parseBlock(entries, constants, treeConstants);
     }
 
     /** Applies a parsed conversion set to a values map. */
@@ -446,7 +446,7 @@ public class GooValueRegistry implements IGooValueLookup {
                 }
             }
             GooConversion.applyAssignment(values, targetItems, sourceItems,
-                    assignment, parsed.formulas());
+                    assignment, parsed.formulas(), parsed.additives());
         }
     }
 
