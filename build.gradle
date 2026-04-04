@@ -31,7 +31,7 @@ runs {
     }
     server {
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        argument '--nogui'
+        // GUI enabled so the server window can be closed cleanly
     }
     clientData {
         arguments.addAll '--mod', project.mod_id, '--all',
