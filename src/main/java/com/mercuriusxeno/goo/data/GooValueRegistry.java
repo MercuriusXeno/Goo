@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,12 @@ public class GooValueRegistry implements IGooValueLookup {
     private final Map<String, Integer> constants = new HashMap<>();
     /** Tree constants from _constants block: GooValue objects keyed by name. */
     private final Map<String, GooValue> treeConstants = new HashMap<>();
+    /** Pseudo-tags from _groups block: group name to item set. */
+    private final Map<String, Set<Identifier>> pseudoTags = new HashMap<>();
+    /** Pre-derivation conversions from _conversions block. Applied to base values before recipe derivation. */
+    private GooConversion.ParsedConversions preConversions;
+    /** Post-derivation conversions from _post_conversions block. Applied after all values finalize. */
+    private GooConversion.ParsedConversions postConversions;
 
     /** Result of the last derivation or cache load. Null before first derivation. */
     @Nullable
@@ -150,6 +157,8 @@ public class GooValueRegistry implements IGooValueLookup {
         lastMergedBaseValues = merged;
         parseConstants(merged);
         parseItemValues(merged);
+        parseConversions(merged);
+        applyConversions(preConversions, baseValues);
         effectiveValues.putAll(baseValues);
         Goo.LOGGER.info("Loaded {} base goo values from {} pack(s)", baseValues.size(), layers.size());
     }
@@ -229,14 +238,15 @@ public class GooValueRegistry implements IGooValueLookup {
         return result;
     }
 
-    /** Expands a single tag key into per-member entries in the result object. */
+    /** Expands a MC tag key into per-member entries. Preserves unresolved keys for pseudo-tag handling. */
     private static void expandOneTag(String tagKey, JsonElement value,
                                      Function<Identifier, Set<Identifier>> tagResolver,
                                      JsonObject result) {
         Identifier tagId = Identifier.parse(tagKey.substring(1));
         Set<Identifier> members = tagResolver.apply(tagId);
         if (members.isEmpty()) {
-            Goo.LOGGER.warn("Tag {} resolved to no members, skipping", tagKey);
+            // Keep the #key for pseudo-tag resolution in parseItemValues
+            result.add(tagKey, value);
             return;
         }
         for (Identifier member : members) {
@@ -261,15 +271,20 @@ public class GooValueRegistry implements IGooValueLookup {
         effectiveValues.clear();
         constants.clear();
         treeConstants.clear();
+        pseudoTags.clear();
+        preConversions = null;
+        postConversions = null;
         lastMergedBaseValues = null;
     }
 
-    /** Parses constants, groups, and item entries (values + denials) from an input stream. */
+    /** Parses constants, groups, item entries, and conversions from an input stream. */
     void parseBaseValuesFromStream(InputStream is) throws IOException {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             parseConstants(json);
             parseItemValues(json);
+            parseConversions(json);
+            applyConversions(preConversions, baseValues);
         }
     }
 
@@ -288,6 +303,16 @@ public class GooValueRegistry implements IGooValueLookup {
                 treeConstants.put(entry.getKey(),
                         GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants));
             } else {
+                // Try tree evaluation first (handles "9 $metal_nugget" where $metal_nugget is a tree).
+                // Fall back to scalar if the result is empty or the expression has no tree refs.
+                String expr = entry.getValue().getAsString().trim();
+                if (referencesTreeConstant(expr)) {
+                    GooValue tree = GooValueExpression.evaluate(expr, Map.of(), constants, treeConstants);
+                    if (!tree.isEmpty()) {
+                        treeConstants.put(entry.getKey(), tree);
+                        continue;
+                    }
+                }
                 constants.put(entry.getKey(),
                         GooValueJsonFormat.resolveConstantValue(entry.getValue(), constants));
             }
@@ -296,18 +321,65 @@ public class GooValueRegistry implements IGooValueLookup {
                 constants.size() + treeConstants.size(), constants.size(), treeConstants.size());
     }
 
-    /** Parses item entries and _groups from the JSON root. Skips meta keys (_ prefix) and tag keys (# prefix). */
+    /** True if the expression string contains a $ref that's a known tree constant. */
+    private boolean referencesTreeConstant(String expr) {
+        int i = expr.indexOf('$');
+        while (i >= 0 && i < expr.length() - 1) {
+            int start = i + 1;
+            int end = start;
+            while (end < expr.length() && (Character.isLetterOrDigit(expr.charAt(end)) || expr.charAt(end) == '_')) {
+                end++;
+            }
+            if (end > start && treeConstants.containsKey(expr.substring(start, end))) {
+                return true;
+            }
+            i = expr.indexOf('$', end);
+        }
+        return false;
+    }
+
+    /** Parses _groups first (pseudo-tags), then item entries. Resolves #name against pseudo-tags. */
     private void parseItemValues(JsonObject json) {
+        parseGroups(json);
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-            if (entry.getKey().startsWith("_") || entry.getKey().startsWith("#")) continue;
-            Identifier itemId = Identifier.parse(entry.getKey());
-            if (isDeniedEntry(entry.getValue())) {
-                deniedItems.add(itemId);
+            String key = entry.getKey();
+            if (key.startsWith("_")) continue;
+            if (key.startsWith("#")) {
+                expandPseudoTag(key.substring(1), entry.getValue());
+                continue;
+            }
+            assignItemValue(Identifier.parse(key), entry.getValue());
+        }
+    }
+
+    /** Expands a #name key against pseudo-tags, assigning the value to each member. */
+    private void expandPseudoTag(String name, JsonElement value) {
+        // Try exact name first, then parse as Identifier and use path
+        Set<Identifier> members = pseudoTags.get(name);
+        if (members == null) {
+            members = pseudoTags.get(Identifier.parse(name).getPath());
+        }
+        if (members == null || members.isEmpty()) {
+            Goo.LOGGER.warn("Pseudo-tag #{} resolved to no members, skipping", name);
+            return;
+        }
+        for (Identifier member : members) {
+            assignItemValue(member, value);
+        }
+    }
+
+    /** Assigns a value or denial to a single item. */
+    private void assignItemValue(Identifier itemId, JsonElement value) {
+        if (isDeniedEntry(value)) {
+            deniedItems.add(itemId);
+        } else {
+            GooValue resolved = resolveItemEntry(value);
+            if (resolved.hasNegative()) {
+                Goo.LOGGER.error("Negative goo in base value for {}: {} -- skipped", itemId, resolved);
             } else {
-                baseValues.put(itemId, resolveItemEntry(entry.getValue()));
+                baseValues.put(itemId, resolved);
             }
         }
-        parseGroups(json);
     }
 
     /**
@@ -322,23 +394,73 @@ public class GooValueRegistry implements IGooValueLookup {
         return GooValueExpression.evaluate(value.getAsString().trim(), baseValues, constants, treeConstants);
     }
 
-    /** Expands _groups: each group has a "value" and an "items" array. */
+    /** Parses _groups into pseudo-tags: each key maps to an array of item IDs. */
     private void parseGroups(JsonObject json) {
         if (!json.has("_groups")) return;
         JsonObject groups = json.getAsJsonObject("_groups");
         for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
-            JsonObject groupObj = group.getValue().getAsJsonObject();
-            JsonElement valueElem = groupObj.get("value");
-            com.google.gson.JsonArray items = groupObj.getAsJsonArray("items");
+            String name = group.getKey();
+            com.google.gson.JsonArray items = group.getValue().getAsJsonArray();
+            Set<Identifier> members = new LinkedHashSet<>();
             for (JsonElement item : items) {
-                Identifier itemId = Identifier.parse(item.getAsString());
-                if (isDeniedEntry(valueElem)) {
-                    deniedItems.add(itemId);
-                } else {
-                    baseValues.put(itemId, resolveItemEntry(valueElem));
+                members.add(Identifier.parse(item.getAsString()));
+            }
+            pseudoTags.put(name, members);
+        }
+    }
+
+    /** Parses both _conversions and _post_conversions blocks. */
+    private void parseConversions(JsonObject json) {
+        preConversions = parseConversionBlock(json, "_conversions");
+        postConversions = parseConversionBlock(json, "_post_conversions");
+    }
+
+    /** Parses a single conversion block by key name. */
+    private static GooConversion.ParsedConversions parseConversionBlock(JsonObject json, String key) {
+        if (!json.has(key)) return null;
+        JsonObject block = json.getAsJsonObject(key);
+        Map<String, String> entries = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : block.entrySet()) {
+            entries.put(entry.getKey(), entry.getValue().getAsString());
+        }
+        return GooConversion.parseBlock(entries);
+    }
+
+    /** Applies a parsed conversion set to a values map. */
+    private void applyConversions(GooConversion.ParsedConversions parsed,
+                                   Map<Identifier, GooValue> values) {
+        if (parsed == null) return;
+        for (GooConversion.Assignment assignment : parsed.assignments()) {
+            List<Identifier> targetItems = resolveConversionTarget(assignment.target());
+            if (targetItems.isEmpty()) {
+                Goo.LOGGER.warn("Conversion target {} resolved to no items", assignment.target());
+                continue;
+            }
+            List<Identifier> sourceItems = null;
+            if (assignment.parallelSource() != null) {
+                sourceItems = resolveConversionTarget(assignment.parallelSource());
+                if (sourceItems.isEmpty()) {
+                    Goo.LOGGER.warn("Parallel source {} resolved to no items",
+                            assignment.parallelSource());
+                    continue;
                 }
             }
+            GooConversion.applyAssignment(values, targetItems, sourceItems,
+                    assignment, parsed.formulas());
         }
+    }
+
+    /** Resolves a conversion target (item ID or #tag) to an ordered list of item IDs. */
+    private List<Identifier> resolveConversionTarget(String target) {
+        if (target.startsWith("#")) {
+            String name = target.substring(1);
+            Set<Identifier> members = pseudoTags.get(name);
+            if (members == null) {
+                members = pseudoTags.get(Identifier.parse(name).getPath());
+            }
+            return members != null ? new ArrayList<>(members) : List.of();
+        }
+        return List.of(Identifier.parse(target));
     }
 
     /** Returns true if the JSON value is the string "denied". */
@@ -537,6 +659,7 @@ public class GooValueRegistry implements IGooValueLookup {
         lastDerivation = GooValueDerivation.derive(recipes, baseValues, deniedItems, baseOverride);
         effectiveValues.clear();
         effectiveValues.putAll(lastDerivation.effectiveValues());
+        applyConversions(postConversions, effectiveValues);
         return lastDerivation.derivedValues().size();
     }
 
@@ -710,6 +833,7 @@ public class GooValueRegistry implements IGooValueLookup {
     /** Copies base values into effective values. For test use after parseBaseValuesFromStream. */
     void copyBaseToEffective() {
         effectiveValues.putAll(baseValues);
+        applyConversions(postConversions, effectiveValues);
     }
 
     /**

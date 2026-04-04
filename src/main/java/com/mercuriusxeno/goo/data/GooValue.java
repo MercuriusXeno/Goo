@@ -18,7 +18,7 @@ public class GooValue {
     public GooValue(Map<GooType, Integer> values) {
         this.values = new EnumMap<>(GooType.class);
         values.forEach((type, amount) -> {
-            if (amount > 0) {
+            if (amount != 0) {
                 this.values.put(type, amount);
             }
         });
@@ -34,6 +34,16 @@ public class GooValue {
 
     public boolean isEmpty() {
         return values.isEmpty();
+    }
+
+    /** True if any goo type has a negative amount. */
+    public boolean hasNegative() {
+        return values.values().stream().anyMatch(v -> v < 0);
+    }
+
+    /** Number of distinct goo types with non-zero amounts. */
+    public int typeCount() {
+        return values.size();
     }
 
     public int totalBlobs() {
@@ -77,7 +87,22 @@ public class GooValue {
     public GooValue subtract(GooValue other) {
         Map<GooType, Integer> result = new EnumMap<>(this.values);
         other.values.forEach((type, amount) ->
-            result.computeIfPresent(type, (k, v) -> v - amount));
+            result.merge(type, -amount, Integer::sum));
+        return new GooValue(result);
+    }
+
+    /**
+     * Returns a new GooValue with all negative types clamped to zero (removed).
+     * Use after applying modifiers that can introduce negatives, when the result
+     * must represent a physical goo composition.
+     */
+    public GooValue floorZero() {
+        boolean hasNegative = values.values().stream().anyMatch(v -> v < 0);
+        if (!hasNegative) return this;
+        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
+        values.forEach((type, amount) -> {
+            if (amount > 0) result.put(type, amount);
+        });
         return new GooValue(result);
     }
 

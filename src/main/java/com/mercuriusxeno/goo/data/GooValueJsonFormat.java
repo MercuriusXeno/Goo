@@ -205,10 +205,14 @@ class GooValueJsonFormat {
         return c == '(' || c == '$' || Character.isDigit(c) || Character.isLetter(c);
     }
 
-    /** Reads one atom: a parenthesized sub-expression, $constant, int literal, or item.type ref. */
+    /** Reads one atom: unary minus, parenthesized sub-expression, $constant, int literal, or item.type ref. */
     private static int evalAtom(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
                                 Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+        if (pos[0] < tokens.size() && tokens.get(pos[0]).equals("-")) {
+            pos[0]++;
+            return -evalAtom(tokens, pos, constants, baseValues);
+        }
         String token = tokens.get(pos[0]++);
         if (token.equals("(")) {
             int result = evalExpr(tokens, pos, constants, baseValues);

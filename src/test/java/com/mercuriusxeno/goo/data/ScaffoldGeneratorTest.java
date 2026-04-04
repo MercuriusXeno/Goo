@@ -326,6 +326,41 @@ class ScaffoldGeneratorTest {
                     "Individual plank entries should be replaced by tag group: " + joined);
         }
 
+        /** Scaffold entries are sorted by unblock count, not insertion order. */
+        @Test
+        void scaffoldEntriesSortedByUnblockCount() {
+            // Small root: glass_pane -> red_stained_glass_pane (1 downstream)
+            RecipeInput redPane = recipe("minecraft:red_stained_glass_pane", 1,
+                    slot("minecraft:glass_pane"), slot("minecraft:red_dye"));
+
+            // Large tag group: 3 log types each feeding into many recipes
+            // We need the tag group's union downstream to exceed glass_pane's
+            RecipeInput oakPlanks = tagRecipe("minecraft:oak_planks", 4,
+                    Arrays.asList("minecraft:logs"),
+                    slot("minecraft:oak_log", "minecraft:birch_log", "minecraft:spruce_log"));
+            RecipeInput stick = recipe("minecraft:stick", 4, slot("minecraft:oak_planks"));
+            RecipeInput ladder = recipe("minecraft:ladder", 3, slot("minecraft:stick"));
+            RecipeInput fence = recipe("minecraft:oak_fence", 1,
+                    slot("minecraft:stick"), slot("minecraft:oak_planks"));
+            RecipeInput sign = recipe("minecraft:oak_sign", 1,
+                    slot("minecraft:stick"), slot("minecraft:oak_planks"));
+
+            List<RecipeInput> recipes = List.of(redPane, oakPlanks, stick, ladder, fence, sign);
+            List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                    recipes, Map.of(), Set.of());
+            ScaffoldGenerator.ScaffoldResult result = ScaffoldGenerator.generateScaffold(roots, recipes);
+
+            String joined = String.join("\n", result.lines());
+            // The tag group (#logs) unblocks more items than glass_pane,
+            // so it must appear first in the scaffold output.
+            int logsPos = joined.indexOf("#logs");
+            int panePos = joined.indexOf("glass_pane");
+            assertTrue(logsPos >= 0, "Expected #logs entry: " + joined);
+            assertTrue(panePos >= 0, "Expected glass_pane entry: " + joined);
+            assertTrue(logsPos < panePos,
+                    "Higher-impact #logs should appear before glass_pane: " + joined);
+        }
+
         /** Roots without any tag association stay as individual entries. */
         @Test
         void rootsWithoutTagStayIndividual() {

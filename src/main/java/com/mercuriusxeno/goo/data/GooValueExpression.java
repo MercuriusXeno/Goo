@@ -175,11 +175,16 @@ final class GooValueExpression {
         return c == '(' || c == '$' || Character.isDigit(c) || Character.isLetter(c);
     }
 
-    /** Atom: parenthesized group, $constant (tree or scalar), integer, or namespaced item ID. */
+    /** Atom: unary minus, parenthesized group, $constant (tree or scalar), integer, or namespaced item ID. */
     private static ExprVal evalAtom(List<String> tokens, int[] pos,
                                     Map<Identifier, GooValue> baseValues,
                                     Map<String, Integer> constants,
                                     Map<String, GooValue> treeConstants) {
+        if (pos[0] < tokens.size() && tokens.get(pos[0]).equals("-")) {
+            pos[0]++;
+            ExprVal inner = evalAtom(tokens, pos, baseValues, constants, treeConstants);
+            return negate(inner);
+        }
         String token = tokens.get(pos[0]++);
         if (token.equals("(")) {
             ExprVal result = evalExpr(tokens, pos, baseValues, constants, treeConstants);
@@ -290,6 +295,12 @@ final class GooValueExpression {
                 yield new GooVal(gv);
             }
         };
+    }
+
+    /** Negates an expression value: flips sign on scalar or all goo types. */
+    private static ExprVal negate(ExprVal val) {
+        if (val.isScalar()) return new ScalarVal(-val.toInt());
+        return new GooVal(multiplyGooValue(val.toGooValue(), -1));
     }
 
     /** Multiplies every type in a GooValue by a scalar. */

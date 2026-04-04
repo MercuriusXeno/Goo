@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.data;
 
+import com.mercuriusxeno.goo.Goo;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
@@ -57,14 +58,30 @@ class GooValueDerivation {
     static Map<Identifier, GooValue> buildEffectiveValues(
             Map<Identifier, GooValue> baseValues, Map<Identifier, GooValue> derivedValues,
             boolean baseOverride) {
-        Map<Identifier, GooValue> effective = new HashMap<>(baseValues);
+        Map<Identifier, GooValue> effective = new HashMap<>();
+        // Validate base values
+        for (var entry : baseValues.entrySet()) {
+            GooValue value = entry.getValue();
+            if (value.hasNegative()) {
+                Goo.LOGGER.error("Negative goo in base value for {}: {} -- skipped",
+                        entry.getKey(), value);
+                continue;
+            }
+            effective.put(entry.getKey(), value);
+        }
+        // Merge derived values, validating each
         for (var entry : derivedValues.entrySet()) {
             Identifier itemId = entry.getKey();
-            GooValue base = baseValues.get(itemId);
             GooValue derived = entry.getValue();
+            if (derived.hasNegative()) {
+                Goo.LOGGER.error("Negative goo in derived value for {}: {} -- skipped",
+                        itemId, derived);
+                continue;
+            }
+            GooValue base = effective.get(itemId);
             if (base == null) {
                 effective.put(itemId, derived);
-            } else if (!baseOverride && derived.totalBlobs() < base.totalBlobs()) {
+            } else if (!baseOverride && isCheaper(derived, base)) {
                 effective.put(itemId, derived);
             }
         }
@@ -153,7 +170,7 @@ class GooValueDerivation {
         RecipeResult best = findCheapestRecipeValue(recipes);
         if (best == null) return false;
         GooValue existing = derivedValues.get(itemId);
-        if (existing == null || best.value.totalBlobs() < existing.totalBlobs()) {
+        if (existing == null || isCheaper(best.value, existing)) {
             derivedValues.put(itemId, best.value);
             derivationSources.put(itemId, best.source);
             return true;
@@ -163,6 +180,14 @@ class GooValueDerivation {
 
     private record RecipeResult(GooValue value, RecipeInput source) {}
 
+    /** Cheaper = fewer total blobs, then fewer goo types as tiebreaker. */
+    private static boolean isCheaper(GooValue candidate, GooValue current) {
+        int cBlobs = candidate.totalBlobs();
+        int eBlobs = current.totalBlobs();
+        if (cBlobs != eBlobs) return cBlobs < eBlobs;
+        return candidate.typeCount() < current.typeCount();
+    }
+
     private RecipeResult findCheapestRecipeValue(List<RecipeInput> recipes) {
         RecipeResult best = null;
         for (RecipeInput recipe : recipes) {
@@ -170,7 +195,7 @@ class GooValueDerivation {
             if (candidate.isEmpty()) continue;
             GooValue perItem = candidate.get().divide(recipe.resultCount());
             if (perItem.isEmpty()) continue;
-            if (best == null || perItem.totalBlobs() < best.value.totalBlobs()) {
+            if (best == null || isCheaper(perItem, best.value)) {
                 best = new RecipeResult(perItem, recipe);
             }
         }
@@ -208,7 +233,8 @@ class GooValueDerivation {
         GooValue containerValue = lookupForDerivation(containerId, baseValues, derivedValues);
         if (containerValue == null || containerValue.isEmpty()) return gross;
         GooValue net = gross.subtract(containerValue);
-        return net.isEmpty() ? gross : net;
+        GooValue floored = net.floorZero();
+        return floored.isEmpty() ? gross : floored;
     }
 
     private List<GooValueRegistry.ValueConflict> detectConflicts() {

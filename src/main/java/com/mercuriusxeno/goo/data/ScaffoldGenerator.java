@@ -177,9 +177,9 @@ public class ScaffoldGenerator {
     }
 
     /** A single scaffold entry, either an individual root or a tag group. */
-    private record ScaffoldEntry(String commentKey, String comment, String jsonKey) {}
+    private record ScaffoldEntry(String commentKey, String comment, String jsonKey, int unblocks) {}
 
-    /** Builds the ordered list of scaffold entries from tag groups and ungrouped roots. */
+    /** Builds the ordered list of scaffold entries, sorted by unblock count descending. */
     private static List<ScaffoldEntry> buildEntries(List<Root> roots,
             Map<Identifier, List<Root>> tagGroups, Set<Root> grouped) {
         List<ScaffoldEntry> entries = new ArrayList<>();
@@ -192,6 +192,7 @@ public class ScaffoldGenerator {
                 entries.add(buildRootEntry(root));
             }
         }
+        entries.sort(Comparator.comparingInt(ScaffoldEntry::unblocks).reversed());
         return entries;
     }
 
@@ -209,8 +210,9 @@ public class ScaffoldGenerator {
                 unionDownstream.addAll(member.downstream());
             }
             String tagShort = shortId(tagId);
-            String comment = members.size() + " tag members. Unblocks " + unionDownstream.size();
-            entries.add(new ScaffoldEntry(tagShort, comment, "#" + tagShort));
+            int unblocks = unionDownstream.size();
+            String comment = members.size() + " tag members. Unblocks " + unblocks;
+            entries.add(new ScaffoldEntry(tagShort, comment, "#" + tagShort, unblocks));
         }
     }
 
@@ -227,7 +229,8 @@ public class ScaffoldGenerator {
         if (sample.size() > shown) {
             chainDesc.append(" ... +").append(sample.size() - shown).append(" more");
         }
-        return new ScaffoldEntry(root.itemId().getPath(), chainDesc.toString(), shortId(root.itemId()));
+        return new ScaffoldEntry(root.itemId().getPath(), chainDesc.toString(),
+                shortId(root.itemId()), root.downstream().size());
     }
 
     /**
