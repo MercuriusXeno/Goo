@@ -19,20 +19,22 @@ public final class GooNetworking {
     @SubscribeEvent
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(Goo.MODID).versioned("1");
+        // Client-bound payloads use lambdas (not method references) to defer
+        // class loading of client-only handler classes on the dedicated server.
         registrar.playToClient(
                 GooValueSyncPayload.TYPE,
                 GooValueSyncPayload.STREAM_CODEC,
-                GooValueSyncHandler::handle
+                (payload, context) -> GooValueSyncHandler.handle(payload, context)
         );
         registrar.playToClient(
                 OpenNamingScreenPayload.TYPE,
                 OpenNamingScreenPayload.STREAM_CODEC,
-                OpenNamingScreenHandler::handle
+                (payload, context) -> OpenNamingScreenHandler.handle(payload, context)
         );
         registrar.playToClient(
                 TunerFeedbackPayload.TYPE,
                 TunerFeedbackPayload.STREAM_CODEC,
-                TunerFeedbackHandler::handle
+                (payload, context) -> TunerFeedbackHandler.handle(payload, context)
         );
         registrar.playToServer(
                 CanisterRenamePayload.TYPE,
@@ -62,7 +64,7 @@ public final class GooNetworking {
         registrar.playToClient(
                 BlobFlightPayload.TYPE,
                 BlobFlightPayload.STREAM_CODEC,
-                BlobFlightHandler::handle
+                (payload, context) -> BlobFlightHandler.handle(payload, context)
         );
     }
 }
