@@ -25,6 +25,7 @@ import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -112,6 +113,12 @@ public class GooClientSetup {
         event.registerEntityModifier(
                 new TypeToken<EntityRenderer<Entity, EntityRenderState>>() {},
                 GooTargetHighlighter::modifyEntityRenderState);
+    }
+
+    /** Registers custom render pipelines (additive glow lines, etc.). */
+    @SubscribeEvent
+    public static void registerRenderPipelines(RegisterRenderPipelinesEvent event) {
+        GooRenderTypes.registerPipelines(event);
     }
 
     /** Registers standalone baked models for canister and vat item rendering. */

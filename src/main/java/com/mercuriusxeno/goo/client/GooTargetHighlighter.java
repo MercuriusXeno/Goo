@@ -411,7 +411,7 @@ public final class GooTargetHighlighter {
             int rgb, float dashOffset, float baseWidth) {
 
         Vec3 cam = camera.position();
-        VertexConsumer line = bufferSource.getBuffer(RenderTypes.lines());
+        VertexConsumer line = bufferSource.getBuffer(GooRenderTypes.LINES_GLOW);
 
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
             float alphaScale = (float) Math.pow(ARC_GLOW_ALPHA_DECAY, pass);

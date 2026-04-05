@@ -872,13 +872,23 @@ public class GooValueRegistry implements IGooValueLookup {
      * Does not require a prior regen.
      */
     public ScaffoldGenerator.ScaffoldResult generateScaffoldFresh(MinecraftServer server) {
+        return generateScaffoldFresh(server, false);
+    }
+
+    /** Generates scaffold by collecting recipes fresh from the server. */
+    public ScaffoldGenerator.ScaffoldResult generateScaffoldFresh(MinecraftServer server, boolean bare) {
         HolderLookup.Provider registries = server.registryAccess();
         List<RecipeInput> recipes = adaptRecipes(server.getRecipeManager().getRecipes(), registries);
         // Include conversion targets as valued so they don't appear as roots
         Map<Identifier, GooValue> holistic = holisticValuedItems();
+        Set<Identifier> allItems = BuiltInRegistries.ITEM.keySet();
         List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
-                recipes, holistic, deniedItems);
-        return ScaffoldGenerator.generateScaffold(roots, recipes);
+                recipes, holistic, deniedItems, allItems);
+        return ScaffoldGenerator.generateScaffold(roots, recipes, bare);
+    }
+
+    public ScaffoldGenerator.ScaffoldResult generateScaffoldMissing() {
+        return generateScaffoldMissing(false);
     }
 
     /**
@@ -886,10 +896,11 @@ public class GooValueRegistry implements IGooValueLookup {
      * Shows only roots that are still missing after the last derivation pass.
      * Uses effective values (post-derivation, post-conversion) for completeness.
      */
-    public ScaffoldGenerator.ScaffoldResult generateScaffoldMissing() {
+    public ScaffoldGenerator.ScaffoldResult generateScaffoldMissing(boolean bare) {
+        Set<Identifier> allItems = BuiltInRegistries.ITEM.keySet();
         List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
-                lastRecipes, effectiveValues, deniedItems);
-        return ScaffoldGenerator.generateScaffold(roots, lastRecipes);
+                lastRecipes, effectiveValues, deniedItems, allItems);
+        return ScaffoldGenerator.generateScaffold(roots, lastRecipes, bare);
     }
 
     /**

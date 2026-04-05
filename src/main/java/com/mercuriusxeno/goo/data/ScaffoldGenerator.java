@@ -40,24 +40,48 @@ public class ScaffoldGenerator {
     ) {}
 
     /**
-     * Finds all root nodes in the recipe graph that need manual valuation.
-     *
-     * @param recipes    all known recipes
-     * @param baseValues currently valued items
-     * @param denied     denied items (excluded from analysis)
-     * @return roots sorted by downstream impact (highest first)
+     * Backward-compatible overload without registry items (used by tests).
+     * Only finds recipe-graph roots; does not include flat registry items.
      */
     public static List<Root> findRoots(List<RecipeInput> recipes,
                                        Map<Identifier, GooValue> baseValues,
                                        Set<Identifier> denied) {
+        return findRoots(recipes, baseValues, denied, Set.of());
+    }
+
+    /**
+     * Finds all items that need manual valuation.
+     * <p>Three phases:
+     * <ol>
+     *   <li><b>True roots</b> -- unvalued recipe inputs no recipe produces
+     *       (e.g. blaze_rod, prismarine_shard). Shown even when downstream
+     *       is empty (all products already valued).</li>
+     *   <li><b>Cycle roots</b> -- items trapped in dependency cycles even
+     *       after all true roots would be valued. Picks the smallest unit
+     *       via multiplication factor scoring.</li>
+     *   <li><b>Flat items</b> -- registered items that appear in no recipe
+     *       at all and have no value (e.g. mob drops, treasure items).</li>
+     * </ol>
+     *
+     * @param recipes       all known recipes
+     * @param baseValues    currently valued items
+     * @param denied        denied items (excluded from analysis)
+     * @param allKnownItems all registered item IDs (from BuiltInRegistries);
+     *                      empty set disables phase 3
+     * @return roots sorted by downstream impact (highest first), then flat items
+     */
+    public static List<Root> findRoots(List<RecipeInput> recipes,
+                                       Map<Identifier, GooValue> baseValues,
+                                       Set<Identifier> denied,
+                                       Set<Identifier> allKnownItems) {
         Map<Identifier, List<RecipeInput>> byOutput = GooValueDerivation.groupByOutput(recipes);
 
         // Build forward graph: output -> all input items needed
         Map<Identifier, Set<Identifier>> forwardDeps = buildForwardDeps(byOutput);
 
         // Collect all items mentioned anywhere (as input or output)
-        Set<Identifier> allItems = new HashSet<>(forwardDeps.keySet());
-        forwardDeps.values().forEach(allItems::addAll);
+        Set<Identifier> recipeItems = new HashSet<>(forwardDeps.keySet());
+        forwardDeps.values().forEach(recipeItems::addAll);
 
         // Build reverse graph: input -> items it directly enables
         Map<Identifier, Set<Identifier>> reverseDeps = buildReverseDeps(forwardDeps);
@@ -68,50 +92,80 @@ public class ScaffoldGenerator {
         // Simulate value propagation (forward + homogenous reverse)
         propagateValues(valued, recipes, denied);
 
-        // Build value clusters: groups connected by homogenous recipes.
-        // Valuing any one member propagates to the whole cluster.
+        // ── Phase 1: true roots (unvalued items no recipe produces) ──
+        List<Root> roots = new ArrayList<>();
+        Set<Identifier> trueRootIds = new HashSet<>();
+
+        for (Identifier item : recipeItems) {
+            if (valued.contains(item) || denied.contains(item)) continue;
+            if (byOutput.containsKey(item)) continue; // has a recipe -> not a true root
+
+            trueRootIds.add(item);
+            Set<Identifier> downstream = computeDownstream(item, reverseDeps, valued, denied);
+            List<Identifier> chain = traceExampleChain(item, reverseDeps, valued, denied, 5);
+            roots.add(new Root(item, downstream, 1, "no recipe", chain));
+        }
+
+        // ── Phase 2: cycle roots (items that can't resolve even with all true roots) ──
+        Set<Identifier> simValued = new HashSet<>(valued);
+        simValued.addAll(trueRootIds);
+        propagateValues(simValued, recipes, denied);
+
+        Set<Identifier> cycleItems = new HashSet<>();
+        for (Identifier item : recipeItems) {
+            if (!simValued.contains(item) && !denied.contains(item)) {
+                cycleItems.add(item);
+            }
+        }
+
         List<RecipeInput> homogenous = recipes.stream()
                 .filter(r -> r.soleInputItem() != null)
                 .toList();
-        Set<Identifier> eligible = new HashSet<>(allItems);
-        eligible.removeAll(valued);
-        Map<Identifier, Set<Identifier>> clusters = buildClusters(homogenous, eligible);
 
-        // For each unvalued cluster, pick the most-multiplied member as entry point
-        List<Root> roots = new ArrayList<>();
-        Set<Identifier> visited = new HashSet<>();
+        if (!cycleItems.isEmpty()) {
+            Map<Identifier, Set<Identifier>> clusters = buildClusters(homogenous, cycleItems);
+            Set<Identifier> visited = new HashSet<>();
 
-        for (Identifier item : allItems) {
-            if (valued.contains(item) || denied.contains(item) || visited.contains(item)) continue;
+            for (Identifier item : cycleItems) {
+                if (visited.contains(item)) continue;
+                Set<Identifier> cluster = clusters.getOrDefault(item, Set.of(item));
+                if (!Collections.disjoint(cluster, visited)) continue;
 
-            Set<Identifier> cluster = clusters.getOrDefault(item, Set.of(item));
-            if (!Collections.disjoint(cluster, visited)) continue;
+                Identifier entry = pickCycleEntry(cluster, homogenous, reverseDeps, denied);
+                visited.addAll(cluster);
 
-            // Pick the cluster member with the highest multiplication factor
-            Identifier entry = pickMostMultiplied(cluster, homogenous, reverseDeps, valued, denied);
-            visited.addAll(cluster);
-
-            // Downstream = everything reachable from ANY cluster member,
-            // since valuing the entry propagates to the whole cluster.
-            Set<Identifier> downstream = new HashSet<>();
-            for (Identifier member : cluster) {
-                downstream.addAll(computeDownstream(member, reverseDeps, valued, denied));
-            }
-            // Cluster members themselves are also covered (minus entry)
-            for (Identifier member : cluster) {
-                if (!member.equals(entry) && !valued.contains(member) && !denied.contains(member)) {
-                    downstream.add(member);
+                Set<Identifier> downstream = new HashSet<>();
+                for (Identifier member : cluster) {
+                    downstream.addAll(computeDownstream(member, reverseDeps, simValued, denied));
                 }
-            }
-            downstream.remove(entry);
-            if (downstream.isEmpty()) continue;
+                for (Identifier member : cluster) {
+                    if (!member.equals(entry)) downstream.add(member);
+                }
+                downstream.remove(entry);
 
-            List<Identifier> chain = traceExampleChain(entry, reverseDeps, valued, denied, 5);
-            String reason = cluster.size() > 1 ? "value cluster (" + cluster.size() + " items)" : "no recipe";
-            roots.add(new Root(entry, downstream, cluster.size(), reason, chain));
+                List<Identifier> chain = traceExampleChain(entry, reverseDeps, simValued, denied, 5);
+                String reason = cluster.size() > 1
+                        ? "cycle (" + cluster.size() + " items)" : "cycle";
+                roots.add(new Root(entry, downstream, cluster.size(), reason, chain));
+            }
         }
 
-        // Sort by downstream impact (desc), then cluster size (desc) as tiebreak
+        // ── Phase 3: flat items (registered items not in any recipe, unvalued) ──
+        if (!allKnownItems.isEmpty()) {
+            // Everything that will be resolved: valued + propagated-from-true-roots
+            // + cycle items (handled by cycle roots or derivable from them)
+            Set<Identifier> accounted = new HashSet<>(simValued);
+            accounted.addAll(cycleItems);
+            accounted.addAll(denied);
+
+            for (Identifier item : allKnownItems) {
+                if (accounted.contains(item)) continue;
+                if (recipeItems.contains(item)) continue; // will derive from recipe roots
+                roots.add(new Root(item, Set.of(), 1, "no recipe or chain", List.of()));
+            }
+        }
+
+        // Sort: downstream impact desc, then cluster size desc, then flat items last
         roots.sort(Comparator.comparingInt((Root r) -> r.downstream().size())
                 .thenComparingInt(r -> r.clusterSize())
                 .reversed());
@@ -142,11 +196,25 @@ public class ScaffoldGenerator {
      * @return lines suitable for writing to a file, plus root count
      */
     public static ScaffoldResult generateScaffold(List<Root> roots, List<RecipeInput> recipes) {
+        return generateScaffold(roots, recipes, false);
+    }
+
+    /**
+     * Generates a scaffold JSON showing which items need manual valuation.
+     *
+     * @param roots   the roots to generate scaffold for
+     * @param recipes recipes providing tag metadata for grouping
+     * @param bare    if true, emit only root keys with empty values (no comments)
+     * @return lines suitable for writing to a file, plus root count
+     */
+    public static ScaffoldResult generateScaffold(List<Root> roots, List<RecipeInput> recipes, boolean bare) {
         List<String> lines = new ArrayList<>();
         lines.add("{");
 
         if (roots.isEmpty()) {
-            lines.add("    \"_comment_scaffold\": \"No unvalued roots found. All recipe chains are anchored.\"");
+            if (!bare) {
+                lines.add("    \"_comment_scaffold\": \"No unvalued roots found. All recipe chains are anchored.\"");
+            }
             lines.add("}");
             return new ScaffoldResult(lines, 0);
         }
@@ -160,16 +228,22 @@ public class ScaffoldGenerator {
         // Build ordered entries: tag groups first, then ungrouped roots
         List<ScaffoldEntry> entries = buildEntries(roots, tagGroups, grouped);
 
-        lines.add("    \"_comment_scaffold\": \"Root nodes needing manual valuation. "
-                + entries.size() + " root(s) found. Fill in goo types, then paste into base_values.json.\",");
-        lines.add("");
+        if (!bare) {
+            lines.add("    \"_comment_scaffold\": \"Root nodes needing manual valuation. "
+                    + entries.size() + " root(s) found. Fill in goo types, then paste into base_values.json.\",");
+            lines.add("");
+        }
 
         for (int i = 0; i < entries.size(); i++) {
             ScaffoldEntry entry = entries.get(i);
             boolean last = (i == entries.size() - 1);
-            lines.add("    \"_comment_" + entry.commentKey + "\": \"" + entry.comment + "\",");
+            if (!bare) {
+                lines.add("    \"_comment_" + entry.commentKey + "\": \"" + entry.comment + "\",");
+            }
             lines.add("    \"" + entry.jsonKey + "\": { }" + (last ? "" : ","));
-            lines.add("");
+            if (!bare) {
+                lines.add("");
+            }
         }
 
         lines.add("}");
@@ -456,17 +530,15 @@ public class ScaffoldGenerator {
     }
 
     /**
-     * Picks the cluster member with the highest multiplication factor that
-     * is also used as an ingredient in other recipes. End products (high
-     * multiplier but no fan-out) are poor anchors. Items like sticks (16x
-     * from log, used in dozens of recipes) and nuggets (9x from ingot,
-     * used in several) are ideal.
+     * Picks the cycle cluster member that is the smallest unit. Uses
+     * multiplication factor scoring: the item that multiplies most from
+     * within-cluster recipes is the smallest base unit (e.g. nugget > ingot
+     * > block). Ties broken by fan-out.
      */
-    private static Identifier pickMostMultiplied(Set<Identifier> cluster,
-                                                  List<RecipeInput> homogenous,
-                                                  Map<Identifier, Set<Identifier>> reverseDeps,
-                                                  Set<Identifier> valued,
-                                                  Set<Identifier> denied) {
+    private static Identifier pickCycleEntry(Set<Identifier> cluster,
+                                              List<RecipeInput> homogenous,
+                                              Map<Identifier, Set<Identifier>> reverseDeps,
+                                              Set<Identifier> denied) {
         if (cluster.size() == 1) return cluster.iterator().next();
 
         Map<Identifier, Long> factors = new HashMap<>();
@@ -484,7 +556,6 @@ public class ScaffoldGenerator {
                 if (input == null || !cluster.contains(input) || !cluster.contains(output)) continue;
                 long inputFactor = factors.getOrDefault(input, 1L);
                 int inputCount = recipe.ingredientAlternatives().size();
-                // 2 planks -> 4 sticks = ratio of 4/2 = 2x per plank
                 long outputFactor = inputFactor * recipe.resultCount() / inputCount;
                 if (outputFactor > factors.getOrDefault(output, 1L)) {
                     factors.put(output, outputFactor);
@@ -493,16 +564,10 @@ public class ScaffoldGenerator {
             }
         }
 
-        // Score = multiplication factor, but only for items that fan out
-        // (are used as input in at least one recipe). End products score 0.
-        // Score = multiplication factor, but only for non-denied items with fan-out.
-        // Denied items can be in the cluster but should not be the entry point.
+        // Highest multiplication factor = smallest unit. Tiebreak by fan-out.
         return cluster.stream()
                 .filter(id -> !denied.contains(id))
-                .max(Comparator.<Identifier>comparingLong(id -> {
-                            int fanOut = reverseDeps.getOrDefault(id, Set.of()).size();
-                            return fanOut > 0 ? factors.getOrDefault(id, 1L) : 0L;
-                        })
+                .max(Comparator.<Identifier>comparingLong(id -> factors.getOrDefault(id, 1L))
                         .thenComparingInt(id -> reverseDeps.getOrDefault(id, Set.of()).size()))
                 .orElse(cluster.iterator().next());
     }

@@ -59,9 +59,13 @@ public class GooCommand {
             .then(Commands.literal("scaffold")
                 .requires(GooCommand::requiresOp)
                 .then(Commands.literal("fresh")
-                    .executes(GooCommand::scaffoldFresh))
+                    .executes(GooCommand::scaffoldFresh)
+                    .then(Commands.literal("bare")
+                        .executes(GooCommand::scaffoldFreshBare)))
                 .then(Commands.literal("missing")
-                    .executes(GooCommand::scaffoldMissing)))
+                    .executes(GooCommand::scaffoldMissing)
+                    .then(Commands.literal("bare")
+                        .executes(GooCommand::scaffoldMissingBare))))
             .then(Commands.literal("init")
                 .requires(GooCommand::requiresOp)
                 .executes(GooCommand::init))
@@ -192,6 +196,24 @@ public class GooCommand {
         ScaffoldGenerator.ScaffoldResult result =
                 Goo.GOO_VALUES.generateScaffoldFresh(ctx.getSource().getServer());
         return writeScaffoldAndReport(ctx, result, "fresh");
+    }
+
+    /** Fresh scaffold, bare mode: root keys only, no comments. */
+    private static int scaffoldFreshBare(CommandContext<CommandSourceStack> ctx) {
+        ScaffoldGenerator.ScaffoldResult result =
+                Goo.GOO_VALUES.generateScaffoldFresh(ctx.getSource().getServer(), true);
+        return writeScaffoldAndReport(ctx, result, "fresh bare");
+    }
+
+    /** Missing scaffold, bare mode: root keys only, no comments. */
+    private static int scaffoldMissingBare(CommandContext<CommandSourceStack> ctx) {
+        if (Goo.GOO_VALUES.derivedSize() == 0) {
+            ctx.getSource().sendFailure(
+                Component.literal("No cached recipes. Run /goo regen first, or use /goo scaffold fresh."));
+            return 0;
+        }
+        ScaffoldGenerator.ScaffoldResult result = Goo.GOO_VALUES.generateScaffoldMissing(true);
+        return writeScaffoldAndReport(ctx, result, "missing bare");
     }
 
     /** Generates scaffold from cached recipes, showing only still-missing roots. */
