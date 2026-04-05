@@ -71,7 +71,7 @@ public class ScaffoldGenerator {
         // Build value clusters: groups connected by homogenous recipes.
         // Valuing any one member propagates to the whole cluster.
         List<RecipeInput> homogenous = recipes.stream()
-                .filter(ScaffoldGenerator::isHomogenousInput)
+                .filter(r -> r.soleInputItem() != null)
                 .toList();
         Set<Identifier> eligible = new HashSet<>(allItems);
         eligible.removeAll(valued);
@@ -348,37 +348,13 @@ public class ScaffoldGenerator {
 
                 // Reverse: output valued + single homogenous input -> input valued
                 if (valued.contains(output)) {
-                    Identifier sole = soleInputItem(recipe);
+                    Identifier sole = recipe.soleInputItem();
                     if (sole != null && !denied.contains(sole) && valued.add(sole)) {
                         changed = true;
                     }
                 }
             }
         }
-    }
-
-    /**
-     * True if every ingredient slot is the same single item.
-     * Multi-variant slots (tag-based like "any planks") don't count because
-     * you can't reverse-derive a specific variant's value from the output.
-     */
-    private static boolean isHomogenousInput(RecipeInput recipe) {
-        return soleInputItem(recipe) != null;
-    }
-
-    /** Returns the single input item if all slots use the same one, null otherwise. */
-    private static Identifier soleInputItem(RecipeInput recipe) {
-        Identifier sole = null;
-        for (Set<Identifier> alts : recipe.ingredientAlternatives()) {
-            if (alts.size() != 1) return null;
-            Identifier item = alts.iterator().next();
-            if (sole == null) {
-                sole = item;
-            } else if (!sole.equals(item)) {
-                return null;
-            }
-        }
-        return sole;
     }
 
     /**
@@ -462,7 +438,7 @@ public class ScaffoldGenerator {
             membership.put(item, singleton);
         }
         for (RecipeInput recipe : homogenous) {
-            Identifier input = soleInputItem(recipe);
+            Identifier input = recipe.soleInputItem();
             Identifier output = recipe.output();
             if (input == null || input.equals(output)) continue;
             Set<Identifier> inputCluster = membership.get(input);
@@ -503,7 +479,7 @@ public class ScaffoldGenerator {
         while (changed) {
             changed = false;
             for (RecipeInput recipe : homogenous) {
-                Identifier input = soleInputItem(recipe);
+                Identifier input = recipe.soleInputItem();
                 Identifier output = recipe.output();
                 if (input == null || !cluster.contains(input) || !cluster.contains(output)) continue;
                 long inputFactor = factors.getOrDefault(input, 1L);

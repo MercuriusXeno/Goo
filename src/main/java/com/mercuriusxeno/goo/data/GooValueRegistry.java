@@ -301,7 +301,7 @@ public class GooValueRegistry implements IGooValueLookup {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             if (entry.getValue().isJsonObject()) {
                 treeConstants.put(entry.getKey(),
-                        GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants));
+                        GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants, null, treeConstants));
             } else {
                 // Try tree evaluation first (handles "9 $metal_nugget" where $metal_nugget is a tree).
                 // Fall back to scalar if the result is empty or the expression has no tree refs.
@@ -352,19 +352,78 @@ public class GooValueRegistry implements IGooValueLookup {
         }
     }
 
+    /** Pattern for parallel copy with optional scale: "#source * N / M" or just "#source". */
+    private static final java.util.regex.Pattern PARALLEL_COPY_PATTERN = java.util.regex.Pattern.compile(
+            "#(\\w+)(?:\\s*\\*\\s*(\\d+)\\s*/\\s*(\\d+))?\\s*");
+
     /** Expands a #name key against pseudo-tags, assigning the value to each member. */
     private void expandPseudoTag(String name, JsonElement value) {
-        // Try exact name first, then parse as Identifier and use path
+        Set<Identifier> targetMembers = resolvePseudoTag(name);
+        if (targetMembers == null || targetMembers.isEmpty()) {
+            Goo.LOGGER.warn("Pseudo-tag #{} resolved to no members, skipping", name);
+            return;
+        }
+
+        // Check for parallel copy: "#source * N / M"
+        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+            java.util.regex.Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
+            if (m.matches()) {
+                String sourceName = m.group(1);
+                int multiplier = m.group(2) != null ? Integer.parseInt(m.group(2)) : 1;
+                int divisor = m.group(3) != null ? Integer.parseInt(m.group(3)) : 1;
+                parallelCopyBaseValues(name, sourceName, targetMembers, multiplier, divisor);
+                return;
+            }
+        }
+
+        for (Identifier member : targetMembers) {
+            assignItemValue(member, value);
+        }
+    }
+
+    /** Resolves a pseudo-tag name to its members, trying exact then parsed path. */
+    private Set<Identifier> resolvePseudoTag(String name) {
         Set<Identifier> members = pseudoTags.get(name);
         if (members == null) {
             members = pseudoTags.get(Identifier.parse(name).getPath());
         }
-        if (members == null || members.isEmpty()) {
-            Goo.LOGGER.warn("Pseudo-tag #{} resolved to no members, skipping", name);
+        return members;
+    }
+
+    /** Parallel copy from source tag to target tag, with optional scale, during base value parsing. */
+    private void parallelCopyBaseValues(String targetName, String sourceName,
+                                         Set<Identifier> targetMembers,
+                                         int multiplier, int divisor) {
+        Set<Identifier> sourceMembers = resolvePseudoTag(sourceName);
+        if (sourceMembers == null || sourceMembers.isEmpty()) {
+            Goo.LOGGER.error("Parallel copy source #{} resolved to no members", sourceName);
             return;
         }
-        for (Identifier member : members) {
-            assignItemValue(member, value);
+        List<Identifier> targets = new ArrayList<>(targetMembers);
+        List<Identifier> sources = new ArrayList<>(sourceMembers);
+        if (targets.size() != sources.size()) {
+            Goo.LOGGER.error("Parallel copy size mismatch: #{} has {} items, #{} has {} items",
+                    targetName, targets.size(), sourceName, sources.size());
+            return;
+        }
+        for (int i = 0; i < targets.size(); i++) {
+            GooValue sourceVal = baseValues.get(sources.get(i));
+            if (sourceVal == null || sourceVal.isEmpty()) {
+                Goo.LOGGER.warn("Parallel copy: source {} has no value, skipping target {}",
+                        sources.get(i), targets.get(i));
+                continue;
+            }
+            try {
+                GooValue scaled = sourceVal.multiply(multiplier).divideExact(divisor);
+                if (scaled.hasNegative()) {
+                    Goo.LOGGER.error("Parallel copy produced negative for {}: {}", targets.get(i), scaled);
+                    continue;
+                }
+                baseValues.put(targets.get(i), scaled);
+            } catch (ArithmeticException e) {
+                Goo.LOGGER.error("Parallel copy scale failed for {} (from {}): {}",
+                        targets.get(i), sources.get(i), e.getMessage());
+            }
         }
     }
 
@@ -388,7 +447,7 @@ public class GooValueRegistry implements IGooValueLookup {
      */
     private GooValue resolveItemEntry(JsonElement value) {
         if (value.isJsonObject()) {
-            return GooValueJsonFormat.parseGooValue(value.getAsJsonObject(), constants, baseValues);
+            return GooValueJsonFormat.parseGooValue(value.getAsJsonObject(), constants, baseValues, treeConstants);
         }
         // String expression referencing other items
         return GooValueExpression.evaluate(value.getAsString().trim(), baseValues, constants, treeConstants);

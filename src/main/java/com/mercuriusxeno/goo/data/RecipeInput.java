@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,5 +58,29 @@ public record RecipeInput(
      */
     public boolean hasNoIngredients() {
         return ingredientAlternatives.isEmpty();
+    }
+
+    /** Number of ingredient slots in this recipe. */
+    public int slotCount() {
+        return ingredientAlternatives.size();
+    }
+
+    /**
+     * Returns the single input item if every ingredient slot accepts the same
+     * lone item, or null if slots are heterogeneous, multi-variant, or empty.
+     * Recipes satisfying this are eligible for reverse derivation.
+     */
+    public @Nullable Identifier soleInputItem() {
+        Identifier sole = null;
+        for (Set<Identifier> alts : ingredientAlternatives) {
+            if (alts.size() != 1) return null;
+            Identifier item = alts.iterator().next();
+            if (sole == null) {
+                sole = item;
+            } else if (!sole.equals(item)) {
+                return null;
+            }
+        }
+        return sole;
     }
 }

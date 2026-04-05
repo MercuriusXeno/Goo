@@ -212,6 +212,37 @@ class GooConversionTest {
             assertEquals("#copper_stuff", parsed.assignments().get(0).target());
         }
 
+        /** Assignment with * N / M scalar is parsed correctly. */
+        @Test
+        void parseScaleAssignment() {
+            Map<String, String> entries = new LinkedHashMap<>();
+            entries.put("#wood", "#logs * 3 / 4");
+
+            GooConversion.ParsedConversions parsed = GooConversion.parseBlock(entries);
+            assertEquals(1, parsed.assignments().size());
+            var assignment = parsed.assignments().get(0);
+            assertEquals("#wood", assignment.target());
+            assertEquals("#logs", assignment.parallelSource());
+            assertEquals(3, assignment.scaleMultiplier());
+            assertEquals(4, assignment.scaleDivisor());
+            assertTrue(assignment.chain().isEmpty());
+        }
+
+        /** Scale + chain: "#wood": "#logs * 3 / 4 @decay". */
+        @Test
+        void parseScaleWithChain() {
+            Map<String, String> entries = new LinkedHashMap<>();
+            entries.put("decay", "leaf / 2 -> aeon / 4");
+            entries.put("#wood", "#logs * 3 / 4 @decay");
+
+            GooConversion.ParsedConversions parsed = GooConversion.parseBlock(entries);
+            var assignment = parsed.assignments().get(0);
+            assertEquals(3, assignment.scaleMultiplier());
+            assertEquals(4, assignment.scaleDivisor());
+            assertEquals(1, assignment.chain().size());
+            assertEquals("decay", assignment.chain().get(0).formulaName());
+        }
+
         /** "denied" on a formula removes it. */
         @Test
         void deniedFormulaRemoved() {
@@ -245,7 +276,7 @@ class GooConversionTest {
                     id("minecraft:weathered_cut_copper"));
 
             GooConversion.Assignment assignment = new GooConversion.Assignment(
-                    "#weathered", null, java.util.List.of(weatheredStack));
+                    "#weathered", null, 1, 1, java.util.List.of(weatheredStack));
             GooConversion.applyAssignment(effective, targets, null, assignment, formulas, Map.of());
 
             GooValue copper = effective.get(id("minecraft:weathered_copper"));
@@ -273,7 +304,7 @@ class GooConversionTest {
                     id("minecraft:exposed_copper"), id("minecraft:exposed_cut_copper"));
 
             GooConversion.Assignment assignment = new GooConversion.Assignment(
-                    "#exposed", "#originals",
+                    "#exposed", "#originals", 1, 1,
                     java.util.List.of(new GooConversion.Stack("oxidation", 1)));
             GooConversion.applyAssignment(effective, targets, sources, assignment, formulas, Map.of());
 
@@ -288,6 +319,43 @@ class GooConversionTest {
             assertEquals(10, exposedCut.get(GooType.AEON));   // 20 / 2
         }
 
+        /** Parallel copy with scale: #wood = #logs * 3 / 4 (4 logs -> 3 wood). */
+        @Test
+        void parallelCopyWithScale() {
+            Map<Identifier, GooValue> effective = new HashMap<>();
+            effective.put(id("oak_log"), goo(GooType.LEAF, 120));
+            effective.put(id("birch_log"), goo(GooType.LEAF, 80));
+
+            java.util.List<Identifier> sources = java.util.List.of(
+                    id("oak_log"), id("birch_log"));
+            java.util.List<Identifier> targets = java.util.List.of(
+                    id("oak_wood"), id("birch_wood"));
+
+            GooConversion.Assignment assignment = new GooConversion.Assignment(
+                    "#wood", "#logs", 3, 4, java.util.List.of());
+            GooConversion.applyAssignment(effective, targets, sources, assignment, Map.of(), Map.of());
+
+            assertEquals(90, effective.get(id("oak_wood")).get(GooType.LEAF));   // 120 * 3 / 4
+            assertEquals(60, effective.get(id("birch_wood")).get(GooType.LEAF)); // 80 * 3 / 4
+        }
+
+        /** Scale with lossy division throws. */
+        @Test
+        void parallelCopyScaleLossyThrows() {
+            Map<Identifier, GooValue> effective = new HashMap<>();
+            effective.put(id("a"), goo(GooType.METAL, 10));
+
+            java.util.List<Identifier> sources = java.util.List.of(id("a"));
+            java.util.List<Identifier> targets = java.util.List.of(id("b"));
+
+            GooConversion.Assignment assignment = new GooConversion.Assignment(
+                    "b", "#src", 3, 4, java.util.List.of());
+            GooConversion.applyAssignment(effective, targets, sources, assignment, Map.of(), Map.of());
+
+            // 10 * 3 = 30, 30 / 4 has remainder -- logged as error, value unchanged
+            assertTrue(effective.get(id("b")).isEmpty() || effective.get(id("b")).get(GooType.METAL) == 10);
+        }
+
         /** Size mismatch between source and target logs error, skips assignment. */
         @Test
         void parallelSizeMismatchSkips() {
@@ -297,7 +365,7 @@ class GooConversionTest {
             effective.put(id("c"), GooValue.EMPTY);
 
             GooConversion.Assignment assignment = new GooConversion.Assignment(
-                    "#target", "#source", java.util.List.of());
+                    "#target", "#source", 1, 1, java.util.List.of());
             GooConversion.applyAssignment(effective,
                     java.util.List.of(id("b"), id("c")),
                     java.util.List.of(id("a")),

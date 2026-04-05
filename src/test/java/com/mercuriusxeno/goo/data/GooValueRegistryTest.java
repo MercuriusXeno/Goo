@@ -905,6 +905,58 @@ class GooValueRegistryTest {
             assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
         }
 
+        /** Parallel copy with scale: #wood = #logs * 3 / 4. */
+        @Test
+        void parallelCopyWithScaleInBaseValues() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": ["minecraft:oak_log", "minecraft:birch_log"],
+                        "wood": ["minecraft:oak_wood", "minecraft:birch_wood"]
+                    },
+                    "#logs": { "leaf": 480 },
+                    "#wood": "#logs * 3 / 4"
+                }
+                """);
+            assertEquals(360, registry.lookup(id("minecraft:oak_wood")).get(GooType.LEAF));
+            assertEquals(360, registry.lookup(id("minecraft:birch_wood")).get(GooType.LEAF));
+        }
+
+        /** Parallel copy without scale: #stripped_logs = #logs (identity copy). */
+        @Test
+        void parallelCopyWithoutScale() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": ["minecraft:oak_log", "minecraft:birch_log"],
+                        "stripped": ["minecraft:stripped_oak_log", "minecraft:stripped_birch_log"]
+                    },
+                    "#logs": { "leaf": 480 },
+                    "#stripped": "#logs"
+                }
+                """);
+            assertEquals(480, registry.lookup(id("minecraft:stripped_oak_log")).get(GooType.LEAF));
+            assertEquals(480, registry.lookup(id("minecraft:stripped_birch_log")).get(GooType.LEAF));
+        }
+
+        /** Parallel copy preserves multi-type values with scale. */
+        @Test
+        void parallelCopyMultiTypeWithScale() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "ingots": ["minecraft:iron_ingot"],
+                        "nuggets": ["minecraft:iron_nugget"]
+                    },
+                    "#ingots": { "metal": 1728, "rock": 432 },
+                    "#nuggets": "#ingots * 1 / 9"
+                }
+                """);
+            GooValue nugget = registry.lookup(id("minecraft:iron_nugget"));
+            assertEquals(192, nugget.get(GooType.METAL));  // 1728 / 9
+            assertEquals(48, nugget.get(GooType.ROCK));     // 432 / 9
+        }
+
         /** Unresolved pseudo-tag (no _groups entry, no MC tag) logs warning. */
         @Test
         void unresolvedPseudoTagSkipped() throws IOException {
@@ -1505,6 +1557,49 @@ class GooValueRegistryTest {
             assertEquals(136, val.get(GooType.METAL)); // 200 - 64
             assertEquals(32, val.get(GooType.AEON));   // 0 + 32
             assertEquals(50, val.get(GooType.ROCK));   // unchanged
+        }
+
+        /** Tree constant dot notation in item-level expression: produces single-type GooValue. */
+        @Test
+        void treeConstantDotInItemExpression() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:oak_wood": "$log.leaf * 3 / 4"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:oak_wood"));
+            assertNotNull(val);
+            assertEquals(360, val.get(GooType.LEAF)); // 480 * 3 / 4
+            assertEquals(1, val.typeCount()); // only leaf, not the full tree
+        }
+
+        /** Tree constant dot notation in per-type expression: resolves to scalar int. */
+        @Test
+        void treeConstantDotInPerTypeExpression() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:stem": { "leaf": "$log.leaf" }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:stem"));
+            assertNotNull(val);
+            assertEquals(480, val.get(GooType.LEAF));
+        }
+
+        /** Tree constant dot notation with arithmetic in per-type context. */
+        @Test
+        void treeConstantDotWithArithmeticPerType() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:oak_wood": { "leaf": "$log.leaf * 3 / 4" }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:oak_wood"));
+            assertNotNull(val);
+            assertEquals(360, val.get(GooType.LEAF));
         }
 
         /** Binary subtraction still works after unary minus support. */

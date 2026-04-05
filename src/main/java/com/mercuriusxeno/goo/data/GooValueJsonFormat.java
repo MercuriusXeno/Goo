@@ -55,11 +55,27 @@ class GooValueJsonFormat {
      */
     static GooValue parseGooValue(JsonObject json, Map<String, Integer> constants,
                                   Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+        return parseGooValue(json, constants, baseValues, Map.of());
+    }
+
+    /**
+     * Parses a goo value JSON object with item and tree constant dot-notation support.
+     * Per-type values can use {@code $tree.type} to extract a single type from a tree constant.
+     *
+     * @param json           JSON object whose keys are goo type names and values are ints or expressions
+     * @param constants      symbol table mapping constant names to integer values
+     * @param baseValues     item values for dot-notation lookups (may be null)
+     * @param treeConstants  tree constant symbol table for $name.type lookups
+     * @return parsed GooValue
+     */
+    static GooValue parseGooValue(JsonObject json, Map<String, Integer> constants,
+                                  Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                  Map<String, GooValue> treeConstants) {
         Map<GooType, Integer> map = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
             try {
                 GooType type = GooType.valueOf(entry.getKey().toUpperCase());
-                map.put(type, resolveValue(entry.getValue(), constants, baseValues));
+                map.put(type, resolveValue(entry.getValue(), constants, baseValues, treeConstants));
             } catch (IllegalArgumentException e) {
                 LOGGER.warn("Unknown goo type in values: {}", entry.getKey());
             }
@@ -92,15 +108,21 @@ class GooValueJsonFormat {
     // ── Private helpers ──────────────────────────────────────────────────
 
     private static int resolveValue(JsonElement element, Map<String, Integer> constants) {
-        return resolveValue(element, constants, null);
+        return resolveValue(element, constants, null, Map.of());
     }
 
     private static int resolveValue(JsonElement element, Map<String, Integer> constants,
                                     Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+        return resolveValue(element, constants, baseValues, Map.of());
+    }
+
+    private static int resolveValue(JsonElement element, Map<String, Integer> constants,
+                                    Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                    Map<String, GooValue> treeConstants) {
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
             return element.getAsInt();
         }
-        return resolveExpression(element.getAsString().trim(), constants, baseValues);
+        return resolveExpression(element.getAsString().trim(), constants, baseValues, treeConstants);
     }
 
     /**
@@ -108,10 +130,11 @@ class GooValueJsonFormat {
      * Tokenizes first, then recurses on parenthetical groups.
      */
     private static int resolveExpression(String expr, Map<String, Integer> constants,
-                                         Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                         Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                         Map<String, GooValue> treeConstants) {
         List<String> tokens = tokenize(expr);
         int[] pos = {0};
-        return evalExpr(tokens, pos, constants, baseValues);
+        return evalExpr(tokens, pos, constants, baseValues, treeConstants);
     }
 
     /**
@@ -134,7 +157,8 @@ class GooValueJsonFormat {
                 i++;
             } else if (c == '$') {
                 int start = i++;
-                while (i < expr.length() && isIdentChar(expr.charAt(i))) i++;
+                // Allow dots for type extraction: $log.leaf
+                while (i < expr.length() && (isIdentChar(expr.charAt(i)) || expr.charAt(i) == '.')) i++;
                 tokens.add(expr.substring(start, i));
             } else if (Character.isDigit(c)) {
                 int start = i++;
@@ -165,13 +189,14 @@ class GooValueJsonFormat {
     /** Additive level: handles + and -, delegates * and / to evalTerm. */
     private static int evalExpr(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
-        int result = evalTerm(tokens, pos, constants, baseValues);
+                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<String, GooValue> treeConstants) {
+        int result = evalTerm(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
             String op = tokens.get(pos[0]);
             if (!op.equals("+") && !op.equals("-")) break;
             pos[0]++;
-            int rhs = evalTerm(tokens, pos, constants, baseValues);
+            int rhs = evalTerm(tokens, pos, constants, baseValues, treeConstants);
             result = applyOperator(result, op, rhs);
         }
         return result;
@@ -180,17 +205,18 @@ class GooValueJsonFormat {
     /** Multiplicative level: * and /, plus implicit multiplication (e.g. "4 $base"). */
     private static int evalTerm(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
-        int result = evalAtom(tokens, pos, constants, baseValues);
+                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<String, GooValue> treeConstants) {
+        int result = evalAtom(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
             String next = tokens.get(pos[0]);
             if (next.equals("*") || next.equals("/")) {
                 pos[0]++;
-                int rhs = evalAtom(tokens, pos, constants, baseValues);
+                int rhs = evalAtom(tokens, pos, constants, baseValues, treeConstants);
                 result = applyOperator(result, next, rhs);
             } else if (isAtomStart(next)) {
                 // Implicit multiplication: "4 $base" == "4 * $base"
-                int rhs = evalAtom(tokens, pos, constants, baseValues);
+                int rhs = evalAtom(tokens, pos, constants, baseValues, treeConstants);
                 result = applyOperator(result, "*", rhs);
             } else {
                 break;
@@ -208,14 +234,15 @@ class GooValueJsonFormat {
     /** Reads one atom: unary minus, parenthesized sub-expression, $constant, int literal, or item.type ref. */
     private static int evalAtom(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<String, GooValue> treeConstants) {
         if (pos[0] < tokens.size() && tokens.get(pos[0]).equals("-")) {
             pos[0]++;
-            return -evalAtom(tokens, pos, constants, baseValues);
+            return -evalAtom(tokens, pos, constants, baseValues, treeConstants);
         }
         String token = tokens.get(pos[0]++);
         if (token.equals("(")) {
-            int result = evalExpr(tokens, pos, constants, baseValues);
+            int result = evalExpr(tokens, pos, constants, baseValues, treeConstants);
             if (pos[0] < tokens.size() && tokens.get(pos[0]).equals(")")) {
                 pos[0]++;
             } else {
@@ -223,17 +250,34 @@ class GooValueJsonFormat {
             }
             return result;
         }
-        return resolveOperand(token, constants, baseValues);
+        return resolveOperand(token, constants, baseValues, treeConstants);
     }
 
     /**
-     * Resolves a single operand token: $constant, integer literal, or
-     * dot-notation item reference (e.g. minecraft:coal.blaze).
+     * Resolves a single operand token: $constant (with optional .type for tree extraction),
+     * integer literal, or dot-notation item reference (e.g. minecraft:coal.blaze).
      */
     private static int resolveOperand(String token, Map<String, Integer> constants,
-                                      Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                      Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                      Map<String, GooValue> treeConstants) {
         if (token.startsWith("$")) {
-            return lookupConstant(token.substring(1), constants);
+            String name = token.substring(1);
+            // Try tree constant dot extraction: $log.leaf -> scalar int
+            int dotIdx = name.lastIndexOf('.');
+            if (dotIdx > 0 && dotIdx < name.length() - 1) {
+                String constName = name.substring(0, dotIdx);
+                String typeSuffix = name.substring(dotIdx + 1);
+                GooValue tree = treeConstants.get(constName);
+                if (tree != null) {
+                    try {
+                        GooType type = GooType.valueOf(typeSuffix.toUpperCase());
+                        return tree.get(type);
+                    } catch (IllegalArgumentException ignored) {
+                        // Not a valid GooType, fall through
+                    }
+                }
+            }
+            return lookupConstant(name, constants);
         }
         if (Character.isDigit(token.charAt(0))) {
             return Integer.parseInt(token);

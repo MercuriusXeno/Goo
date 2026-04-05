@@ -125,6 +125,39 @@ public class GooValue {
     }
 
     /**
+     * Multiplies all type amounts by a factor. Symmetric to {@link #divide(int)}.
+     */
+    public GooValue multiply(int factor) {
+        if (factor <= 0) return EMPTY;
+        if (factor == 1) return this;
+        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
+        values.forEach((type, amount) -> result.put(type, amount * factor));
+        return new GooValue(result);
+    }
+
+    /**
+     * Divides all type amounts by divisor, throwing if any type has a remainder.
+     *
+     * @throws ArithmeticException if any type's amount is not evenly divisible
+     */
+    public GooValue divideExact(int divisor) {
+        if (divisor <= 1) return this;
+        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
+        values.forEach((type, amount) -> {
+            if (amount % divisor != 0) {
+                throw new ArithmeticException(
+                        "Lossy reverse division: " + type.getId() + "=" + amount
+                        + " / " + divisor + " (remainder " + amount % divisor + ")");
+            }
+            int divided = amount / divisor;
+            if (divided > 0) {
+                result.put(type, divided);
+            }
+        });
+        return new GooValue(result);
+    }
+
+    /**
      * Divides all values by divisor (integer division, floors).
      */
     public GooValue divide(int divisor) {

@@ -196,6 +196,63 @@ class GooValueTest {
         assertEquals(-5, result.get(GooType.CRYSTAL));
     }
 
+    // ── multiply ────────────────────────────────────────────────────────
+
+    /** Multiplying scales all types. */
+    @Test
+    void multiplyScalesAllTypes() {
+        GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 6);
+        GooValue result = val.multiply(3);
+        assertEquals(30, result.get(GooType.METAL));
+        assertEquals(18, result.get(GooType.CRYSTAL));
+    }
+
+    /** Multiplying by 1 returns the same instance. */
+    @Test
+    void multiplyByOneReturnsSame() {
+        GooValue val = goo(GooType.BLAZE, 15);
+        assertSame(val, val.multiply(1));
+    }
+
+    /** Multiplying by 0 returns EMPTY. */
+    @Test
+    void multiplyByZeroReturnsEmpty() {
+        GooValue val = goo(GooType.VITAL, 100);
+        assertTrue(val.multiply(0).isEmpty());
+    }
+
+    /** Multiplying by negative returns EMPTY. */
+    @Test
+    void multiplyByNegativeReturnsEmpty() {
+        GooValue val = goo(GooType.LEAF, 42);
+        assertTrue(val.multiply(-1).isEmpty());
+    }
+
+    // ── divideExact ──────────────────────────────────────────────────────
+
+    /** Exact division with clean divisor succeeds. */
+    @Test
+    void divideExactClean() {
+        GooValue val = goo(GooType.METAL, 18, GooType.CRYSTAL, 9);
+        GooValue result = val.divideExact(9);
+        assertEquals(2, result.get(GooType.METAL));
+        assertEquals(1, result.get(GooType.CRYSTAL));
+    }
+
+    /** Exact division with remainder throws ArithmeticException. */
+    @Test
+    void divideExactLossyThrows() {
+        GooValue val = goo(GooType.METAL, 10);
+        assertThrows(ArithmeticException.class, () -> val.divideExact(3));
+    }
+
+    /** Exact division by 1 returns same instance. */
+    @Test
+    void divideExactByOneReturnsSame() {
+        GooValue val = goo(GooType.BLAZE, 15);
+        assertSame(val, val.divideExact(1));
+    }
+
     // ── divide ──────────────────────────────────────────────────────────
 
     /** Dividing evenly produces exact result. */

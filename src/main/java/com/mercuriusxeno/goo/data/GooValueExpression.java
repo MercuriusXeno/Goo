@@ -100,7 +100,8 @@ final class GooValueExpression {
                 i++;
             } else if (c == '$') {
                 int start = i++;
-                while (i < expr.length() && isIdentChar(expr.charAt(i))) i++;
+                // Allow dots for type extraction: $log.leaf
+                while (i < expr.length() && (isIdentChar(expr.charAt(i)) || expr.charAt(i) == '.')) i++;
                 tokens.add(expr.substring(start, i));
             } else if (Character.isDigit(c)) {
                 int start = i++;
@@ -205,10 +206,29 @@ final class GooValueExpression {
         return resolveItemRef(token, baseValues);
     }
 
-    /** Checks tree constants first, then falls back to scalar constants. */
+    /**
+     * Checks tree constants first, then falls back to scalar constants.
+     * Supports dot notation: $log.leaf extracts a single type as a GooValue.
+     * At item level, this preserves the type identity (e.g. {leaf: 480}).
+     */
     private static ExprVal lookupAnyConstant(String name,
                                              Map<String, Integer> constants,
                                              Map<String, GooValue> treeConstants) {
+        // Dot extraction on tree constant: $log.leaf -> single-type GooValue {leaf: N}
+        int dotIdx = name.lastIndexOf('.');
+        if (dotIdx > 0 && dotIdx < name.length() - 1) {
+            String constName = name.substring(0, dotIdx);
+            String typeSuffix = name.substring(dotIdx + 1);
+            GooValue tree = treeConstants.get(constName);
+            if (tree != null) {
+                try {
+                    GooType type = GooType.valueOf(typeSuffix.toUpperCase());
+                    return new GooVal(new GooValue(Map.of(type, tree.get(type))));
+                } catch (IllegalArgumentException ignored) {
+                    // Not a valid GooType, fall through to full name lookup
+                }
+            }
+        }
         GooValue tree = treeConstants.get(name);
         if (tree != null) {
             return new GooVal(tree);

@@ -31,13 +31,17 @@ public final class GooConversion {
 
     /**
      * An item or tag assignment: optionally copy values from a parallel source tag,
-     * then apply a chain of conversion stacks in order.
+     * scale by a fraction, then apply a chain of conversion stacks in order.
      *
-     * @param target        the target item ID or #tag
-     * @param parallelSource if non-null, a #tag to copy values from (parallel arrays)
-     * @param chain         conversion stacks to apply in order after the copy
+     * @param target          the target item ID or #tag
+     * @param parallelSource  if non-null, a #tag to copy values from (parallel arrays)
+     * @param scaleMultiplier numerator for post-copy scaling (1 = no scaling)
+     * @param scaleDivisor    denominator for post-copy scaling (1 = no scaling, exact division)
+     * @param chain           conversion stacks to apply in order after copy + scale
      */
-    public record Assignment(String target, String parallelSource, java.util.List<Stack> chain) {}
+    public record Assignment(String target, String parallelSource,
+                             int scaleMultiplier, int scaleDivisor,
+                             java.util.List<Stack> chain) {}
 
     /** Result of parsing a _conversions block. */
     public record ParsedConversions(
@@ -152,18 +156,35 @@ public final class GooConversion {
         return key.startsWith("#") || key.contains(":");
     }
 
+    /** Pattern for scalar fraction: "* N / M" after a parallel source. */
+    private static final Pattern SCALE_PATTERN = Pattern.compile(
+            "\\*\\s*(\\d+)\\s*/\\s*(\\d+)");
+
     /**
      * Parses an assignment value: optional #source for parallel copy,
-     * then space-delimited @conversion chain.
-     * Examples: "@exposed", "#copper_originals @exposed", "#originals @exposed @weathered"
+     * optional * N / M scalar, then space-delimited @conversion chain.
+     * Examples: "@exposed", "#copper @exposed", "#logs * 4 / 3", "#logs * 4 / 3 @decay"
      */
     private static Assignment parseAssignment(String target, String value,
                                                Map<String, Stack> stacks) {
-        String[] parts = value.trim().split("\\s+");
         String parallelSource = null;
+        int scaleMultiplier = 1;
+        int scaleDivisor = 1;
         java.util.List<Stack> chain = new java.util.ArrayList<>();
 
+        // Check for scalar fraction and extract it before splitting
+        String remaining = value.trim();
+        Matcher scaleMatcher = SCALE_PATTERN.matcher(remaining);
+        if (scaleMatcher.find()) {
+            scaleMultiplier = Integer.parseInt(scaleMatcher.group(1));
+            scaleDivisor = Integer.parseInt(scaleMatcher.group(2));
+            remaining = remaining.substring(0, scaleMatcher.start()).trim()
+                    + " " + remaining.substring(scaleMatcher.end()).trim();
+        }
+
+        String[] parts = remaining.trim().split("\\s+");
         for (String part : parts) {
+            if (part.isEmpty()) continue;
             if (part.startsWith("#")) {
                 parallelSource = part;
             } else if (part.contains("@")) {
@@ -172,7 +193,7 @@ public final class GooConversion {
                 LOGGER.warn("Unexpected token in conversion assignment: {}", part);
             }
         }
-        return new Assignment(target, parallelSource, chain);
+        return new Assignment(target, parallelSource, scaleMultiplier, scaleDivisor, chain);
     }
 
     /** Resolves a @ref expression against known stacks. */
@@ -265,6 +286,23 @@ public final class GooConversion {
                 GooValue sourceVal = effectiveValues.get(sourceItems.get(i));
                 if (sourceVal != null && !sourceVal.isEmpty()) {
                     effectiveValues.put(targetItems.get(i), sourceVal);
+                }
+            }
+        }
+
+        // Scale phase: multiply then exact divide (e.g. * 4 / 3 for 4 logs -> 3 wood)
+        if (assignment.scaleMultiplier() != 1 || assignment.scaleDivisor() != 1) {
+            for (Identifier itemId : targetItems) {
+                GooValue current = effectiveValues.get(itemId);
+                if (current == null || current.isEmpty()) continue;
+                try {
+                    GooValue scaled = current.multiply(assignment.scaleMultiplier())
+                            .divideExact(assignment.scaleDivisor());
+                    effectiveValues.put(itemId, scaled);
+                } catch (ArithmeticException e) {
+                    LOGGER.error("Scale failed for {} (* {} / {}): {}",
+                            itemId, assignment.scaleMultiplier(), assignment.scaleDivisor(),
+                            e.getMessage());
                 }
             }
         }
