@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.resources.Identifier;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -51,7 +51,12 @@ public class GasketRegistry extends SavedData {
         this(new HashMap<>(), new HashMap<>());
     }
 
-    /** Creates a registry from deserialized data, rebuilding the inverse index. */
+    /**
+     * Creates a registry from deserialized data, rebuilding the inverse index.
+     *
+     * @param pairings output-to-input gasket UUID pairs
+     * @param locations gasket UUID to world location cache
+     */
     public GasketRegistry(Map<UUID, UUID> pairings, Map<UUID, GasketLocation> locations) {
         this.pairings = new HashMap<>(pairings);
         this.reversePairings = new HashMap<>();
@@ -62,6 +67,9 @@ public class GasketRegistry extends SavedData {
     /**
      * Retrieves the singleton GasketRegistry for the server.
      * Always stored in the overworld's data storage.
+     *
+     * @param level any server level (overworld is used internally)
+     * @return the server-wide gasket registry
      */
     public static GasketRegistry get(ServerLevel level) {
         ServerLevel overworld = level.getServer().overworld();
@@ -71,6 +79,9 @@ public class GasketRegistry extends SavedData {
     /**
      * Links an output gasket to an input gasket. Replaces any existing pairing
      * for either gasket (each gasket can only participate in one link).
+     *
+     * @param outputGasket the source (output) gasket UUID
+     * @param inputGasket the destination (input) gasket UUID
      */
     public void link(UUID outputGasket, UUID inputGasket) {
         unlink(outputGasket);
@@ -82,28 +93,56 @@ public class GasketRegistry extends SavedData {
 
     /**
      * Removes any pairing involving the given gasket, whether as source or target.
+     *
+     * @param gasketId the gasket UUID to unlink
      */
     public void unlink(UUID gasketId) {
-        boolean changed = false;
+        boolean changed = unlinkForward(gasketId);
+        changed |= unlinkReverse(gasketId);
+        if (changed) { setDirty(); }
+    }
+
+    /** Removes the forward pairing (gasketId as source) and its reverse entry.
+     *
+     * @param gasketId the gasket UUID
+     * @return true if a forward pairing was removed
+     */
+    private boolean unlinkForward(UUID gasketId) {
         UUID removedInput = pairings.remove(gasketId);
         if (removedInput != null) {
             reversePairings.remove(removedInput);
-            changed = true;
+            return true;
         }
-        UUID sourceKey = reversePairings.remove(gasketId);
-        if (sourceKey != null && pairings.remove(sourceKey) != null) {
-            changed = true;
-        }
-        if (changed) setDirty();
+        return false;
     }
 
-    /** Returns the input gasket UUID paired to the given output, or null. */
+    /** Removes the reverse pairing (gasketId as target) and its forward entry.
+     *
+     * @param gasketId the gasket UUID
+     * @return true if a reverse pairing was removed
+     */
+    private boolean unlinkReverse(UUID gasketId) {
+        UUID sourceKey = reversePairings.remove(gasketId);
+        return sourceKey != null && pairings.remove(sourceKey) != null;
+    }
+
+    /**
+     * Returns the input gasket UUID paired to the given output, or null.
+     *
+     * @param outputGasket the output gasket to look up
+     * @return the paired input gasket UUID, or null if unpaired
+     */
     @Nullable
     public UUID getTarget(UUID outputGasket) {
         return pairings.get(outputGasket);
     }
 
-    /** Returns the output gasket UUID feeding into the given input, or null. */
+    /**
+     * Returns the output gasket UUID feeding into the given input, or null.
+     *
+     * @param inputGasket the input gasket to look up
+     * @return the paired output gasket UUID, or null if unpaired
+     */
     @Nullable
     public UUID getSource(UUID inputGasket) {
         return reversePairings.get(inputGasket);
@@ -112,6 +151,9 @@ public class GasketRegistry extends SavedData {
     /**
      * Updates the cached world location for a gasket.
      * Pass null to indicate the gasket is displaced (in item form).
+     *
+     * @param gasketId the gasket UUID to update
+     * @param location the new location, or null if displaced
      */
     public void updateLocation(UUID gasketId, @Nullable GasketLocation location) {
         if (location == null) {
@@ -122,23 +164,40 @@ public class GasketRegistry extends SavedData {
         setDirty();
     }
 
-    /** Returns the cached location for a gasket, or null if displaced. */
+    /**
+     * Returns the cached location for a gasket, or null if displaced.
+     *
+     * @param gasketId the gasket UUID to look up
+     * @return the cached location, or null
+     */
     @Nullable
     public GasketLocation getLocation(UUID gasketId) {
         return locations.get(gasketId);
     }
 
-    /** Returns an unmodifiable view of all pairings (output -> input). */
+    /**
+     * Returns an unmodifiable view of all pairings (output -> input).
+     *
+     * @return immutable copy of the pairings map
+     */
     public Map<UUID, UUID> getPairings() {
         return Map.copyOf(pairings);
     }
 
-    /** Returns an unmodifiable view of all locations. */
+    /**
+     * Returns an unmodifiable view of all locations.
+     *
+     * @return immutable copy of the locations map
+     */
     public Map<UUID, GasketLocation> getLocations() {
         return Map.copyOf(locations);
     }
 
-    /** Returns an unmodifiable view of all reverse pairings (input -> output). */
+    /**
+     * Returns an unmodifiable view of all reverse pairings (input -> output).
+     *
+     * @return immutable copy of the reverse pairings map
+     */
     public Map<UUID, UUID> getReversePairings() {
         return Map.copyOf(reversePairings);
     }

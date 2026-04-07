@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
+import java.util.Locale;
 
 /**
  * Omniblob: a single-type, uncapped-capacity goo container for volumes that
@@ -21,6 +22,11 @@ import org.jspecify.annotations.NonNull;
  * via click mechanics.</p>
  */
 public class GooOmniblobItem extends Item implements IGooItemInteraction {
+
+    /** Separator between type name and tier in display name. */
+    private static final String NAME_SEPARATOR = " ";
+    /** Divisor for splitting omniblob volume in half. */
+    private static final long HALF_DIVISOR = 2;
 
     private final GooType gooType;
 
@@ -35,7 +41,11 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         this.gooType = gooType;
     }
 
-    /** Returns the goo type this omniblob carries. */
+    /**
+     * Returns the goo type this omniblob carries.
+     *
+     * @return the goo type
+     */
     public GooType getGooType() {
         return gooType;
     }
@@ -74,13 +84,19 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         return stack;
     }
 
+    /**
+     * Returns the display name as "[Type] [Tier]" based on stored volume.
+     *
+     * @param stack the item stack
+     * @return the display name component
+     */
     @Override
     public @NonNull Component getName(@NonNull ItemStack stack) {
         long volume = getVolume(stack);
         String tierName = BlobTiers.computeTierName(volume);
-        String typeName = gooType.getId().substring(0, 1).toUpperCase()
+        String typeName = gooType.getId().substring(0, 1).toUpperCase(Locale.ROOT)
             + gooType.getId().substring(1);
-        return Component.literal(typeName + " " + tierName);
+        return Component.literal(typeName + NAME_SEPARATOR + tierName);
     }
 
     // -- Cursor interactions --
@@ -90,6 +106,12 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * Right-click on empty slot: place ONE blob (1,000 mB).
      * Left-click on same-type blob: absorb entire blob stack into omniblob.
      * Right-click on same-type blob: absorb 1 blob into omniblob.
+     *
+     * @param omniblob the omniblob on the cursor
+     * @param slot     the target inventory slot
+     * @param action   the click action
+     * @param player   the interacting player
+     * @return true if the interaction was handled
      */
     @Override
     public boolean overrideStackedOnOther(@NonNull ItemStack omniblob, @NonNull Slot slot,
@@ -100,11 +122,11 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
             return handleAbsorbFromSlot(omniblob, target, slot, action, player);
         }
 
-        if (action != ClickAction.SECONDARY) return false;
-        if (!target.isEmpty()) return false;
+        if (action != ClickAction.SECONDARY) { return false; }
+        if (!target.isEmpty()) { return false; }
 
         long volume = getVolume(omniblob);
-        if (volume < BlobStacks.MB_PER_BLOB) return false;
+        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
 
         long placed = BlobStacks.MB_PER_BLOB;
         long remaining = volume - placed;
@@ -125,17 +147,24 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * Omniblob cursor onto same-type blob stack in slot.
      * Left-click: merge everything into one omniblob in the slot, cursor clears.
      * Right-click: place 1 blob from omniblob into the stack (grow stack by 1).
+     *
+     * @param omniblob the omniblob on the cursor
+     * @param target   the blob stack in the slot
+     * @param slot     the target inventory slot
+     * @param action   the click action
+     * @param player   the interacting player
+     * @return true if the interaction was handled
      */
     private boolean handleAbsorbFromSlot(ItemStack omniblob, ItemStack target, Slot slot,
             ClickAction action, Player player) {
         if (action == ClickAction.PRIMARY) {
             long omniVol = getVolume(omniblob);
-            long targetVol = (long) target.getCount() * BlobStacks.MB_PER_BLOB;
+            long targetVol = target.getCount() * BlobStacks.MB_PER_BLOB;
             slot.set(BlobStacks.createForOutput(gooType, omniVol + targetVol));
             player.containerMenu.setCarried(ItemStack.EMPTY);
         } else {
             long volume = getVolume(omniblob);
-            if (volume < BlobStacks.MB_PER_BLOB) return false;
+            if (volume < BlobStacks.MB_PER_BLOB) { return false; }
 
             target.grow(1);
             long remaining = volume - BlobStacks.MB_PER_BLOB;
@@ -156,6 +185,14 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * Right-click + blob stack: absorb 1 (shift: all).
      * Left/right-click + same-type omniblob: combine into slot omniblob.
      * Right-click + empty cursor: split volume in half.
+     *
+     * @param omniblob    the omniblob in the slot
+     * @param cursor      the item stack on the cursor
+     * @param slot        the inventory slot
+     * @param action      the click action
+     * @param player      the interacting player
+     * @param cursorAccess access to set the cursor contents
+     * @return true if the interaction was handled
      */
     @Override
     public boolean overrideOtherStackedOnMe(@NonNull ItemStack omniblob, @NonNull ItemStack cursor,
@@ -181,10 +218,15 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * Splits the omniblob in half. One half goes to the cursor, the other stays
      * in the slot. Each half follows the output rule (blob stack if clean, omniblob otherwise).
      * Sub-blob remainder case (volume < 1000) gives the whole omniblob to the cursor.
+     *
+     * @param omniblob    the omniblob in the slot
+     * @param slot        the inventory slot
+     * @param cursorAccess access to set the cursor contents
+     * @return true if the extraction was performed
      */
     private boolean handleEmptyCursorExtract(ItemStack omniblob, Slot slot, SlotAccess cursorAccess) {
         long volume = getVolume(omniblob);
-        if (volume <= 0) return false;
+        if (volume <= 0) { return false; }
 
         long wholeBlobs = BlobStacks.wholeBlobs(volume);
         if (wholeBlobs <= 0) {
@@ -193,7 +235,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
             return true;
         }
 
-        long half = volume / 2;
+        long half = volume / HALF_DIVISOR;
         long other = volume - half;
 
         cursorAccess.set(BlobStacks.createForOutput(gooType, half));
@@ -211,6 +253,11 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     /**
      * Combines a cursor omniblob of the same type into the slot omniblob.
      * The cursor omniblob's volume is added to the slot omniblob, and the cursor is cleared.
+     *
+     * @param slotOmniblob   the omniblob in the slot
+     * @param cursorOmniblob the omniblob on the cursor
+     * @param cursorAccess   access to set the cursor contents
+     * @return true always (combination performed)
      */
     private boolean handleOmniblobCombine(ItemStack slotOmniblob, ItemStack cursorOmniblob,
             SlotAccess cursorAccess) {
@@ -221,7 +268,16 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         return true;
     }
 
-    /** Absorbs blob stack into the omniblob. */
+    /**
+     * Absorbs blob stack into the omniblob.
+     *
+     * @param omniblob    the omniblob in the slot
+     * @param cursor      the blob stack on the cursor
+     * @param action      the click action
+     * @param cursorAccess access to set the cursor contents
+     * @param player      the interacting player
+     * @return true always (absorption performed)
+     */
     private boolean handleBlobAbsorb(ItemStack omniblob, ItemStack cursor,
             ClickAction action, SlotAccess cursorAccess, Player player) {
         int absorbCount;
@@ -231,7 +287,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
             absorbCount = player.isShiftKeyDown() ? cursor.getCount() : 1;
         }
 
-        long absorbVolume = (long) absorbCount * BlobStacks.MB_PER_BLOB;
+        long absorbVolume = absorbCount * BlobStacks.MB_PER_BLOB;
         long currentVolume = getVolume(omniblob);
         setVolume(omniblob, currentVolume + absorbVolume);
 
@@ -242,7 +298,11 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         return true;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Returns BLOB_INSERT so canister blocks route to blob pour logic.
+     *
+     * @return the blob insert interaction type
+     */
     @Override
     public GooInteractionType canisterInteraction() {
         return GooInteractionType.BLOB_INSERT;

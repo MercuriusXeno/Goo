@@ -9,6 +9,8 @@ public interface IGooItemInteraction {
 
     /**
      * Returns the interaction type this item performs when used on a canister block.
+     *
+     * @return the goo interaction type
      */
     GooInteractionType canisterInteraction();
 }

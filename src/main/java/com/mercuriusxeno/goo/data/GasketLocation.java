@@ -22,6 +22,12 @@ import java.util.UUID;
  *
  * <p>For entity targets (e.g. player inventory), entityId is non-null and
  * pos becomes a stale hint for display purposes only.</p>
+ *
+ * @param dimension the dimension resource key
+ * @param pos       the block position (or stale hint for entity targets)
+ * @param isTop     true for input/cap gasket, false for output/base
+ * @param slot      the sub-slot index (0-8 for canisters, 0 for single-gasket)
+ * @param entityId  the entity UUID for entity targets, or null
  */
 public record GasketLocation(
         ResourceKey<Level> dimension,
@@ -29,16 +35,6 @@ public record GasketLocation(
         boolean isTop,
         int slot,
         @Nullable UUID entityId) {
-
-    /** Convenience constructor for block targets (no entity). */
-    public GasketLocation(ResourceKey<Level> dimension, BlockPos pos, boolean isTop, int slot) {
-        this(dimension, pos, isTop, slot, null);
-    }
-
-    /** Returns true if this location targets an entity rather than a block. */
-    public boolean isEntityTarget() {
-        return entityId != null;
-    }
 
     /** Codec for persistent serialization. Slot and entityId are optional for backward compat. */
     public static final Codec<GasketLocation> CODEC = RecordCodecBuilder.create(instance ->
@@ -53,4 +49,25 @@ public record GasketLocation(
         ).apply(instance, (dim, pos, isTop, slot, entityOpt) ->
             new GasketLocation(dim, pos, isTop, slot, entityOpt.orElse(null)))
     );
+
+    /**
+     * Convenience constructor for block targets (no entity).
+     *
+     * @param dimension the world dimension
+     * @param pos the block position
+     * @param isTop true if this is the top (input) gasket
+     * @param slot sub-canister index within a 3x3 grid (0 for single blocks)
+     */
+    public GasketLocation(ResourceKey<Level> dimension, BlockPos pos, boolean isTop, int slot) {
+        this(dimension, pos, isTop, slot, null);
+    }
+
+    /**
+     * Returns true if this location targets an entity rather than a block.
+     *
+     * @return true if entityId is non-null
+     */
+    public boolean isEntityTarget() {
+        return entityId != null;
+    }
 }

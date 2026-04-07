@@ -10,13 +10,20 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public final class BlobFlightHandler {
 
+    /** Log message for received flight payloads. */
+    private static final String LOG_FLIGHT_RECEIVED = "Flight received: {} -> target in {} ticks";
+
     private BlobFlightHandler() {}
 
-    /** Handles the flight payload on the client render thread. */
+    /**
+     * Handles the flight payload on the client render thread.
+     *
+     * @param payload the flight payload data
+     * @param context the network context
+     */
     public static void handle(BlobFlightPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            Goo.LOGGER.debug("Flight received: {} -> target in {} ticks",
-                    payload.gooTypeId(), payload.travelTicks());
+            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_FLIGHT_RECEIVED, payload.gooTypeId(), payload.travelTicks()); }
             BlobFlightManager.addFlight(payload);
         });
     }

@@ -54,6 +54,11 @@ public class CrucibleBlockEntityRenderer
     /** Basin bottom Y (where chains anchor at the top). */
     private static final float BASIN_Y = 9f / 16f;
 
+    // -- Blaze Rod --
+
+    /** Full rod height when platform is at floor level. */
+    private static final float ROD_FULL_HEIGHT = BASIN_Y - PLAT_THICKNESS;
+
     /** Chain half-width in block coords (3/8 pixel: quarter of 3px texture strip). */
     private static final float CHAIN_HW = 0.375f / 16f;
     /** Chain tile height in block coords (4px: quarter of 16px texture height). */
@@ -136,7 +141,11 @@ public class CrucibleBlockEntityRenderer
     /** V coordinate for the bottom of rod side textures. */
     private static final float ROD_V_BOTTOM = UV_8;
 
-    /** Creates a crucible BER. Context is unused. */
+    /**
+     * Creates a crucible BER. Context is unused.
+     *
+     * @param context the renderer provider context
+     */
     public CrucibleBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         // No resources needed from context
     }
@@ -181,6 +190,9 @@ public class CrucibleBlockEntityRenderer
     /**
      * Linearly interpolates between prevPlatformY and platformY using partialTick.
      * Standard Minecraft sub-tick interpolation: prev + (current - prev) * partialTick.
+     *
+     * @param state the block state
+     * @return the interpolated value
      */
     private static float lerpPlatformY(CrucibleRenderState state) {
         return state.prevPlatformY
@@ -189,11 +201,17 @@ public class CrucibleBlockEntityRenderer
 
     // -- Liquid level --
 
-    /** Submits the liquid surface quad(s). Renders two during crossfade for smooth blending. */
+    /**
+     * Submits the liquid surface quad(s). Renders two during crossfade for smooth blending.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitLiquidLevel(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CrucibleRenderState state) {
         long totalGoo = state.poolVolume + state.reservoirVolume;
-        if (totalGoo <= 0 || state.dominantType == null) return;
+        if (totalGoo <= 0 || state.dominantType == null) { return; }
 
         float fillFraction = computeLogFill(totalGoo, LIQUID_LOG_CAP);
         float surfaceY = LIQUID_MIN_Y + fillFraction * (LIQUID_MAX_Y - LIQUID_MIN_Y);
@@ -211,7 +229,16 @@ public class CrucibleBlockEntityRenderer
         }
     }
 
-    /** Submits a single liquid surface quad for one goo type at the given alpha. */
+    /**
+     * Submits a single liquid surface quad for one goo type at the given alpha.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param type the goo type
+     * @param surfaceY the surface Y height
+     * @param light the packed light value
+     * @param alpha the alpha transparency [0, 1]
+     */
     private static void submitLiquidQuad(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, GooType type,
             float surfaceY, int light, float alpha) {
@@ -232,17 +259,27 @@ public class CrucibleBlockEntityRenderer
     /**
      * Computes a logarithmic fill fraction in [0, 1] from volume and cap.
      * Front-loaded: small volumes fill quickly, large volumes approach 1 slowly.
+     *
+     * @param volume the volume in microblobs
+     * @param cap the log curve saturation cap
+     * @return the computed logFill
      */
     static float computeLogFill(long volume, long cap) {
-        if (volume <= 0) return 0f;
-        if (volume >= cap) return 1f;
+        if (volume <= 0) { return 0f; }
+        if (volume >= cap) { return 1f; }
         return (float) (Math.log(1.0 + volume) / Math.log(1.0 + cap));
     }
 
-
     // -- Platform --
 
-    /** Submits the 4x1x4 platform box at the given Y position. */
+    /**
+     * Submits the 4x1x4 platform box at the given Y position.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param bottomY the bottom Y position
+     * @param light the packed light value
+     */
     private static void submitPlatform(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, float bottomY, int light) {
         float topY = bottomY + PLAT_THICKNESS;
@@ -255,7 +292,19 @@ public class CrucibleBlockEntityRenderer
         );
     }
 
-    /** Renders the platform box: 6 faces with UV rects from the sprite sheet. */
+    /**
+     * Renders the platform box: 6 faces with UV rects from the sprite sheet.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param x0 the minimum X bound
+     * @param y0 the minimum Y bound
+     * @param z0 the minimum Z bound
+     * @param x1 the maximum X bound
+     * @param y1 the maximum Y bound
+     * @param z1 the maximum Z bound
+     */
     private static void renderPlatformBox(PoseStack.Pose pose, VertexConsumer c,
             int light, float x0, float y0, float z0, float x1, float y1, float z1) {
         GooRenderUtil.faceY(pose, c, light, x0, x1, y1, z0, z1, PLAT_UV_TOP, 1f);
@@ -268,12 +317,19 @@ public class CrucibleBlockEntityRenderer
 
     // -- Chains --
 
-    /** Submits all four chain crosses between the platform and basin. */
+    /**
+     * Submits all four chain crosses between the platform and basin.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param platformY the platform Y position
+     * @param light the packed light value
+     */
     private static void submitChains(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, float platformY, int light) {
         float chainBottom = platformY + PLAT_THICKNESS;
         float chainTop = BASIN_Y;
-        if (chainBottom >= chainTop) return;
+        if (chainBottom >= chainTop) { return; }
 
         nodeCollector.submitCustomGeometry(
             poseStack,
@@ -283,7 +339,15 @@ public class CrucibleBlockEntityRenderer
         );
     }
 
-    /** Renders four chain crosses at the platform corners. */
+    /**
+     * Renders four chain crosses at the platform corners.
+     *
+     * @param pose the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param light the packed light value
+     * @param bottom whether to render the bottom cap
+     * @param top whether to render the top cap
+     */
     private static void renderAllChains(PoseStack.Pose pose, VertexConsumer consumer,
             int light, float bottom, float top) {
         for (int i = 0; i < CHAIN_X.length; i++) {
@@ -292,7 +356,17 @@ public class CrucibleBlockEntityRenderer
         }
     }
 
-    /** Renders a single chain cross (two perpendicular quads) at the given X/Z center. */
+    /**
+     * Renders a single chain cross (two perpendicular quads) at the given X/Z center.
+     *
+     * @param pose the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bottom whether to render the bottom cap
+     * @param top whether to render the top cap
+     */
     private static void renderChainCross(PoseStack.Pose pose, VertexConsumer consumer,
             int light, float cx, float cz, float bottom, float top) {
         renderChainQuadNS(pose, consumer, light, cx, cz, bottom, top);
@@ -302,6 +376,14 @@ public class CrucibleBlockEntityRenderer
     /**
      * Tiles NS chain quads with platform-anchored UVs.
      * Chains scroll upward with the platform; top links clip into the basin.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bottom whether to render the bottom cap
+     * @param top whether to render the top cap
      */
     private static void renderChainQuadNS(PoseStack.Pose pose, VertexConsumer c,
             int light, float cx, float cz, float bottom, float top) {
@@ -311,6 +393,14 @@ public class CrucibleBlockEntityRenderer
     /**
      * Tiles EW chain quads with platform-anchored UVs.
      * Same scrolling behavior as the NS quads.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bottom whether to render the bottom cap
+     * @param top whether to render the top cap
      */
     private static void renderChainQuadEW(PoseStack.Pose pose, VertexConsumer c,
             int light, float cx, float cz, float bottom, float top) {
@@ -321,6 +411,17 @@ public class CrucibleBlockEntityRenderer
      * Tiles chain quads from bottom to top. Full tiles use v=0..1.
      * The topmost partial tile clips from the top: v=(1-fraction)..1.
      * Chain links scroll upward into the basin as the platform rises.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bottom whether to render the bottom cap
+     * @param top whether to render the top cap
+     * @param u0 the minimum U texture coordinate
+     * @param u1 the maximum U texture coordinate
+     * @param ns true for north-south orientation
      */
     private static void tileChainQuad(PoseStack.Pose pose, VertexConsumer c,
             int light, float cx, float cz, float bottom, float top,
@@ -338,7 +439,22 @@ public class CrucibleBlockEntityRenderer
         }
     }
 
-    /** Dispatches a single chain tile to NS or EW emitter. */
+    /**
+     * Dispatches a single chain tile to NS or EW emitter.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bot the bot
+     * @param top whether to render the top cap
+     * @param u0 the minimum U texture coordinate
+     * @param u1 the maximum U texture coordinate
+     * @param vStart the vStart
+     * @param vEnd the vEnd
+     * @param ns true for north-south orientation
+     */
     private static void emitChainTile(PoseStack.Pose pose, VertexConsumer c,
             int light, float cx, float cz, float bot, float top,
             float u0, float u1, float vStart, float vEnd, boolean ns) {
@@ -349,7 +465,21 @@ public class CrucibleBlockEntityRenderer
         }
     }
 
-    /** Emits one NS chain tile (front + back) with explicit vStart and vEnd. */
+    /**
+     * Emits one NS chain tile (front + back) with explicit vStart and vEnd.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bot the bot
+     * @param top whether to render the top cap
+     * @param u0 the minimum U texture coordinate
+     * @param u1 the maximum U texture coordinate
+     * @param vStart the vStart
+     * @param vEnd the vEnd
+     */
     private static void emitNS(PoseStack.Pose pose, VertexConsumer c, int light,
             float cx, float cz, float bot, float top,
             float u0, float u1, float vStart, float vEnd) {
@@ -364,7 +494,21 @@ public class CrucibleBlockEntityRenderer
         GooRenderUtil.vertex(pose, c, light, cx - CHAIN_HW, top, cz, u1, vStart, 0f, 0f, NEG_UNIT);
     }
 
-    /** Emits one EW chain tile (front + back) with explicit vStart and vEnd. */
+    /**
+     * Emits one EW chain tile (front + back) with explicit vStart and vEnd.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     * @param bot the bot
+     * @param top whether to render the top cap
+     * @param u0 the minimum U texture coordinate
+     * @param u1 the maximum U texture coordinate
+     * @param vStart the vStart
+     * @param vEnd the vEnd
+     */
     private static void emitEW(PoseStack.Pose pose, VertexConsumer c, int light,
             float cx, float cz, float bot, float top,
             float u0, float u1, float vStart, float vEnd) {
@@ -379,24 +523,25 @@ public class CrucibleBlockEntityRenderer
         GooRenderUtil.vertex(pose, c, light, cx, top, cz - CHAIN_HW, u0, vStart, NEG_UNIT, 0f, 0f);
     }
 
-    // -- Blaze Rod --
-
-    /** Full rod height when platform is at floor level. */
-    private static final float ROD_FULL_HEIGHT = BASIN_Y - PLAT_THICKNESS;
-
     /**
      * Submits the blaze rod as a 2x2 pixel cuboid sitting on the platform.
      * Rod height is fuel-proportional: it sits on the platform and extends
      * upward by fuelFraction * ROD_FULL_HEIGHT. Side UVs recede from the
      * top as the rod shortens, keeping the bottom texture anchored.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param platformY the platform Y position
+     * @param fuelFraction the fuel remaining fraction [0, 1]
+     * @param light the packed light value
      */
     private static void submitBlazeRod(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, float platformY,
             float fuelFraction, int light) {
         float rodBottom = platformY + PLAT_THICKNESS;
         float rodHeight = fuelFraction * ROD_FULL_HEIGHT;
+        if (rodHeight <= 0f) { return; }
         float rodTop = rodBottom + rodHeight;
-        if (rodHeight <= 0f) return;
 
         float heightFraction = rodHeight / ROD_FULL_HEIGHT;
         float vTop = ROD_V_BOTTOM - heightFraction * ROD_V_BOTTOM;
@@ -410,7 +555,20 @@ public class CrucibleBlockEntityRenderer
         );
     }
 
-    /** Renders the blaze rod box: 6 faces with side UVs cropped from the top. */
+    /**
+     * Renders the blaze rod box: 6 faces with side UVs cropped from the top.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param x0 the minimum X bound
+     * @param y0 the minimum Y bound
+     * @param z0 the minimum Z bound
+     * @param x1 the maximum X bound
+     * @param y1 the maximum Y bound
+     * @param z1 the maximum Z bound
+     * @param vTop the top V texture coordinate
+     */
     private static void renderRodBox(PoseStack.Pose pose, VertexConsumer c,
             int light, float x0, float y0, float z0, float x1, float y1, float z1,
             float vTop) {

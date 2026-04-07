@@ -15,25 +15,44 @@ import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
  */
 public final class VatBodyModels {
 
-    /** Key for the vat shell model. */
+    /** Debug name suffix for the vat shell model key. */
+    private static final String DEBUG_NAME = "vat_shell";
+    /** Model path for the vat shell geometry. */
+    private static final String MODEL_PATH = "block/vat";
+    /** Namespace separator for debug name. */
+    private static final String NS_SEP = ":";
+
+    /**
+     * Key for the vat shell model.
+     *
+     * @return the result
+     */
     private static final StandaloneModelKey<QuadCollection> KEY =
         new StandaloneModelKey<>(new ModelDebugName() {
             @Override
             public String debugName() {
-                return Goo.MODID + ":vat_shell";
+                return Goo.MODID + NS_SEP + DEBUG_NAME;
             }
         });
 
     private VatBodyModels() {}
 
-    /** Registers the vat shell model as a standalone model. */
+    /**
+     * Registers the vat shell model as a standalone model.
+     *
+     * @param event the event instance
+     */
     public static void register(ModelEvent.RegisterStandalone event) {
         event.register(KEY,
             SimpleUnbakedStandaloneModel.quadCollection(
-                Identifier.fromNamespaceAndPath(Goo.MODID, "block/vat")));
+                Identifier.fromNamespaceAndPath(Goo.MODID, MODEL_PATH)));
     }
 
-    /** Returns the baked quad collection for the vat shell. */
+    /**
+     * Returns the baked quad collection for the vat shell.
+     *
+     * @return the model
+     */
     public static QuadCollection getModel() {
         return Minecraft.getInstance().getModelManager().getStandaloneModel(KEY);
     }

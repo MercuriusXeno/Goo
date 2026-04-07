@@ -14,19 +14,38 @@ import org.jspecify.annotations.Nullable;
  */
 public final class TunerAwaitState {
 
-    private TunerAwaitState() {}
+    /** Default slot value when no slot is selected. */
+    private static final int NO_SLOT = -1;
+    /** Ellipsis cycle interval in milliseconds. */
+    private static final long ELLIPSIS_INTERVAL_MS = 500;
+    /** Number of ellipsis phases (., .., ...). */
+    private static final int ELLIPSIS_PHASES = 3;
+    /** Ellipsis phase 0: single dot. */
+    private static final String ELLIPSIS_1 = ".";
+    /** Ellipsis phase 1: two dots. */
+    private static final String ELLIPSIS_2 = "..";
+    /** Ellipsis phase 2: three dots. */
+    private static final String ELLIPSIS_3 = "...";
+    /** Await text prefix for receiver role. */
+    private static final String PREFIX_FROM = "From";
+    /** Await text prefix for transmitter role. */
+    private static final String PREFIX_TO = "To";
+    /** Await text infix. */
+    private static final String INFIX_AWAITING = ": Awaiting Link";
 
     /** Position of the machine block awaiting a link, or null if idle. */
-    private static @Nullable BlockPos awaitingPos = null;
+    private static @Nullable BlockPos awaitingPos;
 
     /** Slot index of the awaiting gasket (-1 for vat/crucible). */
-    private static int awaitingSlot = -1;
+    private static int awaitingSlot = NO_SLOT;
 
     /** Role of the awaiting gasket. */
-    private static @Nullable GasketRole awaitingRole = null;
+    private static @Nullable GasketRole awaitingRole;
 
     /** Client tick when the await started, for ellipsis animation. */
-    private static long startTick = 0;
+    private static long startTick;
+
+    private TunerAwaitState() {}
 
     /**
      * Sets the awaiting state for a specific machine gasket.
@@ -45,7 +64,7 @@ public final class TunerAwaitState {
     /** Clears the awaiting state. */
     public static void clear() {
         awaitingPos = null;
-        awaitingSlot = -1;
+        awaitingSlot = NO_SLOT;
         awaitingRole = null;
     }
 
@@ -58,40 +77,58 @@ public final class TunerAwaitState {
      * @return the await info, or null
      */
     public static @Nullable AwaitInfo getForMachine(BlockPos pos, int slot) {
-        if (awaitingPos == null || awaitingRole == null) return null;
-        if (!awaitingPos.equals(pos) || awaitingSlot != slot) return null;
+        if (awaitingPos == null || awaitingRole == null) { return null; }
+        if (!awaitingPos.equals(pos) || awaitingSlot != slot) { return null; }
         return new AwaitInfo(awaitingRole, formatEllipsis());
     }
 
     /**
      * Returns cycling ellipsis text: ".", "..", "..." rotating every 500ms.
+     *
+     * @return the formatted string
      */
     public static String formatEllipsis() {
         long elapsed = System.currentTimeMillis() - startTick;
-        int phase = (int) ((elapsed / 500) % 3);
+        int phase = (int) (elapsed / ELLIPSIS_INTERVAL_MS % ELLIPSIS_PHASES);
         return switch (phase) {
-            case 0 -> ".";
-            case 1 -> "..";
-            default -> "...";
+            case 0 -> ELLIPSIS_1;
+            case 1 -> ELLIPSIS_2;
+            default -> ELLIPSIS_3;
         };
     }
 
-    /** Returns true if any await is currently active. */
+    /**
+     * Returns true if any await is currently active.
+     *
+     * @return true if active
+     */
     public static boolean isActive() {
         return awaitingPos != null;
     }
 
-    /** Returns the currently awaiting position, or null. */
+    /**
+     * Returns the currently awaiting position, or null.
+     *
+     * @return the awaitingPos
+     */
     public static @Nullable BlockPos getAwaitingPos() {
         return awaitingPos;
     }
 
-    /** Returns the currently awaiting slot. */
+    /**
+     * Returns the currently awaiting slot.
+     *
+     * @return the awaitingSlot
+     */
     public static int getAwaitingSlot() {
         return awaitingSlot;
     }
 
-    /** Returns the currently awaiting role, or null. */
+    /**
+     * Returns the currently awaiting role, or null.
+     *
+     * @return the awaitingRole
+     */
     public static @Nullable GasketRole getAwaitingRole() {
         return awaitingRole;
     }
@@ -104,10 +141,14 @@ public final class TunerAwaitState {
      */
     public record AwaitInfo(GasketRole role, String ellipsis) {
 
-        /** Formats the await text: "From: Awaiting Link..." or "To: Awaiting Link...". */
+        /**
+         * Formats the await text: "From: Awaiting Link..." or "To: Awaiting Link...".
+         *
+         * @return the formatted string
+         */
         public String formatText() {
-            String prefix = role == GasketRole.RECEIVER ? "From" : "To";
-            return prefix + ": Awaiting Link" + ellipsis;
+            String prefix = role == GasketRole.RECEIVER ? PREFIX_FROM : PREFIX_TO;
+            return prefix + INFIX_AWAITING + ellipsis;
         }
     }
 }

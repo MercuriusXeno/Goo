@@ -16,23 +16,39 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public final class CanisterRenameHandler {
 
+    /** Maximum interaction range in blocks. */
+    private static final double MAX_RANGE = 8.0;
     /** Maximum distance (in blocks) from which a player can rename. */
-    private static final double MAX_RANGE_SQUARED = 8.0 * 8.0;
+    private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
+    /** Block center offset (half-block). */
+    private static final double BLOCK_CENTER = 0.5;
 
     private CanisterRenameHandler() {}
 
-    /** Handles the rename payload on the server thread. */
+    /**
+     * Handles the rename payload on the server thread.
+     *
+     * @param payload the rename payload data
+     * @param context the network context
+     */
     public static void handle(CanisterRenamePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) return;
+            if (!(context.player() instanceof ServerPlayer player)) { return; }
             applyRename(player, payload.pos(), payload.slot(), payload.newLabel());
         });
     }
 
-    /** Dispatches rename to the appropriate block entity type. */
+    /**
+     * Dispatches rename to the appropriate block entity type.
+     *
+     * @param player   the interacting player
+     * @param pos      the block position
+     * @param slot     the canister slot index, or -1 for vat
+     * @param newLabel the new label text
+     */
     private static void applyRename(
             ServerPlayer player, BlockPos pos, int slot, String newLabel) {
-        if (!isInRange(player, pos)) return;
+        if (!isInRange(player, pos)) { return; }
         String sanitized = sanitizeLabel(newLabel);
 
         BlockEntity be = player.level().getBlockEntity(pos);
@@ -43,34 +59,63 @@ public final class CanisterRenameHandler {
         }
     }
 
-    /** Applies a rename to a canister slot. */
+    /**
+     * Applies a rename to a canister slot.
+     *
+     * @param player   the interacting player
+     * @param canister the canister block entity
+     * @param slot     the canister slot index
+     * @param label    the sanitized label text
+     */
     private static void applyCanisterRename(
             ServerPlayer player, CanisterBlockEntity canister, int slot, String label) {
-        if (!isOwnerOrUnowned(player, canister)) return;
+        if (!isOwnerOrUnowned(player, canister)) { return; }
         CanisterMetadata meta = canister.getSlotMetadata(slot);
         canister.setSlotMetadata(slot, meta.withLabel(
             label.isEmpty() ? null : label));
     }
 
-    /** Applies a rename to a vat. */
+    /**
+     * Applies a rename to a vat.
+     *
+     * @param vat   the vat block entity
+     * @param label the sanitized label text
+     */
     private static void applyVatRename(VatBlockEntity vat, String label) {
         vat.setLabel(label.isEmpty() ? null : label);
     }
 
-    /** Returns true if the player is within interaction range of the position. */
+    /**
+     * Returns true if the player is within interaction range of the position.
+     *
+     * @param player the interacting player
+     * @param pos    the block position
+     * @return true if within range
+     */
     private static boolean isInRange(ServerPlayer player, BlockPos pos) {
-        return player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)
+        return player.distanceToSqr(pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER)
             <= MAX_RANGE_SQUARED;
     }
 
-    /** Returns true if the player owns the canister or the canister has no owner. */
+    /**
+     * Returns true if the player owns the canister or the canister has no owner.
+     *
+     * @param player   the interacting player
+     * @param canister the canister block entity
+     * @return true if the player is the owner or the canister is unowned
+     */
     private static boolean isOwnerOrUnowned(
             ServerPlayer player, CanisterBlockEntity canister) {
         return canister.getOwner() == null
             || canister.getOwner().equals(player.getUUID());
     }
 
-    /** Trims and truncates the label to the maximum length. */
+    /**
+     * Trims and truncates the label to the maximum length.
+     *
+     * @param label the raw label input
+     * @return the sanitized label
+     */
     private static String sanitizeLabel(String label) {
         String trimmed = label.trim();
         if (trimmed.length() > ChoralTunerItem.MAX_LABEL_LENGTH) {

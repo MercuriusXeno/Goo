@@ -19,6 +19,10 @@ public class GooValueClientTooltipComponent implements ClientTooltipComponent {
     private static final int ICON_GAP = 2;
     private static final int LINE_HEIGHT = 15;
     private static final int ICON_Y_OFFSET = -2;
+    /** Separator between amount and type name in tooltip text. */
+    private static final String AMOUNT_TYPE_SEPARATOR = " ";
+    /** Fully opaque white in ARGB for tooltip text rendering. */
+    private static final int TEXT_COLOR = 0xFFFFFFFF;
 
     private final Identifier iconTexture;
     private final Component displayText;
@@ -34,43 +38,80 @@ public class GooValueClientTooltipComponent implements ClientTooltipComponent {
         this.displayText = buildDisplayText(data);
     }
 
-    /** Builds the formatted display text: "1.8 Metal" with type color. */
+    /**
+     * Builds the formatted display text: "1.8 Metal" with type color.
+     *
+     * @param data the goo value data to format
+     * @return the styled text component for display
+     */
     private static Component buildDisplayText(GooValueTooltipComponent data) {
         String formatted = GooTooltipHandler.formatFluidDisplay(data.amount());
-        return Component.literal(formatted + " ")
+        return Component.literal(formatted + AMOUNT_TYPE_SEPARATOR)
                 .append(Component.translatable(data.type().getTranslationKey())
                         .withStyle(Style.EMPTY.withColor(data.type().getColor())));
     }
 
-    /** Returns the line height matching standard tooltip text. */
+    /**
+     * Returns the line height matching standard tooltip text.
+     *
+     * @param font the font used for measurement
+     * @return the line height in pixels
+     */
     @Override
     public int getHeight(@NonNull Font font) {
         return LINE_HEIGHT;
     }
 
-    /** Returns total width: icon + gap + text. */
+    /**
+     * Returns total width: icon + gap + text.
+     *
+     * @param font the font used for text width measurement
+     * @return the total width in pixels
+     */
     @Override
     public int getWidth(Font font) {
         return ICON_SIZE + ICON_GAP + font.width(displayText);
     }
 
-    /** Renders the goo icon and value text. */
+    /**
+     * Renders the goo icon and value text.
+     *
+     * @param font the font for text rendering
+     * @param x the left x position of the tooltip area
+     * @param y the top y position of the tooltip area
+     * @param width the available width for rendering
+     * @param height the available height for rendering
+     * @param guiGraphics the GUI graphics extractor for drawing
+     */
     @Override
     public void extractImage(@NonNull Font font, int x, int y, int width, int height, @NonNull GuiGraphicsExtractor guiGraphics) {
         renderIcon(guiGraphics, x, y);
         renderText(font, x, y, guiGraphics);
     }
 
-    /** Blits the 11x11 bordered goo type icon texture. */
+    /**
+     * Blits the 11x11 bordered goo type icon texture.
+     *
+     * @param guiGraphics the GUI graphics extractor for drawing
+     * @param x the left x position
+     * @param y the top y position
+     */
     private void renderIcon(GuiGraphicsExtractor guiGraphics, int x, int y) {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, iconTexture,
                 x, y + ICON_Y_OFFSET, 0.0f, 0.0f,
                 ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
     }
 
-    /** Draws the formatted value text to the right of the icon. */
+    /**
+     * Draws the formatted value text to the right of the icon.
+     *
+     * @param font the font for text rendering
+     * @param x the left x position
+     * @param y the top y position
+     * @param guiGraphics the GUI graphics extractor for drawing
+     */
     private void renderText(Font font, int x, int y, GuiGraphicsExtractor guiGraphics) {
         guiGraphics.text(font, displayText,
-                x + ICON_SIZE + ICON_GAP, y, 0xFFFFFFFF);
+                x + ICON_SIZE + ICON_GAP, y, TEXT_COLOR);
     }
 }

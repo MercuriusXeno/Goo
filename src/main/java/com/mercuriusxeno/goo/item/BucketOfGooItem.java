@@ -31,6 +31,19 @@ import org.jspecify.annotations.NonNull;
  */
 public class BucketOfGooItem extends Item implements IGooItemInteraction {
 
+    /** Block update flags: notify clients + update neighbors. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
+    /** Default sound volume for bucket interactions. */
+    private static final float SOUND_VOLUME = 1.0f;
+    /** Default sound pitch for bucket interactions. */
+    private static final float SOUND_PITCH = 1.0f;
+    /** Translation key for the empty bucket name. */
+    private static final String KEY_EMPTY = "item.goo.bucket_of_goo";
+    /** Translation key for a single-type bucket name. */
+    private static final String KEY_TYPED = "item.goo.bucket_of_goo.typed";
+    /** Translation key for a mixed-type (slurry) bucket name. */
+    private static final String KEY_SLURRY = "item.goo.bucket_of_goo.slurry";
+
     /** Microblobs in one blob. */
     public static final long MICROBLOBS_PER_BLOB = 1_000L;
 
@@ -40,23 +53,44 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
     /** Microblobs in a full fluid block. */
     public static final long MICROBLOBS_PER_BLOCK = MICROBLOBS_PER_BLOB * BLOBS_PER_BLOCK;
 
-    /** Creates a new bucket of goo item. */
+    /**
+     * Creates a new bucket of goo item.
+     *
+     * @param properties the item properties
+     */
     public BucketOfGooItem(Properties properties) {
         super(properties);
     }
 
-    /** Returns the goo contents from the stack, or EMPTY if absent. */
+    /**
+     * Returns the goo contents from the stack, or EMPTY if absent.
+     *
+     * @param stack the item stack
+     * @return the goo contents, never null
+     */
     public static GooContents getContents(ItemStack stack) {
         GooContents contents = stack.get(GooDataComponents.GOO_CONTENTS.get());
         return contents != null ? contents : GooContents.EMPTY;
     }
 
-    /** Sets the goo contents on the stack. */
+    /**
+     * Sets the goo contents on the stack.
+     *
+     * @param stack    the item stack
+     * @param contents the goo contents to set
+     */
     public static void setContents(ItemStack stack, GooContents contents) {
         stack.set(GooDataComponents.GOO_CONTENTS.get(), contents);
     }
 
-    /** Sets contents, reverting to a vanilla bucket if empty. */
+    /**
+     * Sets contents, reverting to a vanilla bucket if empty.
+     *
+     * @param stack    the bucket item stack
+     * @param contents the goo contents to set
+     * @param player   the interacting player
+     * @param hand     the hand used
+     */
     public static void setOrRevert(ItemStack stack, GooContents contents,
             Player player, InteractionHand hand) {
         if (contents.isEmpty()) {
@@ -66,7 +100,13 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         }
     }
 
-    /** Creates a bucket ItemStack pre-loaded with a single goo type and volume. */
+    /**
+     * Creates a bucket ItemStack pre-loaded with a single goo type and volume.
+     *
+     * @param type   the goo type to fill with
+     * @param volume the volume in microblobs
+     * @return a new bucket item stack
+     */
     public static ItemStack createWithGoo(GooType type, long volume) {
         ItemStack stack = new ItemStack(
             com.mercuriusxeno.goo.registry.GooItems.BUCKET_OF_GOO.get());
@@ -74,6 +114,14 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         return stack;
     }
 
+    /**
+     * Handles right-click: picks up or places goo fluid in the world.
+     *
+     * @param level  the current level
+     * @param player the interacting player
+     * @param hand   the hand used
+     * @return the interaction result
+     */
     @Override
     public @NonNull InteractionResult use(Level level, Player player, @NonNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -91,7 +139,17 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         return handleHit(level, player, hand, stack, contents, hit);
     }
 
-    /** Routes the hit to pickup or placement based on what was hit. */
+    /**
+     * Routes the hit to pickup or placement based on what was hit.
+     *
+     * @param level    the current level
+     * @param player   the interacting player
+     * @param hand     the hand used
+     * @param stack    the bucket item stack
+     * @param contents the current bucket goo contents
+     * @param hit      the ray trace hit result
+     * @return the interaction result
+     */
     private InteractionResult handleHit(Level level, Player player,
             InteractionHand hand, ItemStack stack, GooContents contents,
             BlockHitResult hit) {
@@ -109,6 +167,15 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
     /**
      * Picks up a goo fluid block, adding its volume to the bucket.
      * Removes the block from the world.
+     *
+     * @param level      the current level
+     * @param player     the interacting player
+     * @param pos        the block position of the fluid
+     * @param fluidState the fluid state at the position
+     * @param stack      the bucket item stack
+     * @param contents   the current bucket goo contents
+     * @param type       the goo type of the fluid
+     * @return the interaction result
      */
     private InteractionResult tryPickup(Level level, Player player,
             BlockPos pos, FluidState fluidState, ItemStack stack,
@@ -126,6 +193,14 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
     /**
      * Places goo from a single-type bucket onto the adjacent block face.
      * Slurry and sub-blob volumes cannot place.
+     *
+     * @param level    the current level
+     * @param player   the interacting player
+     * @param hand     the hand used
+     * @param pos      the target block position
+     * @param stack    the bucket item stack
+     * @param contents the current bucket goo contents
+     * @return the interaction result
      */
     private InteractionResult tryPlace(Level level, Player player,
             InteractionHand hand, BlockPos pos, ItemStack stack,
@@ -143,7 +218,19 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         return executePlacement(level, player, hand, pos, stack, contents, type, volume);
     }
 
-    /** Calculates blob count, validates placement, and sets the fluid block. */
+    /**
+     * Calculates blob count, validates placement, and sets the fluid block.
+     *
+     * @param level    the current level
+     * @param player   the interacting player
+     * @param hand     the hand used
+     * @param pos      the target block position
+     * @param stack    the bucket item stack
+     * @param contents the current bucket goo contents
+     * @param type     the goo type being placed
+     * @param volume   the available volume in microblobs
+     * @return the interaction result
+     */
     private InteractionResult executePlacement(Level level, Player player,
             InteractionHand hand, BlockPos pos, ItemStack stack,
             GooContents contents, GooType type, long volume) {
@@ -155,13 +242,19 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         }
 
         BlockState fluidBlock = fluidBlockState(type, blobsToPlace);
-        level.setBlock(pos, fluidBlock, 3);
+        level.setBlock(pos, fluidBlock, BLOCK_UPDATE_FLAGS);
         depleteAfterPlace(stack, contents, type, blobsToPlace, player, hand);
         playPlaceSound(level, pos);
         return InteractionResult.SUCCESS;
     }
 
-    /** Returns true if the target position can be replaced with a fluid block. */
+    /**
+     * Returns true if the target position can be replaced with a fluid block.
+     *
+     * @param level the current level
+     * @param pos   the block position to check
+     * @return true if placement is allowed
+     */
     private boolean canPlaceAt(Level level, BlockPos pos) {
         BlockState existing = level.getBlockState(pos);
         return existing.canBeReplaced();
@@ -170,6 +263,10 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
     /**
      * Builds the LiquidBlock state for the given type and blob count.
      * Level 0 = source (8 blobs), level N = 8-N blobs.
+     *
+     * @param type      the goo type
+     * @param blobCount the number of blobs to place (1-8)
+     * @return the block state with correct fluid level
      */
     private BlockState fluidBlockState(GooType type, int blobCount) {
         BlockState base = GooBlocks.FLUID_BLOCKS.get(type).get().defaultBlockState();
@@ -180,12 +277,24 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
     /**
      * Converts blob count to LiquidBlock LEVEL value.
      * 8 blobs = level 0 (source), 7 = level 1, ..., 1 = level 7.
+     *
+     * @param blobCount the number of blobs (1-8)
+     * @return the LiquidBlock LEVEL value (0-7)
      */
     static int placementLevel(int blobCount) {
         return BLOBS_PER_BLOCK - blobCount;
     }
 
-    /** Deducts placed blobs from bucket contents, reverting to vanilla bucket if empty. */
+    /**
+     * Deducts placed blobs from bucket contents, reverting to vanilla bucket if empty.
+     *
+     * @param stack      the bucket item stack
+     * @param contents   the current bucket goo contents
+     * @param type       the goo type that was placed
+     * @param blobsPlaced number of blobs placed
+     * @param player     the interacting player
+     * @param hand       the hand used
+     */
     private void depleteAfterPlace(ItemStack stack, GooContents contents,
             GooType type, int blobsPlaced, Player player, InteractionHand hand) {
         long cost = blobsPlaced * MICROBLOBS_PER_BLOB;
@@ -193,38 +302,63 @@ public class BucketOfGooItem extends Item implements IGooItemInteraction {
         setOrRevert(stack, remaining, player, hand);
     }
 
-    /** Plays the bucket-fill sound at the given position. */
+    /**
+     * Plays the bucket-fill sound at the given position.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     */
     private void playPickupSound(Level level, BlockPos pos) {
         level.playSound(null, pos, SoundEvents.BUCKET_FILL,
-                SoundSource.BLOCKS, 1.0f, 1.0f);
+                SoundSource.BLOCKS, SOUND_VOLUME, SOUND_PITCH);
     }
 
-    /** Plays the bucket-empty sound at the given position. */
+    /**
+     * Plays the bucket-empty sound at the given position.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     */
     private void playPlaceSound(Level level, BlockPos pos) {
         level.playSound(null, pos, SoundEvents.BUCKET_EMPTY,
-                SoundSource.BLOCKS, 1.0f, 1.0f);
+                SoundSource.BLOCKS, SOUND_VOLUME, SOUND_PITCH);
     }
 
+    /**
+     * Returns the display name based on contents: empty, single-type, or slurry.
+     *
+     * @param stack the item stack
+     * @return the display name component
+     */
     @Override
     public @NonNull Component getName(@NonNull ItemStack stack) {
         GooContents contents = getContents(stack);
         return buildName(contents);
     }
 
-    /** Builds the display name based on contents: empty, single-type, or slurry. */
+    /**
+     * Builds the display name based on contents: empty, single-type, or slurry.
+     *
+     * @param contents the goo contents to name
+     * @return the display name component
+     */
     private Component buildName(GooContents contents) {
         if (contents.isEmpty()) {
-            return Component.translatable("item.goo.bucket_of_goo");
+            return Component.translatable(KEY_EMPTY);
         }
         if (contents.isSingleType()) {
             GooType type = contents.getSingleType();
-            return Component.translatable("item.goo.bucket_of_goo.typed",
+            return Component.translatable(KEY_TYPED,
                 Component.translatable(type.getTranslationKey()));
         }
-        return Component.translatable("item.goo.bucket_of_goo.slurry");
+        return Component.translatable(KEY_SLURRY);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Returns BUCKET_INSERT so canister blocks route to bucket pour logic.
+     *
+     * @return the bucket insert interaction type
+     */
     @Override
     public GooInteractionType canisterInteraction() {
         return GooInteractionType.BUCKET_INSERT;

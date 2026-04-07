@@ -7,14 +7,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.math.Axis;
 import com.mojang.serialization.MapCodec;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -23,7 +23,6 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
-
 import java.util.function.Consumer;
 
 /**
@@ -43,7 +42,7 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      * Camera-relative position of the held blob's center, captured during
      * item rendering. The arc renderer adds camera.position() to get world space.
      */
-    private static volatile Vec3 blobCenterCamRel = null;
+    private static volatile Vec3 blobCenterCamRel;
 
     /** Frame counter to detect stale captures. */
     private static long captureFrame = -1;
@@ -52,6 +51,48 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      *  may occur after arc rendering within the same frame, so we tolerate
      *  a one-tick lag to avoid first-frame-of-tick fallback flicker. */
     private static final long MAX_CAPTURE_AGE = 1;
+
+    /** Pixels per block for coordinate conversion. */
+    private static final float BLOCK_PIXELS = 16f;
+
+    /** Fully opaque white for untinted rendering. */
+    private static final int COLOR_WHITE = 0xFFFFFFFF;
+
+    /** Half-width of the held blob cuboid in model pixels. */
+    private static final float BLOB_HW_PX = 2.5f;
+
+    /** Center X of the blob in model pixels. */
+    private static final float BLOB_CX_PX = 8f;
+
+    /** Center Y of the blob in model pixels. */
+    private static final float BLOB_CY_PX = 3.5f;
+
+    /** Center Z of the blob in model pixels. */
+    private static final float BLOB_CZ_PX = 6f;
+
+    /** Normal direction for negative-facing surfaces. */
+    private static final float NORMAL_NEG = -1f;
+
+    /** Sentinel value for stale frame counter. */
+    private static final int STALE_FRAME = -1;
+
+    /** Minimum extent X in model pixels. */
+    private static final float EXTENT_MIN_X_PX = 4.5f;
+
+    /** Minimum extent Y in model pixels. */
+    private static final float EXTENT_MIN_Y_PX = -1f;
+
+    /** Minimum extent Z in model pixels. */
+    private static final float EXTENT_MIN_Z_PX = 4f;
+
+    /** Maximum extent X in model pixels. */
+    private static final float EXTENT_MAX_X_PX = 11.5f;
+
+    /** Maximum extent Y in model pixels. */
+    private static final float EXTENT_MAX_Y_PX = 11f;
+
+    /** Maximum extent Z in model pixels. */
+    private static final float EXTENT_MAX_Z_PX = 11.5f;
 
     /**
      * Returns the camera-relative blob center if captured recently.
@@ -73,9 +114,6 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
     /**
      * Extracted render data from the glove item stack.
      *
-     * @param selectedType the selected goo type, or null if none selected
-     */
-    /**
      * @param item         the glove item instance (determines tier/body model)
      * @param selectedType the selected goo type, or null if none selected
      */
@@ -89,7 +127,7 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      */
     @Override
     public @Nullable GloveData extractArgument(ItemStack stack) {
-        if (!(stack.getItem() instanceof GooGloveItem)) return null;
+        if (!(stack.getItem() instanceof GooGloveItem)) { return null; }
         GooType type = GooGloveItem.getSelectedType(stack);
         // Suppress the held blob visual when the player has no goo of that type
         if (type != null && !GloveUseTracker.isSelectedTypeAvailable()) {
@@ -102,7 +140,6 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      * Renders the glove body and optional held blob overlay.
      *
      * @param data           extracted glove data (may be null)
-     * @param displayContext the display context (GUI, hand, etc.)
      * @param poseStack      the current pose stack
      * @param nodeCollector  the render node collector
      * @param packedLight    packed light value
@@ -119,9 +156,9 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
         // Debug transform overlay - adjust with RSHIFT+hotkeys, remove when tuning is done
         if (GloveTransformDebug.enabled) {
             poseStack.translate(
-                GloveTransformDebug.transX / 16f,
-                GloveTransformDebug.transY / 16f,
-                GloveTransformDebug.transZ / 16f);
+                GloveTransformDebug.transX / BLOCK_PIXELS,
+                GloveTransformDebug.transY / BLOCK_PIXELS,
+                GloveTransformDebug.transZ / BLOCK_PIXELS);
             poseStack.mulPose(Axis.XP.rotationDegrees(GloveTransformDebug.rotX));
             poseStack.mulPose(Axis.YP.rotationDegrees(GloveTransformDebug.rotY));
             poseStack.mulPose(Axis.ZP.rotationDegrees(GloveTransformDebug.rotZ));
@@ -139,7 +176,14 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
         poseStack.popPose();
     }
 
-    /** Submits the baked glove body model (arm sheath geometry) for the given tier. */
+    /**
+     * Submits the baked glove body model (arm sheath geometry) for the given tier.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param gloveItem the glove item instance
+     */
     private static void submitGloveBody(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight, Item gloveItem) {
         QuadCollection model = GloveBodyModels.getModel(gloveItem);
@@ -147,7 +191,7 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 QuadInstance qi = new QuadInstance();
-                qi.setColor(0xFFFFFFFF);
+                qi.setColor(COLOR_WHITE);
                 qi.setLightCoords(packedLight);
                 qi.setOverlayCoords(OverlayTexture.NO_OVERLAY);
                 for (BakedQuad quad : model.getAll()) {
@@ -159,11 +203,18 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
     /**
      * Renders a fluid cuboid (5x5x5 pixels) in the palm area,
      * sitting above the finger plate so the blob is substantial.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param type the goo type
      */
     private static void submitHeldBlob(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight, GooType type) {
-        float hw = 2.5f / 16f;
-        float cx = 8f / 16f, cy = 3.5f / 16f, cz = 6f / 16f;
+        float hw = BLOB_HW_PX / BLOCK_PIXELS;
+        float cx = BLOB_CX_PX / BLOCK_PIXELS;
+        float cy = BLOB_CY_PX / BLOCK_PIXELS;
+        float cz = BLOB_CZ_PX / BLOCK_PIXELS;
 
         captureBlobCenter(poseStack, cx, cy, cz);
 
@@ -171,31 +222,38 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0(), u1 = sprite.getU1();
-                float v0 = sprite.getV0(), v1 = sprite.getV1();
+                float u0 = sprite.getU0();
+                float u1 = sprite.getU1();
+                float v0 = sprite.getV0();
+                float v1 = sprite.getV1();
                 GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(u0, v0, u1, v1);
 
                 // Top and bottom faces
                 GooRenderUtil.faceY(pose, c, packedLight,
                     cx - hw, cx + hw, cy + hw, cz - hw, cz + hw, uv, 1f);
                 GooRenderUtil.faceY(pose, c, packedLight,
-                    cx - hw, cx + hw, cy - hw, cz - hw, cz + hw, uv, -1f);
+                    cx - hw, cx + hw, cy - hw, cz - hw, cz + hw, uv, NORMAL_NEG);
                 // East and west faces
                 GooRenderUtil.faceX(pose, c, packedLight,
                     cx + hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, 1f);
                 GooRenderUtil.faceX(pose, c, packedLight,
-                    cx - hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, -1f);
+                    cx - hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, NORMAL_NEG);
                 // South and north faces
                 GooRenderUtil.faceZ(pose, c, packedLight,
                     cx - hw, cx + hw, cy - hw, cy + hw, cz + hw, uv, 1f);
                 GooRenderUtil.faceZ(pose, c, packedLight,
-                    cx - hw, cx + hw, cy - hw, cy + hw, cz - hw, uv, -1f);
+                    cx - hw, cx + hw, cy - hw, cy + hw, cz - hw, uv, NORMAL_NEG);
             });
     }
 
     /**
      * Transforms the blob center through the current PoseStack to get
      * camera-relative coordinates and stores them for the arc renderer.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param cx the center X in block coords
+     * @param cy the cy
+     * @param cz the center Z in block coords
      */
     private static void captureBlobCenter(PoseStack poseStack,
                                           float cx, float cy, float cz) {
@@ -203,7 +261,7 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
         poseStack.last().pose().transform(pos);
         blobCenterCamRel = new Vec3(pos.x(), pos.y(), pos.z());
         Minecraft mc = Minecraft.getInstance();
-        captureFrame = mc.level != null ? mc.level.getGameTime() : -1;
+        captureFrame = mc.level != null ? mc.level.getGameTime() : STALE_FRAME;
     }
 
     /**
@@ -214,8 +272,8 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        output.accept(new Vector3f(4.5f / 16f, -1f / 16f, 4f / 16f));
-        output.accept(new Vector3f(11.5f / 16f, 11f / 16f, 11.5f / 16f));
+        output.accept(new Vector3f(EXTENT_MIN_X_PX / BLOCK_PIXELS, EXTENT_MIN_Y_PX / BLOCK_PIXELS, EXTENT_MIN_Z_PX / BLOCK_PIXELS));
+        output.accept(new Vector3f(EXTENT_MAX_X_PX / BLOCK_PIXELS, EXTENT_MAX_Y_PX / BLOCK_PIXELS, EXTENT_MAX_Z_PX / BLOCK_PIXELS));
     }
 
     /**

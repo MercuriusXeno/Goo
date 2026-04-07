@@ -9,19 +9,17 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
-
 import java.util.function.Consumer;
 
 /**
@@ -51,6 +49,8 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
 
     /** Vat full top (y=16px). */
     private static final float VAT_TOP = 1f;
+    /** Fully opaque white in ARGB for untinted quad rendering. */
+    private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
     /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
     private static final float FLUID_INSET = 0.5f / 16f;
@@ -71,18 +71,33 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
     public record VatData(@Nullable GooType gooType, float fill) {
     }
 
-    /** Extracts goo render data from the vat item stack. */
+    /**
+     * Extracts goo render data from the vat item stack.
+     *
+     * @param stack the item stack
+     * @return the extracted render data, or null
+     */
     @Override
     public @Nullable VatData extractArgument(ItemStack stack) {
         GooContents contents = VatBlockItem.getGooContents(stack);
-        if (contents.isEmpty()) return null;
+        if (contents.isEmpty()) { return null; }
         int compression = GooEnchantments.getCompressionLevel(stack);
         long capacity = ContainerCapacity.vatCapacity(compression);
         float fill = Math.min(1f, (float) contents.totalVolume() / capacity);
         return new VatData(contents.largestType(), fill);
     }
 
-    /** Renders the vat shell and fluid fill for the item. */
+    /**
+     * Renders the vat shell and fluid fill for the item.
+     *
+     * @param data the extracted render data
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param packedOverlay the packed overlay value
+     * @param hasFoil whether the item has enchantment foil
+     * @param outlineColor the outline color for selected items
+     */
     @Override
     public void submit(@Nullable VatData data,
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
@@ -98,7 +113,13 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
         poseStack.popPose();
     }
 
-    /** Submits the baked vat shell model (cap + body + base). */
+    /**
+     * Submits the baked vat shell model (cap + body + base).
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     */
     private static void submitShell(PoseStack poseStack, SubmitNodeCollector nodeCollector,
             int packedLight) {
         QuadCollection model = VatBodyModels.getModel();
@@ -106,7 +127,7 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 QuadInstance qi = new QuadInstance();
-                qi.setColor(0xFFFFFFFF);
+                qi.setColor(OPAQUE_WHITE);
                 qi.setLightCoords(packedLight);
                 qi.setOverlayCoords(OverlayTexture.NO_OVERLAY);
                 for (BakedQuad quad : model.getAll()) {
@@ -118,12 +139,20 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
     /**
      * Submits fluid surface geometry inside the vat body.
      * Renders top face + 4 side faces from body bottom up to the fill level.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param type the goo type
+     * @param fill the fill fraction in [0, 1]
      */
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             GooType type, float fill) {
-        float x0 = WALL + FLUID_INSET, x1 = 1f - WALL - FLUID_INSET;
-        float z0 = WALL + FLUID_INSET, z1 = 1f - WALL - FLUID_INSET;
+        float x0 = WALL + FLUID_INSET;
+        float x1 = 1f - WALL - FLUID_INSET;
+        float z0 = WALL + FLUID_INSET;
+        float z1 = 1f - WALL - FLUID_INSET;
         float yBot = BODY_BOT + Y_EPSILON;
         float y = yBot + fill * (BODY_TOP - yBot);
 
@@ -131,8 +160,10 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0(), u1 = sprite.getU1();
-                float v0 = sprite.getV0(), v1 = sprite.getV1();
+                float u0 = sprite.getU0();
+                float u1 = sprite.getU1();
+                float v0 = sprite.getV0();
+                float v1 = sprite.getV1();
 
                 float cuboidWidth = x1 - x0;
                 float cuboidDepth = z1 - z0;
@@ -167,6 +198,8 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
     /**
      * Reports the geometric extents of the vat for GUI rendering.
      * 14x16x14 px block, inset 1px from edges.
+     *
+     * @param output consumer for extent corner vertices
      */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {

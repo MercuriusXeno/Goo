@@ -5,7 +5,6 @@ import com.mercuriusxeno.goo.item.GooContents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -31,11 +30,11 @@ public final class VatStackRedistributor {
      */
     public static void redistribute(Level level, BlockPos pos) {
         List<VatBlockEntity> stack = collectStack(level, pos);
-        if (stack.size() <= 1) return;
+        if (stack.size() <= 1) { return; }
 
         // Guard: skip if any vat is already redistributing (re-entrance from onFluidChanged)
         for (VatBlockEntity vat : stack) {
-            if (vat.redistributing) return;
+            if (vat.redistributing) { return; }
         }
 
         // Set re-entrance guard on all vats before mutating
@@ -51,10 +50,13 @@ public final class VatStackRedistributor {
         }
     }
 
-    /** Sums all goo, then fills vats bottom-up greedily. */
+    /** Sums all goo, then fills vats bottom-up greedily.
+     *
+     * @param stack the item stack
+     */
     private static void doRedistribute(List<VatBlockEntity> stack) {
         // 1. Merge all fluid into a mutable pool
-        EnumMap<GooType, Long> pool = new EnumMap<>(GooType.class);
+        Map<GooType, Long> pool = new EnumMap<>(GooType.class);
         for (VatBlockEntity vat : stack) {
             for (Map.Entry<GooType, Long> e : vat.getContents().contents().entrySet()) {
                 pool.merge(e.getKey(), e.getValue(), Long::sum);
@@ -76,11 +78,15 @@ public final class VatStackRedistributor {
     /**
      * Takes up to {@code capacity} total mB from the pool, removing consumed
      * volume. Returns an immutable {@link GooContents} for one vat.
+     *
+     * @param pool     the mutable goo pool
+     * @param capacity the capacity in mB
+     * @return the goo contents
      */
-    private static GooContents takeSlice(EnumMap<GooType, Long> pool, long capacity) {
-        if (pool.isEmpty() || capacity <= 0) return GooContents.EMPTY;
+    private static GooContents takeSlice(Map<GooType, Long> pool, long capacity) {
+        if (pool.isEmpty() || capacity <= 0) { return GooContents.EMPTY; }
 
-        EnumMap<GooType, Long> slice = new EnumMap<>(GooType.class);
+        Map<GooType, Long> slice = new EnumMap<>(GooType.class);
         long remaining = capacity;
 
         var it = pool.entrySet().iterator();
@@ -102,6 +108,10 @@ public final class VatStackRedistributor {
     /**
      * Walks the stack vertically from {@code pos} to collect all connected
      * {@link VatBlockEntity} instances, returned bottom-to-top.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @return the list
      */
     private static List<VatBlockEntity> collectStack(Level level, BlockPos pos) {
         // Walk down to bottom
@@ -120,7 +130,7 @@ public final class VatStackRedistributor {
             } else {
                 break;
             }
-            if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) break;
+            if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) { break; }
             cursor = cursor.above();
         }
         return stack;

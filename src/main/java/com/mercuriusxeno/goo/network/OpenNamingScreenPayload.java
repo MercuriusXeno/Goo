@@ -12,6 +12,11 @@ import org.jspecify.annotations.NonNull;
  * Server-to-client payload: tells the client to open the canister naming screen
  * for a specific slot within a multi-canister block.
  * Includes whether the canister has an active gasket link (for "Clear Link" button).
+ *
+ * @param pos          the block position of the canister block
+ * @param slot         the sub-slot index
+ * @param currentLabel the current label text
+ * @param hasLink      whether the canister has an active gasket link
  */
 public record OpenNamingScreenPayload(BlockPos pos, int slot, String currentLabel,
         boolean hasLink)
@@ -30,7 +35,12 @@ public record OpenNamingScreenPayload(BlockPos pos, int slot, String currentLabe
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, OpenNamingScreenPayload payload) {
         buf.writeBlockPos(payload.pos);
         buf.writeVarInt(payload.slot);
@@ -38,7 +48,12 @@ public record OpenNamingScreenPayload(BlockPos pos, int slot, String currentLabe
         buf.writeBoolean(payload.hasLink);
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static OpenNamingScreenPayload decode(FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         int slot = buf.readVarInt();

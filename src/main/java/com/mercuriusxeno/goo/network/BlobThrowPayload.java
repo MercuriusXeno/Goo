@@ -11,6 +11,12 @@ import org.jspecify.annotations.NonNull;
 /**
  * Client-to-server payload: requests throwing the selected goo type at a target.
  * The server validates goo availability and range before executing the throw.
+ *
+ * @param gooTypeId      the goo type string identifier
+ * @param targetEntityId the target entity ID, or -1 for block targets
+ * @param targetPos      the target block position
+ * @param targetFace     the target face ordinal
+ * @param grannyArc      whether to use the boosted arc trajectory
  */
 public record BlobThrowPayload(String gooTypeId, int targetEntityId,
                                BlockPos targetPos, int targetFace,
@@ -30,7 +36,12 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, BlobThrowPayload payload) {
         buf.writeUtf(payload.gooTypeId);
         buf.writeVarInt(payload.targetEntityId);
@@ -39,7 +50,12 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         buf.writeBoolean(payload.grannyArc);
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static BlobThrowPayload decode(FriendlyByteBuf buf) {
         String gooTypeId = buf.readUtf();
         int targetEntityId = buf.readVarInt();

@@ -26,10 +26,22 @@ public record GloveSelectPayload(String gooTypeId) implements CustomPacketPayloa
         return TYPE;
     }
 
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, GloveSelectPayload payload) {
         buf.writeUtf(payload.gooTypeId);
     }
 
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static GloveSelectPayload decode(FriendlyByteBuf buf) {
         return new GloveSelectPayload(buf.readUtf());
     }

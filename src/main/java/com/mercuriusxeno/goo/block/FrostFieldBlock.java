@@ -8,7 +8,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -30,24 +29,53 @@ public class FrostFieldBlock extends BaseEntityBlock {
     public static final MapCodec<FrostFieldBlock> CODEC = simpleCodec(FrostFieldBlock::new);
 
     /** Small centered cube so the block is barely selectable. */
-    private static final VoxelShape SHAPE = Block.box(5, 5, 5, 11, 11, 11);
+    private static final VoxelShape SHAPE = box(5, 5, 5, 11, 11, 11);
+    /** Block center offset (0.5 blocks). */
+    private static final double BLOCK_CENTER = 0.5;
+    /** Spread multiplier for radius-based particle range. */
+    private static final double SPREAD_FACTOR = 0.5;
+    /** Base particle count for snowflake effects. */
+    private static final int BASE_PARTICLE_COUNT = 2;
+    /** Spread diameter multiplier for random offset range. */
+    private static final double SPREAD_DIAMETER = 2;
+    /** Downward velocity for snowflake particles. */
+    private static final double SNOWFLAKE_FALL_SPEED = -0.02;
 
+    /** Creates a frost field block with the given properties.
+     *
+     * @param properties the block properties
+     */
     public FrostFieldBlock(Properties properties) {
         super(properties);
     }
 
+    /** Returns the codec for serialization.
+     *
+     * @return the codec
+     */
     @Override
     protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
-    /** Fully invisible -- no block model, no BER needed. */
+    /** Fully invisible -- no block model, no BER needed.
+     *
+     * @param state the block state
+     * @return the render shape
+     */
     @Override
     protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
         return RenderShape.INVISIBLE;
     }
 
-    /** No collision -- players walk through the field. */
+    /** No collision -- players walk through the field.
+     *
+     * @param state   the block state
+     * @param level   the current level
+     * @param pos     the block position
+     * @param context the collision context
+     * @return the collision shape
+     */
     @Override
     protected @NonNull VoxelShape getCollisionShape(
             @NonNull BlockState state, @NonNull BlockGetter level,
@@ -55,7 +83,14 @@ public class FrostFieldBlock extends BaseEntityBlock {
         return Shapes.empty();
     }
 
-    /** Small outline for selection/targeting. */
+    /** Small outline for selection/targeting.
+     *
+     * @param state   the block state
+     * @param level   the current level
+     * @param pos     the block position
+     * @param context the collision context
+     * @return the shape
+     */
     @Override
     protected @NonNull VoxelShape getShape(
             @NonNull BlockState state, @NonNull BlockGetter level,
@@ -63,37 +98,64 @@ public class FrostFieldBlock extends BaseEntityBlock {
         return SHAPE;
     }
 
+    /** Creates the frost field block entity for this position.
+     *
+     * @param pos   the block position
+     * @param state the block state
+     * @return the new block entity
+     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new FrostFieldBlockEntity(pos, state);
     }
 
+    /** Registers the server-side duration tick dispatcher.
+     *
+     * @param level the current level
+     * @param state the block state
+     * @param type  the goo type
+     * @return the ticker
+     */
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             @NonNull Level level, @NonNull BlockState state,
             @NonNull BlockEntityType<T> type) {
-        if (level.isClientSide()) return null;
+        if (level.isClientSide()) { return null; }
         return createTickerHelper(type, GooBlockEntities.FROST_FIELD.get(),
                 FrostFieldBlockEntity::serverTick);
     }
 
-    /** Spawns snowflake particles around the field center. */
+    /** Spawns snowflake particles around the field center.
+     *
+     * @param state  the block state
+     * @param level  the current level
+     * @param pos    the block position
+     * @param random the random source
+     */
     @Override
     public void animateTick(@NonNull BlockState state, @NonNull Level level,
             @NonNull BlockPos pos, @NonNull RandomSource random) {
-        if (!(level.getBlockEntity(pos) instanceof FrostFieldBlockEntity be)) return;
-        double cx = pos.getX() + 0.5;
-        double cy = pos.getY() + 0.5;
-        double cz = pos.getZ() + 0.5;
-        double spread = be.getRadius() * 0.5;
-        for (int i = 0; i < 2 + be.getStacks(); i++) {
-            double ox = (random.nextDouble() - 0.5) * spread * 2;
-            double oy = (random.nextDouble() - 0.5) * spread * 2;
-            double oz = (random.nextDouble() - 0.5) * spread * 2;
-            level.addParticle(ParticleTypes.SNOWFLAKE,
-                    cx + ox, cy + oy, cz + oz, 0, -0.02, 0);
+        if (!(level.getBlockEntity(pos) instanceof FrostFieldBlockEntity be)) { return; }
+        spawnSnowflakes(level, pos, random, be);
+    }
+
+    /** Spawns snowflake particles scattered around the block center.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param random the random source
+     * @param be     the frost field block entity
+     */
+    private void spawnSnowflakes(Level level, BlockPos pos, RandomSource random,
+                                  FrostFieldBlockEntity be) {
+        double spread = be.getRadius() * SPREAD_FACTOR * SPREAD_DIAMETER;
+        for (int i = 0; i < BASE_PARTICLE_COUNT + be.getStacks(); i++) {
+            double ox = (random.nextDouble() - BLOCK_CENTER) * spread;
+            double oy = (random.nextDouble() - BLOCK_CENTER) * spread;
+            double oz = (random.nextDouble() - BLOCK_CENTER) * spread;
+            level.addParticle(ParticleTypes.SNOWFLAKE, pos.getX() + BLOCK_CENTER + ox, pos.getY() + BLOCK_CENTER + oy, pos.getZ() + BLOCK_CENTER + oz, 0, SNOWFLAKE_FALL_SPEED, 0);
         }
     }
 }

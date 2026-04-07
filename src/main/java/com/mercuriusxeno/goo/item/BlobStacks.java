@@ -15,8 +15,6 @@ import java.util.Map;
  */
 public final class BlobStacks {
 
-    private BlobStacks() {}
-
     /** Volume of one blob in microblobs. */
     public static final long MB_PER_BLOB = 1000L;
 
@@ -25,6 +23,8 @@ public final class BlobStacks {
 
     /** Maximum volume representable as a blob stack (64 blobs = 64,000 mB). */
     public static final long MAX_BLOB_STACK_VOLUME = MB_PER_BLOB * MAX_STACK;
+
+    private BlobStacks() {}
 
     /**
      * Returns the volume of the given item stack in microblobs.
@@ -36,7 +36,7 @@ public final class BlobStacks {
      */
     public static long volumeOf(ItemStack stack) {
         if (stack.getItem() instanceof GooBlobItem) {
-            return (long) stack.getCount() * MB_PER_BLOB;
+            return stack.getCount() * MB_PER_BLOB;
         }
         if (stack.getItem() instanceof GooOmniblobItem) {
             return GooOmniblobItem.getVolume(stack);
@@ -70,7 +70,7 @@ public final class BlobStacks {
      * @return a single ItemStack (blob stack or omniblob)
      */
     public static ItemStack createForOutput(GooType type, long volumeMb) {
-        if (volumeMb <= 0) return ItemStack.EMPTY;
+        if (volumeMb <= 0) { return ItemStack.EMPTY; }
         if (isCleanBlobStack(volumeMb)) {
             return createBlobStack(type, (int) (volumeMb / MB_PER_BLOB));
         }
@@ -98,8 +98,7 @@ public final class BlobStacks {
      * @return a blob ItemStack
      */
     public static ItemStack createBlobStack(GooType type, int count) {
-        ItemStack stack = new ItemStack(GooItems.BLOBS.get(type).get(), count);
-        return stack;
+        return new ItemStack(GooItems.BLOBS.get(type).get(), count);
     }
 
     /**
@@ -133,15 +132,34 @@ public final class BlobStacks {
      */
     public static void deplete(ItemStack stack, long accepted, Player player) {
         if (stack.getItem() instanceof GooBlobItem) {
-            int blobsUsed = (int) (accepted / MB_PER_BLOB);
-            stack.shrink(blobsUsed);
+            depleteBlob(stack, accepted);
         } else if (stack.getItem() instanceof GooOmniblobItem) {
-            long remaining = GooOmniblobItem.getVolume(stack) - accepted;
-            if (remaining <= 0) {
-                stack.consume(1, player);
-            } else {
-                GooOmniblobItem.setVolume(stack, remaining);
-            }
+            depleteOmniblob(stack, accepted, player);
+        }
+    }
+
+    /** Shrinks a blob stack by the number of whole blobs consumed.
+     *
+     * @param stack    the blob stack
+     * @param accepted the accepted volume in microblobs
+     */
+    private static void depleteBlob(ItemStack stack, long accepted) {
+        int blobsUsed = (int) (accepted / MB_PER_BLOB);
+        stack.shrink(blobsUsed);
+    }
+
+    /** Deducts volume from an omniblob, consuming the stack if empty.
+     *
+     * @param stack    the omniblob stack
+     * @param accepted the accepted volume in microblobs
+     * @param player   the player holding the stack
+     */
+    private static void depleteOmniblob(ItemStack stack, long accepted, Player player) {
+        long remaining = GooOmniblobItem.getVolume(stack) - accepted;
+        if (remaining <= 0) {
+            stack.consume(1, player);
+        } else {
+            GooOmniblobItem.setVolume(stack, remaining);
         }
     }
 
@@ -154,7 +172,7 @@ public final class BlobStacks {
      * @param pos      the position to drop items at
      */
     public static void dropAll(GooContents contents, Level level, BlockPos pos) {
-        if (contents.isEmpty()) return;
+        if (contents.isEmpty()) { return; }
         for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
             Block.popResource(level, pos, createForOutput(entry.getKey(), entry.getValue()));
         }
@@ -169,7 +187,7 @@ public final class BlobStacks {
      */
     public static int computeExtractCount(long volume, boolean shiftHeld) {
         long whole = wholeBlobs(volume);
-        if (whole <= 0) return 0;
+        if (whole <= 0) { return 0; }
         if (shiftHeld) {
             return (int) Math.min(whole, MAX_STACK);
         }

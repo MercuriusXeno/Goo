@@ -59,6 +59,17 @@ public class FrostFieldBER
     /** Ticks over which the orb fades out before field expiry. */
     private static final int FADE_TICKS = 40;
 
+    /** Full alpha channel value. */
+    private static final int FULL_ALPHA = 0xFF;
+    /** Bit shift for alpha channel in ARGB. */
+    private static final int ALPHA_SHIFT = 24;
+    /** Mask for stripping alpha from an ARGB color. */
+    private static final int RGB_MASK = 0x00FFFFFF;
+    /** Center offset in block units. */
+    private static final float BLOCK_CENTER = 0.5f;
+    /** Negative face direction for normal inversion. */
+    private static final float NEG_FACE = -1f;
+
     public FrostFieldBER(BlockEntityRendererProvider.Context context) {
     }
 
@@ -95,10 +106,10 @@ public class FrostFieldBER
         int light = LightCoordsUtil.FULL_BRIGHT;
         int gooColor = GooType.FROST.getColor();
         int baseShellAlpha = state.targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
-        int coreAlpha = (int) (0xFF * fade);
+        int coreAlpha = (int) (FULL_ALPHA * fade);
         int shellAlpha = (int) (baseShellAlpha * fade);
-        int coreColor = (coreAlpha << 24) | 0x00FFFFFF;
-        int shellColor = (shellAlpha << 24) | (gooColor & 0x00FFFFFF);
+        int coreColor = (coreAlpha << ALPHA_SHIFT) | RGB_MASK;
+        int shellColor = (shellAlpha << ALPHA_SHIFT) | (gooColor & RGB_MASK);
 
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(GooType.FROST);
         float u0 = sprite.getU(0f);
@@ -107,7 +118,7 @@ public class FrostFieldBER
         float v1 = sprite.getV(1f);
 
         poseStack.pushPose();
-        poseStack.translate(0.5f, 0.5f, 0.5f);
+        poseStack.translate(BLOCK_CENTER, BLOCK_CENTER, BLOCK_CENTER);
 
         // Inner core: frost fluid texture
         float ch = coreHalf;
@@ -128,36 +139,63 @@ public class FrostFieldBER
         poseStack.popPose();
     }
 
-    /** Linear scale from 1.0 at stack 1 to MAX_SCALE at MAX_STACKS. */
+    /**
+     * Linear scale from 1.0 at stack 1 to MAX_SCALE at MAX_STACKS.
+     *
+     * @param stacks the current stack count
+     * @return the computed stackScale
+     */
     private static float computeStackScale(int stacks) {
-        if (MAX_STACKS <= 1) return 1f;
+        if (MAX_STACKS <= 1) { return 1f; }
         float t = (float) (stacks - 1) / (MAX_STACKS - 1);
         return 1f + t * (MAX_SCALE - 1f);
     }
 
-    /** Gentle sine-wave breathing pulse driven by level game time. */
+    /**
+     * Gentle sine-wave breathing pulse driven by level game time.
+     *
+     * @param gameTime the level game time in ticks
+     * @param partialTick the partial tick for interpolation
+     * @return the computed breathe
+     */
     private static float computeBreathe(long gameTime, float partialTick) {
         float t = gameTime + partialTick;
         return (float) Math.sin(t * PULSE_SPEED) * PULSE_AMP;
     }
 
-    /** Fades alpha from 1.0 to 0.0 over the final FADE_TICKS. */
+    /**
+     * Fades alpha from 1.0 to 0.0 over the final FADE_TICKS.
+     *
+     * @param remaining the ticks remaining
+     * @param partialTick the partial tick for interpolation
+     * @return the computed fade
+     */
     private static float computeFade(int remaining, float partialTick) {
-        if (remaining > FADE_TICKS) return 1f;
+        if (remaining > FADE_TICKS) { return 1f; }
         float smooth = Math.max(0f, remaining - partialTick);
         return smooth / FADE_TICKS;
     }
 
-    /** Renders all 6 faces of an axis-aligned cube centered at the origin. */
+    /**
+     * Renders all 6 faces of an axis-aligned cube centered at the origin.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param color the ARGB color value
+     * @param min the min
+     * @param max the max
+     * @param uv the UV texture rectangle
+     */
     private static void renderCube(PoseStack.Pose pose, VertexConsumer c,
             int light, int color, float min, float max,
             GooRenderUtil.UvRect uv) {
         coloredFaceY(pose, c, light, color, min, max, max, min, max, uv, 1f);
-        coloredFaceY(pose, c, light, color, min, max, min, min, max, uv, -1f);
+        coloredFaceY(pose, c, light, color, min, max, min, min, max, uv, NEG_FACE);
         coloredFaceX(pose, c, light, color, max, min, max, min, max, uv, 1f);
-        coloredFaceX(pose, c, light, color, min, min, max, min, max, uv, -1f);
+        coloredFaceX(pose, c, light, color, min, min, max, min, max, uv, NEG_FACE);
         coloredFaceZ(pose, c, light, color, min, max, min, max, max, uv, 1f);
-        coloredFaceZ(pose, c, light, color, min, max, min, max, min, uv, -1f);
+        coloredFaceZ(pose, c, light, color, min, max, min, max, min, uv, NEG_FACE);
     }
 
     private static void coloredFaceY(PoseStack.Pose pose, VertexConsumer c,

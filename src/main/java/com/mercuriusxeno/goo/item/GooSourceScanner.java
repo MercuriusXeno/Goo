@@ -4,7 +4,6 @@ import com.mercuriusxeno.goo.GooType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -18,13 +17,13 @@ import java.util.Map;
  */
 public final class GooSourceScanner {
 
-    private GooSourceScanner() {}
-
     /** Main inventory: slots 0-35. */
     private static final int MAIN_START = 0;
     private static final int MAIN_END = 36;
     /** Offhand slot index in Inventory. */
     private static final int OFFHAND_SLOT = Inventory.SLOT_OFFHAND;
+
+    private GooSourceScanner() {}
 
     /**
      * Aggregates available mB per goo type across all inventory sources.
@@ -33,8 +32,8 @@ public final class GooSourceScanner {
      * @param player the player whose inventory to scan
      * @return map of goo type to total available mB
      */
-    public static EnumMap<GooType, Long> aggregateAvailable(Player player) {
-        EnumMap<GooType, Long> totals = new EnumMap<>(GooType.class);
+    public static Map<GooType, Long> aggregateAvailable(Player player) {
+        Map<GooType, Long> totals = new EnumMap<>(GooType.class);
         Inventory inv = player.getInventory();
 
         for (int i = MAIN_START; i < MAIN_END; i++) {
@@ -56,7 +55,7 @@ public final class GooSourceScanner {
      * @return actual mB depleted
      */
     public static long deplete(Player player, GooType type, long amount) {
-        if (amount <= 0) return 0;
+        if (amount <= 0) { return 0; }
 
         long remaining = amount;
         Inventory inv = player.getInventory();
@@ -65,13 +64,13 @@ public final class GooSourceScanner {
         remaining = depletePass(inv, type, remaining, GooBlobItem.class);
 
         // Pass 2: GooOmniblobItem matching type - partial depletion, bottom-up
-        if (remaining > 0) remaining = depletePass(inv, type, remaining, GooOmniblobItem.class);
+        if (remaining > 0) { remaining = depletePass(inv, type, remaining, GooOmniblobItem.class); }
 
         // Pass 3: CanisterItem with matching type
-        if (remaining > 0) remaining = depletePass(inv, type, remaining, CanisterItem.class);
+        if (remaining > 0) { remaining = depletePass(inv, type, remaining, CanisterItem.class); }
 
         // Pass 4: VatBlockItem with matching type
-        if (remaining > 0) remaining = depletePass(inv, type, remaining, VatBlockItem.class);
+        if (remaining > 0) { remaining = depletePass(inv, type, remaining, VatBlockItem.class); }
 
         return amount - remaining;
     }
@@ -86,7 +85,7 @@ public final class GooSourceScanner {
      * @return true if sufficient goo is available
      */
     public static boolean hasEnough(Player player, GooType type, long amount) {
-        if (amount <= 0) return true;
+        if (amount <= 0) { return true; }
 
         long found = 0;
         Inventory inv = player.getInventory();
@@ -102,13 +101,18 @@ public final class GooSourceScanner {
 
     // --- Private scanning helpers ---
 
-    /** Aggregates all goo from a single stack into the totals map. */
-    private static void scanStack(ItemStack stack, EnumMap<GooType, Long> totals) {
-        if (stack.isEmpty()) return;
+    /**
+     * Aggregates all goo from a single stack into the totals map.
+     *
+     * @param stack  the item stack to scan
+     * @param totals the running totals map
+     */
+    private static void scanStack(ItemStack stack, Map<GooType, Long> totals) {
+        if (stack.isEmpty()) { return; }
 
         if (stack.getItem() instanceof GooBlobItem blob) {
             addToMap(totals, blob.getGooType(),
-                    (long) stack.getCount() * BlobStacks.MB_PER_BLOB);
+                    stack.getCount() * BlobStacks.MB_PER_BLOB);
         } else if (stack.getItem() instanceof GooOmniblobItem omni) {
             addToMap(totals, omni.getGooType(), GooOmniblobItem.getVolume(stack));
         } else if (stack.getItem() instanceof CanisterItem) {
@@ -122,12 +126,18 @@ public final class GooSourceScanner {
         }
     }
 
-    /** Returns the volume of the given type in a single stack. */
+    /**
+     * Returns the volume of the given type in a single stack.
+     *
+     * @param stack the item stack to inspect
+     * @param type  the goo type to look for
+     * @return volume in microblobs
+     */
     private static long volumeOfType(ItemStack stack, GooType type) {
-        if (stack.isEmpty()) return 0;
+        if (stack.isEmpty()) { return 0; }
 
         if (stack.getItem() instanceof GooBlobItem blob && blob.getGooType() == type) {
-            return (long) stack.getCount() * BlobStacks.MB_PER_BLOB;
+            return stack.getCount() * BlobStacks.MB_PER_BLOB;
         }
         if (stack.getItem() instanceof GooOmniblobItem omni && omni.getGooType() == type) {
             return GooOmniblobItem.getVolume(stack);
@@ -146,26 +156,41 @@ public final class GooSourceScanner {
     /**
      * Runs one depletion pass across main inventory + offhand for a specific
      * source class. Bottom-up slot order (slot 0 first).
+     *
+     * @param inv         the player inventory
+     * @param type        the goo type to deplete
+     * @param remaining   the remaining amount to deplete
+     * @param sourceClass the item class to target in this pass
+     * @return the remaining amount after this pass
      */
     private static long depletePass(Inventory inv, GooType type, long remaining, Class<?> sourceClass) {
-        for (int i = MAIN_START; i < MAIN_END && remaining > 0; i++) {
-            remaining = depleteStack(inv.getItem(i), type, remaining, sourceClass);
+        long left = remaining;
+        for (int i = MAIN_START; i < MAIN_END && left > 0; i++) {
+            left = depleteStack(inv.getItem(i), type, left, sourceClass);
         }
-        if (remaining > 0) {
-            remaining = depleteStack(inv.getItem(OFFHAND_SLOT), type, remaining, sourceClass);
+        if (left > 0) {
+            left = depleteStack(inv.getItem(OFFHAND_SLOT), type, left, sourceClass);
         }
-        return remaining;
+        return left;
     }
 
-    /** Depletes from a single stack if it matches the source class and type. */
+    /**
+     * Depletes from a single stack if it matches the source class and type.
+     *
+     * @param stack       the item stack to deplete from
+     * @param type        the goo type to deplete
+     * @param remaining   the remaining amount to deplete
+     * @param sourceClass the item class to match
+     * @return the remaining amount after depletion
+     */
     private static long depleteStack(ItemStack stack, GooType type, long remaining, Class<?> sourceClass) {
-        if (stack.isEmpty()) return remaining;
+        if (stack.isEmpty()) { return remaining; }
 
         if (sourceClass == GooBlobItem.class && stack.getItem() instanceof GooBlobItem blob
                 && blob.getGooType() == type) {
             int blobsNeeded = (int) Math.min(
                     ceilDiv(remaining, BlobStacks.MB_PER_BLOB), stack.getCount());
-            long depleted = (long) blobsNeeded * BlobStacks.MB_PER_BLOB;
+            long depleted = blobsNeeded * BlobStacks.MB_PER_BLOB;
             stack.shrink(blobsNeeded);
             return remaining - depleted;
         }
@@ -198,11 +223,24 @@ public final class GooSourceScanner {
 
     // --- Util ---
 
-    private static void addToMap(EnumMap<GooType, Long> map, GooType type, long amount) {
+    /**
+     * Adds the given amount to the running total for the given type.
+     *
+     * @param map    the running totals map
+     * @param type   the goo type
+     * @param amount the amount to add
+     */
+    private static void addToMap(Map<GooType, Long> map, GooType type, long amount) {
         map.merge(type, amount, Long::sum);
     }
 
-    /** Ceiling division for positive values. */
+    /**
+     * Ceiling division for positive values.
+     *
+     * @param a the dividend
+     * @param b the divisor
+     * @return the ceiling of a/b
+     */
     private static long ceilDiv(long a, long b) {
         return (a + b - 1) / b;
     }

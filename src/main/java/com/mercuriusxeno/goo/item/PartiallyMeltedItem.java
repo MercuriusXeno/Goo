@@ -13,18 +13,32 @@ import net.minecraft.world.item.ItemStack;
  */
 public class PartiallyMeltedItem extends Item {
 
-    /** Creates a partially melted item. Unstackable. */
+    /**
+     * Creates a partially melted item. Unstackable.
+     *
+     * @param properties the item properties
+     */
     public PartiallyMeltedItem(Properties properties) {
         super(properties);
     }
 
-    /** Returns the goo contents from the stack, or EMPTY if absent. */
+    /**
+     * Returns the goo contents from the stack, or EMPTY if absent.
+     *
+     * @param stack the item stack
+     * @return the goo contents, never null
+     */
     public static GooContents getContents(ItemStack stack) {
         GooContents contents = stack.get(GooDataComponents.GOO_CONTENTS.get());
         return contents != null ? contents : GooContents.EMPTY;
     }
 
-    /** Sets the goo contents on the stack. */
+    /**
+     * Sets the goo contents on the stack.
+     *
+     * @param stack    the item stack
+     * @param contents the goo contents to set
+     */
     public static void setContents(ItemStack stack, GooContents contents) {
         stack.set(GooDataComponents.GOO_CONTENTS.get(), contents);
     }
@@ -32,6 +46,9 @@ public class PartiallyMeltedItem extends Item {
     /**
      * Creates a partially melted ItemStack pre-loaded with the given goo contents.
      * Used when the crucible begins melting an item.
+     *
+     * @param contents the goo contents to embed
+     * @return a new partially melted item stack
      */
     public static ItemStack createWith(GooContents contents) {
         ItemStack stack = new ItemStack(
@@ -43,13 +60,21 @@ public class PartiallyMeltedItem extends Item {
     /**
      * Merges additional goo contents into an existing PMI stack.
      * Used by the crucible's shared pool when a new item is inserted.
+     *
+     * @param stack      the partially melted item stack
+     * @param additional the goo contents to merge in
      */
     public static void mergeContents(ItemStack stack, GooContents additional) {
         GooContents current = getContents(stack);
         setContents(stack, current.mergeWith(additional));
     }
 
-    /** Returns true if all goo has been fully drained from this item. */
+    /**
+     * Returns true if all goo has been fully drained from this item.
+     *
+     * @param stack the item stack
+     * @return true if no goo remains
+     */
     public static boolean isFullyMelted(ItemStack stack) {
         return getContents(stack).isEmpty();
     }
@@ -57,6 +82,11 @@ public class PartiallyMeltedItem extends Item {
     /**
      * Drains a specific amount of one goo type from the stack.
      * Returns the amount actually drained (may be less if insufficient).
+     *
+     * @param stack  the item stack
+     * @param type   the goo type to drain
+     * @param amount the requested volume in microblobs
+     * @return the volume actually drained
      */
     public static long drain(ItemStack stack, GooType type, long amount) {
         GooContents contents = getContents(stack);

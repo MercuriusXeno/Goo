@@ -40,7 +40,11 @@ public class PlexerBlockEntityRenderer
     private final ItemModelResolver itemModelResolver;
     private final ItemStackRenderState itemRenderState = new ItemStackRenderState();
 
-    /** Stores the item model resolver for rendering target items. */
+    /**
+     * Stores the item model resolver for rendering target items.
+     *
+     * @param context the renderer provider context
+     */
     public PlexerBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
         this.itemModelResolver = context.itemModelResolver();
     }
@@ -50,7 +54,15 @@ public class PlexerBlockEntityRenderer
         return new PlexerRenderState();
     }
 
-    /** Snapshots the target item and facing from the block entity. */
+    /**
+     * Snapshots the target item and facing from the block entity.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param partialTick the partial tick for interpolation
+     * @param cameraPos the camera world position
+     * @param breakProgress the crumbling overlay, or null
+     */
     @Override
     public void extractRenderState(PlexerBlockEntity be, PlexerRenderState state,
             float partialTick, Vec3 cameraPos,
@@ -60,12 +72,19 @@ public class PlexerBlockEntityRenderer
         state.facing = be.getBlockState().getValue(PlexerBlock.FACING);
     }
 
-    /** Submits the target item model in the cutaway if one is set. */
+    /**
+     * Submits the target item model in the cutaway if one is set.
+     *
+     * @param state the block state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param cameraState the camera render state
+     */
     @Override
     public void submit(PlexerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (state.targetItem.isEmpty()) return;
-        if (!resolveItemModel(state)) return;
+        if (state.targetItem.isEmpty()) { return; }
+        if (!resolveItemModel(state)) { return; }
         poseStack.pushPose();
         translateToCutaway(poseStack, state.facing);
         poseStack.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
@@ -73,7 +92,12 @@ public class PlexerBlockEntityRenderer
         poseStack.popPose();
     }
 
-    /** Resolves the target item into the reusable render state. */
+    /**
+     * Resolves the target item into the reusable render state.
+     *
+     * @param state the block state
+     * @return true if the condition is met
+     */
     private boolean resolveItemModel(PlexerRenderState state) {
         itemModelResolver.updateForTopItem(
             itemRenderState, state.targetItem, ItemDisplayContext.FIXED, null, null, 0);
@@ -83,6 +107,9 @@ public class PlexerBlockEntityRenderer
     /**
      * Translates to the cutaway center by rotating around the block center.
      * Moves to pivot, rotates by facing, then offsets into the cutaway.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param facing the block facing direction
      */
     private static void translateToCutaway(PoseStack poseStack, Direction facing) {
         poseStack.translate(BLOCK_CENTER, CUTAWAY_Y, BLOCK_CENTER);

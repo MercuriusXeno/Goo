@@ -26,6 +26,35 @@ import java.util.Set;
 @Mixin(AbstractContainerScreen.class)
 public abstract class OmniblobQuickCraftScreenMixin {
 
+    /** Mixin method target: mouseDragged. */
+    private static final String METHOD_MOUSE_DRAGGED = "mouseDragged";
+    /** Mixin method target: renderSlot. */
+    private static final String METHOD_RENDER_SLOT = "renderSlot";
+    /** Mixin injection point type: invoke. */
+    private static final String AT_INVOKE = "INVOKE";
+    /** Mixin target: ItemStack.getCount(). */
+    private static final String TARGET_GET_COUNT =
+        "Lnet/minecraft/world/item/ItemStack;getCount()I";
+    /** Mixin target: AbstractContainerMenu.canItemQuickReplace(). */
+    private static final String TARGET_CAN_QUICK_REPLACE =
+        "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
+        + "canItemQuickReplace(Lnet/minecraft/world/inventory/Slot;"
+        + "Lnet/minecraft/world/item/ItemStack;Z)Z";
+    /** Mixin target: AbstractContainerMenu.getQuickCraftPlaceCount(). */
+    private static final String TARGET_GET_PLACE_COUNT =
+        "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
+        + "getQuickCraftPlaceCount(IILnet/minecraft/world/item/ItemStack;)I";
+    /** Mixin target: AbstractContainerScreen.renderSlotContents(). */
+    private static final String TARGET_RENDER_SLOT_CONTENTS =
+        "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;"
+        + "renderSlotContents(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
+        + "Lnet/minecraft/world/item/ItemStack;"
+        + "Lnet/minecraft/world/inventory/Slot;Ljava/lang/String;)V";
+    /** Mixin method target: recalculateQuickCraftRemaining. */
+    private static final String METHOD_RECALC = "recalculateQuickCraftRemaining";
+    /** Mixin injection point type: HEAD. */
+    private static final String AT_HEAD = "HEAD";
+
     @Shadow
     @Final
     protected Set<Slot> quickCraftSlots;
@@ -52,10 +81,13 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * For omniblobs, returns Integer.MAX_VALUE so the slot-collection condition
      * always passes (actual limits enforced server-side).
      * For non-omniblobs, returns the real count (vanilla behavior).
+     *
+     * @param stack the item stack being checked
+     * @return the effective count for the gate check
      */
     @Redirect(
-        method = "mouseDragged",
-        at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;getCount()I", ordinal = 1)
+        method = METHOD_MOUSE_DRAGGED,
+        at = @At(value = AT_INVOKE, target = TARGET_GET_COUNT, ordinal = 1)
     )
     private int goo$omniblobBypassCountGate(ItemStack stack) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(stack)) {
@@ -67,11 +99,16 @@ public abstract class OmniblobQuickCraftScreenMixin {
     /**
      * Shared logic for canItemQuickReplace overrides. Returns true for empty
      * slots and occupied slots with matching goo type, enabling merge collection.
+     *
+     * @param slot             the target slot
+     * @param carried          the carried item stack
+     * @param stackSizeMatters whether stack size affects the check
+     * @return true if the slot accepts the item for quickcraft
      */
     private boolean omniblobCanQuickReplace(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
             ItemStack existing = slot.getItem();
-            if (existing.isEmpty()) return true;
+            if (existing.isEmpty()) { return true; }
             GooType carriedType = BlobStacks.gooTypeOf(carried);
             GooType existingType = BlobStacks.gooTypeOf(existing);
             return carriedType != null && carriedType == existingType;
@@ -83,11 +120,16 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * Redirects canItemQuickReplace in mouseDragged so that occupied same-type
      * goo slots are collected into quickCraftSlots during drag.
      * Without this, vanilla rejects them (maxStackSize=1, existing count=1).
+     *
+     * @param slot             the target slot
+     * @param carried          the carried item stack
+     * @param stackSizeMatters whether stack size affects the check
+     * @return true if the slot should be collected
      */
     @Redirect(
-        method = "mouseDragged",
-        at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;canItemQuickReplace(Lnet/minecraft/world/inventory/Slot;Lnet/minecraft/world/item/ItemStack;Z)Z")
+        method = METHOD_MOUSE_DRAGGED,
+        at = @At(value = AT_INVOKE,
+            target = TARGET_CAN_QUICK_REPLACE)
     )
     private boolean goo$allowSameTypeCollect(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         return omniblobCanQuickReplace(slot, carried, stackSizeMatters);
@@ -97,11 +139,16 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * Redirects canItemQuickReplace in renderSlot so that same-type goo items
      * in occupied slots are not ejected from quickCraftSlots during render.
      * Vanilla ejects slots where this returns false, preventing merge previews.
+     *
+     * @param slot             the target slot
+     * @param carried          the carried item stack
+     * @param stackSizeMatters whether stack size affects the check
+     * @return true if the slot should remain collected
      */
     @Redirect(
-        method = "renderSlot",
-        at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;canItemQuickReplace(Lnet/minecraft/world/inventory/Slot;Lnet/minecraft/world/item/ItemStack;Z)Z")
+        method = METHOD_RENDER_SLOT,
+        at = @At(value = AT_INVOKE,
+            target = TARGET_CAN_QUICK_REPLACE)
     )
     private boolean goo$allowSameTypeQuickReplace(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         return omniblobCanQuickReplace(slot, carried, stackSizeMatters);
@@ -111,11 +158,16 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * Returns a dummy count for omniblob quickcraft so vanilla's copyWithCount
      * doesn't produce an empty stack. The real preview is built in
      * goo$fixOmniblobPreview via renderSlotContents.
+     *
+     * @param slotCount the number of slots in the quickcraft set
+     * @param craftType the quickcraft drag type
+     * @param carried   the carried item stack
+     * @return the place count (1 for omniblobs, vanilla result otherwise)
      */
     @Redirect(
-        method = "renderSlot",
-        at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/inventory/AbstractContainerMenu;getQuickCraftPlaceCount(IILnet/minecraft/world/item/ItemStack;)I")
+        method = METHOD_RENDER_SLOT,
+        at = @At(value = AT_INVOKE,
+            target = TARGET_GET_PLACE_COUNT)
     )
     private int goo$omniblobPlaceCount(int slotCount, int craftType, ItemStack carried) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
@@ -129,11 +181,17 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * volume-correct one during omniblob quickcraft, and suppresses the yellow
      * count overlay. Vanilla's preview uses copyWithCount which preserves the
      * original volume component (wrong) and clamps to maxStackSize=1 (yellow "1").
+     *
+     * @param self         the container screen instance
+     * @param graphics     the GUI graphics extractor
+     * @param previewStack the vanilla-computed preview stack
+     * @param slot         the slot being rendered
+     * @param countString  the vanilla count string overlay
      */
     @Redirect(
-        method = "renderSlot",
-        at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;renderSlotContents(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/inventory/Slot;Ljava/lang/String;)V")
+        method = METHOD_RENDER_SLOT,
+        at = @At(value = AT_INVOKE,
+            target = TARGET_RENDER_SLOT_CONTENTS)
     )
     private void goo$fixOmniblobPreview(AbstractContainerScreen<?> self,
             GuiGraphicsExtractor graphics, ItemStack previewStack, Slot slot, String countString) {
@@ -147,8 +205,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
             if (!existing.isEmpty() && type == BlobStacks.gooTypeOf(existing)) {
                 perSlot += BlobStacks.volumeOf(existing);
             }
-            previewStack = BlobStacks.createForOutput(type, perSlot);
-            countString = null;
+            ItemStack omniblobPreview = BlobStacks.createForOutput(type, perSlot);
+            renderSlotContents(graphics, omniblobPreview, slot, null);
+            return;
         }
         renderSlotContents(graphics, previewStack, slot, countString);
     }
@@ -158,11 +217,13 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * remainder using count/maxStackSize which is meaningless for volume-based items.
      * Keeps the cursor visible during drag by setting remainder to the carried count
      * when volume remains, or 0 when fully distributed.
+     *
+     * @param ci the mixin callback info
      */
-    @Inject(method = "recalculateQuickCraftRemaining", at = @At("HEAD"), cancellable = true)
+    @Inject(method = METHOD_RECALC, at = @At(AT_HEAD), cancellable = true)
     private void goo$omniblobRecalcRemainder(CallbackInfo ci) {
         ItemStack carried = menu.getCarried();
-        if (!isQuickCrafting || !OmniblobQuickCraft.isOmniblobQuickCraft(carried)) return;
+        if (!isQuickCrafting || !OmniblobQuickCraft.isOmniblobQuickCraft(carried)) { return; }
 
         long totalVolume = BlobStacks.volumeOf(carried);
         long perSlot = computeClientPerSlot(totalVolume);
@@ -176,13 +237,16 @@ public abstract class OmniblobQuickCraftScreenMixin {
     /**
      * Computes per-slot volume on the client side for remainder preview.
      * Mirrors the server-side logic: charitable divides evenly, greedy gives 1 blob.
+     *
+     * @param totalVolume the total volume being distributed
+     * @return the volume per slot
      */
     private long computeClientPerSlot(long totalVolume) {
         if (quickCraftingType == AbstractContainerMenu.QUICKCRAFT_TYPE_GREEDY) {
             return OmniblobQuickCraft.greedyPerSlot();
         }
         int slotCount = quickCraftSlots.size();
-        if (slotCount <= 0) return 0L;
+        if (slotCount <= 0) { return 0L; }
         return OmniblobQuickCraft.charitablePerSlot(totalVolume, slotCount);
     }
 }

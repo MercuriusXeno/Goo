@@ -4,8 +4,8 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.DepletedBlazeRodItem;
+import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.PartiallyMeltedItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -38,8 +38,7 @@ import java.util.Set;
  * an icon with "reservoir / total" volumes.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
-public class CrucibleHudRenderer {
-
+public final class CrucibleHudRenderer {
     /** Height of one row (icon + text line). */
     private static final float ROW_HEIGHT = 11f;
     /** Icon render size in scaled pixels (matches the 10x10 tooltip icons). */
@@ -82,6 +81,45 @@ public class CrucibleHudRenderer {
     /** Score bonus given to side midpoints when look vector is near-cardinal. */
     private static final float SIDE_BIAS_BONUS = 0.5f;
 
+    /** Z-nudge for panel to prevent z-fighting on the basin rim. */
+    private static final double RIM_Z_NUDGE = -0.01;
+
+    /** Below-rim sign for selecting nearest rim point. */
+    private static final float BELOW_RIM_SIGN = -1f;
+
+    /** Divisor for centering calculations. */
+    private static final int HALF = 2;
+
+    /** Half-width divisor for panel centering. */
+    private static final float HALF_F = 2f;
+
+    /** Ticks per second for fuel time conversion. */
+    private static final float TICKS_PER_SECOND = 20f;
+
+    /** Fuel display threshold: show integer seconds above this. */
+    private static final float FUEL_INT_THRESHOLD = 10f;
+
+    /** Format string for integer-second fuel display. */
+    private static final String FUEL_INT_FORMAT = "%.0fs";
+
+    /** Format string for decimal-second fuel display. */
+    private static final String FUEL_DEC_FORMAT = "%.1fs";
+
+    /** Separator between reservoir and total volumes. */
+    private static final String VOLUME_SEPARATOR = " / ";
+
+    /** Texture path prefix for goo type icons. */
+    private static final String ICON_PATH_PREFIX = "textures/item/";
+
+    /** Texture path suffix for bordered goo type icons. */
+    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+
+    /** Texture path prefix for depleted blaze rod stages. */
+    private static final String BLAZE_ROD_PREFIX = "textures/item/depleted_blaze_rod_";
+
+    /** Texture path suffix for depleted blaze rod stages. */
+    private static final String BLAZE_ROD_SUFFIX = ".png";
+
     /**
      * 8 rim anchor points on the basin top, in block-local XZ coords.
      * 4 corners + 4 side midpoints. Y is always BASIN_TOP_Y + HUD_LIFT.
@@ -101,20 +139,24 @@ public class CrucibleHudRenderer {
     // --- Animation state (static, persists across frames) ---
 
     /** Block position currently showing the HUD, or null if idle. */
-    private static @Nullable BlockPos trackedPos = null;
+    private static @Nullable BlockPos trackedPos;
 
     /** Smoothed pitch angle in radians (0 = flush with rim, positive = tilted toward camera). */
-    private static float currentPitch = 0f;
+    private static float currentPitch;
 
     /** True when crosshair has left and the panel is animating back to flush. */
-    private static boolean retracting = false;
+    private static boolean retracting;
 
     /** System.nanoTime() of the last frame, for delta-time calculation. */
     private static final long[] lastFrameNanos = {0};
 
+    private CrucibleHudRenderer() {}
+
     /**
      * Renders the crucible HUD after entities are drawn.
      * Drives the state machine and dispatches rendering when active.
+     *
+     * @param event the event instance
      */
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
@@ -124,7 +166,7 @@ public class CrucibleHudRenderer {
 
         updateState(target, dt);
 
-        if (trackedPos == null) return;
+        if (trackedPos == null) { return; }
 
         CrucibleBlockEntity be = lookupCrucible(trackedPos);
         if (be == null) {
@@ -138,12 +180,15 @@ public class CrucibleHudRenderer {
     /**
      * State machine: manages transitions between idle, emerging, and retracting.
      * Updates currentPitch each frame via exponential smoothing.
+     *
+     * @param target the current aim target
+     * @param dt the delta time in seconds
      */
     private static void updateState(@Nullable BlockPos target, float dt) {
         boolean hasTarget = target != null;
         boolean sameTarget = hasTarget && target.equals(trackedPos);
 
-        if (hasTarget && (trackedPos == null || !sameTarget)) {
+        if (hasTarget && !sameTarget) {
             beginEmerge(target);
         } else if (hasTarget && retracting) {
             retracting = false;
@@ -151,7 +196,16 @@ public class CrucibleHudRenderer {
             retracting = true;
         }
 
-        if (trackedPos == null) return;
+        advancePitch(dt);
+    }
+
+    /**
+     * Advances the pitch toward the target value and completes retract if flush.
+     *
+     * @param dt the delta time in seconds
+     */
+    private static void advancePitch(float dt) {
+        if (trackedPos == null) { return; }
 
         float targetPitch = retracting ? 0f : 1f;
         currentPitch = InWorldHud.smoothToward(currentPitch, targetPitch, dt, SMOOTH_TAU);
@@ -161,7 +215,11 @@ public class CrucibleHudRenderer {
         }
     }
 
-    /** Initializes state for a new emerge animation on the given block. */
+    /**
+     * Initializes state for a new emerge animation on the given block.
+     *
+     * @param pos the block position
+     */
     private static void beginEmerge(BlockPos pos) {
         trackedPos = pos;
         currentPitch = 0f;
@@ -181,28 +239,41 @@ public class CrucibleHudRenderer {
      * Returns the block position of the targeted crucible basin, or null.
      * Only returns a target when the crosshair hits the basin portion (Y >= 10/16),
      * not the fuel rod area below.
+     *
+     * @return the targetPos
      */
     private static @Nullable BlockPos getTargetPos() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.hitResult == null) return null;
-        if (mc.hitResult.getType() != HitResult.Type.BLOCK) return null;
+        if (mc.level == null || mc.hitResult == null) { return null; }
+        if (mc.hitResult.getType() != HitResult.Type.BLOCK) { return null; }
         BlockHitResult hit = (BlockHitResult) mc.hitResult;
         BlockPos pos = hit.getBlockPos();
-        if (!(mc.level.getBlockState(pos).getBlock() instanceof CrucibleBlock)) return null;
-        if (hitsBelowBasin(hit, pos)) return null;
+        if (!(mc.level.getBlockState(pos).getBlock() instanceof CrucibleBlock)) { return null; }
+        if (hitsBelowBasin(hit, pos)) { return null; }
         return pos;
     }
 
-    /** Returns true if the hit location is below the basin floor (fuel rod area). */
+    /**
+     * Returns true if the hit location is below the basin floor (fuel rod area).
+     *
+     * @param hit the block hit result
+     * @param pos the block position
+     * @return true if the condition is met
+     */
     private static boolean hitsBelowBasin(BlockHitResult hit, BlockPos pos) {
         double localY = hit.getLocation().y - pos.getY();
         return localY < BASIN_MIN_Y;
     }
 
-    /** Looks up the CrucibleBlockEntity at the given position, or null. */
+    /**
+     * Looks up the CrucibleBlockEntity at the given position, or null.
+     *
+     * @param pos the block position
+     * @return the crucible, or null if not found
+     */
     private static @Nullable CrucibleBlockEntity lookupCrucible(BlockPos pos) {
         Level level = Minecraft.getInstance().level;
-        if (level == null) return null;
+        if (level == null) { return null; }
         BlockEntity be = level.getBlockEntity(pos);
         return be instanceof CrucibleBlockEntity cbe ? cbe : null;
     }
@@ -210,6 +281,10 @@ public class CrucibleHudRenderer {
     /**
      * Renders the HUD panel on the basin rim at the farthest point from the camera.
      * Billboards to face the player with smoothed emerge animation.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param be the block entity instance
+     * @param camera the render camera
      */
     private static void renderRimPanel(PoseStack poseStack, CrucibleBlockEntity be,
             Camera camera) {
@@ -219,7 +294,7 @@ public class CrucibleHudRenderer {
         poseStack.pushPose();
         translateToRimPoint(poseStack, pos, cam, camera);
         applyBillboardRotation(poseStack, camera);
-        poseStack.translate(0, 0, -0.01);
+        poseStack.translate(0, 0, RIM_Z_NUDGE);
         poseStack.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
 
         renderPanel(poseStack, be);
@@ -230,6 +305,11 @@ public class CrucibleHudRenderer {
      * Translates the pose stack to the farthest rim point, lifted above the basin,
      * relative to camera position. The point is selected from 8 candidates
      * (4 corners + 4 side midpoints) with look-alignment bias.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param pos the block position
+     * @param cam the cam
+     * @param camera the render camera
      */
     private static void translateToRimPoint(PoseStack poseStack, BlockPos pos,
             Vec3 cam, Camera camera) {
@@ -245,6 +325,10 @@ public class CrucibleHudRenderer {
      * the basin rim, picks the farthest point (behind the basin). When below,
      * picks the nearest point (in front) so the panel isn't hidden by the walls.
      * Side midpoints get a bias when the look vector is near-cardinal.
+     *
+     * @param pos the block position
+     * @param camera the render camera
+     * @return the selected result
      */
     private static RimPoint selectBestRimPoint(BlockPos pos, Camera camera) {
         float yawRad = (float) Math.toRadians(camera.yRot());
@@ -257,7 +341,7 @@ public class CrucibleHudRenderer {
         float bestScore = Float.NEGATIVE_INFINITY;
         RimPoint best = RIM_POINTS[0];
 
-        float sign = belowRim ? -1f : 1f;
+        float sign = belowRim ? BELOW_RIM_SIGN : 1f;
 
         for (RimPoint rp : RIM_POINTS) {
             float score = scoreRimPoint(rp, pos, cam, forwardX, forwardZ, nearCardinal, sign);
@@ -273,6 +357,10 @@ public class CrucibleHudRenderer {
      * Returns true if the camera's forward XZ vector is within the bias threshold
      * of a cardinal axis (N/S/E/W), meaning the player is looking roughly straight
      * along one axis.
+     *
+     * @param forwardX the forwardX
+     * @param forwardZ the forwardZ
+     * @return true if nearCardinal
      */
     private static boolean isNearCardinal(float forwardX, float forwardZ) {
         float absX = Math.abs(forwardX);
@@ -286,11 +374,20 @@ public class CrucibleHudRenderer {
      * camera-to-point vector with the camera forward direction, multiplied by
      * sign (+1 = farthest wins, -1 = nearest wins). Side midpoints receive a
      * bias bonus in the same direction.
+     *
+     * @param rp the rp
+     * @param pos the block position
+     * @param cam the cam
+     * @param forwardX the forwardX
+     * @param forwardZ the forwardZ
+     * @param nearCardinal the nearCardinal
+     * @param sign the sign
+     * @return the computed score
      */
     private static float scoreRimPoint(RimPoint rp, BlockPos pos, Vec3 cam,
             float forwardX, float forwardZ, boolean nearCardinal, float sign) {
-        float dx = (pos.getX() + rp.x()) - (float) cam.x;
-        float dz = (pos.getZ() + rp.z()) - (float) cam.z;
+        float dx = pos.getX() + rp.x() - (float) cam.x;
+        float dz = pos.getZ() + rp.z() - (float) cam.z;
         float score = (dx * forwardX + dz * forwardZ) * sign;
         if (nearCardinal && rp.isSide()) {
             score += SIDE_BIAS_BONUS;
@@ -298,7 +395,12 @@ public class CrucibleHudRenderer {
         return score;
     }
 
-    /** Applies billboard rotation, delegating to InWorldHud with current pitch. */
+    /**
+     * Applies billboard rotation, delegating to InWorldHud with current pitch.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
+     */
     private static void applyBillboardRotation(PoseStack poseStack, Camera camera) {
         InWorldHud.applyBillboardRotation(poseStack, camera, currentPitch);
     }
@@ -307,35 +409,78 @@ public class CrucibleHudRenderer {
      * Renders the compact panel: optional gasket partner row, one row per goo type,
      * plus an optional fuel row.
      * Goo rows: {icon} reservoir / total. Fuel row: {blaze rod icon} ##.#s
+     *
+     * @param poseStack the pose stack for rendering
+     * @param be the block entity instance
      */
     private static void renderPanel(PoseStack poseStack, CrucibleBlockEntity be) {
         GooContents reservoir = be.getReservoir();
         GooContents pool = getPoolContents(be);
         boolean hasFuel = !be.getFuelRod().isEmpty();
         boolean hasGoo = !reservoir.isEmpty() || !pool.isEmpty();
-        if (!hasGoo && !hasFuel) return;
+        if (!hasGoo && !hasFuel) { return; }
 
-        GooContents total = hasGoo ? reservoir.mergeWith(pool) : GooContents.EMPTY;
-        Set<GooType> types = hasGoo ? allTypes(reservoir, pool) : Set.of();
-
-        Font font = Minecraft.getInstance().font;
-        float gooWidth = hasGoo ? measureMaxRowWidth(font, reservoir, total, types) : 0;
-        float fuelWidth = hasFuel ? measureFuelRowWidth(font, be.getFuelRod()) : 0;
-        float contentWidth = Math.max(gooWidth, fuelWidth);
-        int rowCount = types.size() + (hasFuel ? 1 : 0);
-        float panelWidth = contentWidth + InWorldHud.BORDER * 2;
-        float panelHeight = InWorldHud.BORDER * 2 + rowCount * ROW_HEIGHT;
+        PanelLayout layout = measurePanelLayout(reservoir, pool, be.getFuelRod(), hasGoo, hasFuel);
 
         MultiBufferSource.BufferSource buffers =
             Minecraft.getInstance().renderBuffers().bufferSource();
 
-        float halfW = panelWidth / 2f;
+        float halfW = layout.panelWidth / HALF_F;
+        InWorldHud.renderBackground(poseStack, buffers, -halfW, -layout.panelHeight,
+            layout.panelWidth, layout.panelHeight);
+
         float contentX = -halfW + InWorldHud.BORDER;
-        float contentY = -panelHeight + InWorldHud.BORDER;
+        float contentY = -layout.panelHeight + InWorldHud.BORDER;
+
+        renderPanelContent(poseStack, buffers, reservoir, layout.total, layout.types,
+            be.getFuelRod(), hasGoo, hasFuel, contentX, contentY);
+        buffers.endBatch();
+    }
+
+    /**
+     * Measures panel dimensions from the crucible's goo and fuel state.
+     *
+     * @param reservoir the reservoir contents
+     * @param pool the pool contents
+     * @param fuelRod the fuel rod stack
+     * @param hasGoo whether goo is present
+     * @param hasFuel whether fuel is present
+     * @return the computed layout
+     */
+    private static PanelLayout measurePanelLayout(GooContents reservoir, GooContents pool,
+            ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
+        GooContents total = hasGoo ? reservoir.mergeWith(pool) : GooContents.EMPTY;
+        Set<GooType> types = hasGoo ? allTypes(reservoir, pool) : Set.of();
+        Font font = Minecraft.getInstance().font;
+        float gooWidth = hasGoo ? measureMaxRowWidth(font, reservoir, total, types) : 0;
+        float fuelWidth = hasFuel ? measureFuelRowWidth(font, fuelRod) : 0;
+        float contentWidth = Math.max(gooWidth, fuelWidth);
+        int rowCount = types.size() + (hasFuel ? 1 : 0);
+        float panelWidth = contentWidth + InWorldHud.BORDER * HALF;
+        float panelHeight = InWorldHud.BORDER * HALF + rowCount * ROW_HEIGHT;
+        return new PanelLayout(panelWidth, panelHeight, total, types);
+    }
+
+    /**
+     * Renders goo rows and fuel row into the panel area.
+     *
+     * @param poseStack the pose stack
+     * @param buffers the buffer source
+     * @param reservoir the reservoir contents
+     * @param total the merged total contents
+     * @param types the goo types present
+     * @param fuelRod the fuel rod stack
+     * @param hasGoo whether goo is present
+     * @param hasFuel whether fuel is present
+     * @param contentX the left X
+     * @param contentY the top Y
+     */
+    private static void renderPanelContent(PoseStack poseStack, MultiBufferSource buffers,
+            GooContents reservoir, GooContents total, Set<GooType> types,
+            ItemStack fuelRod, boolean hasGoo, boolean hasFuel,
+            float contentX, float contentY) {
+        Font font = Minecraft.getInstance().font;
         int row = 0;
-
-        InWorldHud.renderBackground(poseStack, buffers, -halfW, -panelHeight, panelWidth, panelHeight);
-
         if (hasGoo) {
             float gooY = contentY + row * ROW_HEIGHT;
             renderRows(poseStack, font, buffers, reservoir, total, types, contentX, gooY);
@@ -343,18 +488,28 @@ public class CrucibleHudRenderer {
         }
         if (hasFuel) {
             float fuelY = contentY + row * ROW_HEIGHT;
-            renderFuelRow(poseStack, font, buffers, be.getFuelRod(), contentX, fuelY);
+            renderFuelRow(poseStack, font, buffers, fuelRod, contentX, fuelY);
         }
-        buffers.endBatch();
     }
 
-    /** Extracts the PMI pool contents from the crucible. */
+    /**
+     * Extracts the PMI pool contents from the crucible.
+     *
+     * @param be the block entity instance
+     * @return the poolContents
+     */
     private static GooContents getPoolContents(CrucibleBlockEntity be) {
-        if (be.getMeltingItem().isEmpty()) return GooContents.EMPTY;
+        if (be.getMeltingItem().isEmpty()) { return GooContents.EMPTY; }
         return PartiallyMeltedItem.getContents(be.getMeltingItem());
     }
 
-    /** Returns all goo types present in either the reservoir or pool. */
+    /**
+     * Returns all goo types present in either the reservoir or pool.
+     *
+     * @param reservoir the reservoir goo contents
+     * @param pool the pool goo contents
+     * @return the complete set
+     */
     private static Set<GooType> allTypes(GooContents reservoir, GooContents pool) {
         Set<GooType> types = new LinkedHashSet<>();
         types.addAll(reservoir.getAll().keySet());
@@ -362,7 +517,15 @@ public class CrucibleHudRenderer {
         return types;
     }
 
-    /** Measures the widest row across all types to determine panel width. */
+    /**
+     * Measures the widest row across all types to determine panel width.
+     *
+     * @param font the font renderer
+     * @param reservoir the reservoir goo contents
+     * @param total the total merged goo contents
+     * @param types the set of goo types present
+     * @return the measured width in pixels
+     */
     private static float measureMaxRowWidth(Font font, GooContents reservoir,
             GooContents total, Set<GooType> types) {
         float maxW = 0;
@@ -373,19 +536,42 @@ public class CrucibleHudRenderer {
         return ICON_SIZE + ICON_TEXT_GAP + maxW;
     }
 
-    /** Formats a single row: "### / ###" with compact volume notation. */
+    /**
+     * Formats a single row: "### / ###" with compact volume notation.
+     *
+     * @param reservoirVol the reservoir volume in mB
+     * @param totalVol the total volume in mB
+     * @return the formatted string
+     */
     private static String formatRow(long reservoirVol, long totalVol) {
         return GooTooltipHandler.formatFluidDisplayCompact(reservoirVol)
-            + " / "
+            + VOLUME_SEPARATOR
             + GooTooltipHandler.formatFluidDisplayCompact(totalVol);
     }
 
-    /** Returns the volume of a specific type in a GooContents, or 0 if absent. */
+    /**
+     * Returns the volume of a specific type in a GooContents, or 0 if absent.
+     *
+     * @param contents the goo contents to measure
+     * @param type the goo type
+     * @return the result
+     */
     private static long volumeOf(GooContents contents, GooType type) {
         return contents.getAll().getOrDefault(type, 0L);
     }
 
-    /** Renders all type rows vertically. */
+    /**
+     * Renders all type rows vertically.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param reservoir the reservoir goo contents
+     * @param total the total merged goo contents
+     * @param types the set of goo types present
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
     private static void renderRows(PoseStack poseStack, Font font, MultiBufferSource buffers,
             GooContents reservoir, GooContents total,
             Set<GooType> types, float x, float y) {
@@ -397,23 +583,44 @@ public class CrucibleHudRenderer {
         }
     }
 
-    /** Renders one row: goo type icon + "reservoir / total" text, both vertically centered. */
+    /**
+     * Renders one row: goo type icon + "reservoir / total" text, both vertically centered.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param type the goo type
+     * @param reservoirVol the reservoir volume in mB
+     * @param totalVol the total volume in mB
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
     private static void renderTypeRow(PoseStack poseStack, Font font,
             MultiBufferSource buffers, GooType type,
             long reservoirVol, long totalVol, float x, float y) {
-        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / 2f;
-        float textY = y + (ROW_HEIGHT - font.lineHeight) / 2f;
+        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / HALF_F;
+        float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF_F;
         renderTexturedQuad(poseStack, buffers, iconTexture(type), x, iconY);
         float textX = x + ICON_SIZE + ICON_TEXT_GAP;
         renderFractionText(font, buffers, poseStack, reservoirVol, totalVol, textX, textY);
     }
 
-    /** Renders "### / ###" with the separator in a dim color. */
+    /**
+     * Renders "### / ###" with the separator in a dim color.
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param poseStack the pose stack for rendering
+     * @param reservoirVol the reservoir volume in mB
+     * @param totalVol the total volume in mB
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
     private static void renderFractionText(Font font, MultiBufferSource buffers,
             PoseStack poseStack, long reservoirVol, long totalVol,
             float x, float y) {
         String resText = GooTooltipHandler.formatFluidDisplayCompact(reservoirVol);
-        String sep = " / ";
+        String sep = VOLUME_SEPARATOR;
         String totText = GooTooltipHandler.formatFluidDisplayCompact(totalVol);
         float cx = x;
         InWorldHud.drawText(font, buffers, poseStack, resText, cx, y, TEXT_COLOR);
@@ -423,17 +630,32 @@ public class CrucibleHudRenderer {
         InWorldHud.drawText(font, buffers, poseStack, totText, cx, y, TEXT_COLOR);
     }
 
-    /** Measures the width of the fuel row: blaze rod icon + seconds text. */
+    /**
+     * Measures the width of the fuel row: blaze rod icon + seconds text.
+     *
+     * @param font the font renderer
+     * @param fuelRod the fuel rod item stack
+     * @return the measured width in pixels
+     */
     private static float measureFuelRowWidth(Font font, ItemStack fuelRod) {
         String text = formatFuelSeconds(fuelRod);
         return ICON_SIZE + ICON_TEXT_GAP + font.width(text);
     }
 
-    /** Renders the fuel row: depleted blaze rod icon + remaining seconds, both vertically centered. */
+    /**
+     * Renders the fuel row: depleted blaze rod icon + remaining seconds, both vertically centered.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param fuelRod the fuel rod item stack
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
     private static void renderFuelRow(PoseStack poseStack, Font font,
             MultiBufferSource buffers, ItemStack fuelRod, float x, float y) {
-        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / 2f;
-        float textY = y + (ROW_HEIGHT - font.lineHeight) / 2f;
+        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / HALF_F;
+        float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF_F;
         Identifier tex = blazeRodTexture(fuelRod);
         renderTexturedQuad(poseStack, buffers, tex, x, iconY);
         String text = formatFuelSeconds(fuelRod);
@@ -441,44 +663,75 @@ public class CrucibleHudRenderer {
         InWorldHud.drawText(font, buffers, poseStack, text, textX, textY, FUEL_COLOR);
     }
 
-    /** Formats fuel remaining as seconds with one decimal: "42.3s". */
+    /**
+     * Formats fuel remaining as seconds with one decimal: "42.3s".
+     *
+     * @param fuelRod the fuel rod item stack
+     * @return the formatted string
+     */
     private static String formatFuelSeconds(ItemStack fuelRod) {
         int ticks = fuelTicksRemaining(fuelRod);
-        float seconds = ticks / 20f;
-        if (seconds >= 10f) return String.format("%.0fs", seconds);
-        return String.format("%.1fs", seconds);
+        float seconds = ticks / TICKS_PER_SECOND;
+        if (seconds >= FUEL_INT_THRESHOLD) { return String.format(FUEL_INT_FORMAT, seconds); }
+        return String.format(FUEL_DEC_FORMAT, seconds);
     }
 
-    /** Returns fuel ticks remaining: full 1200 for a vanilla blaze rod, else from data component. */
+    /**
+     * Returns fuel ticks remaining: full 1200 for a vanilla blaze rod, else from data component.
+     *
+     * @param fuelRod the fuel rod item stack
+     * @return the result
+     */
     private static int fuelTicksRemaining(ItemStack fuelRod) {
-        if (fuelRod.is(Items.BLAZE_ROD)) return DepletedBlazeRodItem.FULL_FUEL_TICKS;
+        if (fuelRod.is(Items.BLAZE_ROD)) { return DepletedBlazeRodItem.FULL_FUEL_TICKS; }
         return DepletedBlazeRodItem.getTicksRemaining(fuelRod);
     }
 
-    /** Returns the appropriate depleted blaze rod texture for the current fuel level. */
+    /**
+     * Returns the appropriate depleted blaze rod texture for the current fuel level.
+     *
+     * @param fuelRod the fuel rod item stack
+     * @return the blaze rod texture identifier
+     */
     private static Identifier blazeRodTexture(ItemStack fuelRod) {
         float fraction = fuelFraction(fuelRod);
         int stage = Math.min((int) (fraction * BLAZE_ROD_STAGES), BLAZE_ROD_STAGES - 1);
-        return Identifier.fromNamespaceAndPath("goo",
-            "textures/item/depleted_blaze_rod_" + stage + ".png");
+        return Identifier.fromNamespaceAndPath(Goo.MODID,
+            BLAZE_ROD_PREFIX + stage + BLAZE_ROD_SUFFIX);
     }
 
-    /** Computes fuel fraction (0.0 = depleted, 1.0 = fresh). */
+    /**
+     * Computes fuel fraction (0.0 = depleted, 1.0 = fresh).
+     *
+     * @param fuelRod the fuel rod item stack
+     * @return the result
+     */
     private static float fuelFraction(ItemStack fuelRod) {
-        if (fuelRod.is(Items.BLAZE_ROD)) return 1f;
+        if (fuelRod.is(Items.BLAZE_ROD)) { return 1f; }
         int remaining = DepletedBlazeRodItem.getTicksRemaining(fuelRod);
         return (float) remaining / DepletedBlazeRodItem.FULL_FUEL_TICKS;
     }
 
-    /** Returns the texture Identifier for a goo type's item icon. */
+    /**
+     * Returns the texture Identifier for a goo type's item icon.
+     *
+     * @param type the goo type
+     * @return the icon texture identifier
+     */
     private static Identifier iconTexture(GooType type) {
-        return Identifier.fromNamespaceAndPath("goo",
-            "textures/item/" + type.getId() + "_icon_bordered.png");
+        return Identifier.fromNamespaceAndPath(Goo.MODID,
+            ICON_PATH_PREFIX + type.getId() + ICON_PATH_SUFFIX);
     }
 
     /**
      * Renders a textured quad (ICON_SIZE x ICON_SIZE) in world space.
      * Uses textSeeThrough so icons respect the same depth as text and background.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param tex the texture identifier
+     * @param x the X coordinate
+     * @param y the Y coordinate
      */
     private static void renderTexturedQuad(PoseStack poseStack, MultiBufferSource buffers,
             Identifier tex, float x, float y) {
@@ -492,6 +745,11 @@ public class CrucibleHudRenderer {
         InWorldHud.iconVertex(vc, pose, x2, y, InWorldHud.CONTENT_Z, 1f, 0f);
     }
 
+
+    /** Pre-computed panel dimensions and merged contents for rendering. */
+    private record PanelLayout(float panelWidth, float panelHeight,
+            GooContents total, Set<GooType> types) {
+    }
 
     /**
      * A candidate anchor point on the basin rim.

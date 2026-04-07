@@ -9,13 +9,25 @@ import java.util.Set;
  */
 public interface ICanisterAttachable {
 
-    /** Returns the max number of canisters that can attach to the top face. */
+    /** All slot indices in the 3x3 canister grid (0-8). */
+    Set<Integer> ALL_SLOTS = Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+
+    /** Returns the max number of canisters that can attach to the top face.
+     *
+     * @return the integer value
+     */
     int maxTopAttachments();
 
-    /** Returns the current number of canisters attached to the top face. */
+    /** Returns the current number of canisters attached to the top face.
+     *
+     * @return the integer value
+     */
     int currentTopAttachments();
 
-    /** Returns true if another canister can be attached to the top face. */
+    /** Returns true if another canister can be attached to the top face.
+     *
+     * @return true if attach on top
+     */
     default boolean canAttachOnTop() {
         return currentTopAttachments() < maxTopAttachments();
     }
@@ -26,8 +38,10 @@ public interface ICanisterAttachable {
      * constrain which positions are valid based on facing, upgrades, etc.
      *
      * <p>Default returns all 9 slots (no constraint).</p>
+     *
+     * @return the set
      */
     default Set<Integer> allowedSlots() {
-        return Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
+        return ALL_SLOTS;
     }
 }

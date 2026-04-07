@@ -22,21 +22,23 @@ import java.util.UUID;
  *
  * <p>For entity targets (e.g. player inventory), entityId is non-null and
  * pos becomes a stale hint for display. Use {@link #isEntityTarget()} to check.</p>
+ *
+ * @param pos      the block position (or stale hint for entity targets)
+ * @param slot     the sub-slot index (-1 for single-gasket machines)
+ * @param entityId the entity UUID for entity targets, or null
  */
 public record GasketPartner(BlockPos pos, int slot, @Nullable UUID entityId) {
 
     /** Slot value indicating a single-gasket machine (vat, crucible). */
     public static final int NO_SLOT = -1;
-
-    /** Convenience constructor for block targets (no entity). */
-    public GasketPartner(BlockPos pos, int slot) {
-        this(pos, slot, null);
-    }
-
-    /** Returns true if this partner targets an entity rather than a block. */
-    public boolean isEntityTarget() {
-        return entityId != null;
-    }
+    /** Coordinate label prefix for X axis. */
+    private static final String COORD_X = "X: ";
+    /** Coordinate label prefix for Y axis. */
+    private static final String COORD_Y = "Y: ";
+    /** Coordinate label prefix for Z axis. */
+    private static final String COORD_Z = "Z: ";
+    /** Separator between coordinate components. */
+    private static final String COORD_SEP = ", ";
 
     /** Persistent codec. entityId is optional for backward compatibility. */
     public static final Codec<GasketPartner> CODEC = RecordCodecBuilder.create(instance ->
@@ -59,23 +61,58 @@ public record GasketPartner(BlockPos pos, int slot, @Nullable UUID entityId) {
             (pos, slot, entityOpt) -> new GasketPartner(pos, slot, entityOpt.orElse(null))
         );
 
-    /** Formats position as "X: x, Y: y, Z: z". */
+    /**
+     * Convenience constructor for block targets (no entity).
+     *
+     * @param pos  the block position
+     * @param slot the slot index (-1 for single-gasket machines)
+     */
+    public GasketPartner(BlockPos pos, int slot) {
+        this(pos, slot, null);
+    }
+
+    /**
+     * Returns true if this partner targets an entity rather than a block.
+     *
+     * @return true if entity-targeted
+     */
+    public boolean isEntityTarget() {
+        return entityId != null;
+    }
+
+    /**
+     * Formats position as "X: x, Y: y, Z: z".
+     *
+     * @return the formatted coordinate string
+     */
     public String formatCoords() {
-        return "X: " + pos.getX() + ", Y: " + pos.getY() + ", Z: " + pos.getZ();
+        return COORD_X + pos.getX() + COORD_SEP + COORD_Y + pos.getY() + COORD_SEP + COORD_Z + pos.getZ();
     }
 
-    /** Formats X coordinate as "X: n". */
+    /**
+     * Formats X coordinate as "X: n".
+     *
+     * @return the formatted X coordinate
+     */
     public String formatX() {
-        return "X: " + pos.getX();
+        return COORD_X + pos.getX();
     }
 
-    /** Formats Y coordinate as "Y: n". */
+    /**
+     * Formats Y coordinate as "Y: n".
+     *
+     * @return the formatted Y coordinate
+     */
     public String formatY() {
-        return "Y: " + pos.getY();
+        return COORD_Y + pos.getY();
     }
 
-    /** Formats Z coordinate as "Z: n". */
+    /**
+     * Formats Z coordinate as "Z: n".
+     *
+     * @return the formatted Z coordinate
+     */
     public String formatZ() {
-        return "Z: " + pos.getZ();
+        return COORD_Z + pos.getZ();
     }
 }

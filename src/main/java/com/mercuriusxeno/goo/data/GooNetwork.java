@@ -18,6 +18,7 @@ import java.util.UUID;
  */
 public final class GooNetwork {
 
+    /** Utility class, not instantiable. */
     private GooNetwork() {}
 
     /**
@@ -53,7 +54,7 @@ public final class GooNetwork {
         Set<UUID> inCycle = new HashSet<>();
 
         for (UUID node : graph.keySet()) {
-            if (!white.contains(node)) continue;
+            if (!white.contains(node)) { continue; }
             dfsMarkCycles(node, graph, white, gray, black, inCycle);
         }
         return inCycle;
@@ -66,6 +67,13 @@ public final class GooNetwork {
      * Iterative DFS that marks nodes in cycles.
      * Gray nodes form the current path; if we revisit a gray node, everything
      * on the path from that node onward is in a cycle.
+     *
+     * @param start the node to begin DFS from
+     * @param graph adjacency list of the directed graph
+     * @param white unvisited nodes
+     * @param gray nodes on the current DFS path
+     * @param black fully processed nodes
+     * @param inCycle accumulator for nodes found in cycles
      */
     private static void dfsMarkCycles(
             UUID start, Map<UUID, List<UUID>> graph,
@@ -100,13 +108,19 @@ public final class GooNetwork {
         }
     }
 
-    /** Marks all nodes on the stack from the cycle entry point onward. */
+    /**
+     * Marks all nodes on the stack from the cycle entry point onward.
+     *
+     * @param stack the current DFS stack of frames
+     * @param cycleEntry the node where the cycle was detected
+     * @param inCycle accumulator for nodes found in cycles
+     */
     private static void markCycleFromStack(
             List<DfsFrame> stack, UUID cycleEntry, Set<UUID> inCycle) {
         for (int i = stack.size() - 1; i >= 0; i--) {
             UUID node = stack.get(i).node();
             inCycle.add(node);
-            if (node.equals(cycleEntry)) break;
+            if (node.equals(cycleEntry)) { break; }
         }
     }
 

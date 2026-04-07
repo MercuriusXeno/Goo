@@ -15,14 +15,14 @@ public class FrostFieldRenderState extends BlockEntityRenderState {
     public int radius = 3;
 
     /** Level game time at extraction -- drives the breathing cycle. */
-    public long gameTime = 0;
+    public long gameTime;
 
     /** Duration remaining in ticks -- drives the fade-out near expiry. */
-    public int durationRemaining = 0;
+    public int durationRemaining;
 
     /** Partial tick for smooth interpolation. */
-    public float partialTick = 0f;
+    public float partialTick;
 
     /** True when the player's crosshair is on this block. */
-    public boolean targeted = false;
+    public boolean targeted;
 }

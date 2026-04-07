@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,9 +32,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import org.jspecify.annotations.Nullable;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -52,9 +51,6 @@ import java.util.Optional;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GooTargetHighlighter {
-
-    private GooTargetHighlighter() {}
-
     /** Maximum range for blob throwing in blocks. */
     public static final double MAX_RANGE = 32.0;
 
@@ -115,6 +111,21 @@ public final class GooTargetHighlighter {
     /** Alpha decay per bloom pass (exponential). */
     private static final float ARC_GLOW_ALPHA_DECAY = 0.35f;
 
+    /** Half divisor for centering AABB calculations. */
+    private static final double CENTER_HALF = 0.5;
+    /** Half block offset for face center calculations. */
+    private static final double FACE_CENTER_OFFSET = 0.5;
+    /** Minimum arc segment count. */
+    private static final int MIN_ARC_SEGMENTS = 8;
+    /** Maximum arc segment count. */
+    private static final int MAX_ARC_SEGMENTS = 128;
+    /** Maximum alpha channel value. */
+    private static final int MAX_ALPHA = 255;
+    /** Half segment midpoint for dash calculations. */
+    private static final float DASH_MID = 0.5f;
+    /** Sentinel for no valid hand position frame. */
+    private static final long NO_FRAME = -1;
+
     // --- Entity outline state ---
 
     /** The entity currently targeted by the glove, or null. Updated each tick. */
@@ -123,9 +134,23 @@ public final class GooTargetHighlighter {
     /** Opaque ARGB outline color for the targeted entity, or 0 if none. */
     private static int targetOutlineColor;
 
+    // --- Line-of-sight ---
+
+    /** Inset from AABB face to avoid sampling right at block boundaries. */
+    private static final double LOS_INSET = 0.05;
+
+    // --- Rendering: dashed arc to entity target ---
+
+    /** Ticks-per-second divisor for converting game time to seconds. */
+    private static final float TICKS_PER_SECOND = 20.0f;
+
+    private GooTargetHighlighter() {}
+
     /**
      * Client tick: resolves aim target and stores entity + goo color for the
      * render state modifier to pick up during entity rendering.
+     *
+     * @param event the event instance
      */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -153,6 +178,9 @@ public final class GooTargetHighlighter {
      * Render state modifier callback: sets outlineColor on entities targeted
      * by the glove so vanilla renders the spectral glow outline in the goo color.
      * Registered via RegisterRenderStateModifiersEvent in GooClientSetup.
+     *
+     * @param entity the target entity
+     * @param state the block state
      */
     public static void modifyEntityRenderState(Entity entity, EntityRenderState state) {
         if (entity == targetedEntity && targetOutlineColor != 0) {
@@ -201,14 +229,18 @@ public final class GooTargetHighlighter {
      * Returns true if the hit landed in the upper portion of the block's
      * voxel shape, measured against the shape's actual Y extent so slabs,
      * stairs, etc. use their real geometry, not a full cube.
+     *
+     * @param level the current level
+     * @param hit the block hit result
+     * @return true if upperEdge
      */
     private static boolean isUpperEdge(Level level, BlockHitResult hit) {
         BlockPos pos = hit.getBlockPos();
         VoxelShape shape = level.getBlockState(pos).getShape(level, pos);
-        if (shape.isEmpty()) return false;
+        if (shape.isEmpty()) { return false; }
         AABB bounds = shape.bounds();
         double range = bounds.maxY - bounds.minY;
-        if (range <= 0) return false;
+        if (range <= 0) { return false; }
         double hitY = hit.getLocation().y - pos.getY();
         double relative = (hitY - bounds.minY) / range;
         return relative >= GRANNY_ARC_THRESHOLD;
@@ -220,17 +252,19 @@ public final class GooTargetHighlighter {
      * Renders goo-colored target visuals: dashed arc to entity targets,
      * translucent face highlight for block targets. Entity spectral outlines
      * are handled separately by the render state modifier.
+     *
+     * @param event the event instance
      */
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
+        if (mc.player == null || mc.level == null) { return; }
 
         // Arc is first-person only - hide in third person and from other players
-        if (!mc.options.getCameraType().isFirstPerson()) return;
+        if (!mc.options.getCameraType().isFirstPerson()) { return; }
 
         GooType selectedType = findSelectedGooType(mc.player);
-        if (selectedType == null) return;
+        if (selectedType == null) { return; }
 
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         TargetResult target = resolveTarget(mc.player, partialTick);
@@ -245,18 +279,13 @@ public final class GooTargetHighlighter {
                     mc.player, end, selectedType, partialTick, false);
         } else if (target instanceof TargetResult.BlockTarget bt) {
             Vec3 end = Vec3.atCenterOf(bt.pos())
-                    .add(bt.face().getUnitVec3().scale(0.5));
+                    .add(bt.face().getUnitVec3().scale(FACE_CENTER_OFFSET));
             renderTargetArc(poseStack, bufferSource, camera,
                     mc.player, end, selectedType, partialTick, bt.grannyArc());
             renderBlockFace(poseStack, bufferSource, camera, bt.pos(),
                     bt.face(), selectedType);
         }
     }
-
-    // --- Line-of-sight ---
-
-    /** Inset from AABB face to avoid sampling right at block boundaries. */
-    private static final double LOS_INSET = 0.05;
 
     /**
      * Checks whether the player has line-of-sight to an entity by casting rays
@@ -266,12 +295,18 @@ public final class GooTargetHighlighter {
      *
      * Uses OUTLINE clip mode - glass, fences, bars all block LOS, matching
      * what a thrown blob would physically collide with.
+     *
+     * @param level the current level
+     * @param player the interacting player
+     * @param eyePos the eyePos position
+     * @param target the current aim target
+     * @return true if lineOfSight is present
      */
     private static boolean hasLineOfSight(Level level, Player player, Vec3 eyePos, Entity target) {
         AABB box = target.getBoundingBox();
-        double cx = (box.minX + box.maxX) * 0.5;
-        double cy = (box.minY + box.maxY) * 0.5;
-        double cz = (box.minZ + box.maxZ) * 0.5;
+        double cx = (box.minX + box.maxX) * CENTER_HALF;
+        double cy = (box.minY + box.maxY) * CENTER_HALF;
+        double cz = (box.minZ + box.maxZ) * CENTER_HALF;
 
         // 7 sample points: center + 6 face centers (inset to avoid edge issues)
         Vec3[] samples = {
@@ -309,77 +344,141 @@ public final class GooTargetHighlighter {
      * behind solid blocks are not targetable.
      *
      * @return the best target entity, or null if none in range/cone
+     *
+     * @param player the interacting player
+     * @param from the start world position
+     * @param to the end world position
      */
     private static @Nullable Entity findClosestEntity(Player player, Vec3 from, Vec3 to) {
         Vec3 lookDir = to.subtract(from).normalize();
         Level level = player.level();
+        List<Entity> candidates = gatherCandidates(player, from, to);
 
-        // Inflate search box enough to cover the cone at max range
+        Entity exactHit = findExactRaytraceHit(candidates, level, player, from, to);
+        if (exactHit != null) { return exactHit; }
+
+        Entity bestCone = findBestConeTarget(candidates, level, player, from, lookDir);
+
+        Entity sticky = retainStickyTarget(candidates, level, player, from, lookDir, bestCone);
+        return (sticky != null) ? sticky : bestCone;
+    }
+
+    /**
+     * Gathers living, pickable entities within the aim-assist cone's bounding volume.
+     *
+     * @param player the aiming player (excluded from results)
+     * @param from   ray start (eye position)
+     * @param to     ray end (eye + look * range)
+     * @return candidate entities in the inflated search box
+     */
+    private static List<Entity> gatherCandidates(Player player, Vec3 from, Vec3 to) {
         double coneRadius = MAX_RANGE * Math.tan(Math.toRadians(AIM_ASSIST_DEGREES));
         AABB searchBox = player.getBoundingBox()
                 .expandTowards(to.subtract(from))
                 .inflate(coneRadius + 1.0);
-        List<Entity> candidates = level.getEntities(
+        return player.level().getEntities(
                 player, searchBox, e -> e instanceof LivingEntity && e.isPickable());
+    }
 
-        // Pass 1: exact raytrace - AABB clip then LOS check
-        Entity exactHit = null;
-        double exactDist = Double.MAX_VALUE;
+    /**
+     * Pass 1: exact AABB raytrace. Returns the closest entity whose inflated
+     * bounding box intersects the look ray and has line-of-sight.
+     *
+     * @param candidates pre-filtered entity list
+     * @param level      the current level
+     * @param player     the aiming player
+     * @param from       ray start
+     * @param to         ray end
+     * @return closest exact hit, or null
+     */
+    private static @Nullable Entity findExactRaytraceHit(
+            List<Entity> candidates, Level level, Player player, Vec3 from, Vec3 to) {
+        Entity best = null;
+        double bestDist = Double.MAX_VALUE;
         for (Entity entity : candidates) {
             AABB entityBox = entity.getBoundingBox().inflate(entity.getPickRadius());
             Optional<Vec3> clip = entityBox.clip(from, to);
             if (clip.isPresent() && hasLineOfSight(level, player, from, entity)) {
                 double dist = from.distanceToSqr(clip.get());
-                if (dist < exactDist) {
-                    exactDist = dist;
-                    exactHit = entity;
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = entity;
                 }
             }
         }
-        if (exactHit != null) return exactHit;
+        return best;
+    }
 
-        // Pass 2: aim-assist cone - angle check then LOS check
-        Entity bestCone = null;
-        double bestConeAngle = AIM_ASSIST_COS; // must beat this (higher cos = smaller angle)
-
+    /**
+     * Pass 2: aim-assist cone scan. Returns the entity closest to the reticle
+     * center (highest cosine) that passes range and line-of-sight checks.
+     *
+     * @param candidates pre-filtered entity list
+     * @param level      the current level
+     * @param player     the aiming player
+     * @param from       ray start
+     * @param lookDir    normalized look direction
+     * @return best cone target, or null
+     */
+    private static @Nullable Entity findBestConeTarget(
+            List<Entity> candidates, Level level, Player player, Vec3 from, Vec3 lookDir) {
+        Entity best = null;
+        double bestAngle = AIM_ASSIST_COS;
         for (Entity entity : candidates) {
             Vec3 toEntity = entity.getBoundingBox().getCenter().subtract(from);
             double dist = toEntity.length();
-            if (dist < 0.5 || dist > MAX_RANGE) continue;
+            if (dist < CENTER_HALF || dist > MAX_RANGE) { continue; }
             double cos = lookDir.dot(toEntity.normalize());
-            if (cos > bestConeAngle && hasLineOfSight(level, player, from, entity)) {
-                bestConeAngle = cos;
-                bestCone = entity;
+            if (cos > bestAngle && hasLineOfSight(level, player, from, entity)) {
+                bestAngle = cos;
+                best = entity;
             }
         }
-
-        // Sticky retention: keep previous target if it's still in the wider cone and visible
-        if (targetedEntity != null && targetedEntity != bestCone
-                && targetedEntity.isAlive() && candidates.contains(targetedEntity)) {
-            Vec3 toPrev = targetedEntity.getBoundingBox().getCenter().subtract(from);
-            double prevDist = toPrev.length();
-            if (prevDist > 0.5 && prevDist <= MAX_RANGE) {
-                double prevCos = lookDir.dot(toPrev.normalize());
-                if (prevCos > STICKY_COS && hasLineOfSight(level, player, from, targetedEntity)) {
-                    return targetedEntity;
-                }
-            }
-        }
-
-        return bestCone;
+        return best;
     }
 
-    // --- Rendering: dashed arc to entity target ---
+    /**
+     * Sticky retention: if the previous frame's target is still alive, in range,
+     * inside the wider sticky cone, and visible, keep it to prevent flicker.
+     *
+     * @param candidates pre-filtered entity list
+     * @param level      the current level
+     * @param player     the aiming player
+     * @param from       ray start
+     * @param lookDir    normalized look direction
+     * @param bestCone   the cone-pass winner (skipped if already equal)
+     * @return the previous target if it should be retained, or null
+     */
+    private static @Nullable Entity retainStickyTarget(
+            List<Entity> candidates, Level level, Player player,
+            Vec3 from, Vec3 lookDir, @Nullable Entity bestCone) {
+        if (targetedEntity == null || targetedEntity == bestCone) { return null; }
+        if (!targetedEntity.isAlive() || !candidates.contains(targetedEntity)) { return null; }
 
-    /** Ticks-per-second divisor for converting game time to seconds. */
-    private static final float TICKS_PER_SECOND = 20.0f;
+        Vec3 toPrev = targetedEntity.getBoundingBox().getCenter().subtract(from);
+        double prevDist = toPrev.length();
+        if (prevDist <= CENTER_HALF || prevDist > MAX_RANGE) { return null; }
+
+        double prevCos = lookDir.dot(toPrev.normalize());
+        if (prevCos > STICKY_COS && hasLineOfSight(level, player, from, targetedEntity)) {
+            return targetedEntity;
+        }
+        return null;
+    }
 
     /**
      * Renders a glowing animated dashed arc from the glove hand to the target,
      * previewing the throw trajectory. Orchestrator: delegates arc sampling to
      * {@link ThrowArc} and emits dashed line segments with multi-pass bloom.
      *
-     * @param grannyArc if true, uses the boosted granny-arc peak height
+     * @param poseStack    the current pose stack
+     * @param bufferSource the buffer source for render output
+     * @param camera       the active camera
+     * @param player       the local player
+     * @param end          the target endpoint position
+     * @param gooType      the goo type for color tinting
+     * @param partialTick  the partial tick for animation
+     * @param grannyArc    if true, uses the boosted granny-arc peak height
      */
     private static void renderTargetArc(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
@@ -392,7 +491,7 @@ public final class GooTargetHighlighter {
         double peak = grannyArc
                 ? ThrowArc.grannyPeak(travelTicks)
                 : ThrowArc.basePeak(travelTicks);
-        int segments = Mth.clamp((int) (distance / SAMPLE_SPACING), 8, 128);
+        int segments = Mth.clamp((int) (distance / SAMPLE_SPACING), MIN_ARC_SEGMENTS, MAX_ARC_SEGMENTS);
         Vec3[] points = ThrowArc.sampleArc(start, end, peak, segments);
 
         Minecraft mc = Minecraft.getInstance();
@@ -404,7 +503,18 @@ public final class GooTargetHighlighter {
                 mc.getWindow().getAppropriateLineWidth());
     }
 
-    /** Emits multi-pass glowing dashed lines for the sampled arc polyline. */
+    /**
+     * Emits multi-pass glowing dashed lines for the sampled arc polyline.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera the render camera
+     * @param points the sampled arc polyline points
+     * @param segments the number of arc segments
+     * @param rgb the RGB color value
+     * @param dashOffset the dash scroll offset
+     * @param baseWidth the base line width
+     */
     private static void emitDashedGlow(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Vec3[] points, int segments,
@@ -415,7 +525,7 @@ public final class GooTargetHighlighter {
 
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
             float alphaScale = (float) Math.pow(ARC_GLOW_ALPHA_DECAY, pass);
-            int alpha = Mth.clamp((int) (ARC_ALPHA * alphaScale), 0, 255);
+            int alpha = Mth.clamp((int) (ARC_ALPHA * alphaScale), 0, MAX_ALPHA);
             int color = ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
             float width = baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP);
             emitDashedPass(poseStack, line, cam, points, segments,
@@ -424,7 +534,18 @@ public final class GooTargetHighlighter {
         bufferSource.endLastBatch();
     }
 
-    /** Emits one pass of dashed line segments for the arc polyline. */
+    /**
+     * Emits one pass of dashed line segments for the arc polyline.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param line the line
+     * @param cam the cam
+     * @param points the sampled arc polyline points
+     * @param segments the number of arc segments
+     * @param dashOffset the dash scroll offset
+     * @param color the ARGB color value
+     * @param width the width
+     */
     private static void emitDashedPass(
             PoseStack poseStack, VertexConsumer line, Vec3 cam,
             Vec3[] points, int segments,
@@ -435,7 +556,7 @@ public final class GooTargetHighlighter {
             Vec3 a = points[i];
             Vec3 b = points[i + 1];
             float segLen = (float) a.distanceTo(b);
-            if (isDashOn(arcLen + segLen * 0.5f, dashOffset)) {
+            if (isDashOn(arcLen + segLen * DASH_MID, dashOffset)) {
                 SlotOutlineRenderer.emitEdge(poseStack, line,
                         a.x - cam.x, a.y - cam.y, a.z - cam.z,
                         b.x - cam.x, b.y - cam.y, b.z - cam.z,
@@ -445,10 +566,16 @@ public final class GooTargetHighlighter {
         }
     }
 
-    /** Returns true if the dash at the given arc-length is in the "on" phase. */
+    /**
+     * Returns true if the dash at the given arc-length is in the "on" phase.
+     *
+     * @param midArcLen the midArcLen
+     * @param dashOffset the dash scroll offset
+     * @return true if dashOn
+     */
     private static boolean isDashOn(float midArcLen, float dashOffset) {
         float phase = (midArcLen - dashOffset) % DASH_CYCLE;
-        if (phase < 0) phase += DASH_CYCLE;
+        if (phase < 0) { phase += DASH_CYCLE; }
         return phase < DASH_ON;
     }
 
@@ -458,6 +585,13 @@ public final class GooTargetHighlighter {
      * Renders goo-colored translucent fill and wireframe edges tracing the
      * block's voxel outline shape. Stairs, slabs, fences, etc. highlight
      * their actual geometry instead of a flat face quad.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera the render camera
+     * @param pos the block position
+     * @param face the block face direction
+     * @param type the goo type
      */
     private static void renderBlockFace(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
@@ -465,7 +599,7 @@ public final class GooTargetHighlighter {
         Minecraft mc = Minecraft.getInstance();
         BlockState state = mc.level.getBlockState(pos);
         VoxelShape shape = state.getShape(mc.level, pos);
-        if (shape.isEmpty()) return;
+        if (shape.isEmpty()) { return; }
 
         int rgb = type.getColor();
         int fillColor = ARGB.color(FACE_ALPHA, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
@@ -501,7 +635,19 @@ public final class GooTargetHighlighter {
         bufferSource.endLastBatch();
     }
 
-    /** Emits six quads (one per face) for an axis-aligned box. */
+    /**
+     * Emits six quads (one per face) for an axis-aligned box.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param x0 the minimum X bound
+     * @param y0 the minimum Y bound
+     * @param z0 the minimum Z bound
+     * @param x1 the maximum X bound
+     * @param y1 the maximum Y bound
+     * @param z1 the maximum Z bound
+     * @param color the ARGB color value
+     */
     private static void emitBox(PoseStack.Pose pose, VertexConsumer c,
             float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         // Up (+Y)
@@ -542,10 +688,14 @@ public final class GooTargetHighlighter {
      * Returns the world-space arc origin. Prefers the exact blob center
      * captured during item rendering (pixel-accurate). Falls back to a
      * camera-basis approximation when the blob wasn't rendered this frame.
+     *
+     * @param player the interacting player
+     * @param camera the render camera
+     * @return the gloveHandPosition
      */
     public static Vec3 getGloveHandPosition(Player player, Camera camera) {
         Minecraft mc = Minecraft.getInstance();
-        long frame = mc.level != null ? mc.level.getGameTime() : -1;
+        long frame = mc.level != null ? mc.level.getGameTime() : NO_FRAME;
         Vec3 captured = GloveSpecialRenderer.getBlobCenterCamRel(frame);
         if (captured != null) {
             return camera.position().add(captured);
@@ -555,8 +705,8 @@ public final class GooTargetHighlighter {
         org.joml.Vector3fc left = camera.leftVector();
         org.joml.Vector3fc up = camera.upVector();
         Vec3 offset = ThrowArc.handOffset(
-                -left.x(), -left.y(), -left.z(),
-                up.x(), up.y(), up.z(),
+                new Vec3(-left.x(), -left.y(), -left.z()),
+                new Vec3(up.x(), up.y(), up.z()),
                 side, player.getScale());
         return camera.position().add(offset);
     }
@@ -566,16 +716,24 @@ public final class GooTargetHighlighter {
     /**
      * Checks both hands for a goo glove with a selected type. Main hand priority.
      * Returns null if the player has no goo of that type (suppresses visuals).
+     *
+     * @param player the interacting player
+     * @return the matching result, or null if not found
      */
     private static @Nullable GooType findSelectedGooType(Player player) {
         GooType type = tryGloveInHand(player.getMainHandItem());
-        if (type != null) return GloveUseTracker.isSelectedTypeAvailable() ? type : null;
+        if (type != null) { return GloveUseTracker.isSelectedTypeAvailable() ? type : null; }
         type = tryGloveInHand(player.getOffhandItem());
-        if (type != null) return GloveUseTracker.isSelectedTypeAvailable() ? type : null;
+        if (type != null) { return GloveUseTracker.isSelectedTypeAvailable() ? type : null; }
         return null;
     }
 
-    /** Returns the selected type if the stack is a glove with a selection. */
+    /**
+     * Returns the selected type if the stack is a glove with a selection.
+     *
+     * @param stack the item stack
+     * @return the result
+     */
     private static @Nullable GooType tryGloveInHand(ItemStack stack) {
         if (stack.getItem() instanceof GooGloveItem) {
             return GooGloveItem.getSelectedType(stack);

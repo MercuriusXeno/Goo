@@ -23,6 +23,9 @@ public enum GooType implements StringRepresentable {
     TYPHOON("typhoon", 0xD5F5E3),
     VITAL("vital", 0xE74C3C);
 
+    /** Translation key prefix for goo type display names. */
+    private static final String TRANSLATION_PREFIX = "goo.type.";
+
     private final String id;
     private final int color;
 
@@ -31,10 +34,20 @@ public enum GooType implements StringRepresentable {
         this.color = color;
     }
 
+    /**
+     * Returns the lowercase string identifier for this goo type.
+     *
+     * @return the goo type ID string
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns the RGB color used for rendering this goo type.
+     *
+     * @return the RGB color int
+     */
     public int getColor() {
         return color;
     }
@@ -44,12 +57,20 @@ public enum GooType implements StringRepresentable {
         return id;
     }
 
+    /**
+     * Returns the translation key for this goo type's display name.
+     *
+     * @return the translation key string
+     */
     public String getTranslationKey() {
-        return "goo.type." + id;
+        return TRANSLATION_PREFIX + id;
     }
 
     /**
      * Looks up a GooType by its string id. Returns null if no match.
+     *
+     * @param id the string identifier to look up
+     * @return the matching GooType, or null if not found
      */
     @org.jspecify.annotations.Nullable
     public static GooType fromId(String id) {

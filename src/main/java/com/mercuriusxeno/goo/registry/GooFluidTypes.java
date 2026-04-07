@@ -14,6 +14,28 @@ import java.util.Map;
  */
 public class GooFluidTypes {
 
+    // ── Density values (kg/m^3, water = 1000) ──
+    private static final int DENSITY_METAL = 2500;
+    private static final int DENSITY_ROCK = 2000;
+    private static final int DENSITY_NETHER_BLAZE = 1500;
+    private static final int DENSITY_CRYSTAL_ENDER = 1200;
+    private static final int DENSITY_DEFAULT = 1000;
+
+    // ── Viscosity values (higher = thicker, water = 1000) ──
+    private static final int VISCOSITY_AEON_SHROOM = 3000;
+    private static final int VISCOSITY_METAL_ROCK = 2000;
+    private static final int VISCOSITY_HEX_NETHER = 1500;
+    private static final int VISCOSITY_DEFAULT = 1000;
+    private static final int VISCOSITY_BLAZE_FROST = 800;
+    private static final int VISCOSITY_TYPHOON = 500;
+
+    // ── Temperature values (Kelvin, room temp = 300) ──
+    private static final int TEMP_BLAZE = 1300;
+    private static final int TEMP_NETHER = 900;
+    private static final int TEMP_GLOW = 400;
+    private static final int TEMP_DEFAULT = 300;
+    private static final int TEMP_FROST = 200;
+
     /** Deferred register for NeoForge fluid types. */
     public static final DeferredRegister<FluidType> FLUID_TYPES =
             DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, Goo.MODID);
@@ -29,7 +51,12 @@ public class GooFluidTypes {
         }
     }
 
-    /** Builds fluid type properties tuned to the goo type's character. */
+    /**
+     * Builds fluid type properties tuned to the goo type's character.
+     *
+     * @param type the goo type
+     * @return the configured fluid type properties
+     */
     private static FluidType.Properties buildProperties(GooType type) {
         return FluidType.Properties.create()
                 .density(density(type))
@@ -38,37 +65,57 @@ public class GooFluidTypes {
                 .canExtinguish(type == GooType.FROST || type == GooType.TYPHOON);
     }
 
-    /** Returns density for the given goo type (kg/m^3 scale, water = 1000). */
+    /**
+     * Returns density for the given goo type (kg/m^3 scale, water = 1000).
+     *
+     * @param type the goo type
+     * @return the density value
+     */
     private static int density(GooType type) {
         return switch (type) {
-            case METAL -> 2500;
-            case ROCK -> 2000;
-            case NETHER, BLAZE -> 1500;
-            case CRYSTAL, ENDER -> 1200;
-            default -> 1000;
+            case METAL -> DENSITY_METAL;
+            case ROCK -> DENSITY_ROCK;
+            case NETHER, BLAZE -> DENSITY_NETHER_BLAZE;
+            case CRYSTAL, ENDER -> DENSITY_CRYSTAL_ENDER;
+            default -> DENSITY_DEFAULT;
         };
     }
 
-    /** Returns viscosity for the given goo type (higher = thicker, water = 1000). */
+    /**
+     * Returns viscosity for the given goo type (higher = thicker, water = 1000).
+     *
+     * @param type the goo type
+     * @return the viscosity value
+     */
+    /** Per-type viscosity overrides; types not present default to VISCOSITY_DEFAULT. */
+    private static final Map<GooType, Integer> VISCOSITY_MAP = new EnumMap<>(Map.ofEntries(
+            Map.entry(GooType.AEON, VISCOSITY_AEON_SHROOM),
+            Map.entry(GooType.SHROOM, VISCOSITY_AEON_SHROOM),
+            Map.entry(GooType.METAL, VISCOSITY_METAL_ROCK),
+            Map.entry(GooType.ROCK, VISCOSITY_METAL_ROCK),
+            Map.entry(GooType.HEX, VISCOSITY_HEX_NETHER),
+            Map.entry(GooType.NETHER, VISCOSITY_HEX_NETHER),
+            Map.entry(GooType.BLAZE, VISCOSITY_BLAZE_FROST),
+            Map.entry(GooType.FROST, VISCOSITY_BLAZE_FROST),
+            Map.entry(GooType.TYPHOON, VISCOSITY_TYPHOON)));
+
     private static int viscosity(GooType type) {
-        return switch (type) {
-            case AEON, SHROOM -> 3000;
-            case METAL, ROCK -> 2000;
-            case HEX, NETHER -> 1500;
-            case BLAZE, FROST -> 800;
-            case TYPHOON -> 500;
-            default -> 1000;
-        };
+        return VISCOSITY_MAP.getOrDefault(type, VISCOSITY_DEFAULT);
     }
 
-    /** Returns temperature for the given goo type (Kelvin, room temp = 300). */
+    /**
+     * Returns temperature for the given goo type (Kelvin, room temp = 300).
+     *
+     * @param type the goo type
+     * @return the temperature in Kelvin
+     */
     private static int temperature(GooType type) {
         return switch (type) {
-            case BLAZE -> 1300;
-            case NETHER -> 900;
-            case FROST -> 200;
-            case GLOW -> 400;
-            default -> 300;
+            case BLAZE -> TEMP_BLAZE;
+            case NETHER -> TEMP_NETHER;
+            case FROST -> TEMP_FROST;
+            case GLOW -> TEMP_GLOW;
+            default -> TEMP_DEFAULT;
         };
     }
 }

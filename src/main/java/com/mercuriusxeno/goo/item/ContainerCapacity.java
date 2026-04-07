@@ -7,8 +7,6 @@ package com.mercuriusxeno.goo.item;
  */
 public final class ContainerCapacity {
 
-    private ContainerCapacity() {}
-
     /** Base canister capacity in microblobs (2^20 = 1,048,576 mB). */
     public static final long CANISTER_BASE = 1L << 20;
 
@@ -23,6 +21,8 @@ public final class ContainerCapacity {
 
     /** Maximum Compression enchantment level (shared by canister and vat). */
     public static final int MAX_COMPRESSION = 5;
+
+    private ContainerCapacity() {}
 
     /**
      * Computes canister capacity at the given compression level.

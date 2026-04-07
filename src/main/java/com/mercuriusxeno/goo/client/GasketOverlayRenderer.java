@@ -40,9 +40,6 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GasketOverlayRenderer {
-
-    private GasketOverlayRenderer() {}
-
     /** Translucent blue for receiver (input/cap) regions. */
     private static final int RECEIVER_COLOR = ARGB.color(100, 80, 140, 255);
 
@@ -83,17 +80,55 @@ public final class GasketOverlayRenderer {
     /** Sin wave amplitude for glow pulsing (±15% brightness). */
     private static final float GLOW_PULSE_AMP = 0.15f;
 
+    /** Wireframe color for receiver outlines (bright blue). */
+    private static final int RECEIVER_WIRE = ARGB.color(200, 80, 140, 255);
+
+    /** Wireframe color for transmitter outlines (bright orange). */
+    private static final int TRANSMITTER_WIRE = ARGB.color(200, 255, 160, 40);
+
+    /** Midpoint offset for face center calculations. */
+    private static final double FACE_MIDPOINT = 0.5;
+
+    /** Game time to radians conversion factor for glow animation. */
+    private static final float GLOW_TIME_SCALE = 0.05f;
+
+    /** Vertical midpoint divisor for splitting slot bounds. */
+    private static final double SLOT_MID_DIVISOR = 2.0;
+
+    /** Vat receiver upper half Y start. */
+    private static final double VAT_UPPER_START = 0.5;
+
+    /** Vat transmitter lower half Y end. */
+    private static final double VAT_LOWER_END = 0.5;
+
+    /** Crucible basin top boundary in block-local coords (9/16). */
+    private static final double CRUCIBLE_BASIN_Y = 9.0 / 16.0;
+
+    /** Inset for stripe z-fighting prevention. */
+    private static final double STRIPE_INSET = 0.001;
+
+    /** Diagonal stripe shift for warning pattern. */
+    private static final double STRIPE_DIAGONAL_SHIFT = 0.3;
+
+    /** Maximum channel value for alpha clamping. */
+    private static final int MAX_CHANNEL = 255;
+
+    /** Block-local coordinate to pixel conversion factor. */
+    private static final double BLOCK_PIXELS = 16.0;
+
+    private GasketOverlayRenderer() {}
+
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) return;
-        if (!(mc.player.getMainHandItem().getItem() instanceof ChoralTunerItem)) return;
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) return;
+        if (mc.player == null || mc.level == null) { return; }
+        if (!(mc.player.getMainHandItem().getItem() instanceof ChoralTunerItem)) { return; }
+        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) { return; }
 
         BlockHitResult hit = (BlockHitResult) mc.hitResult;
         BlockPos pos = hit.getBlockPos();
         BlockEntity be = mc.level.getBlockEntity(pos);
-        if (!(be instanceof IGasketHolder holder)) return;
+        if (!(be instanceof IGasketHolder holder)) { return; }
 
         Camera camera = mc.gameRenderer.getMainCamera();
         double ox = pos.getX() - camera.position().x;
@@ -108,12 +143,12 @@ public final class GasketOverlayRenderer {
         int slot = holder.resolveSlot(hit);
 
         // Check if the machine supports this role
-        if (!holder.supportsRole(role)) return;
+        if (!holder.supportsRole(role)) { return; }
 
         // Get the overlay bounds for this specific region, inflated slightly
         // to sit above block geometry and avoid z-fighting
         AABB bounds = resolveGasketBounds(be, role, slot);
-        if (bounds == null) return;
+        if (bounds == null) { return; }
         bounds = bounds.inflate(OVERLAY_EPSILON);
 
         // Check if this gasket is already connected
@@ -135,8 +170,8 @@ public final class GasketOverlayRenderer {
         VertexConsumer lineConsumer = bufferSource.getBuffer(RenderTypes.lines());
         float lineWidth = mc.getWindow().getAppropriateLineWidth();
         int wireColor = role == GasketRole.RECEIVER
-                ? ARGB.color(200, 80, 140, 255)
-                : ARGB.color(200, 255, 160, 40);
+                ? RECEIVER_WIRE
+                : TRANSMITTER_WIRE;
         SlotOutlineRenderer.renderWireframeCuboid(poseStack, lineConsumer,
                 bounds.minX + ox, bounds.minY + oy, bounds.minZ + oz,
                 bounds.maxX + ox, bounds.maxY + oy, bounds.maxZ + oz,
@@ -155,20 +190,30 @@ public final class GasketOverlayRenderer {
      * Renders a multi-pass glowing line from the highlighted gasket face to its
      * connected partner. Each pass is wider and fainter, producing a soft bloom.
      * Skips rendering if the partner block is unloaded or in a different dimension.
+     *
+     * @param mc the mc
+     * @param poseStack the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera the render camera
+     * @param localPos the local block position
+     * @param localBounds the local gasket bounds
+     * @param localRole the local gasket role
+     * @param localSlot the local slot index
+     * @param localHolder the local gasket holder
      */
     private static void renderConnectionLine(
             Minecraft mc, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, BlockPos localPos, AABB localBounds, GasketRole localRole,
             int localSlot, IGasketHolder localHolder) {
         GasketPartner partner = localHolder.getPartner(localRole, localSlot);
-        if (partner == null || partner.isEntityTarget()) return;
+        if (partner == null || partner.isEntityTarget()) { return; }
 
         BlockPos partnerPos = partner.pos();
-        if (mc.level == null || !mc.level.isLoaded(partnerPos)) return;
+        if (mc.level == null || !mc.level.isLoaded(partnerPos)) { return; }
 
         Vec3 from = gasketFaceCenter(localPos, localBounds, localRole);
         Vec3 to = resolvePartnerEndpoint(mc, partnerPos, partner.slot(), localRole.opposite());
-        if (to == null) return;
+        if (to == null) { return; }
 
         renderGlowLine(poseStack, bufferSource, camera, from, to, mc);
     }
@@ -176,10 +221,15 @@ public final class GasketOverlayRenderer {
     /**
      * Returns the center of the gasket face on the highlighted block.
      * RECEIVER faces emit from the top of their region; TRANSMITTER from the bottom.
+     *
+     * @param pos the block position
+     * @param bounds the axis-aligned bounding box
+     * @param role the gasket role
+     * @return the result
      */
     private static Vec3 gasketFaceCenter(BlockPos pos, AABB bounds, GasketRole role) {
-        double cx = pos.getX() + (bounds.minX + bounds.maxX) * 0.5;
-        double cz = pos.getZ() + (bounds.minZ + bounds.maxZ) * 0.5;
+        double cx = pos.getX() + (bounds.minX + bounds.maxX) * FACE_MIDPOINT;
+        double cz = pos.getZ() + (bounds.minZ + bounds.maxZ) * FACE_MIDPOINT;
         double cy = role == GasketRole.RECEIVER
                 ? pos.getY() + bounds.maxY
                 : pos.getY() + bounds.minY;
@@ -190,17 +240,23 @@ public final class GasketOverlayRenderer {
      * Computes the partner's gasket face center by looking up the block entity
      * and resolving its slot/machine geometry. Returns null if the partner
      * block entity can't be resolved.
+     *
+     * @param mc the mc
+     * @param partnerPos the partner block position
+     * @param partnerSlot the partner slot index
+     * @param partnerRole the partner gasket role
+     * @return the resolved result, or null if unresolvable
      */
     private static Vec3 resolvePartnerEndpoint(
             Minecraft mc, BlockPos partnerPos, int partnerSlot, GasketRole partnerRole) {
         BlockEntity partnerBe = mc.level.getBlockEntity(partnerPos);
-        if (partnerBe == null) return null;
+        if (partnerBe == null) { return null; }
 
         AABB partnerBounds = resolveGasketBounds(partnerBe, partnerRole, partnerSlot);
         if (partnerBounds == null) {
             // Fallback: center of the block at top or bottom
             double y = partnerRole == GasketRole.RECEIVER ? partnerPos.getY() + 1.0 : partnerPos.getY();
-            return new Vec3(partnerPos.getX() + 0.5, y, partnerPos.getZ() + 0.5);
+            return new Vec3(partnerPos.getX() + FACE_MIDPOINT, y, partnerPos.getZ() + FACE_MIDPOINT);
         }
         return gasketFaceCenter(partnerPos, partnerBounds, partnerRole);
     }
@@ -209,11 +265,18 @@ public final class GasketOverlayRenderer {
      * Renders a multi-pass glow line between two world-space points.
      * Core pass is bright and thin; bloom passes are progressively wider and fainter.
      * Alpha pulses gently over time for a living feel.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera the render camera
+     * @param from the start world position
+     * @param to the end world position
+     * @param mc the mc
      */
     private static void renderGlowLine(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Vec3 from, Vec3 to, Minecraft mc) {
-        float gameTime = mc.level.getGameTime() * 0.05f;
+        float gameTime = mc.level.getGameTime() * GLOW_TIME_SCALE;
         float pulse = 1.0f + GLOW_PULSE_AMP * Mth.sin(gameTime * GLOW_PULSE_FREQ);
         float baseWidth = mc.getWindow().getAppropriateLineWidth();
 
@@ -229,7 +292,7 @@ public final class GasketOverlayRenderer {
         // Bloom passes (outermost first so core draws on top)
         for (int i = GLOW_PASSES - 1; i >= 0; i--) {
             float alphaScale = (float) Math.pow(GLOW_ALPHA_DECAY, i) * pulse;
-            int alpha = Mth.clamp((int) (ARGB.alpha(GLOW_CORE_COLOR) * alphaScale), 0, 255);
+            int alpha = Mth.clamp((int) (ARGB.alpha(GLOW_CORE_COLOR) * alphaScale), 0, MAX_CHANNEL);
             int color = ARGB.color(alpha,
                     ARGB.red(GLOW_CORE_COLOR), ARGB.green(GLOW_CORE_COLOR), ARGB.blue(GLOW_CORE_COLOR));
             float width = baseWidth * (1.0f + i * GLOW_WIDTH_STEP);
@@ -245,6 +308,10 @@ public final class GasketOverlayRenderer {
      * Used for both the local overlay and partner endpoint computation.
      *
      * @return the gasket bounds in block-local coordinates (0-1), or null if invalid
+     *
+     * @param be the block entity instance
+     * @param role the gasket role
+     * @param slot the slot index
      */
     private static AABB resolveGasketBounds(BlockEntity be, GasketRole role, int slot) {
         if (be instanceof CanisterBlockEntity cbe) {
@@ -262,13 +329,18 @@ public final class GasketOverlayRenderer {
     /**
      * Canister: split the full slot body at the vertical midpoint into upper/lower halves.
      * Uses slotShape (the full 4x12x4 body), NOT the 1px gasket caps.
+     *
+     * @param cbe the cbe
+     * @param role the gasket role
+     * @param slot the slot index
+     * @return the resolved result, or null if unresolvable
      */
     private static AABB resolveCanisterBounds(CanisterBlockEntity cbe, GasketRole role, int slot) {
-        if (slot < 0 || slot >= CanisterBlock.SLOT_COUNT) return null;
-        if (cbe.getCanister(slot).isEmpty()) return null;
+        if (slot < 0 || slot >= CanisterBlock.SLOT_COUNT) { return null; }
+        if (cbe.getCanister(slot).isEmpty()) { return null; }
 
         AABB slotBounds = CanisterBlock.slotShape(slot).bounds();
-        double midY = (slotBounds.minY + slotBounds.maxY) / 2.0;
+        double midY = (slotBounds.minY + slotBounds.maxY) / SLOT_MID_DIVISOR;
         if (role == GasketRole.RECEIVER) {
             return new AABB(slotBounds.minX, midY, slotBounds.minZ,
                     slotBounds.maxX, slotBounds.maxY, slotBounds.maxZ);
@@ -280,13 +352,18 @@ public final class GasketOverlayRenderer {
 
     /**
      * Hub: split the full slot body at the vertical midpoint into upper/lower halves.
+     *
+     * @param hbe the hbe
+     * @param role the gasket role
+     * @param slot the slot index
+     * @return the resolved result, or null if unresolvable
      */
     private static AABB resolveHubBounds(HubBlockEntity hbe, GasketRole role, int slot) {
-        if (slot < 0 || slot >= HubBlock.SLOT_COUNT) return null;
-        if (hbe.getCanister(slot).isEmpty()) return null;
+        if (slot < 0 || slot >= HubBlock.SLOT_COUNT) { return null; }
+        if (hbe.getCanister(slot).isEmpty()) { return null; }
 
         AABB slotBounds = HubBlock.slotShape(slot).bounds();
-        double midY = (slotBounds.minY + slotBounds.maxY) / 2.0;
+        double midY = (slotBounds.minY + slotBounds.maxY) / SLOT_MID_DIVISOR;
         if (role == GasketRole.RECEIVER) {
             return new AABB(slotBounds.minX, midY, slotBounds.minZ,
                     slotBounds.maxX, slotBounds.maxY, slotBounds.maxZ);
@@ -296,26 +373,45 @@ public final class GasketOverlayRenderer {
         }
     }
 
-    /** Vat: upper or lower half of the full block, depending on role. */
+    /**
+     * Vat: upper or lower half of the full block, depending on role.
+     *
+     * @param be the block entity instance
+     * @param role the gasket role
+     * @return the resolved result, or null if unresolvable
+     */
     private static AABB resolveVatBounds(BlockEntity be, GasketRole role) {
         var state = be.getBlockState();
         if (role == GasketRole.RECEIVER && state.getValue(VatBlock.GASKET_CAP)) {
-            return new AABB(0, 0.5, 0, 1, 1, 1);
+            return new AABB(0, VAT_UPPER_START, 0, 1, 1, 1);
         } else if (role == GasketRole.TRANSMITTER && state.getValue(VatBlock.GASKET_BASE)) {
-            return new AABB(0, 0, 0, 1, 0.5, 1);
+            return new AABB(0, 0, 0, 1, VAT_LOWER_END, 1);
         }
         return null;
     }
 
-    /** Crucible: basin region (upper portion, Y 9/16 to 16/16). Always transmitter. */
+    /**
+     * Crucible: basin region (upper portion, Y 9/16 to 16/16). Always transmitter.
+     *
+     * @param be the block entity instance
+     * @return the resolved result, or null if unresolvable
+     */
     private static AABB resolveCrucibleBounds(BlockEntity be) {
-        if (!be.getBlockState().getValue(CrucibleBlock.HAS_GASKET)) return null;
-        return new AABB(0, 9.0 / 16.0, 0, 1, 1, 1);
+        if (!be.getBlockState().getValue(CrucibleBlock.HAS_GASKET)) { return null; }
+        return new AABB(0, CRUCIBLE_BASIN_Y, 0, 1, 1, 1);
     }
 
     /**
      * Renders six filled faces of an AABB as translucent quads.
      * Coordinates are block-local; ox/oy/oz apply camera offset.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param consumer the vertex consumer
+     * @param bounds the axis-aligned bounding box
+     * @param ox the ox
+     * @param oy the oy
+     * @param oz the oz
+     * @param color the ARGB color value
      */
     private static void renderFilledBox(PoseStack poseStack, VertexConsumer consumer,
             AABB bounds, double ox, double oy, double oz, int color) {
@@ -368,11 +464,19 @@ public final class GasketOverlayRenderer {
      * Renders diagonal warning stripes across all six faces of the AABB to
      * indicate the gasket is already connected. Stripes run diagonally across
      * each face as thin bands.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param consumer the vertex consumer
+     * @param bounds the axis-aligned bounding box
+     * @param ox the ox
+     * @param oy the oy
+     * @param oz the oz
+     * @param color the ARGB color value
      */
     private static void renderDiagonalStripes(PoseStack poseStack, VertexConsumer consumer,
             AABB bounds, double ox, double oy, double oz, int color) {
         // Inset slightly to avoid z-fighting with the filled box
-        double inset = 0.001;
+        double inset = STRIPE_INSET;
         double x0 = bounds.minX + ox - inset;
         double y0 = bounds.minY + oy - inset;
         double z0 = bounds.minZ + oz - inset;
@@ -405,6 +509,18 @@ public final class GasketOverlayRenderer {
      * Renders diagonal stripe bands on a horizontal or vertical face.
      * For horizontal faces (isHorizontal=true): face spans (x0,fixedY,z0)-(x1,fixedY,z1).
      * For vertical faces along Z axis (isHorizontal=false): face spans (x0,y0,fixedZ)-(x1,y1,fixedZ).
+     *
+     * @param pose the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param color the ARGB color value
+     * @param ax0 the ax0
+     * @param ay0 the ay0
+     * @param az0 the az0
+     * @param ax1 the ax1
+     * @param ay1 the ay1
+     * @param az1 the az1
+     * @param isHorizontal true for horizontal faces
+     * @param flipWinding whether to reverse winding order
      */
     private static void renderFaceStripes(PoseStack.Pose pose, VertexConsumer consumer,
             int color, double ax0, double ay0, double az0, double ax1, double ay1, double az1,
@@ -426,9 +542,9 @@ public final class GasketOverlayRenderer {
                 double sz0 = az0;
                 double sx1 = ax0 + xLen * t1;
                 double sz1 = az0;
-                double sx2 = ax0 + xLen * Math.min(t1 + 0.3, 1.0);
+                double sx2 = ax0 + xLen * Math.min(t1 + STRIPE_DIAGONAL_SHIFT, 1.0);
                 double sz2 = az1;
-                double sx3 = ax0 + xLen * Math.min(t0 + 0.3, 1.0);
+                double sx3 = ax0 + xLen * Math.min(t0 + STRIPE_DIAGONAL_SHIFT, 1.0);
                 double sz3 = az1;
 
                 if (flipWinding) {
@@ -451,9 +567,9 @@ public final class GasketOverlayRenderer {
                 double sy0 = ay0;
                 double sx1 = ax0 + xLen * t1;
                 double sy1 = ay0;
-                double sx2 = ax0 + xLen * Math.min(t1 + 0.3, 1.0);
+                double sx2 = ax0 + xLen * Math.min(t1 + STRIPE_DIAGONAL_SHIFT, 1.0);
                 double sy2 = ay1;
-                double sx3 = ax0 + xLen * Math.min(t0 + 0.3, 1.0);
+                double sx3 = ax0 + xLen * Math.min(t0 + STRIPE_DIAGONAL_SHIFT, 1.0);
                 double sy3 = ay1;
 
                 if (flipWinding) {
@@ -473,6 +589,16 @@ public final class GasketOverlayRenderer {
 
     /**
      * Renders diagonal stripe bands on X-facing vertical faces (stripes in ZY plane).
+     *
+     * @param pose the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param color the ARGB color value
+     * @param fixedX the fixed X coordinate
+     * @param y0 the minimum Y bound
+     * @param z0 the minimum Z bound
+     * @param y1 the maximum Y bound
+     * @param z1 the maximum Z bound
+     * @param flipWinding whether to reverse winding order
      */
     private static void renderVerticalFaceStripes(PoseStack.Pose pose, VertexConsumer consumer,
             int color, double fixedX, double y0, double z0, double y1, double z1,
@@ -489,9 +615,9 @@ public final class GasketOverlayRenderer {
             double sy0 = y0;
             double sz1 = z0 + zLen * t1;
             double sy1 = y0;
-            double sz2 = z0 + zLen * Math.min(t1 + 0.3, 1.0);
+            double sz2 = z0 + zLen * Math.min(t1 + STRIPE_DIAGONAL_SHIFT, 1.0);
             double sy2 = y1;
-            double sz3 = z0 + zLen * Math.min(t0 + 0.3, 1.0);
+            double sz3 = z0 + zLen * Math.min(t0 + STRIPE_DIAGONAL_SHIFT, 1.0);
             double sy3 = y1;
 
             if (flipWinding) {

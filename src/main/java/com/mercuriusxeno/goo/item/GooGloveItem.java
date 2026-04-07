@@ -22,8 +22,14 @@ public class GooGloveItem extends Item {
 
     /** Ticks of hold before radial menu opens instead of throwing. */
     public static final int RADIAL_THRESHOLD_TICKS = 6;
+    /** Maximum use duration in ticks (same as bow: 1 hour at 20 tps). */
+    private static final int MAX_USE_DURATION = 72_000;
 
-    /** Creates a goo glove item with the given properties. */
+    /**
+     * Creates a goo glove item with the given properties.
+     *
+     * @param properties the item properties
+     */
     public GooGloveItem(Properties properties) {
         super(properties);
     }
@@ -52,10 +58,15 @@ public class GooGloveItem extends Item {
      */
     @Override
     public int getUseDuration(@NonNull ItemStack stack, @NonNull LivingEntity entity) {
-        return 72000;
+        return MAX_USE_DURATION;
     }
 
-    /** No animation while holding the glove. */
+    /**
+     * No animation while holding the glove.
+     *
+     * @param stack the item stack
+     * @return NONE (no animation)
+     */
     @Override
     public @NonNull ItemUseAnimation getUseAnimation(@NonNull ItemStack stack) {
         return ItemUseAnimation.NONE;
@@ -76,18 +87,26 @@ public class GooGloveItem extends Item {
             @NonNull LivingEntity entity, int timeLeft) {
         int ticksUsed = getUseDuration(stack, entity) - timeLeft;
         if (ticksUsed < RADIAL_THRESHOLD_TICKS) {
-            GooType selected = getSelectedType(stack);
-            if (selected == null) return false;
-            if (level.isClientSide() && entity instanceof net.minecraft.world.entity.player.Player player) {
-                // Client resolves target and sends C2S throw packet
-                com.mercuriusxeno.goo.client.GloveThrowSender.sendThrow(player, selected);
-            }
-            // Arm pump visible to self and other players
-            entity.swing(entity.getUsedItemHand());
-            return true;
+            return handleQuickThrow(stack, level, entity);
         }
-        // Long hold: radial menu already handled by GloveUseTracker on client
         return false;
+    }
+
+    /** Sends a throw packet (client) and plays the arm swing (both sides).
+     *
+     * @param stack  the glove stack
+     * @param level  the world
+     * @param entity the entity throwing
+     * @return true if a throw was initiated, false if no type selected
+     */
+    private boolean handleQuickThrow(ItemStack stack, Level level, LivingEntity entity) {
+        GooType selected = getSelectedType(stack);
+        if (selected == null) { return false; }
+        if (level.isClientSide() && entity instanceof Player player) {
+            com.mercuriusxeno.goo.client.GloveThrowSender.sendThrow(player, selected);
+        }
+        entity.swing(entity.getUsedItemHand());
+        return true;
     }
 
     /**
@@ -98,7 +117,7 @@ public class GooGloveItem extends Item {
      */
     public static @Nullable GooType getSelectedType(ItemStack stack) {
         String id = stack.get(GooDataComponents.SELECTED_GOO_TYPE.get());
-        if (id == null || id.isEmpty()) return null;
+        if (id == null || id.isEmpty()) { return null; }
         return GooType.fromId(id);
     }
 

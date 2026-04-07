@@ -3,10 +3,8 @@ package com.mercuriusxeno.goo.client;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
-import net.minecraft.core.Direction;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -15,7 +13,9 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -55,6 +55,15 @@ public class ChainMarkerBER
 
     /** Minimum scale during implosion (fraction of normal). */
     private static final float IMPLOSION_MIN = 0.3f;
+
+    /** Bit shift for alpha channel in ARGB. */
+    private static final int ALPHA_SHIFT = 24;
+    /** Mask for stripping alpha from an ARGB color. */
+    private static final int RGB_MASK = 0x00FFFFFF;
+    /** Center offset in block units. */
+    private static final float BLOCK_CENTER = 0.5f;
+    /** Negative face direction for normal inversion. */
+    private static final float NEG_FACE = -1f;
 
     public ChainMarkerBER(BlockEntityRendererProvider.Context context) {
     }
@@ -96,7 +105,7 @@ public class ChainMarkerBER
         int light = LightCoordsUtil.FULL_BRIGHT;
         int gooColor = type.getColor();
         int baseShellAlpha = state.targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
-        int shellColor = (baseShellAlpha << 24) | (gooColor & 0x00FFFFFF);
+        int shellColor = (baseShellAlpha << ALPHA_SHIFT) | (gooColor & RGB_MASK);
 
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         float u0 = sprite.getU(0f);
@@ -105,16 +114,16 @@ public class ChainMarkerBER
         float v1 = sprite.getV(1f);
 
         poseStack.pushPose();
-        float cx = 0.5f;
-        float cy = 0.5f;
-        float cz = 0.5f;
+        float cx = BLOCK_CENTER;
+        float cy = BLOCK_CENTER;
+        float cz = BLOCK_CENTER;
 
         // Rock markers render half-embedded in the face they're stuck to
         if (type == GooType.ROCK) {
             Direction face = state.placedFace;
-            cx -= face.getStepX() * 0.5f;
-            cy -= face.getStepY() * 0.5f;
-            cz -= face.getStepZ() * 0.5f;
+            cx -= face.getStepX() * BLOCK_CENTER;
+            cy -= face.getStepY() * BLOCK_CENTER;
+            cz -= face.getStepZ() * BLOCK_CENTER;
         }
 
         poseStack.translate(cx, cy, cz);
@@ -140,9 +149,13 @@ public class ChainMarkerBER
 
     /**
      * Scale multiplier from stack count. Linear 1.0 to MAX_SCALE.
+     *
+     * @param stacks the current stack count
+     * @param maxStacks the maximum stack count
+     * @return the computed stackScale
      */
     private static float computeStackScale(int stacks, int maxStacks) {
-        if (maxStacks <= 1) return 1f;
+        if (maxStacks <= 1) { return 1f; }
         float t = (float) (stacks - 1) / (maxStacks - 1);
         return 1f + t * (MAX_SCALE - 1f);
     }
@@ -150,27 +163,55 @@ public class ChainMarkerBER
     /**
      * Implosion scale: 1.0 normally, shrinks to IMPLOSION_MIN in the
      * final IMPLOSION_TICKS before detonation. Smooth via partial tick.
+     *
+     * @param fuseRemaining the fuse ticks remaining
+     * @param partialTick the partial tick for interpolation
+     * @return the computed implosionScale
      */
     private static float computeImplosionScale(int fuseRemaining, float partialTick) {
-        if (fuseRemaining > IMPLOSION_TICKS) return 1f;
+        if (fuseRemaining > IMPLOSION_TICKS) { return 1f; }
         float smoothFuse = Math.max(0f, fuseRemaining - partialTick);
         float t = 1f - (smoothFuse / IMPLOSION_TICKS);
         return 1f - t * (1f - IMPLOSION_MIN);
     }
 
-    /** Renders all 6 faces of an axis-aligned cube centered at the origin. */
+    /**
+     * Renders all 6 faces of an axis-aligned cube centered at the origin.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param color the ARGB color value
+     * @param min the min
+     * @param max the max
+     * @param uv the UV texture rectangle
+     */
     private static void renderCube(PoseStack.Pose pose, VertexConsumer c,
             int light, int color, float min, float max,
             GooRenderUtil.UvRect uv) {
         coloredFaceY(pose, c, light, color, min, max, max, min, max, uv, 1f);
-        coloredFaceY(pose, c, light, color, min, max, min, min, max, uv, -1f);
+        coloredFaceY(pose, c, light, color, min, max, min, min, max, uv, NEG_FACE);
         coloredFaceX(pose, c, light, color, max, min, max, min, max, uv, 1f);
-        coloredFaceX(pose, c, light, color, min, min, max, min, max, uv, -1f);
+        coloredFaceX(pose, c, light, color, min, min, max, min, max, uv, NEG_FACE);
         coloredFaceZ(pose, c, light, color, min, max, min, max, max, uv, 1f);
-        coloredFaceZ(pose, c, light, color, min, max, min, max, min, uv, -1f);
+        coloredFaceZ(pose, c, light, color, min, max, min, max, min, uv, NEG_FACE);
     }
 
-    /** Y-axis face with explicit ARGB color. */
+    /**
+     * Y-axis face with explicit ARGB color.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param color the ARGB color value
+     * @param x0 the minimum X bound
+     * @param x1 the maximum X bound
+     * @param y the Y coordinate
+     * @param z0 the minimum Z bound
+     * @param z1 the maximum Z bound
+     * @param uv the UV texture rectangle
+     * @param ny the Y normal component
+     */
     private static void coloredFaceY(PoseStack.Pose pose, VertexConsumer c,
             int light, int color, float x0, float x1, float y,
             float z0, float z1, GooRenderUtil.UvRect uv, float ny) {
@@ -187,7 +228,21 @@ public class ChainMarkerBER
         }
     }
 
-    /** X-axis face with explicit ARGB color. */
+    /**
+     * X-axis face with explicit ARGB color.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param color the ARGB color value
+     * @param x the X coordinate
+     * @param y0 the minimum Y bound
+     * @param y1 the maximum Y bound
+     * @param z0 the minimum Z bound
+     * @param z1 the maximum Z bound
+     * @param uv the UV texture rectangle
+     * @param nx the X normal component
+     */
     private static void coloredFaceX(PoseStack.Pose pose, VertexConsumer c,
             int light, int color, float x, float y0, float y1,
             float z0, float z1, GooRenderUtil.UvRect uv, float nx) {
@@ -204,7 +259,21 @@ public class ChainMarkerBER
         }
     }
 
-    /** Z-axis face with explicit ARGB color. */
+    /**
+     * Z-axis face with explicit ARGB color.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param color the ARGB color value
+     * @param x0 the minimum X bound
+     * @param x1 the maximum X bound
+     * @param y0 the minimum Y bound
+     * @param y1 the maximum Y bound
+     * @param z the Z coordinate
+     * @param uv the UV texture rectangle
+     * @param nz the Z normal component
+     */
     private static void coloredFaceZ(PoseStack.Pose pose, VertexConsumer c,
             int light, int color, float x0, float x1, float y0,
             float y1, float z, GooRenderUtil.UvRect uv, float nz) {

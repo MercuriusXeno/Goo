@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -12,8 +11,6 @@ import net.minecraft.world.phys.Vec3;
  * origin). Every method is side-agnostic and testable without framework state.
  */
 public final class ThrowArc {
-
-    private ThrowArc() {}
 
     /** Minecraft standard entity gravity in blocks/tick². */
     public static final double GRAVITY = 0.08;
@@ -34,6 +31,22 @@ public final class ThrowArc {
     public static final double ARM_DOWN = 0.35;
 
     /**
+     * Where the arc peaks as a fraction of total flight [0..1].
+     * Values below 0.5 front-load the climb: the blob rises steeply
+     * in the first portion then glides down more gently. 0.5 = symmetric.
+     */
+    public static final double ARC_PEAK_T = 0.5;
+
+    /** Divisor for the base-peak parabolic formula (quarter-flight squared). */
+    private static final double BASE_PEAK_DIVISOR = 8.0;
+    /** Parabolic factor for "2 - s" envelope in the skewed arc rise phase. */
+    private static final double ARC_RISE_FACTOR = 2.0;
+    /** Left-arm side indicator (negative direction). */
+    private static final float LEFT_ARM_SIDE = -1f;
+
+    private ThrowArc() {}
+
+    /**
      * Computes travel time in ticks for a given distance.
      *
      * @param distance world-space distance in blocks
@@ -50,7 +63,7 @@ public final class ThrowArc {
      * @return peak height in blocks
      */
     public static double basePeak(double travelTicks) {
-        return GRAVITY * travelTicks * travelTicks / 8.0;
+        return GRAVITY * travelTicks * travelTicks / BASE_PEAK_DIVISOR;
     }
 
     /**
@@ -62,13 +75,6 @@ public final class ThrowArc {
     public static double grannyPeak(double travelTicks) {
         return basePeak(travelTicks) * ARC_GRAVITY_SCALE + ARC_FLAT_BOOST;
     }
-
-    /**
-     * Where the arc peaks as a fraction of total flight [0..1].
-     * Values below 0.5 front-load the climb: the blob rises steeply
-     * in the first portion then glides down more gently. 0.5 = symmetric.
-     */
-    public static final double ARC_PEAK_T = 0.5;
 
     /**
      * Interpolates a point on an asymmetric arc with a given peak height.
@@ -103,7 +109,7 @@ public final class ThrowArc {
     static double skewedArc(double t, double peak, double tPeak) {
         if (t <= tPeak) {
             double s = t / tPeak;
-            return peak * s * (2.0 - s);
+            return peak * s * (ARC_RISE_FACTOR - s);
         } else {
             double s = (t - tPeak) / (1.0 - tPeak);
             return peak * (1.0 - s * s);
@@ -133,25 +139,19 @@ public final class ThrowArc {
      * Pure hand-offset calculation. Takes basis vectors and returns the
      * world-space offset from the eye to the glove hand.
      *
-     * @param rightX right-vector X (negate camera left)
-     * @param rightY right-vector Y
-     * @param rightZ right-vector Z
-     * @param upX    up-vector X
-     * @param upY    up-vector Y
-     * @param upZ    up-vector Z
+     * @param right  the camera right vector
+     * @param up     the camera up vector
      * @param side   +1 for right arm, −1 for left arm
      * @param scale  player scale factor
      * @return offset vector to add to eye position
      */
-    public static Vec3 handOffset(double rightX, double rightY, double rightZ,
-                                  double upX, double upY, double upZ,
-                                  float side, float scale) {
+    public static Vec3 handOffset(Vec3 right, Vec3 up, float side, float scale) {
         double s = side * ARM_SIDE * scale;
         double d = ARM_DOWN * scale;
         return new Vec3(
-                rightX * s - upX * d,
-                rightY * s - upY * d,
-                rightZ * s - upZ * d);
+                right.x * s - up.x * d,
+                right.y * s - up.y * d,
+                right.z * s - up.z * d);
     }
 
     /**
@@ -164,6 +164,6 @@ public final class ThrowArc {
     public static float gloveSide(ItemStack mainItem, HumanoidArm mainArm) {
         boolean inMainHand = mainItem.getItem() instanceof GooGloveItem;
         HumanoidArm arm = inMainHand ? mainArm : mainArm.getOpposite();
-        return arm == HumanoidArm.RIGHT ? 1f : -1f;
+        return arm == HumanoidArm.RIGHT ? 1f : LEFT_ARM_SIDE;
     }
 }

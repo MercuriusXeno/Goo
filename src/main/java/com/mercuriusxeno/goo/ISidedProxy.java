@@ -17,7 +17,11 @@ public interface ISidedProxy {
     /** The active proxy instance. Client on client dist, SERVER on server. */
     ISidedProxy[] INSTANCE = { SERVER };
 
-    /** Returns the active proxy. */
+    /**
+     * Returns the active proxy.
+     *
+     * @return the active proxy instance
+     */
     static ISidedProxy get() {
         return INSTANCE[0];
     }
@@ -25,6 +29,8 @@ public interface ISidedProxy {
     /**
      * Returns the current crosshair hit result, or null.
      * Server: always null.
+     *
+     * @return the crosshair hit result, or null on server
      */
     default @Nullable HitResult getCrosshairHit() {
         return null;

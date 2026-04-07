@@ -4,10 +4,10 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooFluids;
 import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
-import net.neoforged.neoforge.fluids.FluidStack;
 import org.jspecify.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.Map;
@@ -79,7 +79,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      */
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        if (resource.isEmpty()) return false;
+        if (resource.isEmpty()) { return false; }
         GooType type = GooFluids.getTypeFromFluid(resource.getFluid());
         return type != null && type.ordinal() == index;
     }
@@ -98,15 +98,19 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
     protected int getCapacity(int index, FluidResource resource) {
         int otherVolume = 0;
         for (int i = 0; i < size(); i++) {
-            if (i != index) otherVolume += getAmountAsInt(i);
+            if (i != index) { otherVolume += getAmountAsInt(i); }
         }
         return capacity - otherVolume;
     }
 
-    /** Detects insertions for stream tracking, then notifies the owner. Suppressed during bulk loads. */
+    /** Detects insertions for stream tracking, then notifies the owner. Suppressed during bulk loads.
+     *
+     * @param index            the tank index
+     * @param previousContents the previous fluid stack contents
+     */
     @Override
     protected void onContentsChanged(int index, FluidStack previousContents) {
-        if (suppressCallbacks) return;
+        if (suppressCallbacks) { return; }
         long current = getAmountAsLong(index);
         long previous = previousContents.getAmount();
         long delta = current - previous;
@@ -153,9 +157,10 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @return immutable GooContents reflecting current volumes
      */
+    @Override
     public GooContents toGooContents() {
         GooType[] types = GooType.values();
-        EnumMap<GooType, Long> map = new EnumMap<>(GooType.class);
+        Map<GooType, Long> map = new EnumMap<>(GooType.class);
         for (int i = 0; i < types.length; i++) {
             long amount = getAmountAsLong(i);
             if (amount > 0) {
@@ -172,6 +177,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @param contents the contents to load from
      */
+    @Override
     public void loadFrom(GooContents contents) {
         suppressCallbacks = true;
         try {
@@ -190,7 +196,10 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
         }
     }
 
-    /** Returns the total volume across all 15 tanks. */
+    /** Returns the total volume across all 15 tanks.
+     *
+     * @return the long value
+     */
     public long totalVolume() {
         long total = 0;
         for (int i = 0; i < size(); i++) {
@@ -199,7 +208,11 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
         return total;
     }
 
-    /** Returns true if all tanks are empty. */
+    /** Returns true if all tanks are empty.
+     *
+     * @return true if empty
+     */
+    @Override
     public boolean isEmpty() {
         return totalVolume() == 0;
     }
@@ -224,12 +237,12 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @return the amount actually inserted (or that would be)
      */
     public int insertGoo(GooType type, int amount, boolean simulate) {
-        if (amount <= 0) return 0;
+        if (amount <= 0) { return 0; }
         int index = type.ordinal();
         FluidResource resource = FluidResource.of(GooFluids.SOURCES.get(type).get());
         try (var tx = Transaction.openRoot()) {
             int inserted = insert(index, resource, amount, tx);
-            if (!simulate) tx.commit();
+            if (!simulate) { tx.commit(); }
             return inserted;
         }
     }
@@ -243,12 +256,12 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @return the amount actually extracted (or that would be)
      */
     public int extractGoo(GooType type, int amount, boolean simulate) {
-        if (amount <= 0) return 0;
+        if (amount <= 0) { return 0; }
         int index = type.ordinal();
         FluidResource resource = FluidResource.of(GooFluids.SOURCES.get(type).get());
         try (var tx = Transaction.openRoot()) {
             int extracted = extract(index, resource, amount, tx);
-            if (!simulate) tx.commit();
+            if (!simulate) { tx.commit(); }
             return extracted;
         }
     }

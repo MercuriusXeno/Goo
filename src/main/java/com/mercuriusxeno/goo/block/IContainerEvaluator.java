@@ -16,6 +16,9 @@ public interface IContainerEvaluator {
      * Result of recursively evaluating a container item's contents.
      * Goo: summed goo values of all items (including nested containers).
      * Ejects: items with no goo value that should be spawned as entities.
+     *
+     * @param goo    the aggregated goo contents
+     * @param ejects the list of items to eject
      */
     record ContainerEvaluation(GooContents goo, List<ItemStack> ejects) {
 
@@ -27,6 +30,9 @@ public interface IContainerEvaluator {
     /**
      * Returns true if the given stack is a container that should be
      * recursively evaluated rather than flat-looked-up.
+     *
+     * @param stack the item stack
+     * @return the result
      */
     boolean isContainer(ItemStack stack);
 

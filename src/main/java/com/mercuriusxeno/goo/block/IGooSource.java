@@ -8,12 +8,21 @@ import com.mercuriusxeno.goo.item.GooContents;
  */
 public interface IGooSource {
 
-    /** Returns true if the source contains no goo. */
+    /** Returns true if the source contains no goo.
+     *
+     * @return true if empty
+     */
     boolean isEmpty();
 
-    /** Returns a snapshot of the current goo contents. */
+    /** Returns a snapshot of the current goo contents.
+     *
+     * @return the goo contents
+     */
     GooContents toGooContents();
 
-    /** Loads contents from a snapshot, replacing current state. */
+    /** Loads contents from a snapshot, replacing current state.
+     *
+     * @param contents the goo contents
+     */
     void loadFrom(GooContents contents);
 }

@@ -11,6 +11,9 @@ import org.jspecify.annotations.NonNull;
 /**
  * Client-to-server payload: requests popping a specific canister out of a
  * multi-canister block by left-clicking (punching) the targeted slot.
+ *
+ * @param pos  the block position of the canister block
+ * @param slot the targeted sub-slot index
  */
 public record CanisterPunchPayload(BlockPos pos, int slot)
         implements CustomPacketPayload {
@@ -28,13 +31,23 @@ public record CanisterPunchPayload(BlockPos pos, int slot)
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, CanisterPunchPayload payload) {
         buf.writeBlockPos(payload.pos);
         buf.writeVarInt(payload.slot);
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static CanisterPunchPayload decode(FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         int slot = buf.readVarInt();

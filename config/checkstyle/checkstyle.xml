@@ -8,7 +8,8 @@
     mechanical enough to check at source level. Complements ArchUnit
     (bytecode-level).
 
-    Philosophy: warnings, not errors. Smells are heuristics, not laws.
+    Mechanical rules (fixable without design judgment) are severity=error.
+    Design rules (require decomposition or refactoring) are severity=warning.
 -->
 <module name="Checker">
     <property name="severity" value="warning"/>
@@ -16,11 +17,16 @@
 
     <module name="TreeWalker">
 
+        <!-- ── Errors: mechanical, fix them ──────────────────────── -->
+
         <!-- Dead imports -->
-        <module name="UnusedImports"/>
+        <module name="UnusedImports">
+            <property name="severity" value="error"/>
+        </module>
 
         <!-- IMPORT_DISORDER: group ordering per repo SMELL.md -->
         <module name="ImportOrder">
+            <property name="severity" value="error"/>
             <property name="groups"
                 value="/^com\.google/,/^com\.mercuriusxeno/,/^com\.mojang/,/^io\./,/^net\.minecraft/,/^net\.neoforged/,/^org\./,/^java\./,/^javax\./"/>
             <property name="staticGroups" value="*"/>
@@ -30,14 +36,9 @@
             <property name="option" value="bottom"/>
         </module>
 
-        <!-- LONG_METHOD: 10-line hard limit per SMELL.md -->
-        <module name="MethodLength">
-            <property name="max" value="10"/>
-            <property name="countEmpty" value="false"/>
-        </module>
-
         <!-- MAGIC: named constants for literals with semantic meaning -->
         <module name="MagicNumber">
+            <property name="severity" value="error"/>
             <property name="ignoreNumbers" value="0, 1"/>
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
@@ -46,6 +47,7 @@
 
         <!-- MAGIC: all string literals in method bodies need named constants -->
         <module name="MatchXpath">
+            <property name="severity" value="error"/>
             <property name="query"
                 value="//METHOD_DEF//EXPR//STRING_LITERAL"/>
             <message key="matchxpath.match"
@@ -54,7 +56,35 @@
 
         <!-- MISSING_DOCS: classes need javadoc -->
         <module name="JavadocType">
+            <property name="severity" value="error"/>
             <property name="scope" value="public"/>
+        </module>
+
+        <!-- MISSING_DOCS: all methods need javadoc -->
+        <module name="JavadocMethod">
+            <property name="severity" value="error"/>
+            <property name="accessModifiers" value="public, protected, package, private"/>
+            <property name="allowMissingParamTags" value="false"/>
+            <property name="allowMissingReturnTag" value="false"/>
+        </module>
+
+        <!-- No cramming multiple statements on one line to game MethodLength -->
+        <module name="OneStatementPerLine">
+            <property name="severity" value="error"/>
+        </module>
+
+        <!-- Boolean expression complexity: tripwire for raw predicates -->
+        <module name="BooleanExpressionComplexity">
+            <property name="severity" value="error"/>
+            <property name="max" value="3"/>
+        </module>
+
+        <!-- ── Warnings: design judgment required ────────────────── -->
+
+        <!-- LONG_METHOD: 10-line hard limit per SMELL.md -->
+        <module name="MethodLength">
+            <property name="max" value="10"/>
+            <property name="countEmpty" value="false"/>
         </module>
 
         <!-- Cyclomatic complexity: tripwire for tangled control flow -->
@@ -65,11 +95,6 @@
         <!-- Parameter count: tripwire for greedy signatures -->
         <module name="ParameterNumber">
             <property name="max" value="4"/>
-        </module>
-
-        <!-- Boolean expression complexity: tripwire for raw predicates -->
-        <module name="BooleanExpressionComplexity">
-            <property name="max" value="3"/>
         </module>
 
         <!-- Nesting depth: readability signal -->

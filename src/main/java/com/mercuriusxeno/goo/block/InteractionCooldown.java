@@ -10,13 +10,13 @@ import java.util.UUID;
  */
 public final class InteractionCooldown {
 
-    private InteractionCooldown() {}
-
     /** Minimum ticks between consecutive canister place/pickup interactions. */
     private static final long COOLDOWN_TICKS = 10;
 
     /** Tracks the last successful interaction tick per player. */
     private static final Map<UUID, Long> LAST_INTERACTION = new HashMap<>();
+
+    private InteractionCooldown() {}
 
     /**
      * Returns true if the player is still within the cooldown window.

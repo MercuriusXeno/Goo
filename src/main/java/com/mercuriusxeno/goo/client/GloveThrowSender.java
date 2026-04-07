@@ -15,6 +15,9 @@ import net.minecraft.world.entity.player.Player;
  */
 public final class GloveThrowSender {
 
+    /** Sentinel value indicating no entity target. */
+    private static final int NO_ENTITY = -1;
+
     private GloveThrowSender() {}
 
     /**
@@ -25,25 +28,44 @@ public final class GloveThrowSender {
      * @param gooType the selected goo type to throw
      */
     public static void sendThrow(Player player, GooType gooType) {
-        // Don't send a throw the server will reject - no goo of this type in inventory
-        if (!GloveUseTracker.isSelectedTypeAvailable()) return;
+        if (!GloveUseTracker.isSelectedTypeAvailable()) { return; }
+        TargetResult target = resolveAimTarget(player);
+        BlobThrowPayload payload = targetToPayload(target, gooType);
+        if (payload != null) {
+            sendPayload(payload);
+        }
+    }
 
+    /** Resolves the player's current aim target at the current partial tick.
+     *
+     * @param player the local player
+     * @return the resolved target result
+     */
+    private static TargetResult resolveAimTarget(Player player) {
         float partialTick = Minecraft.getInstance()
                 .getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        TargetResult target = GooTargetHighlighter.resolveTarget(player, partialTick);
+        return GooTargetHighlighter.resolveTarget(player, partialTick);
+    }
 
-        BlobThrowPayload payload = switch (target) {
-            case TargetResult.EntityTarget et ->
-                    new BlobThrowPayload(gooType.getId(), et.entity().getId(),
-                            BlockPos.ZERO, -1, false);
-            case TargetResult.BlockTarget bt ->
-                    new BlobThrowPayload(gooType.getId(), -1,
-                            bt.pos(), bt.face().ordinal(), bt.grannyArc());
+    /** Converts a target result into a throw payload, or null if no valid target.
+     *
+     * @param target  the aim target
+     * @param gooType the selected goo type
+     * @return the payload, or null for no target
+     */
+    private static BlobThrowPayload targetToPayload(TargetResult target, GooType gooType) {
+        return switch (target) {
+            case TargetResult.EntityTarget et -> new BlobThrowPayload(gooType.getId(), et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
+            case TargetResult.BlockTarget bt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
             case TargetResult.None ignored -> null;
         };
+    }
 
-        if (payload == null) return; // nothing targeted
-
+    /** Sends a custom payload packet to the server.
+     *
+     * @param payload the payload to send
+     */
+    private static void sendPayload(BlobThrowPayload payload) {
         var connection = Minecraft.getInstance().getConnection();
         if (connection != null) {
             connection.send(new ServerboundCustomPayloadPacket(payload));

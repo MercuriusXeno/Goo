@@ -16,8 +16,7 @@ import java.util.Map;
  * Registers source and flowing {@link Fluid} instances for each goo type.
  * Uses non-flowing {@link GooFluid} variants so goo stays where placed.
  */
-public class GooFluids {
-
+public final class GooFluids {
     /** Deferred register for vanilla fluids. */
     public static final DeferredRegister<Fluid> FLUIDS =
             DeferredRegister.create(Registries.FLUID, Goo.MODID);
@@ -29,6 +28,8 @@ public class GooFluids {
     /** Flowing fluid per goo type. */
     public static final Map<GooType, DeferredHolder<Fluid, GooFluid.Flowing>> FLOWING =
             new EnumMap<>(GooType.class);
+
+    private GooFluids() {}
 
     static {
         for (GooType type : GooType.values()) {
@@ -44,6 +45,7 @@ public class GooFluids {
      * Looks up the GooType for a given fluid instance.
      * Checks both source and flowing maps.
      *
+     * @param fluid the fluid instance to look up
      * @return the matching GooType, or null if the fluid is not a goo fluid
      */
     @Nullable
@@ -56,7 +58,12 @@ public class GooFluids {
         return getTypeFromFlowing(fluid);
     }
 
-    /** Checks the flowing fluid map for a match. */
+    /**
+     * Checks the flowing fluid map for a match.
+     *
+     * @param fluid the fluid instance to look up
+     * @return the matching GooType, or null if not found
+     */
     @Nullable
     private static GooType getTypeFromFlowing(Fluid fluid) {
         for (Map.Entry<GooType, DeferredHolder<Fluid, GooFluid.Flowing>> entry : FLOWING.entrySet()) {
@@ -71,12 +78,15 @@ public class GooFluids {
      * Builds the shared fluid properties linking source, flowing, and fluid type.
      * Block association is omitted here to avoid circular static init with GooBlocks.
      * The LiquidBlock constructor receives the fluid directly instead.
+     *
+     * @param type the goo type
+     * @return the configured fluid properties
      */
     private static BaseFlowingFluid.Properties fluidProperties(GooType type) {
         return new BaseFlowingFluid.Properties(
                 GooFluidTypes.TYPES.get(type),
-                GooFluids.SOURCES.get(type),
-                GooFluids.FLOWING.get(type)
+                SOURCES.get(type),
+                FLOWING.get(type)
         );
     }
 }

@@ -2,25 +2,24 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
+import com.mercuriusxeno.goo.data.GasketLocation;
+import com.mercuriusxeno.goo.data.GasketRegistry;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ChoralGasketItem;
 import com.mercuriusxeno.goo.item.ChoralTunerItem;
+import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GasketPartner;
 import com.mercuriusxeno.goo.item.GasketRole;
-import com.mercuriusxeno.goo.data.GasketLocation;
-import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooBlobItem;
+import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooOmniblobItem;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooItems;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -41,10 +40,10 @@ import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import java.util.Map;
-import java.util.UUID;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Stationary bulk goo storage block. Multi-type, large capacity with matrix upgrades.
@@ -66,11 +65,19 @@ public class VatBlock extends BaseEntityBlock {
 
     /** Vat collision shape: 14x16x14 cuboid centered in the block. */
     private static final VoxelShape SHAPE = box(1, 0, 1, 15, 16, 15);
+    /** Block update flags: notify neighbors + send to clients. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
 
     /** Y midpoint for determining cap vs base clicks. */
     private static final double FACE_MID_Y = 8.0 / 16.0;
 
-    /** Creates a new vat block with the given properties. */
+    /** Fills an empty bucket with up to 8 blobs (8,000 mB) of the dominant goo type from the vat. */
+    private static final long BUCKET_FILL_AMOUNT = 8 * BlobStacks.MB_PER_BLOB;
+
+    /** Creates a new vat block with the given properties.
+     *
+     * @param properties the block properties
+     */
     public VatBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
@@ -80,13 +87,23 @@ public class VatBlock extends BaseEntityBlock {
             .setValue(VAT_BELOW, false));
     }
 
-    /** Registers blockstate properties for gaskets and vat stacking. */
+    /** Registers blockstate properties for gaskets and vat stacking.
+     *
+     * @param builder the state definition builder
+     */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(GASKET_CAP, GASKET_BASE, VAT_ABOVE, VAT_BELOW);
     }
 
-    /** Returns the vat's 14x16x14 collision shape. */
+    /** Returns the vat's 14x16x14 collision shape.
+     *
+     * @param state   the block state
+     * @param level   the current level
+     * @param pos     the block position
+     * @param context the collision context
+     * @return the shape
+     */
     @Override
     protected @NonNull VoxelShape getShape(
             @NonNull BlockState state, @NonNull BlockGetter level,
@@ -94,62 +111,95 @@ public class VatBlock extends BaseEntityBlock {
         return SHAPE;
     }
 
-    /** Returns the vat codec for serialization. */
+    /** Returns the vat codec for serialization.
+     *
+     * @return the codec
+     */
     @Override
     protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
-    /** Returns MODEL render shape (standard block model). */
+    /** Returns MODEL render shape (standard block model).
+     *
+     * @param state the block state
+     * @return the render shape
+     */
     @Override
     protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
         return RenderShape.MODEL;
     }
 
-    /** Creates a new VatBlockEntity for this position. */
+    /** Creates a new VatBlockEntity for this position.
+     *
+     * @param pos   the block position
+     * @param state the block state
+     * @return the new block entity
+     */
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new VatBlockEntity(pos, state);
     }
 
-    /** Registers the server-side tick dispatcher for gasket push. */
+    /** Registers the server-side tick dispatcher for gasket push.
+     *
+     * @param level the current level
+     * @param state the block state
+     * @param type  the goo type
+     * @return the ticker
+     */
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             @NonNull Level level, @NonNull BlockState state, @NonNull BlockEntityType<T> type) {
-        if (level.isClientSide()) return null;
+        if (level.isClientSide()) { return null; }
         return createTickerHelper(type, GooBlockEntities.VAT.get(), VatBlockEntity::serverTick);
     }
 
     // -- Neighbor updates (vat stacking) --
 
-    /** Updates VAT_ABOVE/VAT_BELOW, pops occluded gaskets, and redistributes fluid when a neighbor changes. */
+    /** Updates VAT_ABOVE/VAT_BELOW, pops occluded gaskets, and redistributes fluid when a neighbor changes.
+     *
+     * @param state         the block state
+     * @param level         the current level
+     * @param pos           the block position
+     * @param neighborBlock the neighbor block that changed
+     * @param orientation   the redstone orientation, or null
+     * @param movedByPiston true if moved by a piston
+     */
     @Override
     protected void neighborChanged(
             @NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
             @NonNull Block neighborBlock, @Nullable Orientation orientation,
             boolean movedByPiston) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) { return; }
         BlockState updated = computeStackState(state, level, pos);
         if (updated != state) {
             popOccludedGaskets(state, updated, level, pos);
-            level.setBlock(pos, updated, 3);
+            level.setBlock(pos, updated, BLOCK_UPDATE_FLAGS);
             // Stack topology changed - redistribute fluid so it settles correctly
             VatStackRedistributor.redistribute(level, pos);
         }
     }
 
-    /** Sets self state, pops occluded gaskets, notifies neighbors, and redistributes fluid when placed. */
+    /** Sets self state, pops occluded gaskets, notifies neighbors, and redistributes fluid when placed.
+     *
+     * @param state         the block state
+     * @param level         the current level
+     * @param pos           the block position
+     * @param oldState      the previous block state
+     * @param movedByPiston true if moved by a piston
+     */
     @Override
     protected void onPlace(
             @NonNull BlockState state, @NonNull Level level, @NonNull BlockPos pos,
             @NonNull BlockState oldState, boolean movedByPiston) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) { return; }
         BlockState updated = computeStackState(state, level, pos);
         if (updated != state) {
             popOccludedGaskets(state, updated, level, pos);
-            level.setBlock(pos, updated, 3);
+            level.setBlock(pos, updated, BLOCK_UPDATE_FLAGS);
         }
         notifyVerticalNeighbors(level, pos);
         // Placed vat may join a stack - redistribute so its fluid settles
@@ -159,6 +209,11 @@ public class VatBlock extends BaseEntityBlock {
     /**
      * Computes VAT_ABOVE/VAT_BELOW from adjacent blocks.
      * Clears gasket flags for faces that become occluded by stacking.
+     *
+     * @param state the block state
+     * @param level the current level
+     * @param pos   the block position
+     * @return the computed stack state
      */
     private static BlockState computeStackState(BlockState state, Level level, BlockPos pos) {
         boolean above = level.getBlockState(pos.above()).getBlock() instanceof VatBlock;
@@ -176,6 +231,11 @@ public class VatBlock extends BaseEntityBlock {
     /**
      * Drops a gasket item for each face that had a gasket in the old state
      * but was cleared in the new state due to occlusion.
+     *
+     * @param oldState the previous block state
+     * @param newState the new block state
+     * @param level    the current level
+     * @param pos      the block position
      */
     private static void popOccludedGaskets(
             BlockState oldState, BlockState newState, Level level, BlockPos pos) {
@@ -187,12 +247,19 @@ public class VatBlock extends BaseEntityBlock {
         }
     }
 
-    /** Creates a single choral gasket item stack. */
+    /** Creates a single choral gasket item stack.
+     *
+     * @return the item stack
+     */
     private static ItemStack gasketStack() {
         return new ItemStack(GooItems.CHORAL_GASKET.get());
     }
 
-    /** Notifies the vat blocks above and below to re-check their stacking state. */
+    /** Notifies the vat blocks above and below to re-check their stacking state.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     */
     private static void notifyVerticalNeighbors(Level level, BlockPos pos) {
         BlockPos abovePos = pos.above();
         if (level.getBlockState(abovePos).getBlock() instanceof VatBlock) {
@@ -209,6 +276,15 @@ public class VatBlock extends BaseEntityBlock {
     /**
      * Dispatches item-on-vat interactions. Tuner passes through, client returns early,
      * then delegates to the server-side dispatch chain.
+     *
+     * @param stack     the item stack
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hand      the hand used
+     * @param hitResult the ray trace hit result
+     * @return the interaction result
      */
     @Override
     protected @NonNull InteractionResult useItemOn(
@@ -219,15 +295,26 @@ public class VatBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
 
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
 
         BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof VatBlockEntity vat)) return InteractionResult.PASS;
+        if (!(be instanceof VatBlockEntity vat)) { return InteractionResult.PASS; }
 
         return dispatchInteraction(vat, stack, state, level, pos, player, hand, hitResult);
     }
 
-    /** Server-side instanceof dispatch chain for item interactions. */
+    /** Server-side instanceof dispatch chain for item interactions.
+     *
+     * @param vat       the vat block entity
+     * @param stack     the item stack
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hand      the hand used
+     * @param hitResult the ray trace hit result
+     * @return the interaction result
+     */
     private InteractionResult dispatchInteraction(
             VatBlockEntity vat, ItemStack stack, BlockState state, Level level,
             BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
@@ -253,14 +340,22 @@ public class VatBlock extends BaseEntityBlock {
      * Applies a gasket to the cap or base face depending on where the player clicked.
      * Click on upper half or UP face -> cap gasket. Lower half or DOWN face -> base gasket.
      * Cannot apply to a face that is occluded by another vat or already has a gasket.
+     *
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param stack     the item stack
+     * @param player    the interacting player
+     * @param hitResult the ray trace hit result
+     * @return the interaction result
      */
     private InteractionResult handleGasketApply(
             BlockState state, Level level, BlockPos pos, ItemStack stack,
             Player player, BlockHitResult hitResult) {
         BooleanProperty target = resolveGasketFace(hitResult, pos);
-        if (state.getValue(target)) return InteractionResult.PASS;
-        if (isFaceOccluded(state, target)) return InteractionResult.PASS;
-        level.setBlock(pos, state.setValue(target, true), 3);
+        if (state.getValue(target)) { return InteractionResult.PASS; }
+        if (isFaceOccluded(state, target)) { return InteractionResult.PASS; }
+        level.setBlock(pos, state.setValue(target, true), BLOCK_UPDATE_FLAGS);
 
         // Generate UUID and register in GasketRegistry
         BlockEntity be = level.getBlockEntity(pos);
@@ -281,28 +376,47 @@ public class VatBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    /** Returns true if the given gasket face is occluded by an adjacent vat. */
+    /** Returns true if the given gasket face is occluded by an adjacent vat.
+     *
+     * @param state      the block state
+     * @param gasketProp the gasket blockstate property
+     * @return true if face occluded
+     */
     private static boolean isFaceOccluded(BlockState state, BooleanProperty gasketProp) {
         return gasketProp == GASKET_CAP ? state.getValue(VAT_ABOVE) : state.getValue(VAT_BELOW);
     }
 
-    /** Resolves which gasket face the player is targeting based on hit location. */
+    /** Resolves which gasket face the player is targeting based on hit location.
+     *
+     * @param hit the ray trace hit result
+     * @param pos the block position
+     * @return the interaction result
+     */
     private static BooleanProperty resolveGasketFace(BlockHitResult hit, BlockPos pos) {
-        if (hit.getDirection() == Direction.UP) return GASKET_CAP;
-        if (hit.getDirection() == Direction.DOWN) return GASKET_BASE;
+        if (hit.getDirection() == Direction.UP) { return GASKET_CAP; }
+        if (hit.getDirection() == Direction.DOWN) { return GASKET_BASE; }
         double localY = hit.getLocation().y - pos.getY();
         return localY >= FACE_MID_Y ? GASKET_CAP : GASKET_BASE;
     }
 
+    /** Empty-hand: sneak removes gasket, otherwise extracts dominant goo type as blobs.
+     *
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hitResult the ray trace hit result
+     * @return the interaction result
+     */
     @Override
     protected @NonNull InteractionResult useWithoutItem(
             @NonNull BlockState state, Level level, @NonNull BlockPos pos, @NonNull Player player,
             @NonNull BlockHitResult hitResult) {
 
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
 
         BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof VatBlockEntity vat)) return InteractionResult.PASS;
+        if (!(be instanceof VatBlockEntity vat)) { return InteractionResult.PASS; }
 
         if (player.isShiftKeyDown()) {
             return handleGasketRemove(state, level, pos, vat, hitResult);
@@ -314,65 +428,87 @@ public class VatBlock extends BaseEntityBlock {
     /**
      * Removes the gasket on the targeted face if one is installed.
      * Flips the blockstate, drops the gasket item, and clears the gasket UUID.
+     *
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param vat       the vat block entity
+     * @param hitResult the ray trace hit result
+     * @return the interaction result
      */
     private InteractionResult handleGasketRemove(
             BlockState state, Level level, BlockPos pos, VatBlockEntity vat,
             BlockHitResult hitResult) {
         BooleanProperty target = resolveGasketFace(hitResult, pos);
-        if (!state.getValue(target)) return InteractionResult.PASS;
+        if (!state.getValue(target)) { return InteractionResult.PASS; }
 
         GasketRole role = target == GASKET_CAP ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
         GasketInstallation.popGasket(level, pos, vat.getGasketId(role));
         vat.clearGasket(role);
-        level.setBlock(pos, state.setValue(target, false), 3);
+        level.setBlock(pos, state.setValue(target, false), BLOCK_UPDATE_FLAGS);
         return InteractionResult.SUCCESS;
     }
 
-    /** Inserts a blob or omniblob's volume into the vat. */
+    /** Inserts a blob or omniblob's volume into the vat.
+     *
+     * @param vat    the vat block entity
+     * @param stack  the item stack
+     * @param player the interacting player
+     * @return the interaction result
+     */
     private InteractionResult handleBlobInsert(
             VatBlockEntity vat, ItemStack stack, Player player) {
         GooType blobType = BlobStacks.gooTypeOf(stack);
-        if (blobType == null) return InteractionResult.PASS;
+        if (blobType == null) { return InteractionResult.PASS; }
         long volume = BlobStacks.volumeOf(stack);
-        if (volume <= 0) return InteractionResult.PASS;
-        if (!vat.canAccept()) return InteractionResult.PASS;
+        if (volume <= 0) { return InteractionResult.PASS; }
+        if (!vat.canAccept()) { return InteractionResult.PASS; }
 
         long accepted = vat.insertGoo(blobType, volume);
-        if (accepted <= 0) return InteractionResult.PASS;
+        if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
         return InteractionResult.SUCCESS;
     }
 
-    /** Extracts a full stack (64,000 mB) of the dominant type from the vat into the player's inventory. */
+    /** Extracts a full stack (64,000 mB) of the dominant type from the vat into the player's inventory.
+     *
+     * @param vat    the vat block entity
+     * @param player the interacting player
+     * @return the interaction result
+     */
     private InteractionResult handleBlobExtract(VatBlockEntity vat, Player player) {
-        if (vat.isEmpty()) return InteractionResult.PASS;
+        if (vat.isEmpty()) { return InteractionResult.PASS; }
 
         GooType dominant = vat.getDominantType();
-        if (dominant == null) return InteractionResult.PASS;
+        if (dominant == null) { return InteractionResult.PASS; }
 
         long extractAmount = Math.min(vat.getContents().getVolume(dominant), BlobStacks.MAX_BLOB_STACK_VOLUME);
         long extracted = vat.extractGoo(dominant, extractAmount);
-        if (extracted <= 0) return InteractionResult.PASS;
+        if (extracted <= 0) { return InteractionResult.PASS; }
 
         ItemStack output = BlobStacks.createForOutput(dominant, extracted);
         PlayerUtils.addOrDrop(player, output);
         return InteractionResult.SUCCESS;
     }
 
-    /** Fills an empty bucket with up to 8 blobs (8,000 mB) of the dominant goo type from the vat. */
-    private static final long BUCKET_FILL_AMOUNT = 8 * BlobStacks.MB_PER_BLOB;
-
+    /** Fills an empty bucket with the dominant goo type from the vat.
+     *
+     * @param vat    the vat block entity
+     * @param stack  the item stack
+     * @param player the interacting player
+     * @return the interaction result
+     */
     private InteractionResult handleBucketFill(VatBlockEntity vat, ItemStack stack, Player player) {
-        if (vat.isEmpty()) return InteractionResult.PASS;
+        if (vat.isEmpty()) { return InteractionResult.PASS; }
 
         GooType dominant = vat.getDominantType();
-        if (dominant == null) return InteractionResult.PASS;
+        if (dominant == null) { return InteractionResult.PASS; }
 
         long available = vat.getContents().getVolume(dominant);
         long toExtract = Math.min(available, BUCKET_FILL_AMOUNT);
         long extracted = vat.extractGoo(dominant, toExtract);
-        if (extracted <= 0) return InteractionResult.PASS;
+        if (extracted <= 0) { return InteractionResult.PASS; }
 
         ItemStack filledBucket = BucketOfGooItem.createWithGoo(dominant, extracted);
         stack.shrink(1);
@@ -380,12 +516,19 @@ public class VatBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    /** Pours a filled goo bucket into the vat, tracking partial fills. */
+    /** Pours a filled goo bucket into the vat, tracking partial fills.
+     *
+     * @param vat    the vat block entity
+     * @param stack  the item stack
+     * @param player the interacting player
+     * @param hand   the hand used
+     * @return the interaction result
+     */
     private InteractionResult handleBucketPour(
             VatBlockEntity vat, ItemStack stack, Player player, InteractionHand hand) {
         GooContents bucketGoo = BucketOfGooItem.getContents(stack);
-        if (bucketGoo.isEmpty()) return InteractionResult.PASS;
-        if (!vat.canAccept()) return InteractionResult.PASS;
+        if (bucketGoo.isEmpty()) { return InteractionResult.PASS; }
+        if (!vat.canAccept()) { return InteractionResult.PASS; }
 
         boolean inserted = false;
         for (Map.Entry<GooType, Long> entry : bucketGoo.getAll().entrySet()) {
@@ -395,13 +538,18 @@ public class VatBlock extends BaseEntityBlock {
                 inserted = true;
             }
         }
-        if (!inserted) return InteractionResult.PASS;
+        if (!inserted) { return InteractionResult.PASS; }
 
         BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
         return InteractionResult.SUCCESS;
     }
 
-    /** Routes canister-vat interaction: dump if canister has fluid, drain if empty. */
+    /** Routes canister-vat interaction: dump if canister has fluid, drain if empty.
+     *
+     * @param vat   the vat block entity
+     * @param stack the item stack
+     * @return the interaction result
+     */
     private InteractionResult handleCanisterInteraction(VatBlockEntity vat, ItemStack stack) {
         GooContents canisterContents = CanisterItem.getGooContents(stack);
         if (!canisterContents.isEmpty()) {
@@ -410,10 +558,16 @@ public class VatBlock extends BaseEntityBlock {
         return handleCanisterDrain(vat, stack);
     }
 
-    /** Dumps all canister goo into the vat, removing accepted amounts from the canister. */
+    /** Dumps all canister goo into the vat, removing accepted amounts from the canister.
+     *
+     * @param vat              the vat block entity
+     * @param stack            the item stack
+     * @param canisterContents the canister goo contents
+     * @return the interaction result
+     */
     private InteractionResult handleCanisterDump(
             VatBlockEntity vat, ItemStack stack, GooContents canisterContents) {
-        if (!vat.canAccept()) return InteractionResult.PASS;
+        if (!vat.canAccept()) { return InteractionResult.PASS; }
 
         boolean inserted = false;
         for (Map.Entry<GooType, Long> entry : canisterContents.getAll().entrySet()) {
@@ -426,21 +580,26 @@ public class VatBlock extends BaseEntityBlock {
         return inserted ? InteractionResult.SUCCESS : InteractionResult.PASS;
     }
 
-    /** Drains the vat's dominant type into an empty canister, up to canister capacity. */
+    /** Drains the vat's dominant type into an empty canister, up to canister capacity.
+     *
+     * @param vat   the vat block entity
+     * @param stack the item stack
+     * @return the result
+     */
     private InteractionResult handleCanisterDrain(VatBlockEntity vat, ItemStack stack) {
-        if (vat.isEmpty()) return InteractionResult.PASS;
+        if (vat.isEmpty()) { return InteractionResult.PASS; }
 
         GooType dominant = vat.getDominantType();
-        if (dominant == null) return InteractionResult.PASS;
+        if (dominant == null) { return InteractionResult.PASS; }
 
         long capacity = ContainerCapacity.canisterCapacity(
             com.mercuriusxeno.goo.registry.GooEnchantments.getCompressionLevel(stack));
         long space = capacity - CanisterItem.getGooContents(stack).totalVolume();
-        if (space <= 0) return InteractionResult.PASS;
+        if (space <= 0) { return InteractionResult.PASS; }
 
         long available = vat.getContents().getVolume(dominant);
         long extracted = vat.extractGoo(dominant, Math.min(available, space));
-        if (extracted <= 0) return InteractionResult.PASS;
+        if (extracted <= 0) { return InteractionResult.PASS; }
 
         CanisterItem.addGoo(stack, dominant, extracted);
         return InteractionResult.SUCCESS;
@@ -451,6 +610,12 @@ public class VatBlock extends BaseEntityBlock {
     /**
      * Drops gaskets on break and notifies vertical neighbors.
      * Goo contents are retained in the item via data components.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param state  the block state
+     * @param player the interacting player
+     * @return the block state
      */
     @Override
     public @NonNull BlockState playerWillDestroy(
@@ -463,7 +628,12 @@ public class VatBlock extends BaseEntityBlock {
         return super.playerWillDestroy(level, pos, state, player);
     }
 
-    /** Drops gasket items for any installed gaskets. */
+    /** Drops gasket items for any installed gaskets.
+     *
+     * @param state the block state
+     * @param level the current level
+     * @param pos   the block position
+     */
     private void dropGaskets(BlockState state, Level level, BlockPos pos) {
         if (state.getValue(GASKET_CAP)) {
             popResource(level, pos, gasketStack());

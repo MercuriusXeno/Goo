@@ -10,19 +10,30 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
  */
 public final class BlockEntitySync {
 
+    /** Block update flags: notify neighbors + send to clients. */
+    static final int BLOCK_UPDATE_FLAGS = 3;
+
     private BlockEntitySync() {}
 
-    /** Marks the block entity dirty and sends a block update to tracking clients. */
+    /**
+     * Marks the block entity dirty and sends a block update to tracking clients.
+     *
+     * @param be the block entity to sync
+     */
     public static void markDirtyAndSync(BlockEntity be) {
         be.setChanged();
         Level level = be.getLevel();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(
-                be.getBlockPos(), be.getBlockState(), be.getBlockState(), 3);
+                be.getBlockPos(), be.getBlockState(), be.getBlockState(), BLOCK_UPDATE_FLAGS);
         }
     }
 
-    /** Invalidates cached capabilities so listeners re-query. Server-side only. */
+    /**
+     * Invalidates cached capabilities so listeners re-query. Server-side only.
+     *
+     * @param be the block entity whose capabilities to invalidate
+     */
     public static void invalidateCapabilities(BlockEntity be) {
         Level level = be.getLevel();
         if (level != null && !level.isClientSide()) {
@@ -30,12 +41,18 @@ public final class BlockEntitySync {
         }
     }
 
-    /** Pushes an integer value into a blockstate property. Server-side only. */
+    /**
+     * Pushes an integer value into a blockstate property. Server-side only.
+     *
+     * @param be       the block entity owning the blockstate
+     * @param property the integer property to update
+     * @param value    the new value
+     */
     public static void syncIntProperty(BlockEntity be, IntegerProperty property, int value) {
         Level level = be.getLevel();
         if (level != null && !level.isClientSide()) {
             level.setBlock(be.getBlockPos(),
-                be.getBlockState().setValue(property, value), 3);
+                be.getBlockState().setValue(property, value), BLOCK_UPDATE_FLAGS);
         }
     }
 }

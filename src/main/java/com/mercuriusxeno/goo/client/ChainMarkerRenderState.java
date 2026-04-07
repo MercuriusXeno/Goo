@@ -23,13 +23,13 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     public int fuseTicks = 1;
 
     /** Fuse remaining in ticks (for pulsing/implosion animation). */
-    public int fuseRemaining = 0;
+    public int fuseRemaining;
 
     /** Partial tick for smooth interpolation. */
-    public float partialTick = 0f;
+    public float partialTick;
 
     /** True when the player's crosshair is on this block. */
-    public boolean targeted = false;
+    public boolean targeted;
 
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;

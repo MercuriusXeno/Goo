@@ -19,12 +19,11 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
  * z-fighting against each other.
  */
 public final class GooRenderTypes {
-
-    private GooRenderTypes() {}
-
     /**
      * Lines pipeline with LIGHTNING blend (SRC_ALPHA, ONE) and no depth write.
      * Reuses vanilla line shaders; only blend and depth state differ.
+     *
+     * @return the result
      */
     public static final RenderPipeline LINES_ADDITIVE_GLOW = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath("goo", "pipeline/lines_additive_glow"))
@@ -42,7 +41,13 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
-    /** Registers custom pipelines with the NeoForge pipeline registry. */
+    private GooRenderTypes() {}
+
+    /**
+     * Registers custom pipelines with the NeoForge pipeline registry.
+     *
+     * @param event the event instance
+     */
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(LINES_ADDITIVE_GLOW);
     }
