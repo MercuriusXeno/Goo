@@ -148,27 +148,90 @@ public final class ScaffoldGenerator {
                                        Map<Identifier, GooValue> baseValues,
                                        Set<Identifier> denied,
                                        Set<Identifier> allKnownItems) {
-        Map<Identifier, List<RecipeInput>> byOutput = GooValueDerivation.groupByOutput(recipes);
-        Map<Identifier, Set<Identifier>> forwardDeps = buildForwardDeps(byOutput);
-        Set<Identifier> recipeItems = collectRecipeItems(forwardDeps);
-        Map<Identifier, Set<Identifier>> reverseDeps = buildReverseDeps(forwardDeps);
-
-        Set<Identifier> valued = new HashSet<>(baseValues.keySet());
-        propagateValues(valued, recipes, denied);
+        var graphData = buildGraphData(recipes);
+        Set<Identifier> valued = initValuedSet(baseValues, recipes, denied);
 
         List<Root> roots = new ArrayList<>();
         Set<Identifier> trueRootIds = collectTrueRoots(
-                recipeItems, byOutput, valued, denied, reverseDeps, roots);
+                graphData.recipeItems, graphData.byOutput, valued, denied, graphData.reverseDeps, roots);
 
+        collectRemainingRoots(graphData, valued, trueRootIds, recipes, denied, allKnownItems, roots);
+        sortRootsByImpact(roots);
+        return roots;
+    }
+
+    /**
+     * Initializes the valued set from base values and propagates through recipes.
+     *
+     * @param baseValues currently valued items
+     * @param recipes all recipes for propagation
+     * @param denied excluded items
+     * @return mutable valued set after initial propagation
+     */
+    private static Set<Identifier> initValuedSet(Map<Identifier, GooValue> baseValues,
+                                                  List<RecipeInput> recipes, Set<Identifier> denied) {
+        Set<Identifier> valued = new HashSet<>(baseValues.keySet());
+        propagateValues(valued, recipes, denied);
+        return valued;
+    }
+
+    /**
+     * Phases 2 and 3: collects cycle roots and unaccounted items after true roots.
+     *
+     * @param graphData recipe graph data
+     * @param valued currently valued items
+     * @param trueRootIds true root IDs from phase 1
+     * @param recipes all recipes
+     * @param denied excluded items
+     * @param allKnownItems all registered item IDs (empty disables phase 3)
+     * @param roots accumulator for discovered roots (mutated)
+     */
+    private static void collectRemainingRoots(GraphData graphData, Set<Identifier> valued,
+                                               Set<Identifier> trueRootIds, List<RecipeInput> recipes,
+                                               Set<Identifier> denied, Set<Identifier> allKnownItems,
+                                               List<Root> roots) {
         Set<Identifier> simValued = simulateWithTrueRoots(valued, trueRootIds, recipes, denied);
-        Set<Identifier> cycleItems = findUnresolved(recipeItems, simValued, denied);
-        collectCycleRoots(cycleItems, recipes, reverseDeps, simValued, denied, roots);
-        collectUnaccountedRoots(allKnownItems, simValued, cycleItems, denied, recipeItems, roots);
+        Set<Identifier> cycleItems = findUnresolved(graphData.recipeItems, simValued, denied);
+        collectCycleRoots(cycleItems, recipes, graphData.reverseDeps, simValued, denied, roots);
+        collectUnaccountedRoots(allKnownItems, simValued, cycleItems, denied, graphData.recipeItems, roots);
+    }
 
+    /**
+     * Intermediate data from recipe graph construction.
+     *
+     * @param byOutput    recipes grouped by output
+     * @param recipeItems all items mentioned in the graph
+     * @param reverseDeps reverse dependency graph
+     */
+    private record GraphData(
+            Map<Identifier, List<RecipeInput>> byOutput,
+            Set<Identifier> recipeItems,
+            Map<Identifier, Set<Identifier>> reverseDeps
+    ) {}
+
+    /**
+     * Builds the forward/reverse dependency graphs and collects all recipe items.
+     *
+     * @param recipes all known recipes
+     * @return graph data bundle for root-finding phases
+     */
+    private static GraphData buildGraphData(List<RecipeInput> recipes) {
+        var byOutput = GooValueDerivation.groupByOutput(recipes);
+        var forwardDeps = buildForwardDeps(byOutput);
+        var recipeItems = collectRecipeItems(forwardDeps);
+        var reverseDeps = buildReverseDeps(forwardDeps);
+        return new GraphData(byOutput, recipeItems, reverseDeps);
+    }
+
+    /**
+     * Sorts roots by downstream impact (highest first), then cluster size.
+     *
+     * @param roots mutable list to sort in place
+     */
+    private static void sortRootsByImpact(List<Root> roots) {
         roots.sort(Comparator.comparingInt((Root r) -> r.downstream().size())
                 .thenComparingInt(r -> r.clusterSize())
                 .reversed());
-        return roots;
     }
 
     /**
@@ -206,11 +269,25 @@ public final class ScaffoldGenerator {
         for (Identifier item : recipeItems) {
             if (!isTrueRoot(item, byOutput, valued, denied)) { continue; }
             trueRootIds.add(item);
-            Set<Identifier> downstream = computeDownstream(item, reverseDeps, valued, denied);
-            List<Identifier> chain = traceExampleChain(item, reverseDeps, valued, denied, MAX_CHAIN_DEPTH);
-            roots.add(new Root(item, downstream, 1, REASON_NO_RECIPE, chain));
+            roots.add(buildTrueRoot(item, reverseDeps, valued, denied));
         }
         return trueRootIds;
+    }
+
+    /**
+     * Builds a Root for a true root item (no recipe produces it).
+     *
+     * @param item the true root item
+     * @param reverseDeps reverse dependency graph
+     * @param valued currently valued items
+     * @param denied excluded items
+     * @return root with downstream and example chain computed
+     */
+    private static Root buildTrueRoot(Identifier item, Map<Identifier, Set<Identifier>> reverseDeps,
+                                       Set<Identifier> valued, Set<Identifier> denied) {
+        Set<Identifier> downstream = computeDownstream(item, reverseDeps, valued, denied);
+        List<Identifier> chain = traceExampleChain(item, reverseDeps, valued, denied, MAX_CHAIN_DEPTH);
+        return new Root(item, downstream, 1, REASON_NO_RECIPE, chain);
     }
 
     /**
@@ -284,22 +361,52 @@ public final class ScaffoldGenerator {
                                            List<Root> roots) {
         if (cycleItems.isEmpty()) { return; }
 
-        List<RecipeInput> homogenous = recipes.stream()
-                .filter(r -> r.soleInputItem() != null)
-                .toList();
+        List<RecipeInput> homogenous = filterHomogenous(recipes);
         Map<Identifier, Set<Identifier>> clusters = buildClusters(homogenous, cycleItems);
         Set<Identifier> visited = new HashSet<>();
-
         for (Identifier item : cycleItems) {
-            if (visited.contains(item)) { continue; }
-            Set<Identifier> cluster = clusters.getOrDefault(item, Set.of(item));
-            if (!Collections.disjoint(cluster, visited)) { continue; }
-
-            Identifier entry = pickCycleEntry(cluster, homogenous, reverseDeps, denied);
-            visited.addAll(cluster);
-            Root root = buildCycleRoot(entry, cluster, reverseDeps, simValued, denied);
-            roots.add(root);
+            processCycleItem(item, visited, clusters, homogenous, reverseDeps, simValued, denied, roots);
         }
+    }
+
+    /**
+     * Filters recipes to only those with a single repeated input item (homogenous).
+     *
+     * @param recipes all recipes
+     * @return homogenous recipes only
+     */
+    private static List<RecipeInput> filterHomogenous(List<RecipeInput> recipes) {
+        return recipes.stream()
+                .filter(r -> r.soleInputItem() != null)
+                .toList();
+    }
+
+    /**
+     * Processes a single cycle item: skips if already visited, otherwise picks
+     * a cluster entry point and adds a root.
+     *
+     * @param item the cycle item to process
+     * @param visited items already assigned to a cluster (mutated)
+     * @param clusters union-find cluster map
+     * @param homogenous homogenous recipes for entry selection
+     * @param reverseDeps reverse dependency graph
+     * @param simValued simulated valued set
+     * @param denied excluded items
+     * @param roots accumulator for discovered roots (mutated)
+     */
+    private static void processCycleItem(Identifier item, Set<Identifier> visited,
+                                          Map<Identifier, Set<Identifier>> clusters,
+                                          List<RecipeInput> homogenous,
+                                          Map<Identifier, Set<Identifier>> reverseDeps,
+                                          Set<Identifier> simValued, Set<Identifier> denied,
+                                          List<Root> roots) {
+        if (visited.contains(item)) { return; }
+        Set<Identifier> cluster = clusters.getOrDefault(item, Set.of(item));
+        if (!Collections.disjoint(cluster, visited)) { return; }
+
+        Identifier entry = pickCycleEntry(cluster, homogenous, reverseDeps, denied);
+        visited.addAll(cluster);
+        roots.add(buildCycleRoot(entry, cluster, reverseDeps, simValued, denied));
     }
 
     /**
@@ -316,19 +423,64 @@ public final class ScaffoldGenerator {
     private static Root buildCycleRoot(Identifier entry, Set<Identifier> cluster,
                                         Map<Identifier, Set<Identifier>> reverseDeps,
                                         Set<Identifier> simValued, Set<Identifier> denied) {
-        Set<Identifier> downstream = new HashSet<>();
-        for (Identifier member : cluster) {
-            downstream.addAll(computeDownstream(member, reverseDeps, simValued, denied));
-        }
-        for (Identifier member : cluster) {
-            if (!member.equals(entry)) { downstream.add(member); }
-        }
-        downstream.remove(entry);
-
+        Set<Identifier> downstream = computeClusterDownstream(entry, cluster, reverseDeps, simValued, denied);
         List<Identifier> chain = traceExampleChain(entry, reverseDeps, simValued, denied, MAX_CHAIN_DEPTH);
         String reason = cluster.size() > 1
                 ? REASON_CYCLE_PREFIX + cluster.size() + REASON_CYCLE_SUFFIX : REASON_CYCLE;
         return new Root(entry, downstream, cluster.size(), reason, chain);
+    }
+
+    /**
+     * Computes the union of downstream items for all cluster members,
+     * adding sibling members (excluding the entry point itself).
+     *
+     * @param entry the cluster entry point (excluded from downstream)
+     * @param cluster all items in the cycle cluster
+     * @param reverseDeps reverse dependency graph
+     * @param simValued simulated valued set
+     * @param denied excluded items
+     * @return combined downstream set for the cluster
+     */
+    private static Set<Identifier> computeClusterDownstream(Identifier entry, Set<Identifier> cluster,
+                                                             Map<Identifier, Set<Identifier>> reverseDeps,
+                                                             Set<Identifier> simValued, Set<Identifier> denied) {
+        Set<Identifier> downstream = unionMemberDownstream(cluster, reverseDeps, simValued, denied);
+        addClusterSiblings(downstream, entry, cluster);
+        return downstream;
+    }
+
+    /**
+     * Computes the union of downstream sets for all cluster members.
+     *
+     * @param cluster the cycle cluster members
+     * @param reverseDeps reverse dependency graph
+     * @param simValued simulated valued set
+     * @param denied excluded items
+     * @return combined downstream set
+     */
+    private static Set<Identifier> unionMemberDownstream(Set<Identifier> cluster,
+                                                          Map<Identifier, Set<Identifier>> reverseDeps,
+                                                          Set<Identifier> simValued, Set<Identifier> denied) {
+        Set<Identifier> downstream = new HashSet<>();
+        for (Identifier member : cluster) {
+            downstream.addAll(computeDownstream(member, reverseDeps, simValued, denied));
+        }
+        return downstream;
+    }
+
+    /**
+     * Adds cluster siblings (excluding the entry point) to the downstream set.
+     *
+     * @param downstream set to add siblings to (mutated)
+     * @param entry the entry point to exclude
+     * @param cluster all cluster members
+     */
+    private static void addClusterSiblings(Set<Identifier> downstream, Identifier entry,
+                                            Set<Identifier> cluster) {
+        for (Identifier member : cluster) {
+            if (!member.equals(entry)) { downstream.add(member); }
+        }
+        downstream.remove(entry);
     }
 
     /**
@@ -350,16 +502,30 @@ public final class ScaffoldGenerator {
                                                  List<Root> roots) {
         if (allKnownItems.isEmpty()) { return; }
 
-        Set<Identifier> accounted = new HashSet<>(simValued);
-        accounted.addAll(cycleItems);
-        accounted.addAll(denied);
-
+        Set<Identifier> accounted = buildAccountedSet(simValued, cycleItems, denied);
         for (Identifier item : allKnownItems) {
             if (accounted.contains(item)) { continue; }
             String reason = recipeItems.contains(item)
                     ? REASON_BROKEN_CHAIN : REASON_NO_CHAIN;
             roots.add(new Root(item, Set.of(), 1, reason, List.of()));
         }
+    }
+
+    /**
+     * Combines simulated-valued, cycle, and denied sets into one accounted set.
+     *
+     * @param simValued simulated valued items
+     * @param cycleItems items handled by cycle roots
+     * @param denied excluded items
+     * @return union of all accounted items
+     */
+    private static Set<Identifier> buildAccountedSet(Set<Identifier> simValued,
+                                                      Set<Identifier> cycleItems,
+                                                      Set<Identifier> denied) {
+        Set<Identifier> accounted = new HashSet<>(simValued);
+        accounted.addAll(cycleItems);
+        accounted.addAll(denied);
+        return accounted;
     }
 
     /**
@@ -405,42 +571,116 @@ public final class ScaffoldGenerator {
         lines.add(JSON_OPEN);
 
         if (roots.isEmpty()) {
-            if (!bare) {
-                lines.add(COMMENT_NO_ROOTS);
-            }
-            lines.add(JSON_CLOSE);
-            return new ScaffoldResult(lines, 0);
+            return emitEmptyScaffold(lines, bare);
         }
+        return emitPopulatedScaffold(lines, roots, recipes, bare);
+    }
 
+    /**
+     * Emits a populated scaffold with entries, header, and closing brace.
+     *
+     * @param lines output line accumulator (mutated)
+     * @param roots non-empty root list
+     * @param recipes recipes for tag grouping
+     * @param bare if true, omit comments
+     * @return scaffold result with entry count
+     */
+    private static ScaffoldResult emitPopulatedScaffold(List<String> lines, List<Root> roots,
+                                                         List<RecipeInput> recipes, boolean bare) {
+        List<ScaffoldEntry> entries = buildAllEntries(roots, recipes);
+        emitScaffoldHeader(lines, entries.size(), bare);
+        emitScaffoldEntries(lines, entries, bare);
+        lines.add(JSON_CLOSE);
+        return new ScaffoldResult(lines, entries.size());
+    }
+
+    /**
+     * Emits the scaffold for an empty root list (no roots found).
+     *
+     * @param lines output line accumulator (mutated)
+     * @param bare if true, omit comment lines
+     * @return scaffold result with zero roots
+     */
+    private static ScaffoldResult emitEmptyScaffold(List<String> lines, boolean bare) {
+        if (!bare) {
+            lines.add(COMMENT_NO_ROOTS);
+        }
+        lines.add(JSON_CLOSE);
+        return new ScaffoldResult(lines, 0);
+    }
+
+    /**
+     * Builds all scaffold entries from roots with tag grouping applied.
+     *
+     * @param roots all roots in priority order
+     * @param recipes recipes for tag grouping
+     * @return ordered scaffold entries
+     */
+    private static List<ScaffoldEntry> buildAllEntries(List<Root> roots, List<RecipeInput> recipes) {
         Map<Identifier, List<Root>> tagGroups = buildTagGroups(roots, recipes);
+        Set<Root> grouped = collectGroupedRoots(tagGroups);
+        return buildEntries(roots, tagGroups, grouped);
+    }
+
+    /**
+     * Collects all roots that belong to at least one tag group.
+     *
+     * @param tagGroups tag ID to grouped root members
+     * @return set of roots assigned to any tag group
+     */
+    private static Set<Root> collectGroupedRoots(Map<Identifier, List<Root>> tagGroups) {
         Set<Root> grouped = new HashSet<>();
         for (List<Root> group : tagGroups.values()) {
             grouped.addAll(group);
         }
+        return grouped;
+    }
 
-        // Build ordered entries: tag groups first, then ungrouped roots
-        List<ScaffoldEntry> entries = buildEntries(roots, tagGroups, grouped);
-
+    /**
+     * Emits the scaffold header comment if not in bare mode.
+     *
+     * @param lines output line accumulator (mutated)
+     * @param entryCount number of entries in the scaffold
+     * @param bare if true, omit header
+     */
+    private static void emitScaffoldHeader(List<String> lines, int entryCount, boolean bare) {
         if (!bare) {
-            lines.add(COMMENT_HEADER_PREFIX
-                    + entries.size() + COMMENT_HEADER_SUFFIX);
+            lines.add(COMMENT_HEADER_PREFIX + entryCount + COMMENT_HEADER_SUFFIX);
             lines.add(EMPTY_LINE);
         }
+    }
 
+    /**
+     * Emits all scaffold entries as JSON lines (comment + key-value pairs).
+     *
+     * @param lines output line accumulator (mutated)
+     * @param entries the scaffold entries to emit
+     * @param bare if true, omit comment lines
+     */
+    private static void emitScaffoldEntries(List<String> lines, List<ScaffoldEntry> entries, boolean bare) {
         for (int i = 0; i < entries.size(); i++) {
             ScaffoldEntry entry = entries.get(i);
             boolean last = i == entries.size() - 1;
-            if (!bare) {
-                lines.add(COMMENT_KEY_PREFIX + entry.commentKey + COMMENT_VALUE_SEP + entry.comment + COMMENT_CLOSE);
-            }
-            lines.add(KEY_PREFIX + entry.jsonKey + (last ? KEY_EMPTY_VALUE : KEY_EMPTY_VALUE_COMMA));
-            if (!bare) {
-                lines.add(EMPTY_LINE);
-            }
+            emitSingleEntry(lines, entry, last, bare);
         }
+    }
 
-        lines.add(JSON_CLOSE);
-        return new ScaffoldResult(lines, entries.size());
+    /**
+     * Emits a single scaffold entry (optional comment line + JSON key line).
+     *
+     * @param lines output line accumulator (mutated)
+     * @param entry the scaffold entry to emit
+     * @param last true if this is the last entry (no trailing comma)
+     * @param bare if true, omit comment line and blank separator
+     */
+    private static void emitSingleEntry(List<String> lines, ScaffoldEntry entry, boolean last, boolean bare) {
+        if (!bare) {
+            lines.add(COMMENT_KEY_PREFIX + entry.commentKey + COMMENT_VALUE_SEP + entry.comment + COMMENT_CLOSE);
+        }
+        lines.add(KEY_PREFIX + entry.jsonKey + (last ? KEY_EMPTY_VALUE : KEY_EMPTY_VALUE_COMMA));
+        if (!bare) {
+            lines.add(EMPTY_LINE);
+        }
     }
 
     /** A single scaffold entry, either an individual root or a tag group. */
@@ -457,8 +697,22 @@ public final class ScaffoldGenerator {
     private static List<ScaffoldEntry> buildEntries(List<Root> roots,
             Map<Identifier, List<Root>> tagGroups, Set<Root> grouped) {
         List<ScaffoldEntry> entries = new ArrayList<>();
-        Set<Identifier> emittedTags = new HashSet<>();
+        dispatchRootEntries(roots, tagGroups, grouped, entries);
+        entries.sort(Comparator.comparingInt(ScaffoldEntry::unblocks).reversed());
+        return entries;
+    }
 
+    /**
+     * Dispatches each root to either a tag group entry or an individual entry.
+     *
+     * @param roots all roots in priority order
+     * @param tagGroups tag ID to grouped root members
+     * @param grouped roots already assigned to a tag group
+     * @param entries accumulator for scaffold entries (mutated)
+     */
+    private static void dispatchRootEntries(List<Root> roots, Map<Identifier, List<Root>> tagGroups,
+                                             Set<Root> grouped, List<ScaffoldEntry> entries) {
+        Set<Identifier> emittedTags = new HashSet<>();
         for (Root root : roots) {
             if (grouped.contains(root)) {
                 emitTagEntry(root, tagGroups, emittedTags, entries);
@@ -466,8 +720,6 @@ public final class ScaffoldGenerator {
                 entries.add(buildRootEntry(root));
             }
         }
-        entries.sort(Comparator.comparingInt(ScaffoldEntry::unblocks).reversed());
-        return entries;
     }
 
     /**
@@ -483,18 +735,38 @@ public final class ScaffoldGenerator {
         for (Map.Entry<Identifier, List<Root>> entry : tagGroups.entrySet()) {
             if (!entry.getValue().contains(root)) { continue; }
             if (!emittedTags.add(entry.getKey())) { continue; }
-
-            Identifier tagId = entry.getKey();
-            List<Root> members = entry.getValue();
-            Set<Identifier> unionDownstream = new HashSet<>();
-            for (Root member : members) {
-                unionDownstream.addAll(member.downstream());
-            }
-            String tagShort = shortId(tagId);
-            int unblocks = unionDownstream.size();
-            String comment = members.size() + TAG_MEMBERS + unblocks;
-            entries.add(new ScaffoldEntry(tagShort, comment, TAG_KEY_PREFIX + tagShort, unblocks));
+            entries.add(buildTagScaffoldEntry(entry.getKey(), entry.getValue()));
         }
+    }
+
+    /**
+     * Constructs a scaffold entry for a tag group by computing the union
+     * of all members' downstream sets.
+     *
+     * @param tagId the tag identifier
+     * @param members roots belonging to this tag
+     * @return scaffold entry for the tag group
+     */
+    private static ScaffoldEntry buildTagScaffoldEntry(Identifier tagId, List<Root> members) {
+        Set<Identifier> unionDownstream = computeTagUnionDownstream(members);
+        String tagShort = shortId(tagId);
+        int unblocks = unionDownstream.size();
+        String comment = members.size() + TAG_MEMBERS + unblocks;
+        return new ScaffoldEntry(tagShort, comment, TAG_KEY_PREFIX + tagShort, unblocks);
+    }
+
+    /**
+     * Computes the union of downstream sets across all tag group members.
+     *
+     * @param members roots in the tag group
+     * @return union of all members' downstream sets
+     */
+    private static Set<Identifier> computeTagUnionDownstream(List<Root> members) {
+        Set<Identifier> unionDownstream = new HashSet<>();
+        for (Root member : members) {
+            unionDownstream.addAll(member.downstream());
+        }
+        return unionDownstream;
     }
 
     /**
@@ -504,19 +776,40 @@ public final class ScaffoldGenerator {
      * @return a scaffold entry with comment and JSON key
      */
     private static ScaffoldEntry buildRootEntry(Root root) {
-        StringBuilder chainDesc = new StringBuilder(CHAIN_DESC_CAPACITY);
-        chainDesc.append(root.reason()).append(UNBLOCKS_PREFIX).append(root.downstream().size()).append(CHAIN_COLON);
-        List<Identifier> sample = root.exampleChain();
+        String chainDesc = buildChainDescription(root);
+        return new ScaffoldEntry(root.itemId().getPath(), chainDesc,
+                shortId(root.itemId()), root.downstream().size());
+    }
+
+    /**
+     * Builds the human-readable chain description for a root's comment line,
+     * showing reason, downstream count, and a sample derivation path.
+     *
+     * @param root the root to describe
+     * @return formatted chain description string
+     */
+    private static String buildChainDescription(Root root) {
+        StringBuilder desc = new StringBuilder(CHAIN_DESC_CAPACITY);
+        desc.append(root.reason()).append(UNBLOCKS_PREFIX).append(root.downstream().size()).append(CHAIN_COLON);
+        appendChainItems(desc, root.exampleChain());
+        return desc.toString();
+    }
+
+    /**
+     * Appends example chain items to a description, truncating if needed.
+     *
+     * @param desc the StringBuilder to append to (mutated)
+     * @param sample the example chain items
+     */
+    private static void appendChainItems(StringBuilder desc, List<Identifier> sample) {
         int shown = Math.min(sample.size(), MAX_CHAIN_SHOWN);
         for (int j = 0; j < shown; j++) {
-            if (j > 0) { chainDesc.append(CHAIN_ARROW); }
-            chainDesc.append(shortId(sample.get(j)));
+            if (j > 0) { desc.append(CHAIN_ARROW); }
+            desc.append(shortId(sample.get(j)));
         }
         if (sample.size() > shown) {
-            chainDesc.append(CHAIN_TRUNCATE_PREFIX).append(sample.size() - shown).append(CHAIN_TRUNCATE_SUFFIX);
+            desc.append(CHAIN_TRUNCATE_PREFIX).append(sample.size() - shown).append(CHAIN_TRUNCATE_SUFFIX);
         }
-        return new ScaffoldEntry(root.itemId().getPath(), chainDesc.toString(),
-                shortId(root.itemId()), root.downstream().size());
     }
 
     /**
@@ -533,22 +826,43 @@ public final class ScaffoldGenerator {
         for (Root root : roots) {
             rootIds.add(root.itemId());
         }
+        return collectTagGroups(roots, tagMembers);
+    }
 
-        // For each tag, collect the roots that are members of it
+    /**
+     * For each tag, collects roots that are members and returns groups with 2+ members.
+     *
+     * @param roots all roots to match against tags
+     * @param tagMembers tag ID to member item IDs
+     * @return map of tag ID to grouped roots (only groups with MIN_GROUP_SIZE+ members)
+     */
+    private static Map<Identifier, List<Root>> collectTagGroups(List<Root> roots,
+                                                                 Map<Identifier, Set<Identifier>> tagMembers) {
         Map<Identifier, List<Root>> groups = new LinkedHashMap<>();
         for (Map.Entry<Identifier, Set<Identifier>> entry : tagMembers.entrySet()) {
-            List<Root> members = new ArrayList<>();
-            for (Root root : roots) {
-                if (entry.getValue().contains(root.itemId())) {
-                    members.add(root);
-                }
-            }
-            // Only group when 2+ roots share the tag
+            List<Root> members = collectRootsForTag(roots, entry.getValue());
             if (members.size() >= MIN_GROUP_SIZE) {
                 groups.put(entry.getKey(), members);
             }
         }
         return groups;
+    }
+
+    /**
+     * Collects roots whose itemId is in the given tag member set.
+     *
+     * @param roots all roots to filter
+     * @param tagItems item IDs belonging to the tag
+     * @return roots matching the tag (may be empty)
+     */
+    private static List<Root> collectRootsForTag(List<Root> roots, Set<Identifier> tagItems) {
+        List<Root> members = new ArrayList<>();
+        for (Root root : roots) {
+            if (tagItems.contains(root.itemId())) {
+                members.add(root);
+            }
+        }
+        return members;
     }
 
     /**
@@ -562,17 +876,37 @@ public final class ScaffoldGenerator {
     static Map<Identifier, Set<Identifier>> buildTagIndex(List<RecipeInput> recipes) {
         Map<Identifier, Set<Identifier>> index = new HashMap<>();
         for (RecipeInput recipe : recipes) {
-            List<Optional<Identifier>> tagIds = recipe.slotTagIds();
-            List<Set<Identifier>> slots = recipe.ingredientAlternatives();
-            for (int i = 0; i < tagIds.size(); i++) {
-                if (tagIds.get(i).isEmpty()) { continue; }
-                Set<Identifier> alts = slots.get(i);
-                if (alts.size() <= 1) { continue; }
-                Identifier tagId = tagIds.get(i).get();
-                index.computeIfAbsent(tagId, k -> new HashSet<>()).addAll(alts);
-            }
+            indexRecipeSlots(index, recipe);
         }
         return index;
+    }
+
+    /**
+     * Indexes all tagged multi-variant slots in a single recipe into the tag index.
+     *
+     * @param index tag index to populate (mutated)
+     * @param recipe the recipe whose slots to scan
+     */
+    private static void indexRecipeSlots(Map<Identifier, Set<Identifier>> index, RecipeInput recipe) {
+        List<Optional<Identifier>> tagIds = recipe.slotTagIds();
+        List<Set<Identifier>> slots = recipe.ingredientAlternatives();
+        for (int i = 0; i < tagIds.size(); i++) {
+            indexSlotTag(index, tagIds.get(i), slots.get(i));
+        }
+    }
+
+    /**
+     * Indexes a single slot's tag into the tag index if it is a tagged multi-variant slot.
+     *
+     * @param index tag index to populate (mutated)
+     * @param tagId the slot's tag ID (empty if untagged)
+     * @param alts the slot's alternative item IDs
+     */
+    private static void indexSlotTag(Map<Identifier, Set<Identifier>> index,
+                                      Optional<Identifier> tagId, Set<Identifier> alts) {
+        if (tagId.isEmpty()) { return; }
+        if (alts.size() <= 1) { return; }
+        index.computeIfAbsent(tagId.get(), k -> new HashSet<>()).addAll(alts);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────
@@ -597,18 +931,41 @@ public final class ScaffoldGenerator {
             Map<Identifier, List<RecipeInput>> byOutput) {
         Map<Identifier, Set<Identifier>> deps = new HashMap<>();
         for (var entry : byOutput.entrySet()) {
-            Set<Identifier> inputs = new HashSet<>();
-            for (RecipeInput recipe : entry.getValue()) {
-                for (Set<Identifier> alts : recipe.ingredientAlternatives()) {
-                    inputs.addAll(alts);
-                }
-            }
-            inputs.remove(entry.getKey()); // no self-loops
-            if (!inputs.isEmpty()) {
-                deps.put(entry.getKey(), inputs);
-            }
+            addForwardDepsForOutput(deps, entry.getKey(), entry.getValue());
         }
         return deps;
+    }
+
+    /**
+     * Collects all unique inputs for a single output and adds them to the forward deps map.
+     *
+     * @param deps forward dependency map to populate (mutated)
+     * @param output the output item ID
+     * @param recipes all recipes producing this output
+     */
+    private static void addForwardDepsForOutput(Map<Identifier, Set<Identifier>> deps,
+                                                 Identifier output, List<RecipeInput> recipes) {
+        Set<Identifier> inputs = collectRecipeInputItems(recipes);
+        inputs.remove(output);
+        if (!inputs.isEmpty()) {
+            deps.put(output, inputs);
+        }
+    }
+
+    /**
+     * Collects all input item IDs from a list of recipes producing the same output.
+     *
+     * @param recipes the recipes to collect inputs from
+     * @return mutable set of all input item IDs
+     */
+    private static Set<Identifier> collectRecipeInputItems(List<RecipeInput> recipes) {
+        Set<Identifier> inputs = new HashSet<>();
+        for (RecipeInput recipe : recipes) {
+            for (Set<Identifier> alts : recipe.ingredientAlternatives()) {
+                inputs.addAll(alts);
+            }
+        }
+        return inputs;
     }
 
     /**
@@ -643,18 +1000,45 @@ public final class ScaffoldGenerator {
                                         Set<Identifier> denied) {
         boolean changed = true;
         while (changed) {
-            changed = false;
-            for (RecipeInput recipe : recipes) {
-                Identifier output = recipe.output();
-                if (denied.contains(output)) { continue; }
+            changed = propagateOnePass(valued, recipes, denied);
+        }
+    }
 
-                boolean allInputsValued = recipe.ingredientAlternatives().stream()
-                        .allMatch(alts -> alts.stream().anyMatch(valued::contains));
-                if (allInputsValued && valued.add(output)) {
-                    changed = true;
-                }
+    /**
+     * Runs one pass of value propagation, returning true if any new item was valued.
+     *
+     * @param valued mutable valued set (may grow)
+     * @param recipes all recipes to check
+     * @param denied excluded items
+     * @return true if at least one new item was valued this pass
+     */
+    private static boolean propagateOnePass(Set<Identifier> valued, List<RecipeInput> recipes,
+                                             Set<Identifier> denied) {
+        boolean changed = false;
+        for (RecipeInput recipe : recipes) {
+            if (tryPropagateRecipe(valued, recipe, denied)) {
+                changed = true;
             }
         }
+        return changed;
+    }
+
+    /**
+     * Attempts to propagate a single recipe: if output is not denied and all
+     * inputs are valued, marks the output as valued.
+     *
+     * @param valued mutable valued set (may be mutated)
+     * @param recipe the recipe to check
+     * @param denied excluded items
+     * @return true if a new item was valued
+     */
+    private static boolean tryPropagateRecipe(Set<Identifier> valued, RecipeInput recipe, Set<Identifier> denied) {
+        Identifier output = recipe.output();
+        if (denied.contains(output)) { return false; }
+
+        boolean allInputsValued = recipe.ingredientAlternatives().stream()
+                .allMatch(alts -> alts.stream().anyMatch(valued::contains));
+        return allInputsValued && valued.add(output);
     }
 
     /**
@@ -668,14 +1052,24 @@ public final class ScaffoldGenerator {
     private static Set<Identifier> homogenousInputs(RecipeInput recipe) {
         Set<Identifier> shared = null;
         for (Set<Identifier> alts : recipe.ingredientAlternatives()) {
-            if (alts.isEmpty()) { return null; }
-            if (shared == null) {
-                shared = alts;
-            } else if (!shared.equals(alts)) {
-                return null;
-            }
+            shared = mergeHomogenousSlot(shared, alts);
+            if (shared == null) { return null; }
         }
         return shared;
+    }
+
+    /**
+     * Merges a slot into the running homogenous check: returns the shared set
+     * if this slot matches, or null if the slot is empty or divergent.
+     *
+     * @param shared the current shared set (null on first slot)
+     * @param alts the slot's alternatives
+     * @return the shared set if still homogenous, null otherwise
+     */
+    private static Set<Identifier> mergeHomogenousSlot(Set<Identifier> shared, Set<Identifier> alts) {
+        if (alts.isEmpty()) { return null; }
+        if (shared == null) { return alts; }
+        return shared.equals(alts) ? shared : null;
     }
 
     /**
@@ -696,13 +1090,31 @@ public final class ScaffoldGenerator {
         queue.add(root);
         while (!queue.isEmpty()) {
             Identifier current = queue.remove(queue.size() - 1);
-            for (Identifier next : reverseDeps.getOrDefault(current, Set.of())) {
-                if (!valued.contains(next) && !denied.contains(next) && downstream.add(next)) {
-                    queue.add(next);
-                }
-            }
+            expandDownstreamNeighbors(current, reverseDeps, valued, denied, downstream, queue);
         }
         return downstream;
+    }
+
+    /**
+     * Expands a single node's neighbors during downstream BFS, adding unvisited
+     * unvalued non-denied neighbors to both the result set and the queue.
+     *
+     * @param current the node to expand
+     * @param reverseDeps reverse dependency graph
+     * @param valued items already valued (excluded)
+     * @param denied items excluded
+     * @param downstream result set (mutated, also used as visited check)
+     * @param queue BFS queue (mutated)
+     */
+    private static void expandDownstreamNeighbors(Identifier current,
+                                                   Map<Identifier, Set<Identifier>> reverseDeps,
+                                                   Set<Identifier> valued, Set<Identifier> denied,
+                                                   Set<Identifier> downstream, List<Identifier> queue) {
+        for (Identifier next : reverseDeps.getOrDefault(current, Set.of())) {
+            if (!valued.contains(next) && !denied.contains(next) && downstream.add(next)) {
+                queue.add(next);
+            }
+        }
     }
 
     /**
@@ -721,26 +1133,67 @@ public final class ScaffoldGenerator {
                                                        Set<Identifier> denied,
                                                        int maxDepth) {
         List<Identifier> chain = new ArrayList<>();
-        Identifier current = root;
+        traceChainSteps(chain, root, reverseDeps, valued, denied, maxDepth);
+        return chain;
+    }
+
+    /**
+     * Follows highest-impact neighbors up to maxDepth steps, appending each to the chain.
+     *
+     * @param chain accumulator for chain items (mutated)
+     * @param start the starting item
+     * @param reverseDeps reverse dependency graph
+     * @param valued items already valued (excluded)
+     * @param denied items excluded
+     * @param maxDepth maximum steps to follow
+     */
+    private static void traceChainSteps(List<Identifier> chain, Identifier start,
+                                         Map<Identifier, Set<Identifier>> reverseDeps,
+                                         Set<Identifier> valued, Set<Identifier> denied, int maxDepth) {
+        Identifier current = start;
         for (int i = 0; i < maxDepth; i++) {
-            Set<Identifier> next = reverseDeps.getOrDefault(current, Set.of());
-            if (next.isEmpty()) { break; }
-            // Follow the path with the most downstream reach
-            Identifier best = null;
-            int bestCount = NO_BEST;
-            for (Identifier candidate : next) {
-                if (valued.contains(candidate) || denied.contains(candidate)) { continue; }
-                int count = reverseDeps.getOrDefault(candidate, Set.of()).size();
-                if (count > bestCount) {
-                    bestCount = count;
-                    best = candidate;
-                }
-            }
+            Identifier best = findBestCandidate(current, reverseDeps, valued, denied);
             if (best == null) { break; }
             chain.add(best);
             current = best;
         }
-        return chain;
+    }
+
+    /**
+     * Finds the best next candidate in a chain trace: the neighbor with the
+     * most downstream reach that is neither valued nor denied.
+     *
+     * @param current the current node in the chain
+     * @param reverseDeps reverse dependency graph
+     * @param valued items already valued (excluded)
+     * @param denied items excluded
+     * @return the best candidate, or null if none qualify
+     */
+    private static Identifier findBestCandidate(Identifier current,
+                                                 Map<Identifier, Set<Identifier>> reverseDeps,
+                                                 Set<Identifier> valued, Set<Identifier> denied) {
+        Set<Identifier> next = reverseDeps.getOrDefault(current, Set.of());
+        if (next.isEmpty()) { return null; }
+        return scoreBestNeighbor(next, reverseDeps, valued, denied);
+    }
+
+    /**
+     * Scores neighbors by their downstream fan-out and returns the one
+     * with the highest reach, skipping valued and denied items.
+     *
+     * @param candidates neighbor candidates to score
+     * @param reverseDeps reverse dependency graph for fan-out scoring
+     * @param valued items already valued (skipped)
+     * @param denied items excluded (skipped)
+     * @return the highest-scoring candidate, or null if all are excluded
+     */
+    private static Identifier scoreBestNeighbor(Set<Identifier> candidates,
+                                                 Map<Identifier, Set<Identifier>> reverseDeps,
+                                                 Set<Identifier> valued, Set<Identifier> denied) {
+        return candidates.stream()
+                .filter(c -> !valued.contains(c) && !denied.contains(c))
+                .max(Comparator.comparingInt(c -> reverseDeps.getOrDefault(c, Set.of()).size()))
+                .orElse(null);
     }
 
     /**
@@ -803,8 +1256,30 @@ public final class ScaffoldGenerator {
                                        Identifier a, Identifier b) {
         Set<Identifier> clusterA = membership.get(a);
         Set<Identifier> clusterB = membership.get(b);
-        if (clusterA == null || clusterB == null || clusterA == clusterB) { return; }
+        if (shouldSkipMerge(clusterA, clusterB)) { return; }
+        absorbSmaller(membership, clusterA, clusterB);
+    }
 
+    /**
+     * Returns true if the merge should be skipped: either cluster is null or they're the same instance.
+     *
+     * @param clusterA first cluster (may be null)
+     * @param clusterB second cluster (may be null)
+     * @return true if merge is unnecessary
+     */
+    private static boolean shouldSkipMerge(Set<Identifier> clusterA, Set<Identifier> clusterB) {
+        return clusterA == null || clusterB == null || clusterA == clusterB;
+    }
+
+    /**
+     * Absorbs the smaller cluster into the larger, updating all membership pointers.
+     *
+     * @param membership the union-find membership map (mutated)
+     * @param clusterA first cluster
+     * @param clusterB second cluster
+     */
+    private static void absorbSmaller(Map<Identifier, Set<Identifier>> membership,
+                                       Set<Identifier> clusterA, Set<Identifier> clusterB) {
         Set<Identifier> larger = clusterA.size() >= clusterB.size() ? clusterA : clusterB;
         Set<Identifier> smaller = larger == clusterA ? clusterB : clusterA;
         larger.addAll(smaller);
@@ -829,30 +1304,124 @@ public final class ScaffoldGenerator {
                                               Set<Identifier> denied) {
         if (cluster.size() == 1) { return cluster.iterator().next(); }
 
+        Map<Identifier, Long> factors = initFactors(cluster);
+        propagateFactors(factors, cluster, homogenous);
+        return selectBestEntry(cluster, factors, reverseDeps, denied);
+    }
+
+    /**
+     * Initializes multiplication factors to 1 for all cluster members.
+     *
+     * @param cluster the cycle cluster members
+     * @return mutable map of item to multiplication factor (all 1)
+     */
+    private static Map<Identifier, Long> initFactors(Set<Identifier> cluster) {
         Map<Identifier, Long> factors = new HashMap<>();
         for (Identifier member : cluster) {
             factors.put(member, 1L);
         }
+        return factors;
+    }
 
-        // Propagate multiplication through homogenous recipes within the cluster
+    /**
+     * Propagates multiplication factors through homogenous recipes within
+     * the cluster until no more updates occur.
+     *
+     * @param factors mutable factor map (mutated)
+     * @param cluster the cycle cluster members
+     * @param homogenous homogenous recipes to propagate through
+     */
+    private static void propagateFactors(Map<Identifier, Long> factors,
+                                          Set<Identifier> cluster,
+                                          List<RecipeInput> homogenous) {
         boolean changed = true;
         while (changed) {
-            changed = false;
-            for (RecipeInput recipe : homogenous) {
-                Identifier input = recipe.soleInputItem();
-                Identifier output = recipe.output();
-                if (input == null || !cluster.contains(input) || !cluster.contains(output)) { continue; }
-                long inputFactor = factors.getOrDefault(input, 1L);
-                int inputCount = recipe.ingredientAlternatives().size();
-                long outputFactor = inputFactor * recipe.resultCount() / inputCount;
-                if (outputFactor > factors.getOrDefault(output, 1L)) {
-                    factors.put(output, outputFactor);
-                    changed = true;
-                }
+            changed = propagateFactorsOnePass(factors, cluster, homogenous);
+        }
+    }
+
+    /**
+     * Runs one pass of factor propagation across homogenous recipes.
+     *
+     * @param factors mutable factor map (may grow)
+     * @param cluster the cycle cluster members
+     * @param homogenous homogenous recipes to check
+     * @return true if at least one factor was updated this pass
+     */
+    private static boolean propagateFactorsOnePass(Map<Identifier, Long> factors,
+                                                    Set<Identifier> cluster,
+                                                    List<RecipeInput> homogenous) {
+        boolean changed = false;
+        for (RecipeInput recipe : homogenous) {
+            if (tryPropagateFactorRecipe(factors, cluster, recipe)) {
+                changed = true;
             }
         }
+        return changed;
+    }
 
-        // Highest multiplication factor = smallest unit. Tiebreak by fan-out.
+    /**
+     * Attempts to propagate a single recipe's multiplication factor within a cluster.
+     *
+     * @param factors mutable factor map (may be mutated)
+     * @param cluster the cycle cluster members
+     * @param recipe the homogenous recipe to check
+     * @return true if a factor was updated
+     */
+    private static boolean tryPropagateFactorRecipe(Map<Identifier, Long> factors,
+                                                     Set<Identifier> cluster,
+                                                     RecipeInput recipe) {
+        Identifier input = recipe.soleInputItem();
+        Identifier output = recipe.output();
+        if (input == null || !cluster.contains(input) || !cluster.contains(output)) { return false; }
+
+        long outputFactor = computeOutputFactor(factors, input, recipe);
+        return tryUpdateFactor(factors, output, outputFactor);
+    }
+
+    /**
+     * Computes the output multiplication factor from a recipe's input factor.
+     *
+     * @param factors current factor map
+     * @param input the recipe's input item
+     * @param recipe the recipe providing result count and input count
+     * @return the computed output factor
+     */
+    private static long computeOutputFactor(Map<Identifier, Long> factors, Identifier input, RecipeInput recipe) {
+        long inputFactor = factors.getOrDefault(input, 1L);
+        int inputCount = recipe.ingredientAlternatives().size();
+        return inputFactor * recipe.resultCount() / inputCount;
+    }
+
+    /**
+     * Updates the factor for an item if the new factor exceeds the current one.
+     *
+     * @param factors mutable factor map (may be mutated)
+     * @param item the item to update
+     * @param newFactor the proposed new factor
+     * @return true if the factor was updated
+     */
+    private static boolean tryUpdateFactor(Map<Identifier, Long> factors, Identifier item, long newFactor) {
+        if (newFactor > factors.getOrDefault(item, 1L)) {
+            factors.put(item, newFactor);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Selects the best cycle entry: highest multiplication factor, tiebroken by fan-out.
+     *
+     * @param cluster the cycle cluster members
+     * @param factors multiplication factor map
+     * @param reverseDeps reverse dependency graph for fan-out tiebreaking
+     * @param denied items excluded from selection
+     * @return the best cycle entry point item ID
+     */
+    private static Identifier selectBestEntry(Set<Identifier> cluster,
+                                               Map<Identifier, Long> factors,
+                                               Map<Identifier, Set<Identifier>> reverseDeps,
+                                               Set<Identifier> denied) {
         return cluster.stream()
                 .filter(id -> !denied.contains(id))
                 .max(Comparator.<Identifier>comparingLong(id -> factors.getOrDefault(id, 1L))

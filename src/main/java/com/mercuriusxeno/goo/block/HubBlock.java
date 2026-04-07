@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ISidedProxy;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.BucketOfGooItem;
@@ -205,16 +206,27 @@ public class HubBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof HubBlockEntity hub)) {
             return super.getCloneItemStack(level, pos, state, includeData);
         }
-        var hit = com.mercuriusxeno.goo.ISidedProxy.get().getCrosshairHit();
+        ItemStack targeted = resolveTargetedCanister(hub, pos);
+        if (!targeted.isEmpty()) { return targeted; }
+        return super.getCloneItemStack(level, pos, state, includeData);
+    }
+
+    /**
+     * Resolves the canister stack under the player's crosshair, if any.
+     *
+     * @param hub the hub block entity
+     * @param pos the block position
+     * @return a copy of the targeted canister, or empty if none targeted
+     */
+    private static ItemStack resolveTargetedCanister(HubBlockEntity hub, BlockPos pos) {
+        var hit = ISidedProxy.get().getCrosshairHit();
         if (!(hit instanceof BlockHitResult blockHit) || !blockHit.getBlockPos().equals(pos)) {
-            return super.getCloneItemStack(level, pos, state, includeData);
+            return ItemStack.EMPTY;
         }
         int slot = hitSlot(blockHit, pos);
-        if (slot >= 0) {
-            ItemStack canister = hub.getCanister(slot);
-            if (!canister.isEmpty()) { return canister.copy(); }
-        }
-        return super.getCloneItemStack(level, pos, state, includeData);
+        if (slot < 0) { return ItemStack.EMPTY; }
+        ItemStack canister = hub.getCanister(slot);
+        return canister.isEmpty() ? ItemStack.EMPTY : canister.copy();
     }
 
     /** Creates the hub block entity for this position.
@@ -309,25 +321,48 @@ public class HubBlock extends BaseEntityBlock {
         if (earlyOut != null) { return earlyOut; }
         if (!(level.getBlockEntity(pos) instanceof HubBlockEntity hub)) { return InteractionResult.PASS; }
 
-        // Sneak + empty hand with intake gasket → remove gasket
         if (player.isShiftKeyDown() && state.getValue(HAS_GASKET)) {
-            GasketInstallation.popGasket(level, pos, hub.getGasketId(GasketRole.RECEIVER));
-            hub.clearGasket(GasketRole.RECEIVER);
-            return InteractionResult.SUCCESS;
+            return removeGasket(level, pos, hub);
         }
+        return removeCanister(hub, hitResult, pos, player, level);
+    }
 
+    /**
+     * Removes the intake gasket from the hub and drops it.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @param hub   the hub block entity
+     * @return SUCCESS after removing the gasket
+     */
+    private static InteractionResult removeGasket(Level level, BlockPos pos, HubBlockEntity hub) {
+        GasketInstallation.popGasket(level, pos, hub.getGasketId(GasketRole.RECEIVER));
+        hub.clearGasket(GasketRole.RECEIVER);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Removes the canister from the targeted hub slot and gives it to the player.
+     *
+     * @param hub       the hub block entity
+     * @param hitResult the ray trace hit result
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param level     the current level
+     * @return SUCCESS if a canister was removed, PASS otherwise
+     */
+    private static InteractionResult removeCanister(
+            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos, Player player, Level level) {
         int slot = hitSlot(hitResult, pos);
         if (slot < 0) { return InteractionResult.PASS; }
 
         ItemStack removed = hub.removeCanister(slot);
-        if (!removed.isEmpty()) {
-            PlayerUtils.addOrDrop(player, removed);
-            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
-            InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
-            return InteractionResult.SUCCESS;
-        }
+        if (removed.isEmpty()) { return InteractionResult.PASS; }
 
-        return InteractionResult.PASS;
+        PlayerUtils.addOrDrop(player, removed);
+        level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
+        return InteractionResult.SUCCESS;
     }
 
     // --- Handlers ---
@@ -377,20 +412,33 @@ public class HubBlock extends BaseEntityBlock {
     private static InteractionResult handleBlobInsert(
             HubBlockEntity hub, BlockHitResult hitResult,
             ItemStack stack, Player player) {
-        var pos = hub.getBlockPos();
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.PASS; }
         long volume = BlobStacks.volumeOf(stack);
-        int slot = GooBlockInteraction.findSlot(
-                hitSlot(hitResult, pos), HubBlockEntity.MAX_CANISTERS, hub::canAccept);
-        if (slot < 0) { return InteractionResult.PASS; }
 
-        long accepted = hub.insertGoo(slot, type, volume);
+        long accepted = insertBlobGoo(hub, hitResult, type, volume);
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
-        hub.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        hub.getLevel().playSound(null, hub.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Finds the best slot and inserts blob goo into it.
+     *
+     * @param hub       the hub block entity
+     * @param hitResult the ray trace hit result for slot targeting
+     * @param type      the goo type to insert
+     * @param volume    the volume of goo in microblobs
+     * @return the volume accepted, or 0 if no slot accepted
+     */
+    private static long insertBlobGoo(HubBlockEntity hub, BlockHitResult hitResult, GooType type, long volume) {
+        var pos = hub.getBlockPos();
+        int slot = GooBlockInteraction.findSlot(
+                hitSlot(hitResult, pos), HubBlockEntity.MAX_CANISTERS, hub::canAccept);
+        if (slot < 0) { return 0; }
+        return hub.insertGoo(slot, type, volume);
     }
 
     /** Pours goo from a bucket of goo into matching hub canister slots.
@@ -405,29 +453,53 @@ public class HubBlock extends BaseEntityBlock {
     private static InteractionResult handleBucketInsert(
             HubBlockEntity hub, BlockHitResult hitResult,
             ItemStack stack, Player player, InteractionHand hand) {
-        var pos = hub.getBlockPos();
         GooContents bucketGoo = BucketOfGooItem.getContents(stack);
         if (bucketGoo.isEmpty()) { return InteractionResult.PASS; }
 
-        int hitSlotIdx = hitSlot(hitResult, pos);
-        boolean inserted = false;
-        for (var entry : bucketGoo.getAll().entrySet()) {
-            GooType type = entry.getKey();
-            long volume = entry.getValue();
-            int slot = GooBlockInteraction.findSlot(
-                    hitSlotIdx, HubBlockEntity.MAX_CANISTERS, hub::canAccept);
-            if (slot < 0) { continue; }
-            long accepted = hub.insertGoo(slot, type, volume);
-            if (accepted > 0) {
-                bucketGoo = bucketGoo.withRemoved(type, accepted);
-                inserted = true;
-            }
-        }
-        if (!inserted) { return InteractionResult.PASS; }
+        GooContents remainder = pourBucketIntoHub(hub, hitResult, bucketGoo);
+        if (remainder == bucketGoo) { return InteractionResult.PASS; }
 
-        BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
-        hub.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        BucketOfGooItem.setOrRevert(stack, remainder, player, hand);
+        hub.getLevel().playSound(null, hub.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Pours each goo type from the bucket into matching hub slots.
+     * Returns the updated contents after insertions, or the original if nothing was inserted.
+     *
+     * @param hub       the hub block entity
+     * @param hitResult the ray trace hit result for slot targeting
+     * @param bucketGoo the bucket's goo contents
+     * @return updated contents after pour, or the original instance if nothing was inserted
+     */
+    private static GooContents pourBucketIntoHub(HubBlockEntity hub, BlockHitResult hitResult, GooContents bucketGoo) {
+        int hitSlotIdx = hitSlot(hitResult, hub.getBlockPos());
+        GooContents result = bucketGoo;
+        for (var entry : bucketGoo.getAll().entrySet()) {
+            result = pourSingleType(hub, hitSlotIdx, entry.getKey(), entry.getValue(), result);
+        }
+        return result;
+    }
+
+    /**
+     * Attempts to pour a single goo type into the hub, updating the remaining contents.
+     *
+     * @param hub        the hub block entity
+     * @param hitSlotIdx the preferred slot from the hit result
+     * @param type       the goo type to pour
+     * @param volume     the volume available
+     * @param contents   the current remaining bucket contents
+     * @return updated contents with any accepted volume removed
+     */
+    private static GooContents pourSingleType(
+            HubBlockEntity hub, int hitSlotIdx, GooType type, long volume, GooContents contents) {
+        int slot = GooBlockInteraction.findSlot(
+                hitSlotIdx, HubBlockEntity.MAX_CANISTERS, hub::canAccept);
+        if (slot < 0) { return contents; }
+        long accepted = hub.insertGoo(slot, type, volume);
+        if (accepted <= 0) { return contents; }
+        return contents.withRemoved(type, accepted);
     }
 
     /** Extracts goo from the first non-empty hub slot into an empty bucket.
@@ -441,23 +513,47 @@ public class HubBlock extends BaseEntityBlock {
     private static InteractionResult handleBucketExtract(
             HubBlockEntity hub, BlockHitResult hitResult,
             ItemStack stack, Player player) {
-        var pos = hub.getBlockPos();
-        int slot = GooBlockInteraction.findSlot(hitSlot(hitResult, pos),
-                HubBlockEntity.MAX_CANISTERS,
-                i -> !hub.getSlotGooContents(i).isEmpty());
+        int slot = findNonEmptySlot(hub, hitResult);
         if (slot < 0) { return InteractionResult.PASS; }
 
-        GooContents slotGoo = hub.getSlotGooContents(slot);
-        GooType type = slotGoo.largestType();
-        if (type == null) { return InteractionResult.PASS; }
-        long extracted = hub.extractGoo(slot, type, slotGoo.getVolume(type));
-        if (extracted <= 0) { return InteractionResult.PASS; }
+        ItemStack filledBucket = extractLargestGooType(hub, slot);
+        if (filledBucket == null) { return InteractionResult.PASS; }
 
-        ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
         stack.shrink(1);
         PlayerUtils.addOrDrop(player, filledBucket);
-        hub.getLevel().playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+        hub.getLevel().playSound(null, hub.getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Finds the first non-empty canister slot using hit-slot preference.
+     *
+     * @param hub       the hub block entity
+     * @param hitResult the ray trace hit result for slot targeting
+     * @return slot index, or -1 if no non-empty slot found
+     */
+    private static int findNonEmptySlot(HubBlockEntity hub, BlockHitResult hitResult) {
+        var pos = hub.getBlockPos();
+        return GooBlockInteraction.findSlot(hitSlot(hitResult, pos),
+                HubBlockEntity.MAX_CANISTERS,
+                i -> !hub.getSlotGooContents(i).isEmpty());
+    }
+
+    /**
+     * Extracts the largest goo type from a hub slot into a filled bucket.
+     *
+     * @param hub  the hub block entity
+     * @param slot the slot index to extract from
+     * @return a filled bucket item stack, or null if extraction failed
+     */
+    @Nullable
+    private static ItemStack extractLargestGooType(HubBlockEntity hub, int slot) {
+        GooContents slotGoo = hub.getSlotGooContents(slot);
+        GooType type = slotGoo.largestType();
+        if (type == null) { return null; }
+        long extracted = hub.extractGoo(slot, type, slotGoo.getVolume(type));
+        if (extracted <= 0) { return null; }
+        return BucketOfGooItem.createWithGoo(type, extracted);
     }
 
     /** Drops the intake gasket item on break if one is installed.
@@ -503,14 +599,26 @@ public class HubBlock extends BaseEntityBlock {
         int best = NO_SLOT;
         double bestDist = MAX_SLOT_DISTANCE * MAX_SLOT_DISTANCE;
         for (int i = 0; i < SLOT_CENTERS.length; i++) {
-            double dx = pixelX - SLOT_CENTERS[i][0];
-            double dz = pixelZ - SLOT_CENTERS[i][1];
-            double distSq = dx * dx + dz * dz;
+            double distSq = slotDistanceSq(pixelX, pixelZ, i);
             if (distSq < bestDist) {
                 bestDist = distSq;
                 best = i;
             }
         }
         return best;
+    }
+
+    /**
+     * Computes the squared distance from a pixel coordinate to a slot center.
+     *
+     * @param pixelX the x position in block-local pixel space
+     * @param pixelZ the z position in block-local pixel space
+     * @param slot   the slot index
+     * @return the squared Euclidean distance
+     */
+    private static double slotDistanceSq(double pixelX, double pixelZ, int slot) {
+        double dx = pixelX - SLOT_CENTERS[slot][0];
+        double dz = pixelZ - SLOT_CENTERS[slot][1];
+        return dx * dx + dz * dz;
     }
 }

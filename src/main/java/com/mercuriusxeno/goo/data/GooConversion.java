@@ -192,11 +192,32 @@ public final class GooConversion {
         Map<String, GooValue> additives = new LinkedHashMap<>();
         Map<String, Stack> stacks = new LinkedHashMap<>();
         List<Assignment> assignments = new ArrayList<>();
+        classifyAllEntries(entries, formulas, additives, stacks, assignments, constants, treeConstants);
+        return new ParsedConversions(formulas, additives, stacks, assignments);
+    }
+
+    /**
+     * Iterates all entries and dispatches each to classification.
+     *
+     * @param entries        raw key-value pairs
+     * @param formulas       mutable formula map
+     * @param additives      mutable additive map
+     * @param stacks         mutable stack map
+     * @param assignments    mutable assignment list
+     * @param constants      scalar constants
+     * @param treeConstants  tree constants
+     */
+    private static void classifyAllEntries(Map<String, String> entries,
+                                            Map<String, Formula> formulas,
+                                            Map<String, GooValue> additives,
+                                            Map<String, Stack> stacks,
+                                            List<Assignment> assignments,
+                                            Map<String, Integer> constants,
+                                            Map<String, GooValue> treeConstants) {
         for (var entry : entries.entrySet()) {
             classifyEntry(entry.getKey(), entry.getValue(), formulas, additives, stacks,
                     assignments, constants, treeConstants);
         }
-        return new ParsedConversions(formulas, additives, stacks, assignments);
     }
 
     /**
@@ -220,11 +241,49 @@ public final class GooConversion {
                                        Map<String, GooValue> treeConstants) {
         if (isItemOrTag(key)) {
             classifyItemEntry(key, value, stacks, assignments);
-        } else if (DENIED.equals(value)) {
+        } else {
+            classifyDefinition(key, value, formulas, additives, stacks, constants, treeConstants);
+        }
+    }
+
+    /**
+     * Classifies a non-item entry as denial, additive, formula, or stack alias.
+     *
+     * @param key            the definition name
+     * @param value          the entry value expression
+     * @param formulas       mutable formula map
+     * @param additives      mutable additive map
+     * @param stacks         mutable stack map
+     * @param constants      scalar constants
+     * @param treeConstants  tree constants
+     */
+    private static void classifyDefinition(String key, String value,
+                                            Map<String, Formula> formulas,
+                                            Map<String, GooValue> additives,
+                                            Map<String, Stack> stacks,
+                                            Map<String, Integer> constants,
+                                            Map<String, GooValue> treeConstants) {
+        if (DENIED.equals(value)) {
             denyEntry(key, stacks, formulas, additives);
         } else if (value.startsWith(ADDITIVE_PREFIX)) {
             parseAdditiveEntry(key, value, additives, constants, treeConstants);
-        } else if (value.contains(ARROW)) {
+        } else {
+            classifyFormulaOrStack(key, value, formulas, stacks);
+        }
+    }
+
+    /**
+     * Classifies a value as either a formula definition or a stack alias.
+     *
+     * @param key      the definition name
+     * @param value    the expression (contains "->" for formulas, else stack ref)
+     * @param formulas mutable formula map
+     * @param stacks   mutable stack map
+     */
+    private static void classifyFormulaOrStack(String key, String value,
+                                                Map<String, Formula> formulas,
+                                                Map<String, Stack> stacks) {
+        if (value.contains(ARROW)) {
             formulas.put(key, parseFormula(value));
         } else {
             stacks.put(key, resolveChain(parseStack(value), stacks, formulas));
@@ -345,13 +404,27 @@ public final class GooConversion {
                                                Map<String, Stack> stacks) {
         String remaining = value.trim();
         Matcher m = SCALE_PATTERN.matcher(remaining);
-        int mul = 1, div = 1;
-        if (m.find()) {
-            mul = Integer.parseInt(m.group(GROUP_SCALE_NUM));
-            div = Integer.parseInt(m.group(GROUP_SCALE_DEN));
-            remaining = stripScaleMatch(remaining, m);
+        if (!m.find()) {
+            return buildAssignment(target, remaining, 1, 1, stacks);
         }
-        return buildAssignment(target, remaining, mul, div, stacks);
+        return buildScaledAssignment(target, remaining, m, stacks);
+    }
+
+    /**
+     * Builds an assignment after extracting scale factors from a matched expression.
+     *
+     * @param target    target item/tag
+     * @param remaining raw token string containing the scale match
+     * @param m         successful scale pattern matcher
+     * @param stacks    known stacks for resolution
+     * @return parsed Assignment with scale applied
+     */
+    private static Assignment buildScaledAssignment(String target, String remaining,
+                                                     Matcher m, Map<String, Stack> stacks) {
+        int mul = Integer.parseInt(m.group(GROUP_SCALE_NUM));
+        int div = Integer.parseInt(m.group(GROUP_SCALE_DEN));
+        String stripped = stripScaleMatch(remaining, m);
+        return buildAssignment(target, stripped, mul, div, stacks);
     }
 
     /**
@@ -379,15 +452,59 @@ public final class GooConversion {
     private static Assignment buildAssignment(String target, String remaining,
                                                int scaleMultiplier, int scaleDivisor,
                                                Map<String, Stack> stacks) {
-        String parallelSource = null;
-        List<Stack> chain = new ArrayList<>();
-        for (String part : remaining.trim().split(WHITESPACE_SPLIT)) {
-            if (part.isEmpty()) { continue; }
-            if (part.startsWith(TAG_PREFIX)) { parallelSource = part; }
-            else if (part.contains(AT_SIGN)) { chain.add(resolveStackRef(part, stacks)); }
-            else { LOGGER.warn(LOG_UNEXPECTED_TOKEN, part); }
-        }
+        String[] tokens = remaining.trim().split(WHITESPACE_SPLIT);
+        String parallelSource = findParallelSource(tokens);
+        List<Stack> chain = collectChain(tokens, stacks);
         return new Assignment(target, parallelSource, scaleMultiplier, scaleDivisor, chain);
+    }
+
+    /**
+     * Finds the first tag-prefixed token to use as a parallel copy source.
+     *
+     * @param tokens whitespace-split assignment tokens
+     * @return the tag token (e.g. "#minecraft:logs"), or null if none
+     */
+    private static String findParallelSource(String[] tokens) {
+        for (String t : tokens) {
+            if (t.startsWith(TAG_PREFIX)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Collects resolved conversion stacks from @-prefixed tokens.
+     *
+     * @param tokens whitespace-split assignment tokens
+     * @param stacks known stack definitions for resolution
+     * @return ordered list of resolved stacks
+     */
+    private static List<Stack> collectChain(String[] tokens, Map<String, Stack> stacks) {
+        List<Stack> chain = new ArrayList<>();
+        for (String part : tokens) {
+            if (part.isEmpty() || part.startsWith(TAG_PREFIX)) {
+                continue;
+            }
+            classifyToken(part, chain, stacks);
+        }
+        return chain;
+    }
+
+    /**
+     * Classifies a single non-tag token as a stack reference or warns on unknown.
+     *
+     * @param part   the token to classify
+     * @param chain  mutable chain list to append to
+     * @param stacks known stack definitions
+     */
+    private static void classifyToken(String part, List<Stack> chain,
+                                       Map<String, Stack> stacks) {
+        if (part.contains(AT_SIGN)) {
+            chain.add(resolveStackRef(part, stacks));
+        } else {
+            LOGGER.warn(LOG_UNEXPECTED_TOKEN, part);
+        }
     }
 
     /**
@@ -587,6 +704,20 @@ public final class GooConversion {
                                    Identifier itemId, Assignment assignment) {
         GooValue current = effectiveValues.get(itemId);
         if (current == null || current.isEmpty()) { return; }
+        tryScaleValue(effectiveValues, itemId, current, assignment);
+    }
+
+    /**
+     * Attempts to scale a value by the assignment fraction, logging on failure.
+     *
+     * @param effectiveValues mutable values map
+     * @param itemId          the item being scaled
+     * @param current         the item's current value
+     * @param assignment      assignment containing scale factors
+     */
+    private static void tryScaleValue(Map<Identifier, GooValue> effectiveValues,
+                                       Identifier itemId, GooValue current,
+                                       Assignment assignment) {
         try {
             GooValue scaled = current.multiply(assignment.scaleMultiplier())
                     .divideExact(assignment.scaleDivisor());
@@ -628,6 +759,20 @@ public final class GooConversion {
             applyAdditiveStack(effectiveValues, items, additive, stack.multiplier());
             return;
         }
+        applyResolvedFormula(effectiveValues, items, stack, formulas);
+    }
+
+    /**
+     * Resolves and applies a formula stack, logging if the formula name is unknown.
+     *
+     * @param effectiveValues mutable values map
+     * @param items           items to convert
+     * @param stack           the stack referencing a formula name
+     * @param formulas        formula lookup
+     */
+    private static void applyResolvedFormula(Map<Identifier, GooValue> effectiveValues,
+                                              List<Identifier> items, Stack stack,
+                                              Map<String, Formula> formulas) {
         Formula formula = formulas.get(stack.formulaName());
         if (formula == null) {
             LOGGER.error(LOG_UNKNOWN_FORMULA, stack.formulaName());
@@ -700,13 +845,25 @@ public final class GooConversion {
             Identifier itemId, GooValue current, Formula formula, int multiplier) {
         try {
             GooValue converted = apply(current, formula, multiplier);
-            if (converted.hasNegative()) {
-                LOGGER.error(LOG_NEGATIVE, itemId, converted);
-                return;
-            }
-            effectiveValues.put(itemId, converted);
+            storeIfValid(effectiveValues, itemId, converted);
         } catch (ArithmeticException e) {
             LOGGER.error(LOG_CONV_FAILED, itemId, e.getMessage());
         }
+    }
+
+    /**
+     * Stores a converted value if it contains no negative entries.
+     *
+     * @param effectiveValues mutable values map
+     * @param itemId          the item being converted
+     * @param converted       the candidate converted value
+     */
+    private static void storeIfValid(Map<Identifier, GooValue> effectiveValues,
+                                      Identifier itemId, GooValue converted) {
+        if (converted.hasNegative()) {
+            LOGGER.error(LOG_NEGATIVE, itemId, converted);
+            return;
+        }
+        effectiveValues.put(itemId, converted);
     }
 }

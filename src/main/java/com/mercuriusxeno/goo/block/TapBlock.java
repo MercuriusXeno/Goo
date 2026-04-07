@@ -63,6 +63,16 @@ public class TapBlock extends BaseEntityBlock {
     /** Pixels per block for coordinate conversion. */
     private static final double PIXELS_PER_BLOCK = 16;
 
+    // Array indices for the [x1, z1, x2, z2] rotation tuple.
+    /** Index of min-X in the XZ rotation tuple. */
+    private static final int XZ_X1 = 0;
+    /** Index of min-Z in the XZ rotation tuple. */
+    private static final int XZ_Z1 = 1;
+    /** Index of max-X in the XZ rotation tuple. */
+    private static final int XZ_X2 = 2;
+    /** Index of max-Z in the XZ rotation tuple. */
+    private static final int XZ_Z2 = 3;
+
     /** Whether a choral gasket is installed on this tap. */
     public static final BooleanProperty HAS_GASKET = BooleanProperty.create("has_gasket");
 
@@ -204,16 +214,37 @@ public class TapBlock extends BaseEntityBlock {
     public @NonNull BlockState playerWillDestroy(
             @NonNull Level level, @NonNull BlockPos pos,
             @NonNull BlockState state, @NonNull Player player) {
-        if (!level.isClientSide() && state.getValue(HAS_GASKET)) {
+        if (!level.isClientSide()) {
+            dropGasketOnBreak(level, pos, state);
+            dropCanisterOnBreak(level, pos);
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /** Drops the gasket item if one is installed.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @param state the block state
+     */
+    private static void dropGasketOnBreak(Level level, BlockPos pos, BlockState state) {
+        if (state.getValue(HAS_GASKET)) {
             popResource(level, pos, new ItemStack(GooItems.CHORAL_GASKET.get()));
         }
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof TapBlockEntity tap) {
+    }
+
+    /** Drops the canister item if one is inserted.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     */
+    private static void dropCanisterOnBreak(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof TapBlockEntity tap) {
             ItemStack canister = tap.removeCanister();
             if (!canister.isEmpty()) {
                 popResource(level, pos, canister);
             }
         }
-        return super.playerWillDestroy(level, pos, state, player);
     }
 
     // --- Interactions ---
@@ -236,19 +267,14 @@ public class TapBlock extends BaseEntityBlock {
     protected @NonNull InteractionResult useItemOn(
             @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
-        // Hits on the canister region delegate to canister interactions
-        if (hitCanister(hitResult, pos, state.getValue(FACING))) {
-            return GooBlockInteraction.handleItemInteraction(
-                    stack, level, pos, player, hand, hitResult,
-                    TapBlockEntity.class,
-                    t -> t == null,
-                    this::dispatchCanisterRegion);
-        }
+        GooBlockInteraction.Dispatcher<TapBlockEntity> handler =
+                hitCanister(hitResult, pos, state.getValue(FACING))
+                ? this::dispatchCanisterRegion : this::dispatchTap;
         return GooBlockInteraction.handleItemInteraction(
                 stack, level, pos, player, hand, hitResult,
                 TapBlockEntity.class,
                 t -> t == null,
-                this::dispatchTap);
+                handler);
     }
 
     /** Routes canister-region interactions - only blob/bucket ops, no canister insert.
@@ -320,43 +346,99 @@ public class TapBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof TapBlockEntity tap)) { return InteractionResult.PASS; }
 
         Direction facing = state.getValue(FACING);
+        return dispatchEmptyHand(state, level, pos, player, hitResult, tap, facing);
+    }
 
-        // Canister region hit → remove canister directly (bypasses valve/gasket)
+    /** Dispatches empty-hand interactions by sub-region: canister, valve, body, gasket.
+     *
+     * @param state     the block state
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hitResult the ray trace hit result
+     * @param tap       the tap block entity
+     * @param facing    the tap facing direction
+     * @return the interaction result
+     */
+    private InteractionResult dispatchEmptyHand(
+            BlockState state, Level level, BlockPos pos,
+            Player player, BlockHitResult hitResult, TapBlockEntity tap, Direction facing) {
         if (hitCanister(hitResult, pos, facing) && !tap.getCanister().isEmpty()) {
-            ItemStack removed = tap.removeCanister();
-            PlayerUtils.addOrDrop(player, removed);
-            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT,
-                SoundSource.BLOCKS, 1.0f, 1.0f);
-            return InteractionResult.SUCCESS;
+            return removeCanister(tap, level, pos, player);
         }
-
         if (hitValve(hitResult, pos, facing)) {
-            boolean nowOpen = !state.getValue(OPEN);
-            level.setBlock(pos, state.setValue(OPEN, nowOpen), BLOCK_UPDATE_FLAGS);
-            level.playSound(null, pos,
-                nowOpen ? SoundEvents.COPPER_TRAPDOOR_OPEN : SoundEvents.COPPER_TRAPDOOR_CLOSE,
-                SoundSource.BLOCKS, 1.0f, 1.0f);
-            return InteractionResult.SUCCESS;
+            return toggleValve(state, level, pos);
         }
+        return tryCanisterOrGasket(state, level, pos, player, tap);
+    }
 
-        // Remove canister if present (fallback for body-region hits)
-        ItemStack canister = tap.getCanister();
-        if (!canister.isEmpty()) {
-            ItemStack removed = tap.removeCanister();
-            PlayerUtils.addOrDrop(player, removed);
-            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT,
-                SoundSource.BLOCKS, 1.0f, 1.0f);
-            return InteractionResult.SUCCESS;
+    /** Removes the canister if present, otherwise tries to remove the gasket.
+     *
+     * @param state  the block state
+     * @param level  the current level
+     * @param pos    the block position
+     * @param player the interacting player
+     * @param tap    the tap block entity
+     * @return the interaction result
+     */
+    private static InteractionResult tryCanisterOrGasket(
+            BlockState state, Level level, BlockPos pos, Player player, TapBlockEntity tap) {
+        if (!tap.getCanister().isEmpty()) {
+            return removeCanister(tap, level, pos, player);
         }
+        return tryRemoveGasket(state, level, pos, player, tap);
+    }
 
-        // Sneak + empty hand with gasket → remove gasket
+    /** Removes the canister from the tap and gives it to the player.
+     *
+     * @param tap    the tap block entity
+     * @param level  the current level
+     * @param pos    the block position
+     * @param player the interacting player
+     * @return SUCCESS
+     */
+    private static InteractionResult removeCanister(
+            TapBlockEntity tap, Level level, BlockPos pos, Player player) {
+        ItemStack removed = tap.removeCanister();
+        PlayerUtils.addOrDrop(player, removed);
+        level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT,
+            SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Toggles the valve open/closed and plays the appropriate sound.
+     *
+     * @param state the block state
+     * @param level the current level
+     * @param pos   the block position
+     * @return SUCCESS
+     */
+    private static InteractionResult toggleValve(BlockState state, Level level, BlockPos pos) {
+        boolean nowOpen = !state.getValue(OPEN);
+        level.setBlock(pos, state.setValue(OPEN, nowOpen), BLOCK_UPDATE_FLAGS);
+        level.playSound(null, pos,
+            nowOpen ? SoundEvents.COPPER_TRAPDOOR_OPEN : SoundEvents.COPPER_TRAPDOOR_CLOSE,
+            SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Removes the gasket if the player is sneaking and one is installed.
+     *
+     * @param state  the block state
+     * @param level  the current level
+     * @param pos    the block position
+     * @param player the interacting player
+     * @param tap    the tap block entity
+     * @return SUCCESS if removed, PASS otherwise
+     */
+    private static InteractionResult tryRemoveGasket(
+            BlockState state, Level level, BlockPos pos, Player player, TapBlockEntity tap) {
         if (player.isShiftKeyDown() && state.getValue(HAS_GASKET)) {
             GasketInstallation.popGasket(level, pos, tap.getGasketId(GasketRole.RECEIVER));
             tap.clearGasket(GasketRole.RECEIVER);
             level.setBlock(pos, state.setValue(HAS_GASKET, false), BLOCK_UPDATE_FLAGS);
             return InteractionResult.SUCCESS;
         }
-
         return InteractionResult.PASS;
     }
 
@@ -414,21 +496,29 @@ public class TapBlock extends BaseEntityBlock {
         GooContents bucketGoo = BucketOfGooItem.getContents(stack);
         if (bucketGoo.isEmpty() || !tap.canAcceptGoo()) { return InteractionResult.PASS; }
 
-        boolean inserted = false;
-        for (var entry : bucketGoo.getAll().entrySet()) {
-            GooType type = entry.getKey();
-            long volume = entry.getValue();
-            long accepted = tap.insertGoo(type, volume);
-            if (accepted > 0) {
-                bucketGoo = bucketGoo.withRemoved(type, accepted);
-                inserted = true;
-            }
-        }
-        if (!inserted) { return InteractionResult.PASS; }
+        GooContents remaining = pourBucketEntries(tap, bucketGoo);
+        if (remaining == bucketGoo) { return InteractionResult.PASS; }
 
-        BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
+        BucketOfGooItem.setOrRevert(stack, remaining, player, hand);
         tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
+    }
+
+    /** Pours each goo entry from a bucket into the tap, returning the leftover contents.
+     *
+     * @param tap       the tap block entity to pour into
+     * @param bucketGoo the bucket goo contents
+     * @return the remaining contents after pouring, or the original if nothing was accepted
+     */
+    private static GooContents pourBucketEntries(TapBlockEntity tap, GooContents bucketGoo) {
+        GooContents remaining = bucketGoo;
+        for (var entry : bucketGoo.getAll().entrySet()) {
+            long accepted = tap.insertGoo(entry.getKey(), entry.getValue());
+            if (accepted > 0) {
+                remaining = remaining.withRemoved(entry.getKey(), accepted);
+            }
+        }
+        return remaining;
     }
 
     /** Extracts goo from the tap's canister into an empty bucket.
@@ -447,11 +537,24 @@ public class TapBlock extends BaseEntityBlock {
         long extracted = tap.extractGoo(type, contents.getVolume(type));
         if (extracted <= 0) { return InteractionResult.PASS; }
 
+        giveFilled(tap, stack, player, type, extracted);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Shrinks the empty bucket, creates a filled bucket, and gives it to the player.
+     *
+     * @param tap       the tap block entity (for sound)
+     * @param stack     the empty bucket stack to shrink
+     * @param player    the receiving player
+     * @param type      the goo type to fill with
+     * @param extracted the volume extracted in microblobs
+     */
+    private static void giveFilled(
+            TapBlockEntity tap, ItemStack stack, Player player, GooType type, long extracted) {
         ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
         stack.shrink(1);
         PlayerUtils.addOrDrop(player, filledBucket);
         tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
     }
 
     // --- Sub-region hit detection ---
@@ -574,25 +677,59 @@ public class TapBlock extends BaseEntityBlock {
     static VoxelShape rotateShapeCw(VoxelShape shape, int steps) {
         if (steps == 0) { return shape; }
         VoxelShape[] result = { Shapes.empty() };
-        shape.forAllBoxes((x1, y1, z1, x2, y2, z2) -> {
-            double rx1 = x1;
-            double rz1 = z1;
-            double rx2 = x2;
-            double rz2 = z2;
-            for (int s = 0; s < steps; s++) {
-                double tmpX1 = 1.0 - rz2;
-                double tmpZ1 = rx1;
-                double tmpX2 = 1.0 - rz1;
-                double tmpZ2 = rx2;
-                rx1 = tmpX1;
-                rz1 = tmpZ1;
-                rx2 = tmpX2;
-                rz2 = tmpZ2;
-            }
-            result[0] = Shapes.or(result[0], box(
-                rx1 * PIXELS_PER_BLOCK, y1 * PIXELS_PER_BLOCK, rz1 * PIXELS_PER_BLOCK,
-                rx2 * PIXELS_PER_BLOCK, y2 * PIXELS_PER_BLOCK, rz2 * PIXELS_PER_BLOCK));
-        });
+        shape.forAllBoxes((x1, y1, z1, x2, y2, z2) ->
+            result[0] = Shapes.or(result[0], rotateBox(x1, y1, z1, x2, y2, z2, steps)));
         return result[0];
+    }
+
+    /** Rotates a single AABB clockwise around Y by the given 90-degree steps and converts to pixel coords.
+     *
+     * @param x1    min X in unit coords
+     * @param y1    min Y in unit coords
+     * @param z1    min Z in unit coords
+     * @param x2    max X in unit coords
+     * @param y2    max Y in unit coords
+     * @param z2    max Z in unit coords
+     * @param steps number of 90-degree clockwise steps
+     * @return the rotated box as a VoxelShape in pixel coords
+     */
+    private static VoxelShape rotateBox(
+            double x1, double y1, double z1, double x2, double y2, double z2, int steps) {
+        double[] xz = rotateXZ(x1, z1, x2, z2, steps);
+        return box(
+            xz[XZ_X1] * PIXELS_PER_BLOCK, y1 * PIXELS_PER_BLOCK, xz[XZ_Z1] * PIXELS_PER_BLOCK,
+            xz[XZ_X2] * PIXELS_PER_BLOCK, y2 * PIXELS_PER_BLOCK, xz[XZ_Z2] * PIXELS_PER_BLOCK);
+    }
+
+    /** Rotates XZ coordinates clockwise around Y by the given 90-degree steps.
+     *
+     * @param x1    min X in unit coords
+     * @param z1    min Z in unit coords
+     * @param x2    max X in unit coords
+     * @param z2    max Z in unit coords
+     * @param steps number of 90-degree clockwise steps
+     * @return array of [rx1, rz1, rx2, rz2] after rotation
+     */
+    private static double[] rotateXZ(double x1, double z1, double x2, double z2, int steps) {
+        double[] xz = { x1, z1, x2, z2 };
+        for (int s = 0; s < steps; s++) {
+            rotateCwOnce(xz);
+        }
+        return xz;
+    }
+
+    /** Applies one 90-degree clockwise rotation around Y to XZ coordinates in place.
+     *
+     * @param xz array of [x1, z1, x2, z2] to rotate in place
+     */
+    private static void rotateCwOnce(double[] xz) {
+        double tmpX1 = 1.0 - xz[XZ_Z2];
+        double tmpZ1 = xz[XZ_X1];
+        double tmpX2 = 1.0 - xz[XZ_Z1];
+        double tmpZ2 = xz[XZ_X2];
+        xz[XZ_X1] = tmpX1;
+        xz[XZ_Z1] = tmpZ1;
+        xz[XZ_X2] = tmpX2;
+        xz[XZ_Z2] = tmpZ2;
     }
 }
