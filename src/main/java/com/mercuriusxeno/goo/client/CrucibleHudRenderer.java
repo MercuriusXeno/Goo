@@ -161,20 +161,26 @@ public final class CrucibleHudRenderer {
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        BlockPos target = getTargetPos();
         float dt = InWorldHud.computeDeltaTime(lastFrameNanos);
-
-        updateState(target, dt);
-
+        updateState(getTargetPos(), dt);
         if (trackedPos == null) { return; }
+        dispatchRender(event.getPoseStack(), camera);
+    }
 
+    /**
+     * Validates the tracked crucible still exists, then renders the rim panel.
+     * Clears state if the block entity is gone.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
+     */
+    private static void dispatchRender(PoseStack poseStack, Camera camera) {
         CrucibleBlockEntity be = lookupCrucible(trackedPos);
         if (be == null) {
             clearState();
             return;
         }
-
-        renderRimPanel(event.getPoseStack(), be, camera);
+        renderRimPanel(poseStack, be, camera);
     }
 
     /**
@@ -185,18 +191,34 @@ public final class CrucibleHudRenderer {
      * @param dt the delta time in seconds
      */
     private static void updateState(@Nullable BlockPos target, float dt) {
-        boolean hasTarget = target != null;
-        boolean sameTarget = hasTarget && target.equals(trackedPos);
+        applyTransition(target);
+        advancePitch(dt);
+    }
 
-        if (hasTarget && !sameTarget) {
+    /**
+     * Applies the idle/emerge/retract state transition for a single frame.
+     * New target starts emerge; same target cancels retract; lost target begins retract.
+     *
+     * @param target the current aim target, or null if not aiming at a crucible
+     */
+    private static void applyTransition(@Nullable BlockPos target) {
+        if (isNewTarget(target)) {
             beginEmerge(target);
-        } else if (hasTarget && retracting) {
+        } else if (target != null && retracting) {
             retracting = false;
-        } else if (!hasTarget && trackedPos != null && !retracting) {
+        } else if (target == null && trackedPos != null && !retracting) {
             retracting = true;
         }
+    }
 
-        advancePitch(dt);
+    /**
+     * Returns true when the target is a new (different) crucible position.
+     *
+     * @param target the current aim target, or null
+     * @return true if a new target should trigger an emerge
+     */
+    private static boolean isNewTarget(@Nullable BlockPos target) {
+        return target != null && !target.equals(trackedPos);
     }
 
     /**
@@ -288,17 +310,25 @@ public final class CrucibleHudRenderer {
      */
     private static void renderRimPanel(PoseStack poseStack, CrucibleBlockEntity be,
             Camera camera) {
-        Vec3 cam = camera.position();
-        BlockPos pos = be.getBlockPos();
-
         poseStack.pushPose();
-        translateToRimPoint(poseStack, pos, cam, camera);
+        positionOnRim(poseStack, be.getBlockPos(), camera);
+        renderPanel(poseStack, be);
+        poseStack.popPose();
+    }
+
+    /**
+     * Transforms the pose stack to the best rim anchor: translates, billboards,
+     * z-nudges, and scales to pixel units.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param pos the block position of the crucible
+     * @param camera the render camera
+     */
+    private static void positionOnRim(PoseStack poseStack, BlockPos pos, Camera camera) {
+        translateToRimPoint(poseStack, pos, camera.position(), camera);
         applyBillboardRotation(poseStack, camera);
         poseStack.translate(0, 0, RIM_Z_NUDGE);
         poseStack.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
-
-        renderPanel(poseStack, be);
-        poseStack.popPose();
     }
 
     /**
@@ -336,19 +366,29 @@ public final class CrucibleHudRenderer {
         float forwardZ = (float) Math.cos(yawRad);
         Vec3 cam = camera.position();
         boolean nearCardinal = isNearCardinal(forwardX, forwardZ);
-        boolean belowRim = cam.y < pos.getY() + BASIN_TOP_Y;
+        float sign = cam.y < pos.getY() + BASIN_TOP_Y ? BELOW_RIM_SIGN : 1f;
+        return pickHighestScoringPoint(pos, cam, forwardX, forwardZ, nearCardinal, sign);
+    }
 
-        float bestScore = Float.NEGATIVE_INFINITY;
+    /**
+     * Iterates all rim point candidates and returns the one with the highest score.
+     *
+     * @param pos the block position
+     * @param cam the camera position
+     * @param forwardX camera forward X component
+     * @param forwardZ camera forward Z component
+     * @param nearCardinal whether the camera is near a cardinal direction
+     * @param sign +1 for farthest-wins (above rim), -1 for nearest-wins (below rim)
+     * @return the highest-scoring rim point
+     */
+    private static RimPoint pickHighestScoringPoint(BlockPos pos, Vec3 cam,
+            float forwardX, float forwardZ, boolean nearCardinal, float sign) {
         RimPoint best = RIM_POINTS[0];
-
-        float sign = belowRim ? BELOW_RIM_SIGN : 1f;
-
+        float bestScore = Float.NEGATIVE_INFINITY;
         for (RimPoint rp : RIM_POINTS) {
             float score = scoreRimPoint(rp, pos, cam, forwardX, forwardZ, nearCardinal, sign);
-            if (score > bestScore) {
-                bestScore = score;
-                best = rp;
-            }
+            best = score > bestScore ? rp : best;
+            bestScore = Math.max(score, bestScore);
         }
         return best;
     }
@@ -419,22 +459,51 @@ public final class CrucibleHudRenderer {
         boolean hasFuel = !be.getFuelRod().isEmpty();
         boolean hasGoo = !reservoir.isEmpty() || !pool.isEmpty();
         if (!hasGoo && !hasFuel) { return; }
-
         PanelLayout layout = measurePanelLayout(reservoir, pool, be.getFuelRod(), hasGoo, hasFuel);
+        drawPanelWithBackground(poseStack, reservoir, layout, be.getFuelRod(), hasGoo, hasFuel);
+    }
 
+    /**
+     * Draws the panel background and content rows, then flushes the buffer.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param reservoir the reservoir goo contents
+     * @param layout the pre-measured panel layout
+     * @param fuelRod the fuel rod item stack
+     * @param hasGoo whether goo is present
+     * @param hasFuel whether fuel is present
+     */
+    private static void drawPanelWithBackground(PoseStack poseStack, GooContents reservoir,
+            PanelLayout layout, ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
         MultiBufferSource.BufferSource buffers =
             Minecraft.getInstance().renderBuffers().bufferSource();
-
         float halfW = layout.panelWidth / HALF_F;
         InWorldHud.renderBackground(poseStack, buffers, -halfW, -layout.panelHeight,
             layout.panelWidth, layout.panelHeight);
+        renderContentAtOrigin(poseStack, buffers, reservoir, layout, halfW,
+            fuelRod, hasGoo, hasFuel);
+        buffers.endBatch();
+    }
 
+    /**
+     * Computes the content origin from the layout and renders panel content there.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source
+     * @param reservoir the reservoir goo contents
+     * @param layout the pre-measured panel layout
+     * @param halfW half the panel width
+     * @param fuelRod the fuel rod item stack
+     * @param hasGoo whether goo is present
+     * @param hasFuel whether fuel is present
+     */
+    private static void renderContentAtOrigin(PoseStack poseStack, MultiBufferSource buffers,
+            GooContents reservoir, PanelLayout layout, float halfW,
+            ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
         float contentX = -halfW + InWorldHud.BORDER;
         float contentY = -layout.panelHeight + InWorldHud.BORDER;
-
         renderPanelContent(poseStack, buffers, reservoir, layout.total, layout.types,
-            be.getFuelRod(), hasGoo, hasFuel, contentX, contentY);
-        buffers.endBatch();
+            fuelRod, hasGoo, hasFuel, contentX, contentY);
     }
 
     /**
@@ -451,14 +520,31 @@ public final class CrucibleHudRenderer {
             ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
         GooContents total = hasGoo ? reservoir.mergeWith(pool) : GooContents.EMPTY;
         Set<GooType> types = hasGoo ? allTypes(reservoir, pool) : Set.of();
+        float contentWidth = measureContentWidth(reservoir, total, types, fuelRod, hasGoo, hasFuel);
+        int rowCount = types.size() + (hasFuel ? 1 : 0);
+        return new PanelLayout(
+            contentWidth + InWorldHud.BORDER * HALF,
+            InWorldHud.BORDER * HALF + rowCount * ROW_HEIGHT,
+            total, types);
+    }
+
+    /**
+     * Measures the widest content row across goo and fuel rows.
+     *
+     * @param reservoir the reservoir goo contents
+     * @param total the merged total goo contents
+     * @param types the set of goo types present
+     * @param fuelRod the fuel rod item stack
+     * @param hasGoo whether goo is present
+     * @param hasFuel whether fuel is present
+     * @return the maximum content width in pixels
+     */
+    private static float measureContentWidth(GooContents reservoir, GooContents total,
+            Set<GooType> types, ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
         Font font = Minecraft.getInstance().font;
         float gooWidth = hasGoo ? measureMaxRowWidth(font, reservoir, total, types) : 0;
         float fuelWidth = hasFuel ? measureFuelRowWidth(font, fuelRod) : 0;
-        float contentWidth = Math.max(gooWidth, fuelWidth);
-        int rowCount = types.size() + (hasFuel ? 1 : 0);
-        float panelWidth = contentWidth + InWorldHud.BORDER * HALF;
-        float panelHeight = InWorldHud.BORDER * HALF + rowCount * ROW_HEIGHT;
-        return new PanelLayout(panelWidth, panelHeight, total, types);
+        return Math.max(gooWidth, fuelWidth);
     }
 
     /**
@@ -480,16 +566,49 @@ public final class CrucibleHudRenderer {
             ItemStack fuelRod, boolean hasGoo, boolean hasFuel,
             float contentX, float contentY) {
         Font font = Minecraft.getInstance().font;
-        int row = 0;
-        if (hasGoo) {
-            float gooY = contentY + row * ROW_HEIGHT;
-            renderRows(poseStack, font, buffers, reservoir, total, types, contentX, gooY);
-            row += types.size();
-        }
-        if (hasFuel) {
-            float fuelY = contentY + row * ROW_HEIGHT;
-            renderFuelRow(poseStack, font, buffers, fuelRod, contentX, fuelY);
-        }
+        int gooRows = renderGooRowsIfPresent(poseStack, font, buffers,
+            reservoir, total, types, hasGoo, contentX, contentY);
+        renderFuelRowIfPresent(poseStack, font, buffers,
+            fuelRod, hasFuel, contentX, contentY + gooRows * ROW_HEIGHT);
+    }
+
+    /**
+     * Renders goo type rows if goo is present.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source
+     * @param reservoir the reservoir goo contents
+     * @param total the merged total goo contents
+     * @param types the set of goo types present
+     * @param hasGoo whether goo is present
+     * @param x the left X coordinate
+     * @param y the top Y coordinate
+     * @return the number of goo rows rendered
+     */
+    private static int renderGooRowsIfPresent(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, GooContents reservoir, GooContents total,
+            Set<GooType> types, boolean hasGoo, float x, float y) {
+        if (!hasGoo) { return 0; }
+        renderRows(poseStack, font, buffers, reservoir, total, types, x, y);
+        return types.size();
+    }
+
+    /**
+     * Renders the fuel row if fuel is present.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source
+     * @param fuelRod the fuel rod item stack
+     * @param hasFuel whether fuel is present
+     * @param x the left X coordinate
+     * @param y the top Y coordinate
+     */
+    private static void renderFuelRowIfPresent(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, ItemStack fuelRod, boolean hasFuel, float x, float y) {
+        if (!hasFuel) { return; }
+        renderFuelRow(poseStack, font, buffers, fuelRod, x, y);
     }
 
     /**
@@ -620,14 +739,29 @@ public final class CrucibleHudRenderer {
             PoseStack poseStack, long reservoirVol, long totalVol,
             float x, float y) {
         String resText = GooTooltipHandler.formatFluidDisplayCompact(reservoirVol);
-        String sep = VOLUME_SEPARATOR;
         String totText = GooTooltipHandler.formatFluidDisplayCompact(totalVol);
         float cx = x;
-        InWorldHud.drawText(font, buffers, poseStack, resText, cx, y, TEXT_COLOR);
-        cx += font.width(resText);
-        InWorldHud.drawText(font, buffers, poseStack, sep, cx, y, SEP_COLOR);
-        cx += font.width(sep);
-        InWorldHud.drawText(font, buffers, poseStack, totText, cx, y, TEXT_COLOR);
+        cx = drawSegment(font, buffers, poseStack, resText, cx, y, TEXT_COLOR);
+        cx = drawSegment(font, buffers, poseStack, VOLUME_SEPARATOR, cx, y, SEP_COLOR);
+        drawSegment(font, buffers, poseStack, totText, cx, y, TEXT_COLOR);
+    }
+
+    /**
+     * Draws one text segment and returns the X coordinate after it.
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source
+     * @param poseStack the pose stack for rendering
+     * @param text the text to draw
+     * @param x the left X coordinate
+     * @param y the Y coordinate
+     * @param color the ARGB color
+     * @return the X coordinate after the drawn text
+     */
+    private static float drawSegment(Font font, MultiBufferSource buffers,
+            PoseStack poseStack, String text, float x, float y, int color) {
+        InWorldHud.drawText(font, buffers, poseStack, text, x, y, color);
+        return x + font.width(text);
     }
 
     /**

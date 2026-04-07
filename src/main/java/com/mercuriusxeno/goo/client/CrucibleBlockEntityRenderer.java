@@ -160,11 +160,33 @@ public class CrucibleBlockEntityRenderer
             float partialTick, Vec3 cameraPos,
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(be, state, breakProgress);
+        extractPlatformState(be, state, partialTick);
+        extractPoolState(be, state);
+    }
+
+    /**
+     * Copies platform position, fuel rod, and interpolation fields from the block entity.
+     *
+     * @param be the crucible block entity
+     * @param state the render state to populate
+     * @param partialTick the sub-tick interpolation fraction
+     */
+    private static void extractPlatformState(CrucibleBlockEntity be,
+            CrucibleRenderState state, float partialTick) {
         state.platformY = be.getPlatformY();
         state.prevPlatformY = be.getPrevPlatformY();
         state.partialTick = partialTick;
         state.hasFuelRod = !be.getFuelRod().isEmpty();
         state.fuelFraction = be.fuelFraction();
+    }
+
+    /**
+     * Copies pool volumes and crossfade dominant-type fields from the block entity.
+     *
+     * @param be the crucible block entity
+     * @param state the render state to populate
+     */
+    private static void extractPoolState(CrucibleBlockEntity be, CrucibleRenderState state) {
         state.poolVolume = be.getPoolVolume();
         state.reservoirVolume = be.getReservoir().totalVolume();
         be.tickDominantType();
@@ -215,18 +237,48 @@ public class CrucibleBlockEntityRenderer
 
         float fillFraction = computeLogFill(totalGoo, LIQUID_LOG_CAP);
         float surfaceY = LIQUID_MIN_Y + fillFraction * (LIQUID_MAX_Y - LIQUID_MIN_Y);
-        int light = state.lightCoords;
+        submitLiquidQuads(poseStack, nodeCollector, state, surfaceY);
+    }
 
+    /**
+     * Submits one or two liquid quads depending on whether a crossfade is active.
+     * During crossfade, the outgoing type fades out while the incoming type fades in.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the crucible render state (dominantType must be non-null)
+     * @param surfaceY the computed liquid surface Y height
+     */
+    private static void submitLiquidQuads(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, CrucibleRenderState state,
+            float surfaceY) {
+        int light = state.lightCoords;
         if (state.outgoingType != null) {
-            float outAlpha = 1f - state.crossfadeAlpha;
-            submitLiquidQuad(poseStack, nodeCollector, state.outgoingType,
-                surfaceY, light, outAlpha);
-            submitLiquidQuad(poseStack, nodeCollector, state.dominantType,
-                surfaceY, light, state.crossfadeAlpha);
+            submitCrossfadeQuads(poseStack, nodeCollector, state, surfaceY, light);
         } else {
             submitLiquidQuad(poseStack, nodeCollector, state.dominantType,
                 surfaceY, light, 1f);
         }
+    }
+
+    /**
+     * Submits two overlapping liquid quads for a crossfade transition:
+     * the outgoing type fading out and the incoming type fading in.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the crucible render state with crossfade fields
+     * @param surfaceY the computed liquid surface Y height
+     * @param light the packed light value
+     */
+    private static void submitCrossfadeQuads(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, CrucibleRenderState state,
+            float surfaceY, int light) {
+        float outAlpha = 1f - state.crossfadeAlpha;
+        submitLiquidQuad(poseStack, nodeCollector, state.outgoingType,
+            surfaceY, light, outAlpha);
+        submitLiquidQuad(poseStack, nodeCollector, state.dominantType,
+            surfaceY, light, state.crossfadeAlpha);
     }
 
     /**
@@ -243,17 +295,43 @@ public class CrucibleBlockEntityRenderer
             SubmitNodeCollector nodeCollector, GooType type,
             float surfaceY, int light, float alpha) {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        int a = (int) (alpha * MAX_ALPHA) & BYTE_MASK;
-        int color = RGB_MASK | (a << ALPHA_SHIFT);
+        int color = packArgb(alpha);
         nodeCollector.submitCustomGeometry(
             poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, consumer) -> GooRenderUtil.liquidSurface(
-                pose, consumer, light, color,
-                LIQUID_MIN_XZ, LIQUID_MIN_XZ, LIQUID_MAX_XZ, LIQUID_MAX_XZ,
-                surfaceY, sprite.getU0(), sprite.getU1(),
-                sprite.getV0(), sprite.getV1())
+            (pose, consumer) -> emitLiquidSurface(
+                pose, consumer, light, color, surfaceY, sprite)
         );
+    }
+
+    /**
+     * Packs an alpha fraction [0, 1] into a full-white ARGB int (0xAARRGGBB).
+     *
+     * @param alpha the alpha transparency [0, 1]
+     * @return the packed ARGB color with white RGB channels
+     */
+    private static int packArgb(float alpha) {
+        int a = (int) (alpha * MAX_ALPHA) & BYTE_MASK;
+        return RGB_MASK | (a << ALPHA_SHIFT);
+    }
+
+    /**
+     * Emits a single liquid surface quad using the basin interior bounds.
+     *
+     * @param pose the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param light the packed light value
+     * @param color the packed ARGB color
+     * @param surfaceY the liquid surface Y height
+     * @param sprite the fluid texture atlas sprite
+     */
+    private static void emitLiquidSurface(PoseStack.Pose pose, VertexConsumer consumer,
+            int light, int color, float surfaceY, TextureAtlasSprite sprite) {
+        GooRenderUtil.liquidSurface(
+            pose, consumer, light, color,
+            LIQUID_MIN_XZ, LIQUID_MIN_XZ, LIQUID_MAX_XZ, LIQUID_MAX_XZ,
+            surfaceY, sprite.getU0(), sprite.getU1(),
+            sprite.getV0(), sprite.getV1());
     }
 
     /**
@@ -328,14 +406,13 @@ public class CrucibleBlockEntityRenderer
     private static void submitChains(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, float platformY, int light) {
         float chainBottom = platformY + PLAT_THICKNESS;
-        float chainTop = BASIN_Y;
-        if (chainBottom >= chainTop) { return; }
+        if (chainBottom >= BASIN_Y) { return; }
 
         nodeCollector.submitCustomGeometry(
             poseStack,
             RenderTypes.entityCutout(CHAIN_TEXTURE),
             (pose, consumer) -> renderAllChains(
-                pose, consumer, light, chainBottom, chainTop)
+                pose, consumer, light, chainBottom, BASIN_Y)
         );
     }
 
@@ -429,14 +506,26 @@ public class CrucibleBlockEntityRenderer
         float y = bottom;
         while (y < top) {
             float tileTop = Math.min(y + CHAIN_TILE, top);
-            float fraction = (tileTop - y) / CHAIN_TILE;
-            boolean isPartialTop = y + CHAIN_TILE > top;
-            float vStart = isPartialTop ? (1f - fraction) : 0f;
-            float vEnd = 1f;
+            float vStart = chainTileVStart(y, tileTop, top);
             emitChainTile(pose, c, light, cx, cz, y, tileTop,
-                u0, u1, vStart, vEnd, ns);
+                u0, u1, vStart, 1f, ns);
             y = tileTop;
         }
+    }
+
+    /**
+     * Computes the V-start coordinate for a chain tile. Full tiles start at 0;
+     * the topmost partial tile clips from the top so the bottom texture stays anchored.
+     *
+     * @param tileBottom the Y of this tile's bottom edge
+     * @param tileTop the Y of this tile's top edge
+     * @param chainTop the Y of the overall chain top
+     * @return the V-start coordinate [0, 1]
+     */
+    private static float chainTileVStart(float tileBottom, float tileTop, float chainTop) {
+        if (tileBottom + CHAIN_TILE <= chainTop) { return 0f; }
+        float fraction = (tileTop - tileBottom) / CHAIN_TILE;
+        return 1f - fraction;
     }
 
     /**
@@ -538,14 +627,40 @@ public class CrucibleBlockEntityRenderer
     private static void submitBlazeRod(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, float platformY,
             float fuelFraction, int light) {
-        float rodBottom = platformY + PLAT_THICKNESS;
         float rodHeight = fuelFraction * ROD_FULL_HEIGHT;
         if (rodHeight <= 0f) { return; }
+
+        float rodBottom = platformY + PLAT_THICKNESS;
         float rodTop = rodBottom + rodHeight;
+        float vTop = rodSideVTop(rodHeight);
+        submitRodGeometry(poseStack, nodeCollector, light, rodBottom, rodTop, vTop);
+    }
 
+    /**
+     * Computes the top V coordinate for rod side textures. As the rod shortens,
+     * the V origin recedes from the top of the texture toward the middle.
+     *
+     * @param rodHeight the current rod height in block coords
+     * @return the top V coordinate for side UVs
+     */
+    private static float rodSideVTop(float rodHeight) {
         float heightFraction = rodHeight / ROD_FULL_HEIGHT;
-        float vTop = ROD_V_BOTTOM - heightFraction * ROD_V_BOTTOM;
+        return ROD_V_BOTTOM - heightFraction * ROD_V_BOTTOM;
+    }
 
+    /**
+     * Submits the rod box geometry centered at ROD_CX/ROD_CZ.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param light the packed light value
+     * @param rodBottom the bottom Y of the rod
+     * @param rodTop the top Y of the rod
+     * @param vTop the top V texture coordinate for side faces
+     */
+    private static void submitRodGeometry(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, int light,
+            float rodBottom, float rodTop, float vTop) {
         nodeCollector.submitCustomGeometry(
             poseStack,
             RenderTypes.entitySolid(BLAZE_ROD_TEXTURE),
@@ -574,6 +689,26 @@ public class CrucibleBlockEntityRenderer
             float vTop) {
         GooRenderUtil.faceY(pose, c, light, x0, x1, y1, z0, z1, ROD_UV_TOP, 1f);
         GooRenderUtil.faceY(pose, c, light, x0, x1, y0, z0, z1, ROD_UV_BOTTOM, NEG_UNIT);
+        renderRodSides(pose, c, light, x0, y0, z0, x1, y1, z1, vTop);
+    }
+
+    /**
+     * Renders the four side faces of the blaze rod with fuel-proportional UV cropping.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param x0 the minimum X bound
+     * @param y0 the minimum Y bound
+     * @param z0 the minimum Z bound
+     * @param x1 the maximum X bound
+     * @param y1 the maximum Y bound
+     * @param z1 the maximum Z bound
+     * @param vTop the top V texture coordinate for side faces
+     */
+    private static void renderRodSides(PoseStack.Pose pose, VertexConsumer c,
+            int light, float x0, float y0, float z0, float x1, float y1, float z1,
+            float vTop) {
         GooRenderUtil.faceX(pose, c, light, x1, y0, y1, z0, z1,
             new GooRenderUtil.UvRect(UV_4, vTop, UV_6, ROD_V_BOTTOM), 1f);
         GooRenderUtil.faceX(pose, c, light, x0, y0, y1, z0, z1,

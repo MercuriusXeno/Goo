@@ -21,7 +21,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -32,9 +31,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Client-side aim highlighting for goo blob throwing. When the player holds
@@ -125,6 +126,16 @@ public final class GooTargetHighlighter {
     private static final float DASH_MID = 0.5f;
     /** Sentinel for no valid hand position frame. */
     private static final long NO_FRAME = -1;
+    /** Sentinel cosine value indicating an invalid or out-of-range cone angle. */
+    private static final double NO_CONE_ANGLE = -1;
+    /** Axis sample index: west face center. */
+    private static final int AXIS_WEST = 0;
+    /** Axis sample index: east face center. */
+    private static final int AXIS_EAST = 1;
+    /** Axis sample index: north face center. */
+    private static final int AXIS_NORTH = 2;
+    /** Axis sample index: south face center. */
+    private static final int AXIS_SOUTH = 3;
 
     // --- Entity outline state ---
 
@@ -156,20 +167,42 @@ public final class GooTargetHighlighter {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) {
-            targetedEntity = null;
-            targetOutlineColor = 0;
+            clearTarget();
             return;
         }
+        tickGloveTarget(mc);
+    }
 
+    /**
+     * Resolves goo type selection and updates aim target for the local player.
+     *
+     * @param mc the Minecraft client instance
+     */
+    private static void tickGloveTarget(Minecraft mc) {
         GooType selectedType = findSelectedGooType(mc.player);
         if (selectedType == null) {
-            targetedEntity = null;
-            targetOutlineColor = 0;
+            clearTarget();
             return;
         }
+        updateTarget(mc.player, selectedType);
+    }
 
-        TargetResult target = resolveTarget(mc.player, 1.0f);
-        targetedEntity = (target instanceof TargetResult.EntityTarget et) ? et.entity() : null;
+    /** Resets entity target and outline color when no valid aim exists. */
+    private static void clearTarget() {
+        targetedEntity = null;
+        targetOutlineColor = 0;
+    }
+
+    /**
+     * Resolves aim and updates the targeted entity and outline color.
+     *
+     * @param player       the local player
+     * @param selectedType the currently selected goo type
+     */
+    private static void updateTarget(Player player, GooType selectedType) {
+        TargetResult target = resolveTarget(player, 1.0f);
+        targetedEntity = (target instanceof TargetResult.EntityTarget et)
+                ? et.entity() : null;
         targetOutlineColor = (targetedEntity != null)
                 ? ARGB.opaque(selectedType.getColor()) : 0;
     }
@@ -201,28 +234,58 @@ public final class GooTargetHighlighter {
      */
     public static TargetResult resolveTarget(Player player, float partialTick) {
         Vec3 eyePos = player.getEyePosition(partialTick);
-        Vec3 lookVec = player.getViewVector(partialTick);
-        Vec3 reach = eyePos.add(lookVec.scale(MAX_RANGE));
+        Vec3 reach = eyePos.add(player.getViewVector(partialTick).scale(MAX_RANGE));
+        TargetResult entityResult = resolveEntityTarget(player, eyePos, reach);
+        if (entityResult != null) { return entityResult; }
+        return resolveBlockTarget(player, eyePos, reach);
+    }
 
-        if (!player.isShiftKeyDown()) {
-            Entity entityHit = findClosestEntity(player, eyePos, reach);
-            if (entityHit != null) {
-                return TargetResult.entity(entityHit);
-            }
-        }
+    /**
+     * Attempts entity targeting unless the player is sneaking.
+     *
+     * @param player the local player
+     * @param eyePos the eye position
+     * @param reach  the maximum reach endpoint
+     * @return an entity target result, or null if none found or sneaking
+     */
+    private static @Nullable TargetResult resolveEntityTarget(
+            Player player, Vec3 eyePos, Vec3 reach) {
+        if (player.isShiftKeyDown()) { return null; }
+        Entity entityHit = findClosestEntity(player, eyePos, reach);
+        if (entityHit != null) { return TargetResult.entity(entityHit); }
+        return null;
+    }
 
-        BlockHitResult blockHit = player.level().clip(new ClipContext(
+    /**
+     * Clips against blocks and returns a block or granny-arc target, or NONE.
+     *
+     * @param player the local player
+     * @param eyePos the eye position
+     * @param reach  the maximum reach endpoint
+     * @return the resolved block target or NONE
+     */
+    private static TargetResult resolveBlockTarget(Player player, Vec3 eyePos, Vec3 reach) {
+        BlockHitResult hit = player.level().clip(new ClipContext(
                 eyePos, reach, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-        if (blockHit.getType() == HitResult.Type.BLOCK) {
-            Direction face = blockHit.getDirection();
-            if (face.getAxis() != Direction.Axis.Y
-                    && isUpperEdge(player.level(), blockHit)) {
-                return TargetResult.grannyArc(blockHit.getBlockPos());
-            }
-            return TargetResult.block(blockHit.getBlockPos(), face);
+        if (hit.getType() != HitResult.Type.BLOCK) {
+            return TargetResult.NONE;
         }
+        return classifyBlockHit(player.level(), hit);
+    }
 
-        return TargetResult.NONE;
+    /**
+     * Classifies a confirmed block hit as a granny-arc or normal face target.
+     *
+     * @param level the current level
+     * @param hit   the confirmed block hit
+     * @return granny-arc or block-face target result
+     */
+    private static TargetResult classifyBlockHit(Level level, BlockHitResult hit) {
+        Direction face = hit.getDirection();
+        if (face.getAxis() != Direction.Axis.Y && isUpperEdge(level, hit)) {
+            return TargetResult.grannyArc(hit.getBlockPos());
+        }
+        return TargetResult.block(hit.getBlockPos(), face);
     }
 
     /**
@@ -259,32 +322,77 @@ public final class GooTargetHighlighter {
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) { return; }
-
-        // Arc is first-person only - hide in third person and from other players
         if (!mc.options.getCameraType().isFirstPerson()) { return; }
-
         GooType selectedType = findSelectedGooType(mc.player);
         if (selectedType == null) { return; }
-
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         TargetResult target = resolveTarget(mc.player, partialTick);
+        dispatchTargetRendering(event, mc, target, selectedType, partialTick);
+    }
 
+    /**
+     * Dispatches arc and face rendering based on target type.
+     *
+     * @param event        the render event for pose stack access
+     * @param mc           the Minecraft instance
+     * @param target       the resolved aim target
+     * @param selectedType the selected goo type
+     * @param partialTick  the partial tick for animation
+     */
+    private static void dispatchTargetRendering(
+            RenderLevelStageEvent.AfterOpaqueFeatures event, Minecraft mc,
+            TargetResult target, GooType selectedType, float partialTick) {
         Camera camera = mc.gameRenderer.getMainCamera();
-        PoseStack poseStack = event.getPoseStack();
-        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-
+        PoseStack ps = event.getPoseStack();
+        MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
         if (target instanceof TargetResult.EntityTarget et) {
-            Vec3 end = et.entity().getBoundingBox().getCenter();
-            renderTargetArc(poseStack, bufferSource, camera,
-                    mc.player, end, selectedType, partialTick, false);
+            renderEntityArc(ps, buf, camera, mc.player, et, selectedType, partialTick);
         } else if (target instanceof TargetResult.BlockTarget bt) {
-            Vec3 end = Vec3.atCenterOf(bt.pos())
-                    .add(bt.face().getUnitVec3().scale(FACE_CENTER_OFFSET));
-            renderTargetArc(poseStack, bufferSource, camera,
-                    mc.player, end, selectedType, partialTick, bt.grannyArc());
-            renderBlockFace(poseStack, bufferSource, camera, bt.pos(),
-                    bt.face(), selectedType);
+            renderBlockArcAndFace(ps, buf, camera, mc.player, bt, selectedType, partialTick);
         }
+    }
+
+    /**
+     * Renders the dashed arc toward an entity target.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the render camera
+     * @param player       the local player
+     * @param et           the entity target
+     * @param gooType      the goo type for coloring
+     * @param partialTick  the partial tick for animation
+     */
+    private static void renderEntityArc(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, Player player, TargetResult.EntityTarget et,
+            GooType gooType, float partialTick) {
+        Vec3 end = et.entity().getBoundingBox().getCenter();
+        renderTargetArc(poseStack, bufferSource, camera,
+                player, end, gooType, partialTick, false);
+    }
+
+    /**
+     * Renders the dashed arc and face highlight for a block target.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the render camera
+     * @param player       the local player
+     * @param bt           the block target
+     * @param gooType      the goo type for coloring
+     * @param partialTick  the partial tick for animation
+     */
+    private static void renderBlockArcAndFace(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, Player player, TargetResult.BlockTarget bt,
+            GooType gooType, float partialTick) {
+        Vec3 end = Vec3.atCenterOf(bt.pos())
+                .add(bt.face().getUnitVec3().scale(FACE_CENTER_OFFSET));
+        renderTargetArc(poseStack, bufferSource, camera,
+                player, end, gooType, partialTick, bt.grannyArc());
+        renderBlockFace(poseStack, bufferSource, camera,
+                bt.pos(), bt.face(), gooType);
     }
 
     /**
@@ -303,30 +411,60 @@ public final class GooTargetHighlighter {
      * @return true if lineOfSight is present
      */
     private static boolean hasLineOfSight(Level level, Player player, Vec3 eyePos, Entity target) {
-        AABB box = target.getBoundingBox();
-        double cx = (box.minX + box.maxX) * CENTER_HALF;
-        double cy = (box.minY + box.maxY) * CENTER_HALF;
-        double cz = (box.minZ + box.maxZ) * CENTER_HALF;
-
-        // 7 sample points: center + 6 face centers (inset to avoid edge issues)
-        Vec3[] samples = {
-            new Vec3(cx, cy, cz),
-            new Vec3(cx, box.maxY - LOS_INSET, cz),  // top
-            new Vec3(cx, box.minY + LOS_INSET, cz),  // bottom
-            new Vec3(box.minX + LOS_INSET, cy, cz),  // west
-            new Vec3(box.maxX - LOS_INSET, cy, cz),  // east
-            new Vec3(cx, cy, box.minZ + LOS_INSET),   // north
-            new Vec3(cx, cy, box.maxZ - LOS_INSET),   // south
-        };
-
+        Vec3[] samples = buildLosSamples(target.getBoundingBox());
         for (Vec3 sample : samples) {
-            BlockHitResult hit = level.clip(new ClipContext(
-                    eyePos, sample, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-            if (hit.getType() == HitResult.Type.MISS) {
-                return true; // clear sightline - no need to check remaining samples
+            if (isClearRay(level, player, eyePos, sample)) {
+                return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Returns true if a ray from origin to target misses all blocks (clear sightline).
+     *
+     * @param level  the current level
+     * @param player the aiming player
+     * @param from   ray origin
+     * @param to     ray target
+     * @return true if no block intersection
+     */
+    private static boolean isClearRay(Level level, Player player, Vec3 from, Vec3 to) {
+        BlockHitResult hit = level.clip(new ClipContext(
+                from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        return hit.getType() == HitResult.Type.MISS;
+    }
+
+    /**
+     * Builds 7 sample points on an AABB: center plus 6 inset face centers.
+     *
+     * @param box the entity bounding box
+     * @return sample points for line-of-sight raycasts
+     */
+    private static Vec3[] buildLosSamples(AABB box) {
+        Vec3 c = box.getCenter();
+        Vec3 top = new Vec3(c.x, box.maxY - LOS_INSET, c.z);
+        Vec3 bottom = new Vec3(c.x, box.minY + LOS_INSET, c.z);
+        Vec3[] axis = buildAxisSamples(box, c);
+        return new Vec3[] {
+            c, top, bottom, axis[AXIS_WEST], axis[AXIS_EAST], axis[AXIS_NORTH], axis[AXIS_SOUTH],
+        };
+    }
+
+    /**
+     * Builds the 4 horizontal axis face-center samples (west, east, north, south).
+     *
+     * @param box    the entity bounding box
+     * @param center the box center
+     * @return array of [west, east, north, south] samples
+     */
+    private static Vec3[] buildAxisSamples(AABB box, Vec3 center) {
+        return new Vec3[] {
+            new Vec3(box.minX + LOS_INSET, center.y, center.z),
+            new Vec3(box.maxX - LOS_INSET, center.y, center.z),
+            new Vec3(center.x, center.y, box.minZ + LOS_INSET),
+            new Vec3(center.x, center.y, box.maxZ - LOS_INSET),
+        };
     }
 
     // --- Entity raytrace with aim assist ---
@@ -393,20 +531,60 @@ public final class GooTargetHighlighter {
      */
     private static @Nullable Entity findExactRaytraceHit(
             List<Entity> candidates, Level level, Player player, Vec3 from, Vec3 to) {
-        Entity best = null;
-        double bestDist = Double.MAX_VALUE;
-        for (Entity entity : candidates) {
-            AABB entityBox = entity.getBoundingBox().inflate(entity.getPickRadius());
-            Optional<Vec3> clip = entityBox.clip(from, to);
-            if (clip.isPresent() && hasLineOfSight(level, player, from, entity)) {
-                double dist = from.distanceToSqr(clip.get());
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    best = entity;
-                }
-            }
+        return closestByDistance(candidates, e -> exactHitDistance(e, level, player, from, to));
+    }
+
+    /**
+     * Returns the entity with the smallest distance from a distance function,
+     * or null if all return MAX_VALUE.
+     *
+     * @param candidates the entity candidates
+     * @param distFn     distance function (MAX_VALUE means skip)
+     * @return the closest entity, or null
+     */
+    private static @Nullable Entity closestByDistance(
+            List<Entity> candidates, ToDoubleFunction<Entity> distFn) {
+        double[] bestDist = {Double.MAX_VALUE};
+        Entity[] best = {null};
+        candidates.forEach(e -> updateNearest(e, distFn.applyAsDouble(e), bestDist, best));
+        return best[0];
+    }
+
+    /**
+     * Updates the nearest-entity tracking arrays if this entity is closer.
+     *
+     * @param entity   the candidate
+     * @param dist     the computed distance
+     * @param bestDist single-element array holding the best distance
+     * @param best     single-element array holding the best entity
+     */
+    private static void updateNearest(
+            Entity entity, double dist, double[] bestDist, Entity[] best) {
+        if (dist < bestDist[0]) {
+            bestDist[0] = dist;
+            best[0] = entity;
         }
-        return best;
+    }
+
+    /**
+     * Returns the squared distance of an exact raytrace hit, or MAX_VALUE if
+     * the ray misses or line-of-sight is blocked.
+     *
+     * @param entity the candidate entity
+     * @param level  the current level
+     * @param player the aiming player
+     * @param from   ray start
+     * @param to     ray end
+     * @return squared hit distance, or Double.MAX_VALUE if no hit
+     */
+    private static double exactHitDistance(
+            Entity entity, Level level, Player player, Vec3 from, Vec3 to) {
+        AABB box = entity.getBoundingBox().inflate(entity.getPickRadius());
+        Optional<Vec3> clip = box.clip(from, to);
+        if (clip.isPresent() && hasLineOfSight(level, player, from, entity)) {
+            return from.distanceToSqr(clip.get());
+        }
+        return Double.MAX_VALUE;
     }
 
     /**
@@ -422,19 +600,52 @@ public final class GooTargetHighlighter {
      */
     private static @Nullable Entity findBestConeTarget(
             List<Entity> candidates, Level level, Player player, Vec3 from, Vec3 lookDir) {
-        Entity best = null;
-        double bestAngle = AIM_ASSIST_COS;
+        double[] bestAngle = {AIM_ASSIST_COS};
+        Entity[] best = {null};
         for (Entity entity : candidates) {
-            Vec3 toEntity = entity.getBoundingBox().getCenter().subtract(from);
-            double dist = toEntity.length();
-            if (dist < CENTER_HALF || dist > MAX_RANGE) { continue; }
-            double cos = lookDir.dot(toEntity.normalize());
-            if (cos > bestAngle && hasLineOfSight(level, player, from, entity)) {
-                bestAngle = cos;
-                best = entity;
-            }
+            double cos = coneAngle(entity, from, lookDir, level, player);
+            updateBestAngle(entity, cos, bestAngle, best);
         }
-        return best;
+        return best[0];
+    }
+
+    /**
+     * Updates the best-angle tracking arrays if this entity has a higher cosine.
+     *
+     * @param entity    the candidate
+     * @param cos       the computed cosine angle
+     * @param bestAngle single-element array holding the best cosine
+     * @param best      single-element array holding the best entity
+     */
+    private static void updateBestAngle(
+            Entity entity, double cos, double[] bestAngle, Entity[] best) {
+        if (cos > bestAngle[0]) {
+            bestAngle[0] = cos;
+            best[0] = entity;
+        }
+    }
+
+    /**
+     * Returns the cosine of the angle between the look direction and the entity,
+     * or -1 if the entity is out of range or occluded.
+     *
+     * @param entity  the candidate entity
+     * @param from    ray start
+     * @param lookDir normalized look direction
+     * @param level   the current level
+     * @param player  the aiming player
+     * @return cosine of the angle, or NO_CONE_ANGLE if invalid
+     */
+    private static double coneAngle(
+            Entity entity, Vec3 from, Vec3 lookDir, Level level, Player player) {
+        Vec3 toEntity = entity.getBoundingBox().getCenter().subtract(from);
+        double dist = toEntity.length();
+        if (dist < CENTER_HALF || dist > MAX_RANGE) { return NO_CONE_ANGLE; }
+        double cos = lookDir.dot(toEntity.normalize());
+        if (cos > AIM_ASSIST_COS && hasLineOfSight(level, player, from, entity)) {
+            return cos;
+        }
+        return NO_CONE_ANGLE;
     }
 
     /**
@@ -454,16 +665,26 @@ public final class GooTargetHighlighter {
             Vec3 from, Vec3 lookDir, @Nullable Entity bestCone) {
         if (targetedEntity == null || targetedEntity == bestCone) { return null; }
         if (!targetedEntity.isAlive() || !candidates.contains(targetedEntity)) { return null; }
+        if (isInStickyCone(level, player, from, lookDir)) { return targetedEntity; }
+        return null;
+    }
 
+    /**
+     * Returns true if the previous target is within range, inside the sticky cone, and visible.
+     *
+     * @param level   the current level
+     * @param player  the aiming player
+     * @param from    ray start
+     * @param lookDir normalized look direction
+     * @return true if the previous target should be retained
+     */
+    private static boolean isInStickyCone(Level level, Player player, Vec3 from, Vec3 lookDir) {
         Vec3 toPrev = targetedEntity.getBoundingBox().getCenter().subtract(from);
         double prevDist = toPrev.length();
-        if (prevDist <= CENTER_HALF || prevDist > MAX_RANGE) { return null; }
-
+        if (prevDist <= CENTER_HALF || prevDist > MAX_RANGE) { return false; }
         double prevCos = lookDir.dot(toPrev.normalize());
-        if (prevCos > STICKY_COS && hasLineOfSight(level, player, from, targetedEntity)) {
-            return targetedEntity;
-        }
-        return null;
+        return prevCos > STICKY_COS
+                && hasLineOfSight(level, player, from, targetedEntity);
     }
 
     /**
@@ -484,23 +705,56 @@ public final class GooTargetHighlighter {
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Player player, Vec3 end,
             GooType gooType, float partialTick, boolean grannyArc) {
-
         Vec3 start = getGloveHandPosition(player, camera);
+        Vec3[] points = sampleArcPoints(start, end, grannyArc);
+        float dashOffset = computeDashOffset(partialTick);
+        Minecraft mc = Minecraft.getInstance();
+        emitDashedGlow(poseStack, bufferSource, camera, points,
+                points.length - 1, gooType.getColor(), dashOffset,
+                mc.getWindow().getAppropriateLineWidth());
+    }
+
+    /**
+     * Samples the throw arc polyline from start to end.
+     *
+     * @param start     arc origin (hand position)
+     * @param end       arc destination (target center)
+     * @param grannyArc true for boosted granny-arc peak height
+     * @return sampled polyline points
+     */
+    private static Vec3[] sampleArcPoints(Vec3 start, Vec3 end, boolean grannyArc) {
         double distance = start.distanceTo(end);
         double travelTicks = ThrowArc.travelTicks(distance);
-        double peak = grannyArc
+        double peak = computeArcPeak(travelTicks, grannyArc);
+        int segments = Mth.clamp(
+                (int) (distance / SAMPLE_SPACING),
+                MIN_ARC_SEGMENTS, MAX_ARC_SEGMENTS);
+        return ThrowArc.sampleArc(start, end, peak, segments);
+    }
+
+    /**
+     * Selects the arc peak height based on whether this is a granny arc.
+     *
+     * @param travelTicks estimated travel time in ticks
+     * @param grannyArc   true for boosted granny-arc peak
+     * @return the arc peak height
+     */
+    private static double computeArcPeak(double travelTicks, boolean grannyArc) {
+        return grannyArc
                 ? ThrowArc.grannyPeak(travelTicks)
                 : ThrowArc.basePeak(travelTicks);
-        int segments = Mth.clamp((int) (distance / SAMPLE_SPACING), MIN_ARC_SEGMENTS, MAX_ARC_SEGMENTS);
-        Vec3[] points = ThrowArc.sampleArc(start, end, peak, segments);
+    }
 
+    /**
+     * Computes the scrolling dash offset based on game time.
+     *
+     * @param partialTick the partial tick for smooth animation
+     * @return dash offset in world units
+     */
+    private static float computeDashOffset(float partialTick) {
         Minecraft mc = Minecraft.getInstance();
-        float dashOffset = (mc.level.getGameTime() + partialTick)
+        return (mc.level.getGameTime() + partialTick)
                 / TICKS_PER_SECOND * SCROLL_SPEED;
-
-        emitDashedGlow(poseStack, bufferSource, camera, points,
-                segments, gooType.getColor(), dashOffset,
-                mc.getWindow().getAppropriateLineWidth());
     }
 
     /**
@@ -519,19 +773,27 @@ public final class GooTargetHighlighter {
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Vec3[] points, int segments,
             int rgb, float dashOffset, float baseWidth) {
-
         Vec3 cam = camera.position();
         VertexConsumer line = bufferSource.getBuffer(GooRenderTypes.LINES_GLOW);
-
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
-            float alphaScale = (float) Math.pow(ARC_GLOW_ALPHA_DECAY, pass);
-            int alpha = Mth.clamp((int) (ARC_ALPHA * alphaScale), 0, MAX_ALPHA);
-            int color = ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
-            float width = baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP);
             emitDashedPass(poseStack, line, cam, points, segments,
-                    dashOffset, color, width);
+                    dashOffset, computeGlowPassColor(rgb, pass),
+                    baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP));
         }
         bufferSource.endLastBatch();
+    }
+
+    /**
+     * Computes the ARGB color for a bloom pass with exponential alpha decay.
+     *
+     * @param rgb  the base RGB color
+     * @param pass the bloom pass index (0 = core, higher = dimmer)
+     * @return the ARGB color with decayed alpha
+     */
+    private static int computeGlowPassColor(int rgb, int pass) {
+        float alphaScale = (float) Math.pow(ARC_GLOW_ALPHA_DECAY, pass);
+        int alpha = Mth.clamp((int) (ARC_ALPHA * alphaScale), 0, MAX_ALPHA);
+        return colorWithAlpha(rgb, alpha);
     }
 
     /**
@@ -550,20 +812,40 @@ public final class GooTargetHighlighter {
             PoseStack poseStack, VertexConsumer line, Vec3 cam,
             Vec3[] points, int segments,
             float dashOffset, int color, float width) {
-
         float arcLen = 0f;
         for (int i = 0; i < segments; i++) {
-            Vec3 a = points[i];
-            Vec3 b = points[i + 1];
-            float segLen = (float) a.distanceTo(b);
-            if (isDashOn(arcLen + segLen * DASH_MID, dashOffset)) {
-                SlotOutlineRenderer.emitEdge(poseStack, line,
-                        a.x - cam.x, a.y - cam.y, a.z - cam.z,
-                        b.x - cam.x, b.y - cam.y, b.z - cam.z,
-                        color, width);
-            }
-            arcLen += segLen;
+            arcLen = emitDashSegment(poseStack, line, cam,
+                    points[i], points[i + 1],
+                    arcLen, dashOffset, color, width);
         }
+    }
+
+    /**
+     * Emits a single dash segment if it falls in the "on" phase of the pattern.
+     *
+     * @param poseStack  the pose stack
+     * @param line       the vertex consumer
+     * @param cam        camera position
+     * @param a          segment start
+     * @param b          segment end
+     * @param arcLen     accumulated arc length before this segment
+     * @param dashOffset the dash scroll offset
+     * @param color      the ARGB color
+     * @param width      the line width
+     * @return the updated accumulated arc length
+     */
+    private static float emitDashSegment(
+            PoseStack poseStack, VertexConsumer line, Vec3 cam,
+            Vec3 a, Vec3 b, float arcLen,
+            float dashOffset, int color, float width) {
+        float segLen = (float) a.distanceTo(b);
+        if (isDashOn(arcLen + segLen * DASH_MID, dashOffset)) {
+            SlotOutlineRenderer.emitEdge(poseStack, line,
+                    a.x - cam.x, a.y - cam.y, a.z - cam.z,
+                    b.x - cam.x, b.y - cam.y, b.z - cam.z,
+                    color, width);
+        }
+        return arcLen + segLen;
     }
 
     /**
@@ -597,42 +879,163 @@ public final class GooTargetHighlighter {
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, BlockPos pos, Direction face, GooType type) {
         Minecraft mc = Minecraft.getInstance();
-        BlockState state = mc.level.getBlockState(pos);
-        VoxelShape shape = state.getShape(mc.level, pos);
+        VoxelShape shape = mc.level.getBlockState(pos).getShape(mc.level, pos);
         if (shape.isEmpty()) { return; }
-
+        Vec3 offset = cameraOffset(pos, camera);
         int rgb = type.getColor();
-        int fillColor = ARGB.color(FACE_ALPHA, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
-        int wireColor = ARGB.color(WIRE_ALPHA, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, rgb);
+        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, rgb);
+    }
 
-        double ox = pos.getX() - camera.position().x;
-        double oy = pos.getY() - camera.position().y;
-        double oz = pos.getZ() - camera.position().z;
+    /**
+     * Computes the camera-relative offset for a block position.
+     *
+     * @param pos    the block position
+     * @param camera the render camera
+     * @return the camera-relative offset vector
+     */
+    private static Vec3 cameraOffset(BlockPos pos, Camera camera) {
+        return new Vec3(
+                pos.getX() - camera.position().x,
+                pos.getY() - camera.position().y,
+                pos.getZ() - camera.position().z);
+    }
 
-        // Translucent box fill for each AABB in the shape
-        VertexConsumer quadConsumer = bufferSource.getBuffer(RenderTypes.debugQuads());
+    /**
+     * Emits translucent fill quads for every AABB in the voxel shape.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param shape        the block's voxel shape
+     * @param ox           camera-relative X offset
+     * @param oy           camera-relative Y offset
+     * @param oz           camera-relative Z offset
+     * @param rgb          the RGB color value
+     */
+    private static void emitFillBoxes(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            VoxelShape shape, double ox, double oy, double oz, int rgb) {
+        int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
+        VertexConsumer quad = bufferSource.getBuffer(RenderTypes.debugQuads());
         PoseStack.Pose pose = poseStack.last();
         shape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
-            float fx0 = (float) (ox + x0 - FACE_OFFSET);
-            float fy0 = (float) (oy + y0 - FACE_OFFSET);
-            float fz0 = (float) (oz + z0 - FACE_OFFSET);
-            float fx1 = (float) (ox + x1 + FACE_OFFSET);
-            float fy1 = (float) (oy + y1 + FACE_OFFSET);
-            float fz1 = (float) (oz + z1 + FACE_OFFSET);
-            emitBox(pose, quadConsumer, fx0, fy0, fz0, fx1, fy1, fz1, fillColor);
+            emitOffsetBox(pose, quad, ox, oy, oz, x0, y0, z0, x1, y1, z1, fillColor);
         });
         bufferSource.endLastBatch();
+    }
 
-        // Wireframe edges along the shape outline
+    /**
+     * Creates an ARGB color from an RGB value and alpha channel.
+     *
+     * @param rgb   the RGB color
+     * @param alpha the alpha value (0-255)
+     * @return the ARGB color
+     */
+    private static int colorWithAlpha(int rgb, int alpha) {
+        return ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+    }
+
+    /**
+     * Computes camera-relative face-offset coords and emits a box.
+     *
+     * @param pose     the pose matrix entry
+     * @param consumer the vertex consumer
+     * @param ox       camera-relative X offset
+     * @param oy       camera-relative Y offset
+     * @param oz       camera-relative Z offset
+     * @param x0       shape-local min X
+     * @param y0       shape-local min Y
+     * @param z0       shape-local min Z
+     * @param x1       shape-local max X
+     * @param y1       shape-local max Y
+     * @param z1       shape-local max Z
+     * @param color    the ARGB color
+     */
+    private static void emitOffsetBox(
+            PoseStack.Pose pose, VertexConsumer consumer,
+            double ox, double oy, double oz,
+            double x0, double y0, double z0,
+            double x1, double y1, double z1, int color) {
+        emitBox(pose, consumer,
+                offsetMin(ox, x0), offsetMin(oy, y0), offsetMin(oz, z0),
+                offsetMax(ox, x1), offsetMax(oy, y1), offsetMax(oz, z1),
+                color);
+    }
+
+    /**
+     * Computes a camera-relative coordinate with inward face offset for the minimum bound.
+     *
+     * @param camOffset camera-relative offset for this axis
+     * @param coord     shape-local coordinate
+     * @return the offset float coordinate
+     */
+    private static float offsetMin(double camOffset, double coord) {
+        return (float) (camOffset + coord - FACE_OFFSET);
+    }
+
+    /**
+     * Computes a camera-relative coordinate with outward face offset for the maximum bound.
+     *
+     * @param camOffset camera-relative offset for this axis
+     * @param coord     shape-local coordinate
+     * @return the offset float coordinate
+     */
+    private static float offsetMax(double camOffset, double coord) {
+        return (float) (camOffset + coord + FACE_OFFSET);
+    }
+
+    /**
+     * Emits wireframe edges along the shape outline.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param mc           the Minecraft instance
+     * @param shape        the block's voxel shape
+     * @param ox           camera-relative X offset
+     * @param oy           camera-relative Y offset
+     * @param oz           camera-relative Z offset
+     * @param rgb          the RGB color value
+     */
+    private static void emitWireframeEdges(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Minecraft mc, VoxelShape shape,
+            double ox, double oy, double oz, int rgb) {
+        int wireColor = colorWithAlpha(rgb, WIRE_ALPHA);
         float lineWidth = mc.getWindow().getAppropriateLineWidth();
-        VertexConsumer lineConsumer = bufferSource.getBuffer(RenderTypes.lines());
-        shape.forAllEdges((x0, y0, z0, x1, y1, z1) -> {
-            SlotOutlineRenderer.emitEdge(poseStack, lineConsumer,
+        VertexConsumer line = bufferSource.getBuffer(RenderTypes.lines());
+        shape.forAllEdges((x0, y0, z0, x1, y1, z1) ->
+            emitEdgeOffset(poseStack, line, ox, oy, oz,
+                    x0, y0, z0, x1, y1, z1, wireColor, lineWidth));
+        bufferSource.endLastBatch();
+    }
+
+    /**
+     * Emits a single wireframe edge with camera-relative offsets applied.
+     *
+     * @param poseStack the pose stack
+     * @param line      the vertex consumer
+     * @param ox        camera-relative X offset
+     * @param oy        camera-relative Y offset
+     * @param oz        camera-relative Z offset
+     * @param x0        edge start X
+     * @param y0        edge start Y
+     * @param z0        edge start Z
+     * @param x1        edge end X
+     * @param y1        edge end Y
+     * @param z1        edge end Z
+     * @param color     the ARGB color
+     * @param width     the line width
+     */
+    private static void emitEdgeOffset(
+            PoseStack poseStack, VertexConsumer line,
+            double ox, double oy, double oz,
+            double x0, double y0, double z0,
+            double x1, double y1, double z1,
+            int color, float width) {
+        SlotOutlineRenderer.emitEdge(poseStack, line,
                 ox + x0, oy + y0, oz + z0,
                 ox + x1, oy + y1, oz + z1,
-                wireColor, lineWidth);
-        });
-        bufferSource.endLastBatch();
+                color, width);
     }
 
     /**
@@ -650,32 +1053,134 @@ public final class GooTargetHighlighter {
      */
     private static void emitBox(PoseStack.Pose pose, VertexConsumer c,
             float x0, float y0, float z0, float x1, float y1, float z1, int color) {
-        // Up (+Y)
+        emitFaceUp(pose, c, x0, y0, z0, x1, y1, z1, color);
+        emitFaceDown(pose, c, x0, y0, z0, x1, y1, z1, color);
+        emitFaceNorth(pose, c, x0, y0, z0, x1, y1, z1, color);
+        emitFaceSouth(pose, c, x0, y0, z0, x1, y1, z1, color);
+        emitFaceWest(pose, c, x0, y0, z0, x1, y1, z1, color);
+        emitFaceEast(pose, c, x0, y0, z0, x1, y1, z1, color);
+    }
+
+    /**
+     * Emits the +Y face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceUp(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x0, y1, z0).setColor(color);
         c.addVertex(pose, x0, y1, z1).setColor(color);
         c.addVertex(pose, x1, y1, z1).setColor(color);
         c.addVertex(pose, x1, y1, z0).setColor(color);
-        // Down (-Y)
+    }
+
+    /**
+     * Emits the -Y face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceDown(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x0, y0, z1).setColor(color);
         c.addVertex(pose, x0, y0, z0).setColor(color);
         c.addVertex(pose, x1, y0, z0).setColor(color);
         c.addVertex(pose, x1, y0, z1).setColor(color);
-        // North (-Z)
+    }
+
+    /**
+     * Emits the -Z face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceNorth(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x0, y0, z0).setColor(color);
         c.addVertex(pose, x0, y1, z0).setColor(color);
         c.addVertex(pose, x1, y1, z0).setColor(color);
         c.addVertex(pose, x1, y0, z0).setColor(color);
-        // South (+Z)
+    }
+
+    /**
+     * Emits the +Z face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceSouth(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x1, y0, z1).setColor(color);
         c.addVertex(pose, x1, y1, z1).setColor(color);
         c.addVertex(pose, x0, y1, z1).setColor(color);
         c.addVertex(pose, x0, y0, z1).setColor(color);
-        // West (-X)
+    }
+
+    /**
+     * Emits the -X face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceWest(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x0, y0, z1).setColor(color);
         c.addVertex(pose, x0, y1, z1).setColor(color);
         c.addVertex(pose, x0, y1, z0).setColor(color);
         c.addVertex(pose, x0, y0, z0).setColor(color);
-        // East (+X)
+    }
+
+    /**
+     * Emits the +X face quad.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer
+     * @param x0    min X
+     * @param y0    min Y
+     * @param z0    min Z
+     * @param x1    max X
+     * @param y1    max Y
+     * @param z1    max Z
+     * @param color the ARGB color
+     */
+    private static void emitFaceEast(PoseStack.Pose pose, VertexConsumer c,
+            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
         c.addVertex(pose, x1, y0, z0).setColor(color);
         c.addVertex(pose, x1, y1, z0).setColor(color);
         c.addVertex(pose, x1, y1, z1).setColor(color);
@@ -700,10 +1205,20 @@ public final class GooTargetHighlighter {
         if (captured != null) {
             return camera.position().add(captured);
         }
-        // Fallback: camera-basis offset via ThrowArc pure math
+        return computeCameraFallback(player, camera);
+    }
+
+    /**
+     * Computes a camera-basis hand position when the blob wasn't rendered this frame.
+     *
+     * @param player the local player
+     * @param camera the render camera
+     * @return the fallback hand position in world space
+     */
+    private static Vec3 computeCameraFallback(Player player, Camera camera) {
         float side = ThrowArc.gloveSide(player.getMainHandItem(), player.getMainArm());
-        org.joml.Vector3fc left = camera.leftVector();
-        org.joml.Vector3fc up = camera.upVector();
+        Vector3fc left = camera.leftVector();
+        Vector3fc up = camera.upVector();
         Vec3 offset = ThrowArc.handOffset(
                 new Vec3(-left.x(), -left.y(), -left.z()),
                 new Vec3(up.x(), up.y(), up.z()),
