@@ -269,9 +269,9 @@ public class TapBlock extends BaseEntityBlock {
         return switch (interaction) {
             case TUNER_PASS      -> throw new IllegalStateException(ERR_TUNER_PASS);
             case CANISTER_INSERT -> InteractionResult.TRY_WITH_EMPTY_HAND;
-            case BLOB_INSERT     -> handleBlobInsert(tap, stack, player, level, pos);
-            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand, level, pos);
-            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player, level, pos);
+            case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
+            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
+            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
         };
     }
 
@@ -292,10 +292,10 @@ public class TapBlock extends BaseEntityBlock {
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
         return switch (interaction) {
             case TUNER_PASS      -> throw new IllegalStateException(ERR_TUNER_PASS);
-            case CANISTER_INSERT -> handleCanisterInsert(tap, stack, player, level, pos);
-            case BLOB_INSERT     -> handleBlobInsert(tap, stack, player, level, pos);
-            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand, level, pos);
-            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player, level, pos);
+            case CANISTER_INSERT -> handleCanisterInsert(tap, stack, player);
+            case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
+            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
+            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
         };
     }
 
@@ -367,17 +367,15 @@ public class TapBlock extends BaseEntityBlock {
      * @param tap    the tap block entity
      * @param stack  the item stack
      * @param player the interacting player
-     * @param level  the current level
-     * @param pos    the block position
      * @return the interaction result
      */
     private static InteractionResult handleCanisterInsert(
-            TapBlockEntity tap, ItemStack stack, Player player, Level level, BlockPos pos) {
+            TapBlockEntity tap, ItemStack stack, Player player) {
         if (!tap.insertCanister(stack.copyWithCount(1))) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         stack.consume(1, player);
-        level.playSound(null, pos, SoundEvents.DECORATED_POT_INSERT,
+        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.DECORATED_POT_INSERT,
             SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
@@ -387,12 +385,10 @@ public class TapBlock extends BaseEntityBlock {
      * @param tap    the tap block entity
      * @param stack  the item stack
      * @param player the interacting player
-     * @param level  the current level
-     * @param pos    the block position
      * @return the interaction result
      */
     private static InteractionResult handleBlobInsert(
-            TapBlockEntity tap, ItemStack stack, Player player, Level level, BlockPos pos) {
+            TapBlockEntity tap, ItemStack stack, Player player) {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null || !tap.canAcceptGoo()) { return InteractionResult.PASS; }
 
@@ -401,7 +397,7 @@ public class TapBlock extends BaseEntityBlock {
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -411,13 +407,10 @@ public class TapBlock extends BaseEntityBlock {
      * @param stack  the item stack
      * @param player the interacting player
      * @param hand   the hand used
-     * @param level  the current level
-     * @param pos    the block position
      * @return the interaction result
      */
     private static InteractionResult handleBucketInsert(
-            TapBlockEntity tap, ItemStack stack, Player player, InteractionHand hand,
-            Level level, BlockPos pos) {
+            TapBlockEntity tap, ItemStack stack, Player player, InteractionHand hand) {
         GooContents bucketGoo = BucketOfGooItem.getContents(stack);
         if (bucketGoo.isEmpty() || !tap.canAcceptGoo()) { return InteractionResult.PASS; }
 
@@ -434,7 +427,7 @@ public class TapBlock extends BaseEntityBlock {
         if (!inserted) { return InteractionResult.PASS; }
 
         BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -443,12 +436,10 @@ public class TapBlock extends BaseEntityBlock {
      * @param tap    the tap block entity
      * @param stack  the item stack
      * @param player the interacting player
-     * @param level  the current level
-     * @param pos    the block position
      * @return the interaction result
      */
     private static InteractionResult handleBucketExtract(
-            TapBlockEntity tap, ItemStack stack, Player player, Level level, BlockPos pos) {
+            TapBlockEntity tap, ItemStack stack, Player player) {
         GooContents contents = tap.getGooContents();
         GooType type = contents.largestType();
         if (type == null) { return InteractionResult.PASS; }
@@ -459,7 +450,7 @@ public class TapBlock extends BaseEntityBlock {
         ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
         stack.shrink(1);
         PlayerUtils.addOrDrop(player, filledBucket);
-        level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 

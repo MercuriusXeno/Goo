@@ -69,95 +69,148 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     public @NonNull InteractionResult useOn(@NonNull UseOnContext context) {
         Level level = context.getLevel();
         BlockPos clickedPos = context.getClickedPos();
-
-        if (level.getBlockState(clickedPos).getBlock() instanceof CanisterBlock) {
-            return insertIntoExisting(context, level, clickedPos);
+        if (isCanisterBlock(level, clickedPos)) {
+            return tryInsertCanister(context, level, clickedPos, context.getClickedFace());
         }
+        return useOnNonCanister(context, level, clickedPos);
+    }
 
+    /**
+     * Handles use-on when the clicked block is not a canister (place-through or new placement).
+     *
+     * @param context    the use-on context
+     * @param level      the current level
+     * @param clickedPos the originally clicked block position
+     * @return the interaction result
+     */
+    private InteractionResult useOnNonCanister(UseOnContext context, Level level, BlockPos clickedPos) {
         BlockPos placePos = clickedPos.relative(context.getClickedFace());
-        if (level.getBlockState(placePos).getBlock() instanceof CanisterBlock) {
-            return insertIntoExistingFromBehind(context, level, placePos);
+        if (isCanisterBlock(level, placePos)) {
+            return tryInsertCanister(context, level, placePos, context.getClickedFace().getOpposite());
         }
+        return placeNewCanister(context, level, placePos);
+    }
 
-        // Validate support below before placing a new canister block
-        BlockPos placeTarget = clickedPos.relative(context.getClickedFace());
-        if (!isSupportedBelow(level, placeTarget.below())) {
-            return InteractionResult.PASS;
-        }
-
-        InteractionResult result = super.useOn(context);
-        if (result.consumesAction() && !level.isClientSide()
-                && context.getPlayer() != null && context.getPlayer().isCreative()) {
-            context.getItemInHand().shrink(1);
-        }
-        return result;
+    /**
+     * Returns true if the block at the given position is a canister block.
+     *
+     * @param level the current level
+     * @param pos   the block position to check
+     * @return true if the block is a canister block
+     */
+    private static boolean isCanisterBlock(Level level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof CanisterBlock;
     }
 
     // --- Insertion logic ---
 
     /**
-     * Inserts this canister into an existing canister block's grid (direct hit).
+     * Validates and places a new canister block, checking support below.
      *
-     * @param context the use-on context
-     * @param level   the current level
-     * @param pos     the canister block position
+     * @param context  the use-on context
+     * @param level    the current level
+     * @param placePos the target placement position
      * @return the interaction result
      */
-    private InteractionResult insertIntoExisting(
-            UseOnContext context, Level level, BlockPos pos) {
-        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+    private InteractionResult placeNewCanister(UseOnContext context, Level level, BlockPos placePos) {
+        if (!isSupportedBelow(level, placePos.below())) {
             return InteractionResult.PASS;
         }
 
+        InteractionResult result = super.useOn(context);
+        shrinkInCreative(result, context, level);
+        return result;
+    }
+
+    /**
+     * Shrinks the held item in creative mode after a successful placement.
+     *
+     * @param result  the placement result
+     * @param context the use-on context
+     * @param level   the current level
+     */
+    private static void shrinkInCreative(InteractionResult result, UseOnContext context, Level level) {
+        if (result.consumesAction() && !level.isClientSide()
+                && context.getPlayer() != null && context.getPlayer().isCreative()) {
+            context.getItemInHand().shrink(1);
+        }
+    }
+
+    /**
+     * Inserts this canister into an existing canister block's grid.
+     * Handles both direct hits and click-through: entryFace determines
+     * which face the slot resolves against.
+     *
+     * @param context   the use-on context
+     * @param level     the current level
+     * @param pos       the canister block position
+     * @param entryFace the face used for slot resolution
+     * @return the interaction result
+     */
+    private InteractionResult tryInsertCanister(
+            UseOnContext context, Level level, BlockPos pos, Direction entryFace) {
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        if (!canInteract(context, level)) { return interactionGuardResult(context); }
+
+        var be = canisterEntityAt(level, pos);
+        if (be == null) { return InteractionResult.PASS; }
+
+        int slot = resolveAndConstrain(context.getClickLocation(), pos, entryFace, be);
+        if (slot < 0) { return InteractionResult.PASS; }
+        return commitInsertion(context, be, slot, level);
+    }
+
+    /**
+     * Returns the CanisterBlockEntity at the position, or null.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @return the canister block entity, or null if absent
+     */
+    private static @Nullable CanisterBlockEntity canisterEntityAt(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof CanisterBlockEntity be ? be : null;
+    }
+
+    /**
+     * Returns true if the player exists and is not on interaction cooldown.
+     *
+     * @param context the use-on context
+     * @param level   the current level
+     * @return true if the player can interact
+     */
+    private static boolean canInteract(UseOnContext context, Level level) {
+        Player player = context.getPlayer();
+        if (player == null) { return false; }
+        return !InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime());
+    }
+
+    /**
+     * Returns the correct guard result when canInteract fails.
+     *
+     * @param context the use-on context
+     * @return PASS if no player, SUCCESS if on cooldown
+     */
+    private static InteractionResult interactionGuardResult(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null) { return InteractionResult.PASS; }
-        if (InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime())) {
-            return InteractionResult.SUCCESS;
-        }
-
-        int slot = resolveConstrainedSlot(
-                context.getClickLocation(), pos, context.getClickedFace(), be, level);
-        if (slot < 0) { return InteractionResult.PASS; }
-
-        ItemStack stack = context.getItemInHand();
-        if (!be.insertCanister(slot, stack, player.isCreative())) { return InteractionResult.PASS; }
-        stack.shrink(1);
-        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
         return InteractionResult.SUCCESS;
     }
 
     /**
-     * Inserts into a canister block reached via click-through (the player
-     * clicked the block behind it). The entry face is the opposite of the
-     * clicked face so the slot resolves against the near side - matching
-     * the ghost preview position.
+     * Commits the canister insertion into a resolved slot.
      *
      * @param context the use-on context
+     * @param be      the canister block entity
+     * @param slot    the target slot index
      * @param level   the current level
-     * @param pos     the canister block position
      * @return the interaction result
      */
-    private InteractionResult insertIntoExistingFromBehind(
-            UseOnContext context, Level level, BlockPos pos) {
-        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
-            return InteractionResult.PASS;
-        }
-
+    private static InteractionResult commitInsertion(
+            UseOnContext context, CanisterBlockEntity be, int slot, Level level) {
         Player player = context.getPlayer();
-        if (player == null) { return InteractionResult.PASS; }
-        if (InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime())) {
-            return InteractionResult.SUCCESS;
-        }
-
-        Direction entryFace = context.getClickedFace().getOpposite();
-        int slot = resolveConstrainedSlot(
-                context.getClickLocation(), pos, entryFace, be, level);
-        if (slot < 0) { return InteractionResult.PASS; }
-
         ItemStack stack = context.getItemInHand();
-        if (!be.insertCanister(slot, stack, player.isCreative())) { return InteractionResult.PASS; }
+        boolean creative = player != null && player.isCreative();
+        if (!be.insertCanister(slot, stack, creative)) { return InteractionResult.PASS; }
         stack.shrink(1);
         InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
         return InteractionResult.SUCCESS;
@@ -182,19 +235,43 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         if (level.getBlockEntity(pos) instanceof CanisterBlockEntity be) {
-            int slot = computePlacementSlot(context);
-            // Constrain to allowed slots if block below is an attachment target
-            if (!isSlotAllowed(level, pos, slot)) {
-                java.util.Set<Integer> allowed = getAllowedSlots(level, pos);
-                slot = (allowed != null && !allowed.isEmpty())
-                    ? allowed.iterator().next() : slot;
-            }
-            boolean creative = context.getPlayer() != null && context.getPlayer().isCreative();
-            be.assignFromItemStack(slot, context.getItemInHand(), creative);
-            stampOwner(be, context.getPlayer());
-            popConflictingGaskets(level, pos);
+            initPlacedCanister(context, level, pos, be);
         }
         return true;
+    }
+
+    /**
+     * Assigns goo data, owner, and gasket cleanup after block placement.
+     *
+     * @param context the block placement context
+     * @param level   the current level
+     * @param pos     the canister block position
+     * @param be      the canister block entity
+     */
+    private void initPlacedCanister(
+            BlockPlaceContext context, Level level, BlockPos pos, CanisterBlockEntity be) {
+        int slot = constrainSlot(computePlacementSlot(context), level, pos);
+        boolean creative = context.getPlayer() != null && context.getPlayer().isCreative();
+        be.assignFromItemStack(slot, context.getItemInHand(), creative);
+        stampOwner(be, context.getPlayer());
+        popConflictingGaskets(level, pos);
+    }
+
+    /**
+     * Falls back to the first allowed slot if the target slot is disallowed.
+     *
+     * @param slot  the preferred slot index
+     * @param level the current level
+     * @param pos   the canister block position
+     * @return the constrained slot index
+     */
+    private static int constrainSlot(int slot, Level level, BlockPos pos) {
+        if (isSlotAllowed(level, pos, slot)) { return slot; }
+        java.util.Set<Integer> allowed = getAllowedSlots(level, pos);
+        if (allowed != null && !allowed.isEmpty()) {
+            return allowed.iterator().next();
+        }
+        return slot;
     }
 
     /**
@@ -258,35 +335,44 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
 
         if (slot >= 0 && be.getCanister(slot).isEmpty()) { return slot; }
 
+        return fallbackSlot(slot, px, pz, be);
+    }
+
+    /**
+     * Tries the adjacent slot by cursor lean, then falls back to the first empty.
+     *
+     * @param slot the targeted slot index
+     * @param px   the x pixel coordinate within the block
+     * @param pz   the z pixel coordinate within the block
+     * @param be   the canister block entity
+     * @return the fallback slot index, or -1 if all full
+     */
+    private static int fallbackSlot(int slot, float px, float pz, CanisterBlockEntity be) {
         if (slot >= 0) {
             int adjacent = CanisterSlotLayout.adjacentByCursorLean(slot, px, pz);
             if (be.getCanister(adjacent).isEmpty()) { return adjacent; }
         }
-
         return findFirstEmpty(be);
     }
 
     /**
-     * Resolves the best empty slot for insertion, constrained by the block
-     * below (if it implements ICanisterAttachable). Falls back to the first
-     * allowed empty slot if the targeted and adjacent slots are disallowed.
+     * Resolves the best empty slot, then constrains to allowed slots for
+     * the attachment target below.
      *
      * @param hitLocation the contact point from the hit result
      * @param pos         the canister block position
      * @param face        the face that was hit
      * @param be          the canister block entity
-     * @param level       the current level
      * @return constrained slot index, or -1 if none available
      */
-    private static int resolveConstrainedSlot(
-            Vec3 hitLocation, BlockPos pos, Direction face,
-            CanisterBlockEntity be, Level level) {
+    private static int resolveAndConstrain(
+            Vec3 hitLocation, BlockPos pos, Direction face, CanisterBlockEntity be) {
         int slot = resolveInsertionSlot(hitLocation, pos, face, be);
+        Level level = be.getLevel();
         if (slot >= 0 && isSlotAllowed(level, pos, slot)) { return slot; }
 
-        // Targeted slot is disallowed - find first allowed empty slot
         java.util.Set<Integer> allowed = getAllowedSlots(level, pos);
-        if (allowed == null) { return slot; } // no constraint, use original result
+        if (allowed == null) { return slot; }
         return findFirstAllowedEmpty(be, allowed);
     }
 
@@ -330,12 +416,22 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
         BlockPos belowPos = canisterPos.below();
         BlockEntity belowBe = level.getBlockEntity(belowPos);
         if (belowBe instanceof IGasketHolder holder) {
-            // Pop the RECEIVER gasket on the top face of the block below
-            java.util.UUID receiverGasketId = holder.getGasketId(GasketRole.RECEIVER);
-            if (receiverGasketId != null) {
-                GasketInstallation.popGasket(level, belowPos, receiverGasketId);
-                holder.clearGasket(GasketRole.RECEIVER);
-            }
+            popReceiverGasket(level, belowPos, holder);
+        }
+    }
+
+    /**
+     * Pops the RECEIVER gasket on the top face of the block below, if present.
+     *
+     * @param level  the current level
+     * @param pos    the gasket holder block position
+     * @param holder the gasket holder
+     */
+    private static void popReceiverGasket(Level level, BlockPos pos, IGasketHolder holder) {
+        java.util.UUID gasketId = holder.getGasketId(GasketRole.RECEIVER);
+        if (gasketId != null) {
+            GasketInstallation.popGasket(level, pos, gasketId);
+            holder.clearGasket(GasketRole.RECEIVER);
         }
     }
 
@@ -507,18 +603,45 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
             return handleEmptyCursorDrain(canister, cursorAccess);
         }
         if (action == ClickAction.PRIMARY) {
-            if (cursor.getItem() instanceof GooBlobItem) {
-                return handleBlobInsert(canister, cursor, cursorAccess);
-            }
-            if (cursor.getItem() instanceof GooOmniblobItem) {
-                return handleOmniblobInsert(canister, cursor, cursorAccess);
-            }
-            if (cursor.is(Items.BUCKET)) {
-                return handleBucketDrain(canister, cursor, cursorAccess);
-            }
-            if (cursor.getItem() instanceof BucketOfGooItem) {
-                return handlePartialBucketDrain(canister, cursor, cursorAccess);
-            }
+            return handlePrimaryClick(canister, cursor, cursorAccess);
+        }
+        return false;
+    }
+
+    /**
+     * Dispatches primary-click interactions based on cursor item type.
+     *
+     * @param canister     the canister item stack
+     * @param cursor       the cursor item stack
+     * @param cursorAccess access to set the cursor contents
+     * @return true if the interaction was handled
+     */
+    private static boolean handlePrimaryClick(
+            ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
+        if (cursor.getItem() instanceof GooBlobItem) {
+            return handleBlobInsert(canister, cursor, cursorAccess);
+        }
+        if (cursor.getItem() instanceof GooOmniblobItem) {
+            return handleOmniblobInsert(canister, cursor, cursorAccess);
+        }
+        return handlePrimaryBucketClick(canister, cursor, cursorAccess);
+    }
+
+    /**
+     * Dispatches primary-click bucket interactions (empty or partial).
+     *
+     * @param canister     the canister item stack
+     * @param cursor       the cursor item stack
+     * @param cursorAccess access to set the cursor contents
+     * @return true if the interaction was handled
+     */
+    private static boolean handlePrimaryBucketClick(
+            ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
+        if (cursor.is(Items.BUCKET)) {
+            return handleBucketDrain(canister, cursor, cursorAccess);
+        }
+        if (cursor.getItem() instanceof BucketOfGooItem) {
+            return handlePartialBucketDrain(canister, cursor, cursorAccess);
         }
         return false;
     }
@@ -557,13 +680,23 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
         long accepted = addGoo(canister, type, volume);
         if (accepted <= 0) { return false; }
 
-        long remaining = volume - accepted;
+        applyOmniblobRemainder(cursor, cursorAccess, volume - accepted);
+        return true;
+    }
+
+    /**
+     * Clears the omniblob cursor or updates its remaining volume.
+     *
+     * @param cursor       the omniblob item stack
+     * @param cursorAccess access to set the cursor contents
+     * @param remaining    the remaining volume after transfer
+     */
+    private static void applyOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, long remaining) {
         if (remaining <= 0) {
             cursorAccess.set(ItemStack.EMPTY);
         } else {
             GooOmniblobItem.setVolume(cursor, remaining);
         }
-        return true;
     }
 
     /**
@@ -574,14 +707,10 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return true if any goo was extracted
      */
     private static boolean handleEmptyCursorDrain(ItemStack canister, SlotAccess cursorAccess) {
-        GooContents contents = getGooContents(canister);
-        if (contents.isEmpty()) { return false; }
-
-        GooType dominant = contents.largestType();
+        GooType dominant = dominantType(canister);
         if (dominant == null) { return false; }
 
-        long toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BLOB_CAP);
-        long extracted = removeGoo(canister, dominant, toExtract);
+        long extracted = extractCapped(canister, dominant, ContainerCapacity.BLOB_CAP);
         if (extracted <= 0) { return false; }
 
         cursorAccess.set(BlobStacks.createForOutput(dominant, extracted));
@@ -597,14 +726,10 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return true if any goo was extracted
      */
     private static boolean handleBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooContents contents = getGooContents(canister);
-        if (contents.isEmpty()) { return false; }
-
-        GooType dominant = contents.largestType();
+        GooType dominant = dominantType(canister);
         if (dominant == null) { return false; }
 
-        long toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BUCKET_CAP);
-        long extracted = removeGoo(canister, dominant, toExtract);
+        long extracted = extractCapped(canister, dominant, ContainerCapacity.BUCKET_CAP);
         if (extracted <= 0) { return false; }
 
         cursorAccess.set(BucketOfGooItem.createWithGoo(dominant, extracted));
@@ -620,22 +745,65 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return true if any goo was transferred
      */
     private static boolean handlePartialBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
-        long remainingCap = ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
+        long remainingCap = bucketRemainingCapacity(cursor);
         if (remainingCap <= 0) { return false; }
 
-        GooContents canisterContents = getGooContents(canister);
-        if (canisterContents.isEmpty()) { return false; }
-
-        GooType dominant = canisterContents.largestType();
+        GooType dominant = dominantType(canister);
         if (dominant == null) { return false; }
 
-        long toExtract = Math.min(canisterContents.getVolume(dominant), remainingCap);
-        long extracted = removeGoo(canister, dominant, toExtract);
+        long extracted = extractCapped(canister, dominant, remainingCap);
         if (extracted <= 0) { return false; }
 
-        BucketOfGooItem.setContents(cursor, bucketContents.withAdded(dominant, extracted));
+        addToBucket(cursor, dominant, extracted);
         return true;
+    }
+
+    /**
+     * Adds extracted goo to a partially-filled bucket item stack.
+     *
+     * @param cursor the bucket item stack
+     * @param type   the goo type to add
+     * @param amount the volume in microblobs to add
+     */
+    private static void addToBucket(ItemStack cursor, GooType type, long amount) {
+        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
+        BucketOfGooItem.setContents(cursor, bucketContents.withAdded(type, amount));
+    }
+
+    /**
+     * Returns the dominant goo type in the canister, or null if empty.
+     *
+     * @param canister the canister item stack
+     * @return the dominant goo type, or null
+     */
+    private static @Nullable GooType dominantType(ItemStack canister) {
+        GooContents contents = getGooContents(canister);
+        if (contents.isEmpty()) { return null; }
+        return contents.largestType();
+    }
+
+    /**
+     * Extracts up to cap mB of the given type, capped by available volume.
+     *
+     * @param canister the canister item stack
+     * @param type     the goo type to extract
+     * @param cap      the maximum volume to extract
+     * @return the amount actually extracted
+     */
+    private static long extractCapped(ItemStack canister, GooType type, long cap) {
+        long available = getGooContents(canister).getVolume(type);
+        return removeGoo(canister, type, Math.min(available, cap));
+    }
+
+    /**
+     * Returns the remaining bucket capacity for a partially-filled goo bucket.
+     *
+     * @param cursor the bucket item stack
+     * @return the remaining capacity in microblobs
+     */
+    private static long bucketRemainingCapacity(ItemStack cursor) {
+        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
+        return ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
     }
 
     /**

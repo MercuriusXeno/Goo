@@ -294,10 +294,10 @@ public class CanisterBlock extends BaseEntityBlock {
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
         return switch (interaction) {
             case TUNER_PASS       -> throw new IllegalStateException(ERR_TUNER_PASS);
-            case CANISTER_INSERT  -> handleCanisterInsert(canister, hitResult, pos, stack, player, level);
-            case BLOB_INSERT      -> handleBlobInsert(canister, hitResult, pos, stack, player, level);
-            case BUCKET_INSERT    -> handleBucketInsert(canister, hitResult, pos, stack, player, hand, level);
-            case BUCKET_EXTRACT   -> handleBucketExtract(canister, hitResult, pos, stack, player, level);
+            case CANISTER_INSERT  -> handleCanisterInsert(canister, hitResult, stack, player);
+            case BLOB_INSERT      -> handleBlobInsert(canister, hitResult, stack, player);
+            case BUCKET_INSERT    -> handleBucketInsert(canister, hitResult, stack, player, hand);
+            case BUCKET_EXTRACT   -> handleBucketExtract(canister, hitResult, stack, player);
         };
     }
 
@@ -324,10 +324,10 @@ public class CanisterBlock extends BaseEntityBlock {
 
         // Sneak + empty hand → remove per-slot gasket if present
         if (player.isShiftKeyDown()) {
-            return handleSlotGasketRemove(canister, slot, hitResult, pos, level);
+            return handleSlotGasketRemove(canister, slot, hitResult);
         }
 
-        return handleCanisterRemove(canister, slot, player, level, pos);
+        return handleCanisterRemove(canister, slot, player);
     }
 
     /**
@@ -336,13 +336,11 @@ public class CanisterBlock extends BaseEntityBlock {
      * @param canister  the canister block entity
      * @param slot      the targeted slot index
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
-     * @param level     the current level
      * @return SUCCESS if a gasket was removed, PASS otherwise
      */
     private static InteractionResult handleSlotGasketRemove(
-            CanisterBlockEntity canister, int slot,
-            BlockHitResult hitResult, BlockPos pos, Level level) {
+            CanisterBlockEntity canister, int slot, BlockHitResult hitResult) {
+        var pos = canister.getBlockPos();
         double localY = hitResult.getLocation().y - pos.getY();
         GasketRole role = GasketRegionResolver.resolveCanisterSlotRole(localY, 0.0, 1.0);
         CanisterMetadata meta = canister.getSlotMetadata(slot);
@@ -350,7 +348,7 @@ public class CanisterBlock extends BaseEntityBlock {
                 ? meta.topGasketId() : meta.bottomGasketId();
         if (gasketId == null) { return InteractionResult.PASS; }
 
-        GasketInstallation.popGasket(level, pos, gasketId);
+        GasketInstallation.popGasket(canister.getLevel(), pos, gasketId);
         CanisterMetadata cleared = role == GasketRole.RECEIVER
                 ? meta.withoutTopGasket() : meta.withoutBottomGasket();
         canister.setSlotMetadata(slot, cleared);
@@ -364,20 +362,18 @@ public class CanisterBlock extends BaseEntityBlock {
      *
      * @param canister  the canister block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the canister item stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return SUCCESS if inserted, PASS otherwise
      */
     private InteractionResult handleCanisterInsert(
-            CanisterBlockEntity canister, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
-        if (!tryInsertCanister(canister, hitResult, pos, stack, player.isCreative())) {
+            CanisterBlockEntity canister, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        if (!tryInsertCanister(canister, hitResult, stack, player.isCreative())) {
             return InteractionResult.PASS;
         }
         stack.consume(1, player);
-        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
+        InteractionCooldown.markInteraction(player.getUUID(), canister.getLevel().getGameTime());
         return InteractionResult.SUCCESS;
     }
 
@@ -386,16 +382,15 @@ public class CanisterBlock extends BaseEntityBlock {
      *
      * @param canister      the canister block entity
      * @param hitResult     the block hit result for slot targeting
-     * @param pos           the block position
      * @param stack         the canister item stack
      * @param stripGaskets  true to clear gasket UUIDs (creative-mode duplication)
      * @return true if the canister was inserted
      */
     private static boolean tryInsertCanister(
             CanisterBlockEntity canister, BlockHitResult hitResult,
-            BlockPos pos, ItemStack stack, boolean stripGaskets) {
+            ItemStack stack, boolean stripGaskets) {
         int slot = CanisterItem.resolveInsertionSlot(
-                hitResult.getLocation(), pos, hitResult.getDirection(), canister);
+                hitResult.getLocation(), canister.getBlockPos(), hitResult.getDirection(), canister);
         return slot >= 0 && canister.insertCanister(slot, stack, stripGaskets);
     }
 
@@ -405,15 +400,15 @@ public class CanisterBlock extends BaseEntityBlock {
      * @param canister the canister block entity
      * @param slot     the targeted slot index
      * @param player   the interacting player
-     * @param level    the current level
-     * @param pos      the block position
      * @return SUCCESS if removed, PASS otherwise
      */
     private InteractionResult handleCanisterRemove(
-            CanisterBlockEntity canister, int slot, Player player, Level level, BlockPos pos) {
+            CanisterBlockEntity canister, int slot, Player player) {
         ItemStack removed = canister.removeCanister(slot);
         if (removed.isEmpty()) { return InteractionResult.PASS; }
 
+        var level = canister.getLevel();
+        var pos = canister.getBlockPos();
         PlayerUtils.addOrDrop(player, removed);
         level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
         InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
@@ -439,22 +434,21 @@ public class CanisterBlock extends BaseEntityBlock {
      *
      * @param canister  the canister block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the blob item stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return SUCCESS if goo was inserted, PASS otherwise
      */
     private InteractionResult handleBlobInsert(
-            CanisterBlockEntity canister, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
+            CanisterBlockEntity canister, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        var pos = canister.getBlockPos();
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.PASS; }
         long accepted = tryInsertBlobGoo(canister, hitSlot(hitResult, pos), type, BlobStacks.volumeOf(stack));
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        canister.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -480,22 +474,21 @@ public class CanisterBlock extends BaseEntityBlock {
      *
      * @param canister  the canister block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the bucket item stack
      * @param player    the interacting player
      * @param hand      the hand used
-     * @param level     the current level
      * @return SUCCESS if goo was inserted, PASS otherwise
      */
     private InteractionResult handleBucketInsert(
-            CanisterBlockEntity canister, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, InteractionHand hand, Level level) {
+            CanisterBlockEntity canister, BlockHitResult hitResult,
+            ItemStack stack, Player player, InteractionHand hand) {
+        var pos = canister.getBlockPos();
         GooContents updatedContents = tryPourBucket(
                 canister, hitSlot(hitResult, pos), BucketOfGooItem.getContents(stack));
         if (updatedContents == null) { return InteractionResult.PASS; }
 
         BucketOfGooItem.setOrRevert(stack, updatedContents, player, hand);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        canister.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -532,22 +525,21 @@ public class CanisterBlock extends BaseEntityBlock {
      *
      * @param canister  the canister block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the empty bucket stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return SUCCESS if goo was extracted, PASS otherwise
      */
     private InteractionResult handleBucketExtract(
-            CanisterBlockEntity canister, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
+            CanisterBlockEntity canister, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        var pos = canister.getBlockPos();
         ExtractedGoo extracted = tryExtractGoo(canister, hitSlot(hitResult, pos));
         if (extracted == null) { return InteractionResult.PASS; }
 
         ItemStack filledBucket = BucketOfGooItem.createWithGoo(extracted.type(), extracted.volume());
         stack.shrink(1);
         PlayerUtils.addOrDrop(player, filledBucket);
-        level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+        canister.getLevel().playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 

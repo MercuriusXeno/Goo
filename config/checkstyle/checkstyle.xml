@@ -95,6 +95,7 @@
         <!-- Parameter count: tripwire for greedy signatures -->
         <module name="ParameterNumber">
             <property name="max" value="4"/>
+            <property name="ignoreOverriddenMethods" value="true"/>
         </module>
 
         <!-- Nesting depth: readability signal -->

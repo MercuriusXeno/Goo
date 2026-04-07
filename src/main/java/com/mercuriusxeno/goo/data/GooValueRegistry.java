@@ -295,6 +295,13 @@ public class GooValueRegistry implements IGooValueLookup {
         deniedItems.clear();
         effectiveValues.clear();
         treeConstants.clear();
+        loadBaseValuesFromClasspath();
+        effectiveValues.putAll(baseValues);
+        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_BASE, baseValues.size()); }
+    }
+
+    /** Reads and parses the embedded base_values.json classpath resource. */
+    private void loadBaseValuesFromClasspath() {
         try (InputStream is = GooValueRegistry.class.getResourceAsStream(BASE_VALUES_PATH)) {
             if (is == null) {
                 Goo.LOGGER.error(LOG_NO_BASE_FILE);
@@ -304,8 +311,6 @@ public class GooValueRegistry implements IGooValueLookup {
         } catch (IOException e) {
             Goo.LOGGER.error(LOG_LOAD_FAIL, e);
         }
-        effectiveValues.putAll(baseValues);
-        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_BASE, baseValues.size()); }
     }
 
     /**
@@ -327,6 +332,16 @@ public class GooValueRegistry implements IGooValueLookup {
         }
 
         List<JsonObject> layers = parseResourceLayers(stack);
+        applyMergedLayers(layers);
+        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_PACKS, baseValues.size(), layers.size()); }
+    }
+
+    /**
+     * Merges, expands, and applies parsed JSON layers to registry state.
+     *
+     * @param layers parsed JSON objects in pack order
+     */
+    private void applyMergedLayers(List<JsonObject> layers) {
         JsonObject merged = mergeBaseValueJsonLayers(layers);
         merged = expandTagEntries(merged, GooValueRegistry::resolveItemTag);
         lastMergedBaseValues = merged;
@@ -335,7 +350,6 @@ public class GooValueRegistry implements IGooValueLookup {
         parseConversions(merged);
         applyConversions(preConversions, baseValues);
         effectiveValues.putAll(baseValues);
-        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_PACKS, baseValues.size(), layers.size()); }
     }
 
     /**
@@ -471,9 +485,19 @@ public class GooValueRegistry implements IGooValueLookup {
 
     /** Clears all mutable registry state before a fresh load. */
     private void clearRegistryState() {
+        clearValueMaps();
+        clearParsingState();
+    }
+
+    /** Clears all computed value maps. */
+    private void clearValueMaps() {
         baseValues.clear();
         deniedItems.clear();
         effectiveValues.clear();
+    }
+
+    /** Clears constants, pseudo-tags, and conversion artifacts. */
+    private void clearParsingState() {
         constants.clear();
         treeConstants.clear();
         pseudoTags.clear();
@@ -511,24 +535,47 @@ public class GooValueRegistry implements IGooValueLookup {
         if (!json.has(CONSTANTS_SUFFIX)) { return; }
         JsonObject obj = json.getAsJsonObject(CONSTANTS_SUFFIX);
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            if (entry.getValue().isJsonObject()) {
-                treeConstants.put(entry.getKey(),
-                        GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject(), constants, null, treeConstants));
-            } else {
-                // Try tree evaluation first (handles "9 $metal_nugget" where $metal_nugget is a tree).
-                // Fall back to scalar if the result is empty or the expression has no tree refs.
-                String expr = entry.getValue().getAsString().trim();
-                if (referencesTreeConstant(expr)) {
-                    GooValue tree = GooValueExpression.evaluate(expr, Map.of(), constants, treeConstants);
-                    if (!tree.isEmpty()) {
-                        treeConstants.put(entry.getKey(), tree);
-                        continue;
-                    }
-                }
-                constants.put(entry.getKey(),
-                        GooValueJsonFormat.resolveConstantValue(entry.getValue(), constants));
+            parseOneConstant(entry.getKey(), entry.getValue());
+        }
+        logConstantCounts();
+    }
+
+    /**
+     * Parses a single constant entry, dispatching to tree or scalar handling.
+     *
+     * @param name the constant name
+     * @param value the JSON value (object for tree, string for scalar/expression)
+     */
+    private void parseOneConstant(String name, JsonElement value) {
+        if (value.isJsonObject()) {
+            treeConstants.put(name,
+                    GooValueJsonFormat.parseGooValue(value.getAsJsonObject(), constants, null, treeConstants));
+        } else {
+            parseScalarConstant(name, value);
+        }
+    }
+
+    /**
+     * Parses a scalar constant. Tries tree evaluation first for expressions
+     * referencing tree constants (e.g. "9 $metal_nugget"), falling back to scalar.
+     *
+     * @param name the constant name
+     * @param value the JSON value to resolve
+     */
+    private void parseScalarConstant(String name, JsonElement value) {
+        String expr = value.getAsString().trim();
+        if (referencesTreeConstant(expr)) {
+            GooValue tree = GooValueExpression.evaluate(expr, Map.of(), constants, treeConstants);
+            if (!tree.isEmpty()) {
+                treeConstants.put(name, tree);
+                return;
             }
         }
+        constants.put(name, GooValueJsonFormat.resolveConstantValue(value, constants));
+    }
+
+    /** Logs the number of scalar and tree constants after parsing. */
+    private void logConstantCounts() {
         if (Goo.LOGGER.isInfoEnabled()) {
             Goo.LOGGER.info(LOG_LOADED_CONSTANTS,
                     constants.size() + treeConstants.size(), constants.size(), treeConstants.size());
@@ -544,17 +591,28 @@ public class GooValueRegistry implements IGooValueLookup {
     private boolean referencesTreeConstant(String expr) {
         int i = expr.indexOf('$');
         while (i >= 0 && i < expr.length() - 1) {
-            int start = i + 1;
-            int end = start;
-            while (end < expr.length() && (Character.isLetterOrDigit(expr.charAt(end)) || expr.charAt(end) == '_')) {
-                end++;
-            }
-            if (end > start && treeConstants.containsKey(expr.substring(start, end))) {
+            int end = scanIdentifier(expr, i + 1);
+            if (end > i + 1 && treeConstants.containsKey(expr.substring(i + 1, end))) {
                 return true;
             }
             i = expr.indexOf('$', end);
         }
         return false;
+    }
+
+    /**
+     * Scans forward from {@code start} while characters are word-like (letter, digit, or '_').
+     *
+     * @param expr the string to scan
+     * @param start the starting index
+     * @return the index of the first non-word character (or string length)
+     */
+    private static int scanIdentifier(String expr, int start) {
+        int end = start;
+        while (end < expr.length() && (Character.isLetterOrDigit(expr.charAt(end)) || expr.charAt(end) == '_')) {
+            end++;
+        }
+        return end;
     }
 
     /**
@@ -587,22 +645,29 @@ public class GooValueRegistry implements IGooValueLookup {
             Goo.LOGGER.warn(LOG_PSEUDO_TAG_EMPTY, name);
             return;
         }
-
-        // Check for parallel copy: "#source * N / M"
-        if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
-            java.util.regex.Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
-            if (m.matches()) {
-                String sourceName = m.group(1);
-                int multiplier = m.group(PARALLEL_COPY_MULTIPLIER_GROUP) != null ? Integer.parseInt(m.group(PARALLEL_COPY_MULTIPLIER_GROUP)) : 1;
-                int divisor = m.group(PARALLEL_COPY_DIVISOR_GROUP) != null ? Integer.parseInt(m.group(PARALLEL_COPY_DIVISOR_GROUP)) : 1;
-                parallelCopyBaseValues(name, sourceName, targetMembers, multiplier, divisor);
-                return;
-            }
-        }
-
+        if (tryParallelCopy(name, value, targetMembers)) { return; }
         for (Identifier member : targetMembers) {
             assignItemValue(member, value);
         }
+    }
+
+    /**
+     * Checks if the value is a parallel copy expression ("#source * N / M") and applies it.
+     *
+     * @param name the target pseudo-tag name
+     * @param value the JSON value to check
+     * @param targetMembers resolved target item IDs
+     * @return true if a parallel copy was applied
+     */
+    private boolean tryParallelCopy(String name, JsonElement value, Set<Identifier> targetMembers) {
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) { return false; }
+        java.util.regex.Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
+        if (!m.matches()) { return false; }
+        String sourceName = m.group(1);
+        int multiplier = m.group(PARALLEL_COPY_MULTIPLIER_GROUP) != null ? Integer.parseInt(m.group(PARALLEL_COPY_MULTIPLIER_GROUP)) : 1;
+        int divisor = m.group(PARALLEL_COPY_DIVISOR_GROUP) != null ? Integer.parseInt(m.group(PARALLEL_COPY_DIVISOR_GROUP)) : 1;
+        parallelCopyBaseValues(name, sourceName, targetMembers, multiplier, divisor);
+        return true;
     }
 
     /**
@@ -638,16 +703,29 @@ public class GooValueRegistry implements IGooValueLookup {
         }
         List<Identifier> targets = new ArrayList<>(targetMembers);
         List<Identifier> sources = new ArrayList<>(sourceMembers);
-        if (targets.size() != sources.size()) {
-            if (Goo.LOGGER.isErrorEnabled()) {
-                Goo.LOGGER.error(LOG_PARALLEL_MISMATCH,
-                        targetName, targets.size(), sourceName, sources.size());
-            }
-            return;
-        }
+        if (!validateParallelSize(targetName, targets, sourceName, sources)) { return; }
         for (int i = 0; i < targets.size(); i++) {
             copyScaledValue(sources.get(i), targets.get(i), multiplier, divisor);
         }
+    }
+
+    /**
+     * Validates that parallel copy source and target have equal size.
+     *
+     * @param targetName target tag name for logging
+     * @param targets resolved target IDs
+     * @param sourceName source tag name for logging
+     * @param sources resolved source IDs
+     * @return true if sizes match
+     */
+    private static boolean validateParallelSize(String targetName, List<Identifier> targets,
+                                                 String sourceName, List<Identifier> sources) {
+        if (targets.size() == sources.size()) { return true; }
+        if (Goo.LOGGER.isErrorEnabled()) {
+            Goo.LOGGER.error(LOG_PARALLEL_MISMATCH,
+                    targetName, targets.size(), sourceName, sources.size());
+        }
+        return false;
     }
 
     /**
@@ -663,11 +741,23 @@ public class GooValueRegistry implements IGooValueLookup {
                                   int multiplier, int divisor) {
         GooValue sourceVal = baseValues.get(source);
         if (sourceVal == null || sourceVal.isEmpty()) {
-            if (Goo.LOGGER.isWarnEnabled()) {
-                Goo.LOGGER.warn(LOG_PARALLEL_NO_VALUE, source, target);
-            }
+            if (Goo.LOGGER.isWarnEnabled()) { Goo.LOGGER.warn(LOG_PARALLEL_NO_VALUE, source, target); }
             return;
         }
+        applyScaling(sourceVal, target, source, multiplier, divisor);
+    }
+
+    /**
+     * Scales a source value and stores the result, logging errors for negatives or overflow.
+     *
+     * @param sourceVal the source goo value to scale
+     * @param target the target item ID
+     * @param source the source item ID (for error logging)
+     * @param multiplier numerator for scaling
+     * @param divisor denominator for scaling
+     */
+    private void applyScaling(GooValue sourceVal, Identifier target, Identifier source,
+                               int multiplier, int divisor) {
         try {
             GooValue scaled = sourceVal.multiply(multiplier).divideExact(divisor);
             if (scaled.hasNegative()) {
@@ -676,9 +766,7 @@ public class GooValueRegistry implements IGooValueLookup {
             }
             baseValues.put(target, scaled);
         } catch (ArithmeticException e) {
-            if (Goo.LOGGER.isErrorEnabled()) {
-                Goo.LOGGER.error(LOG_PARALLEL_SCALE_FAIL, target, source, e.getMessage());
-            }
+            if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(LOG_PARALLEL_SCALE_FAIL, target, source, e.getMessage()); }
         }
     }
 
@@ -725,14 +813,22 @@ public class GooValueRegistry implements IGooValueLookup {
         if (!json.has(GROUPS_SUFFIX)) { return; }
         JsonObject groups = json.getAsJsonObject(GROUPS_SUFFIX);
         for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
-            String name = group.getKey();
-            com.google.gson.JsonArray items = group.getValue().getAsJsonArray();
-            Set<Identifier> members = new LinkedHashSet<>();
-            for (JsonElement item : items) {
-                members.add(Identifier.parse(item.getAsString()));
-            }
-            pseudoTags.put(name, members);
+            pseudoTags.put(group.getKey(), parseGroupMembers(group.getValue().getAsJsonArray()));
         }
+    }
+
+    /**
+     * Parses a JSON array of item ID strings into a linked set of Identifiers.
+     *
+     * @param items the JSON array of item ID strings
+     * @return ordered set of parsed item IDs
+     */
+    private static Set<Identifier> parseGroupMembers(com.google.gson.JsonArray items) {
+        Set<Identifier> members = new LinkedHashSet<>();
+        for (JsonElement item : items) {
+            members.add(Identifier.parse(item.getAsString()));
+        }
+        return members;
     }
 
     /**
@@ -856,14 +952,23 @@ public class GooValueRegistry implements IGooValueLookup {
 
         try (Reader reader = Files.newBufferedReader(effectiveCachePath, StandardCharsets.UTF_8)) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            effectiveValues.clear();
-            for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-                Identifier itemId = Identifier.parse(entry.getKey());
-                effectiveValues.put(itemId, GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject()));
-            }
+            deserializeEffectiveValues(json);
             if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_CACHE, effectiveValues.size()); }
         } catch (IOException | JsonParseException | IllegalStateException e) {
             Goo.LOGGER.warn(LOG_CACHE_LOAD_FAIL, e);
+        }
+    }
+
+    /**
+     * Replaces effective values with entries parsed from a flat cache JSON object.
+     *
+     * @param json the cache JSON with item ID keys and GooValue objects
+     */
+    private void deserializeEffectiveValues(JsonObject json) {
+        effectiveValues.clear();
+        for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+            Identifier itemId = Identifier.parse(entry.getKey());
+            effectiveValues.put(itemId, GooValueJsonFormat.parseGooValue(entry.getValue().getAsJsonObject()));
         }
     }
 
@@ -1064,21 +1169,31 @@ public class GooValueRegistry implements IGooValueLookup {
     @SuppressWarnings(SUPPRESS_UNCHECKED)
     static ItemStack getRecipeResult(Recipe<?> recipe, HolderLookup.Provider registries) {
         try {
-            // TransmuteRecipe.assemble needs real input items; read the result field directly.
-            if (recipe instanceof TransmuteRecipe transmute) {
-                return transmute.result.apply(DataComponentPatch.EMPTY);
-            } else if (recipe instanceof CraftingRecipe crafting) {
-                return crafting.assemble(CraftingInput.EMPTY);
-            } else if (recipe instanceof SingleItemRecipe single) {
-                return single.assemble(new SingleRecipeInput(ItemStack.EMPTY));
-            }
-            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_UNSUPPORTED_RECIPE, recipe.getClass().getName()); }
+            return assembleResult(recipe);
         } catch (RuntimeException e) {
             if (Goo.LOGGER.isWarnEnabled()) {
-                Goo.LOGGER.warn(LOG_RECIPE_RESULT_FAIL,
-                    recipe.getClass().getSimpleName(), e.getMessage());
+                Goo.LOGGER.warn(LOG_RECIPE_RESULT_FAIL, recipe.getClass().getSimpleName(), e.getMessage());
             }
         }
+        return null;
+    }
+
+    /**
+     * Dispatches to the correct assemble method by recipe type.
+     * TransmuteRecipe needs the result field read directly; others use dummy inputs.
+     *
+     * @param recipe the recipe to assemble
+     * @return the result stack, or null if the recipe type is unsupported
+     */
+    private static ItemStack assembleResult(Recipe<?> recipe) {
+        if (recipe instanceof TransmuteRecipe transmute) {
+            return transmute.result.apply(DataComponentPatch.EMPTY);
+        } else if (recipe instanceof CraftingRecipe crafting) {
+            return crafting.assemble(CraftingInput.EMPTY);
+        } else if (recipe instanceof SingleItemRecipe single) {
+            return single.assemble(new SingleRecipeInput(ItemStack.EMPTY));
+        }
+        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_UNSUPPORTED_RECIPE, recipe.getClass().getName()); }
         return null;
     }
 
@@ -1513,23 +1628,54 @@ public class GooValueRegistry implements IGooValueLookup {
         JsonObject block = json.getAsJsonObject(blockKey);
         Set<String> knownRefs = new LinkedHashSet<>();
         for (Map.Entry<String, JsonElement> entry : block.entrySet()) {
-            String key = entry.getKey();
-            if (!entry.getValue().isJsonPrimitive()) {
-                warnings.add(blockKey + DOT + key + WARN_EXPECTED_STRING);
-                continue;
-            }
-            String value = entry.getValue().getAsString();
-            if (VALUE_DENIED.equals(value)) { continue; }
-            String ctx = blockKey + DOT + key;
-            if (value.contains(FORMULA_ARROW)) {
-                validateFormulaEntry(ctx, value, warnings);
-                knownRefs.add(key);
-            } else if (value.startsWith(ADDITIVE_PREFIX)) {
-                validateAdditiveEntry(ctx, value, knownConstants, warnings);
-                knownRefs.add(key);
-            } else if (value.contains(AT_PREFIX)) {
-                validateRefEntry(ctx, key, value, knownRefs, warnings);
-            }
+            validateConversionEntry(blockKey, entry, knownConstants, knownRefs, warnings);
+        }
+    }
+
+    /**
+     * Validates a single conversion entry, dispatching to formula, additive, or ref validation.
+     *
+     * @param blockKey the parent block key for context
+     * @param entry the JSON entry to validate
+     * @param knownConstants known constant names
+     * @param knownRefs mutable set of known conversion refs
+     * @param warnings accumulator for validation warnings
+     */
+    private void validateConversionEntry(String blockKey, Map.Entry<String, JsonElement> entry,
+                                          Set<String> knownConstants, Set<String> knownRefs,
+                                          List<String> warnings) {
+        String key = entry.getKey();
+        if (!entry.getValue().isJsonPrimitive()) {
+            warnings.add(blockKey + DOT + key + WARN_EXPECTED_STRING);
+            return;
+        }
+        String value = entry.getValue().getAsString();
+        if (VALUE_DENIED.equals(value)) { return; }
+        String ctx = blockKey + DOT + key;
+        classifyAndValidateConversion(ctx, key, value, knownConstants, knownRefs, warnings);
+    }
+
+    /**
+     * Classifies a conversion value by type and validates it.
+     *
+     * @param ctx context path for error messages
+     * @param key the entry key
+     * @param value the entry value string
+     * @param knownConstants known constant names
+     * @param knownRefs mutable set of known conversion refs
+     * @param warnings accumulator for validation warnings
+     */
+    private void classifyAndValidateConversion(String ctx, String key, String value,
+                                                Set<String> knownConstants, Set<String> knownRefs,
+                                                List<String> warnings) {
+        if (value.contains(FORMULA_ARROW)) {
+            validateFormulaEntry(ctx, value, warnings);
+            knownRefs.add(key);
+        } else if (value.startsWith(ADDITIVE_PREFIX)) {
+            validateAdditiveEntry(ctx, value, knownConstants, warnings);
+            knownRefs.add(key);
+        } else if (value.contains(AT_PREFIX)) {
+            validateRefEntry(ctx, key, value, knownRefs, warnings);
         }
     }
 

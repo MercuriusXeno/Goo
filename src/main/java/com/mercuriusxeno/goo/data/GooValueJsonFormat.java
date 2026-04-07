@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mercuriusxeno.goo.GooType;
 import com.mojang.logging.LogUtils;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -51,6 +52,8 @@ final class GooValueJsonFormat {
     private static final String WARN_UNKNOWN_CONSTANT = "Unknown constant: ${}";
     /** Log warning for unknown operator. */
     private static final String WARN_UNKNOWN_OP = "Unknown operator in constant expression: {}";
+    /** Sentinel indicating no valid dot position was found. */
+    private static final int NO_DOT = -1;
 
     /** Utility class, not instantiable. */
     private GooValueJsonFormat() {}
@@ -89,7 +92,7 @@ final class GooValueJsonFormat {
      * @return parsed GooValue
      */
     static GooValue parseGooValue(JsonObject json, Map<String, Integer> constants,
-                                  Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                  Map<Identifier, GooValue> baseValues) {
         return parseGooValue(json, constants, baseValues, Map.of());
     }
 
@@ -104,20 +107,38 @@ final class GooValueJsonFormat {
      * @return parsed GooValue
      */
     static GooValue parseGooValue(JsonObject json, Map<String, Integer> constants,
-                                  Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                  Map<Identifier, GooValue> baseValues,
                                   Map<String, GooValue> treeConstants) {
         Map<GooType, Integer> map = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-            try {
-                GooType type = GooType.valueOf(entry.getKey().toUpperCase(Locale.ROOT));
-                map.put(type, resolveValue(entry.getValue(), constants, baseValues, treeConstants));
-            } catch (IllegalArgumentException e) {
-                if (LOGGER.isWarnEnabled()) {
-                    LOGGER.warn(WARN_UNKNOWN_TYPE, entry.getKey());
-                }
-            }
+            parseTypeEntry(entry, constants, baseValues, treeConstants, map);
         }
         return new GooValue(map);
+    }
+
+    /**
+     * Parses a single JSON entry as a goo type/amount pair. Skips unknown type names
+     * with a warning rather than failing the entire parse.
+     *
+     * @param entry         the JSON map entry (type name to value expression)
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table
+     * @param map           output map to populate with the parsed type and amount
+     */
+    private static void parseTypeEntry(Map.Entry<String, JsonElement> entry,
+                                       Map<String, Integer> constants,
+                                       Map<Identifier, GooValue> baseValues,
+                                       Map<String, GooValue> treeConstants,
+                                       Map<GooType, Integer> map) {
+        try {
+            GooType type = GooType.valueOf(entry.getKey().toUpperCase(Locale.ROOT));
+            map.put(type, resolveValue(entry.getValue(), constants, baseValues, treeConstants));
+        } catch (IllegalArgumentException e) {
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn(WARN_UNKNOWN_TYPE, entry.getKey());
+            }
+        }
     }
 
     /**
@@ -146,7 +167,7 @@ final class GooValueJsonFormat {
         return resolveValue(element, constants);
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────
+    // -- Private helpers -------------------------------------------------------
 
     /**
      * Resolves a JSON element to an integer value using only scalar constants.
@@ -168,7 +189,7 @@ final class GooValueJsonFormat {
      * @return the resolved integer value
      */
     private static int resolveValue(JsonElement element, Map<String, Integer> constants,
-                                    Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                    Map<Identifier, GooValue> baseValues) {
         return resolveValue(element, constants, baseValues, Map.of());
     }
 
@@ -182,7 +203,7 @@ final class GooValueJsonFormat {
      * @return the resolved integer value
      */
     private static int resolveValue(JsonElement element, Map<String, Integer> constants,
-                                    Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                    Map<Identifier, GooValue> baseValues,
                                     Map<String, GooValue> treeConstants) {
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
             return element.getAsInt();
@@ -201,7 +222,7 @@ final class GooValueJsonFormat {
      * @return the evaluated integer result
      */
     private static int resolveExpression(String expr, Map<String, Integer> constants,
-                                         Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                         Map<Identifier, GooValue> baseValues,
                                          Map<String, GooValue> treeConstants) {
         List<String> tokens = tokenize(expr);
         int[] pos = {0};
@@ -220,24 +241,78 @@ final class GooValueJsonFormat {
         List<String> tokens = new ArrayList<>();
         int i = 0;
         while (i < expr.length()) {
-            char c = expr.charAt(i);
-            if (Character.isWhitespace(c)) {
-                i++;
-            } else if (isOperatorOrParen(c)) {
-                tokens.add(String.valueOf(c));
-                i++;
-            } else if (c == '$') {
-                i = scanConstant(expr, i, tokens);
-            } else if (Character.isDigit(c)) {
-                i = scanNumber(expr, i, tokens);
-            } else if (Character.isLetter(c)) {
-                i = scanNamespacedId(expr, i, tokens);
-            } else {
-                LOGGER.warn(WARN_UNEXPECTED_CHAR, c, expr);
-                i++;
-            }
+            i = tokenizeChar(expr, i, tokens);
         }
         return tokens;
+    }
+
+    /**
+     * Classifies the character at position {@code i} and dispatches to the
+     * appropriate scanner. Returns the updated position after the token.
+     *
+     * @param expr   the full expression string
+     * @param i      current position in the expression
+     * @param tokens list to append scanned tokens to
+     * @return the position after the consumed character(s)
+     */
+    private static int tokenizeChar(String expr, int i, List<String> tokens) {
+        char c = expr.charAt(i);
+        if (Character.isWhitespace(c) || scanSingleChar(c, tokens)) {
+            return i + 1;
+        }
+        return tokenizeWord(expr, i, c, tokens);
+    }
+
+    /**
+     * If the character is an operator or paren, appends it as a single-char token.
+     *
+     * @param c      the character to test
+     * @param tokens list to append the token to if matched
+     * @return true if the character was consumed as a single-char token
+     */
+    private static boolean scanSingleChar(char c, List<String> tokens) {
+        if (!isOperatorOrParen(c)) {
+            return false;
+        }
+        tokens.add(String.valueOf(c));
+        return true;
+    }
+
+    /**
+     * Dispatches multi-character token scanning for $constants, numbers,
+     * namespaced IDs, and logs a warning for unexpected characters.
+     *
+     * @param expr   the full expression string
+     * @param i      current position in the expression
+     * @param c      the character at position i
+     * @param tokens list to append scanned tokens to
+     * @return the position after the consumed token
+     */
+    private static int tokenizeWord(String expr, int i, char c, List<String> tokens) {
+        if (c == '$') {
+            return scanConstant(expr, i, tokens);
+        }
+        return tokenizeNonConstant(expr, i, c, tokens);
+    }
+
+    /**
+     * Scans a numeric literal, namespaced ID, or warns on an unexpected character.
+     *
+     * @param expr   the full expression string
+     * @param i      current position in the expression
+     * @param c      the character at position i
+     * @param tokens list to append scanned tokens to
+     * @return the position after the consumed token
+     */
+    private static int tokenizeNonConstant(String expr, int i, char c, List<String> tokens) {
+        if (Character.isDigit(c)) {
+            return scanNumber(expr, i, tokens);
+        }
+        if (Character.isLetter(c)) {
+            return scanNamespacedId(expr, i, tokens);
+        }
+        LOGGER.warn(WARN_UNEXPECTED_CHAR, c, expr);
+        return i + 1;
     }
 
     /**
@@ -371,17 +446,26 @@ final class GooValueJsonFormat {
      */
     private static int evalExpr(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<Identifier, GooValue> baseValues,
                                 Map<String, GooValue> treeConstants) {
         int result = evalTerm(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
             String op = tokens.get(pos[0]);
-            if (!OP_ADD.equals(op) && !OP_SUB.equals(op)) { break; }
+            if (!isAdditiveOp(op)) { break; }
             pos[0]++;
-            int rhs = evalTerm(tokens, pos, constants, baseValues, treeConstants);
-            result = applyOperator(result, op, rhs);
+            result = applyOperator(result, op, evalTerm(tokens, pos, constants, baseValues, treeConstants));
         }
         return result;
+    }
+
+    /**
+     * Returns true if the operator string is additive (+ or -).
+     *
+     * @param op the operator string to test
+     * @return true if op is "+" or "-"
+     */
+    private static boolean isAdditiveOp(String op) {
+        return OP_ADD.equals(op) || OP_SUB.equals(op);
     }
 
     /**
@@ -396,24 +480,77 @@ final class GooValueJsonFormat {
      */
     private static int evalTerm(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<Identifier, GooValue> baseValues,
                                 Map<String, GooValue> treeConstants) {
         int result = evalAtom(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
-            String next = tokens.get(pos[0]);
-            if (OP_MUL.equals(next) || OP_DIV.equals(next)) {
-                pos[0]++;
-                int rhs = evalAtom(tokens, pos, constants, baseValues, treeConstants);
-                result = applyOperator(result, next, rhs);
-            } else if (isAtomStart(next)) {
-                // Implicit multiplication: "4 $base" == "4 * $base"
-                int rhs = evalAtom(tokens, pos, constants, baseValues, treeConstants);
-                result = applyOperator(result, OP_MUL, rhs);
-            } else {
-                break;
-            }
+            result = evalTermStep(tokens, pos, result, constants, baseValues, treeConstants);
         }
         return result;
+    }
+
+    /**
+     * Resolves the multiplicative operator for the current token: returns the
+     * explicit operator (* or /) if present, OP_MUL for implicit multiplication
+     * (adjacent atom), or null to signal end of the term.
+     *
+     * @param token the current token to classify
+     * @return the operator string, or null if the term should end
+     */
+    private static String resolveTermOp(String token) {
+        if (isMultiplicativeOp(token)) {
+            return token;
+        }
+        return isAtomStart(token) ? OP_MUL : null;
+    }
+
+    /**
+     * Evaluates one step of the multiplicative loop: explicit * or /, implicit
+     * multiplication when adjacent atoms appear, or signals termination by
+     * returning the accumulated result unchanged.
+     *
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param result        the running accumulated value
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table
+     * @return the updated accumulated value after this step
+     */
+    private static int evalTermStep(List<String> tokens, int[] pos, int result,
+                                    Map<String, Integer> constants,
+                                    Map<Identifier, GooValue> baseValues,
+                                    Map<String, GooValue> treeConstants) {
+        String op = resolveTermOp(tokens.get(pos[0]));
+        if (op == null) {
+            pos[0] = tokens.size();
+            return result;
+        }
+        advanceIfExplicit(op, pos);
+        return applyOperator(result, op, evalAtom(tokens, pos, constants, baseValues, treeConstants));
+    }
+
+    /**
+     * Advances the position past an explicit operator token. Implicit
+     * operators (like adjacent-atom multiplication) have no token to skip.
+     *
+     * @param op  the resolved operator string
+     * @param pos mutable position index to advance
+     */
+    private static void advanceIfExplicit(String op, int[] pos) {
+        if (isMultiplicativeOp(op)) {
+            pos[0]++;
+        }
+    }
+
+    /**
+     * Returns true if the operator string is multiplicative (* or /).
+     *
+     * @param op the operator string to test
+     * @return true if op is "*" or "/"
+     */
+    private static boolean isMultiplicativeOp(String op) {
+        return OP_MUL.equals(op) || OP_DIV.equals(op);
     }
 
     /**
@@ -439,24 +576,71 @@ final class GooValueJsonFormat {
      */
     private static int evalAtom(List<String> tokens, int[] pos,
                                 Map<String, Integer> constants,
-                                Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                Map<Identifier, GooValue> baseValues,
                                 Map<String, GooValue> treeConstants) {
-        if (pos[0] < tokens.size() && OP_SUB.equals(tokens.get(pos[0]))) {
+        if (isUnaryMinus(tokens, pos)) {
             pos[0]++;
             return -evalAtom(tokens, pos, constants, baseValues, treeConstants);
         }
+        return evalPositiveAtom(tokens, pos, constants, baseValues, treeConstants);
+    }
+
+    /**
+     * Returns true if the current token position holds a unary minus operator.
+     *
+     * @param tokens the token list
+     * @param pos    mutable position index into tokens
+     * @return true if the current token is a unary minus
+     */
+    private static boolean isUnaryMinus(List<String> tokens, int[] pos) {
+        return pos[0] < tokens.size() && OP_SUB.equals(tokens.get(pos[0]));
+    }
+
+    /**
+     * Evaluates a non-negated atom: consumes the current token then dispatches
+     * to parenthesized evaluation or operand resolution.
+     *
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table
+     * @return the evaluated integer result
+     */
+    private static int evalPositiveAtom(List<String> tokens, int[] pos,
+                                        Map<String, Integer> constants,
+                                        Map<Identifier, GooValue> baseValues,
+                                        Map<String, GooValue> treeConstants) {
         String token = tokens.get(pos[0]);
         pos[0]++;
         if (TOKEN_OPEN.equals(token)) {
-            int result = evalExpr(tokens, pos, constants, baseValues, treeConstants);
-            if (pos[0] < tokens.size() && TOKEN_CLOSE.equals(tokens.get(pos[0]))) {
-                pos[0]++;
-            } else {
-                LOGGER.warn(WARN_MISSING_PAREN);
-            }
-            return result;
+            return evalParenthesized(tokens, pos, constants, baseValues, treeConstants);
         }
         return resolveOperand(token, constants, baseValues, treeConstants);
+    }
+
+    /**
+     * Evaluates a parenthesized sub-expression and consumes the closing paren.
+     * Warns if the closing paren is missing rather than failing.
+     *
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index (past the opening paren)
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table
+     * @return the evaluated integer result of the sub-expression
+     */
+    private static int evalParenthesized(List<String> tokens, int[] pos,
+                                         Map<String, Integer> constants,
+                                         Map<Identifier, GooValue> baseValues,
+                                         Map<String, GooValue> treeConstants) {
+        int result = evalExpr(tokens, pos, constants, baseValues, treeConstants);
+        if (pos[0] < tokens.size() && TOKEN_CLOSE.equals(tokens.get(pos[0]))) {
+            pos[0]++;
+        } else {
+            LOGGER.warn(WARN_MISSING_PAREN);
+        }
+        return result;
     }
 
     /**
@@ -470,7 +654,7 @@ final class GooValueJsonFormat {
      * @return the resolved integer value
      */
     private static int resolveOperand(String token, Map<String, Integer> constants,
-                                      Map<net.minecraft.resources.Identifier, GooValue> baseValues,
+                                      Map<Identifier, GooValue> baseValues,
                                       Map<String, GooValue> treeConstants) {
         if (token.startsWith(CONSTANT_PREFIX)) {
             return resolveConstantOperand(token.substring(1), constants, treeConstants);
@@ -478,10 +662,7 @@ final class GooValueJsonFormat {
         if (Character.isDigit(token.charAt(0))) {
             return Integer.parseInt(token);
         }
-        if (baseValues != null) {
-            return resolveItemOperand(token, baseValues);
-        }
-        return Integer.parseInt(token);
+        return baseValues != null ? resolveItemOperand(token, baseValues) : Integer.parseInt(token);
     }
 
     /**
@@ -517,15 +698,26 @@ final class GooValueJsonFormat {
      */
     private static int tryTreeDotExtraction(String name, int dotIdx,
                                             Map<String, GooValue> treeConstants) {
-        String constName = name.substring(0, dotIdx);
-        GooValue tree = treeConstants.get(constName);
+        GooValue tree = treeConstants.get(name.substring(0, dotIdx));
         if (tree == null) {
             return Integer.MIN_VALUE;
         }
-        String typeSuffix = name.substring(dotIdx + 1);
+        return extractGooType(name.substring(dotIdx + 1), tree);
+    }
+
+    /**
+     * Parses a type suffix string into a {@link GooType} and extracts its value
+     * from the given {@link GooValue}. Returns {@link Integer#MIN_VALUE} if the
+     * suffix is not a recognized goo type.
+     *
+     * @param typeSuffix the goo type name to look up (case-insensitive)
+     * @param source     the GooValue to extract the type amount from
+     * @return the type's amount, or Integer.MIN_VALUE if the type is unknown
+     */
+    private static int extractGooType(String typeSuffix, GooValue source) {
         try {
             GooType type = GooType.valueOf(typeSuffix.toUpperCase(Locale.ROOT));
-            return tree.get(type);
+            return source.get(type);
         } catch (IllegalArgumentException ignored) {
             return Integer.MIN_VALUE;
         }
@@ -540,13 +732,24 @@ final class GooValueJsonFormat {
      * @return the resolved integer value
      */
     private static int resolveItemOperand(String token,
-                                          Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
+                                          Map<Identifier, GooValue> baseValues) {
         if (token.contains(DOT)) {
             int extracted = tryItemDotExtraction(token, baseValues);
             if (extracted != Integer.MIN_VALUE) {
                 return extracted;
             }
         }
+        return resolveBareName(token);
+    }
+
+    /**
+     * Handles a bare (non-dot-notation) item token: namespaced IDs without a .type
+     * suffix get a warning and return 0, plain numbers are parsed as integers.
+     *
+     * @param token the bare item reference or numeric literal
+     * @return 0 for namespaced IDs missing a type, or the parsed integer
+     */
+    private static int resolveBareName(String token) {
         if (token.contains(COLON)) {
             LOGGER.warn(WARN_ITEM_NO_TYPE, token);
             return 0;
@@ -564,25 +767,68 @@ final class GooValueJsonFormat {
      * @return the extracted type value, or Integer.MIN_VALUE if not resolvable
      */
     private static int tryItemDotExtraction(String token,
-                                            Map<net.minecraft.resources.Identifier, GooValue> baseValues) {
-        int colonIdx = token.indexOf(COLON.charAt(0));
-        int dotIdx = token.lastIndexOf('.');
-        if (dotIdx <= 0 || dotIdx >= token.length() - 1 || (colonIdx >= 0 && dotIdx <= colonIdx)) {
+                                            Map<Identifier, GooValue> baseValues) {
+        int dotIdx = findTypeDot(token);
+        if (dotIdx < 0) {
             return Integer.MIN_VALUE;
         }
+        return resolveItemType(token, dotIdx, baseValues);
+    }
+
+    /**
+     * Finds the position of the dot separating the item ID from its type suffix.
+     * Returns {@link #NO_DOT} if no valid type-dot exists (dot at edges, or dot before a colon).
+     *
+     * @param token the full dot-notation token
+     * @return the dot index, or NO_DOT if no valid type-dot is found
+     */
+    private static int findTypeDot(String token) {
+        int colonIdx = token.indexOf(COLON.charAt(0));
+        int dotIdx = token.lastIndexOf('.');
+        if (dotIdx <= 0 || dotIdx >= token.length() - 1) {
+            return NO_DOT;
+        }
+        return (colonIdx >= 0 && dotIdx <= colonIdx) ? NO_DOT : dotIdx;
+    }
+
+    /**
+     * Resolves the goo type and item lookup for a dot-notation token once the dot
+     * position is known. Returns {@link Integer#MIN_VALUE} for unrecognized types,
+     * warns and returns 0 for unknown items.
+     *
+     * @param token      the full dot-notation token
+     * @param dotIdx     position of the type-separating dot
+     * @param baseValues item values for lookups
+     * @return the extracted type value, or Integer.MIN_VALUE if the type is invalid
+     */
+    private static int resolveItemType(String token, int dotIdx,
+                                       Map<Identifier, GooValue> baseValues) {
         String typeSuffix = token.substring(dotIdx + 1);
         try {
             GooType type = GooType.valueOf(typeSuffix.toUpperCase(Locale.ROOT));
-            String itemId = token.substring(0, dotIdx);
-            GooValue value = baseValues.get(net.minecraft.resources.Identifier.parse(itemId));
-            if (value == null) {
-                LOGGER.warn(WARN_UNKNOWN_ITEM, itemId);
-                return 0;
-            }
-            return value.get(type);
+            return lookupItemValue(token.substring(0, dotIdx), type, baseValues);
         } catch (IllegalArgumentException ignored) {
             return Integer.MIN_VALUE;
         }
+    }
+
+    /**
+     * Looks up an item's value for a specific goo type. Warns and returns 0 if
+     * the item ID is not found in the base values map.
+     *
+     * @param itemId     the namespaced item identifier string
+     * @param type       the goo type to extract
+     * @param baseValues item values for lookups
+     * @return the item's amount for the given type, or 0 if the item is unknown
+     */
+    private static int lookupItemValue(String itemId, GooType type,
+                                       Map<Identifier, GooValue> baseValues) {
+        GooValue value = baseValues.get(Identifier.parse(itemId));
+        if (value == null) {
+            LOGGER.warn(WARN_UNKNOWN_ITEM, itemId);
+            return 0;
+        }
+        return value.get(type);
     }
 
     /**
@@ -603,6 +849,7 @@ final class GooValueJsonFormat {
 
     /**
      * Applies an arithmetic operator to two integer operands.
+     * Division by zero returns 0 rather than throwing.
      *
      * @param base the left operand
      * @param op the operator string (+, -, *, /)
@@ -614,11 +861,31 @@ final class GooValueJsonFormat {
             case OP_MUL -> base * operand;
             case OP_ADD -> base + operand;
             case OP_SUB -> base - operand;
-            case OP_DIV -> operand == 0 ? 0 : base / operand;
-            default -> {
-                LOGGER.warn(WARN_UNKNOWN_OP, op);
-                yield base;
-            }
+            case OP_DIV -> safeDivide(base, operand);
+            default -> warnUnknownOp(op, base);
         };
+    }
+
+    /**
+     * Integer division guarded against divide-by-zero, returning 0 instead.
+     *
+     * @param base the dividend
+     * @param operand the divisor
+     * @return the quotient, or 0 if the divisor is zero
+     */
+    private static int safeDivide(int base, int operand) {
+        return operand == 0 ? 0 : base / operand;
+    }
+
+    /**
+     * Logs a warning for an unrecognized operator and returns the left operand unchanged.
+     *
+     * @param op   the unrecognized operator string
+     * @param base the left operand to pass through
+     * @return the base value unchanged
+     */
+    private static int warnUnknownOp(String op, int base) {
+        LOGGER.warn(WARN_UNKNOWN_OP, op);
+        return base;
     }
 }

@@ -285,10 +285,10 @@ public class HubBlock extends BaseEntityBlock {
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
         return switch (interaction) {
             case TUNER_PASS       -> throw new IllegalStateException(ERR_TUNER_PASS);
-            case CANISTER_INSERT  -> handleCanisterInsert(hub, hitResult, pos, stack, player, level);
-            case BLOB_INSERT      -> handleBlobInsert(hub, hitResult, pos, stack, player, level);
-            case BUCKET_INSERT    -> handleBucketInsert(hub, hitResult, pos, stack, player, hand, level);
-            case BUCKET_EXTRACT   -> handleBucketExtract(hub, hitResult, pos, stack, player, level);
+            case CANISTER_INSERT  -> handleCanisterInsert(hub, hitResult, stack, player);
+            case BLOB_INSERT      -> handleBlobInsert(hub, hitResult, stack, player);
+            case BUCKET_INSERT    -> handleBucketInsert(hub, hitResult, stack, player, hand);
+            case BUCKET_EXTRACT   -> handleBucketExtract(hub, hitResult, stack, player);
         };
     }
 
@@ -336,20 +336,18 @@ public class HubBlock extends BaseEntityBlock {
      *
      * @param hub       the hub block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the item stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return the interaction result
      */
     private static InteractionResult handleCanisterInsert(
-            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
-        if (!tryInsertCanister(hub, hitResult, pos, stack)) {
+            HubBlockEntity hub, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        if (!tryInsertCanister(hub, hitResult, stack)) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         stack.consume(1, player);
-        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
+        InteractionCooldown.markInteraction(player.getUUID(), hub.getLevel().getGameTime());
         return InteractionResult.SUCCESS;
     }
 
@@ -358,14 +356,12 @@ public class HubBlock extends BaseEntityBlock {
      *
      * @param hub the hub block entity
      * @param hitResult the block hit result for slot targeting
-     * @param pos the block position
      * @param stack the canister item stack
      * @return true if the canister was inserted
      */
     private static boolean tryInsertCanister(
-            HubBlockEntity hub, BlockHitResult hitResult,
-            BlockPos pos, ItemStack stack) {
-        int slot = hitSlot(hitResult, pos);
+            HubBlockEntity hub, BlockHitResult hitResult, ItemStack stack) {
+        int slot = hitSlot(hitResult, hub.getBlockPos());
         return (slot >= 0 && hub.insertCanister(slot, stack.copy()))
                 || hub.insertCanister(stack.copy());
     }
@@ -374,15 +370,14 @@ public class HubBlock extends BaseEntityBlock {
      *
      * @param hub       the hub block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the item stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return the interaction result
      */
     private static InteractionResult handleBlobInsert(
-            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
+            HubBlockEntity hub, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        var pos = hub.getBlockPos();
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.PASS; }
         long volume = BlobStacks.volumeOf(stack);
@@ -394,7 +389,7 @@ public class HubBlock extends BaseEntityBlock {
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        hub.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -402,16 +397,15 @@ public class HubBlock extends BaseEntityBlock {
      *
      * @param hub       the hub block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the item stack
      * @param player    the interacting player
      * @param hand      the hand used
-     * @param level     the current level
      * @return the interaction result
      */
     private static InteractionResult handleBucketInsert(
-            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, InteractionHand hand, Level level) {
+            HubBlockEntity hub, BlockHitResult hitResult,
+            ItemStack stack, Player player, InteractionHand hand) {
+        var pos = hub.getBlockPos();
         GooContents bucketGoo = BucketOfGooItem.getContents(stack);
         if (bucketGoo.isEmpty()) { return InteractionResult.PASS; }
 
@@ -432,7 +426,7 @@ public class HubBlock extends BaseEntityBlock {
         if (!inserted) { return InteractionResult.PASS; }
 
         BucketOfGooItem.setOrRevert(stack, bucketGoo, player, hand);
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
+        hub.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -440,15 +434,14 @@ public class HubBlock extends BaseEntityBlock {
      *
      * @param hub       the hub block entity
      * @param hitResult the ray trace hit result
-     * @param pos       the block position
      * @param stack     the item stack
      * @param player    the interacting player
-     * @param level     the current level
      * @return the interaction result
      */
     private static InteractionResult handleBucketExtract(
-            HubBlockEntity hub, BlockHitResult hitResult, BlockPos pos,
-            ItemStack stack, Player player, Level level) {
+            HubBlockEntity hub, BlockHitResult hitResult,
+            ItemStack stack, Player player) {
+        var pos = hub.getBlockPos();
         int slot = GooBlockInteraction.findSlot(hitSlot(hitResult, pos),
                 HubBlockEntity.MAX_CANISTERS,
                 i -> !hub.getSlotGooContents(i).isEmpty());
@@ -463,7 +456,7 @@ public class HubBlock extends BaseEntityBlock {
         ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
         stack.shrink(1);
         PlayerUtils.addOrDrop(player, filledBucket);
-        level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+        hub.getLevel().playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 

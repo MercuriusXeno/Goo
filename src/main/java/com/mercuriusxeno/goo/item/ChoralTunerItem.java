@@ -99,17 +99,40 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         TunerState state = getState(stack);
 
         if (player.isShiftKeyDown()) {
-            if (!state.hasSelection()) { return InteractionResult.PASS; }
-            setState(stack, state.clearSelection());
-            sendFeedback(player, TunerFeedbackPayload.cancel(MSG_CANCELLED));
-            return InteractionResult.SUCCESS;
+            return handleShiftUseInAir(state, player, stack);
         }
 
+        return handleUseInAir(state, player);
+    }
+
+    /**
+     * Shift-click in air: cancel if selection active, otherwise pass.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @return the interaction result
+     */
+    private InteractionResult handleShiftUseInAir(TunerState state, Player player,
+            ItemStack stack) {
+        if (!state.hasSelection()) { return InteractionResult.PASS; }
+        setState(stack, state.clearSelection());
+        sendFeedback(player, TunerFeedbackPayload.cancel(MSG_CANCELLED));
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Non-shift click in air: show awaiting reminder if selection active.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @return the interaction result
+     */
+    private InteractionResult handleUseInAir(TunerState state, Player player) {
         if (state.hasSelection()) {
             sendFeedback(player, TunerFeedbackPayload.brief(MSG_AWAITING));
             return InteractionResult.SUCCESS;
         }
-
         return InteractionResult.PASS;
     }
 
@@ -127,9 +150,20 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         Player player = context.getPlayer();
         if (player == null) { return InteractionResult.PASS; }
 
+        return dispatchUseOn(context, player, level);
+    }
+
+    /**
+     * Unpacks context, ensures owner, and dispatches to the appropriate handler.
+     *
+     * @param context the use-on context
+     * @param player  the interacting player
+     * @param level   the current level
+     * @return the interaction result
+     */
+    private InteractionResult dispatchUseOn(UseOnContext context, Player player, Level level) {
         ItemStack stack = context.getItemInHand();
-        TunerState state = getState(stack);
-        state = ensureOwner(state, player, stack);
+        TunerState state = ensureOwner(getState(stack), player, stack);
 
         BlockPos pos = context.getClickedPos();
         BlockHitResult hit = new BlockHitResult(
@@ -152,19 +186,54 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
     private InteractionResult handleUseOn(
             TunerState state, Player player, ItemStack stack,
             Level level, BlockPos pos, BlockHitResult hit) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof IGasketHolder holder)) {
+        if (!(level.getBlockEntity(pos) instanceof IGasketHolder holder)) {
             return handleNonGasketClick(state, player, stack);
         }
+        return dispatchToHolder(state, player, stack, level, holder, pos, hit);
+    }
+
+    /**
+     * Routes a gasket holder click to the correct handler based on resolved slot.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @param holder the gasket holder on the target block
+     * @param pos    the block position
+     * @param hit    the ray trace hit result
+     * @return the interaction result
+     */
+    private InteractionResult dispatchToHolder(
+            TunerState state, Player player, ItemStack stack,
+            Level level, IGasketHolder holder, BlockPos pos, BlockHitResult hit) {
         int slot = holder.resolveSlot(hit);
         if (slot == IGasketHolder.SLOT_MISS) {
-            if (holder.hasIntake()) {
-                return handleIntakeClick(state, player, stack, level, holder, pos, hit);
-            }
-            return InteractionResult.PASS;
+            return handleSlotMiss(state, player, stack, level, holder, pos, hit);
         }
         return handleGasketMachineClick(state, player, stack, level,
             holder, pos, slot, hit);
+    }
+
+    /**
+     * Handles a slot miss on a gasket holder: falls through to intake if available.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @param holder the gasket holder on the target block
+     * @param pos    the block position
+     * @param hit    the ray trace hit result
+     * @return the interaction result
+     */
+    private InteractionResult handleSlotMiss(
+            TunerState state, Player player, ItemStack stack,
+            Level level, IGasketHolder holder, BlockPos pos, BlockHitResult hit) {
+        if (holder.hasIntake()) {
+            return handleIntakeClick(state, player, stack, level, holder, pos, hit);
+        }
+        return InteractionResult.PASS;
     }
 
     /**
@@ -193,28 +262,121 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         }
 
         if (player.isShiftKeyDown()) {
-            if (state.hasSelection()) { return handleCancelTuning(state, player, stack); }
-            return handleNaming(player, holder, pos, slot);
+            return handleGasketShiftClick(state, player, stack, holder, pos, slot);
         }
 
+        return resolveAndExecuteGasketAction(state, player, stack, level, holder, pos, slot, hit);
+    }
+
+    /**
+     * Shift-click on a gasket machine: cancel selection if active, otherwise open naming.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param holder the gasket holder on the target block
+     * @param pos    the block position
+     * @param slot   the resolved slot index
+     * @return the interaction result
+     */
+    private InteractionResult handleGasketShiftClick(
+            TunerState state, Player player, ItemStack stack,
+            IGasketHolder holder, BlockPos pos, int slot) {
+        if (state.hasSelection()) { return handleCancelTuning(state, player, stack); }
+        return handleNaming(player, holder, pos, slot);
+    }
+
+    /**
+     * Resolves the gasket role from the hit, validates it, then delegates
+     * to TunerLinkLogic and executes the resulting action.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @param holder the gasket holder on the target block
+     * @param pos    the block position
+     * @param slot   the resolved slot index
+     * @param hit    the ray trace hit result
+     * @return the interaction result
+     */
+    private InteractionResult resolveAndExecuteGasketAction(
+            TunerState state, Player player, ItemStack stack,
+            Level level, IGasketHolder holder, BlockPos pos, int slot,
+            BlockHitResult hit) {
         GasketRole role = holder.resolveRole(hit);
         if (!holder.supportsRole(role)) {
-            String msg = holder.getFaceLabel(role);
-            String label = msg != null ? msg : LABEL_MACHINE;
-            sendFeedback(player, TunerFeedbackPayload.brief(
-                label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1)
-                + MSG_CANT_BE_PREFIX + role.name().toLowerCase(Locale.ROOT)));
-            return InteractionResult.SUCCESS;
+            return sendUnsupportedRoleFeedback(player, holder, role);
         }
 
+        return resolveGasketOrWarn(state, player, stack, level, holder, role, pos, slot);
+    }
+
+    /**
+     * Checks gasket presence on the resolved role and delegates to link resolution,
+     * or warns if no gasket is installed.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @param holder the gasket holder on the target block
+     * @param role   the resolved gasket role
+     * @param pos    the block position
+     * @param slot   the slot index
+     * @return the interaction result
+     */
+    private InteractionResult resolveGasketOrWarn(
+            TunerState state, Player player, ItemStack stack,
+            Level level, IGasketHolder holder, GasketRole role,
+            BlockPos pos, int slot) {
         UUID gasketId = holder.getGasketId(role, slot);
         if (gasketId == null) {
             sendFeedback(player, TunerFeedbackPayload.brief(MSG_NO_GASKET));
             return InteractionResult.SUCCESS;
         }
 
+        return resolveAndExecuteAction(state, player, stack, level,
+            role, gasketId, pos, slot, holder.getFaceLabel(role));
+    }
+
+    /**
+     * Sends feedback when the clicked face does not support the resolved role.
+     *
+     * @param player the interacting player
+     * @param holder the gasket holder on the target block
+     * @param role   the unsupported gasket role
+     * @return SUCCESS after sending feedback
+     */
+    private InteractionResult sendUnsupportedRoleFeedback(
+            Player player, IGasketHolder holder, GasketRole role) {
+        String msg = holder.getFaceLabel(role);
+        String label = msg != null ? msg : LABEL_MACHINE;
+        sendFeedback(player, TunerFeedbackPayload.brief(
+            label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1)
+            + MSG_CANT_BE_PREFIX + role.name().toLowerCase(Locale.ROOT)));
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Looks up the partner, resolves a TunerAction, and executes it.
+     *
+     * @param state     the current tuner state
+     * @param player    the interacting player
+     * @param stack     the tuner item stack
+     * @param level     the current level
+     * @param role      the gasket role
+     * @param gasketId  the gasket UUID
+     * @param pos       the block position
+     * @param slot      the slot index
+     * @param faceLabel the face label, or null
+     * @return the interaction result
+     */
+    private InteractionResult resolveAndExecuteAction(
+            TunerState state, Player player, ItemStack stack, Level level,
+            GasketRole role, UUID gasketId, BlockPos pos, int slot,
+            @Nullable String faceLabel) {
         UUID existingPartnerId = lookupPartner(level, gasketId);
-        String faceLabel = holder.getFaceLabel(role);
 
         TunerAction action = TunerLinkLogic.resolve(
             role, gasketId, existingPartnerId,
@@ -248,22 +410,31 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
             return InteractionResult.PASS;
         }
 
-        GasketRole role = GasketRole.RECEIVER;
-        UUID gasketId = holder.getGasketId(role);
+        return resolveIntakeGasket(state, player, stack, level, holder, pos);
+    }
+
+    /**
+     * Resolves the intake gasket and delegates to link resolution, or warns if absent.
+     *
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @param holder the gasket holder on the target block
+     * @param pos    the block position
+     * @return the interaction result
+     */
+    private InteractionResult resolveIntakeGasket(
+            TunerState state, Player player, ItemStack stack,
+            Level level, IGasketHolder holder, BlockPos pos) {
+        UUID gasketId = holder.getGasketId(GasketRole.RECEIVER);
         if (gasketId == null) {
             sendFeedback(player, TunerFeedbackPayload.brief(MSG_NO_INTAKE_GASKET));
             return InteractionResult.SUCCESS;
         }
-        UUID existingPartnerId = lookupPartner(level, gasketId);
 
-        TunerLinkLogic.TunerAction action = TunerLinkLogic.resolve(
-            role, gasketId, existingPartnerId,
-            state.selectedRole(), state.selectedGasketId(),
-            state.pendingConfirm(), state.confirmTarget(), state.confirmSlot(),
-            pos, GasketPartner.NO_SLOT, LABEL_INTAKE);
-
-        return executeAction(action, state, player, stack, level,
-            pos, GasketPartner.NO_SLOT, LABEL_INTAKE);
+        return resolveAndExecuteAction(state, player, stack, level,
+            GasketRole.RECEIVER, gasketId, pos, GasketPartner.NO_SLOT, LABEL_INTAKE);
     }
 
     /**
@@ -304,20 +475,32 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
             ItemStack stack, Level level, BlockPos pos, int slot,
             @Nullable String faceLabel) {
         return switch (action) {
-            case TunerAction.CompleteLink link ->
-                executeCompleteLink(link, state, player, stack, level, pos, slot, faceLabel);
-            case TunerAction.StartAwaiting awaiting ->
-                executeStartAwaiting(awaiting, state, player, stack);
-            case TunerAction.PromptReplace prompt ->
-                executePromptReplace(prompt, state, player, stack, pos, slot);
-            case TunerAction.PromptSever prompt ->
-                executePromptSever(prompt, state, player, stack, pos, slot);
-            case TunerAction.ConfirmReplace confirm ->
-                executeConfirmReplace(confirm, state, player, stack);
-            case TunerAction.ConfirmSever sever ->
-                executeConfirmSever(sever, player, stack, level);
-            case TunerAction.NoGasketWarning warning ->
-                executeWarning(warning, player);
+            case TunerAction.CompleteLink a -> executeCompleteLink(a, state, player, stack, level, pos, slot, faceLabel);
+            case TunerAction.StartAwaiting a -> executeStartAwaiting(a, state, player, stack);
+            case TunerAction.PromptReplace a -> executePromptReplace(a, state, player, stack, pos, slot);
+            case TunerAction.PromptSever a -> executePromptSever(a, state, player, stack, pos, slot);
+            default -> executeConfirmOrWarning(action, state, player, stack, level);
+        };
+    }
+
+    /**
+     * Executes confirm and warning actions that do not need positional context.
+     *
+     * @param action the resolved tuner action (ConfirmReplace, ConfirmSever, or NoGasketWarning)
+     * @param state  the current tuner state
+     * @param player the interacting player
+     * @param stack  the tuner item stack
+     * @param level  the current level
+     * @return the interaction result
+     */
+    private InteractionResult executeConfirmOrWarning(
+            TunerAction action, TunerState state, Player player,
+            ItemStack stack, Level level) {
+        return switch (action) {
+            case TunerAction.ConfirmReplace a -> executeConfirmReplace(a, state, player, stack);
+            case TunerAction.ConfirmSever a -> executeConfirmSever(a, player, stack, level);
+            case TunerAction.NoGasketWarning a -> executeWarning(a, player);
+            default -> InteractionResult.PASS;
         };
     }
 
@@ -341,22 +524,45 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.PASS; }
 
         GasketRegistry registry = GasketRegistry.get(serverLevel);
-
-        // Clear denormalized partner refs on endpoints displaced by re-linking.
-        // Without this, the old pusher's cache stays live and creates ghost edges.
-        clearDisplacedPartner(level, registry, registry.getTarget(link.outputGasket()));
-        clearDisplacedPartner(level, registry, registry.getSource(link.inputGasket()));
-
+        clearDisplacedEndpoints(level, registry, link);
         registry.link(link.outputGasket(), link.inputGasket());
 
+        writePartnerInfoAndClear(level, state, player, stack, inputPos, inputSlot);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Clears denormalized partner refs on both endpoints displaced by re-linking.
+     * Without this, the old pusher's cache stays live and creates ghost edges.
+     *
+     * @param level    the current level
+     * @param registry the gasket registry
+     * @param link     the link action containing output and input gasket UUIDs
+     */
+    private void clearDisplacedEndpoints(Level level, GasketRegistry registry,
+            TunerAction.CompleteLink link) {
+        clearDisplacedPartner(level, registry, registry.getTarget(link.outputGasket()));
+        clearDisplacedPartner(level, registry, registry.getSource(link.inputGasket()));
+    }
+
+    /**
+     * Writes denormalized partner references for both endpoints and clears selection.
+     *
+     * @param level     the current level
+     * @param state     the tuner state holding the output selection
+     * @param player    the interacting player
+     * @param stack     the tuner item stack
+     * @param inputPos  the input endpoint block position
+     * @param inputSlot the input endpoint slot index
+     */
+    private void writePartnerInfoAndClear(Level level, TunerState state,
+            Player player, ItemStack stack, BlockPos inputPos, int inputSlot) {
         GasketRole outputRole = state.selectedRole();
         GasketRole inputRole = outputRole == GasketRole.TRANSMITTER
             ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
         writePartnerInfo(level, state, inputPos, inputSlot, inputRole, outputRole);
         setState(stack, state.clearSelection());
-
         sendFeedback(player, TunerFeedbackPayload.linkComplete(List.of(MSG_LINKED)));
-        return InteractionResult.SUCCESS;
     }
 
     /**
@@ -460,20 +666,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.PASS; }
 
         TunerState state = getState(stack);
-        BlockPos pos = state.confirmTarget();
-        int slot = state.confirmSlot();
-
-        // Clear the denormalized partner reference on the severed endpoint only.
-        if (pos != null && level.getBlockEntity(pos) instanceof IGasketHolder holder) {
-            for (GasketRole role : GasketRole.values()) {
-                if (sever.gasketId().equals(holder.getGasketId(role, slot))) {
-                    GasketPartner partner = holder.getPartner(role, slot);
-                    clearRemotePartner(level, partner);
-                    holder.setPartner(role, slot, null);
-                    break;
-                }
-            }
-        }
+        clearSeveredEndpoint(level, state, sever.gasketId());
 
         GasketRegistry registry = GasketRegistry.get(serverLevel);
         registry.unlink(sever.gasketId());
@@ -481,6 +674,42 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         setState(stack, state.clearSelection());
         sendFeedback(player, TunerFeedbackPayload.cancel(MSG_SEVERED));
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Clears the denormalized partner reference on the endpoint being severed,
+     * matching the gasket UUID to the correct role before clearing.
+     *
+     * @param level    the current level
+     * @param state    the tuner state containing the confirm target
+     * @param gasketId the UUID of the gasket being severed
+     */
+    private void clearSeveredEndpoint(Level level, TunerState state, UUID gasketId) {
+        BlockPos pos = state.confirmTarget();
+        if (pos == null) { return; }
+        if (!(level.getBlockEntity(pos) instanceof IGasketHolder holder)) { return; }
+
+        clearPartnerWithRemote(level, holder, state.confirmSlot(), gasketId);
+    }
+
+    /**
+     * Finds the role matching the given gasket UUID, clears the remote partner,
+     * and nulls the local partner reference.
+     *
+     * @param level    the current level
+     * @param holder   the gasket holder on the severed endpoint
+     * @param slot     the slot index
+     * @param gasketId the UUID of the gasket being severed
+     */
+    private void clearPartnerWithRemote(Level level, IGasketHolder holder,
+            int slot, UUID gasketId) {
+        for (GasketRole role : GasketRole.values()) {
+            if (gasketId.equals(holder.getGasketId(role, slot))) {
+                clearRemotePartner(level, holder.getPartner(role, slot));
+                holder.setPartner(role, slot, null);
+                break;
+            }
+        }
     }
 
     /**
@@ -518,13 +747,27 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         GasketLocation loc = registry.getLocation(displacedId);
         if (loc == null || loc.isEntityTarget()) { return; }
         if (!level.isLoaded(loc.pos())) { return; }
-        BlockEntity be = level.getBlockEntity(loc.pos());
-        if (be instanceof IGasketHolder holder) {
-            for (GasketRole role : GasketRole.values()) {
-                if (displacedId.equals(holder.getGasketId(role, loc.slot()))) {
-                    holder.setPartner(role, loc.slot(), null);
-                    break;
-                }
+
+        clearPartnerByGasketId(level, loc.pos(), loc.slot(), displacedId);
+    }
+
+    /**
+     * Finds the role matching the given gasket UUID at a position/slot and
+     * clears its partner reference.
+     *
+     * @param level      the current level
+     * @param pos        the block position
+     * @param slot       the slot index
+     * @param gasketId   the gasket UUID to match
+     */
+    private void clearPartnerByGasketId(Level level, BlockPos pos, int slot, UUID gasketId) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof IGasketHolder holder)) { return; }
+
+        for (GasketRole role : GasketRole.values()) {
+            if (gasketId.equals(holder.getGasketId(role, slot))) {
+                holder.setPartner(role, slot, null);
+                break;
             }
         }
     }
@@ -721,12 +964,21 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         if (role == null) {
             stack.remove(DataComponents.CUSTOM_MODEL_DATA);
         } else {
-            String modelKey = role == GasketRole.RECEIVER ? MODEL_RECEIVER : MODEL_TRANSMITTER;
-            stack.set(DataComponents.CUSTOM_MODEL_DATA,
-                new CustomModelData(
-                    List.of(), List.of(),
-                    List.of(modelKey), List.of()));
+            stack.set(DataComponents.CUSTOM_MODEL_DATA, buildRoleModelData(role));
         }
+    }
+
+    /**
+     * Builds a CustomModelData with the string key for the given gasket role.
+     *
+     * @param role the gasket role to encode
+     * @return the custom model data for item model selection
+     */
+    private static CustomModelData buildRoleModelData(GasketRole role) {
+        String modelKey = role == GasketRole.RECEIVER ? MODEL_RECEIVER : MODEL_TRANSMITTER;
+        return new CustomModelData(
+            List.of(), List.of(),
+            List.of(modelKey), List.of());
     }
 
     /**

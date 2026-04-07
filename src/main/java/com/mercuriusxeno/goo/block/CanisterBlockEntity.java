@@ -251,11 +251,21 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
         if (stripGaskets) {
             stripGasketMetadata(copy);
         }
+        placeCanisterInSlot(slot, copy);
+        return true;
+    }
+
+    /**
+     * Places a prepared canister stack into a slot and wires up handler, pusher, and gaskets.
+     *
+     * @param slot the slot index
+     * @param copy the canister stack to place
+     */
+    private void placeCanisterInSlot(int slot, ItemStack copy) {
         canisters.set(slot, copy);
         slotHandlers[slot] = createSlotHandler(slot);
         rebuildSlotPusher(slot);
         onSlotStructureChanged(slot, true);
-        return true;
     }
 
     /**
@@ -268,14 +278,23 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
     public ItemStack removeCanister(int slot) {
         if (isSlotOutOfRange(slot)) { return ItemStack.EMPTY; }
         if (canisters.get(slot).isEmpty()) { return ItemStack.EMPTY; }
-        disposeSlotPusher(slot);
-        syncSlotToItemStack(slot);
-        slotHandlers[slot] = null;
-        deregisterSlotGaskets(slot);
+        teardownSlot(slot);
         ItemStack removed = canisters.get(slot).copy();
         canisters.set(slot, ItemStack.EMPTY);
         onSlotStructureChanged(slot, false);
         return removed;
+    }
+
+    /**
+     * Disposes the pusher, syncs handler state, and deregisters gaskets for a slot being removed.
+     *
+     * @param slot the slot index
+     */
+    private void teardownSlot(int slot) {
+        disposeSlotPusher(slot);
+        syncSlotToItemStack(slot);
+        slotHandlers[slot] = null;
+        deregisterSlotGaskets(slot);
     }
 
     /**
@@ -384,15 +403,26 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
      */
     private ItemStack buildCanisterFromPending() {
         ItemStack canisterStack = new ItemStack(GooItems.CANISTER.get());
-        if (pendingGooContents != null && !pendingGooContents.isEmpty()) {
-            CanisterItem.setGooContents(canisterStack, pendingGooContents);
-        }
-        if (pendingMetadata != null && pendingMetadata.hasData()) {
-            CanisterItem.setMetadata(canisterStack, pendingMetadata);
-        }
+        applyGooAndMetadata(canisterStack, pendingGooContents, pendingMetadata);
         pendingGooContents = null;
         pendingMetadata = null;
         return canisterStack;
+    }
+
+    /**
+     * Writes goo contents and metadata onto a canister stack if present and non-empty.
+     *
+     * @param stack the canister item stack to populate
+     * @param goo   the goo contents, or null to skip
+     * @param meta  the canister metadata, or null to skip
+     */
+    private static void applyGooAndMetadata(ItemStack stack, @Nullable GooContents goo, @Nullable CanisterMetadata meta) {
+        if (goo != null && !goo.isEmpty()) {
+            CanisterItem.setGooContents(stack, goo);
+        }
+        if (meta != null && meta.hasData()) {
+            CanisterItem.setMetadata(stack, meta);
+        }
     }
 
     /**
@@ -405,13 +435,8 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
     private ItemStack buildCanisterFromStack(ItemStack source) {
         ItemStack canisterStack = new ItemStack(GooItems.CANISTER.get());
         GooContents goo = CanisterItem.getGooContents(source);
-        if (!goo.isEmpty()) {
-            CanisterItem.setGooContents(canisterStack, goo);
-        }
         CanisterMetadata meta = CanisterItem.getMetadata(source);
-        if (meta.hasData()) {
-            CanisterItem.setMetadata(canisterStack, meta);
-        }
+        applyGooAndMetadata(canisterStack, goo, meta);
         return canisterStack;
     }
 
@@ -565,24 +590,38 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
      */
     private void rebuildSlotPusher(int slot) {
         disposeSlotPusher(slot);
-        GooFluidHandler handler = slotHandlers[slot];
-        if (handler == null) { return; }
-        ItemStack stack = canisters.get(slot);
-        if (stack.isEmpty()) { return; }
-        CanisterMetadata meta = CanisterItem.getMetadata(stack);
-        if (meta.bottomGasketId() == null || meta.bottomPartner() == null) { return; }
+        if (!slotNeedsPusher(slot)) { return; }
+        slotPushers[slot] = createSlotPusher(slot);
+    }
 
-        final int s = slot;
-        GasketPusher pusher = new GasketPusher(
-            handler,
-            () -> CanisterItem.getMetadata(canisters.get(s)).bottomGasketId(),
-            () -> CanisterItem.getMetadata(canisters.get(s)).bottomPartner(),
-            this::getLevel,
-            this::getBlockPos,
-            () -> syncSlotToItemStack(s),
-            gasketRegistryAccess);
+    /**
+     * Returns true if the slot has a handler, a canister, and a paired bottom gasket.
+     *
+     * @param slot the slot index
+     * @return true if a pusher should be created for this slot
+     */
+    private boolean slotNeedsPusher(int slot) {
+        if (slotHandlers[slot] == null) { return false; }
+        ItemStack stack = canisters.get(slot);
+        if (stack.isEmpty()) { return false; }
+        CanisterMetadata meta = CanisterItem.getMetadata(stack);
+        return meta.bottomGasketId() != null && meta.bottomPartner() != null;
+    }
+
+    /**
+     * Creates and cache-rebuilds a gasket pusher for a slot known to need one.
+     *
+     * @param slot the slot index
+     * @return the new pusher
+     */
+    private GasketPusher createSlotPusher(int slot) {
+        GasketPusher pusher = new GasketPusher(slotHandlers[slot],
+            () -> CanisterItem.getMetadata(canisters.get(slot)).bottomGasketId(),
+            () -> CanisterItem.getMetadata(canisters.get(slot)).bottomPartner(),
+            this::getLevel, this::getBlockPos,
+            () -> syncSlotToItemStack(slot), gasketRegistryAccess);
         pusher.rebuildCache();
-        slotPushers[slot] = pusher;
+        return pusher;
     }
 
     /**
@@ -645,17 +684,34 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
         if (gasketRegistryAccess == null || !(level instanceof ServerLevel serverLevel)) { return; }
         ItemStack stack = canisters.get(slot);
         if (stack.isEmpty()) { return; }
-
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
+        updateGasketLocations(meta, slot, serverLevel);
+    }
+
+    /**
+     * Registers top and bottom gasket locations for the given metadata in the gasket registry.
+     *
+     * @param meta        the canister metadata containing gasket UUIDs
+     * @param slot        the slot index
+     * @param serverLevel the server level for dimension key
+     */
+    private void updateGasketLocations(CanisterMetadata meta, int slot, ServerLevel serverLevel) {
         GasketRegistry registry = gasketRegistryAccess.get();
         ResourceKey<Level> dimension = serverLevel.dimension();
-        if (meta.topGasketId() != null) {
-            registry.updateLocation(meta.topGasketId(),
-                new GasketLocation(dimension, worldPosition, true, slot));
-        }
-        if (meta.bottomGasketId() != null) {
-            registry.updateLocation(meta.bottomGasketId(),
-                new GasketLocation(dimension, worldPosition, false, slot));
+        registerFace(registry, meta.topGasketId(), new GasketLocation(dimension, worldPosition, true, slot));
+        registerFace(registry, meta.bottomGasketId(), new GasketLocation(dimension, worldPosition, false, slot));
+    }
+
+    /**
+     * Registers a single gasket face location if the UUID is present.
+     *
+     * @param registry the gasket registry
+     * @param id       the gasket UUID, or null to skip
+     * @param location the location to register
+     */
+    private static void registerFace(GasketRegistry registry, @Nullable UUID id, GasketLocation location) {
+        if (id != null) {
+            registry.updateLocation(id, location);
         }
     }
 
@@ -668,14 +724,21 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
         if (gasketRegistryAccess == null) { return; }
         ItemStack stack = canisters.get(slot);
         if (stack.isEmpty()) { return; }
-
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
         GasketRegistry registry = gasketRegistryAccess.get();
-        if (meta.topGasketId() != null) {
-            registry.updateLocation(meta.topGasketId(), null);
-        }
-        if (meta.bottomGasketId() != null) {
-            registry.updateLocation(meta.bottomGasketId(), null);
+        deregisterFace(registry, meta.topGasketId());
+        deregisterFace(registry, meta.bottomGasketId());
+    }
+
+    /**
+     * Clears the location of a single gasket face if the UUID is present.
+     *
+     * @param registry the gasket registry
+     * @param id       the gasket UUID, or null to skip
+     */
+    private static void deregisterFace(GasketRegistry registry, @Nullable UUID id) {
+        if (id != null) {
+            registry.updateLocation(id, null);
         }
     }
 
@@ -799,19 +862,39 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
      * @param output the value output to write to
      */
     private void saveStreamState(ValueOutput output) {
-        CompoundTag tag = new CompoundTag();
-        for (int i = 0; i < MAX_SLOTS; i++) {
-            if (slotStreamType[i] != null) {
-                CompoundTag slot = new CompoundTag();
-                slot.putInt(TAG_TYPE, slotStreamType[i].ordinal());
-                slot.putInt(TAG_RATE, slotStreamRate[i]);
-                slot.putLong(TAG_TICK, slotStreamTick[i]);
-                tag.put(String.valueOf(i), slot);
-            }
-        }
+        CompoundTag tag = buildStreamTag();
         if (!tag.isEmpty()) {
             output.store(TAG_STREAMS, CompoundTag.CODEC, tag);
         }
+    }
+
+    /**
+     * Collects non-null slot streams into a compound tag keyed by slot index.
+     *
+     * @return the compound tag with stream data
+     */
+    private CompoundTag buildStreamTag() {
+        CompoundTag tag = new CompoundTag();
+        for (int i = 0; i < MAX_SLOTS; i++) {
+            if (slotStreamType[i] != null) {
+                tag.put(String.valueOf(i), serializeSlotStream(i));
+            }
+        }
+        return tag;
+    }
+
+    /**
+     * Serializes a single slot's stream type, rate, and tick into a CompoundTag.
+     *
+     * @param slot the slot index
+     * @return the serialized stream tag
+     */
+    private CompoundTag serializeSlotStream(int slot) {
+        CompoundTag slotTag = new CompoundTag();
+        slotTag.putInt(TAG_TYPE, slotStreamType[slot].ordinal());
+        slotTag.putInt(TAG_RATE, slotStreamRate[slot]);
+        slotTag.putLong(TAG_TICK, slotStreamTick[slot]);
+        return slotTag;
     }
 
     /**
@@ -820,23 +903,44 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
      * @param input the value input to read from
      */
     private void loadStreamState(ValueInput input) {
-        GooType[] types = GooType.values();
-        input.read(TAG_STREAMS, CompoundTag.CODEC).ifPresentOrElse(tag -> {
-            for (int i = 0; i < MAX_SLOTS; i++) {
-                String key = String.valueOf(i);
-                if (tag.contains(key)) {
-                    CompoundTag slot = tag.getCompoundOrEmpty(key);
-                    int ordinal = slot.getIntOr(TAG_TYPE, INVALID_ORDINAL);
-                    slotStreamType[i] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
-                    slotStreamRate[i] = slot.getIntOr(TAG_RATE, 0);
-                    slotStreamTick[i] = slot.getLongOr(TAG_TICK, 0);
-                } else {
-                    clearSlotStream(i);
-                }
+        input.read(TAG_STREAMS, CompoundTag.CODEC).ifPresentOrElse(
+            this::deserializeAllSlotStreams,
+            this::clearAllSlotStreams);
+    }
+
+    /**
+     * Deserializes stream state for all slots from a compound tag.
+     *
+     * @param tag the compound tag containing per-slot stream data
+     */
+    private void deserializeAllSlotStreams(CompoundTag tag) {
+        for (int i = 0; i < MAX_SLOTS; i++) {
+            String key = String.valueOf(i);
+            if (tag.contains(key)) {
+                deserializeSlotStream(i, tag.getCompoundOrEmpty(key));
+            } else {
+                clearSlotStream(i);
             }
-        }, () -> {
-            for (int i = 0; i < MAX_SLOTS; i++) { clearSlotStream(i); }
-        });
+        }
+    }
+
+    /**
+     * Restores a single slot's stream type, rate, and tick from NBT.
+     *
+     * @param slot    the slot index
+     * @param slotTag the compound tag for this slot
+     */
+    private void deserializeSlotStream(int slot, CompoundTag slotTag) {
+        GooType[] types = GooType.values();
+        int ordinal = slotTag.getIntOr(TAG_TYPE, INVALID_ORDINAL);
+        slotStreamType[slot] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
+        slotStreamRate[slot] = slotTag.getIntOr(TAG_RATE, 0);
+        slotStreamTick[slot] = slotTag.getLongOr(TAG_TICK, 0);
+    }
+
+    /** Clears stream state for all slots. */
+    private void clearAllSlotStreams() {
+        for (int i = 0; i < MAX_SLOTS; i++) { clearSlotStream(i); }
     }
 
     /**
@@ -858,16 +962,24 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
+        loadCanisterList(input);
+        input.read(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC).ifPresent(u -> ownerUuid = u);
+        loadStreamState(input);
+        rebuildAllSlotHandlers();
+        invalidateShape();
+    }
+
+    /**
+     * Restores the 3x3 canister grid from the serialized list, padding with EMPTY.
+     *
+     * @param input the value input to read from
+     */
+    private void loadCanisterList(ValueInput input) {
         input.read(TAG_CANISTERS, ItemStack.OPTIONAL_CODEC.listOf()).ifPresent(list -> {
             for (int i = 0; i < MAX_SLOTS; i++) {
                 canisters.set(i, i < list.size() ? list.get(i) : ItemStack.EMPTY);
             }
         });
-        input.read(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC)
-            .ifPresent(u -> ownerUuid = u);
-        loadStreamState(input);
-        rebuildAllSlotHandlers();
-        invalidateShape();
     }
 
     /**
@@ -987,13 +1099,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
     @Override
     protected void applyImplicitComponents(@NonNull DataComponentGetter getter) {
         super.applyImplicitComponents(getter);
-        GooContents goo = getter.get(GooDataComponents.GOO_CONTENTS.get());
-        if (goo != null) {
-            pendingGooContents = goo;
-        }
-        CanisterMetadata meta = getter.get(GooDataComponents.CANISTER_METADATA.get());
-        if (meta != null) {
-            pendingMetadata = meta;
-        }
+        pendingGooContents = getter.get(GooDataComponents.GOO_CONTENTS.get());
+        pendingMetadata = getter.get(GooDataComponents.CANISTER_METADATA.get());
     }
 }
