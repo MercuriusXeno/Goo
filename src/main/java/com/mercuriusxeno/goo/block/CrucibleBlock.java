@@ -15,7 +15,6 @@ import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooItems;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -29,15 +28,12 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
-import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
@@ -49,15 +45,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The crucible block: melts items into goo. Items for melting are received by
- * detecting item entities landing in the basin, not by right-click. Right-click
- * handles rune ink upgrades, fuel rod insertion, blob insertion, canister
- * collection, and empty-hand goo extraction.
+ * The crucible block (goocible): melts items into goo. Items for melting are
+ * received by detecting item entities landing in the block, not by right-click.
+ * Right-click handles fuel rod insertion, blob insertion, canister collection,
+ * and empty-hand goo extraction.
  * Drops internal state (PMI, fuel rod, reservoir blobs) when broken.
  *
- * Blockstate properties: POWERED (redstone gating), PLATE_NORTH/SOUTH/EAST/WEST
- * (decorative mounting plates that appear when a lever is attached to that face),
- * HAS_GASKET (bottom gasket), MATRICES (0-5, drives wall/floor model selection).
+ * Blockstate properties: POWERED (redstone gating), LIT (active/melting visual),
+ * HAS_GASKET (bottom gasket).
+ * The goocible model switches between on (LIT=true) and off (LIT=false) states.
  */
 public class CrucibleBlock extends BaseEntityBlock {
 
@@ -65,45 +61,24 @@ public class CrucibleBlock extends BaseEntityBlock {
 
     /** Redstone signal present: crucible is disabled when true. */
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
-    /** Decorative mounting plate on the north face (lever attached). */
-    public static final BooleanProperty PLATE_NORTH = BooleanProperty.create("plate_north");
-    /** Decorative mounting plate on the south face (lever attached). */
-    public static final BooleanProperty PLATE_SOUTH = BooleanProperty.create("plate_south");
-    /** Decorative mounting plate on the east face (lever attached). */
-    public static final BooleanProperty PLATE_EAST = BooleanProperty.create("plate_east");
-    /** Decorative mounting plate on the west face (lever attached). */
-    public static final BooleanProperty PLATE_WEST = BooleanProperty.create("plate_west");
+    /** Whether the crucible is actively melting (drives on/off model state). */
+    public static final BooleanProperty LIT = BooleanProperty.create("lit");
     /** Whether a gasket is attached to this crucible. */
     public static final BooleanProperty HAS_GASKET = BooleanProperty.create("has_gasket");
 
-    /** Fuel rod pillar shape, used for targeted interaction ray testing. */
-    private static final VoxelShape PILLAR_SHAPE = box(6, 0, 6, 10, 9, 10);
-    /** Basin Y threshold: hits at or above this are basin interactions. */
-    private static final double BASIN_MIN_Y = 9.0 / 16.0;
     /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
 
-    /** 4 corner feet. */
-    private static final VoxelShape FEET = Shapes.or(
-        box(1, 0, 1, 4, 1, 4),
-        box(12, 0, 1, 15, 1, 4),
-        box(1, 0, 12, 4, 1, 15),
-        box(12, 0, 12, 15, 1, 15));
-    /** 4 leg columns. */
-    private static final VoxelShape LEGS = Shapes.or(
-        box(2, 1, 2, 4, 9, 4),
-        box(12, 1, 2, 14, 9, 4),
-        box(2, 1, 12, 4, 9, 14),
-        box(12, 1, 12, 14, 9, 14));
-    /** Basin: 4 walls + recessed floor. */
-    private static final VoxelShape BASIN = Shapes.or(
-        box(0, 10, 15, 15, 16, 16),
-        box(1, 10, 0, 16, 16, 1),
-        box(0, 10, 0, 1, 16, 15),
-        box(15, 10, 1, 16, 16, 16),
-        box(1, 9, 1, 15, 10, 15));
-    /** Crucible outline/collision shape: 4 legs + basin (open-top cauldron shape). */
-    private static final VoxelShape SHAPE = Shapes.or(BASIN, FEET, LEGS, PILLAR_SHAPE);
+    /** Goocible body: full-width solid base, 13px tall. */
+    private static final VoxelShape BODY = box(0, 0, 0, 16, 13, 16);
+    /** Goocible rim: 4 walls forming a hollow collar so items can fall inside. */
+    private static final VoxelShape RIM = Shapes.or(
+        box(2, 13, 2, 14, 16, 4),
+        box(2, 13, 12, 14, 16, 14),
+        box(2, 13, 4, 4, 16, 12),
+        box(12, 13, 4, 14, 16, 12));
+    /** Combined collision/outline shape. */
+    private static final VoxelShape SHAPE = Shapes.or(BODY, RIM);
 
     /** Creates a crucible block and registers default blockstate values.
      *
@@ -113,10 +88,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(POWERED, false)
-            .setValue(PLATE_NORTH, false)
-            .setValue(PLATE_SOUTH, false)
-            .setValue(PLATE_EAST, false)
-            .setValue(PLATE_WEST, false)
+            .setValue(LIT, false)
             .setValue(HAS_GASKET, false));
     }
 
@@ -135,7 +107,7 @@ public class CrucibleBlock extends BaseEntityBlock {
      */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(POWERED, PLATE_NORTH, PLATE_SOUTH, PLATE_EAST, PLATE_WEST, HAS_GASKET);
+        builder.add(POWERED, LIT, HAS_GASKET);
     }
 
     /** Returns MODEL render shape since the crucible uses a block model.
@@ -148,7 +120,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    /** Returns the crucible's open-top cauldron collision/outline shape.
+    /** Returns the goocible pot collision/outline shape.
      *
      * @param state   the block state
      * @param level   the current level
@@ -210,7 +182,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         return createTickerHelper(type, GooBlockEntities.CRUCIBLE.get(), CrucibleBlockEntity::serverTick);
     }
 
-    /** Dispatches held-item interactions to pillar (fuel) or basin (bucket/canister/blob) handlers.
+    /** Dispatches held-item interactions: fuel, bucket, canister, or blob insertion.
      *
      * @param stack     the item stack
      * @param state     the block state
@@ -234,15 +206,11 @@ public class CrucibleBlock extends BaseEntityBlock {
                 ? InteractionResult.SUCCESS : InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
-        if (hitsPillar(hitResult, pos) && tryInsertFuel(stack, crucible, player)) {
-            return InteractionResult.SUCCESS;
-        }
-        if (hitsBasin(hitResult, pos)) {
-            if (tryPourBucket(stack, crucible, player, hand)) { return InteractionResult.SUCCESS; }
-            if (tryFillBucket(stack, crucible, player)) { return InteractionResult.SUCCESS; }
-            if (tryCollectWithCanister(stack, crucible)) { return InteractionResult.SUCCESS; }
-            if (tryInsertBlob(stack, crucible, player)) { return InteractionResult.SUCCESS; }
-        }
+        if (tryInsertFuel(stack, crucible, player)) { return InteractionResult.SUCCESS; }
+        if (tryPourBucket(stack, crucible, player, hand)) { return InteractionResult.SUCCESS; }
+        if (tryFillBucket(stack, crucible, player)) { return InteractionResult.SUCCESS; }
+        if (tryCollectWithCanister(stack, crucible)) { return InteractionResult.SUCCESS; }
+        if (tryInsertBlob(stack, crucible, player)) { return InteractionResult.SUCCESS; }
 
         return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
@@ -395,7 +363,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         return true;
     }
 
-    /** Handles empty-hand interactions: gasket removal, fuel rod removal, or goo extraction.
+    /** Handles empty-hand interactions: shift = gasket/fuel removal, bare = goo extraction.
      *
      * @param state     the block state
      * @param level     the current level
@@ -412,73 +380,16 @@ public class CrucibleBlock extends BaseEntityBlock {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof CrucibleBlockEntity crucible)) { return InteractionResult.PASS; }
 
-        // Sneak + empty hand with gasket → remove gasket
-        if (player.isShiftKeyDown() && state.getValue(HAS_GASKET)) {
-            GasketInstallation.popGasket(level, pos, crucible.getGasketId(GasketRole.TRANSMITTER));
-            crucible.clearGasket(GasketRole.TRANSMITTER);
-            level.setBlock(pos, state.setValue(HAS_GASKET, false), BLOCK_UPDATE_FLAGS);
-            return InteractionResult.SUCCESS;
-        }
-
-        if (hitsPillar(hitResult, pos)) {
+        if (player.isShiftKeyDown()) {
+            if (state.getValue(HAS_GASKET)) {
+                GasketInstallation.popGasket(level, pos, crucible.getGasketId(GasketRole.TRANSMITTER));
+                crucible.clearGasket(GasketRole.TRANSMITTER);
+                level.setBlock(pos, state.setValue(HAS_GASKET, false), BLOCK_UPDATE_FLAGS);
+                return InteractionResult.SUCCESS;
+            }
             return tryRemoveFuelRod(crucible, player);
         }
-        if (hitsBasin(hitResult, pos)) {
-            return tryExtractGoo(crucible, player);
-        }
-        return InteractionResult.PASS;
-    }
-
-    /** Returns true if the hit location is at basin height or above (Y >= 9/16).
-     *
-     * @param hit the ray trace hit result
-     * @param pos the block position
-     * @return the result
-     */
-    private static boolean hitsBasin(BlockHitResult hit, BlockPos pos) {
-        double ly = hit.getLocation().y - pos.getY();
-        return ly >= BASIN_MIN_Y;
-    }
-
-    /**
-     * Returns true if the hit location falls on the fuel rod pillar.
-     * Tests whether the contact point is inside or on the surface of PILLAR_SHAPE's AABB.
-     *
-     * @param hit the ray trace hit result
-     * @param pos the block position
-     * @return true if the condition is met
-     */
-    private static boolean hitsPillar(BlockHitResult hit, BlockPos pos) {
-        double lx = hit.getLocation().x - pos.getX();
-        double ly = hit.getLocation().y - pos.getY();
-        double lz = hit.getLocation().z - pos.getZ();
-        var bounds = PILLAR_SHAPE.bounds();
-        return isWithinXZ(lx, lz, bounds) && isWithinY(ly, bounds);
-    }
-
-    /**
-     * Returns true if the X and Z coordinates fall within the AABB's horizontal range.
-     *
-     * @param lx local X coordinate
-     * @param lz local Z coordinate
-     * @param bounds the axis-aligned bounding box
-     * @return true if within horizontal bounds
-     */
-    private static boolean isWithinXZ(double lx, double lz,
-            net.minecraft.world.phys.AABB bounds) {
-        return lx >= bounds.minX && lx <= bounds.maxX
-            && lz >= bounds.minZ && lz <= bounds.maxZ;
-    }
-
-    /**
-     * Returns true if the Y coordinate falls within the AABB's vertical range.
-     *
-     * @param ly local Y coordinate
-     * @param bounds the axis-aligned bounding box
-     * @return true if within vertical bounds
-     */
-    private static boolean isWithinY(double ly, net.minecraft.world.phys.AABB bounds) {
-        return ly >= bounds.minY && ly <= bounds.maxY;
+        return tryExtractGoo(crucible, player);
     }
 
     /** Removes the fuel rod from the crucible and gives it to the player.
@@ -505,8 +416,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         if (res.isEmpty()) { return InteractionResult.PASS; }
 
         for (Map.Entry<GooType, Long> entry : res.getAll().entrySet()) {
-            ItemStack output = BlobStacks.createForOutput(entry.getKey(), entry.getValue());
-            PlayerUtils.addOrDrop(player, output);
+            BlobStacks.mergeIntoInventory(player, entry.getKey(), entry.getValue());
         }
         crucible.drainReservoir();
         return InteractionResult.SUCCESS;
@@ -649,9 +559,9 @@ public class CrucibleBlock extends BaseEntityBlock {
         }
     }
 
-    // -- Neighbor updates (redstone + lever detection) --
+    // -- Neighbor updates (redstone) --
 
-    /** Updates powered state and plate properties when neighbors change.
+    /** Updates powered state when neighbors change.
      *
      * @param state         the block state
      * @param level         the current level
@@ -665,42 +575,10 @@ public class CrucibleBlock extends BaseEntityBlock {
             Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
         if (level.isClientSide()) { return; }
 
-        BlockState updated = state
-            .setValue(POWERED, level.hasNeighborSignal(pos))
-            .setValue(PLATE_NORTH, hasLeverOnFace(level, pos, Direction.NORTH))
-            .setValue(PLATE_SOUTH, hasLeverOnFace(level, pos, Direction.SOUTH))
-            .setValue(PLATE_EAST, hasLeverOnFace(level, pos, Direction.EAST))
-            .setValue(PLATE_WEST, hasLeverOnFace(level, pos, Direction.WEST));
-
-        if (updated != state) {
-            level.setBlock(pos, updated, UPDATE_NEIGHBORS | UPDATE_CLIENTS);
+        boolean powered = level.hasNeighborSignal(pos);
+        if (powered != state.getValue(POWERED)) {
+            level.setBlock(pos, state.setValue(POWERED, powered), UPDATE_NEIGHBORS | UPDATE_CLIENTS);
         }
-    }
-
-    /**
-     * Returns true if a wall lever is attached to the given face of this block.
-     * Checks the adjacent block for a lever with FACE=WALL facing away from us.
-     *
-     * @param level the current level
-     * @param pos   the block position
-     * @param face  the block face
-     * @return true if lever on face
-     */
-    private static boolean hasLeverOnFace(Level level, BlockPos pos, Direction face) {
-        BlockPos neighborPos = pos.relative(face);
-        BlockState neighbor = level.getBlockState(neighborPos);
-        return neighbor.getBlock() instanceof LeverBlock && isWallLeverFacing(neighbor, face);
-    }
-
-    /** Returns true if the lever state is a wall lever attached toward the given direction.
-     *
-     * @param lever the lever block state
-     * @param face  the block face
-     * @return the result
-     */
-    private static boolean isWallLeverFacing(BlockState lever, Direction face) {
-        return lever.getValue(FaceAttachedHorizontalDirectionalBlock.FACE) == AttachFace.WALL
-                && lever.getValue(LeverBlock.FACING) == face;
     }
 
     // -- Block break drops --

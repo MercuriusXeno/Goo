@@ -109,7 +109,7 @@ public class VatBlockEntity extends BlockEntity implements ISlottedGooContainer,
     private final IGasketPusher gasketPusher = new GasketPusher(
         fluidHandler, () -> baseGasketId, () -> basePartner,
         this::getLevel, this::getBlockPos, this::markDirtyAndSync,
-        gasketRegistryAccess::get);
+        () -> gasketRegistryAccess.get());
 
     /** Creates a new vat block entity at the given position.
      *

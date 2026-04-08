@@ -73,7 +73,8 @@
         "waxed": {"vital": "$medium"},
         "bottle": {"rock": "$medium"},
         "quartz": {"crystal": "$base"},
-        "mundane_trim": "7 diamond + $mundane_block",
+        "diamond": {"crystal": "$ultra", "aeon": "$high"},
+        "mundane_trim": "7 $diamond + $mundane_block",
         "seed": "$log / 4"
     },
     "_groups": {
@@ -796,7 +797,7 @@
     "clay_ball": "$mundane_block / 4",
     "honeycomb": "$waxed",
     "quartz_slab": "2 $quartz",
-    "diamond": {"crystal": "$ultra", "aeon": "$high"},
+    "diamond": "$diamond",
     "redstone": {"pulse": "$medium"},
     "blaze_rod": {"blaze": "8 $fuel.blaze", "hex": "4 $fuel.blaze"},
     "breeze_rod": {"typhoon": "$ultra", "hex": "$magic.hex"},

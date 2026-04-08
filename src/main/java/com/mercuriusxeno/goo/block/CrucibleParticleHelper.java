@@ -17,8 +17,8 @@ public final class CrucibleParticleHelper {
 
     /** Volume at which the logarithmic fill curve reaches 1.0 (matches BER). */
     private static final long LIQUID_LOG_CAP = 64_000L;
-    /** Basin floor Y in block-relative coords. */
-    private static final float LIQUID_MIN_Y = 10f / 16f;
+    /** Basin floor Y in block-relative coords (goocible rim interior). */
+    private static final float LIQUID_MIN_Y = 13f / 16f;
     /** Basin rim Y (just below top) in block-relative coords. */
     private static final float LIQUID_MAX_Y = 15f / 16f;
 
@@ -42,8 +42,8 @@ public final class CrucibleParticleHelper {
 
     /** Block center offset (0.5 blocks). */
     private static final double BLOCK_CENTER = 0.5;
-    /** Rod-basin contact point Y in pixel coords. */
-    private static final double ROD_CONTACT_Y = 8.0 / 16.0;
+    /** Flame area Y in pixel coords (top of goocible body, inside rim). */
+    private static final double FLAME_Y = 13.0 / 16.0;
     /** Smoke spawn Y in pixel coords (near basin rim). */
     private static final double SMOKE_Y = 14.0 / 16.0;
     /** Full-circle angle in radians. */
@@ -104,10 +104,10 @@ public final class CrucibleParticleHelper {
     private static final float SIZZLE_VOLUME = 0.3f;
 
     // -- Basin interior constants --
-    /** Basin wall inset in pixel coords (3 pixels). */
-    private static final double BASIN_INSET = 3.0 / 16.0;
-    /** Basin interior width in block-relative coords (10 pixels). */
-    private static final double BASIN_INTERIOR_WIDTH = 10.0 / 16.0;
+    /** Basin wall inset in pixel coords (5 pixels, goocible rim). */
+    private static final double BASIN_INSET = 5.0 / 16.0;
+    /** Basin interior width in block-relative coords (6 pixels). */
+    private static final double BASIN_INTERIOR_WIDTH = 6.0 / 16.0;
 
     private CrucibleParticleHelper() {}
 
@@ -120,7 +120,7 @@ public final class CrucibleParticleHelper {
      */
     public static void spawnSparkShower(ServerLevel level, BlockPos pos) {
         double x = pos.getX() + BLOCK_CENTER;
-        double y = pos.getY() + ROD_CONTACT_Y;
+        double y = pos.getY() + FLAME_Y;
         double z = pos.getZ() + BLOCK_CENTER;
         RandomSource random = level.getRandom();
         int count = SPARK_BASE_COUNT + random.nextInt(SPARK_RANDOM_COUNT);
@@ -144,7 +144,7 @@ public final class CrucibleParticleHelper {
      */
     public static void spawnIgnitionSparks(ServerLevel level, BlockPos pos) {
         double x = pos.getX() + BLOCK_CENTER;
-        double y = pos.getY() + ROD_CONTACT_Y;
+        double y = pos.getY() + FLAME_Y;
         double z = pos.getZ() + BLOCK_CENTER;
         RandomSource random = level.getRandom();
         int count = IGNITION_BASE_COUNT + random.nextInt(IGNITION_RANDOM_COUNT);
@@ -174,7 +174,7 @@ public final class CrucibleParticleHelper {
         float chance = melting ? EMBER_CHANCE_MELTING : EMBER_CHANCE_IDLE;
         if (random.nextFloat() >= chance) { return; }
         double x = pos.getX() + BLOCK_CENTER;
-        double y = pos.getY() + ROD_CONTACT_Y;
+        double y = pos.getY() + FLAME_Y;
         double z = pos.getZ() + BLOCK_CENTER;
         int count = 1 + random.nextInt(IGNITION_RANDOM_COUNT);
         for (int i = 0; i < count; i++) {

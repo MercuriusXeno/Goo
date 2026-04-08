@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.item;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -161,6 +162,66 @@ public final class BlobStacks {
         } else {
             GooOmniblobItem.setVolume(stack, remaining);
         }
+    }
+
+    /**
+     * Merges goo volume into a player's inventory, stacking with existing items.
+     * Tries to add to existing omniblobs first, then tops up blob stacks, then
+     * creates new items for the remainder.
+     *
+     * @param player   the player to receive the goo
+     * @param type     the goo type
+     * @param volumeMb volume in microblobs
+     */
+    public static void mergeIntoInventory(Player player, GooType type, long volumeMb) {
+        if (volumeMb <= 0) { return; }
+        long remaining = mergeIntoExistingOmniblobs(player, type, volumeMb);
+        remaining = mergeIntoExistingBlobStacks(player, type, remaining);
+        if (remaining > 0) {
+            PlayerUtils.addOrDrop(player, createForOutput(type, remaining));
+        }
+    }
+
+    /**
+     * Adds volume to the first matching omniblob found in the inventory.
+     *
+     * @param player   the player whose inventory to scan
+     * @param type     the goo type to match
+     * @param volumeMb volume to merge in microblobs
+     * @return remaining volume not merged (0 if fully absorbed)
+     */
+    private static long mergeIntoExistingOmniblobs(Player player, GooType type, long volumeMb) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack slot = player.getInventory().getItem(i);
+            if (slot.getItem() instanceof GooOmniblobItem omni && omni.getGooType() == type) {
+                GooOmniblobItem.setVolume(slot, GooOmniblobItem.getVolume(slot) + volumeMb);
+                return 0;
+            }
+        }
+        return volumeMb;
+    }
+
+    /**
+     * Tops up existing blob stacks of the matching type, returning leftover volume.
+     *
+     * @param player   the player whose inventory to scan
+     * @param type     the goo type to match
+     * @param volumeMb volume to merge in microblobs
+     * @return remaining volume not merged
+     */
+    private static long mergeIntoExistingBlobStacks(Player player, GooType type, long volumeMb) {
+        if (volumeMb <= 0) { return 0; }
+        long remaining = volumeMb;
+        for (int i = 0; i < player.getInventory().getContainerSize() && remaining >= MB_PER_BLOB; i++) {
+            ItemStack slot = player.getInventory().getItem(i);
+            if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) { continue; }
+            int room = MAX_STACK - slot.getCount();
+            if (room <= 0) { continue; }
+            int add = (int) Math.min(room, remaining / MB_PER_BLOB);
+            slot.grow(add);
+            remaining -= add * MB_PER_BLOB;
+        }
+        return remaining;
     }
 
     /**

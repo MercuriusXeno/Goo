@@ -42,40 +42,20 @@ import java.util.UUID;
  * power-law curve: max(1, floor(remaining ^ exponent)), where the exponent
  * is raised by rune ink matrices. Redstone signal disables the crucible.
  *
- * <h3>Platform Design (invariant - do not change)</h3>
- * <ul>
- *   <li>{@code platformY} is server-side physical state, serialized and synced.
- *       The BER only lerps for sub-tick smoothness - it does NOT compute targets.</li>
- *   <li>Platform lifts the rod to the basin. Target: BASIN_Y - PLAT_THICKNESS - rodHeight.
- *       Moves toward target at PLATFORM_SPEED per tick (1px/tick).</li>
- *   <li>Melting requires rod contact: only starts when rod top reaches the basin
- *       ({@code isRodContactingBasin}). Platform travel time IS the startup delay.</li>
- *   <li>As fuel depletes, rod shrinks and platform RISES to maintain contact.
- *       Full fuel = platform at floor, depleted = platform at basin.</li>
- *   <li>Depleted rods stay in the slot. They persist until replaced or removed.</li>
- * </ul>
+ * <p>The {@code LIT} blockstate property tracks whether the crucible is
+ * actively fueled and enabled, driving model/texture switching. Depleted
+ * rods stay in the slot until replaced or removed.</p>
  */
 public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, IGooReservoir {
 
-    /** Float tolerance for rod-to-basin contact check (sub-pixel). */
-    private static final float ROD_CONTACT_TOLERANCE = 0.001f;
     /** Base ignition spray duration in ticks. */
     private static final int IGNITION_BASE_TICKS = 4;
     /** Random variance added to ignition spray duration (exclusive bound). */
     private static final int IGNITION_RANDOM_TICKS = 2;
     /** Minimum ticks between sizzle sounds (debounce). */
     private static final int SIZZLE_DEBOUNCE_TICKS = 20;
-
-    /** Basin bottom Y in block coords (platform + rod must reach here to melt). */
-    static final float BASIN_Y = 9f / 16f;
-    /** Platform thickness in block coords (1 pixel). */
-    static final float PLAT_THICKNESS = 1f / 16f;
-    /** Floor position for the platform. */
-    static final float PLAT_FLOOR = 0f;
-    /** Full rod height: gap between platform top at floor and basin bottom. */
-    static final float ROD_FULL_HEIGHT = BASIN_Y - (PLAT_FLOOR + PLAT_THICKNESS);
-    /** Platform travel speed in block coords per tick (1 pixel/tick). */
-    private static final float PLATFORM_SPEED = 1f / 16f;
+    /** Block update flags: notify neighbors + send to clients. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
 
     private ItemStack meltingItem = ItemStack.EMPTY;
     private ItemStack fuelRod = ItemStack.EMPTY;
@@ -83,11 +63,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     /** Multi-type goo reservoir backed by the Transfer API. */
     private final GooFluidHandler reservoir = new GooFluidHandler(
         Integer.MAX_VALUE, this::syncToClients);
-
-    /** Physical platform Y position (bottom edge, block coords). Serialized. */
-    private float platformY = PLAT_FLOOR;
-    /** Platform Y at the start of the current tick (for client interpolation). */
-    private float prevPlatformY = PLAT_FLOOR;
 
     /** UUID for the bottom gasket, used by the tuner link network. */
     private @Nullable UUID gasketId;
@@ -105,8 +80,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     // --- NBT tag keys ---
     /** NBT key for face label. */
     private static final String TAG_CRUCIBLE = "crucible";
-    /** NBT key for platform Y position. */
-    private static final String TAG_PLATFORM_Y = "PlatformY";
     /** NBT key for goo reservoir contents. */
     private static final String TAG_RESERVOIR = "Reservoir";
     /** NBT key for the melting item stack. */
@@ -127,7 +100,7 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     /** Pushes reservoir goo to gasket partners on a timed interval. */
     private final IGasketPusher gasketPusher = new GasketPusher(
         reservoir, () -> gasketId, () -> gasketPartner, this::getLevel, this::getBlockPos,
-        this::syncToClients, gasketRegistryAccess::get);
+        this::syncToClients, () -> gasketRegistryAccess.get());
 
     /** Returns the container evaluator for use by callers (e.g. CrucibleBlock).
      *
@@ -152,11 +125,15 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
      * @param state the block state
      */
     private void serverTick(Level level, BlockPos pos, BlockState state) {
-        tickPlatform();
         tickIgnitionSpray();
         handleMeltingTick(level, pos, state);
         handleBoilingEffects(level, pos);
         gasketPusher.tick();
+
+        boolean lit = isEnabled() && hasFuel();
+        if (lit != state.getValue(CrucibleBlock.LIT)) {
+            level.setBlock(pos, state.setValue(CrucibleBlock.LIT, lit), BLOCK_UPDATE_FLAGS);
+        }
     }
 
     /** Updates the stabilized dominant type with debounce. Called client-side, gated to once per game tick. */
@@ -200,64 +177,13 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     private void handleBoilingEffects(Level level, BlockPos pos) {
         if (!isEnabled()) { return; }
         if (!hasFuel()) { return; }
-        if (!isRodContactingBasin()) { return; }
         if (hasMeltableItem()) { return; } // already handled by spawnActiveEffects in handleMeltingTick
         spawnActiveEffects(level, pos, false);
     }
 
     /**
-     * Moves the platform toward its target Y at a fixed speed each tick.
-     * Saves prev position for client-side partialTick interpolation.
-     * Spawns ignition sparks when the rod first makes contact with the basin.
-     */
-    private void tickPlatform() {
-        prevPlatformY = platformY;
-        float target = computeTargetPlatformY();
-        if (platformY == target) { return; }
-        boolean wasTouching = isRodContactingBasin();
-        platformY = CrucibleMath.moveToward(platformY, target, PLATFORM_SPEED);
-        boolean justIgnited = !wasTouching && isRodContactingBasin();
-        if (justIgnited) {
-            beginIgnitionSpray();
-        }
-        syncToClients();
-    }
-
-    /** Returns true when the platform should drop to the floor (disabled or no fuel).
-     *
-     * @return true if platform return to floor
-     */
-    private boolean shouldPlatformReturnToFloor() {
-        return !isEnabled() || !hasFuel();
-    }
-
-    /**
-     * Computes the target platform Y based on enabled state and rod size.
-     * The platform lifts the rod so its top contacts the basin.
-     * No rod or disabled: platform drops to the floor.
-     *
-     * @return the computed target platform y
-     */
-    float computeTargetPlatformY() {
-        if (shouldPlatformReturnToFloor()) { return PLAT_FLOOR; }
-        float rodHeight = fuelFraction() * ROD_FULL_HEIGHT;
-        return Math.max(PLAT_FLOOR, BASIN_Y - PLAT_THICKNESS - rodHeight);
-    }
-
-    /** Returns true if the fuel rod's top has reached the basin bottom.
-     *
-     * @return true if rod contacting basin
-     */
-    private boolean isRodContactingBasin() {
-        float rodHeight = fuelFraction() * ROD_FULL_HEIGHT;
-        float rodTop = platformY + PLAT_THICKNESS + rodHeight;
-        return rodTop >= BASIN_Y - ROD_CONTACT_TOLERANCE;
-    }
-
-    /**
      * Per-tick melting: drains goo from the PMI pool into the reservoir.
-     * Skips if disabled, no fuel, no meltable item, or the rod hasn't
-     * reached the basin yet (platform still travelling).
+     * Skips if disabled, no fuel, or no meltable item.
      *
      * @param level the current level
      * @param pos   the block position
@@ -267,7 +193,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
         if (!isEnabled()) { return; }
         if (!hasMeltableItem()) { return; }
         if (!hasFuel()) { return; }
-        if (!isRodContactingBasin()) { return; }
 
         convertFreshRodToDepleted();
         drainFromPool();
@@ -725,18 +650,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
         return PartiallyMeltedItem.getContents(meltingItem).totalVolume();
     }
 
-    /** Returns the current physical platform Y position in block coords.
-     *
-     * @return the platform y
-     */
-    public float getPlatformY() { return platformY; }
-
-    /** Returns the platform Y at the start of the current tick (for partialTick interpolation).
-     *
-     * @return the prev platform y
-     */
-    public float getPrevPlatformY() { return prevPlatformY; }
-
     /**
      * Returns the fuel rod's remaining fraction (0.0 = depleted, 1.0 = fresh).
      * A vanilla blaze rod (not yet burning) returns 1.0.
@@ -771,7 +684,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        output.putFloat(TAG_PLATFORM_Y, platformY);
         saveMeltingState(output);
         GooContents reservoirContents = reservoir.toGooContents();
         if (!reservoirContents.isEmpty()) {
@@ -787,8 +699,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        platformY = input.getFloatOr(TAG_PLATFORM_Y, PLAT_FLOOR);
-        prevPlatformY = platformY;
         loadMeltingState(input);
         reservoir.loadFrom(input.read(TAG_RESERVOIR, GooContents.CODEC).orElse(GooContents.EMPTY));
         loadGasketFields(input);
