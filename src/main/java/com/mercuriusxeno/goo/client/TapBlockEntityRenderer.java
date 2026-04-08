@@ -8,7 +8,6 @@ import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -17,12 +16,10 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -64,6 +61,8 @@ public class TapBlockEntityRenderer
 
     /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
     private static final float FLUID_INSET = 0.5f / 16f;
+    /** Divisor for computing AABB center from min+max. */
+    private static final double CENTER_DIVISOR = 2.0;
 
     // -- Body UV region: canister_side.png [0,0]-[4,8] on 16x16 --
 
@@ -84,7 +83,11 @@ public class TapBlockEntityRenderer
     /** Gasket side V end: row 1/16. */
     private static final float GS_V1 = 0.0625f;
 
-    /** Creates a tap BER. */
+    /**
+     * Creates a tap BER.
+     *
+     * @param context the renderer provider context
+     */
     public TapBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -93,7 +96,15 @@ public class TapBlockEntityRenderer
         return new TapRenderState();
     }
 
-    /** Snapshots canister presence and fluid data from the block entity. */
+    /**
+     * Snapshots canister presence and fluid data from the block entity.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param partialTick the partial tick for interpolation
+     * @param cameraPos the camera world position
+     * @param breakProgress the crumbling overlay, or null
+     */
     @Override
     public void extractRenderState(TapBlockEntity be, TapRenderState state,
             float partialTick, Vec3 cameraPos,
@@ -120,15 +131,22 @@ public class TapBlockEntityRenderer
         }
     }
 
-    /** Submits canister geometry if a canister is present. */
+    /**
+     * Submits canister geometry if a canister is present.
+     *
+     * @param state the block state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param cameraState the camera render state
+     */
     @Override
     public void submit(TapRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (!state.hasCanister) return;
+        if (!state.hasCanister) { return; }
 
         AABB slotBounds = TapBlock.canisterSlotShape(state.facing).bounds();
-        float cx = (float) ((slotBounds.minX + slotBounds.maxX) / 2.0);
-        float cz = (float) ((slotBounds.minZ + slotBounds.maxZ) / 2.0);
+        float cx = (float) ((slotBounds.minX + slotBounds.maxX) / CENTER_DIVISOR);
+        float cz = (float) ((slotBounds.minZ + slotBounds.maxZ) / CENTER_DIVISOR);
 
         submitBody(poseStack, nodeCollector, state, cx, cz);
         submitGaskets(poseStack, nodeCollector, state, cx, cz);
@@ -137,7 +155,15 @@ public class TapBlockEntityRenderer
         }
     }
 
-    /** Renders the 4 side faces of the canister body. */
+    /**
+     * Renders the 4 side faces of the canister body.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     */
     private static void submitBody(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, TapRenderState state,
             float cx, float cz) {
@@ -145,7 +171,10 @@ public class TapBlockEntityRenderer
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityCutout(CANISTER_SIDE),
             (pose, c) -> {
-                float x0 = cx - HW, x1 = cx + HW, z0 = cz - HW, z1 = cz + HW;
+                float x0 = cx - HW;
+                float x1 = cx + HW;
+                float z0 = cz - HW;
+                float z1 = cz + HW;
                 CanisterGeometry.faceNorth(pose, c, light, x0, BODY_BOT, z0, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
                 CanisterGeometry.faceSouth(pose, c, light, x0, BODY_BOT, z1, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
                 CanisterGeometry.faceWest(pose, c, light, x0, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
@@ -153,7 +182,15 @@ public class TapBlockEntityRenderer
             });
     }
 
-    /** Renders copper endcaps at top and bottom of the canister. */
+    /**
+     * Renders copper endcaps at top and bottom of the canister.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     */
     private static void submitGaskets(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, TapRenderState state,
             float cx, float cz) {
@@ -161,13 +198,24 @@ public class TapBlockEntityRenderer
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
             (pose, c) -> {
-                float x0 = cx - HW, x1 = cx + HW, z0 = cz - HW, z1 = cz + HW;
+                float x0 = cx - HW;
+                float x1 = cx + HW;
+                float z0 = cz - HW;
+                float z1 = cz + HW;
                 CanisterGeometry.gasketBox(pose, c, light, x0, BODY_TOP, z0, x1, GASKET_TOP, z1, GS_U0, GS_U1, GS_V1);
                 CanisterGeometry.gasketBox(pose, c, light, x0, GASKET_BOT, z0, x1, BODY_BOT, z1, GS_U0, GS_U1, GS_V1);
             });
     }
 
-    /** Renders the fluid surface inside the canister. */
+    /**
+     * Renders the fluid surface inside the canister.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     * @param cx the center X in block coords
+     * @param cz the center Z in block coords
+     */
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, TapRenderState state,
             float cx, float cz) {
@@ -177,14 +225,19 @@ public class TapBlockEntityRenderer
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
-                float x0 = cx - HW + FLUID_INSET, x1 = cx + HW - FLUID_INSET;
-                float z0 = cz - HW + FLUID_INSET, z1 = cz + HW - FLUID_INSET;
+                float x0 = cx - HW + FLUID_INSET;
+                float x1 = cx + HW - FLUID_INSET;
+                float z0 = cz - HW + FLUID_INSET;
+                float z1 = cz + HW - FLUID_INSET;
                 float y = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
 
                 TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0(), u1 = sprite.getU1();
-                float v0 = sprite.getV0(), v1 = sprite.getV1();
-                float cuboidW = x1 - x0, cuboidD = z1 - z0;
+                float u0 = sprite.getU0();
+                float u1 = sprite.getU1();
+                float v0 = sprite.getV0();
+                float v1 = sprite.getV1();
+                float cuboidW = x1 - x0;
+                float cuboidD = z1 - z0;
                 float su1 = u0 + (u1 - u0) * cuboidW;
                 float sv1 = v0 + (v1 - v0) * cuboidD;
 

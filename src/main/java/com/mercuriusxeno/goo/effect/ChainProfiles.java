@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
@@ -25,6 +24,31 @@ public final class ChainProfiles {
     private static final int BLAZE_MAX_STACKS = 4;
     private static final int ROCK_FUSE_TICKS = 30;
     private static final int ROCK_MAX_STACKS = 5;
+
+    /** Offset to get block center from integer position. */
+    private static final double BLOCK_CENTER_OFFSET = 0.5;
+    /** Particles per stack for flame effect. */
+    private static final int FLAME_PARTICLES_PER_STACK = 20;
+    /** Spread multiplier applied to explosion range for particle distribution. */
+    private static final double FLAME_SPREAD_FACTOR = 0.6;
+    /** Upward velocity for flame particles. */
+    private static final double FLAME_PARTICLE_SPEED = 0.05;
+    /** Lava particle count divisor relative to flame count. */
+    private static final int LAVA_PARTICLE_DIVISOR = 2;
+    /** Smoke particle count divisor relative to flame count. */
+    private static final int SMOKE_PARTICLE_DIVISOR = 3;
+    /** Vertical spread multiplier for smoke plume. */
+    private static final double SMOKE_SPREAD_MULTIPLIER = 1.5;
+    /** Upward velocity for smoke particles. */
+    private static final double SMOKE_PARTICLE_SPEED = 0.02;
+    /** Fires placed per stack count in scatter phase. */
+    private static final int FIRES_PER_STACK = 3;
+    /** Attempts per desired fire placement to account for misses. */
+    private static final int FIRE_ATTEMPT_MULTIPLIER = 4;
+    /** Vertical range divisor for fire scatter (half the horizontal range). */
+    private static final int FIRE_VERTICAL_RANGE_DIVISOR = 2;
+    /** Block update flags for setBlock calls. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
 
     private ChainProfiles() {}
 
@@ -46,46 +70,61 @@ public final class ChainProfiles {
 
     // ── Blaze executor ──────────────────────────────────────────────────
 
-    /** Explosion + fiery aftermath scaled by stack count. */
+    /**
+     * Explosion + fiery aftermath scaled by stack count.
+     *
+     * @param level      the server level
+     * @param pos        the anchor block position
+     * @param range      computed explosion radius
+     * @param stackCount the raw stack count
+     * @param placedFace the face the marker was attached to
+     */
     private static void blazeExecutor(ServerLevel level, BlockPos pos,
                                       int range, int stackCount,
                                       Direction placedFace) {
-        double cx = pos.getX() + 0.5;
-        double cy = pos.getY() + 0.5;
-        double cz = pos.getZ() + 0.5;
+        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
+        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
+        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
 
         // Core explosion
         level.explode(null, cx, cy, cz, (float) range,
                 Level.ExplosionInteraction.TNT);
 
         // Flame particles scaled by range
-        int particleCount = 20 * stackCount;
-        double spread = range * 0.6;
+        int particleCount = FLAME_PARTICLES_PER_STACK * stackCount;
+        double spread = range * FLAME_SPREAD_FACTOR;
         level.sendParticles(ParticleTypes.FLAME,
-                cx, cy, cz, particleCount, spread, spread, spread, 0.05);
+                cx, cy, cz, particleCount, spread, spread, spread, FLAME_PARTICLE_SPEED);
         level.sendParticles(ParticleTypes.LAVA,
-                cx, cy, cz, particleCount / 2, spread, spread, spread, 0.0);
+                cx, cy, cz, particleCount / LAVA_PARTICLE_DIVISOR, spread, spread, spread, 0.0);
         level.sendParticles(ParticleTypes.SMOKE,
-                cx, cy + 0.5, cz, particleCount / 3, spread, spread * 1.5, spread, 0.02);
+                cx, cy + BLOCK_CENTER_OFFSET, cz, particleCount / SMOKE_PARTICLE_DIVISOR, spread, spread * SMOKE_SPREAD_MULTIPLIER, spread, SMOKE_PARTICLE_SPEED);
 
         // Scatter fires on surviving air blocks in the blast zone
         scatterFires(level, pos, range, stackCount);
     }
 
-    /** Places fire on random air blocks above solid surfaces in the blast radius. */
+    /**
+     * Places fire on random air blocks above solid surfaces in the blast radius.
+     *
+     * @param level      the server level
+     * @param center     the explosion center position
+     * @param range      the blast radius
+     * @param stackCount the raw stack count
+     */
     private static void scatterFires(ServerLevel level, BlockPos center,
                                      int range, int stackCount) {
-        int fireCount = 3 * stackCount;
+        int fireCount = FIRES_PER_STACK * stackCount;
         var random = level.getRandom();
-        for (int i = 0; i < fireCount * 4; i++) {
-            if (fireCount <= 0) break;
+        for (int i = 0; i < fireCount * FIRE_ATTEMPT_MULTIPLIER; i++) {
+            if (fireCount <= 0) { break; }
             int dx = random.nextIntBetweenInclusive(-range, range);
-            int dy = random.nextIntBetweenInclusive(-range / 2, range / 2);
+            int dy = random.nextIntBetweenInclusive(-range / FIRE_VERTICAL_RANGE_DIVISOR, range / FIRE_VERTICAL_RANGE_DIVISOR);
             int dz = random.nextIntBetweenInclusive(-range, range);
             BlockPos target = center.offset(dx, dy, dz);
             BlockState state = level.getBlockState(target);
             if (state.isAir() && level.getBlockState(target.below()).isSolidRender()) {
-                level.setBlock(target, Blocks.FIRE.defaultBlockState(), 3);
+                level.setBlock(target, Blocks.FIRE.defaultBlockState(), BLOCK_UPDATE_FLAGS);
                 fireCount--;
             }
         }
@@ -109,17 +148,32 @@ public final class ChainProfiles {
     ) {
         private static final Map<GooType, ChainProfile> PROFILES = new EnumMap<>(GooType.class);
 
-        /** Registers a chain profile for a goo type. Called during mod init. */
+        /**
+         * Registers a chain profile for a goo type. Called during mod init.
+         *
+         * @param type    the goo type
+         * @param profile the chain profile definition
+         */
         public static void register(GooType type, ChainProfile profile) {
             PROFILES.put(type, profile);
         }
 
-        /** Looks up the profile for a goo type. Returns null if unregistered. */
+        /**
+         * Looks up the profile for a goo type. Returns null if unregistered.
+         *
+         * @param type the goo type
+         * @return the chain profile, or null if none registered
+         */
         public static ChainProfile forType(GooType type) {
             return PROFILES.get(type);
         }
 
-        /** Returns true if the given goo type has a registered chain profile. */
+        /**
+         * Returns true if the given goo type has a registered chain profile.
+         *
+         * @param type the goo type to check
+         * @return true if a chain profile exists
+         */
         public static boolean isChainType(GooType type) {
             return PROFILES.containsKey(type);
         }

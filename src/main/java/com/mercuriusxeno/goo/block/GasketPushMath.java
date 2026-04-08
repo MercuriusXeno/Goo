@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.GooContents;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
@@ -10,6 +9,9 @@ import java.util.function.BiFunction;
  * a reservoir to a destination, separated for unit testing.
  */
 public final class GasketPushMath {
+
+    /** Exponent for the tapering transfer rate formula. */
+    private static final double TAPER_EXPONENT = 0.6;
 
     private GasketPushMath() {}
 
@@ -22,9 +24,6 @@ public final class GasketPushMath {
      */
     public record PushResult(GooContents accepted, GooContents remaining) {}
 
-    /** Exponent for the tapering transfer rate formula. */
-    private static final double TAPER_EXPONENT = 0.6;
-
     /**
      * Computes the per-tick transfer rate for a given remaining volume.
      * Uses {@code ceil(remaining^0.6)} so the rate tapers as the source drains.
@@ -33,7 +32,7 @@ public final class GasketPushMath {
      * @return mB to transfer this tick (min 1 if remaining > 0, 0 if empty)
      */
     public static long taperRate(long remaining) {
-        if (remaining <= 0) return 0L;
+        if (remaining <= 0) { return 0L; }
         return Math.max(1L, (long) Math.ceil(Math.pow(remaining, TAPER_EXPONENT)));
     }
 
@@ -48,31 +47,8 @@ public final class GasketPushMath {
      */
     public static PushResult computeTaperedPush(GooContents reservoir,
             BiFunction<GooType, Long, Long> acceptor) {
-        if (reservoir.isEmpty()) {
-            return new PushResult(GooContents.EMPTY, GooContents.EMPTY);
-        }
-
-        GooContents accepted = GooContents.EMPTY;
-        GooContents remaining = GooContents.EMPTY;
-
-        for (Map.Entry<GooType, Long> entry : reservoir.getAll().entrySet()) {
-            GooType type = entry.getKey();
-            long volume = entry.getValue();
-            long budget = taperRate(volume);
-            long offer = Math.min(budget, volume);
-            long took = acceptor.apply(type, offer);
-            took = Math.max(0, Math.min(took, offer));
-
-            if (took > 0) {
-                accepted = accepted.withAdded(type, took);
-            }
-            long leftover = volume - took;
-            if (leftover > 0) {
-                remaining = remaining.withAdded(type, leftover);
-            }
-        }
-
-        return new PushResult(accepted, remaining);
+        return computePush(reservoir,
+                (type, vol) -> acceptor.apply(type, Math.min(taperRate(vol), vol)));
     }
 
     /**
@@ -84,30 +60,38 @@ public final class GasketPushMath {
      * @param acceptor  function (type, volume) -> amount accepted
      * @return push result with accepted and remaining contents
      */
-    public static PushResult computePush(GooContents reservoir,
-            BiFunction<GooType, Long, Long> acceptor) {
-        if (reservoir.isEmpty()) {
-            return new PushResult(GooContents.EMPTY, GooContents.EMPTY);
-        }
-
+    public static PushResult computePush(GooContents reservoir, BiFunction<GooType, Long, Long> acceptor) {
+        if (reservoir.isEmpty()) { return new PushResult(GooContents.EMPTY, GooContents.EMPTY); }
         GooContents accepted = GooContents.EMPTY;
         GooContents remaining = GooContents.EMPTY;
-
-        for (Map.Entry<GooType, Long> entry : reservoir.getAll().entrySet()) {
-            GooType type = entry.getKey();
-            long volume = entry.getValue();
-            long took = acceptor.apply(type, volume);
-            took = Math.max(0, Math.min(took, volume));
-
-            if (took > 0) {
-                accepted = accepted.withAdded(type, took);
-            }
-            long leftover = volume - took;
-            if (leftover > 0) {
-                remaining = remaining.withAdded(type, leftover);
-            }
+        for (var entry : reservoir.getAll().entrySet()) {
+            long took = clampedTake(acceptor, entry.getKey(), entry.getValue());
+            accepted = addIfPositive(accepted, entry.getKey(), took);
+            remaining = addIfPositive(remaining, entry.getKey(), entry.getValue() - took);
         }
-
         return new PushResult(accepted, remaining);
+    }
+
+    /** Clamps the acceptor result to [0, volume].
+     *
+     * @param acceptor the acceptor function
+     * @param type     the goo type
+     * @param volume   the offered volume
+     * @return the clamped accepted amount
+     */
+    private static long clampedTake(BiFunction<GooType, Long, Long> acceptor,
+                                     GooType type, long volume) {
+        return Math.max(0, Math.min(acceptor.apply(type, volume), volume));
+    }
+
+    /** Adds the amount to the contents only if positive.
+     *
+     * @param contents the current contents
+     * @param type     the goo type
+     * @param amount   the amount to add
+     * @return the updated contents
+     */
+    private static GooContents addIfPositive(GooContents contents, GooType type, long amount) {
+        return amount > 0 ? contents.withAdded(type, amount) : contents;
     }
 }

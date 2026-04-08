@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<ruleset name="Goo PMD Ruleset"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+        https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Curated PMD rules for Goo. Complements Checkstyle (style/complexity)
+        and SpotBugs (bytecode bugs). Avoids overlap with both.
+
+        Philosophy: warnings, not errors. Smells are heuristics, not laws.
+    </description>
+
+    <!-- ── Best Practices ─────────────────────────────────────── -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- Covered by Checkstyle: UnusedImports -->
+        <exclude name="UnusedImports"/>
+        <!-- NeoForge callbacks mandate unused parameters by contract -->
+        <exclude name="UnusedFormalParameter"/>
+        <!-- NeoForge event handlers often have unused private methods wired by @SubscribeEvent -->
+        <exclude name="UnusedPrivateMethod"/>
+        <!-- Too noisy for Minecraft: many vanilla overrides return without using all args -->
+        <exclude name="UnusedAssignment"/>
+        <!-- Framework subclass constructors legitimately call overridable registration methods -->
+        <exclude name="ConstructorCallsOverridableMethod"/>
+        <!-- JUnit5 convention: package-private test classes, PMD wants public -->
+        <exclude name="JUnitTestsShouldIncludeAssert"/>
+        <exclude name="JUnitTestClassShouldBeFinal"/>
+        <!-- Conflicts with our ArchUnit convention of package-private tests -->
+        <exclude name="JUnit5TestShouldBePackagePrivate"/>
+        <!-- LooseCoupling: re-enabled in 7.21, false positive on Map/Collection fixed -->
+    </rule>
+
+    <!-- ── Code Style ─────────────────────────────────────────── -->
+    <rule ref="category/java/codestyle.xml">
+        <!-- Covered by Checkstyle or too opinionated for a mod codebase -->
+        <exclude name="MethodArgumentCouldBeFinal"/>
+        <exclude name="LocalVariableCouldBeFinal"/>
+        <exclude name="OnlyOneReturn"/>
+        <exclude name="AtLeastOneConstructor"/>
+        <exclude name="CallSuperInConstructor"/>
+        <!-- Short variable names are idiomatic in Minecraft (x, y, z, p, e) -->
+        <exclude name="ShortVariable"/>
+        <exclude name="ShortMethodName"/>
+        <exclude name="ShortClassName"/>
+        <!-- Long names are fine for descriptive methods -->
+        <exclude name="LongVariable"/>
+        <!-- var is fine; explicit types add noise without value -->
+        <exclude name="UseExplicitTypes"/>
+        <!-- Conflicts with import order conventions in Checkstyle -->
+        <exclude name="UnnecessaryImport"/>
+        <!-- Minecraft style uses commented-out fields as documentation -->
+        <exclude name="CommentDefaultAccessModifier"/>
+        <exclude name="DefaultPackage"/>
+        <!-- Mixin methods require goo$ prefix (dollar signs) to avoid name collisions -->
+        <exclude name="AvoidDollarSigns"/>
+        <!-- AvoidFieldNameMatchingMethodName moved to errorprone in PMD 7.21; excluded there -->
+    </rule>
+
+    <!-- ── Design ─────────────────────────────────────────────── -->
+    <rule ref="category/java/design.xml">
+        <!-- Covered by Checkstyle: CyclomaticComplexity, MethodLength, ParameterNumber -->
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="ExcessiveMethodLength"/>
+        <exclude name="ExcessiveParameterList"/>
+        <exclude name="NcssCount"/>
+        <!-- NeoForge mod classes are necessarily coupled to the framework -->
+        <exclude name="CouplingBetweenObjects"/>
+        <exclude name="LawOfDemeter"/>
+        <exclude name="ExcessiveImports"/>
+        <!-- Data components intentionally expose fields -->
+        <exclude name="DataClass"/>
+        <!-- Too aggressive for record-heavy code -->
+        <exclude name="TooManyFields"/>
+        <!-- God class detection is too coarse; ArchUnit handles boundaries -->
+        <exclude name="GodClass"/>
+        <!-- Requires explicit package config; not useful without inter-package rules -->
+        <exclude name="LoosePackageCoupling"/>
+    </rule>
+
+    <!-- ── Error Prone ────────────────────────────────────────── -->
+    <rule ref="category/java/errorprone.xml">
+        <!-- Covered by SpotBugs with better precision -->
+        <exclude name="NullAssignment"/>
+        <exclude name="CompareObjectsWithEquals"/>
+        <exclude name="MissingSerialVersionUID"/>
+        <!-- Record constructors trigger this on compact form -->
+        <exclude name="ConstructorCallsOverridableMethod"/>
+        <!-- Vanilla Minecraft pattern: close handled by try-with-resources at call site -->
+        <exclude name="CloseResource"/>
+        <!-- NeoForge MapCodec pattern: CODEC field + codec() method share the name by convention (moved from codestyle in 7.21) -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+    </rule>
+
+    <!-- ── Performance ────────────────────────────────────────── -->
+    <rule ref="category/java/performance.xml">
+        <!-- Modern JVM inlines these; not worth the noise -->
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>
+        <!-- AvoidUsingShortType removed in PMD 7.21; was excluded for readability -->
+    </rule>
+
+    <!-- ── Multithreading ─────────────────────────────────────── -->
+    <rule ref="category/java/multithreading.xml">
+        <!-- Minecraft is single-threaded per side; most thread rules are noise -->
+        <exclude name="UseConcurrentHashMap"/>
+        <exclude name="DoNotUseThreads"/>
+    </rule>
+
+    <!-- ── Rule tuning ────────────────────────────────────────── -->
+
+    <!-- Allow common boundary literals (0, 1, -1) and float equivalents in if-conditions.
+         Extracting constants for "size <= 1" or "fill <= 0f" adds noise, not clarity. -->
+    <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition">
+        <properties>
+            <property name="ignoreMagicNumbers" value="-1,0,1,0f,1f,0.0,1.0,'$'"/>
+        </properties>
+    </rule>
+
+    <!-- ── Per-package suppressions ────────────────────────────── -->
+
+    <!-- Mixin methods use goo$name convention: suppress naming rules for mixin package only -->
+    <rule ref="category/java/codestyle.xml/MethodNamingConventions">
+        <properties>
+            <property name="violationSuppressXPath"
+                value="//ClassDeclaration[ends-with(@SimpleName, 'Mixin')]"/>
+        </properties>
+    </rule>
+
+</ruleset>

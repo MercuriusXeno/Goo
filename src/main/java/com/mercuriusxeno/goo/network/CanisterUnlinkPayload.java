@@ -15,14 +15,13 @@ import org.jspecify.annotations.Nullable;
  * position and slot. Includes an optional GasketRole for vat unlinking
  * (to target cap vs base specifically). When role is null, both gaskets
  * on the slot are unlinked (canister/hub behavior).
+ *
+ * @param pos  the block position
+ * @param slot the sub-slot index
+ * @param role the gasket role to unlink, or null for both
  */
 public record CanisterUnlinkPayload(BlockPos pos, int slot,
         @Nullable GasketRole role) implements CustomPacketPayload {
-
-    /** Convenience constructor for canister/hub (unlink both gaskets). */
-    public CanisterUnlinkPayload(BlockPos pos, int slot) {
-        this(pos, slot, null);
-    }
 
     /** Payload type ID for registration. */
     public static final Type<CanisterUnlinkPayload> TYPE =
@@ -32,12 +31,27 @@ public record CanisterUnlinkPayload(BlockPos pos, int slot,
     public static final StreamCodec<FriendlyByteBuf, CanisterUnlinkPayload> STREAM_CODEC =
         StreamCodec.of(CanisterUnlinkPayload::encode, CanisterUnlinkPayload::decode);
 
+    /**
+     * Convenience constructor for canister/hub (unlink both gaskets).
+     *
+     * @param pos  the block position
+     * @param slot the canister slot index
+     */
+    public CanisterUnlinkPayload(BlockPos pos, int slot) {
+        this(pos, slot, null);
+    }
+
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, CanisterUnlinkPayload payload) {
         buf.writeBlockPos(payload.pos);
         buf.writeVarInt(payload.slot);
@@ -47,7 +61,12 @@ public record CanisterUnlinkPayload(BlockPos pos, int slot,
         }
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static CanisterUnlinkPayload decode(FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         int slot = buf.readVarInt();

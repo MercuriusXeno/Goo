@@ -10,9 +10,15 @@ import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactori
  * Registers the mapping from GooValueTooltipComponent data to its client renderer.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
-public class GooTooltipComponentFactory {
+public final class GooTooltipComponentFactory {
 
-    /** Maps the goo tooltip data model to its client-side renderer. */
+    private GooTooltipComponentFactory() {}
+
+    /**
+     * Maps the goo tooltip data model to its client-side renderer.
+     *
+     * @param event the tooltip component factory registration event
+     */
     @SubscribeEvent
     public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(GooValueTooltipComponent.class, GooValueClientTooltipComponent::new);

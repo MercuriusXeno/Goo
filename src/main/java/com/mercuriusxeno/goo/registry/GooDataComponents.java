@@ -34,6 +34,7 @@ public class GooDataComponents {
                 .networkSynchronized(CanisterMetadata.STREAM_CODEC)
                 .build());
 
+    /** Gasket pairing data stored on choral gasket items during linking. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<GasketPairing>> GASKET_PAIRING =
         DATA_COMPONENTS.register("gasket_pairing",
             () -> DataComponentType.<GasketPairing>builder()

@@ -22,10 +22,10 @@ import org.jspecify.annotations.Nullable;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class CanisterPunchListener {
-
-    private CanisterPunchListener() {}
-
     /** Number of ticks the player must hold left-click before the canister pops. */
+    /** Sentinel value indicating no valid slot was resolved. */
+    private static final int NO_SLOT = -1;
+
     private static final int HOLD_TICKS = 10;
 
     /** Block position of the canister being targeted, or null if inactive. */
@@ -40,9 +40,13 @@ public final class CanisterPunchListener {
     /** Whether a hold-to-break sequence is in progress. */
     private static boolean active;
 
+    private CanisterPunchListener() {}
+
     /**
      * Intercepts left-click on canister blocks to begin or abort a hold sequence.
      * START on a canister: begins the hold. ABORT: clears state.
+     *
+     * @param event the event instance
      */
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
@@ -50,7 +54,7 @@ public final class CanisterPunchListener {
             clearState();
             return;
         }
-        if (event.getAction() != PlayerInteractEvent.LeftClickBlock.Action.START) return;
+        if (event.getAction() != PlayerInteractEvent.LeftClickBlock.Action.START) { return; }
 
         boolean isCanister = event.getLevel().getBlockState(event.getPos())
                 .getBlock() instanceof CanisterBlock;
@@ -83,10 +87,12 @@ public final class CanisterPunchListener {
      * Advances the hold timer each client tick.
      * Clears state if the player releases the attack key, looks away,
      * or switches to a different slot. Fires the punch packet on completion.
+     *
+     * @param event the event instance
      */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (!active) return;
+        if (!active) { return; }
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !mc.options.keyAttack.isDown()) {
@@ -106,23 +112,38 @@ public final class CanisterPunchListener {
         }
     }
 
-    /** Returns true if the player is still looking at the same canister slot. */
+    /**
+     * Returns true if the player is still looking at the same canister slot.
+     *
+     * @param mc the mc
+     * @return true if stillAimingAtTarget
+     */
     private static boolean isStillAimingAtTarget(Minecraft mc) {
-        if (!(mc.hitResult instanceof BlockHitResult blockHit)) return false;
-        if (!blockHit.getBlockPos().equals(activePos)) return false;
+        if (!(mc.hitResult instanceof BlockHitResult blockHit)) { return false; }
+        if (!blockHit.getBlockPos().equals(activePos)) { return false; }
 
         int slot = CanisterBlock.hitSlot(blockHit, activePos);
         return slot == activeSlot;
     }
 
-    /** Resolves the targeted slot using the client's precise hit result. */
+    /**
+     * Resolves the targeted slot using the client's precise hit result.
+     *
+     * @param pos the block position
+     * @return the resolved result, or null if unresolvable
+     */
     private static int resolveSlot(BlockPos pos) {
         HitResult hitResult = Minecraft.getInstance().hitResult;
-        if (!(hitResult instanceof BlockHitResult blockHit)) return -1;
+        if (!(hitResult instanceof BlockHitResult blockHit)) { return NO_SLOT; }
         return CanisterBlock.hitSlot(blockHit, pos);
     }
 
-    /** Sends the punch payload to the server. */
+    /**
+     * Sends the punch payload to the server.
+     *
+     * @param pos the block position
+     * @param slot the slot index
+     */
     private static void sendPunchPacket(BlockPos pos, int slot) {
         var connection = Minecraft.getInstance().getConnection();
         if (connection != null) {
@@ -139,22 +160,38 @@ public final class CanisterPunchListener {
         holdTicks = 0;
     }
 
-    /** Returns the break progress as a float from 0.0 (just started) to 1.0 (complete). */
+    /**
+     * Returns the break progress as a float from 0.0 (just started) to 1.0 (complete).
+     *
+     * @return the progress
+     */
     public static float getProgress() {
         return active ? (float) holdTicks / HOLD_TICKS : 0f;
     }
 
-    /** Returns the block position of the active punch target, or null if inactive. */
+    /**
+     * Returns the block position of the active punch target, or null if inactive.
+     *
+     * @return the activePos
+     */
     public static @Nullable BlockPos getActivePos() {
         return active ? activePos : null;
     }
 
-    /** Returns the slot index of the active punch target. */
+    /**
+     * Returns the slot index of the active punch target.
+     *
+     * @return the activeSlot
+     */
     public static int getActiveSlot() {
         return activeSlot;
     }
 
-    /** Returns true if a hold-to-break sequence is in progress. */
+    /**
+     * Returns true if a hold-to-break sequence is in progress.
+     *
+     * @return true if active
+     */
     public static boolean isActive() {
         return active;
     }

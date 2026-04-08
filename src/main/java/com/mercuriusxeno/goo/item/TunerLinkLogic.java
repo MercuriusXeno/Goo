@@ -21,6 +21,15 @@ import java.util.UUID;
  */
 public final class TunerLinkLogic {
 
+    /** Prompt suffix for the replace-link confirmation. */
+    private static final String PROMPT_REPLACE_PREFIX = "Already tuning a ";
+    /** Prompt suffix for the replace-link confirmation. */
+    private static final String PROMPT_REPLACE_SUFFIX = ". Tune again to switch.";
+    /** Prompt prefix for the sever-link confirmation. */
+    private static final String PROMPT_SEVER_PREFIX = "Sever this ";
+    /** Prompt suffix for the sever-link confirmation. */
+    private static final String PROMPT_SEVER_SUFFIX = "'s link? Tune again to confirm.";
+
     private TunerLinkLogic() {}
 
     /**
@@ -72,7 +81,14 @@ public final class TunerLinkLogic {
             pendingConfirm, sameTarget);
     }
 
-    /** Carried opposite role: complete the link. */
+    /**
+     * Carried opposite role: complete the link.
+     *
+     * @param clickedRole     the role of the clicked gasket
+     * @param clickedGasketId the UUID of the clicked gasket
+     * @param carriedGasketId the UUID of the carried gasket
+     * @return a CompleteLink action
+     */
     private static TunerAction resolveOppositeRole(
             GasketRole clickedRole, UUID clickedGasketId,
             UUID carriedGasketId) {
@@ -82,7 +98,18 @@ public final class TunerLinkLogic {
         return new TunerAction.CompleteLink(clickedGasketId, carriedGasketId);
     }
 
-    /** Carried same role: prompt or confirm replacement. */
+    /**
+     * Carried same role: prompt or confirm replacement.
+     *
+     * @param clickedRole      the role of the clicked gasket
+     * @param clickedGasketId  the UUID of the clicked gasket
+     * @param clickedPos       the block position of the click
+     * @param clickedSlot      the slot of the click
+     * @param clickedFaceLabel the face label, or null
+     * @param pendingConfirm   the current pending confirmation
+     * @param sameTarget       whether the confirm target matches
+     * @return a PromptReplace or ConfirmReplace action
+     */
     private static TunerAction resolveSameRole(
             GasketRole clickedRole, UUID clickedGasketId,
             BlockPos clickedPos, int clickedSlot,
@@ -93,11 +120,23 @@ public final class TunerLinkLogic {
                 clickedPos, clickedSlot, clickedRole, clickedFaceLabel);
         }
         return new TunerAction.PromptReplace(
-            "Already tuning a " + clickedRole.getSerializedName()
-                + ". Tune again to switch.");
+            PROMPT_REPLACE_PREFIX + clickedRole.getSerializedName()
+                + PROMPT_REPLACE_SUFFIX);
     }
 
-    /** No carried selection: sever, prompt sever, or start awaiting. */
+    /**
+     * No carried selection: sever, prompt sever, or start awaiting.
+     *
+     * @param clickedRole      the role of the clicked gasket
+     * @param clickedGasketId  the UUID of the clicked gasket
+     * @param existingPartnerId the existing partner UUID, or null
+     * @param clickedPos       the block position of the click
+     * @param clickedSlot      the slot of the click
+     * @param clickedFaceLabel the face label, or null
+     * @param pendingConfirm   the current pending confirmation
+     * @param sameTarget       whether the confirm target matches
+     * @return the appropriate action
+     */
     private static TunerAction resolveNoCarried(
             GasketRole clickedRole, UUID clickedGasketId,
             @Nullable UUID existingPartnerId,
@@ -109,18 +148,26 @@ public final class TunerLinkLogic {
                 return new TunerAction.ConfirmSever(clickedGasketId);
             }
             return new TunerAction.PromptSever(
-                "Sever this " + clickedRole.getSerializedName()
-                    + "'s link? Tune again to confirm.");
+                PROMPT_SEVER_PREFIX + clickedRole.getSerializedName()
+                    + PROMPT_SEVER_SUFFIX);
         }
         return new TunerAction.StartAwaiting(clickedRole, clickedGasketId,
             clickedPos, clickedSlot, clickedFaceLabel);
     }
 
-    /** Returns true if the confirm target matches the clicked position and slot. */
+    /**
+     * Returns true if the confirm target matches the clicked position and slot.
+     *
+     * @param confirmTarget the position being confirmed, or null
+     * @param confirmSlot   the slot being confirmed
+     * @param clickedPos    the clicked block position
+     * @param clickedSlot   the clicked slot
+     * @return true if both position and slot match
+     */
     private static boolean isSameTarget(
             @Nullable BlockPos confirmTarget, int confirmSlot,
             BlockPos clickedPos, int clickedSlot) {
-        if (confirmTarget == null) return false;
+        if (confirmTarget == null) { return false; }
         return confirmTarget.equals(clickedPos) && confirmSlot == clickedSlot;
     }
 
@@ -133,30 +180,65 @@ public final class TunerLinkLogic {
         /**
          * Complete a link between two gaskets. Output (transmitter) is always
          * first, input (receiver) second.
+         *
+         * @param outputGasket the transmitter gasket UUID
+         * @param inputGasket  the receiver gasket UUID
          */
         record CompleteLink(UUID outputGasket, UUID inputGasket)
             implements TunerAction {}
 
-        /** Start awaiting a partner for this gasket. */
+        /**
+         * Start awaiting a partner for this gasket.
+         *
+         * @param role      the gasket role (transmitter or receiver)
+         * @param gasketId  the gasket UUID
+         * @param pos       the block position
+         * @param slot      the sub-slot index
+         * @param faceLabel the face label for display, or null
+         */
         record StartAwaiting(GasketRole role, UUID gasketId, BlockPos pos,
                 int slot, @Nullable String faceLabel)
             implements TunerAction {}
 
-        /** Prompt the player to confirm replacing their current carried selection. */
+        /**
+         * Prompt the player to confirm replacing their current carried selection.
+         *
+         * @param message the prompt message to display
+         */
         record PromptReplace(String message) implements TunerAction {}
 
-        /** Prompt the player to confirm severing an existing link. */
+        /**
+         * Prompt the player to confirm severing an existing link.
+         *
+         * @param message the prompt message to display
+         */
         record PromptSever(String message) implements TunerAction {}
 
-        /** Confirmed: replace the carried selection with a new one. */
+        /**
+         * Confirmed: replace the carried selection with a new one.
+         *
+         * @param newGasketId the replacement gasket UUID
+         * @param newPos      the new block position
+         * @param newSlot     the new sub-slot index
+         * @param role        the gasket role
+         * @param faceLabel   the face label for display, or null
+         */
         record ConfirmReplace(UUID newGasketId, BlockPos newPos, int newSlot,
                 GasketRole role, @Nullable String faceLabel)
             implements TunerAction {}
 
-        /** Confirmed: sever the gasket's link. */
+        /**
+         * Confirmed: sever the gasket's link.
+         *
+         * @param gasketId the gasket UUID to sever
+         */
         record ConfirmSever(UUID gasketId) implements TunerAction {}
 
-        /** Warning: no gasket present on this face. */
+        /**
+         * Warning: no gasket present on this face.
+         *
+         * @param message the warning message to display
+         */
         record NoGasketWarning(String message) implements TunerAction {}
     }
 }

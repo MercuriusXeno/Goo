@@ -12,10 +12,14 @@ import net.minecraft.core.Direction;
  */
 public final class CanisterSlotLayout {
 
-    private CanisterSlotLayout() {}
-
     /** Number of slots in the 3x3 grid. */
     public static final int SLOT_COUNT = 9;
+    /** Number of columns (and rows) in the grid. */
+    private static final int GRID_SIZE = 3;
+    /** Maximum valid grid index (GRID_SIZE - 1). */
+    private static final int MAX_GRID_INDEX = 2;
+    /** Sentinel value: no matching slot found. */
+    private static final int NO_SLOT = -1;
 
     /** Hit detection threshold in pixels: max distance from slot center. */
     public static final float HIT_THRESHOLD = 4.0f;
@@ -42,12 +46,18 @@ public final class CanisterSlotLayout {
         {13, 13}, // slot 8 (SE)
     };
 
+    private CanisterSlotLayout() {}
+
     /**
      * Finds the nearest slot center to the given pixel coordinates.
      * Returns -1 if the closest center is beyond the hit threshold.
+     *
+     * @param px pixel-space X coordinate
+     * @param pz pixel-space Z coordinate
+     * @return slot index 0-8, or -1 if beyond threshold
      */
     public static int nearestSlot(float px, float pz) {
-        int best = -1;
+        int best = NO_SLOT;
         float bestDist = HIT_THRESHOLD * HIT_THRESHOLD;
         for (int i = 0; i < SLOT_COUNT; i++) {
             float dx = px - SLOT_CENTERS[i][0];
@@ -76,11 +86,11 @@ public final class CanisterSlotLayout {
         int col = pixelToColumn(px);
 
         return switch (face) {
-            case NORTH -> clampGrid(row - 1) * 3 + col;
-            case SOUTH -> clampGrid(row + 1) * 3 + col;
-            case WEST  -> row * 3 + clampGrid(col - 1);
-            case EAST  -> row * 3 + clampGrid(col + 1);
-            default    -> row * 3 + col;          // UP/DOWN: full grid
+            case NORTH -> clampGrid(row - 1) * GRID_SIZE + col;
+            case SOUTH -> clampGrid(row + 1) * GRID_SIZE + col;
+            case WEST  -> row * GRID_SIZE + clampGrid(col - 1);
+            case EAST  -> row * GRID_SIZE + clampGrid(col + 1);
+            default    -> row * GRID_SIZE + col;          // UP/DOWN: full grid
         };
     }
 
@@ -100,30 +110,45 @@ public final class CanisterSlotLayout {
         float cz = SLOT_CENTERS[occupiedSlot][1];
         float dx = px - cx;
         float dz = pz - cz;
-        int row = occupiedSlot / 3;
-        int col = occupiedSlot % 3;
+        int row = occupiedSlot / GRID_SIZE;
+        int col = occupiedSlot % GRID_SIZE;
         if (Math.abs(dx) >= Math.abs(dz)) {
-            return row * 3 + clampGrid(dx > 0 ? col + 1 : col - 1);
+            return row * GRID_SIZE + clampGrid(dx > 0 ? col + 1 : col - 1);
         }
-        return clampGrid(dz > 0 ? row + 1 : row - 1) * 3 + col;
+        return clampGrid(dz > 0 ? row + 1 : row - 1) * GRID_SIZE + col;
     }
 
-    /** Clamps a grid index to the valid range [0, 2]. */
+    /**
+     * Clamps a grid index to the valid range [0, 2].
+     *
+     * @param index the grid index to clamp
+     * @return the clamped index
+     */
     private static int clampGrid(int index) {
-        return Math.max(0, Math.min(2, index));
+        return Math.max(0, Math.min(MAX_GRID_INDEX, index));
     }
 
-    /** Maps a pixel coordinate to a grid column index (0, 1, or 2). */
+    /**
+     * Maps a pixel coordinate to a grid column index (0, 1, or 2).
+     *
+     * @param px the pixel-space X coordinate
+     * @return column index (0, 1, or 2)
+     */
     private static int pixelToColumn(float px) {
-        if (px < COL_BOUNDARY_LOW)  return 0;
-        if (px >= COL_BOUNDARY_HIGH) return 2;
+        if (px < COL_BOUNDARY_LOW) { return 0; }
+        if (px >= COL_BOUNDARY_HIGH) { return MAX_GRID_INDEX; }
         return 1;
     }
 
-    /** Maps a pixel coordinate to a grid row index (0, 1, or 2). */
+    /**
+     * Maps a pixel coordinate to a grid row index (0, 1, or 2).
+     *
+     * @param pz the pixel-space Z coordinate
+     * @return row index (0, 1, or 2)
+     */
     private static int pixelToRow(float pz) {
-        if (pz < COL_BOUNDARY_LOW)  return 0;
-        if (pz >= COL_BOUNDARY_HIGH) return 2;
+        if (pz < COL_BOUNDARY_LOW) { return 0; }
+        if (pz >= COL_BOUNDARY_HIGH) { return MAX_GRID_INDEX; }
         return 1;
     }
 }

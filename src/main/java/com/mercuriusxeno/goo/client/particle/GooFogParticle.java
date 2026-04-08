@@ -14,12 +14,34 @@ import org.jspecify.annotations.Nullable;
  * fades to zero, giving a smoggy buildup when multiple puffs overlap.
  * Uses a radial-gradient "dot" texture for soft edges.
  */
-public class GooFogParticle extends SingleQuadParticle {
+public final class GooFogParticle extends SingleQuadParticle {
 
     /** Initial alpha - never fully opaque so overlapping puffs layer naturally. */
     private static final float START_ALPHA = 0.4f;
+    /** Initial collision box size for fog particles. */
+    private static final float COLLISION_SIZE = 0.01f;
+    /** Velocity damping factor per tick. */
+    private static final float FRICTION_FACTOR = 0.95f;
+    /** Base lifetime in ticks before random extension. */
+    private static final int BASE_LIFETIME = 8;
+    /** Base quad size before random scaling. */
+    private static final float BASE_QUAD_SIZE = 0.1f;
 
-    /** Creates a fog puff tinted to the goo type color. */
+    /**
+     * Creates a fog puff tinted to the goo type color.
+     *
+     * @param level   the client level
+     * @param x       the X spawn position
+     * @param y       the Y spawn position
+     * @param z       the Z spawn position
+     * @param vx      the initial X velocity
+     * @param vy      the initial Y velocity
+     * @param vz      the initial Z velocity
+     * @param red     the red color component
+     * @param green   the green color component
+     * @param blue    the blue color component
+     * @param sprites the sprite set for animation frames
+     */
     private GooFogParticle(ClientLevel level, double x, double y, double z,
             double vx, double vy, double vz,
             float red, float green, float blue, SpriteSet sprites) {
@@ -30,15 +52,16 @@ public class GooFogParticle extends SingleQuadParticle {
         this.rCol = red;
         this.gCol = green;
         this.bCol = blue;
-        this.setSize(0.01f, 0.01f);
+        this.setSize(COLLISION_SIZE, COLLISION_SIZE);
         this.gravity = 0f;
-        this.friction = 0.95f;
+        this.friction = FRICTION_FACTOR;
         this.hasPhysics = false;
-        this.lifetime = 8 + level.getRandom().nextInt(8); // 8-15 ticks
-        this.quadSize = 0.1f + level.getRandom().nextFloat() * 0.1f; // 0.1-0.2
+        this.lifetime = BASE_LIFETIME + level.getRandom().nextInt(BASE_LIFETIME);
+        this.quadSize = BASE_QUAD_SIZE + level.getRandom().nextFloat() * BASE_QUAD_SIZE;
         this.alpha = START_ALPHA;
     }
 
+    /** Advances the particle and linearly fades alpha to zero over its lifetime. */
     @Override
     public void tick() {
         super.tick();
@@ -47,7 +70,11 @@ public class GooFogParticle extends SingleQuadParticle {
         this.alpha = START_ALPHA * (1f - progress);
     }
 
-    /** Translucent particle sheet with depth sorting for alpha blend. */
+    /**
+     * Translucent particle sheet with depth sorting for alpha blend.
+     *
+     * @return the translucent particle render layer
+     */
     @Override
     public Layer getLayer() {
         return Layer.TRANSLUCENT;
@@ -61,10 +88,29 @@ public class GooFogParticle extends SingleQuadParticle {
 
         private final SpriteSet sprites;
 
+        /**
+         * Creates a provider with the given sprite set from the particle definition.
+         *
+         * @param sprites the sprite set for fog puff rendering
+         */
         public Provider(SpriteSet sprites) {
             this.sprites = sprites;
         }
 
+        /**
+         * Creates a fog puff particle, extracting RGB from the color option.
+         *
+         * @param options the color particle data carrying RGB values
+         * @param level the client level to spawn in
+         * @param x the x spawn coordinate
+         * @param y the y spawn coordinate
+         * @param z the z spawn coordinate
+         * @param xSpeed the x velocity for drift
+         * @param ySpeed the y velocity for drift
+         * @param zSpeed the z velocity for drift
+         * @param random the random source
+         * @return the new fog puff particle, or null if skipped
+         */
         @Override
         public @Nullable GooFogParticle createParticle(
                 ColorParticleOption options, ClientLevel level,

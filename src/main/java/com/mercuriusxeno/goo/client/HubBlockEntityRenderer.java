@@ -122,7 +122,11 @@ public class HubBlockEntityRenderer
         { 3f / 16f,  3f / 16f},   // slot 7 (NW)
     };
 
-    /** Creates a hub BER. Context is unused. */
+    /**
+     * Creates a hub BER. Context is unused.
+     *
+     * @param context the renderer provider context
+     */
     public HubBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -131,7 +135,15 @@ public class HubBlockEntityRenderer
         return new HubRenderState();
     }
 
-    /** Snapshots canister presence, fluid fill, and stream state from the block entity. */
+    /**
+     * Snapshots canister presence, fluid fill, and stream state from the block entity.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param partialTick the partial tick for interpolation
+     * @param cameraPos the camera world position
+     * @param breakProgress the crumbling overlay, or null
+     */
     @Override
     public void extractRenderState(HubBlockEntity be, HubRenderState state,
             float partialTick, Vec3 cameraPos,
@@ -150,7 +162,13 @@ public class HubBlockEntityRenderer
         }
     }
 
-    /** Extracts dominant goo type and fill fraction for a single hub slot. */
+    /**
+     * Extracts dominant goo type and fill fraction for a single hub slot.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param slot the slot index
+     */
     private static void extractSlotFluid(HubBlockEntity be, HubRenderState state, int slot) {
         ItemStack canister = be.getCanister(slot);
         int compression = GooEnchantments.getCompressionLevel(canister);
@@ -165,33 +183,58 @@ public class HubBlockEntityRenderer
         state.slotFill[slot] = Math.min(1f, (float) contents.totalVolume() / capacity);
     }
 
-    /** Extracts active stream data for a single slot from the block entity. */
+    /**
+     * Extracts active stream data for a single slot from the block entity.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param slot the slot index
+     * @param gameTick the current game tick
+     */
     private static void extractSlotStream(HubBlockEntity be,
             HubRenderState state, int slot, long gameTick) {
         state.streamType[slot] = be.getSlotStreamType(slot, gameTick);
         state.streamRate[slot] = be.getSlotStreamRate(slot, gameTick);
     }
 
-    /** Submits canister geometry for all occupied slots. */
+    /**
+     * Submits canister geometry for all occupied slots.
+     *
+     * @param state the block state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param cameraState the camera render state
+     */
     @Override
     public void submit(HubRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (!hasAnyCanister(state)) return;
+        if (!hasAnyCanister(state)) { return; }
         submitBodies(poseStack, nodeCollector, state);
         submitGaskets(poseStack, nodeCollector, state);
         submitFluids(poseStack, nodeCollector, state);
         submitStreams(poseStack, nodeCollector, state);
     }
 
-    /** Returns true if any slot has a canister. */
+    /**
+     * Returns true if any slot has a canister.
+     *
+     * @param state the block state
+     * @return true if anyCanister is present
+     */
     private static boolean hasAnyCanister(HubRenderState state) {
         for (boolean b : state.hasCanister) {
-            if (b) return true;
+            if (b) { return true; }
         }
         return false;
     }
 
-    /** Batches all canister body sides into a single draw call. */
+    /**
+     * Batches all canister body sides into a single draw call.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitBodies(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
         int light = state.lightCoords;
@@ -199,7 +242,7 @@ public class HubBlockEntityRenderer
             RenderTypes.entityCutout(CANISTER_SIDE),
             (pose, c) -> {
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.hasCanister[i]) renderBodySides(pose, c, light, i);
+                    if (state.hasCanister[i]) { renderBodySides(pose, c, light, i); }
                 }
             });
     }
@@ -208,6 +251,10 @@ public class HubBlockEntityRenderer
      * Submits endcap geometry for all occupied slots. Every canister always gets
      * top and bottom caps - copper by default, choral when upgraded. Two draw
      * calls batch each texture separately.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
      */
     private static void submitGaskets(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
@@ -216,62 +263,118 @@ public class HubBlockEntityRenderer
         if (hasAnyCopperCap(state)) {
             nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entitySolid(COPPER_GASKET),
-                (pose, c) -> {
-                    for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                        if (!state.hasCanister[i]) continue;
-                        renderEndcaps(pose, c, light, i,
-                            !state.hasTopGasket[i], !state.hasBottomGasket[i]);
-                    }
-                });
+                (pose, c) -> renderCopperEndcaps(pose, c, light, state));
         }
         // Choral gaskets: upgraded caps
         if (hasAnyChoralCap(state)) {
             nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entitySolid(CHORAL_GASKET),
-                (pose, c) -> {
-                    for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                        if (!state.hasCanister[i]) continue;
-                        renderEndcaps(pose, c, light, i,
-                            state.hasTopGasket[i], state.hasBottomGasket[i]);
-                    }
-                });
+                (pose, c) -> renderChoralEndcaps(pose, c, light, state));
         }
     }
 
-    /** Renders the 4 side faces of a canister body at the given slot. */
+    /** Renders copper (non-choral) endcaps for all occupied hub slots.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer for copper endcap geometry
+     * @param light packed light value
+     * @param state the hub render state snapshot
+     */
+    private static void renderCopperEndcaps(PoseStack.Pose pose, VertexConsumer c,
+            int light, HubRenderState state) {
+        for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
+            if (!state.hasCanister[i]) { continue; }
+            renderEndcaps(pose, c, light, i,
+                !state.hasTopGasket[i], !state.hasBottomGasket[i]);
+        }
+    }
+
+    /** Renders choral endcaps for all occupied hub slots.
+     *
+     * @param pose  the pose matrix entry
+     * @param c     the vertex consumer for choral endcap geometry
+     * @param light packed light value
+     * @param state the hub render state snapshot
+     */
+    private static void renderChoralEndcaps(PoseStack.Pose pose, VertexConsumer c,
+            int light, HubRenderState state) {
+        for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
+            if (!state.hasCanister[i]) { continue; }
+            renderEndcaps(pose, c, light, i,
+                state.hasTopGasket[i], state.hasBottomGasket[i]);
+        }
+    }
+
+    /**
+     * Renders the 4 side faces of a canister body at the given slot.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param slot the slot index
+     */
     private static void renderBodySides(PoseStack.Pose pose, VertexConsumer c,
             int light, int slot) {
-        float cx = CENTERS[slot][0], cz = CENTERS[slot][1];
-        float x0 = cx - HW, x1 = cx + HW, z0 = cz - HW, z1 = cz + HW;
+        float cx = CENTERS[slot][0];
+        float cz = CENTERS[slot][1];
+        float x0 = cx - HW;
+        float x1 = cx + HW;
+        float z0 = cz - HW;
+        float z1 = cz + HW;
         CanisterGeometry.faceNorth(pose, c, light, x0, BODY_BOT, z0, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
         CanisterGeometry.faceSouth(pose, c, light, x0, BODY_BOT, z1, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
         CanisterGeometry.faceWest(pose, c, light, x0, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
         CanisterGeometry.faceEast(pose, c, light, x1, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
     }
 
-    /** Returns true if any occupied slot has a non-choral (copper) cap on either end. */
+    /**
+     * Returns true if any occupied slot has a non-choral (copper) cap on either end.
+     *
+     * @param state the block state
+     * @return true if anyCopperCap is present
+     */
     private static boolean hasAnyCopperCap(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (state.hasCanister[i]
-                    && (!state.hasTopGasket[i] || !state.hasBottomGasket[i])) return true;
+                    && (!state.hasTopGasket[i] || !state.hasBottomGasket[i])) {
+                return true;
+            }
         }
         return false;
     }
 
-    /** Returns true if any occupied slot has a choral gasket on either end. */
+    /**
+     * Returns true if any occupied slot has a choral gasket on either end.
+     *
+     * @param state the block state
+     * @return true if anyChoralCap is present
+     */
     private static boolean hasAnyChoralCap(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.hasTopGasket[i] || state.hasBottomGasket[i]) return true;
+            if (state.hasTopGasket[i] || state.hasBottomGasket[i]) { return true; }
         }
         return false;
     }
 
-    /** Renders endcap boxes for a slot on the specified sides. */
+    /**
+     * Renders endcap boxes for a slot on the specified sides.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param slot the slot index
+     * @param top whether to render the top cap
+     * @param bottom whether to render the bottom cap
+     */
     private static void renderEndcaps(PoseStack.Pose pose, VertexConsumer c,
             int light, int slot, boolean top, boolean bottom) {
-        if (!top && !bottom) return;
-        float cx = CENTERS[slot][0], cz = CENTERS[slot][1];
-        float x0 = cx - HW, x1 = cx + HW, z0 = cz - HW, z1 = cz + HW;
+        if (!top && !bottom) { return; }
+        float cx = CENTERS[slot][0];
+        float cz = CENTERS[slot][1];
+        float x0 = cx - HW;
+        float x1 = cx + HW;
+        float z0 = cz - HW;
+        float z1 = cz + HW;
         if (top) {
             CanisterGeometry.gasketBox(pose, c, light, x0, BODY_TOP, z0, x1, GASKET_TOP, z1, GS_U0, GS_U1, GS_V1);
         }
@@ -282,10 +385,16 @@ public class HubBlockEntityRenderer
 
     // -- Fluid rendering --
 
-    /** Batches all fluid surface quads into a single translucent draw call. */
+    /**
+     * Batches all fluid surface quads into a single translucent draw call.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
-        if (!hasAnyFluid(state)) return;
+        if (!hasAnyFluid(state)) { return; }
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
@@ -299,25 +408,44 @@ public class HubBlockEntityRenderer
             });
     }
 
-    /** Returns true if any slot has fluid to render. */
+    /**
+     * Returns true if any slot has fluid to render.
+     *
+     * @param state the block state
+     * @return true if anyFluid is present
+     */
     private static boolean hasAnyFluid(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) return true;
+            if (state.slotType[i] != null && state.slotFill[i] > 0f) { return true; }
         }
         return false;
     }
 
-    /** Renders fluid geometry for a single hub slot: top face + 4 side faces. */
+    /**
+     * Renders fluid geometry for a single hub slot: top face + 4 side faces.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param slot the slot index
+     * @param type the goo type
+     * @param fill the fill fraction in [0, 1]
+     */
     private static void renderFluidSurface(PoseStack.Pose pose, VertexConsumer c,
             int light, int slot, GooType type, float fill) {
-        float cx = CENTERS[slot][0], cz = CENTERS[slot][1];
-        float x0 = cx - HW + FLUID_INSET, x1 = cx + HW - FLUID_INSET;
-        float z0 = cz - HW + FLUID_INSET, z1 = cz + HW - FLUID_INSET;
+        float cx = CENTERS[slot][0];
+        float cz = CENTERS[slot][1];
+        float x0 = cx - HW + FLUID_INSET;
+        float x1 = cx + HW - FLUID_INSET;
+        float z0 = cz - HW + FLUID_INSET;
+        float z1 = cz + HW - FLUID_INSET;
         float y = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
 
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float u0 = sprite.getU0(), u1 = sprite.getU1();
-        float v0 = sprite.getV0(), v1 = sprite.getV1();
+        float u0 = sprite.getU0();
+        float u1 = sprite.getU1();
+        float v0 = sprite.getV0();
+        float v1 = sprite.getV1();
 
         float cuboidWidth = x1 - x0;
         float cuboidDepth = z1 - z0;
@@ -338,18 +466,25 @@ public class HubBlockEntityRenderer
 
     // -- Stream rendering --
 
-    /** Batches all active stream cuboids into a single translucent draw call. */
+    /**
+     * Batches all active stream cuboids into a single translucent draw call.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitStreams(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
-        if (!hasAnyStream(state)) return;
+        if (!hasAnyStream(state)) { return; }
         int light = state.lightCoords;
         float anim = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.streamType[i] == null) continue;
-                    float cx = CENTERS[i][0], cz = CENTERS[i][1];
+                    if (state.streamType[i] == null) { continue; }
+                    float cx = CENTERS[i][0];
+                    float cz = CENTERS[i][1];
                     float yTop = BODY_TOP;
                     float yBottom = BODY_BOT + state.slotFill[i] * (BODY_TOP - BODY_BOT);
                     GooStreamRenderer.renderStream(pose, c, light,
@@ -359,10 +494,15 @@ public class HubBlockEntityRenderer
             });
     }
 
-    /** Returns true if any slot has an active stream. */
+    /**
+     * Returns true if any slot has an active stream.
+     *
+     * @param state the block state
+     * @return true if anyStream is present
+     */
     private static boolean hasAnyStream(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.streamType[i] != null) return true;
+            if (state.streamType[i] != null) { return true; }
         }
         return false;
     }

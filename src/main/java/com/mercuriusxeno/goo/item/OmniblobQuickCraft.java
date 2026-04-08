@@ -30,7 +30,7 @@ public final class OmniblobQuickCraft {
      * @return volume per slot in microblobs
      */
     public static long charitablePerSlot(long totalVolume, int slotCount) {
-        if (slotCount <= 0) return 0L;
+        if (slotCount <= 0) { return 0L; }
         return totalVolume / slotCount;
     }
 

@@ -9,6 +9,11 @@ import net.minecraft.core.Direction;
  */
 public final class GasketRegionResolver {
 
+    /** Midpoint of the block's vertical range, used to split top/bottom halves. */
+    private static final double VERTICAL_MIDPOINT = 0.5;
+    /** Divisor for computing midpoint of a voxel range. */
+    private static final double HALF_DIVISOR = 2.0;
+
     private GasketRegionResolver() {}
 
     /**
@@ -20,9 +25,9 @@ public final class GasketRegionResolver {
      * @return RECEIVER for top/cap hits, TRANSMITTER for bottom/base hits
      */
     public static GasketRole resolveVatRole(Direction hitFace, double localY) {
-        if (hitFace == Direction.UP) return GasketRole.RECEIVER;
-        if (hitFace == Direction.DOWN) return GasketRole.TRANSMITTER;
-        return localY >= 0.5 ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
+        if (hitFace == Direction.UP) { return GasketRole.RECEIVER; }
+        if (hitFace == Direction.DOWN) { return GasketRole.TRANSMITTER; }
+        return localY >= VERTICAL_MIDPOINT ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
     }
 
     /**
@@ -36,7 +41,7 @@ public final class GasketRegionResolver {
      */
     public static GasketRole resolveCanisterSlotRole(
             double localY, double slotMinY, double slotMaxY) {
-        double midY = (slotMinY + slotMaxY) / 2.0;
+        double midY = (slotMinY + slotMaxY) / HALF_DIVISOR;
         return localY >= midY ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
     }
 

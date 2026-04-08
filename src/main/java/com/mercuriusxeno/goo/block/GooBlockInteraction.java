@@ -20,9 +20,19 @@ import java.util.function.Predicate;
  */
 public final class GooBlockInteraction {
 
+    /** SuppressWarnings value for unchecked generic casts. */
+    private static final String UNCHECKED = "unchecked";
+
+    /** Sentinel value: no matching slot found. */
+    private static final int NO_SLOT = -1;
+
     private GooBlockInteraction() {}
 
-    /** Dispatches a validated interaction to a block-specific handler. */
+    /**
+     * Dispatches a validated interaction to a block-specific handler.
+     *
+     * @param <T> the block entity type
+     */
     @FunctionalInterface
     public interface Dispatcher<T extends BlockEntity> {
         InteractionResult dispatch(
@@ -45,6 +55,7 @@ public final class GooBlockInteraction {
      * @param rejectAsEmptyHand predicate returning true for interaction types that should
      *                          fall through to useWithoutItem (e.g. null)
      * @param dispatcher       block-specific dispatch function
+     * @param <T>              the block entity type
      * @return the interaction result
      */
     public static <T extends BlockEntity> InteractionResult handleItemInteraction(
@@ -57,9 +68,9 @@ public final class GooBlockInteraction {
         GooInteractionType interaction = GooInteractionType.classify(stack);
         InteractionResult earlyOut = validate(
                 interaction, level, pos, player, entityType, rejectAsEmptyHand);
-        if (earlyOut != null) return earlyOut;
+        if (earlyOut != null) { return earlyOut; }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings(UNCHECKED)
         T entity = (T) level.getBlockEntity(pos);
         return dispatcher.dispatch(interaction, entity, stack, player, hand, hitResult, pos, level);
     }
@@ -67,15 +78,24 @@ public final class GooBlockInteraction {
     /**
      * Shared validation for item interactions.
      * Returns an early-out result or null to continue.
+     *
+     * @param <T>                the block entity type
+     * @param interaction        the classified interaction type, or null
+     * @param level              the world
+     * @param pos                the block position
+     * @param player             the interacting player
+     * @param entityType         expected block entity class
+     * @param rejectAsEmptyHand  predicate returning true for types that fall through
+     * @return an early-out result, or null to continue dispatch
      */
     static <T extends BlockEntity> @Nullable InteractionResult validate(
             @Nullable GooInteractionType interaction, Level level,
             BlockPos pos, Player player, Class<T> entityType,
             Predicate<@Nullable GooInteractionType> rejectAsEmptyHand) {
-        if (rejectAsEmptyHand.test(interaction)) return InteractionResult.TRY_WITH_EMPTY_HAND;
-        if (interaction == GooInteractionType.TUNER_PASS) return InteractionResult.PASS;
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
-        if (!entityType.isInstance(level.getBlockEntity(pos))) return InteractionResult.PASS;
+        if (rejectAsEmptyHand.test(interaction)) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
+        if (interaction == GooInteractionType.TUNER_PASS) { return InteractionResult.PASS; }
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        if (!entityType.isInstance(level.getBlockEntity(pos))) { return InteractionResult.PASS; }
         if (interaction.requiresCooldown()
                 && InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime())) {
             return InteractionResult.SUCCESS;
@@ -86,10 +106,15 @@ public final class GooBlockInteraction {
     /**
      * Shared validation for empty-hand interactions.
      * Returns an early-out result or null to continue.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param player the interacting player
+     * @return the interaction result
      */
     public static @Nullable InteractionResult validateEmptyHand(
             Level level, BlockPos pos, Player player) {
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
         if (InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime())) {
             return InteractionResult.SUCCESS;
         }
@@ -106,10 +131,10 @@ public final class GooBlockInteraction {
      * @return matching slot index, or -1
      */
     public static int findSlot(int hitSlot, int maxSlots, IntPredicate matches) {
-        if (hitSlot >= 0 && matches.test(hitSlot)) return hitSlot;
+        if (hitSlot >= 0 && matches.test(hitSlot)) { return hitSlot; }
         for (int i = 0; i < maxSlots; i++) {
-            if (matches.test(i)) return i;
+            if (matches.test(i)) { return i; }
         }
-        return -1;
+        return NO_SLOT;
     }
 }

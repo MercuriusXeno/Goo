@@ -37,12 +37,21 @@ public enum GasketRole implements StringRepresentable {
         this.serializedName = serializedName;
     }
 
+    /**
+     * Returns the serialized name for codec persistence.
+     *
+     * @return the serialized name string
+     */
     @Override
     public @NonNull String getSerializedName() {
         return serializedName;
     }
 
-    /** Returns the opposite role. */
+    /**
+     * Returns the opposite role.
+     *
+     * @return RECEIVER if this is TRANSMITTER, and vice versa
+     */
     public GasketRole opposite() {
         return this == TRANSMITTER ? RECEIVER : TRANSMITTER;
     }

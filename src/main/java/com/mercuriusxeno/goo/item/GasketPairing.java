@@ -11,6 +11,9 @@ import java.util.Optional;
 
 /**
  * Stores a gasket's source and destination block positions.
+ *
+ * @param source      the source (origin) block position
+ * @param destination the destination block position, or null if unlinked
  */
 public record GasketPairing(BlockPos source, @Nullable BlockPos destination) {
 
@@ -29,6 +32,11 @@ public record GasketPairing(BlockPos source, @Nullable BlockPos destination) {
         (src, dest) -> new GasketPairing(src, dest.orElse(null))
     );
 
+    /**
+     * Returns true if the pairing has both source and destination set.
+     *
+     * @return true if destination is non-null
+     */
     public boolean isComplete() {
         return destination != null;
     }

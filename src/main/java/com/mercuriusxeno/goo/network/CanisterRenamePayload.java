@@ -11,6 +11,10 @@ import org.jspecify.annotations.NonNull;
 /**
  * Client-to-server payload: requests renaming a canister at a specific slot
  * within a multi-canister block.
+ *
+ * @param pos      the block position of the canister block
+ * @param slot     the targeted sub-slot index
+ * @param newLabel the new label text
  */
 public record CanisterRenamePayload(BlockPos pos, int slot, String newLabel)
         implements CustomPacketPayload {
@@ -28,14 +32,24 @@ public record CanisterRenamePayload(BlockPos pos, int slot, String newLabel)
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, CanisterRenamePayload payload) {
         buf.writeBlockPos(payload.pos);
         buf.writeVarInt(payload.slot);
         buf.writeUtf(payload.newLabel);
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static CanisterRenamePayload decode(FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         int slot = buf.readVarInt();

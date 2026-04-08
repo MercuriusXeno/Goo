@@ -14,23 +14,40 @@ import java.util.Map;
  */
 public final class GooValueSync {
 
+    /** Log message for single-player sync. */
+    private static final String LOG_SENT = "Sent {} goo values to {}";
+    /** Log message for broadcast sync. */
+    private static final String LOG_BROADCAST = "Broadcast {} goo values to all players";
+
     private GooValueSync() {}
 
-    /** Sends the full effective value map to a single player. */
+    /**
+     * Sends the full effective value map to a single player.
+     *
+     * @param player the target player
+     */
     public static void sendToPlayer(ServerPlayer player) {
         GooValueSyncPayload payload = buildPayload();
         PacketDistributor.sendToPlayer(player, payload);
-        Goo.LOGGER.debug("Sent {} goo values to {}", payload.values().size(), player.getName().getString());
+        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_SENT, payload.values().size(), player.getName().getString()); }
     }
 
-    /** Sends the full effective value map to all connected players. */
+    /**
+     * Sends the full effective value map to all connected players.
+     *
+     * @param server the running server instance
+     */
     public static void sendToAll(MinecraftServer server) {
         GooValueSyncPayload payload = buildPayload();
         PacketDistributor.sendToAllPlayers(payload);
-        Goo.LOGGER.info("Broadcast {} goo values to all players", payload.values().size());
+        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_BROADCAST, payload.values().size()); }
     }
 
-    /** Builds the sync payload from the current effective values. */
+    /**
+     * Builds the sync payload from the current effective values.
+     *
+     * @return the constructed sync payload
+     */
     private static GooValueSyncPayload buildPayload() {
         Map<Identifier, GooValue> values = Goo.GOO_VALUES.getEffectiveValues();
         return new GooValueSyncPayload(values);

@@ -15,7 +15,11 @@ import org.jspecify.annotations.Nullable;
  */
 public class FuelRemainingProperty implements RangeSelectItemModelProperty {
 
-    /** Codec for deserialization (no config parameters, singleton). */
+    /**
+     * Codec for deserialization (no config parameters, singleton).
+     *
+     * @return the result
+     */
     public static final MapCodec<FuelRemainingProperty> MAP_CODEC =
         MapCodec.unit(new FuelRemainingProperty());
 
@@ -28,14 +32,19 @@ public class FuelRemainingProperty implements RangeSelectItemModelProperty {
     /**
      * Returns a float 0.0-7.0 representing the fuel rod's visual stage.
      * 0.0 = nearly empty (nub), 7.0 = barely depleted (almost full).
+     *
+     * @param stack the item stack
+     * @param level the current level
+     * @param owner the entity holding the item, or null
+     * @param seed the random seed for model variation
+     * @return the value
      */
     @Override
     public float get(ItemStack stack, @Nullable ClientLevel level,
             @Nullable ItemOwner owner, int seed) {
-        if (!(stack.getItem() instanceof DepletedBlazeRodItem)) return 0f;
+        if (!(stack.getItem() instanceof DepletedBlazeRodItem)) { return 0f; }
         int remaining = DepletedBlazeRodItem.getTicksRemaining(stack);
-        int stage = Math.min(remaining / TICKS_PER_STAGE, STAGES - 1);
-        return (float) stage;
+        return Math.min(remaining / TICKS_PER_STAGE, STAGES - 1);
     }
 
     @Override

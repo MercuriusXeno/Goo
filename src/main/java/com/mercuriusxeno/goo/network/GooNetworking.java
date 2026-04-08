@@ -13,58 +13,46 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = Goo.MODID)
 public final class GooNetworking {
 
+    /** Protocol version for network payload registration. */
+    private static final String PROTOCOL_VERSION = "1";
+
     private GooNetworking() {}
 
-    /** Registers all network payloads for both directions. */
+    /**
+     * Registers all network payloads for both directions.
+     *
+     * @param event the payload registration event
+     */
     @SubscribeEvent
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar(Goo.MODID).versioned("1");
-        // Client-bound payloads use lambdas (not method references) to defer
-        // class loading of client-only handler classes on the dedicated server.
-        registrar.playToClient(
-                GooValueSyncPayload.TYPE,
-                GooValueSyncPayload.STREAM_CODEC,
-                (payload, context) -> GooValueSyncHandler.handle(payload, context)
-        );
-        registrar.playToClient(
-                OpenNamingScreenPayload.TYPE,
-                OpenNamingScreenPayload.STREAM_CODEC,
-                (payload, context) -> OpenNamingScreenHandler.handle(payload, context)
-        );
-        registrar.playToClient(
-                TunerFeedbackPayload.TYPE,
-                TunerFeedbackPayload.STREAM_CODEC,
-                (payload, context) -> TunerFeedbackHandler.handle(payload, context)
-        );
-        registrar.playToServer(
-                CanisterRenamePayload.TYPE,
-                CanisterRenamePayload.STREAM_CODEC,
-                CanisterRenameHandler::handle
-        );
-        registrar.playToServer(
-                CanisterPunchPayload.TYPE,
-                CanisterPunchPayload.STREAM_CODEC,
-                CanisterPunchHandler::handle
-        );
-        registrar.playToServer(
-                CanisterUnlinkPayload.TYPE,
-                CanisterUnlinkPayload.STREAM_CODEC,
-                CanisterUnlinkHandler::handle
-        );
-        registrar.playToServer(
-                BlobThrowPayload.TYPE,
-                BlobThrowPayload.STREAM_CODEC,
-                BlobThrowHandler::handle
-        );
-        registrar.playToServer(
-                GloveSelectPayload.TYPE,
-                GloveSelectPayload.STREAM_CODEC,
-                GloveSelectHandler::handle
-        );
-        registrar.playToClient(
-                BlobFlightPayload.TYPE,
-                BlobFlightPayload.STREAM_CODEC,
-                (payload, context) -> BlobFlightHandler.handle(payload, context)
-        );
+        PayloadRegistrar r = event.registrar(Goo.MODID).versioned(PROTOCOL_VERSION);
+        registerClientPayloads(r);
+        registerServerPayloads(r);
+    }
+
+    /** Registers client-bound payloads. Lambdas defer client-only class loading on dedicated servers.
+     *
+     * @param r the payload registrar
+     */
+    private static void registerClientPayloads(PayloadRegistrar r) {
+        r.playToClient(GooValueSyncPayload.TYPE, GooValueSyncPayload.STREAM_CODEC, GooValueSyncHandler::handle);
+        r.playToClient(OpenNamingScreenPayload.TYPE, OpenNamingScreenPayload.STREAM_CODEC,
+                (payload, ctx) -> OpenNamingScreenHandler.handle(payload, ctx));
+        r.playToClient(TunerFeedbackPayload.TYPE, TunerFeedbackPayload.STREAM_CODEC,
+                (payload, ctx) -> TunerFeedbackHandler.handle(payload, ctx));
+        r.playToClient(BlobFlightPayload.TYPE, BlobFlightPayload.STREAM_CODEC,
+                (payload, ctx) -> BlobFlightHandler.handle(payload, ctx));
+    }
+
+    /** Registers server-bound payloads.
+     *
+     * @param r the payload registrar
+     */
+    private static void registerServerPayloads(PayloadRegistrar r) {
+        r.playToServer(CanisterRenamePayload.TYPE, CanisterRenamePayload.STREAM_CODEC, CanisterRenameHandler::handle);
+        r.playToServer(CanisterPunchPayload.TYPE, CanisterPunchPayload.STREAM_CODEC, CanisterPunchHandler::handle);
+        r.playToServer(CanisterUnlinkPayload.TYPE, CanisterUnlinkPayload.STREAM_CODEC, CanisterUnlinkHandler::handle);
+        r.playToServer(BlobThrowPayload.TYPE, BlobThrowPayload.STREAM_CODEC, BlobThrowHandler::handle);
+        r.playToServer(GloveSelectPayload.TYPE, GloveSelectPayload.STREAM_CODEC, GloveSelectHandler::handle);
     }
 }

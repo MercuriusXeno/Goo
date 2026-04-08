@@ -6,11 +6,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.gui.Font;
-import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import java.util.Map;
@@ -21,8 +21,24 @@ import java.util.Map;
  */
 public final class InWorldHud {
 
-    private InWorldHud() {}
-
+    /** Full white color for quad rendering. */
+    private static final int OPAQUE_WHITE = 0xFFFFFFFF;
+    /** Degrees-to-radians offset for camera yaw (faces player). */
+    private static final float YAW_OFFSET = 180;
+    /** Half divisor for centering calculations. */
+    private static final float HALF = 2f;
+    /** Default frame delta-time when no previous frame exists. */
+    private static final float DEFAULT_DT = 0.016f;
+    /** Nanoseconds per second for delta-time conversion. */
+    private static final float NANOS_PER_SECOND = 1_000_000_000f;
+    /** Maximum delta-time clamp to handle lag spikes. */
+    private static final float MAX_DT = 0.1f;
+    /** Texture path prefix for goo type icons. */
+    private static final String ICON_PATH_PREFIX = "textures/item/";
+    /** Texture path suffix for goo type icons. */
+    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+    /** Goo mod namespace for resource identifiers. */
+    private static final String NAMESPACE_GOO = "goo";
     /** Scale factor: 1 pixel = 1/64 of a block. */
     public static final float PIXEL_SCALE = 1f / 64f;
 
@@ -39,22 +55,64 @@ public final class InWorldHud {
     public static final Identifier BG_TEXTURE = Identifier.withDefaultNamespace(
         "textures/gui/sprites/hud/effect_background.png");
 
+    // --- Shared goo row rendering constants and methods ---
+
+    /** Height of one HUD row (icon + text). */
+    public static final float ROW_HEIGHT = 11f;
+
+    /** Icon render size in scaled pixels. */
+    public static final float ICON_SIZE = 10f;
+
+    /** Gap between icon and text in a goo row. */
+    public static final float ICON_TEXT_GAP = 2f;
+
+    /** Default text color (white). */
+    public static final int TEXT_COLOR = 0xFFFFFFFF;
+
+    private InWorldHud() {}
+
     /**
      * Renders a nine-slice background using the vanilla effect_background texture.
      * The 3px border is never stretched; edges stretch in one axis; center stretches freely.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param w the width in scaled pixels
+     * @param h the height in scaled pixels
      */
     public static void renderBackground(PoseStack poseStack, MultiBufferSource buffers,
             float x, float y, float w, float h) {
         renderBackgroundInternal(poseStack, buffers, x, y, w, h, false);
     }
 
-    /** Renders a nine-slice background without depth testing (renders on top of world). */
+    /**
+     * Renders a nine-slice background without depth testing (renders on top of world).
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param w the width in scaled pixels
+     * @param h the height in scaled pixels
+     */
     public static void renderBackgroundSeeThrough(PoseStack poseStack, MultiBufferSource buffers,
             float x, float y, float w, float h) {
         renderBackgroundInternal(poseStack, buffers, x, y, w, h, true);
     }
 
-    /** Internal nine-slice background renderer with optional see-through mode. */
+    /**
+     * Internal nine-slice background renderer with optional see-through mode.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param w the width in scaled pixels
+     * @param h the height in scaled pixels
+     * @param seeThrough whether to disable depth testing
+     */
     private static void renderBackgroundInternal(PoseStack poseStack, MultiBufferSource buffers,
             float x, float y, float w, float h, boolean seeThrough) {
         VertexConsumer vc = buffers.getBuffer(
@@ -77,7 +135,20 @@ public final class InWorldHud {
         nineSliceQuad(vc, pose, x1, y1, x2, y2, uB,    uB,    1f-uB, 1f-uB);
     }
 
-    /** Emits one quad of the nine-slice background at z=0. */
+    /**
+     * Emits one quad of the nine-slice background at z=0.
+     *
+     * @param vc the vertex consumer
+     * @param pose the pose matrix entry
+     * @param px0 the left X pixel coordinate
+     * @param py0 the top Y pixel coordinate
+     * @param px1 the right X pixel coordinate
+     * @param py1 the bottom Y pixel coordinate
+     * @param u0 the minimum U texture coordinate
+     * @param v0 the minimum V texture coordinate
+     * @param u1 the maximum U texture coordinate
+     * @param v1 the maximum V texture coordinate
+     */
     public static void nineSliceQuad(VertexConsumer vc, PoseStack.Pose pose,
             float px0, float py0, float px1, float py1,
             float u0, float v0, float u1, float v1) {
@@ -87,28 +158,69 @@ public final class InWorldHud {
         iconVertex(vc, pose, px1, py0, 0f, u1, v0);
     }
 
-    /** Adds a vertex with full-bright lighting at the given depth. */
+    /**
+     * Adds a vertex with full-bright lighting at the given depth.
+     *
+     * @param vc the vertex consumer
+     * @param pose the pose matrix entry
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param z the Z coordinate
+     * @param u the U texture coordinate
+     * @param v the V texture coordinate
+     */
     public static void iconVertex(VertexConsumer vc, PoseStack.Pose pose,
             float x, float y, float z, float u, float v) {
         vc.addVertex(pose, x, y, z)
-            .setColor(0xFFFFFFFF)
+            .setColor(OPAQUE_WHITE)
             .setUv(u, v)
             .setLight(LightCoordsUtil.FULL_BRIGHT);
     }
 
-    /** Draws text at the content Z depth (in front of background). */
+    /**
+     * Draws text at the content Z depth (in front of background).
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param poseStack the pose stack for rendering
+     * @param text the text string to render
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param color the ARGB color value
+     */
     public static void drawText(Font font, MultiBufferSource buffers,
             PoseStack poseStack, String text, float x, float y, int color) {
         drawTextInternal(font, buffers, poseStack, text, x, y, color, Font.DisplayMode.NORMAL);
     }
 
-    /** Draws text without depth testing (renders on top of world). */
+    /**
+     * Draws text without depth testing (renders on top of world).
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param poseStack the pose stack for rendering
+     * @param text the text string to render
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param color the ARGB color value
+     */
     public static void drawTextSeeThrough(Font font, MultiBufferSource buffers,
             PoseStack poseStack, String text, float x, float y, int color) {
         drawTextInternal(font, buffers, poseStack, text, x, y, color, Font.DisplayMode.SEE_THROUGH);
     }
 
-    /** Internal text renderer with configurable display mode. */
+    /**
+     * Internal text renderer with configurable display mode.
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param poseStack the pose stack for rendering
+     * @param text the text string to render
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param color the ARGB color value
+     * @param displayMode the font display mode
+     */
     private static void drawTextInternal(Font font, MultiBufferSource buffers,
             PoseStack poseStack, String text, float x, float y, int color,
             Font.DisplayMode displayMode) {
@@ -123,10 +235,14 @@ public final class InWorldHud {
     /**
      * Applies billboard rotation so a panel faces the camera.
      * Yaw faces the camera; pitch tilts to match camera look angle, scaled by pitchFactor.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
+     * @param pitchFactor the pitch animation factor [0, 1]
      */
     public static void applyBillboardRotation(PoseStack poseStack, Camera camera,
             float pitchFactor) {
-        float yaw = (float) Math.toRadians(-camera.yRot() + 180);
+        float yaw = (float) Math.toRadians(-camera.yRot() + YAW_OFFSET);
         float pitch = (float) Math.toRadians(camera.xRot()) * pitchFactor;
         poseStack.mulPose(new Quaternionf().rotationY(yaw));
         poseStack.mulPose(new Quaternionf().rotationX(-pitch));
@@ -136,13 +252,16 @@ public final class InWorldHud {
      * Orients a panel flat against a block face, facing outward.
      * NORTH faces south (toward player looking north), SOUTH faces north, etc.
      * Only handles horizontal faces; UP/DOWN are handled by {@link #applyFlatRotation}.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param face the block face direction
      */
     public static void applyFaceRotation(PoseStack poseStack, Direction face) {
         float yRot = switch (face) {
             case NORTH -> (float) Math.PI;        // 180 degrees
             case SOUTH -> 0f;
-            case EAST  -> (float) Math.PI / 2f;   // 90 degrees
-            case WEST  -> (float) -Math.PI / 2f;  // -90 degrees
+            case EAST  -> (float) Math.PI / HALF;   // 90 degrees
+            case WEST  -> (float) -Math.PI / HALF;  // -90 degrees
             default    -> 0f;
         };
         poseStack.mulPose(new Quaternionf().rotationY(yRot));
@@ -151,55 +270,66 @@ public final class InWorldHud {
     /**
      * Orients a panel to lie flat on the Y plane, billboarding yaw only.
      * The panel folds flat (X-rot 90) so the player looks down at it.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
      */
     public static void applyFlatRotation(PoseStack poseStack, Camera camera) {
-        float yaw = (float) Math.toRadians(-camera.yRot() + 180);
+        float yaw = (float) Math.toRadians(-camera.yRot() + YAW_OFFSET);
         poseStack.mulPose(new Quaternionf().rotationY(yaw));
-        poseStack.mulPose(new Quaternionf().rotationX((float) Math.PI / 2f));
+        poseStack.mulPose(new Quaternionf().rotationX((float) Math.PI / HALF));
     }
 
     /**
      * Frame-rate-independent exponential smoothing.
      * Moves current toward target at a rate governed by time constant tau.
+     *
+     * @param current the current
+     * @param target the current aim target
+     * @param dt the delta time in seconds
+     * @param tau the tau
+     * @return the smoothed value
      */
     public static float smoothToward(float current, float target, float dt, float tau) {
         float factor = 1f - (float) Math.exp(-dt / tau);
         return current + (target - current) * factor;
     }
 
-    // --- Shared goo row rendering constants and methods ---
-
-    /** Height of one HUD row (icon + text). */
-    public static final float ROW_HEIGHT = 11f;
-
-    /** Icon render size in scaled pixels. */
-    public static final float ICON_SIZE = 10f;
-
-    /** Gap between icon and text in a goo row. */
-    public static final float ICON_TEXT_GAP = 2f;
-
-    /** Default text color (white). */
-    public static final int TEXT_COLOR = 0xFFFFFFFF;
-
     /**
      * Renders a goo type icon + amount text row, vertically centered within
      * {@link #ROW_HEIGHT}. Used by canister and vat HUD renderers.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param type the goo type
+     * @param amountText the formatted volume text
+     * @param x the X coordinate
+     * @param y the Y coordinate
      */
     public static void renderGooRow(PoseStack poseStack, Font font,
             MultiBufferSource buffers, GooType type, String amountText,
             float x, float y) {
-        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / 2f;
-        float textY = y + (ROW_HEIGHT - font.lineHeight) / 2f;
+        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / HALF;
+        float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF;
         renderIcon(poseStack, buffers, type, x, iconY);
         drawText(font, buffers, poseStack, amountText,
             x + ICON_SIZE + ICON_TEXT_GAP, textY, TEXT_COLOR);
     }
 
-    /** Renders a goo type icon quad at the content Z depth. */
+    /**
+     * Renders a goo type icon quad at the content Z depth.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param type the goo type
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
     public static void renderIcon(PoseStack poseStack, MultiBufferSource buffers,
             GooType type, float x, float y) {
-        Identifier tex = Identifier.fromNamespaceAndPath("goo",
-            "textures/item/" + type.getId() + "_icon_bordered.png");
+        Identifier tex = Identifier.fromNamespaceAndPath(NAMESPACE_GOO,
+            ICON_PATH_PREFIX + type.getId() + ICON_PATH_SUFFIX);
         VertexConsumer vc = buffers.getBuffer(RenderTypes.text(tex));
         PoseStack.Pose pose = poseStack.last();
         float x2 = x + ICON_SIZE;
@@ -210,13 +340,19 @@ public final class InWorldHud {
         iconVertex(vc, pose, x2, y, CONTENT_Z, 1f, 0f);
     }
 
-    /** Computes the widest goo row width for panel sizing. */
+    /**
+     * Computes the widest goo row width for panel sizing.
+     *
+     * @param font the font renderer
+     * @param contents the goo contents to measure
+     * @return the computed maxRowWidth
+     */
     public static float computeMaxRowWidth(Font font, GooContents contents) {
         float max = 0;
         for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
             String text = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
             float w = ICON_SIZE + ICON_TEXT_GAP + font.width(text);
-            if (w > max) max = w;
+            if (w > max) { max = w; }
         }
         return max;
     }
@@ -224,6 +360,9 @@ public final class InWorldHud {
     /**
      * Returns the horizontal direction whose outward normal is most anti-parallel to
      * the player's look vector - i.e. the face most directly visible to the player.
+     *
+     * @param look the player look direction vector
+     * @return the result
      */
     public static Direction bestPerpendicularFace(Vec3 look) {
         double ax = Math.abs(look.x);
@@ -238,11 +377,14 @@ public final class InWorldHud {
      * Computes frame delta-time in seconds from System.nanoTime().
      * The caller provides a single-element array that persists across frames.
      * Clamps to 0.1s to handle first-frame and lag spikes.
+     *
+     * @param lastFrameNanos single-element array storing previous frame time
+     * @return the computed deltaTime
      */
     public static float computeDeltaTime(long[] lastFrameNanos) {
         long now = System.nanoTime();
-        float dt = (lastFrameNanos[0] == 0) ? 0.016f : (now - lastFrameNanos[0]) / 1_000_000_000f;
+        float dt = (lastFrameNanos[0] == 0) ? DEFAULT_DT : (now - lastFrameNanos[0]) / NANOS_PER_SECOND;
         lastFrameNanos[0] = now;
-        return Math.min(dt, 0.1f);
+        return Math.min(dt, MAX_DT);
     }
 }

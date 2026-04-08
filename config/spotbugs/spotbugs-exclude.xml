@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+        SpotBugs exclusion filter for Goo (NeoForge mod).
+        Suppresses false positives from Minecraft/NeoForge patterns.
+    -->
+
+    <!-- Minecraft serialization: codec-driven, not Java Serializable -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD,SE_NO_SERIALVERSIONID,SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+    </Match>
+
+    <!-- NeoForge event/capability callbacks use unused parameters by contract -->
+    <Match>
+        <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+        <Package name="~com\.mercuriusxeno\.goo\.event.*"/>
+    </Match>
+
+    <!-- Registry holders and DeferredHolder fields are initialized by the framework post-construction -->
+    <Match>
+        <Bug pattern="UWF_UNWRITTEN_FIELD,UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+        <Package name="~com\.mercuriusxeno\.goo\.registry.*"/>
+    </Match>
+
+    <!-- Mixin and access-transformer widened fields trigger unread/unwritten warnings -->
+    <Match>
+        <Bug pattern="URF_UNREAD_FIELD,UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+        <Package name="~com\.mercuriusxeno\.goo\.mixin.*"/>
+    </Match>
+
+    <!-- Generated resource classes (data providers) -->
+    <Match>
+        <Package name="~com\.mercuriusxeno\.goo\.data.*"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+</FindBugsFilter>

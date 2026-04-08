@@ -8,6 +8,10 @@ package com.mercuriusxeno.goo.data;
 @FunctionalInterface
 public interface IGasketRegistryAccess {
 
-    /** Returns the gasket registry for the current server. */
+    /**
+     * Returns the gasket registry for the current server.
+     *
+     * @return the server-wide gasket registry
+     */
     GasketRegistry get();
 }

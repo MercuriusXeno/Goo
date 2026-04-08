@@ -248,6 +248,31 @@ class GooValueJsonFormatTest {
             assertEquals(25, result.get(GooType.ROCK));
         }
 
+        /** Unary minus with dot notation: "-cut_copper.metal / 4". */
+        @Test
+        void unaryMinusDotNotation() {
+            Map<Identifier, GooValue> baseValues = new LinkedHashMap<>();
+            baseValues.put(Identifier.parse("minecraft:cut_copper"),
+                    new GooValue(Map.of(GooType.METAL, 200)));
+            JsonObject json = new JsonObject();
+            json.addProperty("metal", "-cut_copper.metal / 4");
+            json.addProperty("aeon", "cut_copper.metal / 8");
+
+            GooValue result = GooValueJsonFormat.parseGooValue(json, Map.of(), baseValues);
+            assertEquals(-50, result.get(GooType.METAL)); // -(200) / 4
+            assertEquals(25, result.get(GooType.AEON));    // 200 / 8
+        }
+
+        /** Unary minus on scalar constant: "-$base". */
+        @Test
+        void unaryMinusOnConstant() {
+            JsonObject json = new JsonObject();
+            json.addProperty("metal", "-$base");
+
+            GooValue result = GooValueJsonFormat.parseGooValue(json, Map.of("base", 64));
+            assertEquals(-64, result.get(GooType.METAL));
+        }
+
         /** Unknown constant resolves to zero (no exception). */
         @Test
         void unknownConstantReturnsZero() {

@@ -9,10 +9,12 @@ import net.neoforged.fml.common.EventBusSubscriber;
  * visibility toggled by right-clicking air with a tuner.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
-public class TunerHudRenderer {
-
+public final class TunerHudRenderer {
     /** Whether the reminder HUD is visible (toggled by right-clicking air). */
-    static boolean reminderVisible = false;
+    static boolean reminderVisible;
+
+    private TunerHudRenderer() {}
+
 
     /** Clears the reminder state. Called when selection clears. */
     public static void clearReminder() {

@@ -56,8 +56,18 @@ public class VatBlockEntityRenderer
     /** Vat center X/Z for stream rendering. */
     private static final float VAT_CENTER_X = 0.5f;
     private static final float VAT_CENTER_Z = 0.5f;
+    /** Sentinel index meaning no self-position found in stack. */
+    private static final int NO_INDEX = -1;
+    /** Epsilon threshold for full-submersion check. */
+    private static final float SUBMERSION_EPSILON = 0.0001f;
+    /** Number of intermediate vats excluded from total interior. */
+    private static final int MIDDLE_EXCLUDED = 2;
 
-    /** Creates a vat BER. Context is unused. */
+    /**
+     * Creates a vat BER. Context is unused.
+     *
+     * @param context the renderer provider context
+     */
     public VatBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
@@ -72,6 +82,12 @@ public class VatBlockEntityRenderer
      * Snapshots dominant type, fill fraction, and stack geometry by walking
      * the connected vat column. All vats in a stack share the same dominant
      * type and fill fraction so they render one unified fluid body.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param partialTick the partial tick for interpolation
+     * @param cameraPos the camera world position
+     * @param breakProgress the crumbling overlay, or null
      */
     @Override
     public void extractRenderState(VatBlockEntity be, VatRenderState state,
@@ -94,7 +110,13 @@ public class VatBlockEntityRenderer
         extractStacked(be, state, gameTick);
     }
 
-    /** Fast path for solo (unstacked) vats. */
+    /**
+     * Fast path for solo (unstacked) vats.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param gameTick the current game tick
+     */
     private static void extractSolo(VatBlockEntity be, VatRenderState state, long gameTick) {
         state.stackSize = 1;
         state.indexFromBottom = 0;
@@ -111,31 +133,68 @@ public class VatBlockEntityRenderer
         state.streamRate = be.getVatStreamRate(gameTick);
     }
 
-    /** Walks the vertical stack to compute unified fill and per-vat position. */
+    /**
+     * Walks the vertical stack to compute unified fill and per-vat position.
+     *
+     * @param be the block entity instance
+     * @param state the block state
+     * @param gameTick the current game tick
+     */
     private static void extractStacked(VatBlockEntity be, VatRenderState state, long gameTick) {
         Level level = be.getLevel();
         BlockPos pos = be.getBlockPos();
 
-        // Walk down to bottom
-        int belowCount = 0;
-        long totalVolume = 0;
-        long totalCapacity = 0;
-        GooContents merged = GooContents.EMPTY;
+        BlockPos bottomPos = findStackBottom(level, pos);
+        StackData data = collectStackData(level, bottomPos, pos, gameTick);
 
+        state.stackSize = data.stackSize;
+        state.indexFromBottom = data.selfIndex >= 0 ? data.selfIndex : 0;
+
+        if (data.totalVolume <= 0 || data.totalCapacity <= 0) {
+            state.dominantType = null;
+            state.fillFraction = 0f;
+        } else {
+            state.dominantType = data.merged.largestType();
+            state.fillFraction = Math.min(1f, (float) data.totalVolume / data.totalCapacity);
+        }
+
+        state.streamType = data.topStreamType;
+        state.streamRate = data.topStreamRate;
+    }
+
+    /** Walks downward from the given position to find the bottom of the vat stack.
+     *
+     * @param level the current level
+     * @param pos   the starting position
+     * @return the bottom-most vat position in the stack
+     */
+    private static BlockPos findStackBottom(Level level, BlockPos pos) {
         BlockPos cursor = pos;
         while (level.getBlockState(cursor.below()).getBlock() instanceof VatBlock) {
             cursor = cursor.below();
-            belowCount++;
         }
-        BlockPos bottomPos = cursor;
+        return cursor;
+    }
 
-        // Walk up from bottom, collecting data
+    /** Walks upward from the stack bottom, accumulating volume, capacity, and stream state.
+     *
+     * @param level     the current level
+     * @param bottomPos the bottom-most vat position
+     * @param selfPos   the position of the vat being rendered
+     * @param gameTick  the current game tick
+     * @return aggregated stack data
+     */
+    private static StackData collectStackData(Level level, BlockPos bottomPos,
+            BlockPos selfPos, long gameTick) {
+        long totalVolume = 0;
+        long totalCapacity = 0;
+        GooContents merged = GooContents.EMPTY;
         int stackSize = 0;
-        int selfIndex = -1;
+        int selfIndex = NO_INDEX;
         GooType topStreamType = null;
         int topStreamRate = 0;
 
-        cursor = bottomPos;
+        BlockPos cursor = bottomPos;
         while (true) {
             BlockEntity curBe = level.getBlockEntity(cursor);
             if (curBe instanceof VatBlockEntity vat) {
@@ -143,10 +202,9 @@ public class VatBlockEntityRenderer
                 totalVolume += vc.totalVolume();
                 totalCapacity += vat.getCapacity();
                 merged = merged.mergeWith(vc);
-                if (cursor.equals(pos)) {
+                if (cursor.equals(selfPos)) {
                     selfIndex = stackSize;
                 }
-                // Track stream state from the topmost vat
                 GooType st = vat.getVatStreamType(gameTick);
                 if (st != null) {
                     topStreamType = st;
@@ -155,29 +213,27 @@ public class VatBlockEntityRenderer
                 stackSize++;
             }
 
-            if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) break;
+            if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) { break; }
             cursor = cursor.above();
         }
-
-        state.stackSize = stackSize;
-        state.indexFromBottom = selfIndex >= 0 ? selfIndex : 0;
-
-        if (totalVolume <= 0 || totalCapacity <= 0) {
-            state.dominantType = null;
-            state.fillFraction = 0f;
-        } else {
-            state.dominantType = merged.largestType();
-            state.fillFraction = Math.min(1f, (float) totalVolume / totalCapacity);
-        }
-
-        // Propagate stream from top vat to all vats in stack
-        state.streamType = topStreamType;
-        state.streamRate = topStreamRate;
+        return new StackData(totalVolume, totalCapacity, merged, stackSize,
+                selfIndex, topStreamType, topStreamRate);
     }
+
+    /** Aggregated data from walking a vat stack. */
+    private record StackData(long totalVolume, long totalCapacity, GooContents merged,
+            int stackSize, int selfIndex, @Nullable GooType topStreamType, int topStreamRate) {}
 
     // --- Geometry submission ---
 
-    /** Submits fluid geometry and stream if the vat contains goo or is receiving. */
+    /**
+     * Submits fluid geometry and stream if the vat contains goo or is receiving.
+     *
+     * @param state the block state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param cameraState the camera render state
+     */
     @Override
     public void submit(VatRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
@@ -189,7 +245,13 @@ public class VatBlockEntityRenderer
         }
     }
 
-    /** Submits the fluid quad(s) for this vat's slice of the unified column. */
+    /**
+     * Submits the fluid quad(s) for this vat's slice of the unified column.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, VatRenderState state) {
         int light = state.lightCoords;
@@ -203,6 +265,12 @@ public class VatBlockEntityRenderer
      * Renders this vat's portion of the unified fluid column.
      * Computes local floor/ceiling from stack position, then determines
      * how much of this vat's interior is submerged.
+     *
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param light the packed light value
+     * @param type the goo type
+     * @param state the block state
      */
     private static void renderFluid(PoseStack.Pose pose, VertexConsumer c,
             int light, GooType type, VatRenderState state) {
@@ -213,19 +281,23 @@ public class VatBlockEntityRenderer
 
         // Compute this vat's local fill from the stack-wide fill fraction
         float localFill = computeLocalFill(state, localFloor, localCeiling);
-        if (localFill <= 0f) return;
+        if (localFill <= 0f) { return; }
 
-        float x0 = MIN_X + INSET, x1 = MAX_X - INSET;
-        float z0 = MIN_Z + INSET, z1 = MAX_Z - INSET;
+        float x0 = MIN_X + INSET;
+        float x1 = MAX_X - INSET;
+        float z0 = MIN_Z + INSET;
+        float z1 = MAX_Z - INSET;
         float yBot = localFloor + (state.vatBelow ? 0f : Y_EPSILON);
         float yTop = localFloor + localFill;
 
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float u0 = sprite.getU0(), u1 = sprite.getU1();
-        float v0 = sprite.getV0(), v1 = sprite.getV1();
+        float u0 = sprite.getU0();
+        float u1 = sprite.getU1();
+        float v0 = sprite.getV0();
+        float v1 = sprite.getV1();
 
         // Top surface only if this vat contains the air-liquid interface
-        boolean isFullySubmerged = localFill >= localHeight - 0.0001f;
+        boolean isFullySubmerged = localFill >= localHeight - SUBMERSION_EPSILON;
         if (!isFullySubmerged) {
             GooRenderUtil.liquidSurface(pose, c, light, GooRenderUtil.OPAQUE_WHITE,
                 x0, z0, x1, z1, yTop, u0, u1, v0, v1);
@@ -248,6 +320,10 @@ public class VatBlockEntityRenderer
      * stack-wide fill fraction and this vat's position in the stack.
      *
      * @return fill height in block coords within [0, localHeight]
+     *
+     * @param state the block state
+     * @param localFloor the local interior floor Y
+     * @param localCeiling the local interior ceiling Y
      */
     static float computeLocalFill(VatRenderState state, float localFloor, float localCeiling) {
         float localHeight = localCeiling - localFloor;
@@ -264,16 +340,27 @@ public class VatBlockEntityRenderer
         return Math.max(0f, Math.min(globalFillHeight - cumulativeBelow, localHeight));
     }
 
-    /** Total interior height of a stack of N vats (in block units). */
+    /**
+     * Total interior height of a stack of N vats (in block units).
+     *
+     * @param stackSize the number of vats in the stack
+     * @return the computed totalInterior
+     */
     private static float computeTotalInterior(int stackSize) {
-        if (stackSize <= 1) return CAP_CEILING - BASE_FLOOR;
+        if (stackSize <= 1) { return CAP_CEILING - BASE_FLOOR; }
         // Bottom (1.0-BASE_FLOOR) + middles (1.0 each) + top (CAP_CEILING)
-        return (1.0f - BASE_FLOOR) + (stackSize - 2) * 1.0f + CAP_CEILING;
+        return 1.0f - BASE_FLOOR + (stackSize - MIDDLE_EXCLUDED) * 1.0f + CAP_CEILING;
     }
 
-    /** Cumulative interior height below the vat at indexFromBottom. */
+    /**
+     * Cumulative interior height below the vat at indexFromBottom.
+     *
+     * @param index the zero-based index from the bottom
+     * @param stackSize the number of vats in the stack
+     * @return the computed cumulativeBelow
+     */
     private static float computeCumulativeBelow(int index, int stackSize) {
-        if (index == 0) return 0f;
+        if (index == 0) { return 0f; }
         // Bottom vat contributes (1.0 - BASE_FLOOR)
         float below = 1.0f - BASE_FLOOR;
         // Each middle vat below this one contributes 1.0
@@ -284,7 +371,13 @@ public class VatBlockEntityRenderer
 
     // --- Stream rendering ---
 
-    /** Submits a fluid stream segment for this vat's slice of the stack. */
+    /**
+     * Submits a fluid stream segment for this vat's slice of the stack.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param state the block state
+     */
     private static void submitStream(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, VatRenderState state) {
         int light = state.lightCoords;
@@ -298,13 +391,13 @@ public class VatBlockEntityRenderer
         float localFill = computeLocalFill(state, localFloor, localCeiling);
 
         // Skip stream if this vat is fully submerged (no air gap)
-        if (localFill >= localHeight - 0.0001f) return;
+        if (localFill >= localHeight - SUBMERSION_EPSILON) { return; }
 
         float yTop = localCeiling;
         float yBottom = localFloor + Math.max(localFill, 0f);
 
         // Don't render stream below fluid surface
-        if (yBottom >= yTop) return;
+        if (yBottom >= yTop) { return; }
 
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),

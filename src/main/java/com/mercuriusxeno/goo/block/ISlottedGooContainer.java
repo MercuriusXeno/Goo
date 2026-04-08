@@ -21,6 +21,9 @@ public interface ISlottedGooContainer {
     /**
      * Returns the canister stack in the given slot without removing it.
      * Returns {@link ItemStack#EMPTY} if the slot is out of range or empty.
+     *
+     * @param slot the slot index
+     * @return the canister
      */
     ItemStack getCanister(int slot);
 
@@ -33,6 +36,9 @@ public interface ISlottedGooContainer {
     /**
      * Returns the goo contents of the canister in the given slot, or
      * {@link GooContents#EMPTY} if the slot is empty.
+     *
+     * @param slot the slot index
+     * @return the slot goo contents
      */
     default GooContents getSlotGooContents(int slot) {
         ItemStack stack = getCanister(slot);
@@ -42,6 +48,9 @@ public interface ISlottedGooContainer {
     /**
      * Returns the metadata for the canister in the given slot, or
      * {@link CanisterMetadata#EMPTY} if the slot is empty.
+     *
+     * @param slot the slot index
+     * @return the slot metadata
      */
     default CanisterMetadata getSlotMetadata(int slot) {
         ItemStack stack = getCanister(slot);
@@ -51,10 +60,13 @@ public interface ISlottedGooContainer {
     /**
      * Sets the metadata on the canister in the given slot.
      * No-op if the slot is empty.
+     *
+     * @param slot     the slot index
+     * @param metadata the canister metadata to apply
      */
     default void setSlotMetadata(int slot, CanisterMetadata metadata) {
         ItemStack stack = getCanister(slot);
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty()) { return; }
         CanisterItem.setMetadata(stack, metadata);
         onSlotChanged();
     }
@@ -67,7 +79,7 @@ public interface ISlottedGooContainer {
      */
     default boolean canAccept(int slot) {
         ItemStack canister = getCanister(slot);
-        if (canister.isEmpty()) return false;
+        if (canister.isEmpty()) { return false; }
         GooContents contents = getSlotGooContents(slot);
         int compression = com.mercuriusxeno.goo.registry.GooEnchantments.getCompressionLevel(canister);
         long capacity = ContainerCapacity.canisterCapacity(compression);
@@ -84,9 +96,9 @@ public interface ISlottedGooContainer {
      */
     default long insertGoo(int slot, GooType incomingType, long volume) {
         ItemStack stack = getCanister(slot);
-        if (stack.isEmpty()) return 0L;
+        if (stack.isEmpty()) { return 0L; }
         long accepted = CanisterItem.addGoo(stack, incomingType, volume);
-        if (accepted > 0) onSlotChanged();
+        if (accepted > 0) { onSlotChanged(); }
         return accepted;
     }
 
@@ -100,9 +112,9 @@ public interface ISlottedGooContainer {
      */
     default long extractGoo(int slot, GooType type, long requested) {
         ItemStack stack = getCanister(slot);
-        if (stack.isEmpty()) return 0L;
+        if (stack.isEmpty()) { return 0L; }
         long extracted = CanisterItem.removeGoo(stack, type, requested);
-        if (extracted > 0) onSlotChanged();
+        if (extracted > 0) { onSlotChanged(); }
         return extracted;
     }
 }

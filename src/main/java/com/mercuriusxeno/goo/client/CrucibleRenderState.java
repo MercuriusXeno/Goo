@@ -43,7 +43,11 @@ public class CrucibleRenderState extends BlockEntityRenderState {
     /** Partial tick fraction [0, 1] for sub-tick interpolation. */
     public float partialTick;
 
-    /** Whether the fuel rod should render: installed and not fully depleted. */
+    /**
+     * Whether the fuel rod should render: installed and not fully depleted.
+     *
+     * @return true if fuelRodVisible is present
+     */
     public boolean hasFuelRodVisible() {
         return hasFuelRod && fuelFraction > 0f;
     }

@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,6 +154,47 @@ class GooValueRegistryTest {
             assertEquals(0, registry.derivedSize());
         }
 
+        /** Same total blobs, fewer goo types wins. */
+        @Test
+        void fewerGooTypesWinsTiebreak() {
+            registry.setBaseValues(Map.of(
+                id("a"), goo(GooType.METAL, 16, GooType.ROCK, 8, GooType.CRYSTAL, 8),
+                id("b"), goo(GooType.METAL, 16, GooType.ROCK, 16)
+            ));
+            // Both recipes cost 32 total blobs, but b has 2 types vs a's 3
+            List<RecipeInput> recipes = List.of(
+                recipe("x", 1, slot("a")),
+                recipe("x", 1, slot("b"))
+            );
+
+            registry.deriveFromRecipeInputs(recipes, false);
+            GooValue val = registry.lookup(id("x"));
+            assertNotNull(val);
+            assertEquals(2, val.getAll().size(), "Should pick the 2-type recipe: " + val);
+            assertEquals(16, val.get(GooType.METAL));
+            assertEquals(16, val.get(GooType.ROCK));
+        }
+
+        /** When total blobs differ, cheaper still wins regardless of type count. */
+        @Test
+        void cheaperStillWinsOverFewerTypes() {
+            registry.setBaseValues(Map.of(
+                id("a"), goo(GooType.METAL, 10, GooType.ROCK, 10, GooType.CRYSTAL, 10),
+                id("b"), goo(GooType.METAL, 20, GooType.ROCK, 20)
+            ));
+            // a costs 30 (3 types), b costs 40 (2 types) -- a wins on total
+            List<RecipeInput> recipes = List.of(
+                recipe("x", 1, slot("a")),
+                recipe("x", 1, slot("b"))
+            );
+
+            registry.deriveFromRecipeInputs(recipes, false);
+            GooValue val = registry.lookup(id("x"));
+            assertNotNull(val);
+            assertEquals(30, val.totalBlobs(), "Cheaper recipe wins even with more types");
+            assertEquals(3, val.getAll().size());
+        }
+
         /** Recipe with no ingredients produces no derived value. */
         @Test
         void noIngredientsProducesNothing() {
@@ -280,6 +322,62 @@ class GooValueRegistryTest {
 
             registry.deriveFromRecipeInputs(recipes, true);
             assertEquals(20, registry.lookup(id("item")).get(GooType.METAL));
+        }
+    }
+
+    @Nested
+    class NegativeValueRejection {
+
+        /** A derived value with negatives is excluded from effective values. */
+        @Test
+        void negativeDerivationExcludedFromEffective() {
+            Map<GooType, Integer> negMap = new EnumMap<>(GooType.class);
+            negMap.put(GooType.METAL, -10);
+            negMap.put(GooType.AEON, 5);
+            GooValue negValue = new GooValue(negMap);
+
+            Map<Identifier, GooValue> base = Map.of();
+            Map<Identifier, GooValue> derived = Map.of(id("bad_item"), negValue);
+
+            Map<Identifier, GooValue> effective = GooValueDerivation.buildEffectiveValues(
+                    base, derived, false);
+            assertNull(effective.get(id("bad_item")),
+                    "Items with negative goo types must not appear in effective values");
+        }
+
+        /** A base value with negatives is excluded from effective values. */
+        @Test
+        void negativeBaseExcludedFromEffective() {
+            Map<GooType, Integer> negMap = new EnumMap<>(GooType.class);
+            negMap.put(GooType.METAL, -10);
+            GooValue negValue = new GooValue(negMap);
+
+            Map<Identifier, GooValue> base = Map.of(id("bad_base"), negValue);
+            Map<Identifier, GooValue> derived = Map.of();
+
+            Map<Identifier, GooValue> effective = GooValueDerivation.buildEffectiveValues(
+                    base, derived, false);
+            assertNull(effective.get(id("bad_base")),
+                    "Base items with negative goo types must not appear in effective values");
+        }
+
+        /** A valid derived value next to a rejected one still appears. */
+        @Test
+        void validItemSurvivesAlongsideRejected() {
+            Map<GooType, Integer> negMap = new EnumMap<>(GooType.class);
+            negMap.put(GooType.METAL, -10);
+            GooValue negValue = new GooValue(negMap);
+            GooValue goodValue = goo(GooType.ROCK, 50);
+
+            Map<Identifier, GooValue> base = Map.of();
+            Map<Identifier, GooValue> derived = Map.of(
+                    id("bad_item"), negValue,
+                    id("good_item"), goodValue);
+
+            Map<Identifier, GooValue> effective = GooValueDerivation.buildEffectiveValues(
+                    base, derived, false);
+            assertNull(effective.get(id("bad_item")));
+            assertEquals(50, effective.get(id("good_item")).get(GooType.ROCK));
         }
     }
 
@@ -726,17 +824,15 @@ class GooValueRegistryTest {
             registry.copyBaseToEffective();
         }
 
-        /** A _groups entry assigns the same value to all items in the array. */
+        /** A _groups entry creates a pseudo-tag, #name assigns values. */
         @Test
-        void groupAssignsValueToAllItems() throws IOException {
+        void groupCreatesPseudoTagForAssignment() throws IOException {
             loadJson("""
                 {
                     "_groups": {
-                        "logs": {
-                            "value": { "leaf": 384 },
-                            "items": ["minecraft:oak_log", "minecraft:spruce_log", "minecraft:birch_log"]
-                        }
-                    }
+                        "logs": ["minecraft:oak_log", "minecraft:spruce_log", "minecraft:birch_log"]
+                    },
+                    "#logs": { "leaf": 384 }
                 }
                 """);
             assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
@@ -744,56 +840,48 @@ class GooValueRegistryTest {
             assertEquals(384, registry.lookup(id("minecraft:birch_log")).get(GooType.LEAF));
         }
 
-        /** A denied group marks all items as denied. */
+        /** A denied pseudo-tag marks all items as denied. */
         @Test
-        void groupDeniedMarksAllItems() throws IOException {
+        void pseudoTagDeniedMarksAllItems() throws IOException {
             loadJson("""
                 {
                     "_groups": {
-                        "ores": {
-                            "value": "denied",
-                            "items": ["minecraft:coal_ore", "minecraft:iron_ore"]
-                        }
-                    }
+                        "ores": ["minecraft:coal_ore", "minecraft:iron_ore"]
+                    },
+                    "#ores": "denied"
                 }
                 """);
             assertTrue(registry.isDenied(id("minecraft:coal_ore")));
             assertTrue(registry.isDenied(id("minecraft:iron_ore")));
         }
 
-        /** Group values support $constant expressions. */
+        /** Pseudo-tag values support $constant expressions. */
         @Test
-        void groupValuesResolveConstants() throws IOException {
+        void pseudoTagValuesResolveConstants() throws IOException {
             loadJson("""
                 {
                     "_constants": { "log": 384 },
                     "_groups": {
-                        "logs": {
-                            "value": { "leaf": "$log" },
-                            "items": ["minecraft:oak_log", "minecraft:spruce_log"]
-                        }
-                    }
+                        "logs": ["minecraft:oak_log", "minecraft:spruce_log"]
+                    },
+                    "#logs": { "leaf": "$log" }
                 }
                 """);
             assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
             assertEquals(384, registry.lookup(id("minecraft:spruce_log")).get(GooType.LEAF));
         }
 
-        /** Multiple groups in the same _groups object all parse. */
+        /** Multiple groups all create pseudo-tags. */
         @Test
         void multipleGroupsAllParse() throws IOException {
             loadJson("""
                 {
                     "_groups": {
-                        "logs": {
-                            "value": { "leaf": 384 },
-                            "items": ["minecraft:oak_log"]
-                        },
-                        "stones": {
-                            "value": { "rock": 240 },
-                            "items": ["minecraft:stone", "minecraft:cobblestone"]
-                        }
-                    }
+                        "logs": ["minecraft:oak_log"],
+                        "stones": ["minecraft:stone", "minecraft:cobblestone"]
+                    },
+                    "#logs": { "leaf": 384 },
+                    "#stones": { "rock": 240 }
                 }
                 """);
             assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
@@ -808,15 +896,331 @@ class GooValueRegistryTest {
                 {
                     "minecraft:diamond": { "crystal": 12000 },
                     "_groups": {
-                        "logs": {
-                            "value": { "leaf": 384 },
-                            "items": ["minecraft:oak_log"]
-                        }
-                    }
+                        "logs": ["minecraft:oak_log"]
+                    },
+                    "#logs": { "leaf": 384 }
                 }
                 """);
             assertEquals(12000, registry.lookup(id("minecraft:diamond")).get(GooType.CRYSTAL));
             assertEquals(384, registry.lookup(id("minecraft:oak_log")).get(GooType.LEAF));
+        }
+
+        /** Parallel copy with scale: #wood = #logs * 3 / 4. */
+        @Test
+        void parallelCopyWithScaleInBaseValues() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": ["minecraft:oak_log", "minecraft:birch_log"],
+                        "wood": ["minecraft:oak_wood", "minecraft:birch_wood"]
+                    },
+                    "#logs": { "leaf": 480 },
+                    "#wood": "#logs * 3 / 4"
+                }
+                """);
+            assertEquals(360, registry.lookup(id("minecraft:oak_wood")).get(GooType.LEAF));
+            assertEquals(360, registry.lookup(id("minecraft:birch_wood")).get(GooType.LEAF));
+        }
+
+        /** Parallel copy without scale: #stripped_logs = #logs (identity copy). */
+        @Test
+        void parallelCopyWithoutScale() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "logs": ["minecraft:oak_log", "minecraft:birch_log"],
+                        "stripped": ["minecraft:stripped_oak_log", "minecraft:stripped_birch_log"]
+                    },
+                    "#logs": { "leaf": 480 },
+                    "#stripped": "#logs"
+                }
+                """);
+            assertEquals(480, registry.lookup(id("minecraft:stripped_oak_log")).get(GooType.LEAF));
+            assertEquals(480, registry.lookup(id("minecraft:stripped_birch_log")).get(GooType.LEAF));
+        }
+
+        /** Parallel copy preserves multi-type values with scale. */
+        @Test
+        void parallelCopyMultiTypeWithScale() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "ingots": ["minecraft:iron_ingot"],
+                        "nuggets": ["minecraft:iron_nugget"]
+                    },
+                    "#ingots": { "metal": 1728, "rock": 432 },
+                    "#nuggets": "#ingots * 1 / 9"
+                }
+                """);
+            GooValue nugget = registry.lookup(id("minecraft:iron_nugget"));
+            assertEquals(192, nugget.get(GooType.METAL));  // 1728 / 9
+            assertEquals(48, nugget.get(GooType.ROCK));     // 432 / 9
+        }
+
+        /** Unresolved pseudo-tag (no _groups entry, no MC tag) logs warning. */
+        @Test
+        void unresolvedPseudoTagSkipped() throws IOException {
+            loadJson("""
+                {
+                    "#nonexistent": { "rock": 100 }
+                }
+                """);
+            // No items assigned, no crash
+            assertNull(registry.lookup(id("minecraft:nonexistent")));
+        }
+    }
+
+    // ── Conversions ────────────────────────────────────────────────────
+
+    @Nested
+    class Conversions {
+
+        private void loadJson(String json) throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            registry.copyBaseToEffective();
+        }
+
+        /** Single conversion applied to an individual item. */
+        @Test
+        void singleConversionOnItem() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:copper_ingot": { "metal": 160, "rock": 40 },
+                    "_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "exposed": "@oxidation",
+                        "minecraft:copper_ingot": "@exposed"
+                    }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:copper_ingot"));
+            assertNotNull(val);
+            assertEquals(120, val.get(GooType.METAL)); // 160 - 40
+            assertEquals(20, val.get(GooType.AEON));    // 40 / 2
+            assertEquals(40, val.get(GooType.ROCK));    // untouched
+        }
+
+        /** Stacked conversion: 2x oxidation. */
+        @Test
+        void stackedConversionOnItem() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:copper_ingot": { "metal": 160 },
+                    "_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "weathered": "2 @oxidation",
+                        "minecraft:copper_ingot": "@weathered"
+                    }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:copper_ingot"));
+            assertNotNull(val);
+            assertEquals(80, val.get(GooType.METAL));  // 160 - 2*40
+            assertEquals(40, val.get(GooType.AEON));    // 2 * 20
+        }
+
+        /** Conversion applied to pseudo-tag group. */
+        @Test
+        void conversionOnPseudoTag() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "weathered_copper": [
+                            "minecraft:weathered_copper",
+                            "minecraft:weathered_cut_copper"
+                        ]
+                    },
+                    "minecraft:weathered_copper": { "metal": 160 },
+                    "minecraft:weathered_cut_copper": { "metal": 160 },
+                    "_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "weathered": "2 @oxidation",
+                        "#weathered_copper": "@weathered"
+                    }
+                }
+                """);
+            GooValue copper = registry.lookup(id("minecraft:weathered_copper"));
+            GooValue cut = registry.lookup(id("minecraft:weathered_cut_copper"));
+            assertNotNull(copper);
+            assertNotNull(cut);
+            assertEquals(80, copper.get(GooType.METAL));
+            assertEquals(40, copper.get(GooType.AEON));
+            assertEquals(80, cut.get(GooType.METAL));
+            assertEquals(40, cut.get(GooType.AEON));
+        }
+
+        /** 3x oxidation (oxidized). */
+        @Test
+        void tripleStackConversion() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:copper_ingot": { "metal": 160 },
+                    "_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "oxidized": "3 @oxidation",
+                        "minecraft:copper_ingot": "@oxidized"
+                    }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:copper_ingot"));
+            assertNotNull(val);
+            assertEquals(40, val.get(GooType.METAL));   // 160 - 3*40
+            assertEquals(60, val.get(GooType.AEON));     // 3 * 20
+        }
+
+        /** Pre-derivation conversions propagate through recipes. */
+        @Test
+        void preConversionPropagatesThroughRecipes() throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream("""
+                {
+                    "minecraft:exposed_copper": { "metal": 160 },
+                    "_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "minecraft:exposed_copper": "@oxidation"
+                    }
+                }
+                """.getBytes(StandardCharsets.UTF_8)));
+            // Pre-conversion modifies base: exposed_copper = {metal: 120, aeon: 20}
+            // Recipe derives a slab from it
+            List<RecipeInput> recipes = List.of(
+                recipe("minecraft:exposed_copper_slab", 2, slot("minecraft:exposed_copper"))
+            );
+            registry.deriveFromRecipeInputs(recipes, false);
+            GooValue slab = registry.lookup(id("minecraft:exposed_copper_slab"));
+            assertNotNull(slab);
+            assertEquals(60, slab.get(GooType.METAL));  // 120 / 2
+            assertEquals(10, slab.get(GooType.AEON));    // 20 / 2
+        }
+
+        /** Post-derivation conversions modify effective values after recipes. */
+        @Test
+        void postConversionAppliesAfterDerivation() throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream("""
+                {
+                    "minecraft:copper_ingot": { "metal": 160 },
+                    "_post_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "minecraft:copper_ingot": "@oxidation"
+                    }
+                }
+                """.getBytes(StandardCharsets.UTF_8)));
+            // Post-conversion: base value is unchanged (metal: 160)
+            // Recipes derive from unmodified base
+            List<RecipeInput> recipes = List.of(
+                recipe("minecraft:copper_block", 1,
+                    slot("minecraft:copper_ingot"), slot("minecraft:copper_ingot"),
+                    slot("minecraft:copper_ingot"), slot("minecraft:copper_ingot"),
+                    slot("minecraft:copper_ingot"), slot("minecraft:copper_ingot"),
+                    slot("minecraft:copper_ingot"), slot("minecraft:copper_ingot"),
+                    slot("minecraft:copper_ingot"))
+            );
+            registry.deriveFromRecipeInputs(recipes, false);
+            // copper_block derived from unmodified ingot: 9 * 160 = 1440 metal
+            GooValue block = registry.lookup(id("minecraft:copper_block"));
+            assertNotNull(block);
+            assertEquals(1440, block.get(GooType.METAL));
+            // But copper_ingot itself got post-converted
+            GooValue ingot = registry.lookup(id("minecraft:copper_ingot"));
+            assertNotNull(ingot);
+            assertEquals(120, ingot.get(GooType.METAL)); // 160 - 40
+            assertEquals(20, ingot.get(GooType.AEON));    // 40 / 2
+        }
+
+        /** Parallel copy from source tag + conversion chain in post_conversions. */
+        @Test
+        void parallelCopyWithConversionChain() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "originals": ["minecraft:copper_block", "minecraft:cut_copper"],
+                        "exposed": ["minecraft:exposed_copper", "minecraft:exposed_cut_copper"]
+                    },
+                    "minecraft:copper_block": { "metal": 160 },
+                    "minecraft:cut_copper": { "metal": 80 },
+                    "_post_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "exposed": "@oxidation",
+                        "#exposed": "#originals @exposed"
+                    }
+                }
+                """);
+            // exposed_copper gets copper_block's value (160 metal), then 1x oxidation
+            GooValue exposed = registry.lookup(id("minecraft:exposed_copper"));
+            assertNotNull(exposed);
+            assertEquals(120, exposed.get(GooType.METAL)); // 160 - 40
+            assertEquals(20, exposed.get(GooType.AEON));    // 40 / 2
+
+            // exposed_cut_copper gets cut_copper's value (80 metal), then 1x oxidation
+            GooValue exposedCut = registry.lookup(id("minecraft:exposed_cut_copper"));
+            assertNotNull(exposedCut);
+            assertEquals(60, exposedCut.get(GooType.METAL)); // 80 - 20
+            assertEquals(10, exposedCut.get(GooType.AEON));   // 20 / 2
+        }
+
+        /** Chained parallel copy: weathered copies from exposed (already converted). */
+        @Test
+        void chainedParallelCopy() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "originals": ["minecraft:copper_block"],
+                        "exposed": ["minecraft:exposed_copper"],
+                        "weathered": ["minecraft:weathered_copper"]
+                    },
+                    "minecraft:copper_block": { "metal": 160 },
+                    "_post_conversions": {
+                        "oxidation": "metal / 4 -> aeon / 2",
+                        "exposed_conv": "@oxidation",
+                        "weathered_conv": "2 @oxidation",
+                        "#exposed": "#originals @exposed_conv",
+                        "#weathered": "#exposed @weathered_conv"
+                    }
+                }
+                """);
+            // exposed_copper: copy 160 metal, 1x oxidation -> 120 metal, 20 aeon
+            GooValue exposed = registry.lookup(id("minecraft:exposed_copper"));
+            assertNotNull(exposed);
+            assertEquals(120, exposed.get(GooType.METAL));
+            assertEquals(20, exposed.get(GooType.AEON));
+
+            // weathered_copper: copy from exposed (120 metal, 20 aeon), 2x oxidation
+            // 2 * (120/4) = 60 removed, 2 * (120/4/2) = 30 added
+            GooValue weathered = registry.lookup(id("minecraft:weathered_copper"));
+            assertNotNull(weathered);
+            assertEquals(60, weathered.get(GooType.METAL));  // 120 - 60
+            assertEquals(50, weathered.get(GooType.AEON));    // 20 + 30
+        }
+
+        /** Additive conversion: +$waxed adds flat vital to copied copper items. */
+        @Test
+        void additiveConversionAddsFlatValue() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "waxed": { "vital": 48 } },
+                    "_groups": {
+                        "copper": ["minecraft:copper_block", "minecraft:cut_copper"],
+                        "waxed": ["minecraft:waxed_copper_block", "minecraft:waxed_cut_copper"]
+                    },
+                    "minecraft:copper_block": { "metal": 160 },
+                    "minecraft:cut_copper": { "metal": 80 },
+                    "_post_conversions": {
+                        "waxed": "+$waxed",
+                        "#waxed": "#copper @waxed"
+                    }
+                }
+                """);
+            GooValue waxedBlock = registry.lookup(id("minecraft:waxed_copper_block"));
+            assertNotNull(waxedBlock);
+            assertEquals(160, waxedBlock.get(GooType.METAL)); // copied from copper_block
+            assertEquals(48, waxedBlock.get(GooType.VITAL));   // added by +$waxed
+
+            GooValue waxedCut = registry.lookup(id("minecraft:waxed_cut_copper"));
+            assertNotNull(waxedCut);
+            assertEquals(80, waxedCut.get(GooType.METAL));
+            assertEquals(48, waxedCut.get(GooType.VITAL));
         }
     }
 
@@ -829,6 +1233,27 @@ class GooValueRegistryTest {
             registry.parseBaseValuesFromStream(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
             registry.copyBaseToEffective();
+        }
+
+        /** String constant referencing a tree constant promotes to tree. */
+        @Test
+        void stringConstantReferencingTreePromotes() throws IOException {
+            loadJson("""
+                {
+                    "_constants": {
+                        "base": 48,
+                        "nugget": { "metal": "$base" },
+                        "ingot": "9 $nugget",
+                        "block": "9 $ingot"
+                    },
+                    "minecraft:iron_block": "$block"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:iron_block"));
+            assertNotNull(val, "iron_block should have a value");
+            // nugget = {metal: 48}, ingot = 9 * {metal: 48} = {metal: 432}
+            // block = 9 * {metal: 432} = {metal: 3888}
+            assertEquals(3888, val.get(GooType.METAL));
         }
 
         /** Adding two items merges their goo types. */
@@ -1081,6 +1506,113 @@ class GooValueRegistryTest {
             assertEquals(100, val.get(GooType.ROCK));
             assertEquals(80, val.get(GooType.CRYSTAL));
             assertEquals(40, val.get(GooType.AEON));
+        }
+
+        /** Unary minus on scalar: "-2 $base" negates the multiplier. */
+        @Test
+        void unaryMinusScalarTimesTreeConstant() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "base": { "metal": 100 } },
+                    "minecraft:copper_ingot": { "metal": 160 },
+                    "minecraft:exposed_copper": "copper_ingot + -2 $base"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:exposed_copper"));
+            // 160 + (-2 * 100) = -40 metal; negative -> excluded by effective value guard
+            // But the interstitial expression itself should produce -40
+            // Since effective values reject negatives, exposed_copper won't appear
+            assertNull(registry.lookup(id("minecraft:exposed_copper")),
+                    "Negative final value should be rejected from effective values");
+        }
+
+        /** Unary minus on a tree constant: "-$bonus" negates all types. */
+        @Test
+        void unaryMinusOnTreeConstant() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "drain": { "metal": 64 } },
+                    "minecraft:copper_ingot": { "metal": 200, "aeon": 30 },
+                    "minecraft:exposed_copper": "copper_ingot + -$drain"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:exposed_copper"));
+            assertNotNull(val);
+            assertEquals(136, val.get(GooType.METAL)); // 200 - 64
+            assertEquals(30, val.get(GooType.AEON));   // unchanged
+        }
+
+        /** Unary minus combined with addition: tree constant with mixed signs. */
+        @Test
+        void treeConstantWithNegativeType() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "exposed": { "aeon": 32, "metal": -64 } },
+                    "minecraft:copper_ingot": { "metal": 200, "rock": 50 },
+                    "minecraft:exposed_copper": "copper_ingot + $exposed"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:exposed_copper"));
+            assertNotNull(val);
+            assertEquals(136, val.get(GooType.METAL)); // 200 - 64
+            assertEquals(32, val.get(GooType.AEON));   // 0 + 32
+            assertEquals(50, val.get(GooType.ROCK));   // unchanged
+        }
+
+        /** Tree constant dot notation in item-level expression: produces single-type GooValue. */
+        @Test
+        void treeConstantDotInItemExpression() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:oak_wood": "$log.leaf * 3 / 4"
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:oak_wood"));
+            assertNotNull(val);
+            assertEquals(360, val.get(GooType.LEAF)); // 480 * 3 / 4
+            assertEquals(1, val.typeCount()); // only leaf, not the full tree
+        }
+
+        /** Tree constant dot notation in per-type expression: resolves to scalar int. */
+        @Test
+        void treeConstantDotInPerTypeExpression() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:stem": { "leaf": "$log.leaf" }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:stem"));
+            assertNotNull(val);
+            assertEquals(480, val.get(GooType.LEAF));
+        }
+
+        /** Tree constant dot notation with arithmetic in per-type context. */
+        @Test
+        void treeConstantDotWithArithmeticPerType() throws IOException {
+            loadJson("""
+                {
+                    "_constants": { "log": { "leaf": 480 } },
+                    "minecraft:oak_wood": { "leaf": "$log.leaf * 3 / 4" }
+                }
+                """);
+            GooValue val = registry.lookup(id("minecraft:oak_wood"));
+            assertNotNull(val);
+            assertEquals(360, val.get(GooType.LEAF));
+        }
+
+        /** Binary subtraction still works after unary minus support. */
+        @Test
+        void binarySubtractionStillWorks() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:iron_block": { "metal": 90 },
+                    "minecraft:iron_ingot": { "metal": 10 },
+                    "minecraft:scrap": "iron_block - 2 iron_ingot"
+                }
+                """);
+            assertEquals(70, registry.lookup(id("minecraft:scrap")).get(GooType.METAL));
         }
     }
 
@@ -1467,14 +1999,16 @@ class GooValueRegistryTest {
 
         /** An unknown tag (empty resolver result) adds no entries and does not crash. */
         @Test
-        void unknownTagSkipped() {
+        void unknownTagPreservedForPseudoTagResolution() {
             JsonObject input = json("""
                 { "#test:nonexistent": { "leaf": 100 } }
                 """);
 
             JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(Map.of()));
 
-            assertEquals(0, result.size());
+            // Unresolved MC tags are preserved so pseudo-tag resolution can try them
+            assertEquals(1, result.size());
+            assertTrue(result.has("#test:nonexistent"));
         }
 
         /** A tag value can be a string expression; expansion preserves it as-is for later evaluation. */
@@ -1514,6 +2048,73 @@ class GooValueRegistryTest {
             assertEquals(10, result.getAsJsonObject("_constants").get("iron").getAsInt());
             assertTrue(result.has("minecraft:oak_planks"));
             assertFalse(result.has("#test:planks"));
+        }
+    }
+
+    // ── Restricted items ───────────────────────────────────────────────
+
+    @Nested
+    class RestrictedItems {
+
+        private void loadJson(String json) throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            registry.copyBaseToEffective();
+        }
+
+        /** Items listed in _restricted are flagged but still have values. */
+        @Test
+        void restrictedItemKeepsValueButIsFlagged() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 },
+                    "_restricted": ["minecraft:coal_ore"]
+                }
+                """);
+            assertTrue(registry.isRestricted(id("minecraft:coal_ore")));
+            assertNotNull(registry.lookup(id("minecraft:coal_ore")));
+            assertEquals(100, registry.lookup(id("minecraft:coal_ore")).get(GooType.ROCK));
+        }
+
+        /** Group references in _restricted expand to all members. */
+        @Test
+        void restrictedGroupExpandsToMembers() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "ores": ["minecraft:coal_ore", "minecraft:iron_ore"]
+                    },
+                    "#ores": { "rock": 100 },
+                    "_restricted": ["#ores"]
+                }
+                """);
+            assertTrue(registry.isRestricted(id("minecraft:coal_ore")));
+            assertTrue(registry.isRestricted(id("minecraft:iron_ore")));
+            assertNotNull(registry.lookup(id("minecraft:coal_ore")));
+        }
+
+        /** Items not in _restricted are not flagged. */
+        @Test
+        void nonRestrictedItemIsNotFlagged() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 },
+                    "minecraft:stick": { "leaf": 50 },
+                    "_restricted": ["minecraft:coal_ore"]
+                }
+                """);
+            assertFalse(registry.isRestricted(id("minecraft:stick")));
+        }
+
+        /** Absent _restricted section means nothing is restricted. */
+        @Test
+        void noRestrictedSectionMeansNothingRestricted() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 }
+                }
+                """);
+            assertFalse(registry.isRestricted(id("minecraft:coal_ore")));
         }
     }
 }

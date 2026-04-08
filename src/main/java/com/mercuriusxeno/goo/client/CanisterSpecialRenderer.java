@@ -10,19 +10,17 @@ import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
-
 import java.util.function.Consumer;
 
 /**
@@ -43,6 +41,9 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     /** Choral gasket texture (upgraded canister caps). */
     private static final Identifier CHORAL_GASKET =
         Identifier.fromNamespaceAndPath("goo", "textures/block/choral_gasket.png");
+
+    /** Fully opaque white in ARGB for untinted quad rendering. */
+    private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
     // -- Canister geometry (block coords, centered at 0.5 in XZ) --
 
@@ -120,7 +121,6 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      * Renders the canister body, gaskets, and fluid fill for the item.
      *
      * @param data           extracted goo data (may be null for empty canisters)
-     * @param displayContext the display context (GUI, hand, etc.)
      * @param poseStack      the current pose stack
      * @param nodeCollector  the render node collector
      * @param packedLight    packed light value
@@ -147,7 +147,13 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
         poseStack.popPose();
     }
 
-    /** Submits the baked canister body model at the item center position. */
+    /**
+     * Submits the baked canister body model at the item center position.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     */
     private static void submitBody(PoseStack poseStack, SubmitNodeCollector nodeCollector,
             int packedLight) {
         QuadCollection model = CanisterBodyModels.getModel();
@@ -155,7 +161,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 QuadInstance qi = new QuadInstance();
-                qi.setColor(0xFFFFFFFF);
+                qi.setColor(OPAQUE_WHITE);
                 qi.setLightCoords(packedLight);
                 qi.setOverlayCoords(OverlayTexture.NO_OVERLAY);
                 for (BakedQuad quad : model.getAll()) {
@@ -167,67 +173,92 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     /**
      * Submits endcap geometry. Every canister always gets top and bottom caps -
      * copper by default, choral when upgraded. Two draw calls batch each texture.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param hasTopChoral true if topChoral is present
+     * @param hasBottomChoral true if bottomChoral is present
      */
     private static void submitGaskets(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             boolean hasTopChoral, boolean hasBottomChoral) {
-        float x0 = CENTER - HW, x1 = CENTER + HW;
-        float z0 = CENTER - HW, z1 = CENTER + HW;
+        float x0 = CENTER - HW;
+        float x1 = CENTER + HW;
+        float z0 = CENTER - HW;
+        float z1 = CENTER + HW;
         boolean copperTop = !hasTopChoral;
         boolean copperBottom = !hasBottomChoral;
         // Copper endcaps: caps that are NOT choral-upgraded
         if (copperTop || copperBottom) {
             nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entitySolid(COPPER_GASKET),
-                (pose, c) -> {
-                    if (copperTop) {
-                        CanisterGeometry.gasketBox(pose, c, packedLight,
-                            x0, BODY_TOP, z0, x1, GASKET_TOP, z1,
-                            GS_U0, GS_U1, GS_V1);
-                    }
-                    if (copperBottom) {
-                        CanisterGeometry.gasketBox(pose, c, packedLight,
-                            x0, GASKET_BOT, z0, x1, BODY_BOT, z1,
-                            GS_U0, GS_U1, GS_V1);
-                    }
-                });
+                (pose, c) -> renderEndcapPair(pose, c, packedLight,
+                    x0, x1, z0, z1, copperTop, copperBottom));
         }
         // Choral gaskets: upgraded caps
         if (hasTopChoral || hasBottomChoral) {
             nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entitySolid(CHORAL_GASKET),
-                (pose, c) -> {
-                    if (hasTopChoral) {
-                        CanisterGeometry.gasketBox(pose, c, packedLight,
-                            x0, BODY_TOP, z0, x1, GASKET_TOP, z1,
-                            GS_U0, GS_U1, GS_V1);
-                    }
-                    if (hasBottomChoral) {
-                        CanisterGeometry.gasketBox(pose, c, packedLight,
-                            x0, GASKET_BOT, z0, x1, BODY_BOT, z1,
-                            GS_U0, GS_U1, GS_V1);
-                    }
-                });
+                (pose, c) -> renderEndcapPair(pose, c, packedLight,
+                    x0, x1, z0, z1, hasTopChoral, hasBottomChoral));
+        }
+    }
+
+    /** Renders top and/or bottom endcap geometry for a single canister.
+     *
+     * @param pose   the pose matrix entry
+     * @param c      the vertex consumer for endcap geometry
+     * @param light  packed light value
+     * @param x0     minimum X of the canister quad
+     * @param x1     maximum X of the canister quad
+     * @param z0     minimum Z of the canister quad
+     * @param z1     maximum Z of the canister quad
+     * @param top    true to render the top endcap
+     * @param bottom true to render the bottom endcap
+     */
+    private static void renderEndcapPair(PoseStack.Pose pose, VertexConsumer c,
+            int light, float x0, float x1, float z0, float z1,
+            boolean top, boolean bottom) {
+        if (top) {
+            CanisterGeometry.gasketBox(pose, c, light,
+                x0, BODY_TOP, z0, x1, GASKET_TOP, z1,
+                GS_U0, GS_U1, GS_V1);
+        }
+        if (bottom) {
+            CanisterGeometry.gasketBox(pose, c, light,
+                x0, GASKET_BOT, z0, x1, BODY_BOT, z1,
+                GS_U0, GS_U1, GS_V1);
         }
     }
 
     /**
      * Submits fluid surface geometry inside the canister body.
      * Renders top face + 4 side faces from body bottom up to the fill level.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight the packed light value
+     * @param type the goo type
+     * @param fill the fill fraction in [0, 1]
      */
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             GooType type, float fill) {
-        float x0 = CENTER - HW + FLUID_INSET, x1 = CENTER + HW - FLUID_INSET;
-        float z0 = CENTER - HW + FLUID_INSET, z1 = CENTER + HW - FLUID_INSET;
+        float x0 = CENTER - HW + FLUID_INSET;
+        float x1 = CENTER + HW - FLUID_INSET;
+        float z0 = CENTER - HW + FLUID_INSET;
+        float z1 = CENTER + HW - FLUID_INSET;
         float y = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
 
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0(), u1 = sprite.getU1();
-                float v0 = sprite.getV0(), v1 = sprite.getV1();
+                float u0 = sprite.getU0();
+                float u1 = sprite.getU1();
+                float v0 = sprite.getV0();
+                float v1 = sprite.getV1();
 
                 float cuboidWidth = x1 - x0;
                 float cuboidDepth = z1 - z0;
@@ -268,8 +299,10 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        float x0 = CENTER - HW, x1 = CENTER + HW;
-        float z0 = CENTER - HW, z1 = CENTER + HW;
+        float x0 = CENTER - HW;
+        float x1 = CENTER + HW;
+        float z0 = CENTER - HW;
+        float z1 = CENTER + HW;
         output.accept(new Vector3f(x0, GASKET_BOT, z0));
         output.accept(new Vector3f(x1, GASKET_TOP, z1));
     }

@@ -25,21 +25,25 @@ public class GooParticles {
 
     /** Color-tinted bubble particle spawned during goo extraction. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_BUBBLE =
-        PARTICLE_TYPES.register("goo_bubble", () -> colorParticleType());
+        PARTICLE_TYPES.register("goo_bubble", GooParticles::colorParticleType);
 
     /** Blocky slime drip shed by thrown goo blobs mid-flight. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_DRIP =
-        PARTICLE_TYPES.register("goo_drip", () -> colorParticleType());
+        PARTICLE_TYPES.register("goo_drip", GooParticles::colorParticleType);
 
     /** Brief splat when a goo drip hits the ground. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_DRIP_LAND =
-        PARTICLE_TYPES.register("goo_drip_land", () -> colorParticleType());
+        PARTICLE_TYPES.register("goo_drip_land", GooParticles::colorParticleType);
 
     /** Radial gradient fog puff for blob flight trails. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_FOG =
-        PARTICLE_TYPES.register("goo_fog", () -> colorParticleType());
+        PARTICLE_TYPES.register("goo_fog", GooParticles::colorParticleType);
 
-    /** Creates a non-syncing ParticleType that carries RGB color data. */
+    /**
+     * Creates a non-syncing ParticleType that carries RGB color data.
+     *
+     * @return the configured color particle type
+     */
     private static ParticleType<ColorParticleOption> colorParticleType() {
         return new ParticleType<>(false) {
             @Override

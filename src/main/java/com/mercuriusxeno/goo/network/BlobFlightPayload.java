@@ -11,6 +11,16 @@ import org.jspecify.annotations.NonNull;
 /**
  * Server-to-client payload: broadcasts a blob in flight so nearby clients
  * can render the projectile arc. Sent to all players tracking the thrower.
+ *
+ * @param startX         the starting X position
+ * @param startY         the starting Y position
+ * @param startZ         the starting Z position
+ * @param gooTypeId      the goo type string identifier
+ * @param targetEntityId the target entity ID, or -1 for block targets
+ * @param targetPos      the target block position
+ * @param targetFace     the target face ordinal
+ * @param travelTicks    the number of ticks for the flight arc
+ * @param grannyArc      whether to use the boosted arc trajectory
  */
 public record BlobFlightPayload(double startX, double startY, double startZ,
                                 String gooTypeId, int targetEntityId,
@@ -31,12 +41,35 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         return TYPE;
     }
 
-    /** Writes the payload to the buffer. */
+    /**
+     * Writes the payload to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, BlobFlightPayload payload) {
+        encodeStart(buf, payload);
+        encodeTarget(buf, payload);
+    }
+
+    /** Writes start position and goo type.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload
+     */
+    private static void encodeStart(FriendlyByteBuf buf, BlobFlightPayload payload) {
         buf.writeDouble(payload.startX);
         buf.writeDouble(payload.startY);
         buf.writeDouble(payload.startZ);
         buf.writeUtf(payload.gooTypeId);
+    }
+
+    /** Writes target entity, position, face, travel time, and arc flag.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload
+     */
+    private static void encodeTarget(FriendlyByteBuf buf, BlobFlightPayload payload) {
         buf.writeVarInt(payload.targetEntityId);
         buf.writeBlockPos(payload.targetPos);
         buf.writeVarInt(payload.targetFace);
@@ -44,18 +77,16 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         buf.writeBoolean(payload.grannyArc);
     }
 
-    /** Reads the payload from the buffer. */
+    /**
+     * Reads the payload from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static BlobFlightPayload decode(FriendlyByteBuf buf) {
-        double startX = buf.readDouble();
-        double startY = buf.readDouble();
-        double startZ = buf.readDouble();
-        String gooTypeId = buf.readUtf();
-        int targetEntityId = buf.readVarInt();
-        BlockPos targetPos = buf.readBlockPos();
-        int targetFace = buf.readVarInt();
-        int travelTicks = buf.readVarInt();
-        boolean grannyArc = buf.readBoolean();
-        return new BlobFlightPayload(startX, startY, startZ, gooTypeId,
-                targetEntityId, targetPos, targetFace, travelTicks, grannyArc);
+        return new BlobFlightPayload(
+                buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                buf.readUtf(), buf.readVarInt(), buf.readBlockPos(),
+                buf.readVarInt(), buf.readVarInt(), buf.readBoolean());
     }
 }

@@ -17,8 +17,6 @@ import java.util.UUID;
  */
 public final class GooCapabilities {
 
-    private GooCapabilities() {}
-
     /** Block capability for gasket endpoints. Context is the target gasket UUID. */
     @SuppressWarnings("unchecked")
     public static final BlockCapability<ResourceHandler<FluidResource>, UUID> GASKET_BLOCK =
@@ -34,4 +32,6 @@ public final class GooCapabilities {
             Identifier.fromNamespaceAndPath(Goo.MODID, "gasket_entity"),
             (Class<ResourceHandler<FluidResource>>) (Class<?>) ResourceHandler.class,
             UUID.class);
+
+    private GooCapabilities() {}
 }

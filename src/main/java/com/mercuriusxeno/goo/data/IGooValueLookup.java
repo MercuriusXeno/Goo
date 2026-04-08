@@ -22,6 +22,7 @@ public interface IGooValueLookup {
      * Returns true if the item has a hand-keyed base value (not derived from recipes).
      *
      * @param itemId the item's registry ID
+     * @return true if the item has a hand-keyed base value
      */
     boolean hasBaseValue(Identifier itemId);
 
@@ -29,12 +30,30 @@ public interface IGooValueLookup {
      * Returns true if the item is explicitly denied a goo value.
      *
      * @param itemId the item's registry ID
+     * @return true if the item is on the deny list
      */
     boolean isDenied(Identifier itemId);
 
-    /** Returns the total number of items with effective goo values. */
+    /**
+     * Returns true if the item is restricted from plexer reconstitution.
+     * Restricted items still have goo values (decomposable) but cannot be created.
+     *
+     * @param itemId the item's registry ID
+     * @return true if the item is on the restricted list
+     */
+    boolean isRestricted(Identifier itemId);
+
+    /**
+     * Returns the total number of items with effective goo values.
+     *
+     * @return effective value count
+     */
     int size();
 
-    /** Returns an unmodifiable view of all effective goo values. */
+    /**
+     * Returns an unmodifiable view of all effective goo values.
+     *
+     * @return unmodifiable map of item ID to effective GooValue
+     */
     Map<Identifier, GooValue> getEffectiveValues();
 }

@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
 import com.mercuriusxeno.goo.client.VatStackAggregator.VatStackData;
+import com.mercuriusxeno.goo.item.GooContents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -29,8 +30,7 @@ import java.util.Map;
  * Panel is placed on the face the player is looking at.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
-public class VatHudRenderer {
-
+public final class VatHudRenderer {
     /** Upgrade level color (aqua). */
     private static final int UPGRADE_COLOR = 0xFF55FFFF;
     /** Name label color (gold). */
@@ -50,23 +50,54 @@ public class VatHudRenderer {
     /** Offset to push the panel to the face surface (half a block). */
     private static final double FACE_OFFSET = 0.5;
 
+    /** Block center offset for centering calculations. */
+    private static final double BLOCK_CENTER = 0.5;
+
+    /** Z-nudge for panels on upward/downward faces to prevent z-fighting. */
+    private static final float Z_NUDGE_POS = 0.01f;
+
+    /** Z-nudge for panels on side faces. */
+    private static final float Z_NUDGE_NEG = -0.01f;
+
+    /** Upgrade level display prefix. */
+    private static final String UPGRADE_PREFIX = "Lv ";
+
+    /** Stack size display prefix. */
+    private static final String STACK_PREFIX = "Stack: ";
+
+    /** Empty string for absent text fields. */
+    private static final String EMPTY_TEXT = "";
+
+    /** Divisor for centering calculations. */
+    private static final int HALF = 2;
+
+    /** Half-width divisor for panel centering. */
+    private static final float HALF_F = 2f;
+
     // --- Animation state ---
-    private static @Nullable BlockPos trackedPos = null;
+    private static @Nullable BlockPos trackedPos;
     private static Direction trackedFace = Direction.UP;
     private static double trackedCx = 0.5;
     private static double trackedCz = 0.5;
     private static double trackedLift = BLOCK_TOP;
-    private static float currentPitch = 0f;
-    private static boolean retracting = false;
+    private static float currentPitch;
+    private static boolean retracting;
     private static final long[] lastFrameNanos = {0};
 
-    /** Renders the vat HUD after entities. */
+    private VatHudRenderer() {}
+
+
+    /**
+     * Renders the vat HUD after entities.
+     *
+     * @param event the event instance
+     */
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         VatTarget target = getTarget();
         float dt = InWorldHud.computeDeltaTime(lastFrameNanos);
         updateState(target, dt);
-        if (trackedPos == null) return;
+        if (trackedPos == null) { return; }
 
         VatStackData data = lookupVatData(trackedPos);
         if (data == null || (data.contents().isEmpty()
@@ -79,30 +110,68 @@ public class VatHudRenderer {
         renderPanel(event.getPoseStack(), camera, data, trackedPos);
     }
 
-    /** State machine: manages emerge and retract transitions. */
+    /**
+     * State machine: manages emerge and retract transitions.
+     *
+     * @param target the current aim target
+     * @param dt the delta time in seconds
+     */
     private static void updateState(@Nullable VatTarget target, float dt) {
         boolean hasTarget = target != null;
         boolean sameTarget = hasTarget && target.pos.equals(trackedPos);
 
-        if (hasTarget && (trackedPos == null || !sameTarget)) {
-            trackedPos = target.pos;
-            trackedFace = target.face;
-            trackedCx = target.cx;
-            trackedCz = target.cz;
-            trackedLift = target.lift;
-            currentPitch = 0f;
-            retracting = false;
-        } else if (hasTarget && sameTarget) {
-            trackedFace = target.face;
-            trackedCx = target.cx;
-            trackedCz = target.cz;
-            trackedLift = target.lift;
-            if (retracting) retracting = false;
-        } else if (!hasTarget && trackedPos != null && !retracting) {
+        if (hasTarget && !sameTarget) {
+            adoptTarget(target);
+        } else if (hasTarget) {
+            refreshTarget(target);
+        } else if (trackedPos != null && !retracting) {
             retracting = true;
         }
 
-        if (trackedPos == null) return;
+        advancePitch(dt);
+    }
+
+    /**
+     * Adopts a new target, resetting animation state for a fresh emerge.
+     *
+     * @param target the new target to track
+     */
+    private static void adoptTarget(VatTarget target) {
+        trackedPos = target.pos;
+        applyTargetOffsets(target);
+        currentPitch = 0f;
+        retracting = false;
+    }
+
+    /**
+     * Refreshes offsets from the same target so the HUD follows gaze changes.
+     *
+     * @param target the current target with updated offsets
+     */
+    private static void refreshTarget(VatTarget target) {
+        applyTargetOffsets(target);
+        if (retracting) { retracting = false; }
+    }
+
+    /**
+     * Copies spatial offsets from a target into the tracked state fields.
+     *
+     * @param target the target to copy from
+     */
+    private static void applyTargetOffsets(VatTarget target) {
+        trackedFace = target.face;
+        trackedCx = target.cx;
+        trackedCz = target.cz;
+        trackedLift = target.lift;
+    }
+
+    /**
+     * Advances the pitch toward the target value and completes retract if flush.
+     *
+     * @param dt the delta time in seconds
+     */
+    private static void advancePitch(float dt) {
+        if (trackedPos == null) { return; }
 
         float targetPitch = retracting ? 0f : 1f;
         currentPitch = InWorldHud.smoothToward(currentPitch, targetPitch, dt, SMOOTH_TAU);
@@ -116,48 +185,64 @@ public class VatHudRenderer {
     private static void clearState() {
         trackedPos = null;
         trackedFace = Direction.UP;
-        trackedCx = 0.5;
-        trackedCz = 0.5;
+        trackedCx = BLOCK_CENTER;
+        trackedCz = BLOCK_CENTER;
         trackedLift = BLOCK_TOP;
         currentPitch = 0f;
         retracting = false;
     }
 
-    /** Returns the targeted vat with hit face, or null if not looking at a vat. */
+    /**
+     * Returns the targeted vat with hit face, or null if not looking at a vat.
+     *
+     * @return the target
+     */
     private static @Nullable VatTarget getTarget() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.hitResult == null) return null;
-        if (mc.hitResult.getType() != HitResult.Type.BLOCK) return null;
+        if (mc.level == null || mc.hitResult == null) { return null; }
+        if (mc.hitResult.getType() != HitResult.Type.BLOCK) { return null; }
         BlockHitResult hit = (BlockHitResult) mc.hitResult;
         BlockPos pos = hit.getBlockPos();
         BlockEntity be = mc.level.getBlockEntity(pos);
         if (be instanceof VatBlockEntity) {
             Direction face = hit.getDirection();
             if (face == Direction.UP) {
-                return new VatTarget(pos, Direction.UP, 0.5, 0.5, BLOCK_TOP);
+                return new VatTarget(pos, Direction.UP, BLOCK_CENTER, BLOCK_CENTER, BLOCK_TOP);
             }
             if (face == Direction.DOWN) {
-                return new VatTarget(pos, Direction.DOWN, 0.5, 0.5, BLOCK_BOTTOM);
+                return new VatTarget(pos, Direction.DOWN, BLOCK_CENTER, BLOCK_CENTER, BLOCK_BOTTOM);
             }
             // Side face: pick the face most visible to the player.
             Vec3 look = mc.player != null ? mc.player.getLookAngle() : Vec3.ZERO;
             Direction bestFace = InWorldHud.bestPerpendicularFace(look);
-            double cx = 0.5 + bestFace.getStepX() * FACE_OFFSET;
-            double cz = 0.5 + bestFace.getStepZ() * FACE_OFFSET;
+            double cx = BLOCK_CENTER + bestFace.getStepX() * FACE_OFFSET;
+            double cz = BLOCK_CENTER + bestFace.getStepZ() * FACE_OFFSET;
             return new VatTarget(pos, bestFace, cx, cz, MID_BLOCK);
         }
         return null;
     }
 
-    /** Looks up aggregated vat stack data at the given position. */
+    /**
+     * Looks up aggregated vat stack data at the given position.
+     *
+     * @param pos the block position
+     * @return the vatData, or null if not found
+     */
     @Nullable
     private static VatStackData lookupVatData(BlockPos pos) {
         Level level = Minecraft.getInstance().level;
-        if (level == null) return null;
+        if (level == null) { return null; }
         return VatStackAggregator.aggregate(level, pos);
     }
 
-    /** Renders the HUD panel on the tracked face of the vat block. */
+    /**
+     * Renders the HUD panel on the tracked face of the vat block.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
+     * @param data the extracted render data
+     * @param pos the block position
+     */
     private static void renderPanel(PoseStack poseStack, Camera camera,
             VatStackData data, BlockPos pos) {
         Vec3 cam = camera.position();
@@ -169,7 +254,7 @@ public class VatHudRenderer {
         poseStack.translate(rx, ry, rz);
         applyRotation(poseStack, camera);
         float zNudge = (trackedFace == Direction.UP || trackedFace == Direction.DOWN)
-                ? 0.01f : -0.01f;
+                ? Z_NUDGE_POS : Z_NUDGE_NEG;
         poseStack.translate(0, 0, zNudge);
         poseStack.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
 
@@ -180,6 +265,9 @@ public class VatHudRenderer {
     /**
      * Applies face-aware rotation: side faces use face rotation to lie flat
      * against the block surface; UP/DOWN use billboard rotation.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param camera the render camera
      */
     private static void applyRotation(PoseStack poseStack, Camera camera) {
         if (trackedFace != Direction.UP && trackedFace != Direction.DOWN) {
@@ -189,15 +277,21 @@ public class VatHudRenderer {
         InWorldHud.applyBillboardRotation(poseStack, camera, currentPitch);
     }
 
-    /** Renders the panel content: label, upgrade level, stack size, goo rows. */
+    /**
+     * Renders the panel content: label, upgrade level, stack size, goo rows.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param data the extracted render data
+     * @param face the block face direction
+     */
     private static void renderContent(PoseStack poseStack,
             VatStackData data, Direction face) {
         Font font = Minecraft.getInstance().font;
         boolean hasUpgrade = data.compression() > 0;
         boolean hasLabel = data.hasLabel();
         boolean showStack = data.stackSize() > 1;
-        String upgradeText = hasUpgrade ? "Lv " + data.compression() : "";
-        String stackText = showStack ? "Stack: " + data.stackSize() : "";
+        String upgradeText = hasUpgrade ? UPGRADE_PREFIX + data.compression() : EMPTY_TEXT;
+        String stackText = showStack ? STACK_PREFIX + data.stackSize() : EMPTY_TEXT;
 
         float maxRowWidth = InWorldHud.computeMaxRowWidth(font, data.contents());
         float upgradeWidth = hasUpgrade ? font.width(upgradeText) : 0;
@@ -209,13 +303,9 @@ public class VatHudRenderer {
         int headerRows = (hasLabel ? 1 : 0) + (showStack ? 1 : 0)
             + (hasUpgrade ? 1 : 0);
         int rowCount = headerRows + gooRows;
-        float panelWidth = contentWidth + InWorldHud.BORDER * 2;
-        float panelHeight = InWorldHud.BORDER * 2 + rowCount * InWorldHud.ROW_HEIGHT;
+        float panelWidth = contentWidth + InWorldHud.BORDER * HALF;
+        float panelHeight = InWorldHud.BORDER * HALF + rowCount * InWorldHud.ROW_HEIGHT;
 
-        // For the DOWN face, shift the panel downward so it hangs below the
-        // block instead of extending upward into it.  The Y-axis is flipped by
-        // the -PIXEL_SCALE scale, so a positive pixel-space translate moves the
-        // drawn content to the opposite (downward) side of the anchor.
         if (face == Direction.DOWN) {
             poseStack.translate(0, panelHeight, 0);
         }
@@ -223,7 +313,7 @@ public class VatHudRenderer {
         MultiBufferSource.BufferSource buffers =
             Minecraft.getInstance().renderBuffers().bufferSource();
 
-        float halfW = panelWidth / 2f;
+        float halfW = panelWidth / HALF_F;
         InWorldHud.renderBackground(poseStack, buffers,
             -halfW, -panelHeight, panelWidth, panelHeight);
 
@@ -232,34 +322,61 @@ public class VatHudRenderer {
         int row = 0;
 
         if (hasLabel) {
-            float textY = baseY + (InWorldHud.ROW_HEIGHT - font.lineHeight) / 2f;
-            InWorldHud.drawText(font, buffers, poseStack, data.label(),
-                contentX, textY, LABEL_COLOR);
-            row++;
+            row += renderHeaderRow(font, buffers, poseStack, data.label(), contentX, baseY, row, LABEL_COLOR);
         }
-
         if (showStack) {
-            float textY = baseY + row * InWorldHud.ROW_HEIGHT + (InWorldHud.ROW_HEIGHT - font.lineHeight) / 2f;
-            InWorldHud.drawText(font, buffers, poseStack, stackText,
-                contentX, textY, STACK_COLOR);
-            row++;
+            row += renderHeaderRow(font, buffers, poseStack, stackText, contentX, baseY, row, STACK_COLOR);
         }
-
         if (hasUpgrade) {
-            float textY = baseY + row * InWorldHud.ROW_HEIGHT + (InWorldHud.ROW_HEIGHT - font.lineHeight) / 2f;
-            InWorldHud.drawText(font, buffers, poseStack, upgradeText,
-                contentX, textY, UPGRADE_COLOR);
-            row++;
+            row += renderHeaderRow(font, buffers, poseStack, upgradeText, contentX, baseY, row, UPGRADE_COLOR);
         }
 
-        for (Map.Entry<GooType, Long> entry : data.contents().getAll().entrySet()) {
+        renderGooRows(poseStack, font, buffers, data.contents(), contentX, baseY, row);
+        buffers.endBatch();
+    }
+
+    /**
+     * Renders a single header text row, vertically centered within its row slot.
+     *
+     * @param font the font renderer
+     * @param buffers the buffer source
+     * @param poseStack the pose stack
+     * @param text the header text
+     * @param x the left X
+     * @param baseY the panel content top Y
+     * @param row the current row index
+     * @param color the text color
+     * @return 1, for row-counter advancement
+     */
+    private static int renderHeaderRow(Font font, MultiBufferSource buffers,
+            PoseStack poseStack, String text, float x, float baseY, int row, int color) {
+        float textY = baseY + row * InWorldHud.ROW_HEIGHT
+            + (InWorldHud.ROW_HEIGHT - font.lineHeight) / HALF_F;
+        InWorldHud.drawText(font, buffers, poseStack, text, x, textY, color);
+        return 1;
+    }
+
+    /**
+     * Renders all goo type rows starting at the given row offset.
+     *
+     * @param poseStack the pose stack
+     * @param font the font renderer
+     * @param buffers the buffer source
+     * @param contents the goo contents to render
+     * @param x the left X
+     * @param baseY the panel content top Y
+     * @param startRow the first row index for goo rows
+     */
+    private static void renderGooRows(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, GooContents contents,
+            float x, float baseY, int startRow) {
+        int row = startRow;
+        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
             float rowY = baseY + row * InWorldHud.ROW_HEIGHT;
             String amountText = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
-            InWorldHud.renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, contentX, rowY);
+            InWorldHud.renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, x, rowY);
             row++;
         }
-
-        buffers.endBatch();
     }
 
     /** Target: vat position, face, XZ center offset, and Y lift. */

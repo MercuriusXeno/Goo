@@ -22,12 +22,23 @@ public final class GooFluid {
      */
     public static class Source extends BaseFlowingFluid.Source {
 
-        /** Creates a non-flowing source fluid with the given properties. */
+        /**
+         * Creates a non-flowing source fluid with the given properties.
+         *
+         * @param properties the fluid properties
+         */
         public Source(Properties properties) {
             super(properties);
         }
 
-        /** No-op: goo does not tick, spread, or decay. */
+        /**
+         * No-op: goo does not tick, spread, or decay.
+         *
+         * @param level      the server level
+         * @param pos        the block position
+         * @param blockState the block state at the position
+         * @param fluidState the fluid state at the position
+         */
         @Override
         public void tick(@NonNull ServerLevel level, @NonNull BlockPos pos,
                          @NonNull BlockState blockState, @NonNull FluidState fluidState) {
@@ -41,12 +52,23 @@ public final class GooFluid {
      */
     public static class Flowing extends BaseFlowingFluid.Flowing {
 
-        /** Creates a non-flowing flowing-variant fluid with the given properties. */
+        /**
+         * Creates a non-flowing flowing-variant fluid with the given properties.
+         *
+         * @param properties the fluid properties
+         */
         public Flowing(Properties properties) {
             super(properties);
         }
 
-        /** No-op: goo does not tick, spread, or decay. */
+        /**
+         * No-op: goo does not tick, spread, or decay.
+         *
+         * @param level      the server level
+         * @param pos        the block position
+         * @param blockState the block state at the position
+         * @param fluidState the fluid state at the position
+         */
         @Override
         public void tick(@NonNull ServerLevel level, @NonNull BlockPos pos,
                          @NonNull BlockState blockState, @NonNull FluidState fluidState) {

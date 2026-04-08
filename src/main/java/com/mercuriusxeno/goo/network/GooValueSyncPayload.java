@@ -15,6 +15,8 @@ import java.util.Map;
 /**
  * Network payload carrying the full effective goo value map from server to client.
  * Wire format: VarInt entry count, then per entry: Identifier + VarInt type count + per type: VarInt ordinal + VarInt amount.
+ *
+ * @param values the full effective goo value map
  */
 public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements CustomPacketPayload {
 
@@ -31,7 +33,12 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         return TYPE;
     }
 
-    /** Writes the full value map to the buffer. */
+    /**
+     * Writes the full value map to the buffer.
+     *
+     * @param buf     the output buffer
+     * @param payload the payload to encode
+     */
     private static void encode(FriendlyByteBuf buf, GooValueSyncPayload payload) {
         buf.writeVarInt(payload.values.size());
         for (Map.Entry<Identifier, GooValue> entry : payload.values.entrySet()) {
@@ -40,7 +47,12 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         }
     }
 
-    /** Reads the full value map from the buffer. */
+    /**
+     * Reads the full value map from the buffer.
+     *
+     * @param buf the input buffer
+     * @return the decoded payload
+     */
     private static GooValueSyncPayload decode(FriendlyByteBuf buf) {
         int count = buf.readVarInt();
         Map<Identifier, GooValue> values = new HashMap<>(count);
@@ -51,7 +63,12 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         return new GooValueSyncPayload(values);
     }
 
-    /** Writes a single GooValue: VarInt type count, then ordinal + amount pairs. */
+    /**
+     * Writes a single GooValue: VarInt type count, then ordinal + amount pairs.
+     *
+     * @param buf   the output buffer
+     * @param value the goo value to encode
+     */
     private static void encodeGooValue(FriendlyByteBuf buf, GooValue value) {
         Map<GooType, Integer> all = value.getAll();
         buf.writeVarInt(all.size());
@@ -61,18 +78,31 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         }
     }
 
-    /** Reads a single GooValue: VarInt type count, then ordinal + amount pairs. */
+    /**
+     * Reads a single GooValue: VarInt type count, then ordinal + amount pairs.
+     *
+     * @param buf the input buffer
+     * @return the decoded goo value
+     */
     private static GooValue decodeGooValue(FriendlyByteBuf buf) {
         int typeCount = buf.readVarInt();
-        Map<GooType, Integer> map = new LinkedHashMap<>(typeCount);
+        return new GooValue(readTypeAmounts(buf, typeCount));
+    }
+
+    /** Reads ordinal-amount pairs from the buffer into a map.
+     *
+     * @param buf   the input buffer
+     * @param count the number of pairs to read
+     * @return the decoded type-to-amount map
+     */
+    private static Map<GooType, Integer> readTypeAmounts(FriendlyByteBuf buf, int count) {
+        Map<GooType, Integer> map = new LinkedHashMap<>(count);
         GooType[] types = GooType.values();
-        for (int i = 0; i < typeCount; i++) {
+        for (int i = 0; i < count; i++) {
             int ordinal = buf.readVarInt();
             int amount = buf.readVarInt();
-            if (ordinal >= 0 && ordinal < types.length) {
-                map.put(types[ordinal], amount);
-            }
+            if (ordinal >= 0 && ordinal < types.length) { map.put(types[ordinal], amount); }
         }
-        return new GooValue(map);
+        return map;
     }
 }

@@ -3,18 +3,17 @@ package com.mercuriusxeno.goo;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
 import com.mercuriusxeno.goo.block.PlayerInventorySlotHandler;
-import com.mercuriusxeno.goo.block.VatBlockEntity;
 import com.mercuriusxeno.goo.command.GooCommand;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
 import com.mercuriusxeno.goo.item.BucketGooFluidHandler;
 import com.mercuriusxeno.goo.item.CanisterFluidHandler;
-import com.mercuriusxeno.goo.item.GasketRole;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
+import com.mercuriusxeno.goo.item.GasketRole;
 import com.mercuriusxeno.goo.network.GooValueSync;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
-import com.mercuriusxeno.goo.registry.GooCapabilities;
 import com.mercuriusxeno.goo.registry.GooBlocks;
+import com.mercuriusxeno.goo.registry.GooCapabilities;
 import com.mercuriusxeno.goo.registry.GooCreativeTabs;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEntities;
@@ -49,7 +48,15 @@ public class Goo {
     public static final String MODID = "goo";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final GooValueRegistry GOO_VALUES = new GooValueRegistry();
+    /** Log message for startup value loading. */
+    private static final String LOG_VALUES_LOADED = "Goo values loaded: {} effective values from cache";
 
+    /**
+     * Registers all deferred registries, event listeners, and config on mod construction.
+     *
+     * @param modEventBus  the mod event bus
+     * @param modContainer the mod container
+     */
     public Goo(IEventBus modEventBus, ModContainer modContainer) {
         GooFluidTypes.FLUID_TYPES.register(modEventBus);
         GooFluids.FLUIDS.register(modEventBus);
@@ -76,14 +83,33 @@ public class Goo {
         LOGGER.info("Goo mod initialized");
     }
 
-    /** Common setup - registers chain profiles for world effects. */
+    /**
+     * Common setup - registers chain profiles for world effects.
+     *
+     * @param event the common setup event
+     */
     private static void commonSetup(FMLCommonSetupEvent event) {
         com.mercuriusxeno.goo.effect.ChainProfiles.registerAll();
     }
 
-    /** Registers capabilities: fluid handlers and gasket endpoint resolution. */
+    /**
+     * Registers capabilities: fluid handlers and gasket endpoint resolution.
+     *
+     * @param event the capability registration event
+     */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        // Item fluid handlers
+        registerItemFluidCapabilities(event);
+        registerBlockFluidCapabilities(event);
+        registerGasketBlockCapabilities(event);
+        registerGasketEntityCapabilities(event);
+    }
+
+    /**
+     * Registers item-level fluid handlers for buckets and canisters.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerItemFluidCapabilities(RegisterCapabilitiesEvent event) {
         event.registerItem(
             Capabilities.Fluid.ITEM,
             (stack, ctx) -> new BucketGooFluidHandler(ctx),
@@ -94,8 +120,14 @@ public class Goo {
             (stack, ctx) -> new CanisterFluidHandler(ctx),
             GooItems.CANISTER.get()
         );
+    }
 
-        // Block fluid handlers (local adjacency for tap/pipes)
+    /**
+     * Registers block-level fluid handlers for vat and hub (local adjacency for tap/pipes).
+     *
+     * @param event the capability registration event
+     */
+    private static void registerBlockFluidCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Fluid.BLOCK,
             GooBlockEntities.VAT.get(),
             (be, side) -> (side == null || side == net.minecraft.core.Direction.UP
@@ -105,12 +137,29 @@ public class Goo {
             GooBlockEntities.HUB.get(),
             (be, side) -> (side == null || side == net.minecraft.core.Direction.UP)
                 ? be.getFluidHandler() : null);
+    }
 
-        // GASKET_BLOCK: canister shelf scans slots for gasket UUID match
+    /**
+     * Registers GASKET_BLOCK capabilities for all machine block entities.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerGasketBlockCapabilities(RegisterCapabilitiesEvent event) {
+        registerCanisterGasketBlock(event);
+        registerHubGasketBlock(event);
+        registerSimpleGasketBlocks(event);
+    }
+
+    /**
+     * Registers GASKET_BLOCK for canister: scans slots for gasket UUID match.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerCanisterGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.CANISTER.get(), (be, gasketId) -> {
                 for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-                    if (be.getCanister(i).isEmpty()) continue;
+                    if (be.getCanister(i).isEmpty()) { continue; }
                     CanisterMetadata meta = be.getSlotMetadata(i);
                     if (gasketId.equals(meta.topGasketId())
                             || gasketId.equals(meta.bottomGasketId())) {
@@ -119,16 +168,21 @@ public class Goo {
                 }
                 return null;
             });
+    }
 
-        // GASKET_BLOCK: hub scans canister slots for gasket UUID match
+    /**
+     * Registers GASKET_BLOCK for hub: checks intake gasket then scans canister slots.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerHubGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.HUB.get(), (be, gasketId) -> {
-                // Check hub intake gasket first
                 if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))) {
                     return be.getFluidHandler();
                 }
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (be.getCanister(i).isEmpty()) continue;
+                    if (be.getCanister(i).isEmpty()) { continue; }
                     CanisterMetadata meta = be.getSlotMetadata(i);
                     if (gasketId.equals(meta.topGasketId())
                             || gasketId.equals(meta.bottomGasketId())) {
@@ -137,8 +191,14 @@ public class Goo {
                 }
                 return null;
             });
+    }
 
-        // GASKET_BLOCK: vat checks cap/base gasket IDs
+    /**
+     * Registers GASKET_BLOCK for vat, tap, and plexer (simple gasket ID checks).
+     *
+     * @param event the capability registration event
+     */
+    private static void registerSimpleGasketBlocks(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.VAT.get(), (be, gasketId) -> {
                 if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))
@@ -148,34 +208,32 @@ public class Goo {
                 return null;
             });
 
-        // GASKET_BLOCK: tap checks its single receiver gasket
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.TAP.get(), (be, gasketId) -> {
-                if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))) {
-                    // Tap doesn't have a fluid handler - it drips, not receives.
-                    // Return null; remote delivery to a tap is not supported yet.
-                    return null;
-                }
+                // Tap doesn't have a fluid handler - it drips, not receives.
+                // Remote delivery to a tap is not supported yet.
                 return null;
             });
 
-        // GASKET_BLOCK: plexer checks its single receiver gasket
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.PLEXER.get(), (be, gasketId) -> {
-                if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))) {
-                    // Plexer receives goo into its external canisters (above).
-                    // Return null for now - fluid routing TBD.
-                    return null;
-                }
+                // Plexer receives goo into its external canisters (above).
+                // Fluid routing TBD.
                 return null;
             });
+    }
 
-        // GASKET_ENTITY: player inventory scans for canister with matching gasket
+    /**
+     * Registers GASKET_ENTITY capability for player inventory canister scanning.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerGasketEntityCapabilities(RegisterCapabilitiesEvent event) {
         event.registerEntity(GooCapabilities.GASKET_ENTITY,
             net.minecraft.world.entity.EntityType.PLAYER, (player, gasketId) -> {
                 for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                     ItemStack stack = player.getInventory().getItem(i);
-                    if (!stack.is(GooItems.CANISTER.get())) continue;
+                    if (!stack.is(GooItems.CANISTER.get())) { continue; }
                     CanisterMetadata meta = CanisterItem.getMetadata(stack);
                     if (gasketId.equals(meta.topGasketId())
                             || gasketId.equals(meta.bottomGasketId())) {
@@ -186,19 +244,32 @@ public class Goo {
             });
     }
 
+    /**
+     * Loads goo values from the effective cache when the server starts.
+     *
+     * @param event the server starting event
+     */
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         GOO_VALUES.loadEffectiveCache();
-        LOGGER.info("Goo values loaded: {} effective values from cache",
-            GOO_VALUES.size());
+        if (LOGGER.isInfoEnabled()) { LOGGER.info(LOG_VALUES_LOADED, GOO_VALUES.size()); }
     }
 
+    /**
+     * Registers /goo subcommands with the server command dispatcher.
+     *
+     * @param event the command registration event
+     */
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         GooCommand.register(event.getDispatcher());
     }
 
-    /** Sends the full goo value map to a player when they log in. */
+    /**
+     * Sends the full goo value map to a player when they log in.
+     *
+     * @param event the player login event
+     */
     @SubscribeEvent
     public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
@@ -206,7 +277,11 @@ public class Goo {
         }
     }
 
-    /** Ticks pending blob effects so they apply on arrival. */
+    /**
+     * Ticks pending blob effects so they apply on arrival.
+     *
+     * @param event the post-tick event instance
+     */
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         com.mercuriusxeno.goo.network.BlobThrowHandler.onServerTick(event);

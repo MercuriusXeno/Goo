@@ -79,11 +79,12 @@ class ScaffoldGeneratorTest {
             assertEquals(id("minecraft:raw_iron"), roots.get(0).itemId());
         }
 
-        /** A chain where the intermediate is valued doesn't need the leaf root. */
+        /** A recipeless input still appears even when its downstream is already valued. */
         @Test
-        void chainWithValuedIntermediateDoesNotNeedLeafRoot() {
+        void recipelessInputAppearsEvenWhenDownstreamValued() {
             // raw_copper -> copper_ingot -> copper_block
-            // If copper_ingot is already valued, raw_copper isn't needed as a root
+            // copper_ingot is valued, so raw_copper has empty downstream.
+            // But raw_copper still needs a manual value (it's a game item with no recipe).
             List<RecipeInput> recipes = List.of(
                 recipe("minecraft:copper_ingot", 1, slot("minecraft:raw_copper")),
                 recipe("minecraft:copper_block", 1, slot("minecraft:copper_ingot"))
@@ -95,15 +96,14 @@ class ScaffoldGeneratorTest {
             List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
                     recipes, baseValues, Set.of());
 
-            // raw_copper has no downstream that isn't already derivable
-            assertTrue(roots.stream().noneMatch(r ->
+            assertTrue(roots.stream().anyMatch(r ->
                     r.itemId().equals(id("minecraft:raw_copper"))),
-                    "raw_copper should not be a root when copper_ingot is valued");
+                    "raw_copper should still be a root -- it needs a value even if downstream is covered");
         }
 
-        /** With zero base values, one root per cluster, preferring most-multiplied hub. */
+        /** With zero base values, only recipeless items are roots. */
         @Test
-        void emptyBaseValuesFindsOneRootPerCluster() {
+        void emptyBaseValuesFindsRecipelessRoots() {
             List<RecipeInput> recipes = List.of(
                 recipe("minecraft:copper_ingot", 1, slot("minecraft:raw_copper")),
                 recipe("minecraft:copper_block", 9, slot("minecraft:copper_ingot")),
@@ -118,21 +118,23 @@ class ScaffoldGeneratorTest {
             List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
                     recipes, Map.of(), Set.of());
 
-            // 3 clusters: {raw_copper, copper_ingot, copper_block},
-            //             {raw_iron, iron_ingot, iron_block},
-            //             {oak_log, oak_planks, stick, ladder}
-            // stick is 16x from log, most multiplied with fan-out to ladder/fence
-            assertEquals(3, roots.size(), "One root per cluster: " + roots);
-            assertTrue(roots.stream().anyMatch(r -> r.itemId().equals(id("minecraft:stick"))),
-                    "stick should be the wood cluster root: " + roots);
+            // True roots: raw_copper, raw_iron, oak_log (no recipe produces them).
+            // Recipe outputs (copper_ingot, stick, etc.) derive once inputs are valued.
+            assertEquals(3, roots.size(), "One root per recipeless input: " + roots);
+            assertTrue(roots.stream().anyMatch(r -> r.itemId().equals(id("minecraft:raw_copper"))),
+                    "raw_copper should be a root: " + roots);
+            assertTrue(roots.stream().anyMatch(r -> r.itemId().equals(id("minecraft:raw_iron"))),
+                    "raw_iron should be a root: " + roots);
+            assertTrue(roots.stream().anyMatch(r -> r.itemId().equals(id("minecraft:oak_log"))),
+                    "oak_log should be a root: " + roots);
         }
 
-        /** Homogenous chain picks the widest hub, not the deepest recipeless item. */
+        /** Homogenous chain picks the recipeless input, not a derived product. */
         @Test
-        void homogenousChainPicksWidestHub() {
+        void homogenousChainPicksRecipelessInput() {
             // log -> 4 planks -> 4 sticks (all homogenous single-input recipes)
-            // stick -> fence, stick -> ladder, stick -> sign (stick has most fan-out)
-            // Valuing stick reverse-derives planks and log, so stick is the best anchor.
+            // stick -> fence, stick -> ladder, stick -> sign
+            // oak_log is the only item no recipe produces -- it's the true root.
             List<RecipeInput> recipes = List.of(
                 recipe("minecraft:oak_planks", 4, slot("minecraft:oak_log")),
                 recipe("minecraft:stick", 4, slot("minecraft:oak_planks")),
@@ -144,15 +146,9 @@ class ScaffoldGeneratorTest {
             List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
                     recipes, Map.of(), Set.of());
 
-            // Should suggest ONE root for the whole wood cluster, and it should be stick
-            ScaffoldGenerator.Root woodRoot = roots.stream()
-                    .filter(r -> r.itemId().equals(id("minecraft:stick"))
-                            || r.itemId().equals(id("minecraft:oak_log"))
-                            || r.itemId().equals(id("minecraft:oak_planks")))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("Expected a wood root in: " + roots.stream().map(r -> r.itemId() + "(" + r.reason() + ")").toList()));
-            assertEquals(id("minecraft:stick"), woodRoot.itemId(),
-                    "Should pick stick (widest fan-out) as the cluster entry, not log: " + roots);
+            assertEquals(1, roots.size(), "Only one root expected (oak_log): " + roots);
+            assertEquals(id("minecraft:oak_log"), roots.get(0).itemId(),
+                    "Should pick oak_log (recipeless input), not a derived product: " + roots);
         }
 
         /** Multi-variant tag recipes don't merge clusters (can't reverse-derive). */
@@ -178,12 +174,12 @@ class ScaffoldGeneratorTest {
                     "Oak and birch should be separate clusters: " + roots);
         }
 
-        /** Homogenous-input recipes propagate value in reverse. */
+        /** No reverse propagation: valuing an output doesn't value its inputs. */
         @Test
-        void homogenousRecipeReversePropagates() {
-            // 1 log -> 4 planks (homogenous: single input type)
-            // 2 planks -> 4 sticks (homogenous: single input type)
-            // Valuing stick -> derives planks (reverse) -> derives log (reverse)
+        void noReversePropagation() {
+            // 1 log -> 4 planks -> 4 sticks. Only stick is valued.
+            // Without reverse propagation, log is still a recipeless root
+            // (planks and log can't derive from stick).
             List<RecipeInput> recipes = List.of(
                 recipe("minecraft:oak_planks", 4, slot("minecraft:oak_log")),
                 recipe("minecraft:stick", 4, slot("minecraft:oak_planks"))
@@ -195,8 +191,9 @@ class ScaffoldGeneratorTest {
             List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
                     recipes, baseValues, Set.of());
 
-            assertTrue(roots.isEmpty(),
-                    "No roots expected -- log and planks derivable via reverse propagation: " + roots);
+            assertTrue(roots.stream().anyMatch(r ->
+                    r.itemId().equals(id("minecraft:oak_log"))),
+                    "oak_log should be a root -- no reverse propagation from stick: " + roots);
         }
 
         /** Mixed-input recipes do NOT reverse-propagate from the output. */
@@ -241,7 +238,57 @@ class ScaffoldGeneratorTest {
                     "No roots expected -- torch derivable forward from valued inputs: " + roots);
         }
 
-        /** Denied items are not picked as the cluster entry point. */
+        /** Unvalued input with a valued alternative in its slot is still a Phase 1 root. */
+        @Test
+        void unvaluedAlternativeInMultiSlotIsRoot() {
+            // Smithing: trimmed_armor = (diamond_armor | iron_armor) + template.
+            // iron_armor and template are valued, so the recipe resolves.
+            // diamond_armor has no recipe producing it and no value -- Phase 1
+            // catches it as "no recipe" even though the slot has a valued alt.
+            List<RecipeInput> recipes = List.of(
+                recipe("minecraft:trimmed_armor", 1,
+                    slot("minecraft:diamond_armor", "minecraft:iron_armor"),
+                    slot("minecraft:template"))
+            );
+            Map<Identifier, GooValue> baseValues = Map.of(
+                id("minecraft:iron_armor"), goo(GooType.METAL, 500),
+                id("minecraft:template"), goo(GooType.ROCK, 100)
+            );
+
+            List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                    recipes, baseValues, Set.of());
+
+            assertTrue(roots.stream().anyMatch(r ->
+                    r.itemId().equals(id("minecraft:diamond_armor"))
+                    && r.reason().equals("no recipe")),
+                    "diamond_armor should be a no-recipe root: " + roots);
+        }
+
+        /** Registered item not in any recipe and not valued is a flat root. */
+        @Test
+        void flatItemWithAllKnownItems() {
+            List<RecipeInput> recipes = List.of(
+                recipe("minecraft:iron_ingot", 1, slot("minecraft:raw_iron"))
+            );
+            Map<Identifier, GooValue> baseValues = Map.of(
+                id("minecraft:raw_iron"), goo(GooType.METAL, 100)
+            );
+            // dragon_breath is registered but not in any recipe
+            Set<Identifier> allItems = Set.of(
+                id("minecraft:raw_iron"), id("minecraft:iron_ingot"),
+                id("minecraft:dragon_breath")
+            );
+
+            List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                    recipes, baseValues, Set.of(), allItems);
+
+            assertTrue(roots.stream().anyMatch(r ->
+                    r.itemId().equals(id("minecraft:dragon_breath"))
+                    && r.reason().equals("no recipe or chain")),
+                    "dragon_breath should be a flat root: " + roots);
+        }
+
+        /** Denied items are excluded from roots entirely. */
         @Test
         void deniedItemNotPickedAsEntry() {
             List<RecipeInput> recipes = List.of(
@@ -252,11 +299,12 @@ class ScaffoldGeneratorTest {
             List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
                     recipes, Map.of(), Set.of(id("minecraft:raw_copper")));
 
-            // raw_copper is denied, so copper_block (most multiplied with fan-out)
-            // or copper_ingot should be picked instead
+            // raw_copper is denied. copper_ingot and copper_block are cycle items
+            // (their only input path is through denied raw_copper). One should be
+            // picked as a cycle entry, but raw_copper itself must never appear.
             assertTrue(roots.stream().noneMatch(r ->
                     r.itemId().equals(id("minecraft:raw_copper"))),
-                    "Denied items should not be the cluster entry: " + roots);
+                    "Denied items should never be a root: " + roots);
         }
     }
 
@@ -324,6 +372,41 @@ class ScaffoldGeneratorTest {
                     "Individual plank entries should be replaced by tag group: " + joined);
             assertFalse(joined.contains("\"spruce_planks\""),
                     "Individual plank entries should be replaced by tag group: " + joined);
+        }
+
+        /** Scaffold entries are sorted by unblock count, not insertion order. */
+        @Test
+        void scaffoldEntriesSortedByUnblockCount() {
+            // Small root: glass_pane -> red_stained_glass_pane (1 downstream)
+            RecipeInput redPane = recipe("minecraft:red_stained_glass_pane", 1,
+                    slot("minecraft:glass_pane"), slot("minecraft:red_dye"));
+
+            // Large tag group: 3 log types each feeding into many recipes
+            // We need the tag group's union downstream to exceed glass_pane's
+            RecipeInput oakPlanks = tagRecipe("minecraft:oak_planks", 4,
+                    Arrays.asList("minecraft:logs"),
+                    slot("minecraft:oak_log", "minecraft:birch_log", "minecraft:spruce_log"));
+            RecipeInput stick = recipe("minecraft:stick", 4, slot("minecraft:oak_planks"));
+            RecipeInput ladder = recipe("minecraft:ladder", 3, slot("minecraft:stick"));
+            RecipeInput fence = recipe("minecraft:oak_fence", 1,
+                    slot("minecraft:stick"), slot("minecraft:oak_planks"));
+            RecipeInput sign = recipe("minecraft:oak_sign", 1,
+                    slot("minecraft:stick"), slot("minecraft:oak_planks"));
+
+            List<RecipeInput> recipes = List.of(redPane, oakPlanks, stick, ladder, fence, sign);
+            List<ScaffoldGenerator.Root> roots = ScaffoldGenerator.findRoots(
+                    recipes, Map.of(), Set.of());
+            ScaffoldGenerator.ScaffoldResult result = ScaffoldGenerator.generateScaffold(roots, recipes);
+
+            String joined = String.join("\n", result.lines());
+            // The tag group (#logs) unblocks more items than glass_pane,
+            // so it must appear first in the scaffold output.
+            int logsPos = joined.indexOf("#logs");
+            int panePos = joined.indexOf("glass_pane");
+            assertTrue(logsPos >= 0, "Expected #logs entry: " + joined);
+            assertTrue(panePos >= 0, "Expected glass_pane entry: " + joined);
+            assertTrue(logsPos < panePos,
+                    "Higher-impact #logs should appear before glass_pane: " + joined);
         }
 
         /** Roots without any tag association stay as individual entries. */

@@ -21,9 +21,13 @@ public final class GasketInstallation {
     /**
      * Pops a gasket as an item drop at the given position, unlinks it from
      * any partner, and removes its registry location. No-op if gasketId is null.
+     *
+     * @param level    the current level
+     * @param pos      the block position
+     * @param gasketId the gasket UUID
      */
     public static void popGasket(Level level, BlockPos pos, UUID gasketId) {
-        if (gasketId == null) return;
+        if (gasketId == null) { return; }
         Block.popResource(level, pos, new ItemStack(GooItems.CHORAL_GASKET.get()));
         if (level instanceof ServerLevel serverLevel) {
             GasketRegistry registry = GasketRegistry.get(serverLevel);

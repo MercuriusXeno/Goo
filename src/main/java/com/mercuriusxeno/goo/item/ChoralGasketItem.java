@@ -35,12 +35,54 @@ import java.util.UUID;
  */
 public class ChoralGasketItem extends Item implements IGooItemInteraction {
 
-    /** Creates a choral gasket item with the given properties. */
+    /** Block update flags: notify clients + update neighbors. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
+
+    /** Feedback: machine already has a gasket on the targeted face. */
+    private static final String MSG_ALREADY_HAS_GASKET = "Already has a gasket";
+    /** Feedback: crucible already has a gasket. */
+    private static final String MSG_CRUCIBLE_HAS_GASKET = "This crucible already has a gasket";
+    /** Feedback: gasket installed successfully. */
+    private static final String MSG_GASKET_INSTALLED = "Gasket installed";
+    /** Feedback prefix: machine already has a gasket. */
+    private static final String MSG_THIS_PREFIX = "This ";
+    /** Feedback suffix: machine already has a gasket. */
+    private static final String MSG_ALREADY_SUFFIX = " already has a gasket";
+    /** Feedback prefix: gasket installed on a machine. */
+    private static final String MSG_INSTALLED_ON = "Gasket installed on ";
+    /** Feedback: remove the canister first (mutual exclusivity). */
+    private static final String MSG_REMOVE_CANISTER = "Remove the canister first";
+    /** Feedback: intake already has a gasket. */
+    private static final String MSG_INTAKE_HAS_GASKET = "Intake already has a gasket";
+    /** Feedback: intake gasket installed. */
+    private static final String MSG_INTAKE_INSTALLED = "Intake gasket installed";
+    /** Feedback: no canister in this slot. */
+    private static final String MSG_NO_CANISTER = "No canister in this slot";
+    /** Feedback label for top face. */
+    private static final String FACE_TOP = "top";
+    /** Feedback label for bottom face. */
+    private static final String FACE_BOTTOM = "bottom";
+    /** Feedback prefix for face-specific installation. */
+    private static final String MSG_INSTALLED_FACE_PREFIX = "Gasket installed (";
+    /** Feedback suffix for face-specific installation. */
+    private static final String MSG_INSTALLED_FACE_SUFFIX = ")";
+    /** Machine name: tap. */
+    private static final String MACHINE_TAP = "tap";
+
+    /**
+     * Creates a choral gasket item with the given properties.
+     *
+     * @param properties the item properties
+     */
     public ChoralGasketItem(Properties properties) {
         super(properties);
     }
 
-    /** Tells goo machine blocks to pass so the gasket's own useOn handles it. */
+    /**
+     * Tells goo machine blocks to pass so the gasket's own useOn handles it.
+     *
+     * @return the tuner pass interaction type
+     */
     @Override
     public GooInteractionType canisterInteraction() {
         return GooInteractionType.TUNER_PASS;
@@ -51,16 +93,20 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * 1. Crucible (blockstate HAS_GASKET)
      * 2. Slotted machines (canister/hub - per-face UUID on CanisterMetadata)
      * Vat gasket handling is in VatBlock.useItemOn.
+     *
+     * @param context the use-on context
+     * @return the interaction result
      */
     @Override
     public @NonNull InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+
+        var player = context.getPlayer();
+        if (player == null) { return InteractionResult.PASS; }
 
         BlockPos pos = context.getClickedPos();
         ItemStack stack = context.getItemInHand();
-        var player = context.getPlayer();
-        if (player == null) return InteractionResult.PASS;
 
         BlockEntity be = level.getBlockEntity(pos);
 
@@ -70,7 +116,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         }
         if (be instanceof TapBlockEntity) {
             return installViaBlockstate(level, pos, stack, player,
-                TapBlock.HAS_GASKET, "tap");
+                TapBlock.HAS_GASKET, MACHINE_TAP);
         }
         // Plexer does not support gaskets - skip
 
@@ -90,18 +136,26 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         return InteractionResult.PASS;
     }
 
-    /** Installs a gasket on a crucible via blockstate property. */
+    /**
+     * Installs a gasket on a crucible via blockstate property.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param stack  the gasket item stack
+     * @param player the interacting player
+     * @return the interaction result
+     */
     private InteractionResult installOnCrucible(
             Level level, BlockPos pos, ItemStack stack,
             net.minecraft.world.entity.player.Player player) {
         BlockState state = level.getBlockState(pos);
         if (state.getValue(CrucibleBlock.HAS_GASKET)) {
             player.sendOverlayMessage(
-                Component.literal("This crucible already has a gasket"));
+                Component.literal(MSG_CRUCIBLE_HAS_GASKET));
             return InteractionResult.PASS;
         }
 
-        level.setBlock(pos, state.setValue(CrucibleBlock.HAS_GASKET, true), 3);
+        level.setBlock(pos, state.setValue(CrucibleBlock.HAS_GASKET, true), BLOCK_UPDATE_FLAGS);
 
         // Generate UUID and register in GasketRegistry
         BlockEntity be = level.getBlockEntity(pos);
@@ -119,13 +173,21 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
             stack.shrink(1);
         }
         player.sendOverlayMessage(
-                Component.literal("Gasket installed"));
+                Component.literal(MSG_GASKET_INSTALLED));
         return InteractionResult.SUCCESS;
     }
 
     /**
      * Generic blockstate-based gasket installation for tap and plexer.
      * Same pattern as crucible: flips a HAS_GASKET boolean property.
+     *
+     * @param level          the current level
+     * @param pos            the block position
+     * @param stack          the gasket item stack
+     * @param player         the interacting player
+     * @param gasketProperty the blockstate boolean property to flip
+     * @param machineName    display name for feedback messages
+     * @return the interaction result
      */
     private InteractionResult installViaBlockstate(
             Level level, BlockPos pos, ItemStack stack,
@@ -134,11 +196,11 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         BlockState state = level.getBlockState(pos);
         if (state.getValue(gasketProperty)) {
             player.sendOverlayMessage(
-                Component.literal("This " + machineName + " already has a gasket"));
+                Component.literal(MSG_THIS_PREFIX + machineName + MSG_ALREADY_SUFFIX));
             return InteractionResult.PASS;
         }
 
-        level.setBlock(pos, state.setValue(gasketProperty, true), 3);
+        level.setBlock(pos, state.setValue(gasketProperty, true), BLOCK_UPDATE_FLAGS);
 
         // Ensure the gasket UUID is generated
         BlockEntity be = level.getBlockEntity(pos);
@@ -156,13 +218,20 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
             stack.shrink(1);
         }
         player.sendOverlayMessage(
-                Component.literal("Gasket installed on " + machineName));
+                Component.literal(MSG_INSTALLED_ON + machineName));
         return InteractionResult.SUCCESS;
     }
 
     /**
      * Installs a gasket on a hub's central intake. Refuses if a canister
      * is copper-fitted above (mutual exclusivity).
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param stack  the gasket item stack
+     * @param player the interacting player
+     * @param holder the gasket holder interface
+     * @return the interaction result
      */
     private InteractionResult installOnIntake(
             Level level, BlockPos pos, ItemStack stack,
@@ -173,24 +242,24 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         if (level.getBlockEntity(pos) instanceof ICanisterAttachable att
                 && att.currentTopAttachments() > 0) {
             player.sendOverlayMessage(
-                Component.literal("Remove the canister first"));
+                Component.literal(MSG_REMOVE_CANISTER));
             return InteractionResult.PASS;
         }
 
         UUID existing = holder.getGasketId(GasketRole.RECEIVER);
         if (existing != null) {
             player.sendOverlayMessage(
-                Component.literal("Intake already has a gasket"));
+                Component.literal(MSG_INTAKE_HAS_GASKET));
             return InteractionResult.PASS;
         }
 
         UUID newId = holder.ensureGasketId(GasketRole.RECEIVER);
-        if (newId == null) return InteractionResult.PASS;
+        if (newId == null) { return InteractionResult.PASS; }
 
         // Flip blockstate for hub intake visual
         if (level.getBlockEntity(pos) instanceof HubBlockEntity) {
             BlockState state = level.getBlockState(pos);
-            level.setBlock(pos, state.setValue(HubBlock.HAS_GASKET, true), 3);
+            level.setBlock(pos, state.setValue(HubBlock.HAS_GASKET, true), BLOCK_UPDATE_FLAGS);
         }
 
         // Register in GasketRegistry
@@ -205,7 +274,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
             stack.shrink(1);
         }
         player.sendOverlayMessage(
-                Component.literal("Intake gasket installed"));
+                Component.literal(MSG_INTAKE_INSTALLED));
         return InteractionResult.SUCCESS;
     }
 
@@ -213,6 +282,15 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * Installs a gasket on one face of a canister or hub slot.
      * Click height determines face: upper half = RECEIVER (top),
      * lower half = TRANSMITTER (bottom).
+     *
+     * @param level     the current level
+     * @param pos       the block position
+     * @param stack     the gasket item stack
+     * @param player    the interacting player
+     * @param container the slotted goo container
+     * @param holder    the gasket holder interface
+     * @param hit       the ray trace hit result
+     * @return the interaction result
      */
     private InteractionResult installOnSlottedMachine(
             Level level, BlockPos pos, ItemStack stack,
@@ -228,7 +306,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         // Refuse if the slot is empty (no canister to gasket)
         if (container.getCanister(slot).isEmpty()) {
             player.sendOverlayMessage(
-                Component.literal("No canister in this slot"));
+                Component.literal(MSG_NO_CANISTER));
             return InteractionResult.PASS;
         }
 
@@ -240,7 +318,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
             ? meta.topGasketId() : meta.bottomGasketId();
         if (existing != null) {
             player.sendOverlayMessage(
-                Component.literal("Already has a gasket"));
+                Component.literal(MSG_ALREADY_HAS_GASKET));
             return InteractionResult.PASS;
         }
 
@@ -263,9 +341,9 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         if (!player.isCreative()) {
             stack.shrink(1);
         }
-        String face = role == GasketRole.RECEIVER ? "top" : "bottom";
+        String face = role == GasketRole.RECEIVER ? FACE_TOP : FACE_BOTTOM;
         player.sendOverlayMessage(
-                Component.literal("Gasket installed (" + face + ")"));
+                Component.literal(MSG_INSTALLED_FACE_PREFIX + face + MSG_INSTALLED_FACE_SUFFIX));
         return InteractionResult.SUCCESS;
     }
 }

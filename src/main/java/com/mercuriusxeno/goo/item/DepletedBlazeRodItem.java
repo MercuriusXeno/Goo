@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.item;
 
-import com.mercuriusxeno.goo.data.IComponentValueProvider;
 import com.mercuriusxeno.goo.data.GooValue;
+import com.mercuriusxeno.goo.data.IComponentValueProvider;
 import com.mercuriusxeno.goo.data.IGooValueLookup;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import net.minecraft.resources.Identifier;
@@ -22,19 +22,37 @@ public class DepletedBlazeRodItem extends Item implements IComponentValueProvide
 
     /** Total fuel ticks in a fresh blaze rod: 60 seconds at 20 tps. */
     public static final int FULL_FUEL_TICKS = 1200;
+    /** Maximum durability bar width in pixels (vanilla convention). */
+    private static final float BAR_WIDTH_MAX = 13.0f;
+    /** Warm orange color for the fuel depletion bar. */
+    private static final int FUEL_BAR_COLOR = 0xFF6600;
 
-    /** Creates a depleted blaze rod item. Unstackable. */
+    /**
+     * Creates a depleted blaze rod item. Unstackable.
+     *
+     * @param properties the item properties
+     */
     public DepletedBlazeRodItem(Properties properties) {
         super(properties);
     }
 
-    /** Returns the remaining fuel ticks on the given stack. */
+    /**
+     * Returns the remaining fuel ticks on the given stack.
+     *
+     * @param stack the item stack
+     * @return remaining fuel ticks
+     */
     public static int getTicksRemaining(ItemStack stack) {
         Integer ticks = stack.get(GooDataComponents.FUEL_REMAINING.get());
         return ticks != null ? ticks : 0;
     }
 
-    /** Sets the remaining fuel ticks on the given stack. */
+    /**
+     * Sets the remaining fuel ticks on the given stack.
+     *
+     * @param stack the item stack
+     * @param ticks the fuel ticks to set
+     */
     public static void setTicksRemaining(ItemStack stack, int ticks) {
         stack.set(GooDataComponents.FUEL_REMAINING.get(), ticks);
     }
@@ -42,6 +60,9 @@ public class DepletedBlazeRodItem extends Item implements IComponentValueProvide
     /**
      * Consumes one fuel tick from the stack.
      * Returns true if the rod still has fuel remaining after consumption.
+     *
+     * @param stack the item stack
+     * @return true if fuel remains after consumption
      */
     public static boolean consumeTick(ItemStack stack) {
         int remaining = getTicksRemaining(stack) - 1;
@@ -49,7 +70,11 @@ public class DepletedBlazeRodItem extends Item implements IComponentValueProvide
         return remaining > 0;
     }
 
-    /** Creates a fresh depleted blaze rod with full fuel ticks. */
+    /**
+     * Creates a fresh depleted blaze rod with full fuel ticks.
+     *
+     * @return a new depleted blaze rod item stack
+     */
     public static ItemStack createFresh() {
         ItemStack stack = new ItemStack(
             com.mercuriusxeno.goo.registry.GooItems.DEPLETED_BLAZE_ROD.get());
@@ -57,7 +82,12 @@ public class DepletedBlazeRodItem extends Item implements IComponentValueProvide
         return stack;
     }
 
-    /** Returns true if the rod has no fuel remaining. */
+    /**
+     * Returns true if the rod has no fuel remaining.
+     *
+     * @param stack the item stack
+     * @return true if fully depleted
+     */
     public static boolean isEmpty(ItemStack stack) {
         return getTicksRemaining(stack) <= 0;
     }
@@ -65,33 +95,53 @@ public class DepletedBlazeRodItem extends Item implements IComponentValueProvide
     /**
      * Computes partial goo value proportional to remaining fuel ticks.
      * Scales the vanilla blaze rod's goo value by (remaining / full).
+     *
+     * @param stack    the item stack
+     * @param registry the goo value lookup
+     * @return the scaled goo value, or null if base value unavailable
      */
     @Override
     @Nullable
     public GooValue computeComponentValue(ItemStack stack, IGooValueLookup registry) {
         int remaining = getTicksRemaining(stack);
-        if (remaining <= 0) return GooValue.EMPTY;
+        if (remaining <= 0) { return GooValue.EMPTY; }
         GooValue blazeRodValue = registry.lookup(BLAZE_ROD_ID);
-        if (blazeRodValue == null) return null;
+        if (blazeRodValue == null) { return null; }
         double fraction = (double) remaining / FULL_FUEL_TICKS;
         return blazeRodValue.scale(fraction);
     }
 
+    /**
+     * Returns true if the fuel bar should be visible (partially depleted but not empty).
+     *
+     * @param stack the item stack
+     * @return true if bar should be rendered
+     */
     @Override
     public boolean isBarVisible(ItemStack stack) {
         int remaining = getTicksRemaining(stack);
         return remaining > 0 && remaining < FULL_FUEL_TICKS;
     }
 
-    /** Returns the durability bar width (0-13) based on remaining fuel. */
+    /**
+     * Returns the durability bar width (0-13) based on remaining fuel.
+     *
+     * @param stack the item stack
+     * @return bar width in pixels (0-13)
+     */
     @Override
     public int getBarWidth(ItemStack stack) {
-        return Math.round(getTicksRemaining(stack) * 13.0f / FULL_FUEL_TICKS);
+        return Math.round(getTicksRemaining(stack) * BAR_WIDTH_MAX / FULL_FUEL_TICKS);
     }
 
-    /** Returns a warm orange color for the fuel bar. */
+    /**
+     * Returns a warm orange color for the fuel bar.
+     *
+     * @param stack the item stack
+     * @return the bar color as an RGB int
+     */
     @Override
     public int getBarColor(ItemStack stack) {
-        return 0xFF6600;
+        return FUEL_BAR_COLOR;
     }
 }

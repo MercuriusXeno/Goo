@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
  * Lifecycle: TENSION (0-3), EXPAND (4-13), LINGER (14-33), DANCE (34-53), POP (54-57).
  * Tension shows frame 0 (surface break), then the dome (frame 3) scales from 40% to full.
  */
-public class GooBubbleParticle extends SingleQuadParticle {
+public final class GooBubbleParticle extends SingleQuadParticle {
 
     /** End of expansion (frames 0-2 for first 3 ticks, dome for remaining 7). */
     private static final int EXPAND_END = 10;
@@ -38,6 +38,14 @@ public class GooBubbleParticle extends SingleQuadParticle {
     private static final double DRIFT_SPEED = 0.0015;
     /** Scale factor at the start of dome expansion. */
     private static final float SMALL_SCALE = 0.4f;
+    /** Initial quad size for a freshly spawned bubble. */
+    private static final float INITIAL_QUAD_SIZE = 0.06f;
+    /** Tick interval for picking new drift direction during DANCE. */
+    private static final int DRIFT_INTERVAL = 8;
+    /** Half range for random drift offset. */
+    private static final double DRIFT_HALF = 0.5;
+    /** Inverse pixels-per-block for surface Y offset (1/32). */
+    private static final double SURFACE_Y_OFFSET = 1.0 / 32.0;
 
     /** Sprite set for cycling through animation frames. */
     private final SpriteSet sprites;
@@ -48,7 +56,18 @@ public class GooBubbleParticle extends SingleQuadParticle {
     private double driftX;
     private double driftZ;
 
-    /** Creates a goo bubble particle at the liquid surface with the given color tint. */
+    /**
+     * Creates a goo bubble particle at the liquid surface with the given color tint.
+     *
+     * @param level   the client level
+     * @param x       the X spawn position
+     * @param y       the Y spawn position
+     * @param z       the Z spawn position
+     * @param red     the red color component
+     * @param green   the green color component
+     * @param blue    the blue color component
+     * @param sprites the sprite set for animation frames
+     */
     private GooBubbleParticle(ClientLevel level, double x, double y, double z,
             float red, float green, float blue, SpriteSet sprites) {
         super(level, x, y, z, sprites.first());
@@ -58,7 +77,7 @@ public class GooBubbleParticle extends SingleQuadParticle {
         this.gCol = green;
         this.bCol = blue;
         this.lifetime = POP_END;
-        this.quadSize = 0.06f;
+        this.quadSize = INITIAL_QUAD_SIZE;
         this.xd = 0;
         this.yd = 0;
         this.zd = 0;
@@ -67,7 +86,11 @@ public class GooBubbleParticle extends SingleQuadParticle {
         this.hasPhysics = false;
     }
 
-    /** Goo bubbles render on the opaque particle layer. */
+    /**
+     * Goo bubbles render on the opaque particle layer.
+     *
+     * @return the opaque particle render layer
+     */
     @Override
     public Layer getLayer() {
         return Layer.OPAQUE;
@@ -76,10 +99,13 @@ public class GooBubbleParticle extends SingleQuadParticle {
     /**
      * Returns quad size. During EXPAND, scales continuously from 40% to 100%.
      * Frames 0-2 show during the first 3 ticks, then dome takes over.
+     *
+     * @param partialTick the partial tick for interpolation
+     * @return the scaled quad size for this frame
      */
     @Override
     public float getQuadSize(float partialTick) {
-        if (age >= EXPAND_END) return this.quadSize;
+        if (age >= EXPAND_END) { return this.quadSize; }
         float t = (age + partialTick) / EXPAND_END;
         t = Math.min(1f, Math.max(0f, t));
         return this.quadSize * (SMALL_SCALE + (1f - SMALL_SCALE) * t);
@@ -133,7 +159,7 @@ public class GooBubbleParticle extends SingleQuadParticle {
     /** DANCE: glide smoothly with gentle drift, showing dome sprite. */
     private void tickDance() {
         this.setSprite(this.sprites.get(DOME_FRAME, TOTAL_FRAMES - 1));
-        if ((this.age - LINGER_END) % 8 == 0) {
+        if ((this.age - LINGER_END) % DRIFT_INTERVAL == 0) {
             pickNewDrift();
         }
         this.x += driftX;
@@ -142,23 +168,25 @@ public class GooBubbleParticle extends SingleQuadParticle {
 
     /** Picks a new random drift direction for smooth surface gliding. */
     private void pickNewDrift() {
-        this.driftX = (this.random.nextDouble() - 0.5) * DRIFT_SPEED;
-        this.driftZ = (this.random.nextDouble() - 0.5) * DRIFT_SPEED;
+        this.driftX = (this.random.nextDouble() - DRIFT_HALF) * DRIFT_SPEED;
+        this.driftZ = (this.random.nextDouble() - DRIFT_HALF) * DRIFT_SPEED;
     }
 
     /**
      * Queries the source crucible once per tick: pops early if goo is gone,
-     * otherwise tracks the liquid surface Y. Returns true if the bubble should pop.
+     * otherwise tracks the liquid surface Y.
+     *
+     * @return true if the bubble should skip to the pop phase
      */
     private boolean tickSourceCrucible() {
-        if (age >= DANCE_END) return false;
+        if (age >= DANCE_END) { return false; }
         BlockEntity be = this.level.getBlockEntity(sourcePos);
-        if (!(be instanceof CrucibleBlockEntity crucible)) return true;
+        if (!(be instanceof CrucibleBlockEntity crucible)) { return true; }
         long total = crucible.getReservoir().totalVolume()
                 + crucible.getPoolVolume();
-        if (total <= 0) return true;
+        if (total <= 0) { return true; }
         float surfaceY = CrucibleParticleHelper.computeSurfaceY(total);
-        this.y = sourcePos.getY() + surfaceY + 1.0 / 32.0;
+        this.y = sourcePos.getY() + surfaceY + SURFACE_Y_OFFSET;
         return false;
     }
 
@@ -184,12 +212,29 @@ public class GooBubbleParticle extends SingleQuadParticle {
 
         private final SpriteSet sprites;
 
-        /** Creates a provider with the given sprite set from the particle definition. */
+        /**
+         * Creates a provider with the given sprite set from the particle definition.
+         *
+         * @param sprites the sprite set for bubble animation frames
+         */
         public Provider(SpriteSet sprites) {
             this.sprites = sprites;
         }
 
-        /** Creates a goo bubble particle, extracting RGB from the color option. */
+        /**
+         * Creates a goo bubble particle, extracting RGB from the color option.
+         *
+         * @param options the color particle data carrying RGB values
+         * @param level the client level to spawn in
+         * @param x the x spawn coordinate
+         * @param y the y spawn coordinate
+         * @param z the z spawn coordinate
+         * @param xSpeed the x velocity (unused for bubbles)
+         * @param ySpeed the y velocity (unused for bubbles)
+         * @param zSpeed the z velocity (unused for bubbles)
+         * @param random the random source
+         * @return the new bubble particle, or null if skipped
+         */
         @Override
         public @Nullable GooBubbleParticle createParticle(
                 ColorParticleOption options, ClientLevel level,

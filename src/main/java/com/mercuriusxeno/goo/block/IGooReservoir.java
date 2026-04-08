@@ -9,7 +9,10 @@ import com.mercuriusxeno.goo.item.GooContents;
  */
 public interface IGooReservoir {
 
-    /** Returns the current goo contents as an immutable snapshot. */
+    /** Returns the current goo contents as an immutable snapshot.
+     *
+     * @return the reservoir
+     */
     GooContents getReservoir();
 
     /**

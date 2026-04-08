@@ -17,7 +17,11 @@ import org.jspecify.annotations.Nullable;
  */
 public class BlobSizeProperty implements RangeSelectItemModelProperty {
 
-    /** Codec for deserialization (no config parameters, singleton). */
+    /**
+     * Codec for deserialization (no config parameters, singleton).
+     *
+     * @return the result
+     */
     public static final MapCodec<BlobSizeProperty> MAP_CODEC =
         MapCodec.unit(new BlobSizeProperty());
 
@@ -29,20 +33,30 @@ public class BlobSizeProperty implements RangeSelectItemModelProperty {
 
     /** Volume threshold for the large blob model (Megablob = 1,000,000,000 mB). */
     private static final long MEGABLOB_THRESHOLD = 1_000_000_000L;
+    /** Model variant value for megablob tier. */
+    private static final float SIZE_MEGABLOB = 3.0f;
+    /** Model variant value for kiloblob tier. */
+    private static final float SIZE_KILOBLOB = 2.0f;
 
     @Override
     public float get(ItemStack stack, @Nullable ClientLevel level,
             @Nullable ItemOwner owner, int seed) {
-        if (stack.getItem() instanceof GooBlobItem) {
-            return 1.0f;
-        }
+        if (stack.getItem() instanceof GooBlobItem) { return 1.0f; }
         if (stack.getItem() instanceof GooOmniblobItem) {
-            long volume = GooOmniblobItem.getVolume(stack);
-            if (volume >= MEGABLOB_THRESHOLD) return 3.0f;
-            if (volume >= KILOBLOB_THRESHOLD) return 2.0f;
-            if (volume >= BLOB_THRESHOLD) return 1.0f;
+            return omniblobSize(GooOmniblobItem.getVolume(stack));
         }
         return 0.0f;
+    }
+
+    /** Returns the model variant size for an omniblob based on its volume tier.
+     *
+     * @param volume the omniblob volume in microblobs
+     * @return the model variant float
+     */
+    private float omniblobSize(long volume) {
+        if (volume >= MEGABLOB_THRESHOLD) { return SIZE_MEGABLOB; }
+        if (volume >= KILOBLOB_THRESHOLD) { return SIZE_KILOBLOB; }
+        return volume >= BLOB_THRESHOLD ? 1.0f : 0.0f;
     }
 
     @Override

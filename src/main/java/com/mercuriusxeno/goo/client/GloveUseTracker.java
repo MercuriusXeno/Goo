@@ -5,9 +5,9 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.radial.GooRadialScreen;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -19,8 +19,7 @@ import org.jspecify.annotations.Nullable;
  * when hold exceeds threshold. Auto-registered via EventBusSubscriber.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
-public class GloveUseTracker {
-
+public final class GloveUseTracker {
     private static int holdTicks;
 
     /** How often (in ticks) to re-check whether the selected goo type is in inventory. */
@@ -35,12 +34,23 @@ public class GloveUseTracker {
      */
     private static boolean selectedTypeAvailable;
 
-    /** Whether the player's glove has goo of the selected type in inventory. */
+    private GloveUseTracker() {}
+
+
+    /**
+     * Whether the player's glove has goo of the selected type in inventory.
+     *
+     * @return true if selectedTypeAvailable
+     */
     public static boolean isSelectedTypeAvailable() {
         return selectedTypeAvailable;
     }
 
-    /** Tracks glove hold duration each client tick, opening radial on threshold. */
+    /**
+     * Tracks glove hold duration each client tick, opening radial on threshold.
+     *
+     * @param event the event instance
+     */
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -63,7 +73,8 @@ public class GloveUseTracker {
         }
 
         // Periodically check whether the selected goo type is still in inventory
-        if (++availabilityTick >= AVAILABILITY_CHECK_INTERVAL) {
+        availabilityTick++;
+        if (availabilityTick >= AVAILABILITY_CHECK_INTERVAL) {
             availabilityTick = 0;
             selectedTypeAvailable = checkSelectedTypeAvailable(player);
         }
@@ -72,14 +83,23 @@ public class GloveUseTracker {
         BlobFlightManager.tick();
     }
 
-    /** Returns true if the player holds a glove with a selected type they have in inventory. */
+    /**
+     * Returns true if the player holds a glove with a selected type they have in inventory.
+     *
+     * @param player the interacting player
+     * @return true if the condition is met
+     */
     private static boolean checkSelectedTypeAvailable(LocalPlayer player) {
         GooType type = readSelectedType(player);
-        if (type == null) return false;
-        return GooSourceScanner.hasEnough(player, type, 1);
+        return type != null && GooSourceScanner.hasEnough(player, type, 1);
     }
 
-    /** Reads the selected goo type from whichever hand holds a glove. */
+    /**
+     * Reads the selected goo type from whichever hand holds a glove.
+     *
+     * @param player the interacting player
+     * @return the result
+     */
     private static @Nullable GooType readSelectedType(LocalPlayer player) {
         ItemStack main = player.getMainHandItem();
         if (main.getItem() instanceof GooGloveItem) {

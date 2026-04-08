@@ -31,7 +31,7 @@ public final class VatStackAggregator {
      */
     public static @Nullable VatStackData aggregate(Level level, BlockPos targetPos) {
         BlockEntity be = level.getBlockEntity(targetPos);
-        if (!(be instanceof VatBlockEntity targetVat)) return null;
+        if (!(be instanceof VatBlockEntity targetVat)) { return null; }
 
         BlockPos topPos = findStackTop(level, targetPos);
         BlockPos bottomPos = findStackBottom(level, targetPos);
@@ -52,7 +52,13 @@ public final class VatStackAggregator {
         );
     }
 
-    /** Walks upward while VAT_ABOVE is true. Returns the top-most vat position. */
+    /**
+     * Walks upward while VAT_ABOVE is true. Returns the top-most vat position.
+     *
+     * @param level the current level
+     * @param start the start block position
+     * @return the matching result, or null if not found
+     */
     private static BlockPos findStackTop(Level level, BlockPos start) {
         BlockPos pos = start;
         while (level.getBlockState(pos).getValue(VatBlock.VAT_ABOVE)) {
@@ -61,7 +67,13 @@ public final class VatStackAggregator {
         return pos;
     }
 
-    /** Walks downward while VAT_BELOW is true. Returns the bottom-most vat position. */
+    /**
+     * Walks downward while VAT_BELOW is true. Returns the bottom-most vat position.
+     *
+     * @param level the current level
+     * @param start the start block position
+     * @return the matching result, or null if not found
+     */
     private static BlockPos findStackBottom(Level level, BlockPos start) {
         BlockPos pos = start;
         while (level.getBlockState(pos).getValue(VatBlock.VAT_BELOW)) {
@@ -70,7 +82,14 @@ public final class VatStackAggregator {
         return pos;
     }
 
-    /** Sums GooContents across all vats from top to bottom inclusive. */
+    /**
+     * Sums GooContents across all vats from top to bottom inclusive.
+     *
+     * @param level the current level
+     * @param top whether to render the top cap
+     * @param bottom whether to render the bottom cap
+     * @return the result
+     */
     private static GooContents sumContents(Level level, BlockPos top, BlockPos bottom) {
         GooContents result = GooContents.EMPTY;
         for (int y = top.getY(); y >= bottom.getY(); y--) {
@@ -83,7 +102,14 @@ public final class VatStackAggregator {
         return result;
     }
 
-    /** Resolves gasket state from the top-most and bottom-most vats. */
+    /**
+     * Resolves gasket state from the top-most and bottom-most vats.
+     *
+     * @param level the current level
+     * @param top whether to render the top cap
+     * @param bottom whether to render the bottom cap
+     * @return the resolved result, or null if unresolvable
+     */
     private static StackGaskets resolveGaskets(Level level, BlockPos top, BlockPos bottom) {
         boolean capGasket = level.getBlockState(top).getValue(VatBlock.GASKET_CAP);
         boolean baseGasket = level.getBlockState(bottom).getValue(VatBlock.GASKET_BASE);
@@ -112,6 +138,15 @@ public final class VatStackAggregator {
     /**
      * Aggregated data for a vat stack. Contents are summed, compression level
      * and label are from the targeted vat, gaskets are from stack endpoints.
+     *
+     * @param contents    the summed goo contents of the stack
+     * @param compression the compression level of the targeted vat
+     * @param gasketCap   whether the top vat has a cap gasket
+     * @param gasketBase  whether the bottom vat has a base gasket
+     * @param label       the label of the targeted vat, or null
+     * @param capPartner  the cap gasket's partner, or null
+     * @param basePartner the base gasket's partner, or null
+     * @param stackSize   the number of vats in the stack
      */
     public record VatStackData(
             GooContents contents, int compression,
@@ -120,12 +155,20 @@ public final class VatStackAggregator {
             @Nullable GasketPartner capPartner, @Nullable GasketPartner basePartner,
             int stackSize) {
 
-        /** Returns true if either gasket is present. */
+        /**
+         * Returns true if either gasket is present.
+         *
+         * @return true if anyGasket is present
+         */
         public boolean hasAnyGasket() {
             return gasketCap || gasketBase;
         }
 
-        /** Returns true if the vat has a non-empty label. */
+        /**
+         * Returns true if the vat has a non-empty label.
+         *
+         * @return true if label is present
+         */
         public boolean hasLabel() {
             return label != null && !label.isEmpty();
         }

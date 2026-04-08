@@ -14,9 +14,9 @@ class GooValueTest {
 
     // ── Construction ────────────────────────────────────────────────────
 
-    /** Zero and negative amounts are filtered out during construction. */
+    /** Zero amounts are filtered out, but negatives are preserved. */
     @Test
-    void constructorFiltersZeroAndNegative() {
+    void constructorFiltersZeroButKeepsNegative() {
         Map<GooType, Integer> map = new EnumMap<>(GooType.class);
         map.put(GooType.METAL, 0);
         map.put(GooType.CRYSTAL, -5);
@@ -24,7 +24,7 @@ class GooValueTest {
 
         GooValue val = new GooValue(map);
         assertEquals(0, val.get(GooType.METAL));
-        assertEquals(0, val.get(GooType.CRYSTAL));
+        assertEquals(-5, val.get(GooType.CRYSTAL));
         assertEquals(10, val.get(GooType.LEAF));
     }
 
@@ -114,6 +114,49 @@ class GooValueTest {
         assertEquals(7, result.get(GooType.GLOW));
     }
 
+    /** Adding a value with negatives subtracts those types (exposed copper use case). */
+    @Test
+    void addWithNegativeSubtractsType() {
+        GooValue copper = goo(GooType.METAL, 100, GooType.ROCK, 20);
+        Map<GooType, Integer> exposedMap = new EnumMap<>(GooType.class);
+        exposedMap.put(GooType.AEON, 32);
+        exposedMap.put(GooType.METAL, -64);
+        GooValue exposed = new GooValue(exposedMap);
+
+        GooValue result = copper.add(exposed, 1);
+        assertEquals(36, result.get(GooType.METAL));  // 100 - 64
+        assertEquals(32, result.get(GooType.AEON));    // 0 + 32
+        assertEquals(20, result.get(GooType.ROCK));    // unchanged
+    }
+
+    /** Adding negatives that exceed the positive amount produces a negative result. */
+    @Test
+    void addWithNegativeCanGoNegative() {
+        GooValue small = goo(GooType.METAL, 10);
+        Map<GooType, Integer> bigDrain = new EnumMap<>(GooType.class);
+        bigDrain.put(GooType.METAL, -50);
+        GooValue drain = new GooValue(bigDrain);
+
+        GooValue result = small.add(drain, 1);
+        assertEquals(-40, result.get(GooType.METAL));
+    }
+
+    /** floorZero clamps all negative types to zero. */
+    @Test
+    void floorZeroClampsNegatives() {
+        Map<GooType, Integer> map = new EnumMap<>(GooType.class);
+        map.put(GooType.METAL, -40);
+        map.put(GooType.AEON, 32);
+        map.put(GooType.ROCK, 0);
+        GooValue val = new GooValue(map);
+
+        GooValue floored = val.floorZero();
+        assertEquals(0, floored.get(GooType.METAL));
+        assertEquals(32, floored.get(GooType.AEON));
+        assertTrue(floored.getAll().containsKey(GooType.AEON));
+        assertFalse(floored.getAll().containsKey(GooType.METAL));
+    }
+
     // ── subtract ────────────────────────────────────────────────────────
 
     /** Subtracting per-type produces the difference. */
@@ -126,31 +169,88 @@ class GooValueTest {
         assertEquals(6, result.get(GooType.CRYSTAL));
     }
 
-    /** Subtracting more than available floors at zero (type excluded). */
+    /** Subtracting more than available goes negative. */
     @Test
-    void subtractFloorsAtZero() {
+    void subtractCanGoNegative() {
         GooValue a = goo(GooType.METAL, 5);
         GooValue b = goo(GooType.METAL, 10);
         GooValue result = a.subtract(b);
-        assertTrue(result.isEmpty()); // 5 - 10 = -5 → filtered out
+        assertEquals(-5, result.get(GooType.METAL));
     }
 
-    /** Subtracting from EMPTY produces EMPTY. */
+    /** Subtracting from EMPTY produces negative values. */
     @Test
-    void subtractFromEmpty() {
+    void subtractFromEmptyGoesNegative() {
         GooValue b = goo(GooType.LEAF, 5);
         GooValue result = GooValue.EMPTY.subtract(b);
-        assertTrue(result.isEmpty());
+        assertEquals(-5, result.get(GooType.LEAF));
     }
 
-    /** Subtracting a type not present in the source leaves source unchanged. */
+    /** Subtracting a type not present in the source introduces a negative. */
     @Test
-    void subtractMissingTypeNoEffect() {
+    void subtractMissingTypeGoesNegative() {
         GooValue a = goo(GooType.METAL, 10);
         GooValue b = goo(GooType.CRYSTAL, 5);
         GooValue result = a.subtract(b);
         assertEquals(10, result.get(GooType.METAL));
-        assertEquals(0, result.get(GooType.CRYSTAL));
+        assertEquals(-5, result.get(GooType.CRYSTAL));
+    }
+
+    // ── multiply ────────────────────────────────────────────────────────
+
+    /** Multiplying scales all types. */
+    @Test
+    void multiplyScalesAllTypes() {
+        GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 6);
+        GooValue result = val.multiply(3);
+        assertEquals(30, result.get(GooType.METAL));
+        assertEquals(18, result.get(GooType.CRYSTAL));
+    }
+
+    /** Multiplying by 1 returns the same instance. */
+    @Test
+    void multiplyByOneReturnsSame() {
+        GooValue val = goo(GooType.BLAZE, 15);
+        assertSame(val, val.multiply(1));
+    }
+
+    /** Multiplying by 0 returns EMPTY. */
+    @Test
+    void multiplyByZeroReturnsEmpty() {
+        GooValue val = goo(GooType.VITAL, 100);
+        assertTrue(val.multiply(0).isEmpty());
+    }
+
+    /** Multiplying by negative returns EMPTY. */
+    @Test
+    void multiplyByNegativeReturnsEmpty() {
+        GooValue val = goo(GooType.LEAF, 42);
+        assertTrue(val.multiply(-1).isEmpty());
+    }
+
+    // ── divideExact ──────────────────────────────────────────────────────
+
+    /** Exact division with clean divisor succeeds. */
+    @Test
+    void divideExactClean() {
+        GooValue val = goo(GooType.METAL, 18, GooType.CRYSTAL, 9);
+        GooValue result = val.divideExact(9);
+        assertEquals(2, result.get(GooType.METAL));
+        assertEquals(1, result.get(GooType.CRYSTAL));
+    }
+
+    /** Exact division with remainder throws ArithmeticException. */
+    @Test
+    void divideExactLossyThrows() {
+        GooValue val = goo(GooType.METAL, 10);
+        assertThrows(ArithmeticException.class, () -> val.divideExact(3));
+    }
+
+    /** Exact division by 1 returns same instance. */
+    @Test
+    void divideExactByOneReturnsSame() {
+        GooValue val = goo(GooType.BLAZE, 15);
+        assertSame(val, val.divideExact(1));
     }
 
     // ── divide ──────────────────────────────────────────────────────────
@@ -237,6 +337,31 @@ class GooValueTest {
         GooValue val = goo(GooType.METAL, 1);
         GooValue result = val.scale(0.3);
         assertTrue(result.isEmpty()); // round(0.3) = 0
+    }
+
+    // ── hasNegative ──────────────────────────────────────────────────────
+
+    /** A value with all positive types has no negatives. */
+    @Test
+    void allPositiveHasNoNegative() {
+        GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 5);
+        assertFalse(val.hasNegative());
+    }
+
+    /** A value with a negative type reports hasNegative. */
+    @Test
+    void negativeTypeDetected() {
+        Map<GooType, Integer> map = new EnumMap<>(GooType.class);
+        map.put(GooType.AEON, 32);
+        map.put(GooType.METAL, -64);
+        GooValue val = new GooValue(map);
+        assertTrue(val.hasNegative());
+    }
+
+    /** EMPTY has no negatives. */
+    @Test
+    void emptyHasNoNegative() {
+        assertFalse(GooValue.EMPTY.hasNegative());
     }
 
     // ── isEmpty ─────────────────────────────────────────────────────────

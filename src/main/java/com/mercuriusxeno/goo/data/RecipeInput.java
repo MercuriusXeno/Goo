@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
-
+import org.jspecify.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +15,12 @@ import java.util.Set;
  * <p>{@code slotTagIds} tracks which ingredient slots originated from a tag
  * (e.g. {@code #minecraft:planks}). The scaffold generator uses this to group
  * roots that share a tag into a single scaffold entry.</p>
+ *
+ * @param output                  the output item ID
+ * @param resultCount             the number of items produced
+ * @param ingredientAlternatives  per-slot sets of acceptable input item IDs
+ * @param containerItems          items returned after crafting (e.g. buckets)
+ * @param slotTagIds              per-slot tag IDs, or empty if not tag-based
  */
 public record RecipeInput(
     Identifier output,
@@ -54,8 +60,50 @@ public record RecipeInput(
 
     /**
      * Returns true if this recipe has no ingredient slots.
+     *
+     * @return true if ingredientAlternatives is empty
      */
     public boolean hasNoIngredients() {
         return ingredientAlternatives.isEmpty();
+    }
+
+    /**
+     * Number of ingredient slots in this recipe.
+     *
+     * @return the count of ingredient slots
+     */
+    public int slotCount() {
+        return ingredientAlternatives.size();
+    }
+
+    /**
+     * Returns the single input item if every ingredient slot accepts the same
+     * lone item, or null if slots are heterogeneous, multi-variant, or empty.
+     * Recipes satisfying this are eligible for reverse derivation.
+     *
+     * @return the sole input item ID, or null if not homogeneous
+     */
+    public @Nullable Identifier soleInputItem() {
+        Identifier sole = null;
+        for (Set<Identifier> alts : ingredientAlternatives) {
+            sole = matchSingleAlternative(alts, sole);
+            if (sole == null) { return null; }
+        }
+        return sole;
+    }
+
+    /** Returns the single item if this slot has exactly one alternative matching current,
+     *  or null if the slot is heterogeneous or mismatched.
+     *
+     * @param alts    the alternative item IDs for this ingredient slot
+     * @param current the running sole item (null on first iteration)
+     * @return the confirmed sole item, or null if broken
+     */
+    private @Nullable Identifier matchSingleAlternative(Set<Identifier> alts,
+                                                         @Nullable Identifier current) {
+        if (alts.size() != 1) { return null; }
+        Identifier item = alts.iterator().next();
+        if (current != null && !current.equals(item)) { return null; }
+        return item;
     }
 }
