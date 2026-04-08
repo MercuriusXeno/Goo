@@ -2050,4 +2050,71 @@ class GooValueRegistryTest {
             assertFalse(result.has("#test:planks"));
         }
     }
+
+    // ── Restricted items ───────────────────────────────────────────────
+
+    @Nested
+    class RestrictedItems {
+
+        private void loadJson(String json) throws IOException {
+            registry.parseBaseValuesFromStream(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            registry.copyBaseToEffective();
+        }
+
+        /** Items listed in _restricted are flagged but still have values. */
+        @Test
+        void restrictedItemKeepsValueButIsFlagged() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 },
+                    "_restricted": ["minecraft:coal_ore"]
+                }
+                """);
+            assertTrue(registry.isRestricted(id("minecraft:coal_ore")));
+            assertNotNull(registry.lookup(id("minecraft:coal_ore")));
+            assertEquals(100, registry.lookup(id("minecraft:coal_ore")).get(GooType.ROCK));
+        }
+
+        /** Group references in _restricted expand to all members. */
+        @Test
+        void restrictedGroupExpandsToMembers() throws IOException {
+            loadJson("""
+                {
+                    "_groups": {
+                        "ores": ["minecraft:coal_ore", "minecraft:iron_ore"]
+                    },
+                    "#ores": { "rock": 100 },
+                    "_restricted": ["#ores"]
+                }
+                """);
+            assertTrue(registry.isRestricted(id("minecraft:coal_ore")));
+            assertTrue(registry.isRestricted(id("minecraft:iron_ore")));
+            assertNotNull(registry.lookup(id("minecraft:coal_ore")));
+        }
+
+        /** Items not in _restricted are not flagged. */
+        @Test
+        void nonRestrictedItemIsNotFlagged() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 },
+                    "minecraft:stick": { "leaf": 50 },
+                    "_restricted": ["minecraft:coal_ore"]
+                }
+                """);
+            assertFalse(registry.isRestricted(id("minecraft:stick")));
+        }
+
+        /** Absent _restricted section means nothing is restricted. */
+        @Test
+        void noRestrictedSectionMeansNothingRestricted() throws IOException {
+            loadJson("""
+                {
+                    "minecraft:coal_ore": { "rock": 100 }
+                }
+                """);
+            assertFalse(registry.isRestricted(id("minecraft:coal_ore")));
+        }
+    }
 }

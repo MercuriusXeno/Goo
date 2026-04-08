@@ -208,6 +208,7 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
     ItemStack tryReconstitute(Identifier targetId, IGooValueLookup lookup) {
         GooValue required = lookup.lookup(targetId);
         if (required == null || required.isEmpty()) { return ItemStack.EMPTY; }
+        if (lookup.isRestricted(targetId)) { return ItemStack.EMPTY; }
 
         List<SlotRef> slots = getExternalCanisterSlots();
         if (slots.isEmpty()) { return ItemStack.EMPTY; }

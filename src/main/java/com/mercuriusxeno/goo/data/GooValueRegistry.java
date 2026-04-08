@@ -87,6 +87,8 @@ public class GooValueRegistry implements IGooValueLookup {
     private static final String KEY_CONVERSIONS = "_conversions";
     /** JSON block key for post-derivation conversions. */
     private static final String KEY_POST_CONVERSIONS = "_post_conversions";
+    /** JSON block key for restricted items (cannot be reconstituted in plexer). */
+    private static final String KEY_RESTRICTED = "_restricted";
     /** Dot separator for validation context paths. */
     private static final String DOT = ".";
     /** Constants key prefix for validation context. */
@@ -210,6 +212,8 @@ public class GooValueRegistry implements IGooValueLookup {
     private final Map<Identifier, GooValue> effectiveValues = new HashMap<>();
     /** Items explicitly denied a value (e.g. ore blocks - fortune makes them unvaluable). */
     private final Set<Identifier> deniedItems = new HashSet<>();
+    /** Items restricted from plexer reconstitution but still decomposable. */
+    private final Set<Identifier> restrictedItems = new HashSet<>();
     /** Named constants from _constants block, resolved during value parsing. */
     private final Map<String, Integer> constants = new HashMap<>();
     /** Tree constants from _constants block: GooValue objects keyed by name. */
@@ -293,6 +297,7 @@ public class GooValueRegistry implements IGooValueLookup {
     public void loadBaseValues() {
         baseValues.clear();
         deniedItems.clear();
+        restrictedItems.clear();
         effectiveValues.clear();
         treeConstants.clear();
         loadBaseValuesFromClasspath();
@@ -493,6 +498,7 @@ public class GooValueRegistry implements IGooValueLookup {
     private void clearValueMaps() {
         baseValues.clear();
         deniedItems.clear();
+        restrictedItems.clear();
         effectiveValues.clear();
     }
 
@@ -630,6 +636,26 @@ public class GooValueRegistry implements IGooValueLookup {
                 continue;
             }
             assignItemValue(Identifier.parse(key), entry.getValue());
+        }
+        parseRestricted(json);
+    }
+
+    /**
+     * Parses the _restricted array, resolving #group references against pseudo-tags.
+     * Restricted items keep their goo values but cannot be reconstituted in the plexer.
+     *
+     * @param json the root JSON object containing the optional _restricted key
+     */
+    private void parseRestricted(JsonObject json) {
+        if (!json.has(KEY_RESTRICTED)) { return; }
+        for (JsonElement elem : json.getAsJsonArray(KEY_RESTRICTED)) {
+            String entry = elem.getAsString();
+            if (entry.startsWith(PREFIX_TAG)) {
+                Set<Identifier> members = resolvePseudoTag(entry.substring(1));
+                if (members != null) { restrictedItems.addAll(members); }
+            } else {
+                restrictedItems.add(Identifier.parse(entry));
+            }
         }
     }
 
@@ -1345,13 +1371,25 @@ public class GooValueRegistry implements IGooValueLookup {
     }
 
     /**
-     * Returns all identifiers referenced in base_values.json (valued + denied).
+     * Returns true if the item is restricted from plexer reconstitution.
+     *
+     * @param itemId the item's registry ID
+     * @return true if the item is on the restricted list
+     */
+    @Override
+    public boolean isRestricted(Identifier itemId) {
+        return restrictedItems.contains(itemId);
+    }
+
+    /**
+     * Returns all identifiers referenced in base_values.json (valued + denied + restricted).
      *
      * @return unmodifiable set of all referenced item IDs
      */
     public Set<Identifier> getAllReferencedIds() {
         Set<Identifier> all = new HashSet<>(baseValues.keySet());
         all.addAll(deniedItems);
+        all.addAll(restrictedItems);
         return Collections.unmodifiableSet(all);
     }
 
@@ -1865,6 +1903,7 @@ public class GooValueRegistry implements IGooValueLookup {
         baseValues.clear();
         effectiveValues.clear();
         deniedItems.clear();
+        restrictedItems.clear();
         constants.clear();
         treeConstants.clear();
         lastDerivation = null;

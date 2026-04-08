@@ -27,6 +27,7 @@ public final class GooConversion {
     private static final String DENIED = "denied";
     private static final String ADDITIVE_PREFIX = "+";
     private static final String ARROW = "->";
+    private static final String ASTERISK = "*";
     private static final String DOLLAR = "$";
     private static final String TAG_PREFIX = "#";
     private static final String COLON = ":";
@@ -55,7 +56,8 @@ public final class GooConversion {
     private static final int GROUP_SOURCE_TYPE = 1;
     private static final int GROUP_SOURCE_DIVISOR = 2;
     private static final int GROUP_TARGET_TYPE = 3;
-    private static final int GROUP_TARGET_DIVISOR = 4;
+    private static final int GROUP_TARGET_OP = 4;
+    private static final int GROUP_TARGET_VALUE = 5;
     private static final int GROUP_STACK_MULTIPLIER = 1;
     private static final int GROUP_STACK_NAME = 2;
     private static final int GROUP_SCALE_NUM = 1;
@@ -66,13 +68,15 @@ public final class GooConversion {
     /**
      * A conversion formula: "source / N -> target / M".
      *
-     * @param sourceType    goo type consumed
-     * @param sourceDivisor divisor applied to the source amount
-     * @param targetType    goo type produced
-     * @param targetDivisor divisor applied to the per-application amount
+     * @param sourceType       goo type consumed
+     * @param sourceDivisor    divisor applied to the source amount
+     * @param targetType       goo type produced
+     * @param targetDivisor    divisor applied to the per-application amount
+     * @param targetMultiplier multiplier applied to the target amount
      */
     public record Formula(GooType sourceType, int sourceDivisor,
-                          GooType targetType, int targetDivisor) { }
+                          GooType targetType, int targetDivisor,
+                          int targetMultiplier) { }
 
     /**
      * A named stack: N applications of a formula.
@@ -111,10 +115,10 @@ public final class GooConversion {
             List<Assignment> assignments
     ) { }
 
-    // ── Formula pattern: "type / N -> type / M" ─────────────────────────
+    // ── Formula pattern: "type / N -> type / M", "type / N -> type * M", or "type / N -> 0"
 
     private static final Pattern FORMULA_PATTERN = Pattern.compile(
-            "\\s*(\\w+)\\s*/\\s*(\\d+)\\s*->\\s*(\\w+)\\s*/\\s*(\\d+)\\s*");
+            "\\s*(\\w+)\\s*/\\s*(\\d+)\\s*->\\s*(?:(\\w+)\\s*([*/])\\s*(\\d+)|0)\\s*");
 
     /**
      * Parses a formula string like "metal / 4 -> aeon / 2".
@@ -139,9 +143,15 @@ public final class GooConversion {
     private static Formula buildFormula(Matcher m) {
         GooType source = GooType.valueOf(m.group(GROUP_SOURCE_TYPE).toUpperCase(Locale.ROOT));
         int srcDiv = Integer.parseInt(m.group(GROUP_SOURCE_DIVISOR));
+        if (m.group(GROUP_TARGET_TYPE) == null) {
+            return new Formula(source, srcDiv, source, 1, 0);
+        }
         GooType target = GooType.valueOf(m.group(GROUP_TARGET_TYPE).toUpperCase(Locale.ROOT));
-        int tgtDiv = Integer.parseInt(m.group(GROUP_TARGET_DIVISOR));
-        return new Formula(source, srcDiv, target, tgtDiv);
+        int tgtVal = Integer.parseInt(m.group(GROUP_TARGET_VALUE));
+        boolean isMultiplier = ASTERISK.equals(m.group(GROUP_TARGET_OP));
+        int tgtDiv = isMultiplier ? 1 : tgtVal;
+        int tgtMul = isMultiplier ? tgtVal : 1;
+        return new Formula(source, srcDiv, target, tgtDiv, tgtMul);
     }
 
     // ── Stack reference pattern: "N @name" or "@name" ───────────────────
@@ -387,9 +397,9 @@ public final class GooConversion {
         return key.startsWith(TAG_PREFIX) || key.contains(COLON);
     }
 
-    /** Pattern for scalar fraction: "* N / M" after a parallel source. */
+    /** Pattern for scalar: "* N" or "* N / M" after a parallel source. */
     private static final Pattern SCALE_PATTERN = Pattern.compile(
-            "\\*\\s*(\\d+)\\s*/\\s*(\\d+)");
+            "\\*\\s*(\\d+)(?:\\s*/\\s*(\\d+))?");
 
     /**
      * Parses an assignment value: optional #source for parallel copy,
@@ -422,7 +432,7 @@ public final class GooConversion {
     private static Assignment buildScaledAssignment(String target, String remaining,
                                                      Matcher m, Map<String, Stack> stacks) {
         int mul = Integer.parseInt(m.group(GROUP_SCALE_NUM));
-        int div = Integer.parseInt(m.group(GROUP_SCALE_DEN));
+        int div = m.group(GROUP_SCALE_DEN) != null ? Integer.parseInt(m.group(GROUP_SCALE_DEN)) : 1;
         String stripped = stripScaleMatch(remaining, m);
         return buildAssignment(target, stripped, mul, div, stacks);
     }
@@ -576,7 +586,8 @@ public final class GooConversion {
                 formula.sourceType() + SLASH_SEP + formula.sourceDivisor());
         int removed = perApp * times;
         int added = exactDivide(perApp, formula.targetDivisor(),
-                formula.targetType() + SLASH_SEP + formula.targetDivisor()) * times;
+                formula.targetType() + SLASH_SEP + formula.targetDivisor())
+                * formula.targetMultiplier() * times;
         return applyDelta(original, formula, removed, added);
     }
 

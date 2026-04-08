@@ -484,63 +484,17 @@ final class GooValueJsonFormat {
                                 Map<String, GooValue> treeConstants) {
         int result = evalAtom(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
-            result = evalTermStep(tokens, pos, result, constants, baseValues, treeConstants);
+            String token = tokens.get(pos[0]);
+            if (isMultiplicativeOp(token)) {
+                pos[0]++;
+                result = applyOperator(result, token, evalAtom(tokens, pos, constants, baseValues, treeConstants));
+            } else if (isAtomStart(token)) {
+                result = applyOperator(result, OP_MUL, evalAtom(tokens, pos, constants, baseValues, treeConstants));
+            } else {
+                break;
+            }
         }
         return result;
-    }
-
-    /**
-     * Resolves the multiplicative operator for the current token: returns the
-     * explicit operator (* or /) if present, OP_MUL for implicit multiplication
-     * (adjacent atom), or null to signal end of the term.
-     *
-     * @param token the current token to classify
-     * @return the operator string, or null if the term should end
-     */
-    private static String resolveTermOp(String token) {
-        if (isMultiplicativeOp(token)) {
-            return token;
-        }
-        return isAtomStart(token) ? OP_MUL : null;
-    }
-
-    /**
-     * Evaluates one step of the multiplicative loop: explicit * or /, implicit
-     * multiplication when adjacent atoms appear, or signals termination by
-     * returning the accumulated result unchanged.
-     *
-     * @param tokens        the token list from the tokenizer
-     * @param pos           mutable position index into tokens
-     * @param result        the running accumulated value
-     * @param constants     scalar constant symbol table
-     * @param baseValues    item values for dot-notation lookups (may be null)
-     * @param treeConstants tree constant symbol table
-     * @return the updated accumulated value after this step
-     */
-    private static int evalTermStep(List<String> tokens, int[] pos, int result,
-                                    Map<String, Integer> constants,
-                                    Map<Identifier, GooValue> baseValues,
-                                    Map<String, GooValue> treeConstants) {
-        String op = resolveTermOp(tokens.get(pos[0]));
-        if (op == null) {
-            pos[0] = tokens.size();
-            return result;
-        }
-        advanceIfExplicit(op, pos);
-        return applyOperator(result, op, evalAtom(tokens, pos, constants, baseValues, treeConstants));
-    }
-
-    /**
-     * Advances the position past an explicit operator token. Implicit
-     * operators (like adjacent-atom multiplication) have no token to skip.
-     *
-     * @param op  the resolved operator string
-     * @param pos mutable position index to advance
-     */
-    private static void advanceIfExplicit(String op, int[] pos) {
-        if (isMultiplicativeOp(op)) {
-            pos[0]++;
-        }
     }
 
     /**

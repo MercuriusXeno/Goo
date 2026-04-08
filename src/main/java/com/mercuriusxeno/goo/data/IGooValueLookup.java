@@ -35,6 +35,15 @@ public interface IGooValueLookup {
     boolean isDenied(Identifier itemId);
 
     /**
+     * Returns true if the item is restricted from plexer reconstitution.
+     * Restricted items still have goo values (decomposable) but cannot be created.
+     *
+     * @param itemId the item's registry ID
+     * @return true if the item is on the restricted list
+     */
+    boolean isRestricted(Identifier itemId);
+
+    /**
      * Returns the total number of items with effective goo values.
      *
      * @return effective value count

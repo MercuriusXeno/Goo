@@ -64,6 +64,21 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        showStandardStreams = false
+        exceptionFormat = 'full'
+        showCauses = true
+        showStackTraces = true
+    }
+    reports {
+        html.required = true
+        junitXml {
+            required = true
+            // Capture stdout/stderr per-test in the XML files
+            outputPerTestCase = true
+        }
+    }
 }
 
 tasks.register('gooTest', Test) {
