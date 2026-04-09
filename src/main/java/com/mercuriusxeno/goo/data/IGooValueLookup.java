@@ -3,6 +3,8 @@ package com.mercuriusxeno.goo.data;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Read-only view of the goo value registry. Consumers that only need to look up values
@@ -56,4 +58,26 @@ public interface IGooValueLookup {
      * @return unmodifiable map of item ID to effective GooValue
      */
     Map<Identifier, GooValue> getEffectiveValues();
+
+    /**
+     * Returns the item ID with the lowest {@link GooValue#totalBlobs()} among {@code candidates},
+     * using {@code lookup} to resolve each ID. Null and empty values are skipped.
+     *
+     * @param candidates set of item IDs to compare
+     * @param lookup     function from item ID to GooValue (may return null)
+     * @return cheapest item ID, or null if no candidate has a non-empty value
+     */
+    static @Nullable Identifier findCheapestAmong(
+            Set<Identifier> candidates, Function<Identifier, GooValue> lookup) {
+        Identifier cheapestId = null;
+        int cheapestTotal = Integer.MAX_VALUE;
+        for (Identifier itemId : candidates) {
+            GooValue val = lookup.apply(itemId);
+            if (val != null && !val.isEmpty() && val.totalBlobs() < cheapestTotal) {
+                cheapestTotal = val.totalBlobs();
+                cheapestId = itemId;
+            }
+        }
+        return cheapestId;
+    }
 }

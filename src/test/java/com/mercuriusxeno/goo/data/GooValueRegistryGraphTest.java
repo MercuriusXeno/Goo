@@ -25,6 +25,14 @@ class GooValueRegistryGraphTest {
         registry = new GooValueRegistry();
     }
 
+    /** Sets base values on the registry, copying to effective. */
+    private void setBaseValues(Map<Identifier, GooValue> values) {
+        registry.baseValues.clear();
+        registry.baseValues.putAll(values);
+        registry.effectiveValues.clear();
+        registry.effectiveValues.putAll(values);
+    }
+
     // ── SCC Classification ──────────────────────────────────────────────
 
     @Nested
@@ -37,7 +45,7 @@ class GooValueRegistryGraphTest {
             Set<Identifier> anchoredNodes = Set.of(id("a"), id("b"));
             Set<Identifier> baseValueKeys = Set.of(id("a"));
 
-            var cycle = GooValueDerivation.classifyScc(scc, anchoredNodes, baseValueKeys);
+            var cycle = SccClassifier.classifyScc(scc, anchoredNodes, baseValueKeys);
             assertEquals(id("a"), cycle.anchor());
             assertTrue(cycle.hasAnchor());
         }
@@ -49,7 +57,7 @@ class GooValueRegistryGraphTest {
             Set<Identifier> anchoredNodes = Set.of(id("x")); // reachable from outside
             Set<Identifier> baseValueKeys = Set.of(); // no direct base values
 
-            var cycle = GooValueDerivation.classifyScc(scc, anchoredNodes, baseValueKeys);
+            var cycle = SccClassifier.classifyScc(scc, anchoredNodes, baseValueKeys);
             assertNull(cycle.anchor());
             assertTrue(cycle.hasAnchor());
         }
@@ -61,7 +69,7 @@ class GooValueRegistryGraphTest {
             Set<Identifier> anchoredNodes = Set.of(); // nothing anchored
             Set<Identifier> baseValueKeys = Set.of();
 
-            var cycle = GooValueDerivation.classifyScc(scc, anchoredNodes, baseValueKeys);
+            var cycle = SccClassifier.classifyScc(scc, anchoredNodes, baseValueKeys);
             assertNull(cycle.anchor());
             assertFalse(cycle.hasAnchor());
         }
@@ -75,20 +83,20 @@ class GooValueRegistryGraphTest {
         /** Cycle detected through recipe derivation. */
         @Test
         void cycleThroughRecipes() {
-            registry.setBaseValues(Map.of());
+            setBaseValues(Map.of());
             List<RecipeInput> recipes = List.of(
                 recipe("a", 1, slot("b")),
                 recipe("b", 1, slot("a"))
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertFalse(registry.getLastCycles().isEmpty());
+            assertFalse(registry.diagnostics().cycles().isEmpty());
         }
 
         /** No cycles in a clean recipe chain. */
         @Test
         void noCyclesInCleanChain() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("raw"), goo(GooType.METAL, 5)
             ));
             List<RecipeInput> recipes = List.of(
@@ -97,7 +105,7 @@ class GooValueRegistryGraphTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertTrue(registry.getLastCycles().isEmpty());
+            assertTrue(registry.diagnostics().cycles().isEmpty());
         }
     }
 }

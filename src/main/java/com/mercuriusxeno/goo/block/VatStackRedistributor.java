@@ -1,12 +1,13 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.item.GooContents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,48 +31,74 @@ public final class VatStackRedistributor {
      */
     public static void redistribute(Level level, BlockPos pos) {
         List<VatBlockEntity> stack = collectStack(level, pos);
-        if (stack.size() <= 1) { return; }
-
-        // Guard: skip if any vat is already redistributing (re-entrance from onFluidChanged)
-        for (VatBlockEntity vat : stack) {
-            if (vat.redistributing) { return; }
-        }
-
-        // Set re-entrance guard on all vats before mutating
-        for (VatBlockEntity vat : stack) {
-            vat.redistributing = true;
-        }
+        if (stack.size() <= 1 || anyRedistributing(stack)) { return; }
+        setRedistributing(stack, true);
         try {
             doRedistribute(stack);
         } finally {
-            for (VatBlockEntity vat : stack) {
-                vat.redistributing = false;
-            }
+            setRedistributing(stack, false);
+        }
+    }
+
+    /** Returns true if any vat in the stack is already mid-redistribution.
+     *
+     * @param stack the vat stack to check
+     * @return true if any vat has the redistributing flag set
+     */
+    private static boolean anyRedistributing(List<VatBlockEntity> stack) {
+        for (VatBlockEntity vat : stack) {
+            if (vat.redistributing) { return true; }
+        }
+        return false;
+    }
+
+    /** Sets the redistributing guard flag on every vat in the stack.
+     *
+     * @param stack the vat stack
+     * @param value the flag value to set
+     */
+    private static void setRedistributing(List<VatBlockEntity> stack, boolean value) {
+        for (VatBlockEntity vat : stack) {
+            vat.redistributing = value;
         }
     }
 
     /** Sums all goo, then fills vats bottom-up greedily.
      *
-     * @param stack the item stack
+     * @param stack the vat stack, bottom-to-top
      */
     private static void doRedistribute(List<VatBlockEntity> stack) {
-        // 1. Merge all fluid into a mutable pool
+        Map<GooType, Long> pool = mergePool(stack);
+        for (VatBlockEntity vat : stack) {
+            applySlice(vat, pool);
+        }
+    }
+
+    /** Merges all goo from every vat in the stack into a single mutable pool.
+     *
+     * @param stack the vat stack to merge
+     * @return the merged goo pool
+     */
+    private static Map<GooType, Long> mergePool(List<VatBlockEntity> stack) {
         Map<GooType, Long> pool = new EnumMap<>(GooType.class);
         for (VatBlockEntity vat : stack) {
             for (Map.Entry<GooType, Long> e : vat.getContents().contents().entrySet()) {
                 pool.merge(e.getKey(), e.getValue(), Long::sum);
             }
         }
+        return pool;
+    }
 
-        // 2. Distribute bottom-up (stack list is already bottom-to-top)
-        for (VatBlockEntity vat : stack) {
-            long capacity = vat.getCapacity();
-            GooContents slice = takeSlice(pool, capacity);
-            GooContents current = vat.getContents();
-            if (!slice.equals(current)) {
-                vat.getFluidHandler().loadFrom(slice);
-                vat.syncAfterRedistribution();
-            }
+    /** Takes a capacity-sized slice from the pool and applies it to the vat if changed.
+     *
+     * @param vat  the target vat
+     * @param pool the mutable goo pool to take from
+     */
+    private static void applySlice(VatBlockEntity vat, Map<GooType, Long> pool) {
+        GooContents slice = takeSlice(pool, vat.getCapacity());
+        if (!slice.equals(vat.getContents())) {
+            vat.getFluidHandler().loadFrom(slice);
+            vat.syncAfterRedistribution();
         }
     }
 
@@ -85,24 +112,33 @@ public final class VatStackRedistributor {
      */
     private static GooContents takeSlice(Map<GooType, Long> pool, long capacity) {
         if (pool.isEmpty() || capacity <= 0) { return GooContents.EMPTY; }
-
         Map<GooType, Long> slice = new EnumMap<>(GooType.class);
         long remaining = capacity;
-
         var it = pool.entrySet().iterator();
         while (it.hasNext() && remaining > 0) {
-            Map.Entry<GooType, Long> entry = it.next();
-            long take = Math.min(entry.getValue(), remaining);
-            slice.put(entry.getKey(), take);
-            remaining -= take;
-            long left = entry.getValue() - take;
-            if (left <= 0) {
-                it.remove();
-            } else {
-                entry.setValue(left);
-            }
+            remaining -= takeEntry(it, it.next(), remaining, slice);
         }
         return new GooContents(slice);
+    }
+
+    /** Consumes up to {@code remaining} mB from one pool entry, adds to slice, and returns amount taken.
+     *
+     * @param it        the pool iterator (for removal)
+     * @param entry     the current pool entry
+     * @param remaining the remaining capacity in mB
+     * @param slice     the slice being built
+     * @return the amount of mB taken
+     */
+    private static long takeEntry(Iterator<Map.Entry<GooType, Long>> it,
+            Map.Entry<GooType, Long> entry, long remaining, Map<GooType, Long> slice) {
+        long take = Math.min(entry.getValue(), remaining);
+        slice.put(entry.getKey(), take);
+        if (take >= entry.getValue()) {
+            it.remove();
+        } else {
+            entry.setValue(entry.getValue() - take);
+        }
+        return take;
     }
 
     /**
@@ -114,25 +150,38 @@ public final class VatStackRedistributor {
      * @return the list
      */
     private static List<VatBlockEntity> collectStack(Level level, BlockPos pos) {
-        // Walk down to bottom
-        BlockPos bottom = pos;
-        while (level.getBlockState(bottom.below()).getBlock() instanceof VatBlock) {
-            bottom = bottom.below();
-        }
+        BlockPos bottom = findStackBottom(level, pos);
+        return collectUpward(level, bottom);
+    }
 
-        // Walk up, collecting block entities
+    /** Walks upward from the bottom position, collecting VatBlockEntity instances.
+     *
+     * @param level  the current level
+     * @param bottom the bottom-most vat position
+     * @return the vat list, bottom-to-top
+     */
+    private static List<VatBlockEntity> collectUpward(Level level, BlockPos bottom) {
         List<VatBlockEntity> stack = new ArrayList<>();
         BlockPos cursor = bottom;
-        while (true) {
-            BlockEntity be = level.getBlockEntity(cursor);
-            if (be instanceof VatBlockEntity vat) {
-                stack.add(vat);
-            } else {
-                break;
-            }
+        while (level.getBlockEntity(cursor) instanceof VatBlockEntity vat) {
+            stack.add(vat);
             if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) { break; }
             cursor = cursor.above();
         }
         return stack;
+    }
+
+    /** Walks downward from the given position to find the lowest vat in the stack.
+     *
+     * @param level the current level
+     * @param pos   any position in the stack
+     * @return the bottom-most vat position
+     */
+    private static BlockPos findStackBottom(Level level, BlockPos pos) {
+        BlockPos bottom = pos;
+        while (level.getBlockState(bottom.below()).getBlock() instanceof VatBlock) {
+            bottom = bottom.below();
+        }
+        return bottom;
     }
 }

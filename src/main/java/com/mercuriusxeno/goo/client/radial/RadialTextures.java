@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 
@@ -62,7 +63,7 @@ public final class RadialTextures {
     private static final String CANCEL_PATH = "dynamic/radial_cancel";
 
     /** Registered texture identifiers, one per wedge. */
-    private static final Identifier[] wedgeIds = new Identifier[WEDGE_COUNT];
+    private static final Identifier[] WEDGE_IDS = new Identifier[WEDGE_COUNT];
 
     /** Registered cancel circle texture identifier. */
     private static Identifier cancelId;
@@ -76,18 +77,33 @@ public final class RadialTextures {
     public static void ensureInitialized() {
         if (initialized) { return; }
         initialized = true;
-
         var texManager = Minecraft.getInstance().getTextureManager();
+        registerWedgeTextures(texManager);
+        registerCancelTexture(texManager);
+    }
 
+    /**
+     * Generates and registers one AA mask texture per wedge.
+     *
+     * @param texManager the texture manager for registration
+     */
+    private static void registerWedgeTextures(TextureManager texManager) {
         for (int i = 0; i < WEDGE_COUNT; i++) {
             NativeImage image = generateWedgeMask(i);
-            int idx = i; // effectively final for lambda capture
+            int idx = i;
             DynamicTexture tex = new DynamicTexture(() -> WEDGE_LABEL_PREFIX + idx, image);
             Identifier id = Identifier.fromNamespaceAndPath(Goo.MODID, WEDGE_PATH_PREFIX + i);
             texManager.register(id, tex);
-            wedgeIds[i] = id;
+            WEDGE_IDS[i] = id;
         }
+    }
 
+    /**
+     * Generates and registers the cancel circle mask texture.
+     *
+     * @param texManager the texture manager for registration
+     */
+    private static void registerCancelTexture(TextureManager texManager) {
         NativeImage cancelImage = generateCancelMask();
         DynamicTexture cancelTex = new DynamicTexture(() -> CANCEL_LABEL, cancelImage);
         cancelId = Identifier.fromNamespaceAndPath(Goo.MODID, CANCEL_PATH);
@@ -101,7 +117,7 @@ public final class RadialTextures {
      * @return the registered texture identifier for this wedge
      */
     public static Identifier getWedgeTexture(int wedgeIndex) {
-        return wedgeIds[wedgeIndex];
+        return WEDGE_IDS[wedgeIndex];
     }
 
     /**
@@ -123,16 +139,27 @@ public final class RadialTextures {
     private static NativeImage generateWedgeMask(int wedgeIndex) {
         NativeImage image = new NativeImage(TEX_SIZE, TEX_SIZE, true);
         double half = TEX_SIZE / HALF_DIVISOR;
-        double wedgeStartAngle = wedgeIndex * (TWO_PI / WEDGE_COUNT);
-        double wedgeEndAngle = (wedgeIndex + 1) * (TWO_PI / WEDGE_COUNT);
+        double startAngle = wedgeIndex * (TWO_PI / WEDGE_COUNT);
+        double endAngle = (wedgeIndex + 1) * (TWO_PI / WEDGE_COUNT);
+        rasterizeWedge(image, half, startAngle, endAngle);
+        return image;
+    }
 
+    /**
+     * Fills pixel samples for one wedge arc into the image.
+     *
+     * @param image the target image
+     * @param half half the texture size for normalization
+     * @param startAngle wedge start angle in radians
+     * @param endAngle wedge end angle in radians
+     */
+    private static void rasterizeWedge(NativeImage image, double half, double startAngle, double endAngle) {
         for (int py = 0; py < TEX_SIZE; py++) {
             for (int px = 0; px < TEX_SIZE; px++) {
-                int hits = countWedgeHits(px, py, half, wedgeStartAngle, wedgeEndAngle);
+                int hits = countWedgeHits(px, py, half, startAngle, endAngle);
                 writePixelIfHit(image, px, py, hits);
             }
         }
-        return image;
     }
 
     /**
@@ -145,16 +172,12 @@ public final class RadialTextures {
      * @param endAngle wedge end angle in radians
      * @return number of sub-samples inside the wedge (0..AA_SAMPLES^2)
      */
-    private static int countWedgeHits(int px, int py, double half,
-                                      double startAngle, double endAngle) {
+    private static int countWedgeHits(int px, int py, double half, double startAngle, double endAngle) {
         int hits = 0;
         for (int sy = 0; sy < AA_SAMPLES; sy++) {
             for (int sx = 0; sx < AA_SAMPLES; sx++) {
-                double x = toNormalized(px, sx, half);
-                double y = toNormalized(py, sy, half);
-                if (isInsideWedge(x, y, startAngle, endAngle)) {
-                    hits++;
-                }
+                boolean inside = isInsideWedge(toNormalized(px, sx, half), toNormalized(py, sy, half), startAngle, endAngle);
+                if (inside) { hits++; }
             }
         }
         return hits;
@@ -174,7 +197,7 @@ public final class RadialTextures {
         double dist = Math.sqrt(x * x + y * y);
         if (dist < NORM_INNER || dist > NORM_OUTER) { return false; }
 
-        // Angle from top, clockwise - matches updateHoveredIndex
+        // Angle from top, clockwise - matches GooRadialRenderer.computeHoveredIndex
         double angle = Math.atan2(x, -y);
         if (angle < 0) { angle += TWO_PI; }
         return angle >= startAngle && angle < endAngle;
@@ -190,14 +213,24 @@ public final class RadialTextures {
         NativeImage image = new NativeImage(TEX_SIZE, TEX_SIZE, true);
         double half = TEX_SIZE / HALF_DIVISOR;
         double cancelNorm = (CANCEL_INNER_PX - CANCEL_GAP) / CANCEL_OUTER_PX;
+        rasterizeCircle(image, half, cancelNorm);
+        return image;
+    }
 
+    /**
+     * Fills pixel samples for a filled circle into the image.
+     *
+     * @param image the target image
+     * @param half half the texture size for normalization
+     * @param maxRadius normalized radius threshold
+     */
+    private static void rasterizeCircle(NativeImage image, double half, double maxRadius) {
         for (int py = 0; py < TEX_SIZE; py++) {
             for (int px = 0; px < TEX_SIZE; px++) {
-                int hits = countCircleHits(px, py, half, cancelNorm);
+                int hits = countCircleHits(px, py, half, maxRadius);
                 writePixelIfHit(image, px, py, hits);
             }
         }
-        return image;
     }
 
     /**
@@ -213,13 +246,22 @@ public final class RadialTextures {
         int hits = 0;
         for (int sy = 0; sy < AA_SAMPLES; sy++) {
             for (int sx = 0; sx < AA_SAMPLES; sx++) {
-                double x = toNormalized(px, sx, half);
-                double y = toNormalized(py, sy, half);
-                double dist = Math.sqrt(x * x + y * y);
-                if (dist <= maxRadius) { hits++; }
+                if (isInsideCircle(toNormalized(px, sx, half), toNormalized(py, sy, half), maxRadius)) { hits++; }
             }
         }
         return hits;
+    }
+
+    /**
+     * Tests whether a normalized coordinate lies inside the cancel circle.
+     *
+     * @param x normalized x
+     * @param y normalized y
+     * @param maxRadius normalized radius threshold
+     * @return true if the point is within the circle
+     */
+    private static boolean isInsideCircle(double x, double y, double maxRadius) {
+        return Math.sqrt(x * x + y * y) <= maxRadius;
     }
 
     /**

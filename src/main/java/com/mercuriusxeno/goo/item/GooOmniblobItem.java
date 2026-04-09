@@ -117,36 +117,16 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     public boolean overrideStackedOnOther(@NonNull ItemStack omniblob, @NonNull Slot slot,
             @NonNull ClickAction action, @NonNull Player player) {
         ItemStack target = slot.getItem();
-
-        if (target.getItem() instanceof GooBlobItem blobItem && blobItem.getGooType() == gooType) {
+        if (isMatchingBlob(target)) {
             return handleAbsorbFromSlot(omniblob, target, slot, action, player);
         }
-
         if (action != ClickAction.SECONDARY) { return false; }
         if (!target.isEmpty()) { return false; }
-
-        long volume = getVolume(omniblob);
-        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
-
-        long placed = BlobStacks.MB_PER_BLOB;
-        long remaining = volume - placed;
-
-        slot.set(BlobStacks.createBlobStack(gooType, 1));
-
-        if (remaining <= 0) {
-            omniblob.shrink(1);
-        } else if (BlobStacks.isCleanBlobStack(remaining)) {
-            player.containerMenu.setCarried(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
-        } else {
-            setVolume(omniblob, remaining);
-        }
-        return true;
+        return placeSingleBlobInSlot(omniblob, slot, player);
     }
 
     /**
-     * Omniblob cursor onto same-type blob stack in slot.
-     * Left-click: merge everything into one omniblob in the slot, cursor clears.
-     * Right-click: place 1 blob from omniblob into the stack (grow stack by 1).
+     * Dispatches left/right-click when omniblob cursor meets a same-type blob stack.
      *
      * @param omniblob the omniblob on the cursor
      * @param target   the blob stack in the slot
@@ -158,24 +138,64 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private boolean handleAbsorbFromSlot(ItemStack omniblob, ItemStack target, Slot slot,
             ClickAction action, Player player) {
         if (action == ClickAction.PRIMARY) {
-            long omniVol = getVolume(omniblob);
-            long targetVol = target.getCount() * BlobStacks.MB_PER_BLOB;
-            slot.set(BlobStacks.createForOutput(gooType, omniVol + targetVol));
+            long total = getVolume(omniblob) + target.getCount() * BlobStacks.MB_PER_BLOB;
+            slot.set(BlobStacks.createForOutput(gooType, total));
             player.containerMenu.setCarried(ItemStack.EMPTY);
-        } else {
-            long volume = getVolume(omniblob);
-            if (volume < BlobStacks.MB_PER_BLOB) { return false; }
-
-            target.grow(1);
-            long remaining = volume - BlobStacks.MB_PER_BLOB;
-            if (remaining <= 0) {
-                player.containerMenu.setCarried(ItemStack.EMPTY);
-            } else if (BlobStacks.isCleanBlobStack(remaining)) {
-                player.containerMenu.setCarried(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
-            } else {
-                setVolume(omniblob, remaining);
-            }
+            return true;
         }
+        return feedOneBlobToStack(omniblob, target, player);
+    }
+
+    /**
+     * Places one blob from the omniblob into an empty slot, updating cursor remainder.
+     *
+     * @param omniblob the omniblob on the cursor
+     * @param slot     the empty target slot
+     * @param player   the interacting player
+     * @return true if a blob was placed, false if insufficient volume
+     */
+    private boolean placeSingleBlobInSlot(ItemStack omniblob, Slot slot, Player player) {
+        long volume = getVolume(omniblob);
+        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
+
+        long remaining = volume - BlobStacks.MB_PER_BLOB;
+        slot.set(BlobStacks.createBlobStack(gooType, 1));
+        applyCursorRemainder(omniblob, remaining, player);
+        return true;
+    }
+
+    /**
+     * Updates the cursor after removing volume: shrink, downgrade to blob stack, or keep as omniblob.
+     *
+     * @param omniblob  the omniblob on the cursor
+     * @param remaining volume remaining after extraction
+     * @param player    the interacting player
+     */
+    private void applyCursorRemainder(ItemStack omniblob, long remaining, Player player) {
+        if (remaining <= 0) {
+            omniblob.shrink(1);
+        } else if (BlobStacks.isCleanBlobStack(remaining)) {
+            player.containerMenu.setCarried(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
+        } else {
+            setVolume(omniblob, remaining);
+        }
+    }
+
+    /**
+     * Right-click: grow blob stack by 1 and reduce omniblob accordingly.
+     *
+     * @param omniblob the omniblob on the cursor
+     * @param target   the blob stack in the slot
+     * @param player   the interacting player
+     * @return true if a blob was fed, false if insufficient volume
+     */
+    private boolean feedOneBlobToStack(ItemStack omniblob, ItemStack target, Player player) {
+        long volume = getVolume(omniblob);
+        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
+
+        target.grow(1);
+        long remaining = volume - BlobStacks.MB_PER_BLOB;
+        applyCursorRemainder(omniblob, remaining, player);
         return true;
     }
 
@@ -201,17 +221,29 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         if (cursor.isEmpty() && action == ClickAction.SECONDARY) {
             return handleEmptyCursorExtract(omniblob, slot, cursorAccess);
         }
-
-        if (cursor.getItem() instanceof GooOmniblobItem cursorOmni
-                && cursorOmni.getGooType() == gooType) {
-            return handleOmniblobCombine(omniblob, cursor, cursorAccess);
-        }
-
-        if (cursor.getItem() instanceof GooBlobItem blobItem && blobItem.getGooType() == gooType) {
-            return handleBlobAbsorb(omniblob, cursor, action, cursorAccess, player);
-        }
-
+        if (isMatchingOmniblob(cursor)) { return handleOmniblobCombine(omniblob, cursor, cursorAccess); }
+        if (isMatchingBlob(cursor)) { return handleBlobAbsorb(omniblob, cursor, action, cursorAccess, player); }
         return false;
+    }
+
+    /**
+     * Tests whether the stack is a same-type omniblob.
+     *
+     * @param stack the item stack to test
+     * @return true if the stack is an omniblob of this goo type
+     */
+    private boolean isMatchingOmniblob(ItemStack stack) {
+        return stack.getItem() instanceof GooOmniblobItem omni && omni.getGooType() == gooType;
+    }
+
+    /**
+     * Tests whether the stack is a same-type blob.
+     *
+     * @param stack the item stack to test
+     * @return true if the stack is a blob of this goo type
+     */
+    private boolean isMatchingBlob(ItemStack stack) {
+        return stack.getItem() instanceof GooBlobItem blob && blob.getGooType() == gooType;
     }
 
     /**
@@ -227,27 +259,47 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private boolean handleEmptyCursorExtract(ItemStack omniblob, Slot slot, SlotAccess cursorAccess) {
         long volume = getVolume(omniblob);
         if (volume <= 0) { return false; }
-
-        long wholeBlobs = BlobStacks.wholeBlobs(volume);
-        if (wholeBlobs <= 0) {
+        if (BlobStacks.wholeBlobs(volume) <= 0) {
             cursorAccess.set(omniblob.copy());
             omniblob.shrink(1);
             return true;
         }
+        return splitVolumeInHalf(omniblob, volume, slot, cursorAccess);
+    }
 
+    /**
+     * Splits omniblob volume in half: one half to cursor, the other stays in slot.
+     *
+     * @param omniblob     the omniblob in the slot
+     * @param volume       the current volume to split
+     * @param slot         the inventory slot
+     * @param cursorAccess access to set the cursor contents
+     * @return true always (split performed)
+     */
+    private boolean splitVolumeInHalf(ItemStack omniblob, long volume, Slot slot, SlotAccess cursorAccess) {
         long half = volume / HALF_DIVISOR;
         long other = volume - half;
 
         cursorAccess.set(BlobStacks.createForOutput(gooType, half));
-
-        if (other <= 0) {
-            omniblob.shrink(1);
-        } else if (BlobStacks.isCleanBlobStack(other)) {
-            slot.set(BlobStacks.createBlobStack(gooType, (int) (other / BlobStacks.MB_PER_BLOB)));
-        } else {
-            setVolume(omniblob, other);
-        }
+        applySlotRemainder(omniblob, other, slot);
         return true;
+    }
+
+    /**
+     * Updates the slot after splitting: remove, downgrade to blob stack, or keep as omniblob.
+     *
+     * @param omniblob  the omniblob in the slot
+     * @param remaining volume remaining after split
+     * @param slot      the inventory slot
+     */
+    private void applySlotRemainder(ItemStack omniblob, long remaining, Slot slot) {
+        if (remaining <= 0) {
+            omniblob.shrink(1);
+        } else if (BlobStacks.isCleanBlobStack(remaining)) {
+            slot.set(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
+        } else {
+            setVolume(omniblob, remaining);
+        }
     }
 
     /**
@@ -280,18 +332,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private boolean handleBlobAbsorb(ItemStack omniblob, ItemStack cursor,
             ClickAction action, SlotAccess cursorAccess, Player player) {
-        int absorbCount;
-        if (action == ClickAction.PRIMARY) {
-            absorbCount = cursor.getCount();
-        } else {
-            absorbCount = player.isShiftKeyDown() ? cursor.getCount() : 1;
-        }
-
-        long absorbVolume = absorbCount * BlobStacks.MB_PER_BLOB;
-        long currentVolume = getVolume(omniblob);
-        setVolume(omniblob, currentVolume + absorbVolume);
-
-        cursor.shrink(absorbCount);
+        int count = action == ClickAction.PRIMARY ? cursor.getCount() : (player.isShiftKeyDown() ? cursor.getCount() : 1);
+        setVolume(omniblob, getVolume(omniblob) + count * BlobStacks.MB_PER_BLOB);
+        cursor.shrink(count);
         if (cursor.isEmpty()) {
             cursorAccess.set(ItemStack.EMPTY);
         }

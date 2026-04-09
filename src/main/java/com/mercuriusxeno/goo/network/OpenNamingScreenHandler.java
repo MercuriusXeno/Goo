@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.network;
 
-import com.mercuriusxeno.goo.client.CanisterNamingScreen;
+import com.mercuriusxeno.goo.client.machine.CanisterNamingScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 

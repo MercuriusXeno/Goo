@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.tools;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -21,35 +20,23 @@ import javax.imageio.ImageIO;
  *
  * Run via main() - outputs to src/main/resources/assets/goo/textures/
  */
+@SuppressWarnings("PMD.SystemPrintln") // standalone CLI tool; no logger needed
 public final class FluidTextureGenerator {
 
-    private static final int SIZE = 16;
-    private static final int FRAMES = 32;
-    private static final int WARMUP = 60;
+    static final int SIZE = 16;
+    static final int FRAMES = 32;
+    static final int WARMUP = 60;
 
     private static final Path OUTPUT_ROOT = Path.of("src/main/resources/assets/goo/textures");
     private static final Path FLUID_DIR = OUTPUT_ROOT.resolve("fluid");
-    private static final Path ITEM_DIR = OUTPUT_ROOT.resolve("item");
+    static final Path ITEM_DIR = OUTPUT_ROOT.resolve("item");
 
-    private static final Path BLOB_MASK_TINY_PATH = ITEM_DIR.resolve("goo_blob_mask_tiny.png");
-    private static final Path BLOB_MASK_SMALL_PATH = ITEM_DIR.resolve("goo_blob_mask_small.png");
-    private static final Path BLOB_MASK_PATH = ITEM_DIR.resolve("goo_blob_mask.png");
-    private static final Path BLOB_MASK_LARGE_PATH = ITEM_DIR.resolve("goo_blob_mask_large.png");
+    static final Path BLOB_MASK_TINY_PATH = ITEM_DIR.resolve("goo_blob_mask_tiny.png");
+    static final Path BLOB_MASK_SMALL_PATH = ITEM_DIR.resolve("goo_blob_mask_small.png");
+    static final Path BLOB_MASK_PATH = ITEM_DIR.resolve("goo_blob_mask.png");
+    static final Path BLOB_MASK_LARGE_PATH = ITEM_DIR.resolve("goo_blob_mask_large.png");
 
     private static final Path FLUID_TYPES_JSON = Path.of("src/main/resources/data/goo/goo_fluid_types.json");
-
-    // Hue-shifting luminance modulation constants
-    /** Luminance above this threshold produces specular sheen. */
-    private static final float HIGHLIGHT_THRESHOLD = 0.8f;
-    /** How aggressively shadow hue rotates toward the per-type shadow hue. */
-    private static final float HUE_SHIFT_STRENGTH = 0.3f;
-    /** Saturation boost applied in shadow regions to counteract desaturation. */
-    private static final float SAT_BOOST = 0.2f;
-
-    /** Seed offset for blob CA to decorrelate from fluid CA. */
-    private static final long BLOB_SEED_OFFSET = 7919L;
-    /** Extra warmup ticks for blob generation beyond base warmup. */
-    private static final int BLOB_EXTRA_WARMUP = 20;
 
     /** Minimum heat range before fallback to 1.0 to avoid division by near-zero. */
     private static final float MIN_HEAT_RANGE = 0.001f;
@@ -61,27 +48,8 @@ public final class FluidTextureGenerator {
     private static final int RED_SHIFT = 16;
     /** Bit shift for green channel in ARGB int. */
     private static final int GREEN_SHIFT = 8;
-    /** Mask for extracting a single color channel byte. */
-    private static final int CHANNEL_MASK = 0xFF;
-    /** Mask for stripping alpha from an ARGB int. */
-    private static final int RGB_MASK = 0x00FFFFFF;
     /** Fully transparent ARGB pixel. */
-    private static final int TRANSPARENT = 0x00000000;
-    /** Maximum channel value (white). */
-    private static final int MAX_CHANNEL = 255;
-
-    // ── Luminance extraction weights (Rec. 601) ──
-    /** Red weight for luminance calculation. */
-    private static final float LUMA_RED_WEIGHT = 0.299f;
-    /** Green weight for luminance calculation. */
-    private static final float LUMA_GREEN_WEIGHT = 0.587f;
-    /** Blue weight for luminance calculation. */
-    private static final float LUMA_BLUE_WEIGHT = 0.114f;
-    /** Channel normalizer (divides 0-255 to 0.0-1.0). */
-    private static final float CHANNEL_NORMALIZER = 255.0f;
-
-    /** Maximum specular sheen blend factor. */
-    private static final float MAX_SHEEN_BLEND = 0.5f;
+    static final int TRANSPARENT = 0x00000000;
 
     // ── Palette hex parsing constants ──
     /** Start index for red hex digits. */
@@ -134,9 +102,6 @@ public final class FluidTextureGenerator {
     private static final float CARDINAL_FALLOFF = 0.6f;
     /** Diagonal neighbor ignition falloff. */
     private static final float DIAGONAL_FALLOFF = 0.35f;
-    /** Offset from end of frame list to start the reverse pass (skip last frame already included). */
-    private static final int PING_PONG_REVERSE_OFFSET = 2;
-
     /** Console message prefix for generation progress. */
     private static final String MSG_GENERATING = "Generating: ";
     /** Console message prefix for completion summary. */
@@ -151,20 +116,6 @@ public final class FluidTextureGenerator {
     private static final String SUFFIX_FLUID_MCMETA = "_fluid.png.mcmeta";
     /** Console format for heat range debug output. */
     private static final String FMT_HEAT_RANGE = "  %s: heat range %.4f-%.4f (spread %.4f)%n";
-    /** File suffix for blob variant PNG textures. */
-    private static final String SUFFIX_BLOB_TINY = "_blob_tiny";
-    /** File suffix for small blob variant. */
-    private static final String SUFFIX_BLOB_SMALL = "_blob_small";
-    /** File suffix for base blob variant. */
-    private static final String SUFFIX_BLOB_BASE = "_blob_base";
-    /** File suffix for large blob variant. */
-    private static final String SUFFIX_BLOB_LARGE = "_blob_large";
-    /** File extension for PNG files. */
-    private static final String EXT_PNG = ".png";
-    /** File extension suffix for mcmeta sidecar files. */
-    private static final String EXT_PNG_MCMETA = ".png.mcmeta";
-    /** Separator between ping-pong frame indices. */
-    private static final String FRAME_SEPARATOR = ", ";
     /** Hex color prefix character. */
     private static final String HEX_PREFIX = "#";
     /** Negative direction for neighbor iteration. */
@@ -184,12 +135,21 @@ public final class FluidTextureGenerator {
         Files.createDirectories(FLUID_DIR);
         Files.createDirectories(ITEM_DIR);
         List<GooFluidType> types = loadFluidTypes();
+        generateAll(types);
+        System.out.println(MSG_DONE_PREFIX + types.size() + MSG_DONE_SUFFIX);
+    }
+
+    /** Generates fluid textures and blob bases for all types with progress output.
+     *
+     * @param types the list of goo fluid type definitions
+     * @throws IOException if texture files cannot be written
+     */
+    private static void generateAll(List<GooFluidType> types) throws IOException {
         for (GooFluidType type : types) {
             System.out.println(MSG_GENERATING + type.id());
             generateFluidTexture(type);
-            generateBlobBase(type);
+            BlobTextureRenderer.generateBlobBase(type);
         }
-        System.out.println(MSG_DONE_PREFIX + types.size() + MSG_DONE_SUFFIX);
     }
 
     /**
@@ -235,7 +195,7 @@ public final class FluidTextureGenerator {
      * @param ca    the cellular automata engine
      * @param ticks the number of warmup ticks
      */
-    private static void warmup(FluidCA ca, int ticks) {
+    static void warmup(FluidCA ca, int ticks) {
         for (int i = 0; i < ticks; i++) { ca.tick(); }
     }
 
@@ -247,10 +207,10 @@ public final class FluidTextureGenerator {
      * @throws IOException if files cannot be written
      */
     private static void writeFluidStrip(GooFluidType type, float[][] heatFrames,
-                                         float[] heatRange) throws IOException {
+                                         float... heatRange) throws IOException {
         BufferedImage strip = renderFluidStrip(heatFrames, heatRange, type.palette());
         ImageIO.write(strip, FORMAT_PNG, FLUID_DIR.resolve(type.id() + SUFFIX_FLUID_PNG).toFile());
-        writeFluidMcmeta(type, type.id() + SUFFIX_FLUID_MCMETA);
+        TextureMcmetaWriter.writeFluidMcmeta(type.frametime(), FLUID_DIR, type.id() + SUFFIX_FLUID_MCMETA);
         System.out.printf(FMT_HEAT_RANGE, type.id(), heatRange[0], heatRange[0] + heatRange[1], heatRange[1]);
     }
 
@@ -290,77 +250,12 @@ public final class FluidTextureGenerator {
     }
 
     /**
-     * Writes a looping mcmeta for a fluid sprite strip.
-     *
-     * @param type     the goo fluid type definition
-     * @param filename the mcmeta filename to write
-     * @throws IOException if the file cannot be written
-     */
-    private static void writeFluidMcmeta(GooFluidType type, String filename) throws IOException {
-        String mcmeta = """
-                {"animation": {"frametime": %d, "interpolate": true}}
-                """.formatted(type.frametime());
-        Files.writeString(FLUID_DIR.resolve(filename), mcmeta);
-    }
-
-    /**
-     * Generates tiny, small, base, and large blob sprites for a goo type using luminance masks.
-     *
-     * @param type the goo fluid type definition
-     * @throws IOException if texture or mask files cannot be read or written
-     */
-    private static void generateBlobBase(GooFluidType type) throws IOException {
-        FluidCA ca = new FluidCA(type.genParams(), type.seed() + BLOB_SEED_OFFSET);
-        warmup(ca, WARMUP + BLOB_EXTRA_WARMUP);
-        float[][] heatFrames = captureHeatFrames(ca);
-        float[] heatRange = findHeatRange(heatFrames);
-        writeBlobVariants(type, heatFrames, heatRange);
-    }
-
-    /** Loads all size masks and writes masked blob sprite variants.
-     *
-     * @param type       the goo fluid type definition
-     * @param heatFrames the raw heat values per frame
-     * @param heatRange  min and range values for normalization
-     * @throws IOException if texture or mask files cannot be read or written
-     */
-    private static void writeBlobVariants(GooFluidType type, float[][] heatFrames,
-                                           float[] heatRange) throws IOException {
-        float[][] tinyMask = loadLuminanceMask(BLOB_MASK_TINY_PATH);
-        float[][] smallMask = loadLuminanceMask(BLOB_MASK_SMALL_PATH);
-        float[][] baseMask = loadLuminanceMask(BLOB_MASK_PATH);
-        float[][] largeMask = loadLuminanceMask(BLOB_MASK_LARGE_PATH);
-        writeMaskedBlobVariant(heatFrames, heatRange, type, tinyMask, type.id() + SUFFIX_BLOB_TINY);
-        writeMaskedBlobVariant(heatFrames, heatRange, type, smallMask, type.id() + SUFFIX_BLOB_SMALL);
-        writeMaskedBlobVariant(heatFrames, heatRange, type, baseMask, type.id() + SUFFIX_BLOB_BASE);
-        writeMaskedBlobVariant(heatFrames, heatRange, type, largeMask, type.id() + SUFFIX_BLOB_LARGE);
-    }
-
-    /**
-     * Writes a masked blob variant (luminance-shaded, single layer) with sprite strip + mcmeta.
-     *
-     * @param heatFrames the raw heat values per frame
-     * @param heatRange  min and range values for normalization
-     * @param type       the goo fluid type definition
-     * @param mask       the luminance mask for shading
-     * @param baseName   the output filename without extension
-     * @throws IOException if texture files cannot be written
-     */
-    private static void writeMaskedBlobVariant(float[][] heatFrames, float[] heatRange,
-            GooFluidType type, float[][] mask, String baseName) throws IOException {
-        BufferedImage strip = renderBlobStripMasked(heatFrames, heatRange, type, mask);
-        ImageIO.write(strip, FORMAT_PNG, ITEM_DIR.resolve(baseName + EXT_PNG).toFile());
-        writeBlobMcmeta(type, baseName + EXT_PNG_MCMETA);
-    }
-
-
-    /**
      * Captures FRAMES of raw heat values from the CA.
      *
      * @param ca the cellular automata engine
      * @return array of heat values indexed by [frame][pixel]
      */
-    private static float[][] captureHeatFrames(FluidCA ca) {
+    static float[][] captureHeatFrames(FluidCA ca) {
         float[][] heatFrames = new float[FRAMES][SIZE * SIZE];
         for (int frame = 0; frame < FRAMES; frame++) {
             ca.tick();
@@ -374,7 +269,7 @@ public final class FluidTextureGenerator {
      * @param ca    the cellular automata engine
      * @param dest  the destination array (SIZE*SIZE elements)
      */
-    private static void captureOneFrame(FluidCA ca, float[] dest) {
+    private static void captureOneFrame(FluidCA ca, float... dest) {
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) { dest[y * SIZE + x] = ca.getRawHeat(x, y); }
         }
@@ -386,175 +281,38 @@ public final class FluidTextureGenerator {
      * @param heatFrames the raw heat values per frame
      * @return two-element array: [minHeat, range]
      */
-    private static float[] findHeatRange(float[][] heatFrames) {
+    static float[] findHeatRange(float[]... heatFrames) {
         float minHeat = Float.MAX_VALUE;
         float maxHeat = Float.MIN_VALUE;
         for (float[] frame : heatFrames) {
-            for (float h : frame) {
-                minHeat = Math.min(minHeat, h);
-                maxHeat = Math.max(maxHeat, h);
-            }
+            minHeat = Math.min(minHeat, frameMin(frame));
+            maxHeat = Math.max(maxHeat, frameMax(frame));
         }
         float range = maxHeat - minHeat;
         if (range < MIN_HEAT_RANGE) { range = 1.0f; }
         return new float[]{minHeat, range};
     }
 
-    /**
-     * Loads a PNG mask and extracts per-pixel luminance (0.0-1.0), incorporating alpha.
+    /** Returns the minimum value in a single heat frame.
      *
-     * @param maskPath the path to the PNG mask file
-     * @return 2D luminance array indexed by [y][x]
-     * @throws IOException if the mask file cannot be read
+     * @param frame the heat values for one frame
+     * @return the minimum heat value
      */
-    private static float[][] loadLuminanceMask(Path maskPath) throws IOException {
-        BufferedImage mask = ImageIO.read(maskPath.toFile());
-        float[][] luminance = new float[SIZE][SIZE];
-        for (int y = 0; y < SIZE; y++) {
-            for (int x = 0; x < SIZE; x++) {
-                luminance[y][x] = extractLuminance(mask.getRGB(x, y));
-            }
-        }
-        return luminance;
+    private static float frameMin(float... frame) {
+        float min = Float.MAX_VALUE;
+        for (float h : frame) { min = Math.min(min, h); }
+        return min;
     }
 
-    /**
-     * Extracts luminance from an ARGB pixel, scaled by alpha. Transparent pixels return 0.
+    /** Returns the maximum value in a single heat frame.
      *
-     * @param argb the ARGB pixel value
-     * @return luminance in the range 0.0 to 1.0
+     * @param frame the heat values for one frame
+     * @return the maximum heat value
      */
-    private static float extractLuminance(int argb) {
-        int a = (argb >> ALPHA_SHIFT) & CHANNEL_MASK;
-        if (a == 0) { return 0.0f; }
-        int r = (argb >> RED_SHIFT) & CHANNEL_MASK;
-        int g = (argb >> GREEN_SHIFT) & CHANNEL_MASK;
-        int b = argb & CHANNEL_MASK;
-        float lum = (LUMA_RED_WEIGHT * r + LUMA_GREEN_WEIGHT * g + LUMA_BLUE_WEIGHT * b) / CHANNEL_NORMALIZER;
-        return lum * (a / CHANNEL_NORMALIZER);
-    }
-
-    /**
-     * Renders a blob sprite strip with luminance mask modulating the palette colors.
-     *
-     * @param heatFrames the raw heat values per frame
-     * @param heatRange  min and range values for normalization
-     * @param type       the goo fluid type definition
-     * @param mask       the luminance mask for shading
-     * @return the rendered blob sprite strip image
-     */
-    private static BufferedImage renderBlobStripMasked(
-            float[][] heatFrames, float[] heatRange, GooFluidType type, float[][] mask) {
-        BufferedImage strip = new BufferedImage(SIZE, SIZE * FRAMES, BufferedImage.TYPE_INT_ARGB);
-        for (int frame = 0; frame < FRAMES; frame++) {
-            renderMaskedFrame(strip, heatFrames[frame], frame, heatRange[0], heatRange[1], type, mask);
-        }
-        return strip;
-    }
-
-    /** Renders a single masked blob frame into the composite strip.
-     *
-     * @param strip   the composite sprite strip image
-     * @param heat    the raw heat values for this frame
-     * @param frame   the frame index
-     * @param minHeat the minimum heat for normalization
-     * @param range   the heat range for normalization
-     * @param type    the goo fluid type definition
-     * @param mask    the luminance mask
-     */
-    private static void renderMaskedFrame(BufferedImage strip, float[] heat, int frame,
-            float minHeat, float range, GooFluidType type, float[][] mask) {
-        for (int y = 0; y < SIZE; y++) {
-            for (int x = 0; x < SIZE; x++) {
-                int py = frame * SIZE + y;
-                float lum = mask[y][x];
-                if (lum <= 0) {
-                    strip.setRGB(x, py, TRANSPARENT);
-                    continue;
-                }
-                float normalized = normalizeHeat(heat[y * SIZE + x], minHeat, range);
-                strip.setRGB(x, py, modulateColorShaded(type.palette().sample(normalized), lum, type.shadowHue()));
-            }
-        }
-    }
-
-    /**
-     * Two-zone luminance modulation: hue-shifts shadows toward a per-type shadow hue,
-     * and blends highlights toward white for specular sheen.
-     *
-     * @param argb      the source ARGB color
-     * @param luminance the mask luminance value (0.0 to 1.0)
-     * @param shadowHue the per-type shadow hue for dark regions
-     * @return the modulated ARGB color
-     */
-    private static int modulateColorShaded(int argb, float luminance, float shadowHue) {
-        if (luminance >= HIGHLIGHT_THRESHOLD) {
-            float sheenFactor = (luminance - HIGHLIGHT_THRESHOLD) / (1.0f - HIGHLIGHT_THRESHOLD);
-            return applyHighlight(argb, sheenFactor);
-        }
-        float normalizedLum = luminance / HIGHLIGHT_THRESHOLD;
-        return applyShadow(argb, normalizedLum, shadowHue);
-    }
-
-    /**
-     * Darkens the color via HSB. Negative shadowHue disables hue shift and saturation boost.
-     *
-     * @param argb          the source ARGB color
-     * @param normalizedLum the luminance normalized to highlight threshold
-     * @param shadowHue     the target shadow hue, or negative to disable
-     * @return the darkened ARGB color
-     */
-    private static int applyShadow(int argb, float normalizedLum, float shadowHue) {
-        int a = (argb >> ALPHA_SHIFT) & CHANNEL_MASK;
-        float[] hsb = Color.RGBtoHSB(
-                (argb >> RED_SHIFT) & CHANNEL_MASK, (argb >> GREEN_SHIFT) & CHANNEL_MASK,
-                argb & CHANNEL_MASK, null);
-        shiftShadowHsb(hsb, normalizedLum, shadowHue);
-        int rgb = Color.HSBtoRGB(hsb[IDX_R], hsb[IDX_G], hsb[IDX_B]);
-        return (a << ALPHA_SHIFT) | (rgb & RGB_MASK);
-    }
-
-    /** Applies shadow hue shift, saturation boost, and brightness reduction in HSB space.
-     *
-     * @param hsb           the HSB array to modify in place
-     * @param normalizedLum the luminance normalized to highlight threshold
-     * @param shadowHue     the target shadow hue, or negative to disable
-     */
-    private static void shiftShadowHsb(float[] hsb, float normalizedLum, float shadowHue) {
-        float darkness = 1.0f - normalizedLum;
-        if (shadowHue >= 0) {
-            hsb[IDX_R] = lerpFloat(hsb[IDX_R], shadowHue, darkness * HUE_SHIFT_STRENGTH);
-            hsb[IDX_G] = Math.min(1.0f, hsb[IDX_G] + darkness * SAT_BOOST);
-        }
-        hsb[IDX_B] = hsb[IDX_B] * normalizedLum;
-    }
-
-    /**
-     * Lerps the palette color toward white by a sheen factor (capped at 0.5 blend).
-     *
-     * @param argb        the source ARGB color
-     * @param sheenFactor the specular sheen intensity (0.0 to 1.0)
-     * @return the highlighted ARGB color
-     */
-    private static int applyHighlight(int argb, float sheenFactor) {
-        int a = (argb >> ALPHA_SHIFT) & CHANNEL_MASK;
-        float t = sheenFactor * MAX_SHEEN_BLEND;
-        int r = (int) lerpFloat((argb >> RED_SHIFT) & CHANNEL_MASK, MAX_CHANNEL, t);
-        int g = (int) lerpFloat((argb >> GREEN_SHIFT) & CHANNEL_MASK, MAX_CHANNEL, t);
-        int b = (int) lerpFloat(argb & CHANNEL_MASK, MAX_CHANNEL, t);
-        return (a << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
-    }
-
-    /**
-     * Linear interpolation between two floats.
-     *
-     * @param from the start value
-     * @param to   the end value
-     * @param t    the interpolation factor (0.0 to 1.0)
-     * @return the interpolated value
-     */
-    private static float lerpFloat(float from, float to, float t) {
-        return from + (to - from) * t;
+    private static float frameMax(float... frame) {
+        float max = Float.MIN_VALUE;
+        for (float h : frame) { max = Math.max(max, h); }
+        return max;
     }
 
     /**
@@ -565,41 +323,10 @@ public final class FluidTextureGenerator {
      * @param range   the heat range across all frames
      * @return the normalized heat value
      */
-    private static float normalizeHeat(float heat, float minHeat, float range) {
+    static float normalizeHeat(float heat, float minHeat, float range) {
         return Math.min(1.0f, Math.max(0, (heat - minHeat) / range));
     }
 
-
-    /**
-     * Writes a ping-pong mcmeta for a blob sprite strip.
-     *
-     * @param type     the goo fluid type definition
-     * @param filename the mcmeta filename to write
-     * @throws IOException if the file cannot be written
-     */
-    private static void writeBlobMcmeta(GooFluidType type, String filename) throws IOException {
-        String mcmeta = """
-                {"animation": {"frametime": %d, "interpolate": true, "frames": [%s]}}
-                """.formatted(type.frametime(), buildPingPongFrames());
-        Files.writeString(ITEM_DIR.resolve(filename), mcmeta);
-    }
-
-    /**
-     * Builds a ping-pong frame list: 0,1,...,FRAMES-1,FRAMES-2,...,1
-     *
-     * @return the comma-separated frame index list
-     */
-    private static StringBuilder buildPingPongFrames() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < FRAMES; i++) {
-            if (i > 0) { sb.append(FRAME_SEPARATOR); }
-            sb.append(i);
-        }
-        for (int i = FRAMES - PING_PONG_REVERSE_OFFSET; i >= 1; i--) {
-            sb.append(FRAME_SEPARATOR).append(i);
-        }
-        return sb;
-    }
 
 
     // ---- Cellular Automata Engine ----
@@ -609,6 +336,8 @@ public final class FluidTextureGenerator {
      * Three heat layers (soup, pot, flame) interact to produce organic fluid motion.
      */
     static class FluidCA {
+        /** Multiplier to convert radius to diameter (radius * 2 + 1 = side length). */
+        private static final int DIAMETER_FACTOR = 2;
         private final GooFluidGenParams params;
         private final float[][] soupHeat = new float[SIZE][SIZE];
         private final float[][] potHeat = new float[SIZE][SIZE];
@@ -643,7 +372,7 @@ public final class FluidTextureGenerator {
          * @param newPot   destination for pot heat values
          * @param newFlame accumulator for flame heat values
          */
-        private void computeNextState(float[][] newSoup, float[][] newPot, float[][] newFlame) {
+        private void computeNextState(float[][] newSoup, float[][] newPot, float[]... newFlame) {
             for (int y = 0; y < SIZE; y++) {
                 for (int x = 0; x < SIZE; x++) {
                     newSoup[y][x] = computeSoupHeat(x, y);
@@ -676,17 +405,29 @@ public final class FluidTextureGenerator {
          * @return the neighbor-averaged heat value
          */
         private float computeNeighborAverage(int x, int y) {
-            float neighborSum = 0;
-            int neighborCount = 0;
             int reach = params.neighborhoodReach();
+            float neighborSum = sumNeighborHeat(x, y, reach);
+            int side = DIAMETER_FACTOR * reach + 1;
+            int neighborCount = side * side - 1;
+            return neighborSum / neighborCount;
+        }
+
+        /** Sums soup heat of all neighbors within the reach radius, excluding the center cell.
+         *
+         * @param x     the cell x coordinate
+         * @param y     the cell y coordinate
+         * @param reach the neighborhood reach radius
+         * @return the total neighbor heat
+         */
+        private float sumNeighborHeat(int x, int y, int reach) {
+            float sum = 0;
             for (int dy = -reach; dy <= reach; dy++) {
                 for (int dx = -reach; dx <= reach; dx++) {
                     if (dx == 0 && dy == 0) { continue; }
-                    neighborSum += soupHeat[(y + dy + SIZE) % SIZE][(x + dx + SIZE) % SIZE];
-                    neighborCount++;
+                    sum += soupHeat[(y + dy + SIZE) % SIZE][(x + dx + SIZE) % SIZE];
                 }
             }
-            return neighborSum / neighborCount;
+            return sum;
         }
 
         /**
@@ -708,7 +449,7 @@ public final class FluidTextureGenerator {
          * @param y        the cell y coordinate
          * @param newFlame the accumulator for next-tick flame values
          */
-        private void computeFlameHeat(int x, int y, float[][] newFlame) {
+        private void computeFlameHeat(int x, int y, float[]... newFlame) {
             float flame = flameHeat[y][x] - params.decayRate();
             if (random.nextFloat() < params.ignitionChance()) {
                 flame = params.ignitionStrength();
@@ -724,7 +465,7 @@ public final class FluidTextureGenerator {
          * @param y        the ignition source y coordinate
          * @param newFlame the accumulator for next-tick flame values
          */
-        private void spreadIgnitionToNeighbors(int x, int y, float[][] newFlame) {
+        private void spreadIgnitionToNeighbors(int x, int y, float[]... newFlame) {
             for (int dy = NEIGHBOR_NEG; dy <= 1; dy++) {
                 for (int dx = NEIGHBOR_NEG; dx <= 1; dx++) {
                     if (dx == 0 && dy == 0) { continue; }
@@ -768,11 +509,23 @@ public final class FluidTextureGenerator {
             int stops = args.length / PALETTE_PAIR_SIZE;
             float[] positions = new float[stops];
             int[][] colors = new int[stops][RGBA_COMPONENTS];
+            populateStops(args, stops, positions, colors);
+            return new Palette(positions, colors);
+        }
+
+        /** Parses position/hex pairs from the varargs into parallel arrays.
+         *
+         * @param args      the alternating (float, String) pairs
+         * @param stops     the number of stops
+         * @param positions the destination positions array
+         * @param colors    the destination colors array
+         */
+        private static void populateStops(Object[] args, int stops,
+                float[] positions, int[][] colors) {
             for (int i = 0; i < stops; i++) {
                 positions[i] = ((Number) args[i * PALETTE_PAIR_SIZE]).floatValue();
                 colors[i] = parseHex((String) args[i * PALETTE_PAIR_SIZE + 1]);
             }
-            return new Palette(positions, colors);
         }
 
         /**
@@ -856,7 +609,7 @@ public final class FluidTextureGenerator {
          * @param c the RGBA color array
          * @return the packed ARGB int
          */
-        private static int packColor(int[] c) {
+        private static int packColor(int... c) {
             return (c[IDX_A] << ALPHA_SHIFT) | (c[IDX_R] << RED_SHIFT) | (c[IDX_G] << GREEN_SHIFT) | c[IDX_B];
         }
     }

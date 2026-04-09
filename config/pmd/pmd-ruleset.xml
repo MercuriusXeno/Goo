@@ -105,9 +105,21 @@
         <!-- Minecraft is single-threaded per side; most thread rules are noise -->
         <exclude name="UseConcurrentHashMap"/>
         <exclude name="DoNotUseThreads"/>
+        <exclude name="AvoidUsingVolatile"/>
+        <exclude name="AvoidSynchronizedStatement"/>
+        <exclude name="NonThreadSafeSingleton"/>
     </rule>
 
     <!-- ── Rule tuning ────────────────────────────────────────── -->
+
+    <!-- NeoForge Block/BlockEntity/BER classes inherit large override surfaces.
+         Default threshold (10) fires on nearly every framework subclass.
+         Raised to 20; ArchUnit handles structural boundaries beyond that. -->
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="20"/>
+        </properties>
+    </rule>
 
     <!-- Allow common boundary literals (0, 1, -1) and float equivalents in if-conditions.
          Extracting constants for "size <= 1" or "fill <= 0f" adds noise, not clarity. -->

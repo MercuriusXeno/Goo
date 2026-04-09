@@ -12,6 +12,7 @@ import org.jspecify.annotations.NonNull;
  * placed and never spreads, decays, or changes state on its own.
  * Overriding tick() is sufficient because spread() is called from tick().
  */
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass") // container for Source/Flowing inner classes
 public final class GooFluid {
 
     private GooFluid() {}

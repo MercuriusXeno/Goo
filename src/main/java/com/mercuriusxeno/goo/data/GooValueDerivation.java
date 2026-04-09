@@ -4,9 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,32 +67,74 @@ final class GooValueDerivation {
     static Map<Identifier, GooValue> buildEffectiveValues(
             Map<Identifier, GooValue> baseValues, Map<Identifier, GooValue> derivedValues,
             boolean baseOverride) {
+        Map<Identifier, GooValue> effective = collectValidBaseValues(baseValues);
+        mergeDerivedValues(effective, derivedValues, baseOverride);
+        return effective;
+    }
+
+    /**
+     * Copies base values into a new map, skipping entries with negative goo amounts.
+     *
+     * @param baseValues hand-keyed base values to validate
+     * @return new map containing only non-negative base values
+     */
+    private static Map<Identifier, GooValue> collectValidBaseValues(
+            Map<Identifier, GooValue> baseValues) {
         Map<Identifier, GooValue> effective = new HashMap<>();
-        // Validate base values
         for (var entry : baseValues.entrySet()) {
-            GooValue value = entry.getValue();
-            if (value.hasNegative()) {
-                if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(ERR_NEGATIVE_BASE, entry.getKey(), value); }
-                continue;
-            }
-            effective.put(entry.getKey(), value);
-        }
-        // Merge derived values, validating each
-        for (var entry : derivedValues.entrySet()) {
-            Identifier itemId = entry.getKey();
-            GooValue derived = entry.getValue();
-            if (derived.hasNegative()) {
-                Goo.LOGGER.error(ERR_NEGATIVE_DERIVED, itemId, derived);
-                continue;
-            }
-            GooValue base = effective.get(itemId);
-            if (base == null) {
-                effective.put(itemId, derived);
-            } else if (!baseOverride && isCheaper(derived, base)) {
-                effective.put(itemId, derived);
-            }
+            addIfNonNegativeBase(effective, entry.getKey(), entry.getValue());
         }
         return effective;
+    }
+
+    /**
+     * Adds a base value to the map if non-negative, logging an error otherwise.
+     *
+     * @param dest accumulator map for valid base values
+     * @param itemId the item identifier
+     * @param value the base goo value to validate
+     */
+    private static void addIfNonNegativeBase(Map<Identifier, GooValue> dest,
+            Identifier itemId, GooValue value) {
+        if (value.hasNegative()) {
+            if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(ERR_NEGATIVE_BASE, itemId, value); }
+            return;
+        }
+        dest.put(itemId, value);
+    }
+
+    /**
+     * Merges derived values into the effective map, skipping negatives and applying override rule.
+     *
+     * @param effective accumulator map built from validated base values
+     * @param derivedValues recipe-derived values to merge
+     * @param baseOverride when true, base always wins; when false, cheaper wins
+     */
+    private static void mergeDerivedValues(Map<Identifier, GooValue> effective,
+            Map<Identifier, GooValue> derivedValues, boolean baseOverride) {
+        for (var entry : derivedValues.entrySet()) {
+            mergeSingleDerived(effective, entry.getKey(), entry.getValue(), baseOverride);
+        }
+    }
+
+    /**
+     * Merges one derived value into the effective map if it passes validation and override rules.
+     *
+     * @param effective accumulator map built from validated base values
+     * @param itemId the item identifier
+     * @param derived the recipe-derived goo value
+     * @param baseOverride when true, base always wins; when false, cheaper wins
+     */
+    private static void mergeSingleDerived(Map<Identifier, GooValue> effective,
+            Identifier itemId, GooValue derived, boolean baseOverride) {
+        if (derived.hasNegative()) {
+            Goo.LOGGER.error(ERR_NEGATIVE_DERIVED, itemId, derived);
+            return;
+        }
+        GooValue base = effective.get(itemId);
+        if (base == null || (!baseOverride && GooRecipeEvaluator.isCheaper(derived, base))) {
+            effective.put(itemId, derived);
+        }
     }
 
     /**
@@ -131,23 +171,6 @@ final class GooValueDerivation {
         return base != null ? base : derived;
     }
 
-    /**
-     * Classifies a strongly connected component as anchored or dead.
-     *
-     * @param scc           the strongly connected component
-     * @param anchoredNodes nodes reachable from any base-valued item
-     * @param baseValueKeys item IDs with hand-keyed base values
-     * @return classified RecipeCycle
-     */
-    static GooValueRegistry.RecipeCycle classifyScc(Set<Identifier> scc,
-            Set<Identifier> anchoredNodes, Set<Identifier> baseValueKeys) {
-        List<Identifier> sorted = new ArrayList<>(scc);
-        Collections.sort(sorted);
-        Identifier anchor = findDirectAnchor(sorted, baseValueKeys);
-        boolean reachable = anchor != null || hasAnchoredMember(sorted, anchoredNodes);
-        return new GooValueRegistry.RecipeCycle(sorted, reachable, anchor);
-    }
-
     // ── Private: derivation pipeline ────────────────────────────────────
 
     /**
@@ -161,16 +184,25 @@ final class GooValueDerivation {
         Map<Identifier, List<RecipeInput>> byOutput = groupByOutput(recipes);
         byOutput.keySet().removeAll(deniedItems);
         multiPassDerive(byOutput);
+        return assembleResult(byOutput, baseOverride);
+    }
 
-        List<GooValueRegistry.ValueConflict> conflicts = detectConflicts();
-        Map<Identifier, GooValue> effective = buildEffectiveValues(baseValues, derivedValues, baseOverride);
-        List<GooValueRegistry.RecipeCycle> cycles = detectCycles(byOutput);
-        List<GooValueRegistry.DivisibilityLoss> losses = detectDivisibilityLoss(byOutput);
-
+    /**
+     * Builds the final derivation result from derived values and diagnostic scans.
+     *
+     * @param byOutput recipes grouped by output item ID
+     * @param baseOverride when true, base values always win over derived values
+     * @return complete derivation result with diagnostics
+     */
+    private DerivationResult assembleResult(Map<Identifier, List<RecipeInput>> byOutput,
+            boolean baseOverride) {
         return new DerivationResult(
             Map.copyOf(derivedValues),
             Map.copyOf(derivationSources),
-            effective, conflicts, cycles, losses
+            buildEffectiveValues(baseValues, derivedValues, baseOverride),
+            GooDerivationDiagnostics.detectConflicts(baseValues, derivedValues),
+            GooDerivationDiagnostics.detectCycles(byOutput, baseValues),
+            GooDerivationDiagnostics.detectDivisibilityLoss(byOutput, baseValues, derivedValues)
         );
     }
 
@@ -183,14 +215,25 @@ final class GooValueDerivation {
         boolean changed = true;
         int passes = 0;
         while (changed && passes < GooValueRegistry.MAX_DERIVATION_PASSES) {
-            changed = false;
+            changed = runSinglePass(byOutput);
             passes++;
-            for (var entry : byOutput.entrySet()) {
-                if (tryDeriveItem(entry.getKey(), entry.getValue())) {
-                    changed = true;
-                }
+        }
+    }
+
+    /**
+     * Runs one derivation pass over all output items, returning true if any value changed.
+     *
+     * @param byOutput recipes grouped by output item ID
+     * @return true if any derived value was new or improved during this pass
+     */
+    private boolean runSinglePass(Map<Identifier, List<RecipeInput>> byOutput) {
+        boolean changed = false;
+        for (var entry : byOutput.entrySet()) {
+            if (tryDeriveItem(entry.getKey(), entry.getValue())) {
+                changed = true;
             }
         }
+        return changed;
     }
 
     /**
@@ -201,52 +244,14 @@ final class GooValueDerivation {
      * @return true if the derived value was new or improved
      */
     private boolean tryDeriveItem(Identifier itemId, List<RecipeInput> recipes) {
-        RecipeResult best = findCheapestRecipeValue(recipes);
+        GooRecipeEvaluator.RecipeResult best =
+                GooRecipeEvaluator.findCheapestRecipeValue(recipes, baseValues, derivedValues);
         if (best == null) { return false; }
         GooValue existing = derivedValues.get(itemId);
-        if (existing == null || isCheaper(best.value, existing)) {
-            derivedValues.put(itemId, best.value);
-            derivationSources.put(itemId, best.source);
-            return true;
-        }
-        return false;
-    }
-
-    /** Pairs a computed value with the recipe that produced it. */
-    private record RecipeResult(GooValue value, RecipeInput source) {}
-
-    /**
-     * Cheaper = fewer total blobs, then fewer goo types as tiebreaker.
-     *
-     * @param candidate the proposed replacement value
-     * @param current the existing value to compare against
-     * @return true if candidate is cheaper than current
-     */
-    private static boolean isCheaper(GooValue candidate, GooValue current) {
-        int cBlobs = candidate.totalBlobs();
-        int eBlobs = current.totalBlobs();
-        if (cBlobs != eBlobs) { return cBlobs < eBlobs; }
-        return candidate.typeCount() < current.typeCount();
-    }
-
-    /**
-     * Finds the recipe that produces the cheapest per-item value, or null if none resolves.
-     *
-     * @param recipes candidate recipes to evaluate
-     * @return the cheapest recipe result, or null if none resolves
-     */
-    private RecipeResult findCheapestRecipeValue(List<RecipeInput> recipes) {
-        RecipeResult best = null;
-        for (RecipeInput recipe : recipes) {
-            Optional<GooValue> candidate = deriveFromRecipeInput(recipe);
-            if (candidate.isEmpty()) { continue; }
-            GooValue perItem = candidate.get().divide(recipe.resultCount());
-            if (perItem.isEmpty()) { continue; }
-            if (best == null || isCheaper(perItem, best.value)) {
-                best = new RecipeResult(perItem, recipe);
-            }
-        }
-        return best;
+        if (existing != null && !GooRecipeEvaluator.isCheaper(best.value(), existing)) { return false; }
+        derivedValues.put(itemId, best.value());
+        derivationSources.put(itemId, best.source());
+        return true;
     }
 
     /**
@@ -257,188 +262,7 @@ final class GooValueDerivation {
      * @return the total input goo value, or empty if any slot is unresolvable
      */
     Optional<GooValue> deriveFromRecipeInput(RecipeInput recipe) {
-        if (recipe.hasNoIngredients()) { return Optional.empty(); }
-        GooValue total = GooValue.EMPTY;
-        for (Set<Identifier> alternatives : recipe.ingredientAlternatives()) {
-            GooValue slotCost = computeSlotCost(alternatives, recipe.containerItems());
-            if (slotCost == null) { return Optional.empty(); }
-            total = total.add(slotCost, 1);
-        }
-        return total.isEmpty() ? Optional.empty() : Optional.of(total);
-    }
-
-    /**
-     * Computes the cost for one ingredient slot by picking the cheapest alternative.
-     *
-     * @param alternatives the set of acceptable item IDs for this slot
-     * @param containerItems map of ingredient to its crafting remainder
-     * @return the net goo cost of the cheapest alternative, or null
-     */
-    private GooValue computeSlotCost(Set<Identifier> alternatives,
-            Map<Identifier, Identifier> containerItems) {
-        Identifier cheapestId = GooValueRegistry.findCheapestAmong(
-            alternatives, id -> lookupForDerivation(id, baseValues, derivedValues));
-        if (cheapestId == null) { return null; }
-        GooValue gross = lookupForDerivation(cheapestId, baseValues, derivedValues);
-        return subtractContainerValue(gross, cheapestId, containerItems);
-    }
-
-    /**
-     * Subtracts the crafting remainder's value from the gross ingredient cost.
-     *
-     * @param gross the gross ingredient goo value
-     * @param ingredientId the ingredient item ID
-     * @param containerItems map of ingredient to its crafting remainder
-     * @return the net value after subtracting the container
-     */
-    private GooValue subtractContainerValue(GooValue gross, Identifier ingredientId,
-            Map<Identifier, Identifier> containerItems) {
-        Identifier containerId = containerItems.get(ingredientId);
-        if (containerId == null) { return gross; }
-        GooValue containerValue = lookupForDerivation(containerId, baseValues, derivedValues);
-        if (containerValue == null || containerValue.isEmpty()) { return gross; }
-        GooValue net = gross.subtract(containerValue);
-        GooValue floored = net.floorZero();
-        return floored.isEmpty() ? gross : floored;
-    }
-
-    /**
-     * Detects items where the base value and derived value disagree on total blobs.
-     *
-     * @return list of value conflicts between base and derived
-     */
-    private List<GooValueRegistry.ValueConflict> detectConflicts() {
-        List<GooValueRegistry.ValueConflict> conflicts = new ArrayList<>();
-        for (var entry : baseValues.entrySet()) {
-            GooValue derived = derivedValues.get(entry.getKey());
-            if (derived != null && derived.totalBlobs() != entry.getValue().totalBlobs()) {
-                conflicts.add(new GooValueRegistry.ValueConflict(
-                    entry.getKey(), entry.getValue(), derived));
-            }
-        }
-        return conflicts;
-    }
-
-    /**
-     * Finds strongly connected components in the recipe dependency graph and classifies each.
-     *
-     * @param byOutput recipes grouped by output item ID
-     * @return classified recipe cycles (anchored or dead)
-     */
-    private List<GooValueRegistry.RecipeCycle> detectCycles(
-            Map<Identifier, List<RecipeInput>> byOutput) {
-        Map<Identifier, Set<Identifier>> deps = buildDependencyGraph(byOutput);
-        List<Set<Identifier>> sccs = DirectedGraphUtils.findStronglyConnectedComponents(deps);
-        Set<Identifier> anchored = DirectedGraphUtils.findAnchoredNodes(deps, baseValues.keySet());
-        List<GooValueRegistry.RecipeCycle> cycles = new ArrayList<>();
-        for (Set<Identifier> scc : sccs) {
-            cycles.add(classifyScc(scc, anchored, baseValues.keySet()));
-        }
-        return cycles;
-    }
-
-    /**
-     * Builds a forward dependency graph: output item to set of input items it depends on.
-     *
-     * @param byOutput recipes grouped by output item ID
-     * @return dependency graph as output to input-set map
-     */
-    private Map<Identifier, Set<Identifier>> buildDependencyGraph(
-            Map<Identifier, List<RecipeInput>> byOutput) {
-        Map<Identifier, Set<Identifier>> deps = new HashMap<>();
-        for (var entry : byOutput.entrySet()) {
-            Identifier output = entry.getKey();
-            Set<Identifier> inputs = collectAllInputIds(entry.getValue(), output);
-            if (!inputs.isEmpty()) {
-                deps.put(output, inputs);
-            }
-        }
-        return deps;
-    }
-
-    /**
-     * Collects all input item IDs from a set of recipes, excluding the given output ID.
-     *
-     * @param recipes the recipes to collect inputs from
-     * @param exclude item ID to exclude (typically the output item)
-     * @return set of all input item IDs
-     */
-    private Set<Identifier> collectAllInputIds(List<RecipeInput> recipes, Identifier exclude) {
-        Set<Identifier> result = new HashSet<>();
-        for (RecipeInput recipe : recipes) {
-            for (Set<Identifier> alternatives : recipe.ingredientAlternatives()) {
-                for (Identifier id : alternatives) {
-                    if (!id.equals(exclude)) { result.add(id); }
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Returns the first item in sorted order that has a base value, or null.
-     *
-     * @param sorted items sorted by identifier
-     * @param baseValueKeys item IDs with hand-keyed base values
-     * @return the first base-valued item, or null if none
-     */
-    private static @Nullable Identifier findDirectAnchor(List<Identifier> sorted,
-            Set<Identifier> baseValueKeys) {
-        for (Identifier id : sorted) {
-            if (baseValueKeys.contains(id)) { return id; }
-        }
-        return null;
-    }
-
-    /**
-     * Returns true if any member of the sorted list is in the anchored set.
-     *
-     * @param sorted items to check
-     * @param anchored set of anchored item IDs
-     * @return true if any member is anchored
-     */
-    private static boolean hasAnchoredMember(List<Identifier> sorted, Set<Identifier> anchored) {
-        for (Identifier id : sorted) {
-            if (anchored.contains(id)) { return true; }
-        }
-        return false;
-    }
-
-    /**
-     * Scans all multi-output recipes for integer division remainder losses.
-     *
-     * @param byOutput recipes grouped by output item ID
-     * @return list of detected divisibility losses
-     */
-    private List<GooValueRegistry.DivisibilityLoss> detectDivisibilityLoss(
-            Map<Identifier, List<RecipeInput>> byOutput) {
-        List<GooValueRegistry.DivisibilityLoss> losses = new ArrayList<>();
-        for (var entry : byOutput.entrySet()) {
-            for (RecipeInput recipe : entry.getValue()) {
-                checkDivisibilityLoss(entry.getKey(), recipe, losses);
-            }
-        }
-        return losses;
-    }
-
-    /**
-     * Checks a single recipe for divisibility loss and appends to the losses list if found.
-     *
-     * @param outputId the output item ID
-     * @param recipe the recipe to check
-     * @param losses accumulator for detected losses
-     */
-    private void checkDivisibilityLoss(Identifier outputId, RecipeInput recipe,
-            List<GooValueRegistry.DivisibilityLoss> losses) {
-        if (recipe.resultCount() <= 1) { return; }
-        Optional<GooValue> inputValue = deriveFromRecipeInput(recipe);
-        if (inputValue.isEmpty()) { return; }
-        int inputTotal = inputValue.get().totalBlobs();
-        int remainder = inputTotal % recipe.resultCount();
-        if (remainder == 0) { return; }
-        int perItem = inputTotal / recipe.resultCount();
-        losses.add(new GooValueRegistry.DivisibilityLoss(
-            outputId, recipe.resultCount(), inputTotal, perItem, remainder, recipe));
+        return GooRecipeEvaluator.deriveFromRecipeInput(recipe, baseValues, derivedValues);
     }
 }
 

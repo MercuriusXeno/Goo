@@ -5,6 +5,7 @@ package com.mercuriusxeno.goo.item;
  * Lets the canister dispatch on the item's self-declared interaction type
  * instead of interrogating via instanceof chains.
  */
+@FunctionalInterface
 public interface IGooItemInteraction {
 
     /**

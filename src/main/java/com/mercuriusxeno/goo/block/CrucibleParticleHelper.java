@@ -29,12 +29,6 @@ public final class CrucibleParticleHelper {
     /** Maximum attempts to find a non-overlapping spawn position. */
     private static final int MAX_PLACEMENT_TRIES = 8;
 
-    /** Ring buffer of recent bubble spawn XZ positions (pairs: x, z). */
-    private static final double[] RECENT_X = new double[HISTORY_SIZE];
-    private static final double[] RECENT_Z = new double[HISTORY_SIZE];
-    /** Next write index in the ring buffer. */
-    private static int recentIndex;
-
     /** Ember chance when idle (rod contact, no melting): ~10% per tick. */
     private static final float EMBER_CHANCE_IDLE = 0.10f;
     /** Ember chance when melting: ~30% per tick. */
@@ -82,6 +76,8 @@ public final class CrucibleParticleHelper {
     private static final int ALPHA_OPAQUE = 0xFF000000;
     /** Slight vertical offset to keep bubbles above the fluid surface. */
     private static final double BUBBLE_RISE_OFFSET = 1.0 / 32.0;
+    /** Ticks before a dedupe entry expires (matches GooBubbleParticle.POP_END). */
+    private static final long BUBBLE_TTL_TICKS = 54;
 
     // -- Smoke burst constants --
     /** Base smoke particle count on item absorption. */
@@ -190,84 +186,117 @@ public final class CrucibleParticleHelper {
 
     /**
      * Spawns 0-1 color-tinted goo bubble particles at random XZ within the basin.
-     * Rejects positions too close to recently spawned bubbles.
-     * Bubbles spawn directly at the liquid surface. 3 "emergence" frames and a continuous
-     * scaling of 40% to 100% over 10 frames gives the illusion of surface breaks and expansion.
+     * Rejects positions too close to live (non-expired) bubbles using per-crucible history.
      *
      * @param level    the current level
      * @param pos      the block position
      * @param surfaceY the liquid surface Y in block coords
      * @param color    the ARGB color value
      * @param random   the random source
+     * @param history  per-crucible bubble spawn history
      */
     public static void spawnGooBubbles(ServerLevel level, BlockPos pos,
-            float surfaceY, int color, RandomSource random) {
+            float surfaceY, int color, RandomSource random,
+            BubbleHistory history) {
+        history.tick(level.getGameTime());
         int count = random.nextInt(IGNITION_RANDOM_COUNT);
         ColorParticleOption options = ColorParticleOption.create(
             GooParticles.GOO_BUBBLE.get(), color | ALPHA_OPAQUE);
-        // slight rise here to keep the bubble from going under fluid
         double y = pos.getY() + surfaceY + BUBBLE_RISE_OFFSET;
         for (int i = 0; i < count; i++) {
-            if (!tryFindSpacedPosition(pos, random)) { continue; }
-            double x = RECENT_X[wrapIndex(recentIndex - 1)];
-            double z = RECENT_Z[wrapIndex(recentIndex - 1)];
-            level.sendParticles(options, x, y, z, 1, 0, 0, 0, 0);
+            trySpawnBubble(level, options, pos, y, random, history);
         }
     }
 
     /**
-     * Tries to find a spawn position that isn't too close to recent bubbles.
-     * Records the position in the ring buffer if successful.
+     * Tries to find a non-overlapping position and spawn one bubble.
      *
-     * @param pos    the block position
-     * @param random the random source
-     * @return the computed surface y of find spaced position
+     * @param level   the server level
+     * @param options the particle color options
+     * @param pos     the block position
+     * @param y       the spawn Y coordinate
+     * @param random  the random source
+     * @param history per-crucible bubble spawn history
      */
-    private static boolean tryFindSpacedPosition(BlockPos pos, RandomSource random) {
+    @SuppressWarnings("PMD.AvoidBranchingStatementAsLastInLoop") // return exits on first successful spawn
+    private static void trySpawnBubble(ServerLevel level, ColorParticleOption options,
+            BlockPos pos, double y, RandomSource random, BubbleHistory history) {
         for (int attempt = 0; attempt < MAX_PLACEMENT_TRIES; attempt++) {
             double x = pos.getX() + randomInBasin(random);
             double z = pos.getZ() + randomInBasin(random);
-            if (!tooCloseToRecent(x, z)) {
-                recordSpawn(x, z);
-                return true;
+            if (history.tooClose(x, z, MIN_SPACING_SQ)) { continue; }
+            history.record(x, z);
+            level.sendParticles(options, x, y, z, 1, 0, 0, 0, 0);
+            return;
+        }
+    }
+
+    /**
+     * Per-crucible ring buffer tracking recent bubble spawn positions.
+     * Entries expire after {@link #BUBBLE_TTL_TICKS} so dead positions stop blocking new spawns.
+     */
+    public static final class BubbleHistory {
+        private final double[] recentX = new double[HISTORY_SIZE];
+        private final double[] recentZ = new double[HISTORY_SIZE];
+        private final long[] expiryTick = new long[HISTORY_SIZE];
+        private int index;
+        private long currentTick;
+
+        /**
+         * Sets the current game tick. Call once per server tick before spawning.
+         *
+         * @param gameTick the current game tick
+         */
+        void tick(long gameTick) { this.currentTick = gameTick; }
+
+        /**
+         * Returns true if (x, z) is within minSqDist of any live entry.
+         *
+         * @param x         the X coordinate
+         * @param z         the Z coordinate
+         * @param minSqDist minimum squared distance threshold
+         * @return true if too close to a live entry
+         */
+        boolean tooClose(double x, double z, double minSqDist) {
+            for (int i = 0; i < HISTORY_SIZE; i++) {
+                if (currentTick >= expiryTick[i]) { continue; }
+                double dx = x - recentX[i];
+                double dz = z - recentZ[i];
+                if (dx * dx + dz * dz < minSqDist) { return true; }
             }
+            return false;
         }
-        return false;
-    }
 
-    /** Returns true if the given position is within MIN_SPACING of any recent spawn.
-     *
-     * @param x the X coordinate
-     * @param z the Z coordinate
-     * @return true if the condition is met
-     */
-    private static boolean tooCloseToRecent(double x, double z) {
-        for (int i = 0; i < HISTORY_SIZE; i++) {
-            double dx = x - RECENT_X[i];
-            double dz = z - RECENT_Z[i];
-            if (dx * dx + dz * dz < MIN_SPACING_SQ) { return true; }
+        /**
+         * Records a spawn position. Expires after BUBBLE_TTL_TICKS.
+         *
+         * @param x the X coordinate
+         * @param z the Z coordinate
+         */
+        void record(double x, double z) {
+            recentX[index] = x;
+            recentZ[index] = z;
+            expiryTick[index] = currentTick + BUBBLE_TTL_TICKS;
+            index = (index + 1) % HISTORY_SIZE;
         }
-        return false;
-    }
 
-    /** Records a spawn position in the ring buffer.
-     *
-     * @param x the X coordinate
-     * @param z the Z coordinate
-     */
-    private static void recordSpawn(double x, double z) {
-        RECENT_X[recentIndex] = x;
-        RECENT_Z[recentIndex] = z;
-        recentIndex = wrapIndex(recentIndex + 1);
-    }
+        /**
+         * Returns the X of the most recently recorded position.
+         *
+         * @return the last recorded X
+         */
+        double lastX() {
+            return recentX[((index - 1) % HISTORY_SIZE + HISTORY_SIZE) % HISTORY_SIZE];
+        }
 
-    /** Wraps a ring buffer index.
-     *
-     * @param i the index
-     * @return the integer value
-     */
-    private static int wrapIndex(int i) {
-        return ((i % HISTORY_SIZE) + HISTORY_SIZE) % HISTORY_SIZE;
+        /**
+         * Returns the Z of the most recently recorded position.
+         *
+         * @return the last recorded Z
+         */
+        double lastZ() {
+            return recentZ[((index - 1) % HISTORY_SIZE + HISTORY_SIZE) % HISTORY_SIZE];
+        }
     }
 
     /**

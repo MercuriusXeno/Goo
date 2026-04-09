@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "goo:block/crucible"
+    "model": "goo:block/goocible"
   }
 }

@@ -74,7 +74,7 @@ public final class CanisterPunchHandler {
         player.level().playSound(null, pos,
                 SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, SOUND_VOLUME, SOUND_PITCH);
         InteractionCooldown.markInteraction(player.getUUID(), player.level().getGameTime());
-        if (!canister.hasAnyCanister()) {
+        if (!canister.containerState().hasAnyCanister()) {
             player.level().removeBlock(pos, false);
         }
     }

@@ -3,7 +3,6 @@ package com.mercuriusxeno.goo.block;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import net.minecraft.world.item.ItemStack;
 
@@ -13,10 +12,20 @@ import net.minecraft.world.item.ItemStack;
  * and {@link HubBlockEntity} store canister item stacks in numbered slots.
  * This interface lets callers operate on either type without type-branching.
  *
- * <p>Provides default implementations for goo read/write operations that
- * delegate to {@link #getCanister(int)} and {@link #onSlotChanged()}.
+ * <p>All slot operations delegate to the {@link SlottedContainerState} returned
+ * by {@link #containerState()}. Defaults handle goo read/write, metadata,
+ * and capacity checks; implementors only need to supply the component.</p>
  */
+@SuppressWarnings("PMD.ImplicitFunctionalInterface") // not a lambda target; sole abstract is a composed-state accessor
 public interface ISlottedGooContainer {
+
+    /**
+     * Returns the behavioral component that owns canister stacks, handlers,
+     * and stream state for this container.
+     *
+     * @return the slotted container state
+     */
+    SlottedContainerState containerState();
 
     /**
      * Returns the canister stack in the given slot without removing it.
@@ -25,13 +34,18 @@ public interface ISlottedGooContainer {
      * @param slot the slot index
      * @return the canister
      */
-    ItemStack getCanister(int slot);
+    default ItemStack getCanister(int slot) {
+        return containerState().getCanister(slot);
+    }
 
     /**
-     * Called after a slot's contents change. Implementors should mark the
-     * block entity dirty and trigger a sync packet.
+     * Called after a slot's contents change. Delegates to the component's
+     * sync callback, which marks the block entity dirty and triggers a
+     * client sync packet.
      */
-    void onSlotChanged();
+    default void onSlotChanged() {
+        containerState().onSlotChanged();
+    }
 
     /**
      * Returns the goo contents of the canister in the given slot, or
@@ -41,8 +55,7 @@ public interface ISlottedGooContainer {
      * @return the slot goo contents
      */
     default GooContents getSlotGooContents(int slot) {
-        ItemStack stack = getCanister(slot);
-        return stack.isEmpty() ? GooContents.EMPTY : CanisterItem.getGooContents(stack);
+        return containerState().getSlotGooContents(slot);
     }
 
     /**
@@ -78,12 +91,7 @@ public interface ISlottedGooContainer {
      * @return true if the slot has a canister with space remaining
      */
     default boolean canAccept(int slot) {
-        ItemStack canister = getCanister(slot);
-        if (canister.isEmpty()) { return false; }
-        GooContents contents = getSlotGooContents(slot);
-        int compression = com.mercuriusxeno.goo.registry.GooEnchantments.getCompressionLevel(canister);
-        long capacity = ContainerCapacity.canisterCapacity(compression);
-        return contents.totalVolume() < capacity;
+        return containerState().canAccept(slot);
     }
 
     /**
@@ -95,11 +103,7 @@ public interface ISlottedGooContainer {
      * @return the amount actually inserted
      */
     default long insertGoo(int slot, GooType incomingType, long volume) {
-        ItemStack stack = getCanister(slot);
-        if (stack.isEmpty()) { return 0L; }
-        long accepted = CanisterItem.addGoo(stack, incomingType, volume);
-        if (accepted > 0) { onSlotChanged(); }
-        return accepted;
+        return containerState().insertGoo(slot, incomingType, volume);
     }
 
     /**
@@ -111,10 +115,6 @@ public interface ISlottedGooContainer {
      * @return the amount actually extracted
      */
     default long extractGoo(int slot, GooType type, long requested) {
-        ItemStack stack = getCanister(slot);
-        if (stack.isEmpty()) { return 0L; }
-        long extracted = CanisterItem.removeGoo(stack, type, requested);
-        if (extracted > 0) { onSlotChanged(); }
-        return extracted;
+        return containerState().extractGoo(slot, type, requested);
     }
 }

@@ -4,8 +4,6 @@ import com.mercuriusxeno.goo.GooType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
-import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -18,21 +16,14 @@ import java.util.Map;
  *
  * <p>Operator precedence: * / bind tighter than + -.
  * Parentheses override precedence.</p>
+ *
+ * <p>Tokenization is handled by {@link ExpressionTokenizer};
+ * arithmetic operators by {@link ExpressionOperators}.</p>
  */
 final class GooValueExpression {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // --- Operator constants ---
-
-    /** Addition operator. */
-    private static final String OP_PLUS = "+";
-    /** Subtraction operator. */
-    private static final String OP_MINUS = "-";
-    /** Multiplication operator. */
-    private static final String OP_MULTIPLY = "*";
-    /** Division operator. */
-    private static final String OP_DIVIDE = "/";
     /** Open parenthesis. */
     private static final String OP_OPEN_PAREN = "(";
     /** Close parenthesis. */
@@ -44,23 +35,12 @@ final class GooValueExpression {
 
     /** Log: scalar used where GooValue expected. */
     private static final String LOG_SCALAR_AS_GOO = "Scalar {} used where GooValue expected";
-    /** Log: unexpected character in expression. */
-    private static final String LOG_UNEXPECTED_CHAR = "Unexpected character '{}' in GooValue expression: {}";
     /** Log: missing closing parenthesis. */
     private static final String LOG_MISSING_PAREN = "Missing closing parenthesis in GooValue expression";
     /** Log: unknown item in expression. */
     private static final String LOG_UNKNOWN_ITEM = "Unknown item in expression: {}";
     /** Log: unknown constant in expression. */
     private static final String LOG_UNKNOWN_CONST = "Unknown constant in GooValue expression: ${}";
-    /** Log: cannot apply operator to two GooValues. */
-    private static final String LOG_CANNOT_OP_GOO = "Cannot {} two GooValues; use a scalar operand";
-    /** Log: cannot divide scalar by GooValue. */
-    private static final String LOG_CANNOT_DIV_SCALAR = "Cannot divide scalar by GooValue";
-    /** Log: cannot mix GooValue and scalar with operator. */
-    private static final String LOG_CANNOT_MIX = "Cannot {} GooValue and scalar directly";
-
-    /** Negation multiplier. */
-    private static final int NEGATE = -1;
 
     /** Utility class, not instantiable. */
     private GooValueExpression() {}
@@ -69,7 +49,7 @@ final class GooValueExpression {
      * Represents a value in an expression: either a GooValue (multi-type)
      * or a scalar int (for constants and dot-extracted values).
      */
-    private sealed interface ExprVal {
+    sealed interface ExprVal {
         /**
          * Converts this expression value to a GooValue (identity for GooVal, lossy for ScalarVal).
          *
@@ -93,14 +73,14 @@ final class GooValueExpression {
     }
 
     /** Wraps a multi-type GooValue as an expression result. */
-    private record GooVal(GooValue value) implements ExprVal {
+    record GooVal(GooValue value) implements ExprVal {
         @Override public GooValue toGooValue() { return value; }
         @Override public int toInt() { return value.totalBlobs(); }
         @Override public boolean isScalar() { return false; }
     }
 
     /** Wraps a plain integer as an expression result. */
-    private record ScalarVal(int value) implements ExprVal {
+    record ScalarVal(int value) implements ExprVal {
         @Override public GooValue toGooValue() {
             // Scalar can't meaningfully become a GooValue; shouldn't happen in well-formed expressions
             LOGGER.warn(LOG_SCALAR_AS_GOO, value);
@@ -135,215 +115,10 @@ final class GooValueExpression {
     static GooValue evaluate(String expr, Map<Identifier, GooValue> baseValues,
                              Map<String, Integer> constants,
                              Map<String, GooValue> treeConstants) {
-        List<String> tokens = tokenize(expr);
+        List<String> tokens = ExpressionTokenizer.tokenize(expr);
         int[] pos = {0};
         ExprVal result = evalExpr(tokens, pos, baseValues, constants, treeConstants);
         return result.toGooValue();
-    }
-
-    // ── Tokenizer ────────────────────────────────────────────────────────
-
-    /**
-     * Tokenizes an expression, recognizing namespaced IDs (with optional .type suffix).
-     *
-     * @param expr the expression string to tokenize
-     * @return ordered list of tokens
-     */
-    static List<String> tokenize(String expr) {
-        List<String> tokens = new ArrayList<>();
-        int i = 0;
-        while (i < expr.length()) {
-            i = scanNextToken(expr, i, tokens);
-        }
-        return tokens;
-    }
-
-    /**
-     * Classifies the character at position i and scans the appropriate token type.
-     *
-     * @param expr   the full expression string
-     * @param i      current scan position
-     * @param tokens list to append the scanned token to
-     * @return the position after the scanned token
-     */
-    private static int scanNextToken(String expr, int i, List<String> tokens) {
-        char c = expr.charAt(i);
-        if (Character.isWhitespace(c) || isOperatorOrParen(c)) {
-            return scanSingleChar(c, i, tokens);
-        }
-        return scanValueToken(expr, i, c, tokens);
-    }
-
-    /**
-     * Appends a single-character operator/paren token (skips whitespace) and advances past it.
-     *
-     * @param c      the character to possibly add
-     * @param i      current scan position
-     * @param tokens list to append the token to (whitespace is not appended)
-     * @return the position after the character
-     */
-    private static int scanSingleChar(char c, int i, List<String> tokens) {
-        if (!Character.isWhitespace(c)) {
-            tokens.add(String.valueOf(c));
-        }
-        return i + 1;
-    }
-
-    /**
-     * Scans a value-bearing token: $constant, numeric literal, or namespaced ID.
-     * Logs a warning and skips unrecognized characters.
-     *
-     * @param expr   the full expression string
-     * @param i      current scan position
-     * @param c      the character at position i
-     * @param tokens list to append the scanned token to
-     * @return the position after the scanned token
-     */
-    private static int scanValueToken(String expr, int i, char c, List<String> tokens) {
-        if (c == '$') {
-            return scanConstant(expr, i, tokens);
-        }
-        if (Character.isDigit(c)) {
-            return scanNumber(expr, i, tokens);
-        }
-        return scanWordOrSkip(expr, i, c, tokens);
-    }
-
-    /**
-     * Scans a namespaced ID if the character is a letter, otherwise logs a warning
-     * for the unrecognized character and advances past it.
-     *
-     * @param expr   the full expression string
-     * @param i      current scan position
-     * @param c      the character at position i
-     * @param tokens list to append the scanned token to
-     * @return the position after the scanned token or skipped character
-     */
-    private static int scanWordOrSkip(String expr, int i, char c, List<String> tokens) {
-        if (Character.isLetter(c)) {
-            return scanNamespacedId(expr, i, tokens);
-        }
-        LOGGER.warn(LOG_UNEXPECTED_CHAR, c, expr);
-        return i + 1;
-    }
-
-    /**
-     * Returns true if the character is an operator or parenthesis token.
-     *
-     * @param c the character to test
-     * @return true if c is one of ( ) + - * /
-     */
-    private static boolean isOperatorOrParen(char c) {
-        return isParen(c) || isArithmeticOp(c);
-    }
-
-    /**
-     * Returns true if the character is an opening or closing parenthesis.
-     *
-     * @param c the character to test
-     * @return true if c is ( or )
-     */
-    private static boolean isParen(char c) {
-        return c == '(' || c == ')';
-    }
-
-    /**
-     * Returns true if the character is an arithmetic operator.
-     *
-     * @param c the character to test
-     * @return true if c is one of + - * /
-     */
-    private static boolean isArithmeticOp(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/';
-    }
-
-    /**
-     * Scans a $constant token starting at position i (the dollar sign).
-     * Allows dots for type extraction (e.g. $log.leaf).
-     *
-     * @param expr the full expression string
-     * @param i current position (at the '$')
-     * @param tokens list to append the scanned token to
-     * @return the position after the constant token
-     */
-    private static int scanConstant(String expr, int i, List<String> tokens) {
-        int pos = i;
-        pos++;
-        while (pos < expr.length() && (isIdentChar(expr.charAt(pos)) || expr.charAt(pos) == '.')) { pos++; }
-        tokens.add(expr.substring(i, pos));
-        return pos;
-    }
-
-    /**
-     * Scans a numeric literal starting at position i.
-     *
-     * @param expr the full expression string
-     * @param i current position (at the first digit)
-     * @param tokens list to append the scanned token to
-     * @return the position after the number
-     */
-    private static int scanNumber(String expr, int i, List<String> tokens) {
-        int pos = i;
-        pos++;
-        while (pos < expr.length() && Character.isDigit(expr.charAt(pos))) { pos++; }
-        tokens.add(expr.substring(i, pos));
-        return pos;
-    }
-
-    /**
-     * Scans a namespaced ID token (letters/digits/underscore, colon, path chars, optional .type).
-     *
-     * @param expr the full expression string
-     * @param i current position (at the first letter)
-     * @param tokens list to append the scanned token to
-     * @return the position after the namespaced ID
-     */
-    private static int scanNamespacedId(String expr, int i, List<String> tokens) {
-        int pos = i;
-        pos++;
-        while (pos < expr.length() && isNamespacedIdChar(expr.charAt(pos))) { pos++; }
-        tokens.add(expr.substring(i, pos));
-        return pos;
-    }
-
-    /**
-     * Returns true if the character is valid in a $constant identifier.
-     *
-     * @param c the character to test
-     * @return true if alphanumeric or underscore
-     */
-    private static boolean isIdentChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_';
-    }
-
-    /**
-     * Characters valid in a namespaced ID token: namespace:path.type
-     *
-     * @param c the character to test
-     * @return true if valid in a namespaced ID
-     */
-    private static boolean isNamespacedIdChar(char c) {
-        return Character.isLetterOrDigit(c) || isIdPunctuation(c);
-    }
-
-    /**
-     * Returns true if the character is a punctuation mark valid in namespaced IDs.
-     *
-     * @param c the character to test
-     * @return true if c is one of _ : . / -
-     */
-    private static boolean isIdPunctuation(char c) {
-        return c == '_' || c == ':' || c == '.' || isIdSeparator(c);
-    }
-
-    /**
-     * Returns true if the character is a path separator or hyphen used in namespaced IDs.
-     *
-     * @param c the character to test
-     * @return true if c is / or -
-     */
-    private static boolean isIdSeparator(char c) {
-        return c == '/' || c == '-';
     }
 
     // ── Recursive descent evaluator ──────────────────────────────────────
@@ -367,7 +142,7 @@ final class GooValueExpression {
             String op = tokens.get(pos[0]);
             pos[0]++;
             ExprVal rhs = evalTerm(tokens, pos, baseValues, constants, treeConstants);
-            result = applyOp(result, op, rhs);
+            result = ExpressionOperators.applyOp(result, op, rhs);
         }
         return result;
     }
@@ -379,7 +154,7 @@ final class GooValueExpression {
      * @return true if the token is + or -
      */
     private static boolean isAdditiveOp(String token) {
-        return OP_PLUS.equals(token) || OP_MINUS.equals(token);
+        return ExpressionOperators.OP_PLUS.equals(token) || ExpressionOperators.OP_MINUS.equals(token);
     }
 
     /**
@@ -422,14 +197,42 @@ final class GooValueExpression {
                                            Map<String, Integer> constants,
                                            Map<String, GooValue> treeConstants) {
         String next = tokens.get(pos[0]);
-        if (OP_MULTIPLY.equals(next) || OP_DIVIDE.equals(next)) {
+        if (isMultiplicativeOp(next)) {
             pos[0]++;
             ExprVal rhs = evalAtom(tokens, pos, baseValues, constants, treeConstants);
-            return applyOp(current, next, rhs);
+            return ExpressionOperators.applyOp(current, next, rhs);
         }
+        return tryImplicitMultiply(current, next, tokens, pos, baseValues, constants, treeConstants);
+    }
+
+    /**
+     * Returns true if the token is an explicit multiplicative operator (* or /).
+     * @param token the token to test
+     * @return true if the token is '*' or '/'
+     */
+    private static boolean isMultiplicativeOp(String token) {
+        return ExpressionOperators.OP_MULTIPLY.equals(token) || ExpressionOperators.OP_DIVIDE.equals(token);
+    }
+
+    /**
+     * Applies implicit multiplication when a scalar precedes an atom token.
+     * @param current the left-hand scalar value
+     * @param next    the next token (potential atom start)
+     * @param tokens        the token list being parsed
+     * @param pos           the mutable position index into the token list
+     * @param baseValues   the base item-to-goo-value map
+     * @param constants    the named integer constants
+     * @param treeConstants the named goo value constants from the expression tree
+     * @return the product if implicit multiply applied, otherwise current unchanged
+     */
+    private static ExprVal tryImplicitMultiply(ExprVal current, String next,
+                                               List<String> tokens, int[] pos,
+                                               Map<Identifier, GooValue> baseValues,
+                                               Map<String, Integer> constants,
+                                               Map<String, GooValue> treeConstants) {
         if (current.isScalar() && isAtomStart(next)) {
             ExprVal rhs = evalAtom(tokens, pos, baseValues, constants, treeConstants);
-            return applyOp(current, OP_MULTIPLY, rhs);
+            return ExpressionOperators.applyOp(current, ExpressionOperators.OP_MULTIPLY, rhs);
         }
         return null;
     }
@@ -459,10 +262,10 @@ final class GooValueExpression {
                                     Map<Identifier, GooValue> baseValues,
                                     Map<String, Integer> constants,
                                     Map<String, GooValue> treeConstants) {
-        if (pos[0] < tokens.size() && OP_MINUS.equals(tokens.get(pos[0]))) {
+        if (pos[0] < tokens.size() && ExpressionOperators.OP_MINUS.equals(tokens.get(pos[0]))) {
             pos[0]++;
             ExprVal inner = evalAtom(tokens, pos, baseValues, constants, treeConstants);
-            return negate(inner);
+            return ExpressionOperators.negate(inner);
         }
         String token = tokens.get(pos[0]);
         pos[0]++;
@@ -533,18 +336,25 @@ final class GooValueExpression {
     private static ExprVal lookupAnyConstant(String name,
                                              Map<String, Integer> constants,
                                              Map<String, GooValue> treeConstants) {
+        ExprVal dotResult = tryDotExtraction(name, treeConstants);
+        if (dotResult != null) { return dotResult; }
+        GooValue tree = treeConstants.get(name);
+        if (tree != null) { return new GooVal(tree); }
+        return new ScalarVal(lookupConstant(name, constants));
+    }
+
+    /**
+     * Attempts dot extraction if the name contains a valid dot position.
+     * @param name          the dotted identifier to resolve (e.g. "iron.rock")
+     * @param treeConstants the named goo value constants from the expression tree
+     * @return the extracted goo type amount, or null if no valid dot position
+     */
+    private static ExprVal tryDotExtraction(String name, Map<String, GooValue> treeConstants) {
         int dotIdx = name.lastIndexOf('.');
         if (dotIdx > 0 && dotIdx < name.length() - 1) {
-            ExprVal dotResult = extractDotConstant(name, dotIdx, treeConstants);
-            if (dotResult != null) {
-                return dotResult;
-            }
+            return extractDotConstant(name, dotIdx, treeConstants);
         }
-        GooValue tree = treeConstants.get(name);
-        if (tree != null) {
-            return new GooVal(tree);
-        }
-        return new ScalarVal(lookupConstant(name, constants));
+        return null;
     }
 
     /**
@@ -560,11 +370,11 @@ final class GooValueExpression {
     private static ExprVal extractDotConstant(String name, int dotIdx,
                                               Map<String, GooValue> treeConstants) {
         String constName = name.substring(0, dotIdx);
-        String typeSuffix = name.substring(dotIdx + 1);
         GooValue tree = treeConstants.get(constName);
         if (tree == null) {
             return null;
         }
+        String typeSuffix = name.substring(dotIdx + 1);
         return parseSingleTypeGoo(typeSuffix, tree);
     }
 
@@ -667,126 +477,5 @@ final class GooValueExpression {
             return 0;
         }
         return value;
-    }
-
-    // ── Operators ────────────────────────────────────────────────────────
-
-    /**
-     * Applies an operator, handling mixed GooValue/scalar operands.
-     *
-     * @param lhs the left-hand operand
-     * @param op the operator string (+, -, *, /)
-     * @param rhs the right-hand operand
-     * @return the result of applying the operator
-     */
-    private static ExprVal applyOp(ExprVal lhs, String op, ExprVal rhs) {
-        if (lhs.isScalar() && rhs.isScalar()) {
-            return new ScalarVal(intOp(lhs.toInt(), op, rhs.toInt()));
-        }
-        if (!lhs.isScalar() && !rhs.isScalar()) {
-            return applyGooGooOp(lhs, op, rhs);
-        }
-        return applyMixedOp(lhs, op, rhs);
-    }
-
-    /**
-     * Applies an additive operator to two GooValue operands. Only + and - are valid;
-     * other operators log a warning and return the left operand unchanged.
-     *
-     * @param lhs the left GooValue operand
-     * @param op  the operator string (+, -)
-     * @param rhs the right GooValue operand
-     * @return the result of the GooValue operation
-     */
-    private static ExprVal applyGooGooOp(ExprVal lhs, String op, ExprVal rhs) {
-        return switch (op) {
-            case OP_PLUS -> new GooVal(lhs.toGooValue().add(rhs.toGooValue(), 1));
-            case OP_MINUS -> new GooVal(lhs.toGooValue().subtract(rhs.toGooValue()));
-            default -> {
-                LOGGER.warn(LOG_CANNOT_OP_GOO, op);
-                yield lhs;
-            }
-        };
-    }
-
-    /**
-     * Applies a scaling operator when one operand is a GooValue and the other is a scalar.
-     * Supports * and /; + and - between mixed types log a warning.
-     *
-     * @param lhs the left operand (one of GooValue or scalar)
-     * @param op  the operator string (*, /)
-     * @param rhs the right operand (the other of GooValue or scalar)
-     * @return the scaled result
-     */
-    private static ExprVal applyMixedOp(ExprVal lhs, String op, ExprVal rhs) {
-        GooValue gv = lhs.isScalar() ? rhs.toGooValue() : lhs.toGooValue();
-        int scalar = lhs.isScalar() ? lhs.toInt() : rhs.toInt();
-        return switch (op) {
-            case OP_MULTIPLY -> new GooVal(multiplyGooValue(gv, scalar));
-            case OP_DIVIDE -> divideMixed(lhs.isScalar(), gv, scalar);
-            default -> {
-                LOGGER.warn(LOG_CANNOT_MIX, op);
-                yield new GooVal(gv);
-            }
-        };
-    }
-
-    /**
-     * Handles division in a mixed GooValue/scalar context. Scalar / GooValue is invalid
-     * (logs a warning); GooValue / scalar divides each component.
-     *
-     * @param lhsIsScalar true if the left-hand operand was the scalar
-     * @param gv          the GooValue operand
-     * @param scalar      the scalar operand
-     * @return the division result
-     */
-    private static ExprVal divideMixed(boolean lhsIsScalar, GooValue gv, int scalar) {
-        if (lhsIsScalar) {
-            LOGGER.warn(LOG_CANNOT_DIV_SCALAR);
-            return new GooVal(GooValue.EMPTY);
-        }
-        return new GooVal(gv.divide(scalar));
-    }
-
-    /**
-     * Negates an expression value: flips sign on scalar or all goo types.
-     *
-     * @param val the value to negate
-     * @return the negated value
-     */
-    private static ExprVal negate(ExprVal val) {
-        if (val.isScalar()) { return new ScalarVal(-val.toInt()); }
-        return new GooVal(multiplyGooValue(val.toGooValue(), NEGATE));
-    }
-
-    /**
-     * Multiplies every type in a GooValue by a scalar.
-     *
-     * @param value the GooValue to scale
-     * @param scalar the multiplier to apply per type
-     * @return a new GooValue with scaled amounts
-     */
-    private static GooValue multiplyGooValue(GooValue value, int scalar) {
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        value.getAll().forEach((type, amount) -> result.put(type, amount * scalar));
-        return new GooValue(result);
-    }
-
-    /**
-     * Applies an arithmetic operator to two integer operands.
-     *
-     * @param a the left operand
-     * @param op the operator string (+, -, *, /)
-     * @param b the right operand
-     * @return the result of the arithmetic operation
-     */
-    private static int intOp(int a, String op, int b) {
-        return switch (op) {
-            case OP_PLUS -> a + b;
-            case OP_MINUS -> a - b;
-            case OP_MULTIPLY -> a * b;
-            case OP_DIVIDE -> b == 0 ? 0 : a / b;
-            default -> a;
-        };
     }
 }

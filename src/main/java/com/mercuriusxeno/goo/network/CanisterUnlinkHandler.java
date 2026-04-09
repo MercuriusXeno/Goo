@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.network;
 
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.IGasketHolder;
+import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.item.GasketPartner;
-import com.mercuriusxeno.goo.item.GasketRole;
+import com.mercuriusxeno.goo.item.gasket.GasketPartner;
+import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;

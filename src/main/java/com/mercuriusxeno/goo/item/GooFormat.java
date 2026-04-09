@@ -49,9 +49,6 @@ public final class GooFormat {
     /** Space separator between value and suffix. */
     private static final String SEP_SPACE = " ";
 
-    /** Volume tier: threshold, divisor, and suffix for a formatting bracket. */
-    private record FormatTier(long threshold, long divisor, String suffix) {}
-
     /** Tiers in ascending order; last tier uses MAX_VALUE as a sentinel. */
     private static final FormatTier[] TIERS = {
         new FormatTier(THRESHOLD_BLOB, DIVISOR_BLOB, SUFFIX_BLOB),
@@ -61,7 +58,11 @@ public final class GooFormat {
         new FormatTier(Long.MAX_VALUE, DIVISOR_TERRA, SUFFIX_TERRA),
     };
 
+    /** Volume tier: threshold, divisor, and suffix for a formatting bracket. */
+    private record FormatTier(long threshold, long divisor, String suffix) {}
+
     private GooFormat() {}
+
 
     /**
      * Formats a microblob amount into a human-readable string with unit suffix.

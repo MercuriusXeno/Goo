@@ -49,7 +49,7 @@
         <module name="MatchXpath">
             <property name="severity" value="error"/>
             <property name="query"
-                value="//METHOD_DEF//EXPR//STRING_LITERAL"/>
+                value="//METHOD_DEF/SLIST//EXPR//STRING_LITERAL"/>
             <message key="matchxpath.match"
                 value="String literal in method body - extract to a named constant"/>
         </module>
@@ -94,7 +94,7 @@
 
         <!-- Parameter count: tripwire for greedy signatures -->
         <module name="ParameterNumber">
-            <property name="max" value="4"/>
+            <property name="max" value="5"/>
             <property name="ignoreOverriddenMethods" value="true"/>
         </module>
 

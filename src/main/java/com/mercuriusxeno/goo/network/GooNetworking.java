@@ -37,11 +37,11 @@ public final class GooNetworking {
     private static void registerClientPayloads(PayloadRegistrar r) {
         r.playToClient(GooValueSyncPayload.TYPE, GooValueSyncPayload.STREAM_CODEC, GooValueSyncHandler::handle);
         r.playToClient(OpenNamingScreenPayload.TYPE, OpenNamingScreenPayload.STREAM_CODEC,
-                (payload, ctx) -> OpenNamingScreenHandler.handle(payload, ctx));
+                OpenNamingScreenHandler::handle);
         r.playToClient(TunerFeedbackPayload.TYPE, TunerFeedbackPayload.STREAM_CODEC,
-                (payload, ctx) -> TunerFeedbackHandler.handle(payload, ctx));
+                TunerFeedbackHandler::handle);
         r.playToClient(BlobFlightPayload.TYPE, BlobFlightPayload.STREAM_CODEC,
-                (payload, ctx) -> BlobFlightHandler.handle(payload, ctx));
+                BlobFlightHandler::handle);
     }
 
     /** Registers server-bound payloads.

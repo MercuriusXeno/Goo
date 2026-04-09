@@ -28,19 +28,23 @@ final class DirectedGraphUtils {
      * @return list of SCCs, each containing at least 2 nodes; singletons are omitted
      */
     static <K> List<Set<K>> findStronglyConnectedComponents(Map<K, Set<K>> graph) {
-        List<Set<K>> result = new ArrayList<>();
-        Map<K, Integer> index = new HashMap<>();
-        Map<K, Integer> lowlink = new HashMap<>();
-        Set<K> onStack = new HashSet<>();
-        List<K> stack = new ArrayList<>();
-        int[] counter = {0};
-
+        TarjanState<K> state = new TarjanState<>();
         for (K node : graph.keySet()) {
-            if (!index.containsKey(node)) {
-                tarjanDfs(node, graph, index, lowlink, onStack, stack, counter, result);
+            if (!state.index.containsKey(node)) {
+                tarjanDfs(node, graph, state);
             }
         }
-        return result;
+        return state.result;
+    }
+
+    /** Mutable state bundle for Tarjan's SCC algorithm. */
+    private static final class TarjanState<K> {
+        final List<Set<K>> result = new ArrayList<>();
+        final Map<K, Integer> index = new HashMap<>();
+        final Map<K, Integer> lowlink = new HashMap<>();
+        final Set<K> onStack = new HashSet<>();
+        final List<K> stack = new ArrayList<>();
+        int counter;
     }
 
     /**
@@ -64,25 +68,17 @@ final class DirectedGraphUtils {
      * @param <K> the node key type
      * @param node the starting node for this DFS step
      * @param graph adjacency map of the directed graph
-     * @param index discovery-time index per node
-     * @param lowlink lowest reachable index per node
-     * @param onStack nodes currently on the Tarjan stack
-     * @param stack the explicit Tarjan stack
-     * @param counter mutable discovery-time counter
-     * @param result accumulator for detected SCCs
+     * @param s mutable Tarjan state
      */
-    private static <K> void tarjanDfs(K node, Map<K, Set<K>> graph,
-            Map<K, Integer> index, Map<K, Integer> lowlink,
-            Set<K> onStack, List<K> stack, int[] counter,
-            List<Set<K>> result) {
-        index.put(node, counter[0]);
-        lowlink.put(node, counter[0]);
-        counter[0]++;
-        stack.add(node);
-        onStack.add(node);
+    private static <K> void tarjanDfs(K node, Map<K, Set<K>> graph, TarjanState<K> s) {
+        s.index.put(node, s.counter);
+        s.lowlink.put(node, s.counter);
+        s.counter++;
+        s.stack.add(node);
+        s.onStack.add(node);
 
-        visitNeighbors(node, graph, index, lowlink, onStack, stack, counter, result);
-        collectSccIfRoot(node, index, lowlink, onStack, stack, result);
+        visitNeighbors(node, graph, s);
+        collectSccIfRoot(node, s);
     }
 
     /**
@@ -91,26 +87,31 @@ final class DirectedGraphUtils {
      * @param <K> the node key type
      * @param node the node whose neighbors to visit
      * @param graph adjacency map of the directed graph
-     * @param index discovery-time index per node
-     * @param lowlink lowest reachable index per node
-     * @param onStack nodes currently on the Tarjan stack
-     * @param stack the explicit Tarjan stack
-     * @param counter mutable discovery-time counter
-     * @param result accumulator for detected SCCs
+     * @param s mutable Tarjan state
      */
-    private static <K> void visitNeighbors(K node, Map<K, Set<K>> graph,
-            Map<K, Integer> index, Map<K, Integer> lowlink,
-            Set<K> onStack, List<K> stack, int[] counter,
-            List<Set<K>> result) {
+    private static <K> void visitNeighbors(K node, Map<K, Set<K>> graph, TarjanState<K> s) {
         for (K neighbor : graph.getOrDefault(node, Collections.emptySet())) {
-            if (index.containsKey(neighbor)) {
-                if (onStack.contains(neighbor)) {
-                    lowlink.put(node, Math.min(lowlink.get(node), index.get(neighbor)));
-                }
-            } else {
-                tarjanDfs(neighbor, graph, index, lowlink, onStack, stack, counter, result);
-                lowlink.put(node, Math.min(lowlink.get(node), lowlink.get(neighbor)));
+            updateNeighborLowlink(node, neighbor, graph, s);
+        }
+    }
+
+    /**
+     * Recurses into an unvisited neighbor or updates lowlink for an on-stack one.
+     * @param <K>      the node key type
+     * @param node     the current node being explored
+     * @param neighbor the adjacent node to recurse into or update from
+     * @param graph    the directed adjacency map
+     * @param s        mutable Tarjan state
+     */
+    private static <K> void updateNeighborLowlink(K node, K neighbor,
+            Map<K, Set<K>> graph, TarjanState<K> s) {
+        if (s.index.containsKey(neighbor)) {
+            if (s.onStack.contains(neighbor)) {
+                s.lowlink.put(node, Math.min(s.lowlink.get(node), s.index.get(neighbor)));
             }
+        } else {
+            tarjanDfs(neighbor, graph, s);
+            s.lowlink.put(node, Math.min(s.lowlink.get(node), s.lowlink.get(neighbor)));
         }
     }
 
@@ -119,28 +120,32 @@ final class DirectedGraphUtils {
      *
      * @param <K> the node key type
      * @param node the candidate SCC root
-     * @param index discovery-time index per node
-     * @param lowlink lowest reachable index per node
-     * @param onStack nodes currently on the Tarjan stack
-     * @param stack the explicit Tarjan stack
-     * @param result accumulator for detected SCCs
+     * @param s mutable Tarjan state
      */
-    private static <K> void collectSccIfRoot(K node, Map<K, Integer> index,
-            Map<K, Integer> lowlink, Set<K> onStack,
-            List<K> stack, List<Set<K>> result) {
-        if (!lowlink.get(node).equals(index.get(node))) { return; }
+    private static <K> void collectSccIfRoot(K node, TarjanState<K> s) {
+        if (!s.lowlink.get(node).equals(s.index.get(node))) { return; }
+        Set<K> scc = popScc(node, s);
+        if (scc.size() > 1) {
+            s.result.add(scc);
+        }
+    }
 
+    /**
+     * Pops nodes from the Tarjan stack until the root node is reached.
+     * @param <K>  the node key type
+     * @param root the SCC root node to pop down to
+     * @param s    mutable Tarjan state
+     * @return the set of nodes forming this strongly connected component
+     */
+    private static <K> Set<K> popScc(K root, TarjanState<K> s) {
         Set<K> scc = new HashSet<>();
         K popped;
         do {
-            popped = stack.remove(stack.size() - 1);
-            onStack.remove(popped);
+            popped = s.stack.remove(s.stack.size() - 1);
+            s.onStack.remove(popped);
             scc.add(popped);
-        } while (!popped.equals(node));
-
-        if (scc.size() > 1) {
-            result.add(scc);
-        }
+        } while (!popped.equals(root));
+        return scc;
     }
 
     /**
@@ -173,12 +178,25 @@ final class DirectedGraphUtils {
         List<K> queue = new ArrayList<>(seeds);
         while (!queue.isEmpty()) {
             K current = queue.remove(queue.size() - 1);
-            for (K neighbor : graph.getOrDefault(current, Collections.emptySet())) {
-                if (visited.add(neighbor)) {
-                    queue.add(neighbor);
-                }
-            }
+            enqueueUnvisited(graph, current, visited, queue);
         }
         return visited;
+    }
+
+    /**
+     * Adds all unvisited neighbors of {@code current} to the BFS queue.
+     * @param <K>     the node key type
+     * @param graph   the directed adjacency map
+     * @param current the node whose neighbors to enqueue
+     * @param visited the set of already-visited nodes (updated in place)
+     * @param queue   the BFS queue to append to
+     */
+    private static <K> void enqueueUnvisited(Map<K, Set<K>> graph, K current,
+            Set<K> visited, List<K> queue) {
+        for (K neighbor : graph.getOrDefault(current, Collections.emptySet())) {
+            if (visited.add(neighbor)) {
+                queue.add(neighbor);
+            }
+        }
     }
 }

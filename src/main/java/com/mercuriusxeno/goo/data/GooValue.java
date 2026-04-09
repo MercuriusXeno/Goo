@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 
+// Arithmetic operations live in GooValueArithmetic; instance methods delegate there.
+
 /**
  * Represents the goo composition of an item: how many blobs of each type it contains.
  */
@@ -13,16 +15,6 @@ public class GooValue {
 
     public static final GooValue EMPTY = new GooValue(Collections.emptyMap());
 
-    /** Error prefix for lossy division. */
-    private static final String ERR_LOSSY_PREFIX = "Lossy reverse division: ";
-    /** Equals separator in error messages. */
-    private static final String ERR_EQUALS = "=";
-    /** Division separator in error messages. */
-    private static final String ERR_DIV = " / ";
-    /** Remainder prefix in error messages. */
-    private static final String ERR_REMAINDER = " (remainder ";
-    /** Remainder suffix in error messages. */
-    private static final String ERR_REMAINDER_CLOSE = ")";
     /** Display label for empty values. */
     private static final String LABEL_NONE = "none";
     /** Separator between types in toString. */
@@ -128,11 +120,7 @@ public class GooValue {
      * @return a new GooValue with the combined amounts
      */
     public GooValue add(GooValue other, int multiplier) {
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        result.putAll(this.values);
-        other.values.forEach((type, amount) ->
-            result.merge(type, amount * multiplier, Integer::sum));
-        return new GooValue(result);
+        return GooValueArithmetic.add(this, other, multiplier);
     }
 
     /**
@@ -143,10 +131,7 @@ public class GooValue {
      * @return a new GooValue with the difference
      */
     public GooValue subtract(GooValue other) {
-        Map<GooType, Integer> result = new EnumMap<>(this.values);
-        other.values.forEach((type, amount) ->
-            result.merge(type, -amount, Integer::sum));
-        return new GooValue(result);
+        return GooValueArithmetic.subtract(this, other);
     }
 
     /**
@@ -157,13 +142,7 @@ public class GooValue {
      * @return a new GooValue with negatives removed, or this if none exist
      */
     public GooValue floorZero() {
-        boolean hasNegative = values.values().stream().anyMatch(v -> v < 0);
-        if (!hasNegative) { return this; }
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> {
-            if (amount > 0) { result.put(type, amount); }
-        });
-        return new GooValue(result);
+        return GooValueArithmetic.floorZero(this);
     }
 
     /**
@@ -174,14 +153,7 @@ public class GooValue {
      * @return a new scaled GooValue
      */
     public GooValue scale(double fraction) {
-        if (fraction <= 0.0) { return EMPTY; }
-        if (fraction >= 1.0) { return this; }
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> {
-            int scaled = (int) Math.round(amount * fraction);
-            if (scaled > 0) { result.put(type, scaled); }
-        });
-        return new GooValue(result);
+        return GooValueArithmetic.scale(this, fraction);
     }
 
     /**
@@ -191,11 +163,7 @@ public class GooValue {
      * @return a new scaled GooValue
      */
     public GooValue multiply(int factor) {
-        if (factor <= 0) { return EMPTY; }
-        if (factor == 1) { return this; }
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> result.put(type, amount * factor));
-        return new GooValue(result);
+        return GooValueArithmetic.multiply(this, factor);
     }
 
     /**
@@ -206,20 +174,7 @@ public class GooValue {
      * @throws ArithmeticException if any type's amount is not evenly divisible
      */
     public GooValue divideExact(int divisor) {
-        if (divisor <= 1) { return this; }
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> {
-            if (amount % divisor != 0) {
-                throw new ArithmeticException(
-                        ERR_LOSSY_PREFIX + type.getId() + ERR_EQUALS + amount
-                        + ERR_DIV + divisor + ERR_REMAINDER + amount % divisor + ERR_REMAINDER_CLOSE);
-            }
-            int divided = amount / divisor;
-            if (divided > 0) {
-                result.put(type, divided);
-            }
-        });
-        return new GooValue(result);
+        return GooValueArithmetic.divideExact(this, divisor);
     }
 
     /**
@@ -229,15 +184,7 @@ public class GooValue {
      * @return a new GooValue with floored divided amounts
      */
     public GooValue divide(int divisor) {
-        if (divisor <= 1) { return this; }
-        Map<GooType, Integer> result = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> {
-            int divided = amount / divisor;
-            if (divided > 0) {
-                result.put(type, divided);
-            }
-        });
-        return new GooValue(result);
+        return GooValueArithmetic.divide(this, divisor);
     }
 
     /**

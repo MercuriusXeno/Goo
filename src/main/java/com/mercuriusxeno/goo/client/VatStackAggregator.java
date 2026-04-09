@@ -2,9 +2,9 @@ package com.mercuriusxeno.goo.client;
 
 import com.mercuriusxeno.goo.block.VatBlock;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
-import com.mercuriusxeno.goo.item.GasketPartner;
-import com.mercuriusxeno.goo.item.GasketRole;
 import com.mercuriusxeno.goo.item.GooContents;
+import com.mercuriusxeno.goo.item.gasket.GasketPartner;
+import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;

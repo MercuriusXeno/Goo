@@ -120,19 +120,6 @@ public final class GooMobEffects {
     /** Ender teleport sound pitch. */
     private static final float ENDER_SOUND_PITCH = 1.0f;
 
-    private GooMobEffects() {}
-
-    /**
-     * Applies the mob effect for the given goo type to a living entity.
-     *
-     * @param level   the world
-     * @param target  the entity to affect
-     * @param type    the goo type whose effect to apply
-     * @param thrower the entity that threw the blob, or null if unknown
-     */
-    /** Dispatch context: all parameters an effect handler might need. */
-    private record EffectContext(Level level, LivingEntity target, @Nullable Entity thrower) {}
-
     /** Per-type effect handler map. */
     private static final Map<GooType, Consumer<EffectContext>> EFFECTS =
             new EnumMap<>(Map.ofEntries(
@@ -152,6 +139,19 @@ public final class GooMobEffects {
         Map.entry(GooType.ENDER, ctx -> enderTeleport(ctx.level(), ctx.target())),
         Map.entry(GooType.AEON, ctx -> aeonTimeStop(ctx.target()))));
 
+    /** Dispatch context: all parameters an effect handler might need. */
+    private record EffectContext(Level level, LivingEntity target, @Nullable Entity thrower) {}
+
+    private GooMobEffects() {}
+
+    /**
+     * Applies the mob effect for the given goo type to a living entity.
+     *
+     * @param level   the world
+     * @param target  the entity to affect
+     * @param type    the goo type whose effect to apply
+     * @param thrower the entity that threw the blob, or null if unknown
+     */
     public static void apply(Level level, LivingEntity target, GooType type, @Nullable Entity thrower) {
         if (level.isClientSide()) { return; }
         var handler = EFFECTS.get(type);

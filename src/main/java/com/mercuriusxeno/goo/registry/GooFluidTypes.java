@@ -44,6 +44,18 @@ public class GooFluidTypes {
     public static final Map<GooType, DeferredHolder<FluidType, FluidType>> TYPES =
             new EnumMap<>(GooType.class);
 
+    /** Per-type viscosity overrides; types not present default to VISCOSITY_DEFAULT. */
+    private static final Map<GooType, Integer> VISCOSITY_MAP = new EnumMap<>(Map.ofEntries(
+            Map.entry(GooType.AEON, VISCOSITY_AEON_SHROOM),
+            Map.entry(GooType.SHROOM, VISCOSITY_AEON_SHROOM),
+            Map.entry(GooType.METAL, VISCOSITY_METAL_ROCK),
+            Map.entry(GooType.ROCK, VISCOSITY_METAL_ROCK),
+            Map.entry(GooType.HEX, VISCOSITY_HEX_NETHER),
+            Map.entry(GooType.NETHER, VISCOSITY_HEX_NETHER),
+            Map.entry(GooType.BLAZE, VISCOSITY_BLAZE_FROST),
+            Map.entry(GooType.FROST, VISCOSITY_BLAZE_FROST),
+            Map.entry(GooType.TYPHOON, VISCOSITY_TYPHOON)));
+
     static {
         for (GooType type : GooType.values()) {
             TYPES.put(type, FLUID_TYPES.register(type.getId() + "_goo",
@@ -87,18 +99,6 @@ public class GooFluidTypes {
      * @param type the goo type
      * @return the viscosity value
      */
-    /** Per-type viscosity overrides; types not present default to VISCOSITY_DEFAULT. */
-    private static final Map<GooType, Integer> VISCOSITY_MAP = new EnumMap<>(Map.ofEntries(
-            Map.entry(GooType.AEON, VISCOSITY_AEON_SHROOM),
-            Map.entry(GooType.SHROOM, VISCOSITY_AEON_SHROOM),
-            Map.entry(GooType.METAL, VISCOSITY_METAL_ROCK),
-            Map.entry(GooType.ROCK, VISCOSITY_METAL_ROCK),
-            Map.entry(GooType.HEX, VISCOSITY_HEX_NETHER),
-            Map.entry(GooType.NETHER, VISCOSITY_HEX_NETHER),
-            Map.entry(GooType.BLAZE, VISCOSITY_BLAZE_FROST),
-            Map.entry(GooType.FROST, VISCOSITY_BLAZE_FROST),
-            Map.entry(GooType.TYPHOON, VISCOSITY_TYPHOON)));
-
     private static int viscosity(GooType type) {
         return VISCOSITY_MAP.getOrDefault(type, VISCOSITY_DEFAULT);
     }

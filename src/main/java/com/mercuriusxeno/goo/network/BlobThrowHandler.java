@@ -3,25 +3,16 @@ package com.mercuriusxeno.goo.network;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
-import com.mercuriusxeno.goo.effect.GooMobEffects;
-import com.mercuriusxeno.goo.effect.WorldEffects;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Server-side handler for blob throw requests. Validates the client's claim,
@@ -36,25 +27,8 @@ public final class BlobThrowHandler {
     public static final double MAX_RANGE = 32.0;
     private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
 
-    /** Sound volume for throw event. */
-    private static final float THROW_SOUND_VOLUME = 0.5f;
-    /** Base pitch for throw sound. */
-    private static final float THROW_PITCH_BASE = 0.4f;
-    /** Pitch randomness range for throw sound. */
-    private static final float THROW_PITCH_RANGE = 0.4f;
-    /** Minimum pitch offset for throw sound. */
-    private static final float THROW_PITCH_OFFSET = 0.8f;
-    /** Sound volume for impact event. */
-    private static final float IMPACT_SOUND_VOLUME = 1.0f;
-    /** Base pitch for impact sound. */
-    private static final float IMPACT_PITCH_BASE = 0.9f;
-    /** Pitch randomness range for impact sound. */
-    private static final float IMPACT_PITCH_RANGE = 0.2f;
     /** Block center offset (half-block). */
     private static final double BLOCK_CENTER = 0.5;
-
-    /** Pending effects waiting for their blob to arrive. */
-    private static final List<PendingEffect> PENDING_EFFECTS = new ArrayList<>();
 
     /** Log: player not holding glove. */
     private static final String LOG_NO_GLOVE = "Throw rejected: player {} not holding glove";
@@ -68,8 +42,6 @@ public final class BlobThrowHandler {
     private static final String LOG_PARTIAL_DEPLETE = "Partial depletion ({}/{} mB) for {} throw - proceeding anyway";
     /** Log: throw executed successfully. */
     private static final String LOG_THROW_OK = "Throw executed: {} by {} -> arrival in {} ticks";
-    /** Log: entity no longer exists at blob arrival. */
-    private static final String LOG_ENTITY_GONE = "Blob arrived but entity {} no longer exists";
 
     private BlobThrowHandler() {}
 
@@ -93,58 +65,64 @@ public final class BlobThrowHandler {
      * @param payload the throw payload data
      */
     private static void execute(ServerPlayer player, BlobThrowPayload payload) {
-        if (!isHoldingGlove(player)) {
-            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_NO_GLOVE, player.getName().getString()); }
-            return;
-        }
-
-        GooType gooType = GooType.fromId(payload.gooTypeId());
-        if (gooType == null) {
-            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_BAD_TYPE, payload.gooTypeId()); }
-            return;
-        }
-
+        if (!validateGlove(player)) { return; }
+        GooType gooType = validateGooType(payload);
+        if (gooType == null) { return; }
+        if (!validateRange(player, payload)) { return; }
+        if (!validateSupply(player, gooType)) { return; }
         double distSq = targetDistanceSquared(player, payload);
-        if (!isInRange(distSq)) {
-            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_OUT_OF_RANGE, Math.sqrt(distSq)); }
-            return;
-        }
-
-        if (!hasEnoughGoo(player, gooType)) {
-            if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_NO_GOO, gooType.getId()); }
-            return;
-        }
-
         depleteAndThrow(player, payload, gooType, distSq);
     }
 
-    /** Returns true if the player is holding a goo glove in either hand.
+    /** Validates glove is held, logging rejection if not.
      *
      * @param player the throwing player
-     * @return true if a glove is held
+     * @return true if valid
      */
-    private static boolean isHoldingGlove(ServerPlayer player) {
-        return player.getMainHandItem().getItem() instanceof GooGloveItem
+    private static boolean validateGlove(ServerPlayer player) {
+        boolean held = player.getMainHandItem().getItem() instanceof GooGloveItem
             || player.getOffhandItem().getItem() instanceof GooGloveItem;
+        if (held) { return true; }
+        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_NO_GLOVE, player.getName().getString()); }
+        return false;
     }
 
-    /** Returns true if the squared distance is within max throw range.
+    /** Validates and resolves the goo type from the payload, logging rejection if invalid.
      *
-     * @param distSq squared distance to target
+     * @param payload the throw payload data
+     * @return the resolved goo type, or null if invalid
+     */
+    private static GooType validateGooType(BlobThrowPayload payload) {
+        GooType gooType = GooType.fromId(payload.gooTypeId());
+        if (gooType == null && Goo.LOGGER.isDebugEnabled()) {
+            Goo.LOGGER.debug(LOG_BAD_TYPE, payload.gooTypeId());
+        }
+        return gooType;
+    }
+
+    /** Validates target is within max throw range, logging rejection if not.
+     *
+     * @param player  the throwing player
+     * @param payload the throw payload data
      * @return true if in range
      */
-    private static boolean isInRange(double distSq) {
-        return distSq <= MAX_RANGE_SQUARED;
+    private static boolean validateRange(ServerPlayer player, BlobThrowPayload payload) {
+        double distSq = targetDistanceSquared(player, payload);
+        if (distSq <= MAX_RANGE_SQUARED) { return true; }
+        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_OUT_OF_RANGE, Math.sqrt(distSq)); }
+        return false;
     }
 
-    /** Returns true if the player has enough goo of the given type for one throw.
+    /** Validates the player has enough goo, logging rejection if not.
      *
      * @param player  the throwing player
      * @param gooType the goo type to check
-     * @return true if the player can afford the throw
+     * @return true if supply is sufficient
      */
-    private static boolean hasEnoughGoo(ServerPlayer player, GooType gooType) {
-        return GooSourceScanner.hasEnough(player, gooType, THROW_COST);
+    private static boolean validateSupply(ServerPlayer player, GooType gooType) {
+        if (GooSourceScanner.hasEnough(player, gooType, THROW_COST)) { return true; }
+        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_NO_GOO, gooType.getId()); }
+        return false;
     }
 
     /** Depletes goo, broadcasts the flight, and schedules the delayed effect.
@@ -163,7 +141,7 @@ public final class BlobThrowHandler {
 
         int travelTicks = (int) ThrowArc.travelTicks(Math.sqrt(distSq));
         broadcastFlight(player, payload, travelTicks);
-        scheduleEffect(player, payload, gooType, travelTicks);
+        BlobEffectScheduler.scheduleEffect(player, payload, gooType, travelTicks);
 
         if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_THROW_OK, gooType.getId(), player.getName().getString(), travelTicks); }
     }
@@ -177,7 +155,21 @@ public final class BlobThrowHandler {
     private static void broadcastFlight(ServerPlayer player, BlobThrowPayload payload,
             int travelTicks) {
         Vec3 hand = getThrowHandPosition(player);
-        BlobFlightPayload flight = new BlobFlightPayload(
+        BlobFlightPayload flight = buildFlightPayload(hand, payload, travelTicks);
+        PacketDistributor.sendToPlayersTrackingEntity(player, flight);
+        PacketDistributor.sendToPlayer(player, flight);
+    }
+
+    /** Builds the flight payload from hand position, throw data, and travel time.
+     *
+     * @param hand        the world-space hand position
+     * @param payload     the throw payload data
+     * @param travelTicks the number of ticks until arrival
+     * @return the constructed flight payload
+     */
+    private static BlobFlightPayload buildFlightPayload(Vec3 hand, BlobThrowPayload payload,
+            int travelTicks) {
+        return new BlobFlightPayload(
                 hand.x, hand.y, hand.z,
                 payload.gooTypeId(),
                 payload.targetEntityId(),
@@ -186,31 +178,6 @@ public final class BlobThrowHandler {
                 travelTicks,
                 payload.grannyArc()
         );
-        PacketDistributor.sendToPlayersTrackingEntity(player, flight);
-        PacketDistributor.sendToPlayer(player, flight);
-    }
-
-    /** Plays the throw sound and queues a pending effect for blob arrival.
-     *
-     * @param player      the throwing player
-     * @param payload     the throw payload data
-     * @param gooType     the goo type being thrown
-     * @param travelTicks the number of ticks until arrival
-     */
-    private static void scheduleEffect(ServerPlayer player, BlobThrowPayload payload,
-            GooType gooType, int travelTicks) {
-        ServerLevel level = player.level();
-        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, THROW_SOUND_VOLUME,
-                THROW_PITCH_BASE / (level.getRandom().nextFloat() * THROW_PITCH_RANGE + THROW_PITCH_OFFSET));
-
-        int arrivalTick = level.getServer().getTickCount() + travelTicks;
-        Direction face = directionFromOrdinal(payload.targetFace());
-        synchronized (PENDING_EFFECTS) {
-            PENDING_EFFECTS.add(new PendingEffect(
-                    arrivalTick, level, player, gooType,
-                    payload.targetEntityId(), payload.targetPos(), face));
-        }
     }
 
     /**
@@ -220,44 +187,9 @@ public final class BlobThrowHandler {
      * @param event the post-tick event instance
      */
     public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
-        if (PENDING_EFFECTS.isEmpty()) { return; }
+        if (!BlobEffectScheduler.hasPending()) { return; }
         int currentTick = event.getServer().getTickCount();
-
-        synchronized (PENDING_EFFECTS) {
-            Iterator<PendingEffect> it = PENDING_EFFECTS.iterator();
-            while (it.hasNext()) {
-                PendingEffect pe = it.next();
-                if (currentTick >= pe.arrivalTick) {
-                    applyEffect(pe);
-                    it.remove();
-                }
-            }
-        }
-    }
-
-    /**
-     * Applies the goo effect at the target location or entity, with impact sound.
-     *
-     * @param pe the pending effect to apply
-     */
-    private static void applyEffect(PendingEffect pe) {
-        if (pe.targetEntityId >= 0) {
-            Entity target = pe.level.getEntity(pe.targetEntityId);
-            if (target instanceof LivingEntity living) {
-                pe.level.playSound(null, living.getX(), living.getY(), living.getZ(),
-                        SoundEvents.SLIME_SQUISH, SoundSource.PLAYERS, IMPACT_SOUND_VOLUME,
-                        IMPACT_PITCH_BASE + pe.level.getRandom().nextFloat() * IMPACT_PITCH_RANGE);
-                GooMobEffects.apply(pe.level, living, pe.gooType, pe.thrower);
-            } else {
-                Goo.LOGGER.debug(LOG_ENTITY_GONE, pe.targetEntityId);
-            }
-        } else {
-            BlockPos pos = pe.targetPos;
-            pe.level.playSound(null, pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER,
-                    SoundEvents.SLIME_SQUISH, SoundSource.PLAYERS, IMPACT_SOUND_VOLUME,
-                    IMPACT_PITCH_BASE + pe.level.getRandom().nextFloat() * IMPACT_PITCH_RANGE);
-            WorldEffects.apply(pe.level, pe.targetPos, pe.gooType, pe.targetFace);
-        }
+        BlobEffectScheduler.drainArrivedEffects(currentTick);
     }
 
     /**
@@ -284,7 +216,7 @@ public final class BlobThrowHandler {
      * @param ordinal the direction ordinal from the payload
      * @return the corresponding direction, or null if invalid
      */
-    private static Direction directionFromOrdinal(int ordinal) {
+    static Direction directionFromOrdinal(int ordinal) {
         Direction[] dirs = Direction.values();
         if (ordinal >= 0 && ordinal < dirs.length) {
             return dirs[ordinal];
@@ -310,10 +242,4 @@ public final class BlobThrowHandler {
                 side, player.getScale());
         return player.getEyePosition().add(offset);
     }
-
-    /** A goo effect waiting for its blob to finish travelling. */
-    private record PendingEffect(int arrivalTick, ServerLevel level,
-                                 ServerPlayer thrower, GooType gooType,
-                                 int targetEntityId, BlockPos targetPos,
-                                 Direction targetFace) {}
 }
