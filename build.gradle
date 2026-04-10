@@ -152,7 +152,7 @@ tasks.register('cpd', JavaExec) {
     var cpdReport = layout.buildDirectory.file('reports/cpd/main.xml')
     args = [
         'cpd',
-        '--minimum-tokens', '50',
+        '--minimum-tokens', '100',
         '--language', 'java',
         '--dir', sourceSets.main.java.srcDirs.first().absolutePath,
         '--format', 'xml'

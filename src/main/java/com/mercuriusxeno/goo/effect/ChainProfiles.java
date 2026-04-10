@@ -23,6 +23,8 @@ public final class ChainProfiles {
     private static final int BLAZE_MAX_STACKS = 4;
     private static final int ROCK_FUSE_TICKS = 30;
     private static final int ROCK_MAX_STACKS = 5;
+    private static final int NETHER_FUSE_TICKS = 30;
+    private static final int NETHER_MAX_STACKS = 4;
 
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
@@ -64,6 +66,12 @@ public final class ChainProfiles {
                 ROCK_MAX_STACKS,
                 EffectMath::computeImplosionDepth,
                 RockExecutor::execute
+        ));
+        ChainProfile.register(GooType.NETHER, new ChainProfile(
+                NETHER_FUSE_TICKS,
+                NETHER_MAX_STACKS,
+                EffectMath::computeNetherRadius,
+                NetherExecutor::execute
         ));
     }
 

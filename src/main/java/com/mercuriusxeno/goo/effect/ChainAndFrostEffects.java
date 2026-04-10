@@ -48,6 +48,22 @@ final class ChainAndFrostEffects {
     }
 
     /**
+     * Nether: chain conversion. Places a chain marker on the hit face. On
+     * fuse expiry, blocks with a registered goo value in the radius dissolve
+     * into blob items. Blocks without a goo value are left untouched; the
+     * goo value registry is the sole gate, with no hardness check and no
+     * vanilla fallback.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void netherConvert(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeOrStackChain(level, pos, targetFace, GooType.NETHER);
+    }
+
+    /**
      * Frost: instant freeze + persistent melt-resist field. Executes the
      * freeze immediately, then places (or stacks onto) a FrostFieldBlock
      * that prevents packed ice from being swapped back to regular ice

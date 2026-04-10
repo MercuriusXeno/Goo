@@ -16,22 +16,24 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Performs the rock chain effect: a directional implosion that mines
- * rock-compatible blocks along the placed face's direction. The blast
- * travels INTO the surface the blob was attached to, not outward.
- * Depth scales with stack count via {@link EffectMath#computeImplosionDepth}.
+ * rock-compatible blocks in a 3x3 column travelling into the surface
+ * the marker was attached to. Depth scales with stack count via
+ * {@link EffectMath#computeImplosionDepth}.
  */
 public final class RockExecutor {
 
+    /** Half-width of the 3x3 footprint. */
+    private static final int FOOTPRINT_HALF = 1;
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
     /** Base dust particle count before per-block addition. */
     private static final int DUST_BASE_PARTICLES = 15;
     /** Additional dust particles per destroyed block. */
-    private static final int DUST_PARTICLES_PER_BLOCK = 5;
-    /** Base particle spread radius. */
-    private static final double DUST_BASE_SPREAD = 0.3;
+    private static final int DUST_PARTICLES_PER_BLOCK = 2;
+    /** Base particle spread radius perpendicular to the blast axis. */
+    private static final double DUST_BASE_SPREAD = 0.8;
     /** Spread increase per destroyed block. */
-    private static final double DUST_SPREAD_PER_BLOCK = 0.1;
+    private static final double DUST_SPREAD_PER_BLOCK = 0.02;
     /** Dust particle velocity. */
     private static final double DUST_PARTICLE_SPEED = 0.02;
     /** Base sound volume for stone break. */
@@ -40,19 +42,14 @@ public final class RockExecutor {
     private static final float BREAK_VOLUME_PER_STACK = 0.2f;
     /** Sound pitch for stone break. */
     private static final float BREAK_PITCH = 0.6f;
-    /** Mine result: block was mined successfully. */
-    private static final int MINE_SUCCESS = 1;
-    /** Mine result: block was air, skip to next. */
-    private static final int MINE_SKIP = 0;
-    /** Mine result: hit non-rock, stop the column. */
-    private static final int MINE_STOP = -1;
 
     private RockExecutor() {}
 
     /**
-     * Fires the directional rock implosion. Mines rock-compatible blocks
-     * starting from the anchor position, traveling in the direction the
-     * marker was facing (into the surface it was placed on).
+     * Fires the rock implosion. Mines rock-compatible blocks in a 3x3
+     * footprint perpendicular to the placed face, travelling {@code depth}
+     * layers into the surface the marker was attached to. Per DESIGN-TYPES:
+     * "in one direction" -- the blast travels along the face the blob hit.
      *
      * @param level      the server level
      * @param pos        the anchor block position
@@ -63,46 +60,90 @@ public final class RockExecutor {
     public static void execute(ServerLevel level, BlockPos pos, int depth,
                                int stackCount, Direction placedFace) {
         Direction blastDir = placedFace.getOpposite();
-        int destroyed = mineAlongAxis(level, pos, blastDir, depth);
-        spawnEffects(level, pos, blastDir, destroyed, stackCount);
+        Direction.Axis blastAxis = blastDir.getAxis();
+        int destroyed = mineColumn(level, pos, blastDir, blastAxis, depth);
+        spawnEffects(level, pos, blastDir, depth, destroyed, stackCount);
     }
 
     /**
-     * Mines rock-compatible blocks along the blast axis, returning the count destroyed.
+     * Mines a 3x3 column along the blast axis. Each layer of the column
+     * is a 3x3 footprint perpendicular to the blast direction; non-rock
+     * blocks in a layer are skipped but do not halt the implosion.
      *
-     * @param level    the server level
-     * @param origin   the starting position
-     * @param blastDir the direction to mine
-     * @param depth    the maximum mining depth
+     * @param level     the server level
+     * @param origin    the anchor position
+     * @param blastDir  the direction the blast travels
+     * @param blastAxis the axis of the blast direction
+     * @param depth     the column depth in layers
      * @return the number of blocks destroyed
      */
-    private static int mineAlongAxis(ServerLevel level, BlockPos origin,
-            Direction blastDir, int depth) {
-        BlockPos current = origin;
+    private static int mineColumn(ServerLevel level, BlockPos origin,
+                                  Direction blastDir, Direction.Axis blastAxis,
+                                  int depth) {
         int destroyed = 0;
-        for (int i = 0; i < depth; i++) {
-            current = current.relative(blastDir);
-            int result = tryMineBlock(level, current);
-            if (result < 0) { break; }
-            destroyed += result;
+        for (int step = 0; step < depth; step++) {
+            BlockPos layerCenter = origin.relative(blastDir, step);
+            destroyed += mineLayer(level, layerCenter, blastAxis);
         }
         return destroyed;
     }
 
     /**
-     * Attempts to mine a single block. Returns 1 if mined, 0 if skipped (air), -1 if chain stops.
+     * Mines the 3x3 footprint at the given layer center, perpendicular
+     * to the blast axis.
      *
-     * @param level the server level
-     * @param pos   the block position to mine
-     * @return {@link #MINE_SUCCESS}, {@link #MINE_SKIP}, or {@link #MINE_STOP}
+     * @param level       the server level
+     * @param layerCenter the center of the current layer
+     * @param blastAxis   the axis the blast travels along
+     * @return the number of blocks destroyed in this layer
      */
-    private static int tryMineBlock(ServerLevel level, BlockPos pos) {
-        if (!level.isInWorldBounds(pos)) { return MINE_STOP; }
-        BlockState state = level.getBlockState(pos);
-        if (state.isAir()) { return MINE_SKIP; }
-        if (!isRockBlock(level, state)) { return MINE_STOP; }
-        level.destroyBlock(pos, true);
-        return MINE_SUCCESS;
+    private static int mineLayer(ServerLevel level, BlockPos layerCenter,
+                                 Direction.Axis blastAxis) {
+        int destroyed = 0;
+        for (int a = -FOOTPRINT_HALF; a <= FOOTPRINT_HALF; a++) {
+            for (int b = -FOOTPRINT_HALF; b <= FOOTPRINT_HALF; b++) {
+                BlockPos target = offsetPerpendicular(layerCenter, blastAxis, a, b);
+                if (tryMineBlock(level, target)) { destroyed++; }
+            }
+        }
+        return destroyed;
+    }
+
+    /**
+     * Attempts to mine a single block if it is in-bounds, non-air, and
+     * rock-compatible.
+     *
+     * @param level  the server level
+     * @param target the position to attempt
+     * @return true if a block was destroyed
+     */
+    private static boolean tryMineBlock(ServerLevel level, BlockPos target) {
+        if (!level.isInWorldBounds(target)) { return false; }
+        BlockState state = level.getBlockState(target);
+        if (state.isAir()) { return false; }
+        if (!isRockBlock(level, state)) { return false; }
+        level.destroyBlock(target, true);
+        return true;
+    }
+
+    /**
+     * Offsets a position in the two axes perpendicular to the blast axis,
+     * producing one cell of the 3x3 footprint at the current blast layer.
+     *
+     * @param center    the center of the current blast layer
+     * @param blastAxis the axis the blast travels along
+     * @param a         first perpendicular offset
+     * @param b         second perpendicular offset
+     * @return the footprint cell position
+     */
+    private static BlockPos offsetPerpendicular(BlockPos center,
+                                                Direction.Axis blastAxis,
+                                                int a, int b) {
+        return switch (blastAxis) {
+            case X -> center.offset(0, a, b);
+            case Y -> center.offset(a, 0, b);
+            case Z -> center.offset(a, b, 0);
+        };
     }
 
     /**
@@ -121,38 +162,47 @@ public final class RockExecutor {
     }
 
     /**
-     * Spawns directional dust particles and plays a crumble sound.
+     * Spawns dust particles along the imploded column and plays a crumble sound.
+     * Particles stretch along the blast axis and fill the 3x3 footprint
+     * perpendicular to it, centered at the far end of the column.
      *
      * @param level      the server level
      * @param origin     the implosion origin position
-     * @param blastDir   the blast direction
+     * @param blastDir   the direction the blast travels
+     * @param depth      the full column depth
      * @param destroyed  the number of blocks destroyed
      * @param stackCount the raw stack count
      */
     private static void spawnEffects(ServerLevel level, BlockPos origin,
-                                     Direction blastDir, int destroyed,
-                                     int stackCount) {
-        spawnDustParticles(level, origin, blastDir, destroyed);
+                                     Direction blastDir, int depth,
+                                     int destroyed, int stackCount) {
+        spawnDustParticles(level, origin, blastDir, depth, destroyed);
         playCrumbleSound(level, origin, stackCount);
     }
 
     /**
-     * Spawns directional dust particles at the blast midpoint.
+     * Spawns dust particles centered at the imploded column.
      *
      * @param level     the server level
      * @param origin    the implosion origin position
      * @param blastDir  the blast direction
+     * @param depth     the full column depth
      * @param destroyed the number of blocks destroyed
      */
     private static void spawnDustParticles(ServerLevel level, BlockPos origin,
-            Direction blastDir, int destroyed) {
-        double cx = origin.getX() + BLOCK_CENTER_OFFSET + blastDir.getStepX() * destroyed * BLOCK_CENTER_OFFSET;
-        double cy = origin.getY() + BLOCK_CENTER_OFFSET + blastDir.getStepY() * destroyed * BLOCK_CENTER_OFFSET;
-        double cz = origin.getZ() + BLOCK_CENTER_OFFSET + blastDir.getStepZ() * destroyed * BLOCK_CENTER_OFFSET;
+                                           Direction blastDir, int depth, int destroyed) {
+        double cx = origin.getX() + BLOCK_CENTER_OFFSET + blastDir.getStepX() * depth * BLOCK_CENTER_OFFSET;
+        double cy = origin.getY() + BLOCK_CENTER_OFFSET + blastDir.getStepY() * depth * BLOCK_CENTER_OFFSET;
+        double cz = origin.getZ() + BLOCK_CENTER_OFFSET + blastDir.getStepZ() * depth * BLOCK_CENTER_OFFSET;
+
         int particleCount = DUST_BASE_PARTICLES + DUST_PARTICLES_PER_BLOCK * destroyed;
-        double spread = DUST_BASE_SPREAD + destroyed * DUST_SPREAD_PER_BLOCK;
+        double along = depth * BLOCK_CENTER_OFFSET + destroyed * DUST_SPREAD_PER_BLOCK;
+        double perp = DUST_BASE_SPREAD;
+        double spreadX = blastDir.getAxis() == Direction.Axis.X ? along : perp;
+        double spreadY = blastDir.getAxis() == Direction.Axis.Y ? along : perp;
+        double spreadZ = blastDir.getAxis() == Direction.Axis.Z ? along : perp;
         level.sendParticles(ParticleTypes.DUST_PLUME,
-                cx, cy, cz, particleCount, spread, spread, spread, DUST_PARTICLE_SPEED);
+                cx, cy, cz, particleCount, spreadX, spreadY, spreadZ, DUST_PARTICLE_SPEED);
     }
 
     /**

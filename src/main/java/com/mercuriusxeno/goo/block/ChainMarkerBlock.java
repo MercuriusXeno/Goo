@@ -48,6 +48,12 @@ public class ChainMarkerBlock extends BaseEntityBlock {
     private static final double DUST_FALL_SPEED = -0.02;
     /** Lava particle spawn chance denominator (1 in N). */
     private static final int LAVA_CHANCE = 3;
+    /** Base soul particle count for nether effects. */
+    private static final int NETHER_BASE_PARTICLES = 2;
+    /** Downward drift speed for soul particles. */
+    private static final double SOUL_DRIFT_SPEED = -0.01;
+    /** Smoke particle spawn chance denominator (1 in N) for nether. */
+    private static final int NETHER_SMOKE_CHANCE = 4;
 
     /** Creates a chain marker block with the given properties.
      *
@@ -182,6 +188,7 @@ public class ChainMarkerBlock extends BaseEntityBlock {
         switch (type) {
             case BLAZE -> spawnBlazeParticles(stacks, cx, cy, cz, spread, level, random);
             case ROCK -> spawnRockParticles(stacks, cx, cy, cz, spread, level, random);
+            case NETHER -> spawnNetherParticles(stacks, cx, cy, cz, spread, level, random);
             default -> {}
         }
     }
@@ -242,6 +249,30 @@ public class ChainMarkerBlock extends BaseEntityBlock {
             double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
             level.addParticle(ParticleTypes.DUST_PLUME, cx + ox, cy + oy, cz + oz,
                     0, DUST_FALL_SPEED, 0);
+        }
+    }
+
+    /**
+     * Emits drifting soul particles and occasional smoke for nether chain markers.
+     * @param stacks the current stack count (scales particle count)
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void spawnNetherParticles(int stacks, double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        for (int i = 0; i < NETHER_BASE_PARTICLES + stacks; i++) {
+            double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            level.addParticle(ParticleTypes.SOUL, cx + ox, cy + oy, cz + oz,
+                    0, SOUL_DRIFT_SPEED, 0);
+        }
+        if (random.nextInt(NETHER_SMOKE_CHANCE) == 0) {
+            level.addParticle(ParticleTypes.SMOKE, cx, cy, cz, 0, 0, 0);
         }
     }
 }
