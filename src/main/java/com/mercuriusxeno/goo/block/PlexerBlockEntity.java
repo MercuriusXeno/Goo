@@ -2,12 +2,13 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.gasket.GasketState;
+import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.data.IGooValueLookup;
 import com.mercuriusxeno.goo.item.CanisterItem;
-import com.mercuriusxeno.goo.item.GasketPartner;
-import com.mercuriusxeno.goo.item.GasketRole;
 import com.mercuriusxeno.goo.item.GooContents;
+import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -27,7 +28,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Plexer: reconstitutes items from goo in externally-attached canisters.
@@ -42,18 +42,11 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
     private static final String FACE_LABEL = "plexer";
     /** NBT key for the observer target item. */
     private static final String TAG_TARGET_ITEM = "TargetItem";
-    /** NBT key for the gasket UUID. */
-    private static final String TAG_GASKET_ID = "GasketId";
-    /** NBT key for the gasket partner. */
-    private static final String TAG_PARTNER = "Partner";
 
     private ItemStack targetItem = ItemStack.EMPTY;
 
-    /** Gasket UUID for the receiver gasket (null = no gasket installed). */
-    private @Nullable UUID gasketId;
-
-    /** Linked partner for the gasket. */
-    private @Nullable GasketPartner partner;
+    /** Composed gasket state for the RECEIVER role. */
+    private final GasketState gasketState = GasketState.single(GasketRole.RECEIVER, FACE_LABEL);
 
     /** Creates a plexer block entity at the given position.
      *
@@ -84,6 +77,15 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
         if (!(level.getBlockEntity(above) instanceof CanisterBlockEntity canisterBe)) {
             return 0;
         }
+        return countOccupiedSlots(canisterBe);
+    }
+
+    /** Counts non-empty canister slots in the given block entity.
+     *
+     * @param canisterBe the canister block entity to inspect
+     * @return the number of occupied slots
+     */
+    private int countOccupiedSlots(CanisterBlockEntity canisterBe) {
         int count = 0;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (!canisterBe.getCanister(slot).isEmpty()) { count++; }
@@ -93,82 +95,19 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
 
     // --- IGasketHolder (RECEIVER only) ---
 
-    /** Returns the receiver gasket UUID, or null if not a receiver or no gasket assigned.
-     *
-     * @param role the gasket role
-     * @return the gasket id
-     */
+    /** {@inheritDoc} */
     @Override
-    public @Nullable UUID getGasketId(GasketRole role) {
-        return role == GasketRole.RECEIVER ? gasketId : null;
-    }
+    public GasketState gasketState() { return gasketState; }
 
-    /** Creates a receiver gasket UUID if one does not exist.
-     *
-     * @param role the gasket role
-     * @return the UUID, or null
-     */
+    /** {@inheritDoc} */
     @Override
-    public @Nullable UUID ensureGasketId(GasketRole role) {
-        if (role != GasketRole.RECEIVER) { return null; }
-        if (gasketId == null) {
-            gasketId = UUID.randomUUID();
-            setChanged();
-        }
-        return gasketId;
-    }
+    public Runnable gasketSyncCallback() { return this::setChanged; }
 
-    /** Returns the receiver's linked partner, or null if unlinked.
-     *
-     * @param role the gasket role
-     * @return the partner
-     */
-    @Override
-    public @Nullable GasketPartner getPartner(GasketRole role) {
-        return role == GasketRole.RECEIVER ? partner : null;
-    }
-
-    /** Sets the receiver's linked partner.
-     *
-     * @param role       the gasket role
-     * @param newPartner the new gasket partner, or null to clear
-     */
-    @Override
-    public void setPartner(GasketRole role, @Nullable GasketPartner newPartner) {
-        if (role != GasketRole.RECEIVER) { return; }
-        partner = newPartner;
-        setChanged();
-    }
-
-    /** Clears the receiver gasket UUID and partner.
-     *
-     * @param role the gasket role
-     */
-    @Override
-    public void clearGasket(GasketRole role) {
-        if (role != GasketRole.RECEIVER) { return; }
-        gasketId = null;
-        partner = null;
-        setChanged();
-    }
-
-    /** Only supports the RECEIVER role when a gasket is installed.
-     *
-     * @param role the gasket role
-     * @return true if the condition is met
-     */
+    /** {@inheritDoc} Checks blockstate in addition to role. */
     @Override
     public boolean supportsRole(GasketRole role) {
         return role == GasketRole.RECEIVER && getBlockState().getValue(PlexerBlock.HAS_GASKET);
     }
-
-    /** Returns "plexer" as the face label for tuner display.
-     *
-     * @param role the gasket role
-     * @return the face label
-     */
-    @Override
-    public @Nullable String getFaceLabel(GasketRole role) { return FACE_LABEL; }
 
     // --- Target item ---
 
@@ -206,18 +145,29 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
      * @return the external canister slots
      */
     ItemStack tryReconstitute(Identifier targetId, IGooValueLookup lookup) {
-        GooValue required = lookup.lookup(targetId);
-        if (required == null || required.isEmpty()) { return ItemStack.EMPTY; }
-        if (lookup.isRestricted(targetId)) { return ItemStack.EMPTY; }
+        GooValue required = resolveRequired(targetId, lookup);
+        if (required == null) { return ItemStack.EMPTY; }
 
         List<SlotRef> slots = getExternalCanisterSlots();
         if (slots.isEmpty()) { return ItemStack.EMPTY; }
-
         if (!hasEnoughGoo(slots, required)) { return ItemStack.EMPTY; }
 
         consumeAllRequired(slots, required);
         setChanged();
         return new ItemStack(targetItem.getItem());
+    }
+
+    /** Looks up the goo value for a target, returning null if absent or restricted.
+     *
+     * @param targetId the target item registry ID
+     * @param lookup   the goo value lookup
+     * @return the required goo value, or null if unavailable
+     */
+    private @Nullable GooValue resolveRequired(Identifier targetId, IGooValueLookup lookup) {
+        GooValue required = lookup.lookup(targetId);
+        if (required == null || required.isEmpty()) { return null; }
+        if (lookup.isRestricted(targetId)) { return null; }
+        return required;
     }
 
     /** Returns true if all required goo types are available in sufficient quantity.
@@ -261,6 +211,15 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
         if (!(level.getBlockEntity(above) instanceof CanisterBlockEntity canisterBe)) {
             return List.of();
         }
+        return collectOccupiedSlotRefs(canisterBe);
+    }
+
+    /** Builds slot references for all occupied positions in the canister block entity.
+     *
+     * @param canisterBe the canister block entity above this plexer
+     * @return list of occupied slot references
+     */
+    private List<SlotRef> collectOccupiedSlotRefs(CanisterBlockEntity canisterBe) {
         List<SlotRef> refs = new ArrayList<>();
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (!canisterBe.getCanister(slot).isEmpty()) {
@@ -314,12 +273,7 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
         if (!targetItem.isEmpty()) {
             output.store(TAG_TARGET_ITEM, ItemStack.CODEC, targetItem);
         }
-        if (gasketId != null) {
-            output.putString(TAG_GASKET_ID, gasketId.toString());
-        }
-        if (partner != null) {
-            output.store(TAG_PARTNER, GasketPartner.CODEC, partner);
-        }
+        gasketState.save(output);
     }
 
     /** Restores target item and gasket state from persistent storage.
@@ -330,9 +284,7 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
         targetItem = input.read(TAG_TARGET_ITEM, ItemStack.CODEC).orElse(ItemStack.EMPTY);
-        String idStr = input.getStringOr(TAG_GASKET_ID, null);
-        gasketId = idStr != null ? UUID.fromString(idStr) : null;
-        partner = input.read(TAG_PARTNER, GasketPartner.CODEC).orElse(null);
+        gasketState.load(input);
     }
 
     /** Returns full NBT for initial chunk sync to clients.

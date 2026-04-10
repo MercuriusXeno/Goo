@@ -116,10 +116,8 @@ tasks.register('jacocoGooTestReport', JacocoReport) {
 checkstyle {
     toolVersion = '10.21.4'
     configFile = file('config/checkstyle/checkstyle.xml')
-    // Warnings pass through; errors (severity=error) fail the build
-    maxWarnings = Integer.MAX_VALUE
-    maxErrors = 0
-    ignoreFailures = false
+    // All violations pass through to the digest; build does not fail on checkstyle alone
+    ignoreFailures = true
 }
 
 // Only lint main sources, skip generated and test
@@ -206,52 +204,17 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
     }
 }
 
-// ── Analysis digest: prints report links after check ──────────────────────
-tasks.register('analysisDigest') {
-    description = 'Prints a summary of all static analysis reports'
+// ── SCA digest: unified flat text report from all analysis XML ───────────
+tasks.register('scaDigest', Exec) {
+    description = 'Produces build/reports/digest.txt; fails the build on checkstyle errors or test failures'
     group = 'verification'
-    mustRunAfter 'checkstyleMain', 'pmdMain', 'spotbugsMain', 'cpd', 'test'
-    var reportsDir = layout.buildDirectory.dir('reports')
-    doLast {
-        var reports = [
-            ['Checkstyle',  'checkstyle/main.html',  'checkstyle/main.xml'],
-            ['PMD',         'pmd/main.html',          'pmd/main.xml'],
-            ['SpotBugs',    'spotbugs/main.html',     'spotbugs/main.xml'],
-            ['CPD',         'cpd/main.xml',            null],
-            ['Tests',       '../test-results',          null],
-        ]
-        var base = reportsDir.get().asFile
-        println ''
-        println '┌─────────────────────────────────────────────┐'
-        println '│           Static Analysis Digest             │'
-        println '└─────────────────────────────────────────────┘'
-        reports.each { entry ->
-            var name = entry[0]
-            var htmlPath = entry[1]
-            var xmlPath = entry[2]
-            var htmlFile = new File(base, htmlPath)
-            if (htmlFile.exists()) {
-                var count = ''
-                if (xmlPath != null) {
-                    var xmlFile = new File(base, xmlPath)
-                    if (xmlFile.exists()) {
-                        // Count violations/errors in XML
-                        var text = xmlFile.text
-                        var violations = (text =~ /<violation |<error /).size()
-                        count = violations > 0 ? " (${violations} findings)" : " (clean)"
-                    }
-                }
-                println "  ${name}${count}"
-                println "    file:///${htmlFile.absolutePath.replace('\\', '/')}"
-            } else {
-                println "  ${name}: no report"
-            }
-        }
-        println ''
-    }
+    commandLine 'python3', "${projectDir}/tools/sca-digest.py"
 }
-
-tasks.named('check') { finalizedBy 'analysisDigest' }
+tasks.checkstyleMain.finalizedBy(tasks.scaDigest)
+tasks.pmdMain.finalizedBy(tasks.scaDigest)
+tasks.spotbugsMain.finalizedBy(tasks.scaDigest)
+tasks.named('cpd') { finalizedBy tasks.scaDigest }
+tasks.named('check') { finalizedBy tasks.scaDigest }
 
 tasks.register('generateTextures', JavaExec) {
     description = 'Regenerates CA fluid textures and blob base sprites'
@@ -283,6 +246,21 @@ tasks.withType(ProcessResources).configureEach {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Treating deprecation warnings as errors, preference.
+    options.compilerArgs += ['-Xlint:deprecation', '-Werror']
+}
+
+// Runs sca-fix.py JavadocMethod to auto-stub missing @param/@return/@throws,
+// then ImportOrder to fix any import reordering the stubs introduced.
+// Backfill meaningful descriptions into the stubs manually after this runs.
+tasks.register('fixJavadoc', Exec) {
+    group = 'verification'
+    description = 'Auto-stub missing Javadoc tags via sca-fix.py, then fix import order'
+    dependsOn 'checkstyleMain'
+    commandLine 'python', 'tools/sca-fix.py', 'JavadocMethod'
+    doLast {
+        exec { commandLine 'python', 'tools/sca-fix.py', 'ImportOrder' }
+    }
 }
 
 // NeoGradle run init scripts use Task.project and Gradle.addListener at execution

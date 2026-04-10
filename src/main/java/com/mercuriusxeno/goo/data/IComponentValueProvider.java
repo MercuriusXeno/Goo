@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
  * Items that derive their goo value from data components implement this interface.
  * The registry falls back to this when no static value is found for the item type.
  */
+@FunctionalInterface
 public interface IComponentValueProvider {
 
     /**

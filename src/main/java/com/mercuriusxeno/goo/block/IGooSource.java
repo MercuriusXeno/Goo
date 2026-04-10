@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.item.GooContents;
 
 /**

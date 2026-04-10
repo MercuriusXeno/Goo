@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.network;
 
-import com.mercuriusxeno.goo.client.TunerAwaitState;
+import com.mercuriusxeno.goo.client.machine.TunerAwaitState;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
@@ -38,7 +38,6 @@ public final class TunerFeedbackHandler {
             case LINK_COMPLETE -> handleLinkComplete(payload, context);
             case CANCEL -> handleCancel(payload, context);
             case BRIEF, CONFIRM_PROMPT -> handleMessage(payload, context);
-            default -> {}
         }
     }
 

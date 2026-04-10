@@ -42,17 +42,42 @@ public final class FrostExecutor {
      * @param radius the freeze radius
      */
     public static void execute(ServerLevel level, BlockPos center, int radius) {
+        convertSphere(level, center, radius);
+        spawnEffects(level, center, radius);
+    }
+
+    /**
+     * Iterates all blocks within the sphere and converts eligible ones.
+     *
+     * @param level  the server level
+     * @param center the center of the freeze sphere
+     * @param radius the freeze radius
+     */
+    private static void convertSphere(ServerLevel level, BlockPos center, int radius) {
         int r2 = radius * radius;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (dx * dx + dy * dy + dz * dz > r2) { continue; }
-                    BlockPos target = center.offset(dx, dy, dz);
-                    convertBlock(level, target);
-                }
+                convertSlice(level, center, dx, dy, radius, r2);
             }
         }
-        spawnEffects(level, center, radius);
+    }
+
+    /**
+     * Converts eligible blocks along the z-axis for one (dx, dy) slice of the sphere.
+     *
+     * @param level  the server level
+     * @param center the center of the freeze sphere
+     * @param dx     the x offset from center
+     * @param dy     the y offset from center
+     * @param radius the freeze radius
+     * @param r2     the squared radius threshold
+     */
+    private static void convertSlice(ServerLevel level, BlockPos center,
+            int dx, int dy, int radius, int r2) {
+        for (int dz = -radius; dz <= radius; dz++) {
+            if (dx * dx + dy * dy + dz * dz > r2) { continue; }
+            convertBlock(level, center.offset(dx, dy, dz));
+        }
     }
 
     /**
@@ -63,15 +88,33 @@ public final class FrostExecutor {
      */
     private static void convertBlock(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
-        if (state.is(Blocks.WATER)) {
-            level.setBlock(pos, Blocks.PACKED_ICE.defaultBlockState(), Block.UPDATE_ALL);
-        } else if (state.is(Blocks.LAVA)) {
-            level.setBlock(pos, Blocks.OBSIDIAN.defaultBlockState(), Block.UPDATE_ALL);
-        } else if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        } else if (isPlant(state)) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        Block replacement = frostReplacement(state);
+        if (replacement != null) {
+            level.setBlock(pos, replacement.defaultBlockState(), Block.UPDATE_ALL);
         }
+    }
+
+    /**
+     * Returns the block to replace with under frost rules, or null if no conversion applies.
+     *
+     * @param state the current block state
+     * @return the replacement block, or null
+     */
+    private static Block frostReplacement(BlockState state) {
+        if (state.is(Blocks.WATER)) { return Blocks.PACKED_ICE; }
+        if (state.is(Blocks.LAVA)) { return Blocks.OBSIDIAN; }
+        if (isFire(state) || isPlant(state)) { return Blocks.AIR; }
+        return null;
+    }
+
+    /**
+     * Returns true if the block state is any fire variant.
+     *
+     * @param state the block state to test
+     * @return true if the block is fire or soul fire
+     */
+    private static boolean isFire(BlockState state) {
+        return state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE);
     }
 
     /**

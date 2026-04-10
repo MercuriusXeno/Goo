@@ -1,15 +1,12 @@
 package com.mercuriusxeno.goo.block;
 
-import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -32,7 +29,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import java.util.EnumMap;
 import java.util.Map;
 
 /**
@@ -56,35 +52,11 @@ public class PlexerBlock extends BaseEntityBlock {
     /** Whether the plexer is actively showing its crafting animation. */
     public static final BooleanProperty CRAFTING = BlockStateProperties.CRAFTING;
 
-    /** Overlay prefix for target-set feedback. */
-    private static final String TARGET_PREFIX = "Target: ";
-    /** Overlay message when target is cleared. */
-    private static final String TARGET_CLEARED = "Target cleared";
-
     /** Ticks between redstone rising edge and craft attempt, matching vanilla Crafter. */
     private static final int CRAFTING_TICK_DELAY = 4;
 
     /** How long the crafting visual persists after a successful reconstitution. */
     private static final int CRAFTING_DISPLAY_TICKS = 6;
-
-    /** Pixels per block for coordinate conversion. */
-    private static final double PIXELS_PER_BLOCK = 16;
-    /** 180-degree rotation (2 CW steps). */
-    private static final int ROTATION_HALF = 2;
-    /** 270-degree rotation (3 CW steps). */
-    private static final int ROTATION_THREE_QUARTER = 3;
-
-    // -- Eject point (model space, south-facing) --
-    /** Cutaway center X in block-relative coords. */
-    private static final double EJECT_CENTER_X = 8.0 / 16.0;
-    /** Cutaway center Y in block-relative coords. */
-    private static final double EJECT_CENTER_Y = 10.5 / 16.0;
-    /** Cutaway opening Z in block-relative coords. */
-    private static final double EJECT_CENTER_Z = 15.0 / 16.0;
-    /** Ejected item outward speed. */
-    private static final double EJECT_SPEED = 0.15;
-    /** Ejected item upward velocity. */
-    private static final double EJECT_LIFT = 0.05;
 
     // -- Shape pieces (south-facing) --
     /** Top slab of the plexer. */
@@ -102,14 +74,7 @@ public class PlexerBlock extends BaseEntityBlock {
         SOUTH_TOP, SOUTH_BASE, SOUTH_MIDDLE, SOUTH_CHEEK_WEST, SOUTH_CHEEK_EAST);
 
     /** VoxelShapes per facing, rotated from the south-facing base shape. */
-    private static final Map<Direction, VoxelShape> SHAPES = buildShapes();
-
-    /** Cutaway volume in model space (south-facing): x∈[5,11], y∈[8,13], z∈[12,16]. */
-    private static final double CUTAWAY_MIN_X = 5.0 / 16.0;
-    private static final double CUTAWAY_MAX_X = 11.0 / 16.0;
-    private static final double CUTAWAY_MIN_Y = 8.0 / 16.0;
-    private static final double CUTAWAY_MAX_Y = 13.0 / 16.0;
-    private static final double CUTAWAY_MIN_Z = 12.0 / 16.0;
+    private static final Map<Direction, VoxelShape> SHAPES = PlexerShapeHelper.buildShapes(SOUTH_SHAPE);
 
     /** Creates a plexer block and registers default blockstate values.
      *
@@ -122,52 +87,6 @@ public class PlexerBlock extends BaseEntityBlock {
             .setValue(HAS_GASKET, false)
             .setValue(TRIGGERED, false)
             .setValue(CRAFTING, false));
-    }
-
-    /** Builds VoxelShapes for all four horizontal facings from the south-facing base.
-     *
-     * @return the new shapes
-     */
-    private static Map<Direction, VoxelShape> buildShapes() {
-        Map<Direction, VoxelShape> map = new EnumMap<>(Direction.class);
-        map.put(Direction.SOUTH, SOUTH_SHAPE);
-        map.put(Direction.WEST, rotateShapeCw(SOUTH_SHAPE, 1));
-        map.put(Direction.NORTH, rotateShapeCw(SOUTH_SHAPE, ROTATION_HALF));
-        map.put(Direction.EAST, rotateShapeCw(SOUTH_SHAPE, ROTATION_THREE_QUARTER));
-        return map;
-    }
-
-    /**
-     * Rotates a VoxelShape clockwise around the Y axis by the given number
-     * of 90-degree steps. Decomposes into AABB parts and reassembles.
-     *
-     * @param shape the VoxelShape to rotate
-     * @param steps number of 90-degree clockwise steps
-     * @return the voxel shape
-     */
-    private static VoxelShape rotateShapeCw(VoxelShape shape, int steps) {
-        if (steps == 0) { return shape; }
-        VoxelShape[] result = { Shapes.empty() };
-        shape.forAllBoxes((x1, y1, z1, x2, y2, z2) -> {
-            double rx1 = x1;
-            double rz1 = z1;
-            double rx2 = x2;
-            double rz2 = z2;
-            for (int s = 0; s < steps; s++) {
-                double tmpX1 = 1.0 - rz2;
-                double tmpZ1 = rx1;
-                double tmpX2 = 1.0 - rz1;
-                double tmpZ2 = rx2;
-                rx1 = tmpX1;
-                rz1 = tmpZ1;
-                rx2 = tmpX2;
-                rz2 = tmpZ2;
-            }
-            result[0] = Shapes.or(result[0], box(
-                rx1 * PIXELS_PER_BLOCK, y1 * PIXELS_PER_BLOCK, rz1 * PIXELS_PER_BLOCK,
-                rx2 * PIXELS_PER_BLOCK, y2 * PIXELS_PER_BLOCK, rz2 * PIXELS_PER_BLOCK));
-        });
-        return result[0];
     }
 
     /** Returns the facing-rotated outline shape for the plexer.
@@ -250,23 +169,11 @@ public class PlexerBlock extends BaseEntityBlock {
             @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos, @NonNull Player player,
             @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
         if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-
-        // Let canister placement pass through to CanisterItem.useOn
-        if (stack.getItem() instanceof CanisterItem) { return InteractionResult.PASS; }
-
-        if (!isCutawayClick(state, pos, hitResult)) { return InteractionResult.PASS; }
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof PlexerBlockEntity plexer)) { return InteractionResult.PASS; }
-
-        // Set target item (observer slot)
+        if (PlexerInteractionHelper.shouldPassItemInteraction(stack, state, pos, hitResult)) { return InteractionResult.PASS; }
+        if (!(level.getBlockEntity(pos) instanceof PlexerBlockEntity plexer)) { return InteractionResult.PASS; }
         if (!stack.isEmpty()) {
-            plexer.setTargetItem(stack.copy());
-            player.sendOverlayMessage(
-                Component.literal(TARGET_PREFIX + stack.getHoverName().getString()));
-            return InteractionResult.SUCCESS;
+            return PlexerInteractionHelper.applyTargetItem(plexer, player, stack);
         }
-
         return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 
@@ -282,98 +189,12 @@ public class PlexerBlock extends BaseEntityBlock {
     @Override
     protected @NonNull InteractionResult useWithoutItem(@NonNull BlockState state, Level level, @NonNull BlockPos pos, @NonNull Player player, @NonNull BlockHitResult hitResult) {
         if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-
-        if (!isCutawayClick(state, pos, hitResult)) { return InteractionResult.PASS; }
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof PlexerBlockEntity plexer)) { return InteractionResult.PASS; }
-
-        // Clear target if one is set
+        if (!PlexerInteractionHelper.isCutawayClick(state, pos, hitResult)) { return InteractionResult.PASS; }
+        if (!(level.getBlockEntity(pos) instanceof PlexerBlockEntity plexer)) { return InteractionResult.PASS; }
         if (!plexer.getTargetItem().isEmpty()) {
-            player.sendOverlayMessage(
-                Component.literal(TARGET_CLEARED));
-            plexer.setTargetItem(ItemStack.EMPTY);
-            return InteractionResult.SUCCESS;
+            return PlexerInteractionHelper.clearTargetItem(plexer, player);
         }
-
         return InteractionResult.PASS;
-    }
-
-    /**
-     * Returns true if the hit lands on any of the 5 cutaway interior faces:
-     * back wall, left/right cheek inners, top slab underside, base slab top.
-     * Transforms hit coords to model space and checks against cutaway volume.
-     *
-     * @param state the block state
-     * @param pos   the block position
-     * @param hit   the ray trace hit result
-     * @return true if cutaway click
-     */
-    private static boolean isCutawayClick(BlockState state, BlockPos pos, BlockHitResult hit) {
-        Direction facing = state.getValue(FACING);
-        double hitX = hit.getLocation().x - pos.getX();
-        double hitY = hit.getLocation().y - pos.getY();
-        double hitZ = hit.getLocation().z - pos.getZ();
-        double modelX = toModelX(facing, hitX, hitZ);
-        double modelZ = toModelZ(facing, hitX, hitZ);
-        return isInCutaway(modelX, hitY, modelZ);
-    }
-
-    /** Converts world-local XZ to south-facing model X by reversing facing rotation.
-     *
-     * @param facing the facing direction
-     * @param hitX   block-local X hit coordinate
-     * @param hitZ   block-local Z hit coordinate
-     * @return the double value
-     */
-    private static double toModelX(Direction facing, double hitX, double hitZ) {
-        return switch (facing) {
-            case SOUTH -> hitX;
-            case NORTH -> 1.0 - hitX;
-            case EAST  -> hitZ;
-            case WEST  -> 1.0 - hitZ;
-            default    -> hitX;
-        };
-    }
-
-    /** Converts world-local XZ to south-facing model Z by reversing facing rotation.
-     *
-     * @param facing the facing direction
-     * @param hitX   block-local X hit coordinate
-     * @param hitZ   block-local Z hit coordinate
-     * @return the double value
-     */
-    private static double toModelZ(Direction facing, double hitX, double hitZ) {
-        return switch (facing) {
-            case SOUTH -> hitZ;
-            case NORTH -> 1.0 - hitZ;
-            case EAST  -> 1.0 - hitX;
-            case WEST  -> hitX;
-            default    -> hitZ;
-        };
-    }
-
-    /** Returns true if model-space coords fall within the cutaway volume.
-     *
-     * @param modelX model-space X coordinate
-     * @param modelY model-space Y coordinate
-     * @param modelZ model-space Z coordinate
-     * @return true if in cutaway
-     */
-    private static boolean isInCutaway(double modelX, double modelY, double modelZ) {
-        return isInCutawayXY(modelX, modelY) && modelZ >= CUTAWAY_MIN_Z;
-    }
-
-    /**
-     * Returns true if model-space X and Y fall within the cutaway horizontal and vertical range.
-     *
-     * @param modelX model-space X coordinate
-     * @param modelY model-space Y coordinate
-     * @return true if within cutaway X/Y bounds
-     */
-    private static boolean isInCutawayXY(double modelX, double modelY) {
-        return modelX >= CUTAWAY_MIN_X && modelX <= CUTAWAY_MAX_X
-            && modelY >= CUTAWAY_MIN_Y && modelY <= CUTAWAY_MAX_Y;
     }
 
     // -- Redstone-triggered reconstitution --
@@ -411,49 +232,31 @@ public class PlexerBlock extends BaseEntityBlock {
     @Override
     protected void tick(@NonNull BlockState state, @NonNull ServerLevel level,
             @NonNull BlockPos pos, @NonNull RandomSource random) {
-        // Second tick: clear the crafting display
         if (state.getValue(CRAFTING)) {
             level.setBlock(pos, state.setValue(CRAFTING, false), UPDATE_CLIENTS);
             return;
         }
-
         BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof PlexerBlockEntity plexer)) { return; }
-
-        ItemStack result = plexer.tryReconstitute();
-        if (!result.isEmpty()) {
-            ejectFromCutaway(level, pos, state, result);
-            level.setBlock(pos, state.setValue(CRAFTING, true), UPDATE_CLIENTS);
-            level.scheduleTick(pos, this, CRAFTING_DISPLAY_TICKS);
+        if (be instanceof PlexerBlockEntity plexer) {
+            attemptReconstitution(plexer, level, pos, state);
         }
     }
 
-    /** Spawns an ItemEntity at the cutaway opening with velocity in the facing direction.
+    /** Tries to reconstitute an item and eject it from the cutaway if successful.
      *
-     * @param level the current level
-     * @param pos   the block position
-     * @param state the block state
-     * @param stack the item stack
+     * @param plexer the plexer block entity
+     * @param level  the server level
+     * @param pos    the block position
+     * @param state  the block state
      */
-    private static void ejectFromCutaway(ServerLevel level, BlockPos pos, BlockState state, ItemStack stack) {
-        Direction facing = state.getValue(FACING);
-        // Rotate to world space using facing
-        double wx = facing == Direction.SOUTH ? EJECT_CENTER_X
-                  : facing == Direction.NORTH ? 1.0 - EJECT_CENTER_X
-                  : facing == Direction.EAST  ? 1.0 - EJECT_CENTER_Z
-                  :                             EJECT_CENTER_Z;
-        double wz = facing == Direction.SOUTH ? EJECT_CENTER_Z
-                  : facing == Direction.NORTH ? 1.0 - EJECT_CENTER_Z
-                  : facing == Direction.EAST  ? EJECT_CENTER_X
-                  :                             1.0 - EJECT_CENTER_X;
-        ItemEntity entity = new ItemEntity(level,
-            pos.getX() + wx, pos.getY() + EJECT_CENTER_Y, pos.getZ() + wz, stack);
-        entity.setDeltaMovement(
-            facing.getStepX() * EJECT_SPEED,
-            EJECT_LIFT,
-            facing.getStepZ() * EJECT_SPEED);
-        entity.setDefaultPickUpDelay();
-        level.addFreshEntity(entity);
+    private void attemptReconstitution(PlexerBlockEntity plexer, ServerLevel level,
+            BlockPos pos, BlockState state) {
+        ItemStack result = plexer.tryReconstitute();
+        if (!result.isEmpty()) {
+            PlexerInteractionHelper.ejectFromCutaway(level, pos, state, result);
+            level.setBlock(pos, state.setValue(CRAFTING, true), UPDATE_CLIENTS);
+            level.scheduleTick(pos, this, CRAFTING_DISPLAY_TICKS);
+        }
     }
 
     // -- Block break drops --

@@ -37,7 +37,8 @@ public class GooBlocks {
 
     private static final Supplier<BlockBehaviour.Properties> CRUCIBLE_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
             .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHER_BRICKS)
-            .noOcclusion();
+            .noOcclusion()
+            .lightLevel(state -> state.getValue(CrucibleBlock.LIT) ? 13 : 0);
 
     public static final DeferredBlock<CrucibleBlock> CRUCIBLE = BLOCKS.registerBlock("crucible",
             CrucibleBlock::new, CRUCIBLE_PROPERTY_SUPPLIER);
@@ -98,6 +99,24 @@ public class GooBlocks {
                     .noOcclusion()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
 
+    /** Goo type to vanilla map color mapping. */
+    private static final Map<GooType, MapColor> GOO_MAP_COLORS = new EnumMap<>(Map.ofEntries(
+            Map.entry(GooType.AEON, MapColor.GOLD),
+            Map.entry(GooType.BLAZE, MapColor.FIRE),
+            Map.entry(GooType.CRYSTAL, MapColor.ICE),
+            Map.entry(GooType.ENDER, MapColor.DIAMOND),
+            Map.entry(GooType.FROST, MapColor.ICE),
+            Map.entry(GooType.GLOW, MapColor.GOLD),
+            Map.entry(GooType.HEX, MapColor.COLOR_BLACK),
+            Map.entry(GooType.LEAF, MapColor.PLANT),
+            Map.entry(GooType.METAL, MapColor.METAL),
+            Map.entry(GooType.NETHER, MapColor.NETHER),
+            Map.entry(GooType.PULSE, MapColor.COLOR_RED),
+            Map.entry(GooType.ROCK, MapColor.STONE),
+            Map.entry(GooType.SHROOM, MapColor.COLOR_PURPLE),
+            Map.entry(GooType.TYPHOON, MapColor.COLOR_LIGHT_GREEN),
+            Map.entry(GooType.VITAL, MapColor.COLOR_RED)));
+
     static {
         for (GooType type : GooType.values()) {
             Supplier<BlockBehaviour.Properties> props = fluidBlockProperties(type);
@@ -121,30 +140,6 @@ public class GooBlocks {
                 .strength(INDESTRUCTIBLE)
                 .noLootTable();
     }
-
-    /**
-     * Maps a goo type's RGB color to the nearest vanilla MapColor.
-     *
-     * @param type the goo type
-     * @return the corresponding map color
-     */
-    /** Goo type to vanilla map color mapping. */
-    private static final Map<GooType, MapColor> GOO_MAP_COLORS = new EnumMap<>(Map.ofEntries(
-            Map.entry(GooType.AEON, MapColor.GOLD),
-            Map.entry(GooType.BLAZE, MapColor.FIRE),
-            Map.entry(GooType.CRYSTAL, MapColor.ICE),
-            Map.entry(GooType.ENDER, MapColor.DIAMOND),
-            Map.entry(GooType.FROST, MapColor.ICE),
-            Map.entry(GooType.GLOW, MapColor.GOLD),
-            Map.entry(GooType.HEX, MapColor.COLOR_BLACK),
-            Map.entry(GooType.LEAF, MapColor.PLANT),
-            Map.entry(GooType.METAL, MapColor.METAL),
-            Map.entry(GooType.NETHER, MapColor.NETHER),
-            Map.entry(GooType.PULSE, MapColor.COLOR_RED),
-            Map.entry(GooType.ROCK, MapColor.STONE),
-            Map.entry(GooType.SHROOM, MapColor.COLOR_PURPLE),
-            Map.entry(GooType.TYPHOON, MapColor.COLOR_LIGHT_GREEN),
-            Map.entry(GooType.VITAL, MapColor.COLOR_RED)));
 
     /**
      * Maps a goo type's RGB color to the nearest vanilla MapColor.

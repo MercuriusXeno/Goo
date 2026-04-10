@@ -98,10 +98,16 @@ class ConventionTest {
             .or(simpleName("TapBlockEntity"))
             .or(simpleName("CanisterFluidHandler"))
             .or(simpleName("BucketGooFluidHandler"))
+            .or(simpleName("GooItemFluidHandler"))
             .or(simpleName("GasketInstallation"))
             .or(simpleName("TapBlock"))
             .or(simpleName("PlexerBlock"))
-            .or(simpleName("HubBlock"));
+            .or(simpleName("HubBlock"))
+            .or(simpleName("CanisterSlotLifecycle"))
+            .or(simpleName("CrucibleInteraction"))
+            .or(simpleName("CrucibleDrops"))
+            .or(simpleName("TapInteractionHandler"))
+            .or(simpleName("VatGasketOps"));
     }
 
     /** No new domain-layer class may import GooItems, GooBlocks, or GooFluids. */
@@ -126,7 +132,8 @@ class ConventionTest {
         noClasses()
             .that().resideInAnyPackage(DOMAIN_PACKAGES)
             .and(DescribedPredicate.not(
-                simpleName("CrucibleBlockEntity").or(simpleName("PlexerBlockEntity"))))
+                simpleName("CrucibleBlockEntity").or(simpleName("PlexerBlockEntity"))
+                    .or(simpleName("CrucibleInsertion"))))
             .should().accessField(Goo.class, "GOO_VALUES")
             .because("domain layer must use IGooValueLookup seams, not Goo.GOO_VALUES (decoupling-arch §5.2)")
             .check(mainClasses);
@@ -140,6 +147,7 @@ class ConventionTest {
             .and(DescribedPredicate.not(
                 simpleName("ContainerEvaluator")
                     .or(simpleName("CrucibleBlockEntity"))
+                    .or(simpleName("CrucibleInsertion"))
                     .or(simpleName("PlexerBlockEntity"))))
             .should().dependOnClassesThat()
                 .haveFullyQualifiedName("net.minecraft.core.registries.BuiltInRegistries")

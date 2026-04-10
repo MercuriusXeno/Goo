@@ -198,18 +198,28 @@ public abstract class OmniblobQuickCraftScreenMixin {
         ItemStack carried = menu.getCarried();
         if (isQuickCrafting && quickCraftSlots.contains(slot)
                 && OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
-            GooType type = BlobStacks.gooTypeOf(carried);
-            long totalVolume = BlobStacks.volumeOf(carried);
-            long perSlot = computeClientPerSlot(totalVolume);
-            ItemStack existing = slot.getItem();
-            if (!existing.isEmpty() && type == BlobStacks.gooTypeOf(existing)) {
-                perSlot += BlobStacks.volumeOf(existing);
-            }
-            ItemStack omniblobPreview = BlobStacks.createForOutput(type, perSlot);
-            renderSlotContents(graphics, omniblobPreview, slot, null);
+            renderOmniblobSlotPreview(graphics, slot, carried);
             return;
         }
         renderSlotContents(graphics, previewStack, slot, countString);
+    }
+
+    /**
+     * Builds and renders a volume-correct omniblob preview for one quickcraft slot.
+     * @param graphics the GUI graphics context for rendering
+     * @param slot the slot being previewed during quickcraft drag
+     * @param carried the omniblob item stack on the cursor
+     */
+    private void renderOmniblobSlotPreview(GuiGraphicsExtractor graphics, Slot slot, ItemStack carried) {
+        GooType type = BlobStacks.gooTypeOf(carried);
+        long totalVolume = BlobStacks.volumeOf(carried);
+        long perSlot = computeClientPerSlot(totalVolume);
+        ItemStack existing = slot.getItem();
+        if (!existing.isEmpty() && type == BlobStacks.gooTypeOf(existing)) {
+            perSlot += BlobStacks.volumeOf(existing);
+        }
+        ItemStack omniblobPreview = BlobStacks.createForOutput(type, perSlot);
+        renderSlotContents(graphics, omniblobPreview, slot, null);
     }
 
     /**

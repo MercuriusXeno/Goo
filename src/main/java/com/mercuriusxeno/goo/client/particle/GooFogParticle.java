@@ -52,12 +52,20 @@ public final class GooFogParticle extends SingleQuadParticle {
         this.rCol = red;
         this.gCol = green;
         this.bCol = blue;
+        configureFogDefaults(level.getRandom());
+    }
+
+    /**
+     * Sets physics, size, lifetime, and alpha defaults for a fog puff.
+     * @param random the random source for lifetime and size variance
+     */
+    private void configureFogDefaults(RandomSource random) {
         this.setSize(COLLISION_SIZE, COLLISION_SIZE);
         this.gravity = 0f;
         this.friction = FRICTION_FACTOR;
         this.hasPhysics = false;
-        this.lifetime = BASE_LIFETIME + level.getRandom().nextInt(BASE_LIFETIME);
-        this.quadSize = BASE_QUAD_SIZE + level.getRandom().nextFloat() * BASE_QUAD_SIZE;
+        this.lifetime = BASE_LIFETIME + random.nextInt(BASE_LIFETIME);
+        this.quadSize = BASE_QUAD_SIZE + random.nextFloat() * BASE_QUAD_SIZE;
         this.alpha = START_ALPHA;
     }
 

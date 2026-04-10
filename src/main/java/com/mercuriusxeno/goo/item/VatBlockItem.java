@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.item;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import net.minecraft.world.entity.SlotAccess;
@@ -49,21 +50,29 @@ public class VatBlockItem extends BlockItem {
         if (cursor.isEmpty() && action == ClickAction.SECONDARY) {
             return handleEmptyCursorDrain(vat, cursorAccess);
         }
-        if (action == ClickAction.PRIMARY) {
-            if (cursor.getItem() instanceof GooBlobItem) {
-                return handleBlobInsert(vat, cursor, cursorAccess);
-            }
-            if (cursor.getItem() instanceof GooOmniblobItem) {
-                return handleOmniblobInsert(vat, cursor, cursorAccess);
-            }
-            if (cursor.is(Items.BUCKET)) {
-                return handleBucketDrain(vat, cursor, cursorAccess);
-            }
-            if (cursor.getItem() instanceof BucketOfGooItem) {
-                return handlePartialBucketDrain(vat, cursor, cursorAccess);
-            }
+        return action == ClickAction.PRIMARY && handlePrimaryClick(vat, cursor, cursorAccess);
+    }
+
+    /**
+     * Routes primary click to the appropriate handler based on cursor item type.
+     *
+     * @param vat          the vat item stack
+     * @param cursor       the item stack on the cursor
+     * @param cursorAccess access to set the cursor contents
+     * @return true if the interaction was handled
+     */
+    private static boolean handlePrimaryClick(ItemStack vat, ItemStack cursor, SlotAccess cursorAccess) {
+        if (cursor.getItem() instanceof GooBlobItem) {
+            return handleBlobInsert(vat, cursor, cursorAccess);
         }
-        return false;
+        if (cursor.getItem() instanceof GooOmniblobItem) {
+            return handleOmniblobInsert(vat, cursor, cursorAccess);
+        }
+        if (cursor.is(Items.BUCKET)) {
+            return handleBucketDrain(vat, cursor, cursorAccess);
+        }
+        return cursor.getItem() instanceof BucketOfGooItem
+                && handlePartialBucketDrain(vat, cursor, cursorAccess);
     }
 
     // --- Goo contents helpers (vat-specific capacity) ---
@@ -163,13 +172,22 @@ public class VatBlockItem extends BlockItem {
         long volume = GooOmniblobItem.getVolume(cursor);
         long accepted = addGoo(vat, type, volume);
         if (accepted <= 0) { return false; }
-        long remaining = volume - accepted;
+        updateOmniblobRemainder(cursor, cursorAccess, volume - accepted);
+        return true;
+    }
+
+    /** Clears or shrinks the omniblob cursor after a partial transfer.
+     *
+     * @param cursor       the omniblob on the cursor
+     * @param cursorAccess access to set the cursor contents
+     * @param remaining    the remaining volume after transfer
+     */
+    private static void updateOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, long remaining) {
         if (remaining <= 0) {
             cursorAccess.set(ItemStack.EMPTY);
         } else {
             GooOmniblobItem.setVolume(cursor, remaining);
         }
-        return true;
     }
 
     /**
@@ -183,7 +201,19 @@ public class VatBlockItem extends BlockItem {
         GooContents contents = getGooContents(vat);
         if (contents.isEmpty()) { return false; }
         GooType dominant = contents.largestType();
-        if (dominant == null) { return false; }
+        return dominant != null && extractDominantAsBlobs(vat, cursorAccess, contents, dominant);
+    }
+
+    /** Extracts the dominant type from the vat as blob output onto the cursor.
+     *
+     * @param vat          the vat item stack
+     * @param cursorAccess access to set the cursor contents
+     * @param contents     the current vat contents
+     * @param dominant     the dominant goo type
+     * @return true if any goo was extracted
+     */
+    private static boolean extractDominantAsBlobs(ItemStack vat, SlotAccess cursorAccess,
+            GooContents contents, GooType dominant) {
         long toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BLOB_CAP);
         long extracted = removeGoo(vat, dominant, toExtract);
         if (extracted <= 0) { return false; }
@@ -203,7 +233,19 @@ public class VatBlockItem extends BlockItem {
         GooContents contents = getGooContents(vat);
         if (contents.isEmpty()) { return false; }
         GooType dominant = contents.largestType();
-        if (dominant == null) { return false; }
+        return dominant != null && extractDominantIntoBucket(vat, cursorAccess, contents, dominant);
+    }
+
+    /** Extracts the dominant type from the vat into a new bucket on the cursor.
+     *
+     * @param vat          the vat item stack
+     * @param cursorAccess access to set the cursor contents
+     * @param contents     the current vat contents
+     * @param dominant     the dominant goo type
+     * @return true if any goo was extracted
+     */
+    private static boolean extractDominantIntoBucket(ItemStack vat, SlotAccess cursorAccess,
+            GooContents contents, GooType dominant) {
         long toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BUCKET_CAP);
         long extracted = removeGoo(vat, dominant, toExtract);
         if (extracted <= 0) { return false; }
@@ -222,7 +264,19 @@ public class VatBlockItem extends BlockItem {
     private static boolean handlePartialBucketDrain(ItemStack vat, ItemStack cursor, SlotAccess cursorAccess) {
         GooContents bucketContents = BucketOfGooItem.getContents(cursor);
         long remainingCap = ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
-        if (remainingCap <= 0) { return false; }
+        return remainingCap > 0 && drainIntoBucket(vat, cursor, bucketContents, remainingCap);
+    }
+
+    /** Drains dominant goo from the vat into the bucket up to the remaining capacity.
+     *
+     * @param vat            the vat item stack
+     * @param cursor         the partially-filled bucket on the cursor
+     * @param bucketContents the current bucket contents
+     * @param remainingCap   the remaining bucket capacity in microblobs
+     * @return true if any goo was transferred
+     */
+    private static boolean drainIntoBucket(ItemStack vat, ItemStack cursor,
+            GooContents bucketContents, long remainingCap) {
         GooContents vatContents = getGooContents(vat);
         if (vatContents.isEmpty()) { return false; }
         GooType dominant = vatContents.largestType();

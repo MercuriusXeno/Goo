@@ -1,0 +1,158 @@
+package com.mercuriusxeno.goo.client.overlay;
+
+import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.FlatQuadCtx;
+import com.mercuriusxeno.goo.client.ber.LineCtx;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
+/**
+ * Renders goo-colored translucent fill and wireframe edges tracing a block's
+ * voxel outline shape. Stairs, slabs, fences, etc. highlight their actual
+ * geometry instead of a flat face quad.
+ */
+final class VoxelHighlightRenderer {
+    /** Face highlight alpha (translucent enough to see texture beneath). */
+    private static final int FACE_ALPHA = 80;
+
+    /** Wireframe outline alpha for block face edges. */
+    private static final int WIRE_ALPHA = 200;
+
+    /** Offset from the block face to prevent z-fighting. */
+    private static final double FACE_OFFSET = 0.005;
+
+    private VoxelHighlightRenderer() {}
+
+    /**
+     * Renders goo-colored translucent fill and wireframe edges tracing the
+     * block's voxel outline shape.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera the render camera
+     * @param pos the block position
+     * @param face the block face direction
+     * @param type the goo type
+     */
+    static void renderBlockFace(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, BlockPos pos, Direction face, GooType type) {
+        Minecraft mc = Minecraft.getInstance();
+        VoxelShape shape = mc.level.getBlockState(pos).getShape(mc.level, pos);
+        if (shape.isEmpty()) { return; }
+        Vec3 offset = cameraOffset(pos, camera);
+        int rgb = type.getColor();
+        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, rgb);
+        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, rgb);
+    }
+
+    /**
+     * Computes the camera-relative offset for a block position.
+     *
+     * @param pos    the block position
+     * @param camera the render camera
+     * @return the camera-relative offset vector
+     */
+    private static Vec3 cameraOffset(BlockPos pos, Camera camera) {
+        return new Vec3(
+                pos.getX() - camera.position().x,
+                pos.getY() - camera.position().y,
+                pos.getZ() - camera.position().z);
+    }
+
+    /**
+     * Emits translucent fill quads for every AABB in the voxel shape.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param shape        the block's voxel shape
+     * @param ox           camera-relative X offset
+     * @param oy           camera-relative Y offset
+     * @param oz           camera-relative Z offset
+     * @param rgb          the RGB color value
+     */
+    private static void emitFillBoxes(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            VoxelShape shape, double ox, double oy, double oz, int rgb) {
+        int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
+        FlatQuadCtx ctx = new FlatQuadCtx(poseStack.last(),
+            bufferSource.getBuffer(RenderTypes.debugQuads()));
+        shape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
+            ctx.emitBox(fillColor, new CuboidBounds(
+                offsetMin(ox, x0), offsetMax(ox, x1),
+                offsetMin(oz, z0), offsetMax(oz, z1),
+                offsetMin(oy, y0), offsetMax(oy, y1)));
+        });
+        bufferSource.endLastBatch();
+    }
+
+    /**
+     * Creates an ARGB color from an RGB value and alpha channel.
+     *
+     * @param rgb   the RGB color
+     * @param alpha the alpha value (0-255)
+     * @return the ARGB color
+     */
+    private static int colorWithAlpha(int rgb, int alpha) {
+        return ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+    }
+
+    /**
+     * Computes a camera-relative coordinate with inward face offset for the minimum bound.
+     *
+     * @param camOffset camera-relative offset for this axis
+     * @param coord     shape-local coordinate
+     * @return the offset float coordinate
+     */
+    private static float offsetMin(double camOffset, double coord) {
+        return (float) (camOffset + coord - FACE_OFFSET);
+    }
+
+    /**
+     * Computes a camera-relative coordinate with outward face offset for the maximum bound.
+     *
+     * @param camOffset camera-relative offset for this axis
+     * @param coord     shape-local coordinate
+     * @return the offset float coordinate
+     */
+    private static float offsetMax(double camOffset, double coord) {
+        return (float) (camOffset + coord + FACE_OFFSET);
+    }
+
+    /**
+     * Emits wireframe edges along the shape outline.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param mc           the Minecraft instance
+     * @param shape        the block's voxel shape
+     * @param ox           camera-relative X offset
+     * @param oy           camera-relative Y offset
+     * @param oz           camera-relative Z offset
+     * @param rgb          the RGB color value
+     */
+    private static void emitWireframeEdges(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Minecraft mc, VoxelShape shape,
+            double ox, double oy, double oz, int rgb) {
+        int wireColor = colorWithAlpha(rgb, WIRE_ALPHA);
+        float lineWidth = mc.getWindow().getAppropriateLineWidth();
+        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
+        shape.forAllEdges((x0, y0, z0, x1, y1, z1) ->
+            ctx.emitEdge(
+                (float) (ox + x0), (float) (oy + y0), (float) (oz + z0),
+                (float) (ox + x1), (float) (oy + y1), (float) (oz + z1),
+                wireColor, lineWidth));
+        bufferSource.endLastBatch();
+    }
+
+}

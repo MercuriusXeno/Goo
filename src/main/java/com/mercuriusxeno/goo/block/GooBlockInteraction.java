@@ -96,6 +96,18 @@ public final class GooBlockInteraction {
         if (interaction == GooInteractionType.TUNER_PASS) { return InteractionResult.PASS; }
         if (level.isClientSide()) { return InteractionResult.SUCCESS; }
         if (!entityType.isInstance(level.getBlockEntity(pos))) { return InteractionResult.PASS; }
+        return checkCooldown(interaction, level, player);
+    }
+
+    /**
+     * Returns SUCCESS if the interaction is on cooldown, null otherwise.
+     * @param interaction the classified interaction type
+     * @param level the current level (for game time)
+     * @param player the interacting player (for UUID-based cooldown)
+     * @return SUCCESS if on cooldown, null to continue dispatch
+     */
+    private static @Nullable InteractionResult checkCooldown(
+            GooInteractionType interaction, Level level, Player player) {
         if (interaction.requiresCooldown()
                 && InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime())) {
             return InteractionResult.SUCCESS;

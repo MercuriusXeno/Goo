@@ -37,6 +37,55 @@ class GooValueRegistryTest {
         registry = new GooValueRegistry();
     }
 
+    // ── Test helpers (replace removed registry methods) ────────────────
+
+    /** Sets base values on the registry, copying to effective. */
+    private void setBaseValues(Map<Identifier, GooValue> values) {
+        registry.baseValues.clear();
+        registry.baseValues.putAll(values);
+        registry.effectiveValues.clear();
+        registry.effectiveValues.putAll(values);
+    }
+
+    /** Sets denied items on the registry. */
+    private void setDeniedItems(Set<Identifier> items) {
+        registry.deniedItems.clear();
+        registry.deniedItems.addAll(items);
+    }
+
+    /** Returns derived values snapshot. */
+    private Map<Identifier, GooValue> getDerivedValues() {
+        return registry.lastDerivation != null
+                ? registry.lastDerivation.derivedValues() : Map.of();
+    }
+
+    /** Parses base values from a JSON stream, copying conversions back to registry. */
+    private void parseBaseValuesFromStream(java.io.InputStream is) throws IOException {
+        var state = new GooValueLoader.ParseState(
+                registry.baseValues, registry.effectiveValues,
+                registry.deniedItems, registry.restrictedItems,
+                registry.constants, registry.treeConstants,
+                registry.pseudoTags);
+        GooValueLoader.parseBaseValuesFromStream(is, state);
+        registry.preConversions = state.preConversions;
+        registry.postConversions = state.postConversions;
+    }
+
+    /** Copies base values to effective, applying post-conversions. */
+    private void copyBaseToEffective() {
+        registry.effectiveValues.putAll(registry.baseValues);
+        GooConversionLoader.applyConversions(registry.postConversions,
+                registry.effectiveValues, registry.pseudoTags);
+    }
+
+    /** Validates a JSON string for expression mistakes. */
+    private List<String> validateJsonString(String jsonString) {
+        List<String> warnings = new java.util.ArrayList<>();
+        JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
+        GooValueValidator.validateJson(json, warnings);
+        return warnings;
+    }
+
     // ── LCD Derivation ──────────────────────────────────────────────────
 
     @Nested
@@ -45,7 +94,7 @@ class GooValueRegistryTest {
         /** A single recipe with all ingredients valued produces a derived value. */
         @Test
         void singleRecipeDerivesValue() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("minecraft:iron_ingot"), goo(GooType.METAL, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -67,7 +116,7 @@ class GooValueRegistryTest {
         /** Multiple recipes for the same item: cheapest wins (LCD rule). */
         @Test
         void multipleRecipesCheapestWins() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 10),
                 id("b"), goo(GooType.METAL, 3)
             ));
@@ -85,7 +134,7 @@ class GooValueRegistryTest {
         /** Multi-pass: recipe B needs A's value, A derives on pass 1, B on pass 2. */
         @Test
         void multiPassDerivation() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("raw"), goo(GooType.ROCK, 5)
             ));
             List<RecipeInput> recipes = List.of(
@@ -101,7 +150,7 @@ class GooValueRegistryTest {
         /** Ingredient with alternatives: cheapest alternative is chosen. */
         @Test
         void ingredientAlternativesCheapestChosen() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("cheap"), goo(GooType.LEAF, 2),
                 id("expensive"), goo(GooType.LEAF, 20)
             ));
@@ -116,7 +165,7 @@ class GooValueRegistryTest {
         /** Result count > 1 divides the total value. */
         @Test
         void resultCountDividesValue() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("planks"), goo(GooType.LEAF, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -130,7 +179,7 @@ class GooValueRegistryTest {
         /** Missing ingredient value causes recipe to be skipped. */
         @Test
         void missingIngredientSkipsRecipe() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("known"), goo(GooType.METAL, 5)
             ));
             List<RecipeInput> recipes = List.of(
@@ -151,13 +200,13 @@ class GooValueRegistryTest {
             );
 
             assertDoesNotThrow(() -> registry.deriveFromRecipeInputs(recipes, false));
-            assertEquals(0, registry.derivedSize());
+            assertEquals(0, registry.diagnostics().derivedSize());
         }
 
         /** Same total blobs, fewer goo types wins. */
         @Test
         void fewerGooTypesWinsTiebreak() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 16, GooType.ROCK, 8, GooType.CRYSTAL, 8),
                 id("b"), goo(GooType.METAL, 16, GooType.ROCK, 16)
             ));
@@ -178,7 +227,7 @@ class GooValueRegistryTest {
         /** When total blobs differ, cheaper still wins regardless of type count. */
         @Test
         void cheaperStillWinsOverFewerTypes() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 10, GooType.ROCK, 10, GooType.CRYSTAL, 10),
                 id("b"), goo(GooType.METAL, 20, GooType.ROCK, 20)
             ));
@@ -215,7 +264,7 @@ class GooValueRegistryTest {
         /** No conflict when derived equals base. */
         @Test
         void noConflictWhenEqual() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 10),
                 id("b"), goo(GooType.METAL, 5)
             ));
@@ -224,13 +273,13 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertTrue(registry.getLastConflicts().isEmpty());
+            assertTrue(registry.diagnostics().conflicts().isEmpty());
         }
 
         /** Recipe cheaper than base is flagged as conflict. */
         @Test
         void recipeCheaperThanBaseIsConflict() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 20),
                 id("b"), goo(GooType.METAL, 3)
             ));
@@ -239,14 +288,14 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertEquals(1, registry.getLastConflicts().size());
-            assertTrue(registry.getLastConflicts().get(0).isRecipeCheaper());
+            assertEquals(1, registry.diagnostics().conflicts().size());
+            assertTrue(registry.diagnostics().conflicts().get(0).isRecipeCheaper());
         }
 
         /** Base cheaper than recipe is also flagged as conflict (value mismatch). */
         @Test
         void baseCheaperThanRecipeIsConflict() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 5),
                 id("b"), goo(GooType.METAL, 10)
             ));
@@ -255,8 +304,8 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertEquals(1, registry.getLastConflicts().size());
-            assertFalse(registry.getLastConflicts().get(0).isRecipeCheaper());
+            assertEquals(1, registry.diagnostics().conflicts().size());
+            assertFalse(registry.diagnostics().conflicts().get(0).isRecipeCheaper());
         }
     }
 
@@ -268,7 +317,7 @@ class GooValueRegistryTest {
         /** Derived-only item: effective equals derived. */
         @Test
         void derivedOnlyItemUsesDerivation() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("base_item"), goo(GooType.METAL, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -284,7 +333,7 @@ class GooValueRegistryTest {
         /** Base-only item: effective equals base. */
         @Test
         void baseOnlyItemUsesBase() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("base_only"), goo(GooType.LEAF, 7)
             ));
             registry.deriveFromRecipeInputs(List.of(), false);
@@ -297,7 +346,7 @@ class GooValueRegistryTest {
         /** Both exist, recipe cheaper, override off: effective = derived. */
         @Test
         void cheaperRecipeWinsWithoutOverride() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("item"), goo(GooType.METAL, 20),
                 id("cheap"), goo(GooType.METAL, 3)
             ));
@@ -312,7 +361,7 @@ class GooValueRegistryTest {
         /** Both exist, recipe cheaper, override on: effective = base. */
         @Test
         void baseWinsWithOverride() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("item"), goo(GooType.METAL, 20),
                 id("cheap"), goo(GooType.METAL, 3)
             ));
@@ -389,7 +438,7 @@ class GooValueRegistryTest {
         /** Evenly divisible recipe produces no loss. */
         @Test
         void evenlyDivisibleNoLoss() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("input"), goo(GooType.ROCK, 12)
             ));
             List<RecipeInput> recipes = List.of(
@@ -397,13 +446,13 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertTrue(registry.getLastDivisibilityLosses().isEmpty());
+            assertTrue(registry.diagnostics().divisibilityLosses().isEmpty());
         }
 
         /** Recipe with remainder detects loss with correct amounts. */
         @Test
         void remainderDetectsLoss() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("input"), goo(GooType.ROCK, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -411,8 +460,8 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertEquals(1, registry.getLastDivisibilityLosses().size());
-            var loss = registry.getLastDivisibilityLosses().get(0);
+            assertEquals(1, registry.diagnostics().divisibilityLosses().size());
+            var loss = registry.diagnostics().divisibilityLosses().get(0);
             assertEquals(10, loss.inputTotal());
             assertEquals(3, loss.outputCount());
             assertEquals(3, loss.perItemValue());
@@ -422,7 +471,7 @@ class GooValueRegistryTest {
         /** Result count 1 is never checked for divisibility loss. */
         @Test
         void resultCountOneSkipped() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("input"), goo(GooType.ROCK, 7)
             ));
             List<RecipeInput> recipes = List.of(
@@ -430,7 +479,7 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertTrue(registry.getLastDivisibilityLosses().isEmpty());
+            assertTrue(registry.diagnostics().divisibilityLosses().isEmpty());
         }
     }
 
@@ -442,10 +491,10 @@ class GooValueRegistryTest {
         /** Denied items never receive a derived value, even with valid recipes. */
         @Test
         void deniedItemNeverDerives() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("raw"), goo(GooType.METAL, 10)
             ));
-            registry.setDeniedItems(Set.of(id("ore_block")));
+            setDeniedItems(Set.of(id("ore_block")));
             List<RecipeInput> recipes = List.of(
                 recipe("ore_block", 1, slot("raw"))
             );
@@ -457,10 +506,10 @@ class GooValueRegistryTest {
         /** Denied items can still be used as recipe inputs for other items. */
         @Test
         void deniedItemWorksAsInput() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("ore_block"), goo(GooType.METAL, 20)
             ));
-            registry.setDeniedItems(Set.of(id("ore_block")));
+            setDeniedItems(Set.of(id("ore_block")));
             List<RecipeInput> recipes = List.of(
                 recipe("ingot", 1, slot("ore_block"))
             );
@@ -476,10 +525,10 @@ class GooValueRegistryTest {
         @Test
         void deniedItemBaseValueStillInEffective() {
             // Deny list only blocks derivation output, not base values
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("ore"), goo(GooType.METAL, 10)
             ));
-            registry.setDeniedItems(Set.of(id("ore")));
+            setDeniedItems(Set.of(id("ore")));
             registry.deriveFromRecipeInputs(List.of(), false);
 
             // Base value should still be present  - deny blocks derivation, not base
@@ -495,7 +544,7 @@ class GooValueRegistryTest {
         /** Bucket returned: net cost = ingredient value minus bucket value. */
         @Test
         void bucketReturnedSubtractsContainerValue() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("minecraft:milk_bucket"), goo(GooType.VITAL, 30),
                 id("minecraft:bucket"), goo(GooType.METAL, 10)
             ));
@@ -516,7 +565,7 @@ class GooValueRegistryTest {
         /** Container has no known value: full ingredient cost is used. */
         @Test
         void containerNoValueUsesFullCost() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("minecraft:milk_bucket"), goo(GooType.VITAL, 30)
                 // no value for bucket
             ));
@@ -535,7 +584,7 @@ class GooValueRegistryTest {
         /** Multiple container ingredients: each slot subtracts independently. */
         @Test
         void multipleContainerIngredients() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("milk_bucket"), goo(GooType.VITAL, 20, GooType.METAL, 10),
                 id("bucket"), goo(GooType.METAL, 10)
             ));
@@ -557,7 +606,7 @@ class GooValueRegistryTest {
         /** Container worth more than ingredient: gross cost is used (guard case). */
         @Test
         void containerWorthMoreThanIngredientUsesGross() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("cheap_item"), goo(GooType.LEAF, 5),
                 id("expensive_container"), goo(GooType.LEAF, 50)
             ));
@@ -577,7 +626,7 @@ class GooValueRegistryTest {
         /** Existing tests still pass with the 3-arg constructor (empty container map). */
         @Test
         void backwardCompatibleNoContainers() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("iron"), goo(GooType.METAL, 10)
             ));
             // Uses the 3-arg RecipeInput constructor (no container map)
@@ -599,14 +648,14 @@ class GooValueRegistryTest {
         /** Two-item cycle is detected as a single SCC. */
         @Test
         void twoItemCycleDetected() {
-            registry.setBaseValues(Map.of());
+            setBaseValues(Map.of());
             List<RecipeInput> recipes = List.of(
                 recipe("a", 1, slot("b")),
                 recipe("b", 1, slot("a"))
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            List<GooValueRegistry.RecipeCycle> cycles = registry.getLastCycles();
+            List<GooValueRegistry.RecipeCycle> cycles = registry.diagnostics().cycles();
             assertEquals(1, cycles.size());
             assertTrue(cycles.get(0).items().containsAll(List.of(id("a"), id("b"))));
         }
@@ -614,7 +663,7 @@ class GooValueRegistryTest {
         /** Anchored cycle: one member has a base value. */
         @Test
         void anchoredCycleDetected() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -623,7 +672,7 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            List<GooValueRegistry.RecipeCycle> cycles = registry.getLastCycles();
+            List<GooValueRegistry.RecipeCycle> cycles = registry.diagnostics().cycles();
             assertEquals(1, cycles.size());
             assertTrue(cycles.get(0).hasAnchor());
             assertEquals(id("a"), cycles.get(0).anchor());
@@ -632,7 +681,7 @@ class GooValueRegistryTest {
         /** Non-cyclic chain produces no cycles. */
         @Test
         void noCyclesInLinearChain() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("raw"), goo(GooType.ROCK, 5)
             ));
             List<RecipeInput> recipes = List.of(
@@ -641,20 +690,20 @@ class GooValueRegistryTest {
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            assertTrue(registry.getLastCycles().isEmpty());
+            assertTrue(registry.diagnostics().cycles().isEmpty());
         }
 
         /** Unanchored cycle: no member has a base value or is reachable from one. */
         @Test
         void unanchoredCycleDetected() {
-            registry.setBaseValues(Map.of());
+            setBaseValues(Map.of());
             List<RecipeInput> recipes = List.of(
                 recipe("x", 1, slot("y")),
                 recipe("y", 1, slot("x"))
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
-            List<GooValueRegistry.RecipeCycle> cycles = registry.getLastCycles();
+            List<GooValueRegistry.RecipeCycle> cycles = registry.diagnostics().cycles();
             assertEquals(1, cycles.size());
             assertFalse(cycles.get(0).hasAnchor());
             assertNull(cycles.get(0).anchor());
@@ -728,7 +777,7 @@ class GooValueRegistryTest {
         /** Multi-type ingredients sum correctly. */
         @Test
         void multiTypeIngredientsSumCorrectly() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("a"), goo(GooType.METAL, 5, GooType.CRYSTAL, 3),
                 id("b"), goo(GooType.METAL, 2, GooType.LEAF, 4)
             ));
@@ -747,7 +796,7 @@ class GooValueRegistryTest {
         /** Multi-type value divided correctly. */
         @Test
         void multiTypeDivision() {
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("block"), goo(GooType.METAL, 9, GooType.CRYSTAL, 6)
             ));
             List<RecipeInput> recipes = List.of(
@@ -775,7 +824,7 @@ class GooValueRegistryTest {
                 id("b"), goo(GooType.METAL, 3),
                 id("c"), goo(GooType.METAL, 7)
             );
-            Identifier result = GooValueRegistry.findCheapestAmong(
+            Identifier result = IGooValueLookup.findCheapestAmong(
                 Set.of(id("a"), id("b"), id("c")), values::get);
             assertEquals(id("b"), result);
         }
@@ -786,7 +835,7 @@ class GooValueRegistryTest {
             Map<Identifier, GooValue> values = Map.of(
                 id("known"), goo(GooType.METAL, 5)
             );
-            Identifier result = GooValueRegistry.findCheapestAmong(
+            Identifier result = IGooValueLookup.findCheapestAmong(
                 Set.of(id("known"), id("missing")), values::get);
             assertEquals(id("known"), result);
         }
@@ -798,7 +847,7 @@ class GooValueRegistryTest {
                 id("empty"), GooValue.EMPTY,
                 id("real"), goo(GooType.METAL, 5)
             );
-            Identifier result = GooValueRegistry.findCheapestAmong(
+            Identifier result = IGooValueLookup.findCheapestAmong(
                 Set.of(id("empty"), id("real")), values::get);
             assertEquals(id("real"), result);
         }
@@ -806,7 +855,7 @@ class GooValueRegistryTest {
         /** Returns null if no candidate has a non-empty value. */
         @Test
         void allNullReturnsNull() {
-            Identifier result = GooValueRegistry.findCheapestAmong(
+            Identifier result = IGooValueLookup.findCheapestAmong(
                 Set.of(id("a"), id("b")), id -> null);
             assertNull(result);
         }
@@ -819,9 +868,9 @@ class GooValueRegistryTest {
 
         /** Helper: parse a JSON string through the registry's base value loader. */
         private void loadJson(String json) throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            registry.copyBaseToEffective();
+            copyBaseToEffective();
         }
 
         /** A _groups entry creates a pseudo-tag, #name assigns values. */
@@ -976,9 +1025,9 @@ class GooValueRegistryTest {
     class Conversions {
 
         private void loadJson(String json) throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            registry.copyBaseToEffective();
+            copyBaseToEffective();
         }
 
         /** Single conversion applied to an individual item. */
@@ -1072,7 +1121,7 @@ class GooValueRegistryTest {
         /** Pre-derivation conversions propagate through recipes. */
         @Test
         void preConversionPropagatesThroughRecipes() throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream("""
                 {
                     "minecraft:exposed_copper": { "metal": 160 },
@@ -1097,7 +1146,7 @@ class GooValueRegistryTest {
         /** Post-derivation conversions modify effective values after recipes. */
         @Test
         void postConversionAppliesAfterDerivation() throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream("""
                 {
                     "minecraft:copper_ingot": { "metal": 160 },
@@ -1230,9 +1279,9 @@ class GooValueRegistryTest {
     class ItemReferenceExpressions {
 
         private void loadJson(String json) throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            registry.copyBaseToEffective();
+            copyBaseToEffective();
         }
 
         /** String constant referencing a tree constant promotes to tree. */
@@ -1637,7 +1686,7 @@ class GooValueRegistryTest {
             GooValue val = registry.lookup(id("minecraft:iron_ingot"));
             assertNotNull(val);
             assertEquals(10, val.get(GooType.METAL));
-            assertEquals(0, registry.baseSize());
+            assertEquals(0, registry.diagnostics().baseSize());
         }
 
         /** Missing cache file leaves effective values empty. */
@@ -1656,7 +1705,7 @@ class GooValueRegistryTest {
             Path cacheFile = tempDir.resolve("roundtrip.json");
             registry.setEffectiveCachePath(cacheFile);
 
-            registry.setBaseValues(Map.of(
+            setBaseValues(Map.of(
                 id("minecraft:iron_ingot"), goo(GooType.METAL, 10)
             ));
             List<RecipeInput> recipes = List.of(
@@ -1697,7 +1746,7 @@ class GooValueRegistryTest {
         /** Forgotten $ prefix on a known constant is flagged. */
         @Test
         void forgottenDollarPrefix() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "_constants": { "iron": 100 },
                     "minecraft:foo": { "metal": "iron * 3" }
@@ -1710,7 +1759,7 @@ class GooValueRegistryTest {
         /** Unknown constant reference is flagged. */
         @Test
         void unknownConstant() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "minecraft:foo": { "metal": "$nonexistent" }
                 }
@@ -1722,7 +1771,7 @@ class GooValueRegistryTest {
         /** Out-of-order item reference is flagged. */
         @Test
         void outOfOrderReference() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "minecraft:thing": "minecraft:iron_ingot * 2",
                     "minecraft:iron_ingot": { "metal": 10 }
@@ -1735,7 +1784,7 @@ class GooValueRegistryTest {
         /** Valid expressions produce no warnings. */
         @Test
         void validExpressionsNoWarnings() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "_constants": { "iron": 100 },
                     "minecraft:iron_ingot": { "metal": "$iron" },
@@ -1748,7 +1797,7 @@ class GooValueRegistryTest {
         /** Tree constant ref in expression doesn't produce a warning. */
         @Test
         void treeConstantRefNoWarning() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "_constants": { "stripped": { "nether": 50 } },
                     "minecraft:dark_oak_log": { "leaf": 384 },
@@ -1761,7 +1810,7 @@ class GooValueRegistryTest {
         /** Bare word item ref in expression doesn't produce a warning. */
         @Test
         void bareWordItemRefNoWarning() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "minecraft:iron_ingot": { "metal": 10 },
                     "minecraft:iron_block": "iron_ingot * 9"
@@ -1773,7 +1822,7 @@ class GooValueRegistryTest {
         /** Dot notation referencing an item above is valid. */
         @Test
         void validDotNotation() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "minecraft:coal": { "rock": 48, "blaze": 336 },
                     "minecraft:thing": { "blaze": "minecraft:coal.blaze * 2" }
@@ -1785,7 +1834,7 @@ class GooValueRegistryTest {
         /** Dot notation referencing an item below is flagged. */
         @Test
         void outOfOrderDotNotation() {
-            List<String> warnings = registry.validateJsonString("""
+            List<String> warnings = validateJsonString("""
                 {
                     "minecraft:thing": { "blaze": "minecraft:coal.blaze * 2" },
                     "minecraft:coal": { "rock": 48, "blaze": 336 }
@@ -1815,7 +1864,7 @@ class GooValueRegistryTest {
             JsonObject overlay = json("""
                 { "minecraft:stick": { "vital": 10 } }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(base, overlay));
 
             assertEquals(10, merged.getAsJsonObject("minecraft:stick").get("vital").getAsInt());
         }
@@ -1829,7 +1878,7 @@ class GooValueRegistryTest {
             JsonObject overlay = json("""
                 { "minecraft:coal": { "blaze": 20 } }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(base, overlay));
 
             assertTrue(merged.has("minecraft:stick"), "Base item should survive");
             assertTrue(merged.has("minecraft:coal"), "Overlay item should appear");
@@ -1844,7 +1893,7 @@ class GooValueRegistryTest {
             JsonObject overlay = json("""
                 { "_constants": { "base": 2000 } }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(base, overlay));
 
             JsonObject constants = merged.getAsJsonObject("_constants");
             assertEquals(2000, constants.get("base").getAsInt(), "Overridden constant");
@@ -1869,7 +1918,7 @@ class GooValueRegistryTest {
                     }
                 }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(base, overlay));
 
             JsonObject groups = merged.getAsJsonObject("_groups");
             assertTrue(groups.has("ores"), "Preserved group from base");
@@ -1886,7 +1935,7 @@ class GooValueRegistryTest {
                     "minecraft:stick": { "vital": 5 }
                 }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(layer));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(layer));
 
             assertEquals(1000, merged.getAsJsonObject("_constants").get("base").getAsInt());
             assertEquals(5, merged.getAsJsonObject("minecraft:stick").get("vital").getAsInt());
@@ -1895,7 +1944,7 @@ class GooValueRegistryTest {
         /** An empty layer list produces an empty JsonObject. */
         @Test
         void emptyLayerListProducesEmptyObject() {
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of());
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of());
 
             assertEquals(0, merged.size());
         }
@@ -1909,7 +1958,7 @@ class GooValueRegistryTest {
             JsonObject overlay = json("""
                 { "minecraft:iron_ore": "denied" }
                 """);
-            JsonObject merged = GooValueRegistry.mergeBaseValueJsonLayers(List.of(base, overlay));
+            JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(List.of(base, overlay));
 
             assertEquals("denied", merged.get("minecraft:iron_ore").getAsString());
         }
@@ -1940,7 +1989,7 @@ class GooValueRegistryTest {
                 id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
             );
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertTrue(result.has("minecraft:oak_planks"));
             assertTrue(result.has("minecraft:birch_planks"));
@@ -1959,7 +2008,7 @@ class GooValueRegistryTest {
                 id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
             );
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertEquals(200, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
             assertEquals(100, result.getAsJsonObject("minecraft:birch_planks").get("leaf").getAsInt());
@@ -1975,7 +2024,7 @@ class GooValueRegistryTest {
                 id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
             );
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertEquals(100, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
             assertEquals(100, result.getAsJsonObject("minecraft:birch_planks").get("leaf").getAsInt());
@@ -1991,7 +2040,7 @@ class GooValueRegistryTest {
             tags.put(id("test:planks"), Set.of(id("minecraft:oak_planks")));
             tags.put(id("test:ores"), Set.of(id("minecraft:iron_ore")));
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertEquals(100, result.getAsJsonObject("minecraft:oak_planks").get("leaf").getAsInt());
             assertEquals(50, result.getAsJsonObject("minecraft:iron_ore").get("rock").getAsInt());
@@ -2004,7 +2053,7 @@ class GooValueRegistryTest {
                 { "#test:nonexistent": { "leaf": 100 } }
                 """);
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(Map.of()));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(Map.of()));
 
             // Unresolved MC tags are preserved so pseudo-tag resolution can try them
             assertEquals(1, result.size());
@@ -2021,7 +2070,7 @@ class GooValueRegistryTest {
                 id("test:planks"), Set.of(id("minecraft:oak_planks"), id("minecraft:birch_planks"))
             );
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertEquals("stick * 2", result.get("minecraft:oak_planks").getAsString());
             assertEquals("stick * 2", result.get("minecraft:birch_planks").getAsString());
@@ -2041,7 +2090,7 @@ class GooValueRegistryTest {
                 id("test:planks"), Set.of(id("minecraft:oak_planks"))
             );
 
-            JsonObject result = GooValueRegistry.expandTagEntries(input, resolver(tags));
+            JsonObject result = GooValueMerger.expandTagEntries(input, resolver(tags));
 
             assertTrue(result.has("_constants"));
             assertTrue(result.has("_groups"));
@@ -2057,9 +2106,9 @@ class GooValueRegistryTest {
     class RestrictedItems {
 
         private void loadJson(String json) throws IOException {
-            registry.parseBaseValuesFromStream(
+            parseBaseValuesFromStream(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
-            registry.copyBaseToEffective();
+            copyBaseToEffective();
         }
 
         /** Items listed in _restricted are flagged but still have values. */

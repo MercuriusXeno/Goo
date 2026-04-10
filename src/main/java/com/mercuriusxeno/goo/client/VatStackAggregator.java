@@ -2,9 +2,9 @@ package com.mercuriusxeno.goo.client;
 
 import com.mercuriusxeno.goo.block.VatBlock;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
-import com.mercuriusxeno.goo.item.GasketPartner;
-import com.mercuriusxeno.goo.item.GasketRole;
 import com.mercuriusxeno.goo.item.GooContents;
+import com.mercuriusxeno.goo.item.gasket.GasketPartner;
+import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -35,13 +35,27 @@ public final class VatStackAggregator {
 
         BlockPos topPos = findStackTop(level, targetPos);
         BlockPos bottomPos = findStackBottom(level, targetPos);
-        int stackSize = topPos.getY() - bottomPos.getY() + 1;
 
+        int stackSize = topPos.getY() - bottomPos.getY() + 1;
         GooContents mergedContents = sumContents(level, topPos, bottomPos);
         StackGaskets gaskets = resolveGaskets(level, topPos, bottomPos);
 
+        return buildStackData(targetVat, mergedContents, gaskets, stackSize);
+    }
+
+    /**
+     * Assembles the final VatStackData from collected components.
+     *
+     * @param targetVat the targeted vat block entity
+     * @param contents  the summed goo contents
+     * @param gaskets   the resolved gasket state
+     * @param stackSize the number of vats in the stack
+     * @return the assembled stack data
+     */
+    private static VatStackData buildStackData(VatBlockEntity targetVat,
+            GooContents contents, StackGaskets gaskets, int stackSize) {
         return new VatStackData(
-            mergedContents,
+            contents,
             targetVat.getCompressionLevel(),
             gaskets.capGasket(),
             gaskets.baseGasket(),

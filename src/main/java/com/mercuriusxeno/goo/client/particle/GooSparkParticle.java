@@ -60,15 +60,28 @@ public final class GooSparkParticle extends SingleQuadParticle {
         this.xd = vx;
         this.yd = vy;
         this.zd = vz;
+        initPhysics();
+        initAppearance(level.getRandom());
+    }
+
+    /** Sets up collision, gravity, and friction for the spark. */
+    private void initPhysics() {
         this.setSize(SPARK_SIZE, SPARK_SIZE);
         this.gravity = SPARK_GRAVITY;
         this.friction = SPARK_FRICTION;
         this.hasPhysics = false;
-        this.lifetime = BASE_LIFETIME + level.getRandom().nextInt(LIFETIME_VARIANCE);
-        this.quadSize = BASE_QUAD_SIZE + level.getRandom().nextFloat() * QUAD_SIZE_VARIANCE;
+    }
+
+    /**
+     * Randomizes lifetime, size, and warm color tint.
+     * @param random the random source for lifetime, size, and color variance
+     */
+    private void initAppearance(RandomSource random) {
+        this.lifetime = BASE_LIFETIME + random.nextInt(LIFETIME_VARIANCE);
+        this.quadSize = BASE_QUAD_SIZE + random.nextFloat() * QUAD_SIZE_VARIANCE;
         this.rCol = 1.0f;
-        this.gCol = MIN_GREEN + level.getRandom().nextFloat() * GREEN_RANGE;
-        this.bCol = level.getRandom().nextFloat() * MAX_BLUE;
+        this.gCol = MIN_GREEN + random.nextFloat() * GREEN_RANGE;
+        this.bCol = random.nextFloat() * MAX_BLUE;
     }
 
     /** Enables block collision after clearing the platform, and trails smoke. */

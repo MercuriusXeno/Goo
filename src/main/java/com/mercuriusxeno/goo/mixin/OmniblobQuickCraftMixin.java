@@ -36,6 +36,8 @@ public abstract class OmniblobQuickCraftMixin {
     private static final int PHASE_COLLECT = 1;
     /** Quickcraft phase: distribute volume across collected slots. */
     private static final int PHASE_DISTRIBUTE = 2;
+    /** Sentinel return value indicating the slot holds an incompatible goo type. */
+    private static final long INCOMPATIBLE_SLOT = -1;
 
     @Shadow
     private int quickcraftType;
@@ -243,28 +245,54 @@ public abstract class OmniblobQuickCraftMixin {
      */
     private long distributeToSlots(GooType gooType, long perSlot, long totalVolume) {
         long distributed = 0L;
-
         for (Slot slot : quickcraftSlots) {
-            if (perSlot <= 0 || distributed + perSlot > totalVolume) { break; }
-            if (!slot.mayPlace(getCarried()) || !canDragTo(slot)) { continue; }
-
-            ItemStack existing = slot.getItem();
-            long mergedVolume = perSlot;
-
-            if (!existing.isEmpty()) {
-                GooType existingType = BlobStacks.gooTypeOf(existing);
-                if (existingType == gooType) {
-                    mergedVolume += BlobStacks.volumeOf(existing);
-                } else {
-                    continue;
-                }
-            }
-
-            slot.setByPlayer(BlobStacks.createForOutput(gooType, mergedVolume));
-            distributed += perSlot;
+            if (!canDistributeMore(perSlot, distributed, totalVolume)) { break; }
+            if (!isSlotEligible(slot)) { continue; }
+            long placed = placeIntoSlot(slot, gooType, perSlot);
+            if (placed > 0) { distributed += placed; }
         }
-
         return distributed;
+    }
+
+    /**
+     * Returns true if there is enough remaining volume to distribute another slot.
+     *
+     * @param perSlot     the volume per slot in microblobs
+     * @param distributed the total volume already distributed
+     * @param totalVolume the total volume available
+     * @return true if another slot can receive its share
+     */
+    private static boolean canDistributeMore(long perSlot, long distributed, long totalVolume) {
+        return perSlot > 0 && distributed + perSlot <= totalVolume;
+    }
+
+    /**
+     * Returns true if the slot accepts placement and is a valid drag target.
+     *
+     * @param slot the inventory slot to check
+     * @return true if the slot can receive goo during quick-craft
+     */
+    private boolean isSlotEligible(Slot slot) {
+        return slot.mayPlace(getCarried()) && canDragTo(slot);
+    }
+
+    /**
+     * Merges goo into a single slot, returning volume placed or INCOMPATIBLE_SLOT if incompatible.
+     * @param slot the target inventory slot
+     * @param gooType the goo type being distributed
+     * @param perSlot the volume in microblobs to place in this slot
+     * @return the volume actually placed, or INCOMPATIBLE_SLOT if the slot has an incompatible item
+     */
+    private long placeIntoSlot(Slot slot, GooType gooType, long perSlot) {
+        ItemStack existing = slot.getItem();
+        long mergedVolume = perSlot;
+        if (!existing.isEmpty()) {
+            GooType existingType = BlobStacks.gooTypeOf(existing);
+            if (existingType != gooType) { return INCOMPATIBLE_SLOT; }
+            mergedVolume += BlobStacks.volumeOf(existing);
+        }
+        slot.setByPlayer(BlobStacks.createForOutput(gooType, mergedVolume));
+        return perSlot;
     }
 
     /**

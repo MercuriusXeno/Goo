@@ -18,6 +18,7 @@ public final class GooTickets {
     private static final String TICKET_ID = "gasket_chunks";
 
     /** Ticket controller for gasket-linked chunk loading. */
+    @SuppressWarnings("PMD.MutableStaticState") // NeoForge registration result, set once during init
     public static TicketController gasketChunks;
 
     private GooTickets() {}

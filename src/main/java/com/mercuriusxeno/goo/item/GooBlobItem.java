@@ -101,15 +101,34 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
         int newCount = (int) Math.min(wholeBlobs, BlobStacks.MAX_STACK);
         stack.setCount(newCount);
 
-        long overflowVolume = (wholeBlobs > BlobStacks.MAX_STACK)
+        long overflowVolume = computeOverflow(wholeBlobs, remainder);
+        distributeOverflow(player, overflowVolume, stack, newCount);
+    }
+
+    /**
+     * Computes the leftover volume that exceeds the max blob stack size.
+     * @param wholeBlobs the total number of whole blobs from the legacy volume
+     * @param remainder the sub-blob leftover in microblobs
+     * @return the overflow volume in microblobs (excess blobs beyond 64 plus remainder)
+     */
+    private long computeOverflow(long wholeBlobs, long remainder) {
+        return (wholeBlobs > BlobStacks.MAX_STACK)
             ? (wholeBlobs - BlobStacks.MAX_STACK) * BlobStacks.MB_PER_BLOB + remainder
             : remainder;
+    }
 
+    /**
+     * Creates an omniblob for overflow volume, or clears the stack if nothing remains.
+     * @param player the player to receive the overflow omniblob
+     * @param overflowVolume the excess volume in microblobs to distribute
+     * @param stack the original blob stack being migrated
+     * @param newCount the stack count after capping at max blob stack size
+     */
+    private void distributeOverflow(Player player, long overflowVolume, ItemStack stack, int newCount) {
         if (overflowVolume > 0) {
             ItemStack omniblob = GooOmniblobItem.createWithVolume(gooType, overflowVolume);
             PlayerUtils.addOrDrop(player, omniblob);
         }
-
         if (newCount <= 0 && overflowVolume <= 0) {
             stack.setCount(0);
         }

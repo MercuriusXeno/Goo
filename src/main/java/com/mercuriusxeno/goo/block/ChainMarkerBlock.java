@@ -163,31 +163,85 @@ public class ChainMarkerBlock extends BaseEntityBlock {
         double cx = pos.getX() + BLOCK_CENTER;
         double cy = pos.getY() + BLOCK_CENTER;
         double cz = pos.getZ() + BLOCK_CENTER;
-        double spread = BASE_SPREAD + SPREAD_PER_STACK * stacks;
+        dispatchParticles(type, stacks, cx, cy, cz, level, random);
+    }
 
+    /**
+     * Dispatches to the type-specific particle emitter.
+     * @param type the goo type determining which particles to spawn
+     * @param stacks the current stack count (scales particle density)
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void dispatchParticles(GooType type, int stacks,
+            double cx, double cy, double cz, Level level, RandomSource random) {
+        double spread = BASE_SPREAD + SPREAD_PER_STACK * stacks;
         switch (type) {
-            case BLAZE -> {
-                for (int i = 0; i < BLAZE_BASE_PARTICLES + stacks; i++) {
-                    double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    level.addParticle(ParticleTypes.FLAME, cx + ox, cy + oy, cz + oz,
-                            0, FLAME_RISE_SPEED, 0);
-                }
-                if (random.nextInt(LAVA_CHANCE) == 0) {
-                    level.addParticle(ParticleTypes.LAVA, cx, cy, cz, 0, 0, 0);
-                }
-            }
-            case ROCK -> {
-                for (int i = 0; i < 1 + stacks; i++) {
-                    double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
-                    level.addParticle(ParticleTypes.DUST_PLUME, cx + ox, cy + oy, cz + oz,
-                            0, DUST_FALL_SPEED, 0);
-                }
-            }
+            case BLAZE -> spawnBlazeParticles(stacks, cx, cy, cz, spread, level, random);
+            case ROCK -> spawnRockParticles(stacks, cx, cy, cz, spread, level, random);
             default -> {}
+        }
+    }
+
+    /**
+     * Emits flame particles and occasional lava drips for blaze chain markers.
+     * @param stacks the current stack count (scales particle count)
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void spawnBlazeParticles(int stacks, double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        for (int i = 0; i < BLAZE_BASE_PARTICLES + stacks; i++) {
+            emitFlameParticle(cx, cy, cz, spread, level, random);
+        }
+        if (random.nextInt(LAVA_CHANCE) == 0) {
+            level.addParticle(ParticleTypes.LAVA, cx, cy, cz, 0, 0, 0);
+        }
+    }
+
+    /**
+     * Emits a single flame particle with random offset within the spread radius.
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void emitFlameParticle(double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+        double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+        double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+        level.addParticle(ParticleTypes.FLAME, cx + ox, cy + oy, cz + oz,
+                0, FLAME_RISE_SPEED, 0);
+    }
+
+    /**
+     * Emits dust plume particles for rock chain markers.
+     * @param stacks the current stack count (scales particle count)
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void spawnRockParticles(int stacks, double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        for (int i = 0; i < 1 + stacks; i++) {
+            double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            level.addParticle(ParticleTypes.DUST_PLUME, cx + ox, cy + oy, cz + oz,
+                    0, DUST_FALL_SPEED, 0);
         }
     }
 }

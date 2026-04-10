@@ -3,10 +3,6 @@ package com.mercuriusxeno.goo.item;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.CanisterSlotLayout;
-import com.mercuriusxeno.goo.block.GasketInstallation;
-import com.mercuriusxeno.goo.block.ICanisterAttachable;
-import com.mercuriusxeno.goo.block.IGasketHolder;
 import com.mercuriusxeno.goo.block.InteractionCooldown;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import net.minecraft.core.BlockPos;
@@ -18,14 +14,11 @@ import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -39,11 +32,6 @@ import org.jspecify.annotations.Nullable;
  * location directly.</p>
  */
 public class CanisterItem extends BlockItem implements IGooItemInteraction {
-
-    /** Pixels per block: converts block-space [0..1] to pixel-space [0..16]. */
-    private static final double PIXELS_PER_BLOCK = 16.0;
-    /** Sentinel value: no empty slot found. */
-    private static final int NO_SLOT = -1;
 
     /**
      * Creates a new canister block item.
@@ -113,7 +101,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult placeNewCanister(UseOnContext context, Level level, BlockPos placePos) {
-        if (!isSupportedBelow(level, placePos.below())) {
+        if (!CanisterPlacementValidator.isSupportedBelow(level, placePos.below())) {
             return InteractionResult.PASS;
         }
 
@@ -155,7 +143,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
         var be = canisterEntityAt(level, pos);
         if (be == null) { return InteractionResult.PASS; }
 
-        int slot = resolveAndConstrain(context.getClickLocation(), pos, entryFace, be);
+        int slot = CanisterSlotResolver.resolveAndConstrain(context.getClickLocation(), pos, entryFace, be);
         if (slot < 0) { return InteractionResult.PASS; }
         return commitInsertion(context, be, slot, level);
     }
@@ -180,8 +168,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      */
     private static boolean canInteract(UseOnContext context, Level level) {
         Player player = context.getPlayer();
-        if (player == null) { return false; }
-        return !InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime());
+        return player != null && !InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime());
     }
 
     /**
@@ -250,238 +237,15 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      */
     private void initPlacedCanister(
             BlockPlaceContext context, Level level, BlockPos pos, CanisterBlockEntity be) {
-        int slot = constrainSlot(computePlacementSlot(context), level, pos);
+        int slot = CanisterPlacementValidator.constrainSlot(
+                CanisterPlacementValidator.computePlacementSlot(
+                        context.getClickLocation(), context.getClickedPos(),
+                        context.getClickedFace().getOpposite()),
+                level, pos);
         boolean creative = context.getPlayer() != null && context.getPlayer().isCreative();
         be.assignFromItemStack(slot, context.getItemInHand(), creative);
-        stampOwner(be, context.getPlayer());
-        popConflictingGaskets(level, pos);
-    }
-
-    /**
-     * Falls back to the first allowed slot if the target slot is disallowed.
-     *
-     * @param slot  the preferred slot index
-     * @param level the current level
-     * @param pos   the canister block position
-     * @return the constrained slot index
-     */
-    private static int constrainSlot(int slot, Level level, BlockPos pos) {
-        if (isSlotAllowed(level, pos, slot)) { return slot; }
-        java.util.Set<Integer> allowed = getAllowedSlots(level, pos);
-        if (allowed != null && !allowed.isEmpty()) {
-            return allowed.iterator().next();
-        }
-        return slot;
-    }
-
-    /**
-     * Computes the target slot for new block placement using the click location
-     * on the adjacent solid block's face.
-     *
-     * @param context the block placement context
-     * @return the target slot index (0-8)
-     */
-    private int computePlacementSlot(BlockPlaceContext context) {
-        BlockPos placePos = context.getClickedPos();
-        Vec3 clickLoc = context.getClickLocation();
-        float px = (float) ((clickLoc.x - placePos.getX()) * PIXELS_PER_BLOCK);
-        float pz = (float) ((clickLoc.z - placePos.getZ()) * PIXELS_PER_BLOCK);
-        Direction entryFace = context.getClickedFace().getOpposite();
-        return CanisterSlotLayout.placementSlot(entryFace, px, pz);
-    }
-
-    /**
-     * Stamps owner UUID on the canister block entity.
-     *
-     * @param be     the canister block entity
-     * @param player the player who placed the canister
-     */
-    private void stampOwner(CanisterBlockEntity be, Player player) {
-        if (player != null) {
-            be.setOwner(player.getUUID());
-        }
-    }
-
-    // --- Slot projection ---
-
-    /**
-     * Determines which canister grid cell a hit point targets for placement.
-     *
-     * @param hitLocation the contact point from BlockHitResult.getLocation()
-     * @param pos         the canister block position
-     * @param face        the face that was hit
-     * @return slot index 0-8
-     */
-    public static int projectToCanisterSlot(Vec3 hitLocation, BlockPos pos, Direction face) {
-        float px = (float) ((hitLocation.x - pos.getX()) * PIXELS_PER_BLOCK);
-        float pz = (float) ((hitLocation.z - pos.getZ()) * PIXELS_PER_BLOCK);
-        return CanisterSlotLayout.placementSlot(face, px, pz);
-    }
-
-    /**
-     * Resolves the best empty slot for canister insertion.
-     *
-     * @param hitLocation the contact point from BlockHitResult.getLocation()
-     * @param pos         the canister block position
-     * @param face        the face that was hit
-     * @param be          the canister block entity to check occupancy
-     * @return empty slot index 0-8, or -1 if all full
-     */
-    public static int resolveInsertionSlot(
-            Vec3 hitLocation, BlockPos pos, Direction face, CanisterBlockEntity be) {
-        float px = (float) ((hitLocation.x - pos.getX()) * PIXELS_PER_BLOCK);
-        float pz = (float) ((hitLocation.z - pos.getZ()) * PIXELS_PER_BLOCK);
-        int slot = CanisterSlotLayout.placementSlot(face, px, pz);
-
-        if (slot >= 0 && be.getCanister(slot).isEmpty()) { return slot; }
-
-        return fallbackSlot(slot, px, pz, be);
-    }
-
-    /**
-     * Tries the adjacent slot by cursor lean, then falls back to the first empty.
-     *
-     * @param slot the targeted slot index
-     * @param px   the x pixel coordinate within the block
-     * @param pz   the z pixel coordinate within the block
-     * @param be   the canister block entity
-     * @return the fallback slot index, or -1 if all full
-     */
-    private static int fallbackSlot(int slot, float px, float pz, CanisterBlockEntity be) {
-        if (slot >= 0) {
-            int adjacent = CanisterSlotLayout.adjacentByCursorLean(slot, px, pz);
-            if (be.getCanister(adjacent).isEmpty()) { return adjacent; }
-        }
-        return findFirstEmpty(be);
-    }
-
-    /**
-     * Resolves the best empty slot, then constrains to allowed slots for
-     * the attachment target below.
-     *
-     * @param hitLocation the contact point from the hit result
-     * @param pos         the canister block position
-     * @param face        the face that was hit
-     * @param be          the canister block entity
-     * @return constrained slot index, or -1 if none available
-     */
-    private static int resolveAndConstrain(
-            Vec3 hitLocation, BlockPos pos, Direction face, CanisterBlockEntity be) {
-        int slot = resolveInsertionSlot(hitLocation, pos, face, be);
-        Level level = be.getLevel();
-        if (slot >= 0 && isSlotAllowed(level, pos, slot)) { return slot; }
-
-        java.util.Set<Integer> allowed = getAllowedSlots(level, pos);
-        if (allowed == null) { return slot; }
-        return findFirstAllowedEmpty(be, allowed);
-    }
-
-    /**
-     * Finds the first empty slot in the block entity.
-     *
-     * @param be the canister block entity
-     * @return the first empty slot index, or -1 if all full
-     */
-    private static int findFirstEmpty(CanisterBlockEntity be) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (be.getCanister(i).isEmpty()) { return i; }
-        }
-        return NO_SLOT;
-    }
-
-    /**
-     * Finds the first empty slot that is in the allowed set.
-     *
-     * @param be      the canister block entity
-     * @param allowed the set of allowed slot indices
-     * @return the first allowed empty slot, or -1 if none
-     */
-    private static int findFirstAllowedEmpty(CanisterBlockEntity be, java.util.Set<Integer> allowed) {
-        for (int slot : allowed) {
-            if (be.getCanister(slot).isEmpty()) { return slot; }
-        }
-        return NO_SLOT;
-    }
-
-    // --- Gasket mutual exclusivity ---
-
-    /**
-     * Pops any gaskets on the attachment target below when a canister is placed
-     * above it. E.g. hub intake gasket pops when a canister is copper-fitted on top.
-     *
-     * @param level        the current level
-     * @param canisterPos  the canister block position
-     */
-    private static void popConflictingGaskets(Level level, BlockPos canisterPos) {
-        BlockPos belowPos = canisterPos.below();
-        BlockEntity belowBe = level.getBlockEntity(belowPos);
-        if (belowBe instanceof IGasketHolder holder) {
-            popReceiverGasket(level, belowPos, holder);
-        }
-    }
-
-    /**
-     * Pops the RECEIVER gasket on the top face of the block below, if present.
-     *
-     * @param level  the current level
-     * @param pos    the gasket holder block position
-     * @param holder the gasket holder
-     */
-    private static void popReceiverGasket(Level level, BlockPos pos, IGasketHolder holder) {
-        java.util.UUID gasketId = holder.getGasketId(GasketRole.RECEIVER);
-        if (gasketId != null) {
-            GasketInstallation.popGasket(level, pos, gasketId);
-            holder.clearGasket(GasketRole.RECEIVER);
-        }
-    }
-
-    // --- Placement validation ---
-
-    /**
-     * Returns true if the block below can support a canister. A canister needs
-     * either a solid rendering surface or an ICanisterAttachable with capacity.
-     *
-     * @param level    the current level
-     * @param belowPos the block position below the canister
-     * @return true if the position can support a canister
-     */
-    private static boolean isSupportedBelow(Level level, BlockPos belowPos) {
-        BlockState belowState = level.getBlockState(belowPos);
-        if (belowState.isSolidRender()) { return true; }
-        BlockEntity be = level.getBlockEntity(belowPos);
-        return be instanceof ICanisterAttachable att && att.canAttachOnTop();
-    }
-
-    /**
-     * Returns the set of allowed slot indices for a canister block at the given
-     * position, or null if no constraint applies. Queries the ICanisterAttachable
-     * block below (if any) for its allowed slot set.
-     *
-     * @param level        the current level
-     * @param canisterPos  the canister block position
-     * @return the allowed slots, or null if unconstrained
-     */
-    static java.util.@Nullable Set<Integer> getAllowedSlots(Level level, BlockPos canisterPos) {
-        BlockPos belowPos = canisterPos.below();
-        BlockEntity be = level.getBlockEntity(belowPos);
-        if (be instanceof ICanisterAttachable att) {
-            return att.allowedSlots();
-        }
-        return null;
-    }
-
-    /**
-     * Returns true if the given slot is allowed for a canister block at the given
-     * position. If there is no ICanisterAttachable below, all slots are allowed.
-     *
-     * @param level        the current level
-     * @param canisterPos  the canister block position
-     * @param slot         the slot index to check
-     * @return true if the slot is allowed
-     */
-    static boolean isSlotAllowed(Level level, BlockPos canisterPos, int slot) {
-        java.util.Set<Integer> allowed = getAllowedSlots(level, canisterPos);
-        return allowed == null || allowed.contains(slot);
+        CanisterPlacementValidator.stampOwner(be, context.getPlayer());
+        CanisterInventoryHandler.popConflictingGaskets(level, pos);
     }
 
     // --- Static contents helpers ---
@@ -600,210 +364,10 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
             @NonNull Slot slot, @NonNull ClickAction action, @NonNull Player player,
             @NonNull SlotAccess cursorAccess) {
         if (cursor.isEmpty() && action == ClickAction.SECONDARY) {
-            return handleEmptyCursorDrain(canister, cursorAccess);
+            return CanisterInventoryHandler.handleEmptyCursorDrain(canister, cursorAccess);
         }
-        if (action == ClickAction.PRIMARY) {
-            return handlePrimaryClick(canister, cursor, cursorAccess);
-        }
-        return false;
-    }
-
-    /**
-     * Dispatches primary-click interactions based on cursor item type.
-     *
-     * @param canister     the canister item stack
-     * @param cursor       the cursor item stack
-     * @param cursorAccess access to set the cursor contents
-     * @return true if the interaction was handled
-     */
-    private static boolean handlePrimaryClick(
-            ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        if (cursor.getItem() instanceof GooBlobItem) {
-            return handleBlobInsert(canister, cursor, cursorAccess);
-        }
-        if (cursor.getItem() instanceof GooOmniblobItem) {
-            return handleOmniblobInsert(canister, cursor, cursorAccess);
-        }
-        return handlePrimaryBucketClick(canister, cursor, cursorAccess);
-    }
-
-    /**
-     * Dispatches primary-click bucket interactions (empty or partial).
-     *
-     * @param canister     the canister item stack
-     * @param cursor       the cursor item stack
-     * @param cursorAccess access to set the cursor contents
-     * @return true if the interaction was handled
-     */
-    private static boolean handlePrimaryBucketClick(
-            ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        if (cursor.is(Items.BUCKET)) {
-            return handleBucketDrain(canister, cursor, cursorAccess);
-        }
-        if (cursor.getItem() instanceof BucketOfGooItem) {
-            return handlePartialBucketDrain(canister, cursor, cursorAccess);
-        }
-        return false;
-    }
-
-    /**
-     * Transfers blob goo into the canister, shrinking the blob stack by accepted blobs.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the blob stack on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was transferred
-     */
-    private static boolean handleBlobInsert(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooType type = ((GooBlobItem) cursor.getItem()).getGooType();
-        long volume = BlobStacks.volumeOf(cursor);
-        long accepted = addGoo(canister, type, volume);
-        if (accepted <= 0) { return false; }
-
-        int blobsUsed = (int) (accepted / BlobStacks.MB_PER_BLOB);
-        cursor.shrink(blobsUsed);
-        if (cursor.isEmpty()) { cursorAccess.set(ItemStack.EMPTY); }
-        return true;
-    }
-
-    /**
-     * Transfers omniblob goo into the canister, reducing or clearing the cursor.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the omniblob on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was transferred
-     */
-    private static boolean handleOmniblobInsert(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooType type = ((GooOmniblobItem) cursor.getItem()).getGooType();
-        long volume = GooOmniblobItem.getVolume(cursor);
-        long accepted = addGoo(canister, type, volume);
-        if (accepted <= 0) { return false; }
-
-        applyOmniblobRemainder(cursor, cursorAccess, volume - accepted);
-        return true;
-    }
-
-    /**
-     * Clears the omniblob cursor or updates its remaining volume.
-     *
-     * @param cursor       the omniblob item stack
-     * @param cursorAccess access to set the cursor contents
-     * @param remaining    the remaining volume after transfer
-     */
-    private static void applyOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, long remaining) {
-        if (remaining <= 0) {
-            cursorAccess.set(ItemStack.EMPTY);
-        } else {
-            GooOmniblobItem.setVolume(cursor, remaining);
-        }
-    }
-
-    /**
-     * Drains up to 64,000 mB of the dominant goo type onto the cursor as a blob output.
-     *
-     * @param canister    the canister item stack
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was extracted
-     */
-    private static boolean handleEmptyCursorDrain(ItemStack canister, SlotAccess cursorAccess) {
-        GooType dominant = dominantType(canister);
-        if (dominant == null) { return false; }
-
-        long extracted = extractCapped(canister, dominant, ContainerCapacity.BLOB_CAP);
-        if (extracted <= 0) { return false; }
-
-        cursorAccess.set(BlobStacks.createForOutput(dominant, extracted));
-        return true;
-    }
-
-    /**
-     * Drains up to BUCKET_CAP of the dominant goo type into an empty bucket on the cursor.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the empty bucket on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was extracted
-     */
-    private static boolean handleBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooType dominant = dominantType(canister);
-        if (dominant == null) { return false; }
-
-        long extracted = extractCapped(canister, dominant, ContainerCapacity.BUCKET_CAP);
-        if (extracted <= 0) { return false; }
-
-        cursorAccess.set(BucketOfGooItem.createWithGoo(dominant, extracted));
-        return true;
-    }
-
-    /**
-     * Drains goo into a partially-filled bucket, up to remaining bucket capacity.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the partially-filled bucket on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was transferred
-     */
-    private static boolean handlePartialBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        long remainingCap = bucketRemainingCapacity(cursor);
-        if (remainingCap <= 0) { return false; }
-
-        GooType dominant = dominantType(canister);
-        if (dominant == null) { return false; }
-
-        long extracted = extractCapped(canister, dominant, remainingCap);
-        if (extracted <= 0) { return false; }
-
-        addToBucket(cursor, dominant, extracted);
-        return true;
-    }
-
-    /**
-     * Adds extracted goo to a partially-filled bucket item stack.
-     *
-     * @param cursor the bucket item stack
-     * @param type   the goo type to add
-     * @param amount the volume in microblobs to add
-     */
-    private static void addToBucket(ItemStack cursor, GooType type, long amount) {
-        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
-        BucketOfGooItem.setContents(cursor, bucketContents.withAdded(type, amount));
-    }
-
-    /**
-     * Returns the dominant goo type in the canister, or null if empty.
-     *
-     * @param canister the canister item stack
-     * @return the dominant goo type, or null
-     */
-    private static @Nullable GooType dominantType(ItemStack canister) {
-        GooContents contents = getGooContents(canister);
-        if (contents.isEmpty()) { return null; }
-        return contents.largestType();
-    }
-
-    /**
-     * Extracts up to cap mB of the given type, capped by available volume.
-     *
-     * @param canister the canister item stack
-     * @param type     the goo type to extract
-     * @param cap      the maximum volume to extract
-     * @return the amount actually extracted
-     */
-    private static long extractCapped(ItemStack canister, GooType type, long cap) {
-        long available = getGooContents(canister).getVolume(type);
-        return removeGoo(canister, type, Math.min(available, cap));
-    }
-
-    /**
-     * Returns the remaining bucket capacity for a partially-filled goo bucket.
-     *
-     * @param cursor the bucket item stack
-     * @return the remaining capacity in microblobs
-     */
-    private static long bucketRemainingCapacity(ItemStack cursor) {
-        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
-        return ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
+        return action == ClickAction.PRIMARY
+                && CanisterInventoryHandler.handlePrimaryClick(canister, cursor, cursorAccess);
     }
 
     /**

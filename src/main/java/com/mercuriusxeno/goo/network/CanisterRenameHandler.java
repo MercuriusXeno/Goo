@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.network;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.ChoralTunerItem;
+import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;

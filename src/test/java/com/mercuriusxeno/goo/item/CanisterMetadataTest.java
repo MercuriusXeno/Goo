@@ -1,4 +1,5 @@
 package com.mercuriusxeno.goo.item;
+import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;

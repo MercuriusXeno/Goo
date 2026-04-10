@@ -7,7 +7,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
@@ -86,11 +85,24 @@ public final class ChainProfiles {
         double cy = pos.getY() + BLOCK_CENTER_OFFSET;
         double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
 
-        // Core explosion
         level.explode(null, cx, cy, cz, (float) range,
                 Level.ExplosionInteraction.TNT);
 
-        // Flame particles scaled by range
+        emitBlazeParticles(level, cx, cy, cz, range, stackCount);
+        scatterFires(level, pos, range, stackCount);
+    }
+
+    /**
+     * Sends flame, lava, and smoke particles scaled by explosion range and stack count.
+     * @param level the server level to spawn particles in
+     * @param cx the explosion center X coordinate
+     * @param cy the explosion center Y coordinate
+     * @param cz the explosion center Z coordinate
+     * @param range the explosion radius controlling particle spread
+     * @param stackCount the number of stacked blobs controlling particle density
+     */
+    private static void emitBlazeParticles(ServerLevel level,
+            double cx, double cy, double cz, int range, int stackCount) {
         int particleCount = FLAME_PARTICLES_PER_STACK * stackCount;
         double spread = range * FLAME_SPREAD_FACTOR;
         level.sendParticles(ParticleTypes.FLAME,
@@ -98,10 +110,8 @@ public final class ChainProfiles {
         level.sendParticles(ParticleTypes.LAVA,
                 cx, cy, cz, particleCount / LAVA_PARTICLE_DIVISOR, spread, spread, spread, 0.0);
         level.sendParticles(ParticleTypes.SMOKE,
-                cx, cy + BLOCK_CENTER_OFFSET, cz, particleCount / SMOKE_PARTICLE_DIVISOR, spread, spread * SMOKE_SPREAD_MULTIPLIER, spread, SMOKE_PARTICLE_SPEED);
-
-        // Scatter fires on surviving air blocks in the blast zone
-        scatterFires(level, pos, range, stackCount);
+                cx, cy + BLOCK_CENTER_OFFSET, cz, particleCount / SMOKE_PARTICLE_DIVISOR,
+                spread, spread * SMOKE_SPREAD_MULTIPLIER, spread, SMOKE_PARTICLE_SPEED);
     }
 
     /**
@@ -116,18 +126,30 @@ public final class ChainProfiles {
                                      int range, int stackCount) {
         int fireCount = FIRES_PER_STACK * stackCount;
         var random = level.getRandom();
+        int vertRange = range / FIRE_VERTICAL_RANGE_DIVISOR;
         for (int i = 0; i < fireCount * FIRE_ATTEMPT_MULTIPLIER; i++) {
             if (fireCount <= 0) { break; }
-            int dx = random.nextIntBetweenInclusive(-range, range);
-            int dy = random.nextIntBetweenInclusive(-range / FIRE_VERTICAL_RANGE_DIVISOR, range / FIRE_VERTICAL_RANGE_DIVISOR);
-            int dz = random.nextIntBetweenInclusive(-range, range);
-            BlockPos target = center.offset(dx, dy, dz);
-            BlockState state = level.getBlockState(target);
-            if (state.isAir() && level.getBlockState(target.below()).isSolidRender()) {
-                level.setBlock(target, Blocks.FIRE.defaultBlockState(), BLOCK_UPDATE_FLAGS);
+            BlockPos target = center.offset(
+                    random.nextIntBetweenInclusive(-range, range),
+                    random.nextIntBetweenInclusive(-vertRange, vertRange),
+                    random.nextIntBetweenInclusive(-range, range));
+            if (tryPlaceFire(level, target)) {
                 fireCount--;
             }
         }
+    }
+
+    /**
+     * Places fire at the target if it is air above a solid surface.
+     * @param level the server level to place fire in
+     * @param target the candidate position for fire placement
+     * @return true if fire was successfully placed
+     */
+    private static boolean tryPlaceFire(ServerLevel level, BlockPos target) {
+        if (!level.getBlockState(target).isAir()) { return false; }
+        if (!level.getBlockState(target.below()).isSolidRender()) { return false; }
+        level.setBlock(target, Blocks.FIRE.defaultBlockState(), BLOCK_UPDATE_FLAGS);
+        return true;
     }
 
     // ── Profile definition ────────────────────────────────────────────────

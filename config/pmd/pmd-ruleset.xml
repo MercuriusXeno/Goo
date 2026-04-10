@@ -29,6 +29,8 @@
         <exclude name="JUnitTestClassShouldBeFinal"/>
         <!-- Conflicts with our ArchUnit convention of package-private tests -->
         <exclude name="JUnit5TestShouldBePackagePrivate"/>
+        <!-- False positives on int[] used as mutable-by-reference position cursors -->
+        <exclude name="UseVarargs"/>
         <!-- LooseCoupling: re-enabled in 7.21, false positive on Map/Collection fixed -->
     </rule>
 
@@ -55,6 +57,8 @@
         <exclude name="DefaultPackage"/>
         <!-- Mixin methods require goo$ prefix (dollar signs) to avoid name collisions -->
         <exclude name="AvoidDollarSigns"/>
+        <!-- Parentheses aid cognition even when technically redundant -->
+        <exclude name="UselessParentheses"/>
         <!-- AvoidFieldNameMatchingMethodName moved to errorprone in PMD 7.21; excluded there -->
     </rule>
 
@@ -75,6 +79,8 @@
         <exclude name="TooManyFields"/>
         <!-- God class detection is too coarse; ArchUnit handles boundaries -->
         <exclude name="GodClass"/>
+        <!-- Method count is a poor proxy for complexity; ArchUnit handles structural boundaries -->
+        <exclude name="TooManyMethods"/>
         <!-- Requires explicit package config; not useful without inter-package rules -->
         <exclude name="LoosePackageCoupling"/>
     </rule>
@@ -105,9 +111,13 @@
         <!-- Minecraft is single-threaded per side; most thread rules are noise -->
         <exclude name="UseConcurrentHashMap"/>
         <exclude name="DoNotUseThreads"/>
+        <exclude name="AvoidUsingVolatile"/>
+        <exclude name="AvoidSynchronizedStatement"/>
+        <exclude name="NonThreadSafeSingleton"/>
     </rule>
 
     <!-- ── Rule tuning ────────────────────────────────────────── -->
+
 
     <!-- Allow common boundary literals (0, 1, -1) and float equivalents in if-conditions.
          Extracting constants for "size <= 1" or "fill <= 0f" adds noise, not clarity. -->

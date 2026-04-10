@@ -2,9 +2,9 @@ package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.GasketPairing;
 import com.mercuriusxeno.goo.item.GooContents;
-import com.mercuriusxeno.goo.item.TunerState;
+import com.mercuriusxeno.goo.item.gasket.GasketPairing;
+import com.mercuriusxeno.goo.item.gasket.TunerState;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;

@@ -86,10 +86,7 @@ public class GooGloveItem extends Item {
     public boolean releaseUsing(@NonNull ItemStack stack, @NonNull Level level,
             @NonNull LivingEntity entity, int timeLeft) {
         int ticksUsed = getUseDuration(stack, entity) - timeLeft;
-        if (ticksUsed < RADIAL_THRESHOLD_TICKS) {
-            return handleQuickThrow(stack, level, entity);
-        }
-        return false;
+        return ticksUsed < RADIAL_THRESHOLD_TICKS && handleQuickThrow(stack, level, entity);
     }
 
     /** Sends a throw packet (client) and plays the arm swing (both sides).
@@ -103,7 +100,7 @@ public class GooGloveItem extends Item {
         GooType selected = getSelectedType(stack);
         if (selected == null) { return false; }
         if (level.isClientSide() && entity instanceof Player player) {
-            com.mercuriusxeno.goo.client.GloveThrowSender.sendThrow(player, selected);
+            com.mercuriusxeno.goo.client.throwing.GloveThrowSender.sendThrow(player, selected);
         }
         entity.swing(entity.getUsedItemHand());
         return true;

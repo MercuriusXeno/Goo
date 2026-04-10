@@ -4,10 +4,30 @@ import com.google.common.reflect.TypeToken;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ISidedProxy;
+import com.mercuriusxeno.goo.client.ber.CanisterBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.ChainMarkerBER;
+import com.mercuriusxeno.goo.client.ber.CrucibleBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.FrostFieldBER;
+import com.mercuriusxeno.goo.client.ber.HubBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.PlexerBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.TapBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.VatBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.machine.FuelRemainingProperty;
+import com.mercuriusxeno.goo.client.machine.TunerAwaitState;
+import com.mercuriusxeno.goo.client.model.CanisterBodyModels;
+import com.mercuriusxeno.goo.client.model.CanisterSpecialRenderer;
+import com.mercuriusxeno.goo.client.model.GloveBodyModels;
+import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
+import com.mercuriusxeno.goo.client.model.VatBodyModels;
+import com.mercuriusxeno.goo.client.model.VatSpecialRenderer;
+import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.client.particle.GooBubbleParticle;
 import com.mercuriusxeno.goo.client.particle.GooDripParticle;
 import com.mercuriusxeno.goo.client.particle.GooFogParticle;
 import com.mercuriusxeno.goo.client.particle.GooSparkParticle;
+import com.mercuriusxeno.goo.client.throwing.BlobFlightManager;
+import com.mercuriusxeno.goo.client.throwing.BlobSizeProperty;
+import com.mercuriusxeno.goo.client.throwing.BlobVolumeDecorator;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooFluidTypes;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -72,18 +92,52 @@ public final class GooClientSetup {
      */
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        registerMachineRenderers(event);
+        registerEffectRenderers(event);
+    }
+
+    /**
+     * Registers block entity renderers for machine blocks.
+     *
+     * @param event the renderer registration event
+     */
+    private static void registerMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        registerFluidMachineRenderers(event);
+        registerLogisticMachineRenderers(event);
+    }
+
+    /**
+     * Registers renderers for crucible, hub, and canister block entities.
+     * @param event the renderer registration event
+     */
+    private static void registerFluidMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CRUCIBLE.get(),
             CrucibleBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.HUB.get(),
             HubBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.CANISTER.get(),
             CanisterBlockEntityRenderer::new);
+    }
+
+    /**
+     * Registers renderers for vat, plexer, and tap block entities.
+     * @param event the renderer registration event
+     */
+    private static void registerLogisticMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.VAT.get(),
             VatBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.PLEXER.get(),
             PlexerBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.TAP.get(),
             TapBlockEntityRenderer::new);
+    }
+
+    /**
+     * Registers block entity renderers for world effect blocks.
+     *
+     * @param event the renderer registration event
+     */
+    private static void registerEffectRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CHAIN_MARKER.get(),
             ChainMarkerBER::new);
         event.registerBlockEntityRenderer(GooBlockEntities.FROST_FIELD.get(),

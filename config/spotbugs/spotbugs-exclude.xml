@@ -22,6 +22,41 @@
         <Package name="~com\.mercuriusxeno\.goo\.registry.*"/>
     </Match>
 
+    <!-- Internal mutable field exposure: all callers are our own mod code, not untrusted -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Class-level circular deps from same-package decomposition, not package-level cycles -->
+    <Match>
+        <Bug pattern="FCCD_FIND_CLASS_CIRCULAR_DEPENDENCY"/>
+    </Match>
+
+    <!-- Codec boolean conversions are framework-mandated, not needless -->
+    <Match>
+        <Bug pattern="NAB_NEEDLESS_BOOLEAN_CONSTANT_CONVERSION"/>
+    </Match>
+
+    <!-- Overly concrete parameter: too aggressive, flags semantic types like GooType -->
+    <Match>
+        <Bug pattern="OCP_OVERLY_CONCRETE_PARAMETER"/>
+    </Match>
+
+    <!-- Constant list index: coordinate pairs and slot centers use [0]/[1] by design -->
+    <Match>
+        <Bug pattern="CLI_CONSTANT_LIST_INDEX"/>
+    </Match>
+
+    <!-- NeoForge callbacks mandate unused params by contract -->
+    <Match>
+        <Bug pattern="UP_UNUSED_PARAMETER"/>
+    </Match>
+
+    <!-- Noise: naming opinions, premature optimization, game-not-crypto, internal exposure, style nits -->
+    <Match>
+        <Bug pattern="CNC_COLLECTION_NAMING_CONFUSION,ENMI_NULL_ENUM_VALUE,RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT,PSC_PRESIZE_COLLECTIONS,ITC_INHERITANCE_TYPE_CHECKING,CE_CLASS_ENVY,MRC_METHOD_RETURNS_CONSTANT,UCPM_USE_CHARACTER_PARAMETERIZED_METHOD,MS_MUTABLE_ARRAY,PREDICTABLE_RANDOM,PMB_POSSIBLE_MEMORY_BLOAT,URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD,NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE,PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS,VA_FORMAT_STRING_USES_NEWLINE,MS_PKGPROTECT,PL_PARALLEL_LISTS,AT_NONATOMIC_64BIT_PRIMITIVE,BC_VACUOUS_INSTANCEOF,MS_CANNOT_BE_FINAL,PA_PUBLIC_PRIMITIVE_ATTRIBUTE,OI_OPTIONAL_ISSUES_USES_IMMEDIATE_EXECUTION,MUI_CONTAINSKEY_BEFORE_GET,SUI_CONTAINS_BEFORE_REMOVE,ITU_INAPPROPRIATE_TOSTRING_USE"/>
+    </Match>
+
     <!-- Mixin and access-transformer widened fields trigger unread/unwritten warnings -->
     <Match>
         <Bug pattern="URF_UNREAD_FIELD,UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
@@ -32,5 +67,17 @@
     <Match>
         <Package name="~com\.mercuriusxeno\.goo\.data.*"/>
         <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <!-- Mixin classes merge into the target at runtime; casting this to the target is correct -->
+    <Match>
+        <Bug pattern="BC_IMPOSSIBLE_CAST"/>
+        <Package name="~com\.mercuriusxeno\.goo\.mixin.*"/>
+    </Match>
+
+    <!-- Array initialized via pixel manipulation loops; SpotBugs can't see the writes -->
+    <Match>
+        <Bug pattern="SUA_SUSPICIOUS_UNINITIALIZED_ARRAY"/>
+        <Class name="com.mercuriusxeno.goo.tools.FluidTextureGenerator"/>
     </Match>
 </FindBugsFilter>

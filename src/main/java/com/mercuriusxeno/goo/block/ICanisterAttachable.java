@@ -7,16 +7,18 @@ import java.util.Set;
  * fittings. Canister placement validates the block below; blocks implementing
  * this interface are valid attachment targets.
  */
+@SuppressWarnings("PMD.ImplicitFunctionalInterface") // not a lambda target; sole abstract is a state query
 public interface ICanisterAttachable {
 
     /** All slot indices in the 3x3 canister grid (0-8). */
     Set<Integer> ALL_SLOTS = Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
     /** Returns the max number of canisters that can attach to the top face.
+     * Default: 1 (single center slot).
      *
      * @return the integer value
      */
-    int maxTopAttachments();
+    default int maxTopAttachments() { return 1; }
 
     /** Returns the current number of canisters attached to the top face.
      *

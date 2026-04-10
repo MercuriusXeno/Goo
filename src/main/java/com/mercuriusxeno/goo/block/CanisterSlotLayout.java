@@ -58,17 +58,38 @@ public final class CanisterSlotLayout {
      */
     public static int nearestSlot(float px, float pz) {
         int best = NO_SLOT;
-        float bestDist = HIT_THRESHOLD * HIT_THRESHOLD;
+        float bestDistSq = Float.MAX_VALUE;
         for (int i = 0; i < SLOT_COUNT; i++) {
-            float dx = px - SLOT_CENTERS[i][0];
-            float dz = pz - SLOT_CENTERS[i][1];
-            float dist = dx * dx + dz * dz;
-            if (dist < bestDist) {
-                bestDist = dist;
+            float distSq = squaredDistToSlot(i, px, pz);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
                 best = i;
             }
         }
-        return best;
+        return withinThreshold(best, bestDistSq);
+    }
+
+    /**
+     * Returns the slot index if the squared distance is within the hit threshold, else NO_SLOT.
+     * @param slot the candidate slot index, or NO_SLOT
+     * @param distSq the squared distance to the slot center
+     * @return the slot index if within threshold, otherwise NO_SLOT (-1)
+     */
+    private static int withinThreshold(int slot, float distSq) {
+        return distSq <= HIT_THRESHOLD * HIT_THRESHOLD ? slot : NO_SLOT;
+    }
+
+    /** Returns the squared distance from a point to a slot's center.
+     *
+     * @param slot the slot index
+     * @param px   pixel-space X coordinate
+     * @param pz   pixel-space Z coordinate
+     * @return squared distance in pixel space
+     */
+    private static float squaredDistToSlot(int slot, float px, float pz) {
+        float dx = px - SLOT_CENTERS[slot][0];
+        float dz = pz - SLOT_CENTERS[slot][1];
+        return dx * dx + dz * dz;
     }
 
     /**
@@ -82,15 +103,23 @@ public final class CanisterSlotLayout {
      * @return slot index 0-8
      */
     public static int placementSlot(Direction face, float px, float pz) {
-        int row = pixelToRow(pz);
-        int col = pixelToColumn(px);
+        return resolveGridSlot(face, pixelToRow(pz), pixelToColumn(px));
+    }
 
+    /** Resolves the grid slot for a face click given the base row and column.
+     *
+     * @param face the clicked face
+     * @param row  the grid row (0-2)
+     * @param col  the grid column (0-2)
+     * @return slot index 0-8
+     */
+    private static int resolveGridSlot(Direction face, int row, int col) {
         return switch (face) {
             case NORTH -> clampGrid(row - 1) * GRID_SIZE + col;
             case SOUTH -> clampGrid(row + 1) * GRID_SIZE + col;
             case WEST  -> row * GRID_SIZE + clampGrid(col - 1);
             case EAST  -> row * GRID_SIZE + clampGrid(col + 1);
-            default    -> row * GRID_SIZE + col;          // UP/DOWN: full grid
+            default    -> row * GRID_SIZE + col;
         };
     }
 
@@ -106,12 +135,22 @@ public final class CanisterSlotLayout {
      * @return adjacent slot index 0-8
      */
     public static int adjacentByCursorLean(int occupiedSlot, float px, float pz) {
-        float cx = SLOT_CENTERS[occupiedSlot][0];
-        float cz = SLOT_CENTERS[occupiedSlot][1];
-        float dx = px - cx;
-        float dz = pz - cz;
+        float dx = px - SLOT_CENTERS[occupiedSlot][0];
+        float dz = pz - SLOT_CENTERS[occupiedSlot][1];
         int row = occupiedSlot / GRID_SIZE;
         int col = occupiedSlot % GRID_SIZE;
+        return leanToAdjacent(dx, dz, row, col);
+    }
+
+    /** Picks the adjacent slot based on cursor lean direction from the occupied center.
+     *
+     * @param dx  horizontal offset from slot center
+     * @param dz  vertical offset from slot center
+     * @param row the grid row of the occupied slot
+     * @param col the grid column of the occupied slot
+     * @return adjacent slot index 0-8
+     */
+    private static int leanToAdjacent(float dx, float dz, int row, int col) {
         if (Math.abs(dx) >= Math.abs(dz)) {
             return row * GRID_SIZE + clampGrid(dx > 0 ? col + 1 : col - 1);
         }
