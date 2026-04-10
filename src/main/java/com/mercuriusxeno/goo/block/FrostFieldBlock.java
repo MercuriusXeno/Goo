@@ -5,17 +5,12 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -24,20 +19,14 @@ import org.jspecify.annotations.Nullable;
  * Prevents frozen blocks from melting (via packed ice) for a duration,
  * then converts packed ice back to regular ice on expiry and removes itself.
  */
-public class FrostFieldBlock extends BaseEntityBlock {
+public class FrostFieldBlock extends AbstractEffectBlock {
 
     public static final MapCodec<FrostFieldBlock> CODEC = simpleCodec(FrostFieldBlock::new);
 
-    /** Small centered cube so the block is barely selectable. */
-    private static final VoxelShape SHAPE = box(5, 5, 5, 11, 11, 11);
-    /** Block center offset (0.5 blocks). */
-    private static final double BLOCK_CENTER = 0.5;
     /** Spread multiplier for radius-based particle range. */
     private static final double SPREAD_FACTOR = 0.5;
     /** Base particle count for snowflake effects. */
     private static final int BASE_PARTICLE_COUNT = 2;
-    /** Spread diameter multiplier for random offset range. */
-    private static final double SPREAD_DIAMETER = 2;
     /** Downward velocity for snowflake particles. */
     private static final double SNOWFLAKE_FALL_SPEED = -0.02;
 
@@ -56,46 +45,6 @@ public class FrostFieldBlock extends BaseEntityBlock {
     @Override
     protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
-    }
-
-    /** Fully invisible -- no block model, no BER needed.
-     *
-     * @param state the block state
-     * @return the render shape
-     */
-    @Override
-    protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
-        return RenderShape.INVISIBLE;
-    }
-
-    /** No collision -- players walk through the field.
-     *
-     * @param state   the block state
-     * @param level   the current level
-     * @param pos     the block position
-     * @param context the collision context
-     * @return the collision shape
-     */
-    @Override
-    protected @NonNull VoxelShape getCollisionShape(
-            @NonNull BlockState state, @NonNull BlockGetter level,
-            @NonNull BlockPos pos, @NonNull CollisionContext context) {
-        return Shapes.empty();
-    }
-
-    /** Small outline for selection/targeting.
-     *
-     * @param state   the block state
-     * @param level   the current level
-     * @param pos     the block position
-     * @param context the collision context
-     * @return the shape
-     */
-    @Override
-    protected @NonNull VoxelShape getShape(
-            @NonNull BlockState state, @NonNull BlockGetter level,
-            @NonNull BlockPos pos, @NonNull CollisionContext context) {
-        return SHAPE;
     }
 
     /** Creates the frost field block entity for this position.

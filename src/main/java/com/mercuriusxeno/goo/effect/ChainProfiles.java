@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import org.jspecify.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
@@ -59,19 +60,23 @@ public final class ChainProfiles {
                 BLAZE_FUSE_TICKS,
                 BLAZE_MAX_STACKS,
                 stacks -> (int) EffectMath.computeExplosionRadius(stacks),
-                ChainProfiles::blazeExecutor
+                ChainProfiles::blazeExecutor,
+                null
         ));
         ChainProfile.register(GooType.ROCK, new ChainProfile(
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
                 EffectMath::computeImplosionDepth,
-                RockExecutor::execute
+                null,
+                (level, pos, step, stacks, face) ->
+                        RockExecutor.mineLayer(level, pos, face, step, stacks)
         ));
         ChainProfile.register(GooType.NETHER, new ChainProfile(
                 NETHER_FUSE_TICKS,
                 NETHER_MAX_STACKS,
                 EffectMath::computeNetherRadius,
-                NetherExecutor::execute
+                NetherExecutor::execute,
+                null
         ));
     }
 
@@ -164,17 +169,24 @@ public final class ChainProfiles {
 
     /**
      * Defines the behavior of a chain effect for a specific goo type.
+     * Exactly one of {@code executor} or {@code layerExecutor} should be
+     * non-null: {@code executor} fires the full effect in a single call on
+     * fuse expiry, while {@code layerExecutor} is driven once per tick by
+     * the chain marker BE for effects that break down over time (e.g. rock
+     * progressive mining).
      *
-     * @param fuseTicks    how long the fuse window lasts
-     * @param maxStacks    maximum stack count (additional blobs during fuse)
-     * @param rangeFormula computes range/depth from stack count
-     * @param executor     fires the actual effect on fuse expiry
+     * @param fuseTicks     how long the fuse window lasts
+     * @param maxStacks     maximum stack count (additional blobs during fuse)
+     * @param rangeFormula  computes range/depth from stack count
+     * @param executor      instant executor; null for progressive effects
+     * @param layerExecutor per-layer executor; null for instant effects
      */
     public record ChainProfile(
             int fuseTicks,
             int maxStacks,
             IntUnaryOperator rangeFormula,
-            ChainExecutor executor
+            @Nullable ChainExecutor executor,
+            @Nullable LayerExecutor layerExecutor
     ) {
         private static final Map<GooType, ChainProfile> PROFILES = new EnumMap<>(GooType.class);
 
@@ -227,5 +239,26 @@ public final class ChainProfiles {
          */
         void execute(ServerLevel level, BlockPos pos, int range,
                      int stackCount, Direction placedFace);
+    }
+
+    /**
+     * Functional interface for per-tick progressive chain effects. Called
+     * by {@link com.mercuriusxeno.goo.block.ChainMarkerBlockEntity} once
+     * per server tick with increasing {@code stepIndex} values in
+     * {@code [0, range)} after the fuse expires.
+     */
+    @FunctionalInterface
+    public interface LayerExecutor {
+        /**
+         * Fires a single tick of a progressive chain effect.
+         *
+         * @param level      the server level
+         * @param pos        the anchor block position
+         * @param stepIndex  zero-based current step in the progression
+         * @param stackCount the raw stack count
+         * @param placedFace the face the marker was attached to
+         */
+        void tickLayer(ServerLevel level, BlockPos pos, int stepIndex,
+                       int stackCount, Direction placedFace);
     }
 }

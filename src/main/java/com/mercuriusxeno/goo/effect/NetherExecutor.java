@@ -132,7 +132,8 @@ public final class NetherExecutor {
     }
 
     /**
-     * Pops one blob stack for each goo type in the given value.
+     * Pops one blob stack for each goo type in the given value. GooValue
+     * amounts are stored in microblobs, matching createForOutput's unit.
      *
      * @param level  the server level
      * @param target the position to drop blobs at
@@ -140,8 +141,8 @@ public final class NetherExecutor {
      */
     private static void popValueAsBlobs(ServerLevel level, BlockPos target, GooValue value) {
         for (Map.Entry<GooType, Integer> entry : value.getAll().entrySet()) {
-            long volumeMb = entry.getValue() * BlobStacks.MB_PER_BLOB;
-            ItemStack stack = BlobStacks.createForOutput(entry.getKey(), volumeMb);
+            int amount = entry.getValue();
+            ItemStack stack = BlobStacks.createForOutput(entry.getKey(), amount);
             if (!stack.isEmpty()) {
                 Block.popResource(level, target, stack);
             }

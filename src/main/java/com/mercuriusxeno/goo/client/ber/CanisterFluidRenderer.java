@@ -62,6 +62,14 @@ final class CanisterFluidRenderer {
     /** Gasket side V end: row 1/16. */
     private static final float GS_V1 = 0.0625f;
 
+    /** Y ranges describing where gasket boxes land in a canister slot. */
+    private static final GasketCapRenderer.GasketYRanges GASKET_Y =
+        new GasketCapRenderer.GasketYRanges(BODY_BOT, BODY_TOP, GASKET_BOT, GASKET_TOP);
+
+    /** Gasket side UV region (uniform across container types). */
+    private static final GasketCapRenderer.GasketUv GASKET_UV =
+        new GasketCapRenderer.GasketUv(GS_U0, GS_U1, GS_V1);
+
     private CanisterFluidRenderer() {
     }
 
@@ -82,7 +90,7 @@ final class CanisterFluidRenderer {
         if (hasAnyCopperCap(state)) {
             submitCopperCaps(poseStack, nodeCollector, light, state);
         }
-        if (hasAnyChoralCap(state)) {
+        if (GasketCapRenderer.hasAnyCap(state.topGasketPresent, state.bottomGasketPresent)) {
             submitChoralCaps(poseStack, nodeCollector, light, state);
         }
     }
@@ -158,20 +166,9 @@ final class CanisterFluidRenderer {
     }
 
     /**
-     * Returns true if any occupied slot has a choral gasket on either end.
-     *
-     * @param state the block state
-     * @return true if anyChoralCap is present
-     */
-    private static boolean hasAnyChoralCap(CanisterRenderState state) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.topGasketPresent[i] || state.bottomGasketPresent[i]) { return true; }
-        }
-        return false;
-    }
-
-    /**
-     * Renders endcap boxes for a slot on the specified sides.
+     * Delegates to {@link GasketCapRenderer#renderEndcaps} with this container's
+     * Y ranges and UV constants. Resolves the slot index to XZ coordinates via
+     * {@link CanisterSlotLayout#SLOT_CENTERS}.
      *
      * @param ctx    the render context
      * @param slot   the slot index
@@ -179,25 +176,22 @@ final class CanisterFluidRenderer {
      * @param bottom whether to render the bottom cap
      */
     private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
-        if (!top && !bottom) { return; }
-        CuboidBounds base = slotBoundsXZ(slot);
-        if (top) {
-            ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
-        }
-        if (bottom) {
-            ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
-        }
+        GasketCapRenderer.renderEndcaps(ctx, slotBoundsXZ(slot), GASKET_Y, GASKET_UV, top, bottom);
     }
 
     /**
-     * Computes the XZ cuboid bounds for a canister slot at index.
+     * Computes the XZ cuboid bounds for a canister slot at index. Container-
+     * specific: canister centers live in pixel space and are divided by
+     * {@link #BLOCK_PIXELS} before delegating to {@link GasketCapRenderer#slotBoundsXZ}.
+     *
      * @param slot the slot index in the canister grid
      * @return XZ cuboid bounds centered on the slot with Y zeroed
      */
     private static CuboidBounds slotBoundsXZ(int slot) {
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        return new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, 0, 0);
+        return GasketCapRenderer.slotBoundsXZ(
+            CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS,
+            CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS,
+            HW);
     }
 
     // -- Fluid rendering --

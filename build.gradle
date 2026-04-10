@@ -244,10 +244,16 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
+// UTF-8 applies everywhere; deprecation-as-error is scoped to the mod's own
+// sources so NeoGradle's transformed-vanilla recompile step is not poisoned
+// by vanilla's own deprecated internals.
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // Treating deprecation warnings as errors, preference.
-    options.compilerArgs += ['-Xlint:deprecation', '-Werror']
+}
+['compileJava', 'compileTestJava'].each { taskName ->
+    tasks.named(taskName).configure {
+        options.compilerArgs += ['-Xlint:deprecation', '-Werror']
+    }
 }
 
 // Runs sca-fix.py JavadocMethod to auto-stub missing @param/@return/@throws,

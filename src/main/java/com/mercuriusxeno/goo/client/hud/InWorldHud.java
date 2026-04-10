@@ -350,6 +350,31 @@ public final class InWorldHud {
     }
 
     /**
+     * Renders every goo type in {@code contents} as a stack of rows starting
+     * at {@code baseY + startRow * ROW_HEIGHT}. Centralizes the panel-painter
+     * loop so canister and vat HUDs share one iteration path.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font      the font renderer
+     * @param buffers   the buffer source
+     * @param contents  the goo contents to render
+     * @param x         the left X coordinate for each row
+     * @param baseY     the panel content top Y
+     * @param startRow  the first row index for goo rows
+     */
+    public static void renderGooRows(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, GooContents contents,
+            float x, float baseY, int startRow) {
+        int row = startRow;
+        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
+            float rowY = baseY + row * ROW_HEIGHT;
+            String amountText = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
+            renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, x, rowY);
+            row++;
+        }
+    }
+
+    /**
      * Renders a goo type icon quad at the content Z depth.
      *
      * @param poseStack the pose stack for rendering

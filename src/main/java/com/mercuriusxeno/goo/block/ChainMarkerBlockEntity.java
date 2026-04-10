@@ -33,16 +33,24 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_MAX_STACKS = "MaxStacks";
     private static final String TAG_FUSE_REMAINING = "FuseRemaining";
     private static final String TAG_PLACED_FACE = "PlacedFace";
+    private static final String TAG_MINING_STEP = "MiningStep";
+    private static final String TAG_MINING_DEPTH = "MiningDepth";
     /** Default goo type id when loading from NBT. */
     private static final String DEFAULT_GOO_TYPE = "rock";
     /** Default face name when loading from NBT. */
     private static final String DEFAULT_FACE = "up";
+    /** Sentinel: no progressive mining in progress. */
+    private static final int MINING_INACTIVE = -1;
 
     private GooType gooType = GooType.ROCK;
     private int stackCount = 1;
     private int maxStacks = 1;
     private int fuseRemaining;
     private Direction placedFace = Direction.UP;
+    /** Next layer index to mine while progressive mining is active; -1 otherwise. */
+    private int miningStep = MINING_INACTIVE;
+    /** Total number of layers to mine when progressive mining is active. */
+    private int miningDepth;
 
     /** How often to sync fuse to client (every N ticks). */
     private static final int SYNC_INTERVAL = 5;
@@ -108,6 +116,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state,
                                   ChainMarkerBlockEntity be) {
+        if (be.miningStep != MINING_INACTIVE) {
+            be.tickProgressiveMining((ServerLevel) level, pos);
+            return;
+        }
         be.fuseRemaining--;
         if (!EffectMath.isFuseLive(be.fuseRemaining)) {
             be.detonate((ServerLevel) level, pos);
@@ -124,18 +136,60 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    /** Fires the chain executor and removes the block.
+    /** Fires the chain executor and removes the block, or begins
+     * progressive mining for profiles that use a layer executor.
      *
      * @param level the current level
      * @param pos   the block position
      */
     private void detonate(ServerLevel level, BlockPos pos) {
         ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile != null) {
-            int range = profile.rangeFormula().applyAsInt(stackCount);
+        if (profile == null) {
+            level.removeBlock(pos, false);
+            return;
+        }
+        int range = profile.rangeFormula().applyAsInt(stackCount);
+        if (profile.layerExecutor() != null) {
+            beginProgressiveMining(range);
+            return;
+        }
+        if (profile.executor() != null) {
             profile.executor().execute(level, pos, range, stackCount, placedFace);
         }
         level.removeBlock(pos, false);
+    }
+
+    /** Transitions this marker into progressive mining mode. The BE will
+     * remain in place, ticking one layer per server tick until {@code depth}
+     * layers have been processed.
+     *
+     * @param depth total layers to mine
+     */
+    private void beginProgressiveMining(int depth) {
+        miningDepth = depth;
+        miningStep = 0;
+        setChanged();
+    }
+
+    /** Advances progressive mining by one layer. Removes the marker once
+     * all layers have been processed.
+     *
+     * @param level the server level
+     * @param pos   the marker position
+     */
+    private void tickProgressiveMining(ServerLevel level, BlockPos pos) {
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile == null || profile.layerExecutor() == null) {
+            level.removeBlock(pos, false);
+            return;
+        }
+        profile.layerExecutor().tickLayer(level, pos, miningStep, stackCount, placedFace);
+        miningStep++;
+        if (miningStep >= miningDepth) {
+            level.removeBlock(pos, false);
+            return;
+        }
+        setChanged();
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────
@@ -203,6 +257,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
         maxStacks = input.getIntOr(TAG_MAX_STACKS, 1);
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
+        miningStep = input.getIntOr(TAG_MINING_STEP, MINING_INACTIVE);
+        miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
     }
 
     /** Loads the placed face direction, defaulting to UP if unrecognized.
@@ -228,6 +284,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_MAX_STACKS, maxStacks);
         output.putInt(TAG_FUSE_REMAINING, fuseRemaining);
         output.putString(TAG_PLACED_FACE, placedFace.getName());
+        output.putInt(TAG_MINING_STEP, miningStep);
+        output.putInt(TAG_MINING_DEPTH, miningDepth);
     }
 
     // ── Client sync ───────────────────────────────────────────────────────

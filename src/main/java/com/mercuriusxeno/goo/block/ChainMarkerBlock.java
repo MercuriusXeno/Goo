@@ -6,17 +6,12 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -25,23 +20,16 @@ import org.jspecify.annotations.Nullable;
  * Nether, Rock). No collision, no selection shape - purely visual.
  * The block entity ticks the fuse and fires the executor on expiry.
  */
-public class ChainMarkerBlock extends BaseEntityBlock {
+public class ChainMarkerBlock extends AbstractEffectBlock {
 
     public static final MapCodec<ChainMarkerBlock> CODEC = simpleCodec(ChainMarkerBlock::new);
 
-    /** Outline shape: small centered cube so the block is barely selectable. */
-    private static final VoxelShape SHAPE = box(5, 5, 5, 11, 11, 11);
-
-    /** Block center offset (0.5 blocks). */
-    private static final double BLOCK_CENTER = 0.5;
     /** Base ambient particle spread radius. */
     private static final double BASE_SPREAD = 0.25;
     /** Additional spread per stack. */
     private static final double SPREAD_PER_STACK = 0.1;
     /** Base particle count for blaze effects. */
     private static final int BLAZE_BASE_PARTICLES = 2;
-    /** Spread multiplier applied to random offset range. */
-    private static final double SPREAD_DIAMETER = 2;
     /** Upward particle velocity for flame particles. */
     private static final double FLAME_RISE_SPEED = 0.02;
     /** Downward particle velocity for dust plume particles. */
@@ -70,46 +58,6 @@ public class ChainMarkerBlock extends BaseEntityBlock {
     @Override
     protected @NonNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
-    }
-
-    /** Rendered entirely by the BER - no block model.
-     *
-     * @param state the block state
-     * @return the render shape
-     */
-    @Override
-    protected @NonNull RenderShape getRenderShape(@NonNull BlockState state) {
-        return RenderShape.INVISIBLE;
-    }
-
-    /** No collision - energy-type effects don't impede movement.
-     *
-     * @param state   the block state
-     * @param level   the current level
-     * @param pos     the block position
-     * @param context the collision context
-     * @return the collision shape
-     */
-    @Override
-    protected @NonNull VoxelShape getCollisionShape(
-            @NonNull BlockState state, @NonNull BlockGetter level,
-            @NonNull BlockPos pos, @NonNull CollisionContext context) {
-        return Shapes.empty();
-    }
-
-    /** Small outline for selection/targeting.
-     *
-     * @param state   the block state
-     * @param level   the current level
-     * @param pos     the block position
-     * @param context the collision context
-     * @return the shape
-     */
-    @Override
-    protected @NonNull VoxelShape getShape(
-            @NonNull BlockState state, @NonNull BlockGetter level,
-            @NonNull BlockPos pos, @NonNull CollisionContext context) {
-        return SHAPE;
     }
 
     /** Creates the chain marker block entity for this position.

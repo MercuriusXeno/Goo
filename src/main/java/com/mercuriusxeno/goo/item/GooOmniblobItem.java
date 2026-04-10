@@ -5,12 +5,16 @@ import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.NonNull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -27,6 +31,12 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private static final String NAME_SEPARATOR = " ";
     /** Divisor for splitting omniblob volume in half. */
     private static final long HALF_DIVISOR = 2;
+    /** Ground-absorb scan interval in ticks (20t = 1s). */
+    private static final int ABSORB_SCAN_INTERVAL = 20;
+    /** Horizontal inflation of the absorb search box. Wider than vanilla merge (0.5) to catch bouncing blobs. */
+    private static final double ABSORB_INFLATE_XZ = 1.0;
+    /** Vertical inflation of the absorb search box. Tighter than XZ to avoid jumping across vertical gaps. */
+    private static final double ABSORB_INFLATE_Y = 0.5;
 
     private final GooType gooType;
 
@@ -97,6 +107,95 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         String typeName = gooType.getId().substring(0, 1).toUpperCase(Locale.ROOT)
             + gooType.getId().substring(1);
         return Component.literal(typeName + NAME_SEPARATOR + tierName);
+    }
+
+    // -- Ground auto-merge --
+
+    /**
+     * Per-tick hook patched into the head of {@link ItemEntity#tick()} by NeoForge.
+     * Runs the absorb scan as a side-effect on the server every
+     * {@link #ABSORB_SCAN_INTERVAL} ticks, then returns false so vanilla tick
+     * (gravity, despawn, pickup, pickupDelay) continues normally.
+     *
+     * @param stack the item stack on the entity
+     * @param self  the item entity being ticked
+     * @return always false - we never replace vanilla tick
+     */
+    @Override
+    public boolean onEntityItemUpdate(@NonNull ItemStack stack, @NonNull ItemEntity self) {
+        if (self.level().isClientSide())                { return false; }
+        if (self.isRemoved())                           { return false; }
+        if (self.tickCount % ABSORB_SCAN_INTERVAL != 0) { return false; }
+        absorbNeighbors(self, stack);
+        return false;
+    }
+
+    /**
+     * Drives a single absorb pass: find same-type neighbors, run the pure
+     * merge computation, apply mutations if anything was absorbed.
+     *
+     * @param self      the absorbing item entity
+     * @param selfStack the absorber's item stack (mutated with the combined volume)
+     */
+    private void absorbNeighbors(ItemEntity self, ItemStack selfStack) {
+        List<ItemEntity> nearby = findNearbyOmniblobs(self);
+        if (nearby.isEmpty()) { return; }
+        OmniblobAbsorb.Result result = OmniblobAbsorb.compute(
+            self.getId(), getVolume(selfStack), self.getAge(), toCandidates(nearby));
+        if (result.discardIds().isEmpty()) { return; }
+        applyAbsorb(self, selfStack, nearby, result);
+    }
+
+    /**
+     * Collects alive, same-type omniblob item entities in an inflated AABB
+     * around {@code self}, excluding {@code self} itself.
+     *
+     * @param self the absorbing item entity
+     * @return list of candidate neighbors (may be empty)
+     */
+    private List<ItemEntity> findNearbyOmniblobs(ItemEntity self) {
+        AABB box = self.getBoundingBox()
+            .inflate(ABSORB_INFLATE_XZ, ABSORB_INFLATE_Y, ABSORB_INFLATE_XZ);
+        return self.level().getEntitiesOfClass(
+            ItemEntity.class, box,
+            other -> other != self
+                  && other.isAlive()
+                  && isMatchingOmniblob(other.getItem()));
+    }
+
+    /**
+     * Projects item entities to pure-data absorb candidates for
+     * {@link OmniblobAbsorb#compute}.
+     *
+     * @param entities nearby same-type omniblob entities
+     * @return candidates in the same order
+     */
+    private static List<OmniblobAbsorb.Candidate> toCandidates(List<ItemEntity> entities) {
+        List<OmniblobAbsorb.Candidate> out = new ArrayList<>(entities.size());
+        for (ItemEntity n : entities) {
+            out.add(new OmniblobAbsorb.Candidate(n.getId(), getVolume(n.getItem()), n.getAge()));
+        }
+        return out;
+    }
+
+    /**
+     * Applies an absorb result: discards each absorbed neighbor, writes the
+     * combined volume back to the absorber's stack, and resets the absorber's
+     * age to the min across the cluster.
+     *
+     * @param self      the absorbing item entity
+     * @param selfStack the absorber's item stack (mutated in place)
+     * @param nearby    the full neighbor list the result was computed from
+     * @param result    the combined volume, new age, and ids to discard
+     */
+    private static void applyAbsorb(ItemEntity self, ItemStack selfStack,
+            List<ItemEntity> nearby, OmniblobAbsorb.Result result) {
+        for (ItemEntity n : nearby) {
+            if (result.discardIds().contains(n.getId())) { n.discard(); }
+        }
+        setVolume(selfStack, result.volume());
+        self.setItem(selfStack);
+        self.age = result.age();
     }
 
     // -- Cursor interactions --

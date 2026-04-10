@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
 import com.mercuriusxeno.goo.client.ber.RenderCtx;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
@@ -16,10 +16,8 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
@@ -321,62 +319,8 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
             BODY_BOT, BODY_BOT + fill * (BODY_TOP - BODY_BOT));
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> emitFluidFaces(new RenderCtx(pose, c, packedLight), b, type, fill));
-    }
-
-    /**
-     * Renders the top face and four side faces for the fluid fill level.
-     *
-     * @param ctx  the render context
-     * @param b    the fluid cuboid bounds
-     * @param type the goo type for sprite lookup
-     * @param fill the fill fraction [0,1]
-     */
-    private static void emitFluidFaces(RenderCtx ctx, CuboidBounds b, GooType type, float fill) {
-        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
-        float sv1 = v0 + (sprite.getV1() - v0) * (b.z1() - b.z0());
-        ctx.liquidSurface(GooRenderUtil.OPAQUE_WHITE, b, new GooRenderUtil.UvRect(u0, v0, su1, sv1));
-        emitFluidSides(ctx, b, sprite, u0, v0, fill);
-    }
-
-    /**
-     * Emits the four side faces of the fluid cuboid with fill-scaled UVs.
-     *
-     * @param ctx    the render context
-     * @param b      the fluid cuboid bounds
-     * @param sprite the fluid texture sprite
-     * @param u0     the sprite U origin
-     * @param v0     the sprite V origin
-     * @param fill   the fill fraction [0,1]
-     */
-    private static void emitFluidSides(RenderCtx ctx, CuboidBounds b,
-            TextureAtlasSprite sprite, float u0, float v0, float fill) {
-        float sideVSpan = (sprite.getV1() - v0) * fill * (BODY_TOP - BODY_BOT);
-        float uRange = sprite.getU1() - u0;
-        GooRenderUtil.UvRect xUv = new GooRenderUtil.UvRect(u0, v0,
-            u0 + uRange * (b.x1() - b.x0()), v0 + sideVSpan);
-        GooRenderUtil.UvRect zUv = new GooRenderUtil.UvRect(u0, v0,
-            u0 + uRange * (b.z1() - b.z0()), v0 + sideVSpan);
-        emitAllSideFaces(ctx, b, xUv, zUv);
-    }
-
-    /**
-     * Emits all four cardinal side faces using pre-computed UV rects.
-     *
-     * @param ctx the render context
-     * @param b   the cuboid bounds
-     * @param xUv UV rect for north/south faces
-     * @param zUv UV rect for west/east faces
-     */
-    private static void emitAllSideFaces(RenderCtx ctx, CuboidBounds b,
-            GooRenderUtil.UvRect xUv, GooRenderUtil.UvRect zUv) {
-        ctx.emitFace(b, xUv, Direction.NORTH);
-        ctx.emitFace(b, xUv, Direction.SOUTH);
-        ctx.emitFace(b, zUv, Direction.WEST);
-        ctx.emitFace(b, zUv, Direction.EAST);
+            (pose, c) -> FluidFaceEmitter.emitFluidFaces(
+                new RenderCtx(pose, c, packedLight), b, type));
     }
 
     /**
