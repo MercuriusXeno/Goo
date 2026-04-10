@@ -78,14 +78,11 @@ public final class InWorldHud {
      *
      * @param poseStack the pose stack for rendering
      * @param buffers the buffer source for rendering
-     * @param x the X coordinate
-     * @param y the Y coordinate
-     * @param w the width in scaled pixels
-     * @param h the height in scaled pixels
+     * @param rect the panel rectangle (position + size)
      */
     public static void renderBackground(PoseStack poseStack, MultiBufferSource buffers,
-            float x, float y, float w, float h) {
-        renderBackgroundInternal(poseStack, buffers, x, y, w, h, false);
+            PanelRect rect) {
+        renderBackgroundInternal(poseStack, buffers, rect, false);
     }
 
     /**
@@ -93,14 +90,11 @@ public final class InWorldHud {
      *
      * @param poseStack the pose stack for rendering
      * @param buffers the buffer source for rendering
-     * @param x the X coordinate
-     * @param y the Y coordinate
-     * @param w the width in scaled pixels
-     * @param h the height in scaled pixels
+     * @param rect the panel rectangle (position + size)
      */
     public static void renderBackgroundSeeThrough(PoseStack poseStack, MultiBufferSource buffers,
-            float x, float y, float w, float h) {
-        renderBackgroundInternal(poseStack, buffers, x, y, w, h, true);
+            PanelRect rect) {
+        renderBackgroundInternal(poseStack, buffers, rect, true);
     }
 
     /**
@@ -108,31 +102,68 @@ public final class InWorldHud {
      *
      * @param poseStack the pose stack for rendering
      * @param buffers the buffer source for rendering
-     * @param x the X coordinate
-     * @param y the Y coordinate
-     * @param w the width in scaled pixels
-     * @param h the height in scaled pixels
+     * @param rect the panel rectangle (position + size)
      * @param seeThrough whether to disable depth testing
      */
     private static void renderBackgroundInternal(PoseStack poseStack, MultiBufferSource buffers,
-            float x, float y, float w, float h, boolean seeThrough) {
+            PanelRect rect, boolean seeThrough) {
         VertexConsumer vc = buffers.getBuffer(
             seeThrough ? RenderTypes.textSeeThrough(BG_TEXTURE) : RenderTypes.text(BG_TEXTURE));
         PoseStack.Pose pose = poseStack.last();
-        float b = BORDER;
+        float x1 = rect.x() + BORDER;
+        float x2 = rect.x() + rect.w() - BORDER;
+        float y1 = rect.y() + BORDER;
+        float y2 = rect.y() + rect.h() - BORDER;
+        emitCorners(vc, pose, rect, x1, x2, y1, y2);
+        emitEdgesAndCenter(vc, pose, rect, x1, x2, y1, y2);
+    }
+
+    /**
+     * Emits the four corner quads of a nine-slice background.
+     * @param vc the vertex consumer for quad output
+     * @param pose the pose matrix entry
+     * @param rect the panel rectangle (position + size)
+     * @param x1 the left edge after border inset
+     * @param x2 the right edge before border inset
+     * @param y1 the top edge after border inset
+     * @param y2 the bottom edge before border inset
+     */
+    private static void emitCorners(VertexConsumer vc, PoseStack.Pose pose,
+            PanelRect rect,
+            float x1, float x2, float y1, float y2) {
         float uB = BORDER_UV;
-        float x1 = x + b;
-        float x2 = x + w - b;
-        float y1 = y + b;
-        float y2 = y + h - b;
+        float x = rect.x();
+        float y = rect.y();
+        float xw = x + rect.w();
+        float yh = y + rect.h();
         nineSliceQuad(vc, pose, x,  y,  x1, y1, 0f,    0f,    uB,    uB);
-        nineSliceQuad(vc, pose, x2, y,  x+w,y1, 1f-uB, 0f,    1f,    uB);
-        nineSliceQuad(vc, pose, x,  y2, x1, y+h,0f,    1f-uB, uB,    1f);
-        nineSliceQuad(vc, pose, x2, y2, x+w,y+h,1f-uB, 1f-uB, 1f,   1f);
+        nineSliceQuad(vc, pose, x2, y,  xw, y1, 1f-uB, 0f,    1f,    uB);
+        nineSliceQuad(vc, pose, x,  y2, x1, yh, 0f,    1f-uB, uB,    1f);
+        nineSliceQuad(vc, pose, x2, y2, xw, yh, 1f-uB, 1f-uB, 1f,   1f);
+    }
+
+    /**
+     * Emits the four edge quads and center quad of a nine-slice background.
+     * @param vc the vertex consumer for quad output
+     * @param pose the pose matrix entry
+     * @param rect the panel rectangle (position + size)
+     * @param x1 the left edge after border inset
+     * @param x2 the right edge before border inset
+     * @param y1 the top edge after border inset
+     * @param y2 the bottom edge before border inset
+     */
+    private static void emitEdgesAndCenter(VertexConsumer vc, PoseStack.Pose pose,
+            PanelRect rect,
+            float x1, float x2, float y1, float y2) {
+        float uB = BORDER_UV;
+        float x = rect.x();
+        float y = rect.y();
+        float xw = x + rect.w();
+        float yh = y + rect.h();
         nineSliceQuad(vc, pose, x1, y,  x2, y1, uB,    0f,    1f-uB, uB);
-        nineSliceQuad(vc, pose, x1, y2, x2, y+h,uB,    1f-uB, 1f-uB, 1f);
+        nineSliceQuad(vc, pose, x1, y2, x2, yh, uB,    1f-uB, 1f-uB, 1f);
         nineSliceQuad(vc, pose, x,  y1, x1, y2, 0f,    uB,    uB,    1f-uB);
-        nineSliceQuad(vc, pose, x2, y1, x+w,y2, 1f-uB, uB,    1f,    1f-uB);
+        nineSliceQuad(vc, pose, x2, y1, xw, y2, 1f-uB, uB,    1f,    1f-uB);
         nineSliceQuad(vc, pose, x1, y1, x2, y2, uB,    uB,    1f-uB, 1f-uB);
     }
 
@@ -285,11 +316,11 @@ public final class InWorldHud {
      * Frame-rate-independent exponential smoothing.
      * Moves current toward target at a rate governed by time constant tau.
      *
-     * @param current the current
-     * @param target the current aim target
+     * @param current the current smoothed value
+     * @param target the desired target value
      * @param dt the delta time in seconds
-     * @param tau the tau
-     * @return the smoothed value
+     * @param tau the time constant controlling convergence speed
+     * @return the new smoothed value after one frame step
      */
     public static float smoothToward(float current, float target, float dt, float tau) {
         float factor = 1f - (float) Math.exp(-dt / tau);
@@ -346,7 +377,7 @@ public final class InWorldHud {
      *
      * @param font the font renderer
      * @param contents the goo contents to measure
-     * @return the computed maxRowWidth
+     * @return the width of the widest row (icon + gap + text) in scaled pixels
      */
     public static float computeMaxRowWidth(Font font, GooContents contents) {
         float max = 0;
@@ -363,7 +394,7 @@ public final class InWorldHud {
      * the player's look vector - i.e. the face most directly visible to the player.
      *
      * @param look the player look direction vector
-     * @return the result
+     * @return the horizontal direction most directly facing the player
      */
     public static Direction bestPerpendicularFace(Vec3 look) {
         double ax = Math.abs(look.x);
@@ -380,9 +411,8 @@ public final class InWorldHud {
      * Clamps to 0.1s to handle first-frame and lag spikes.
      *
      * @param lastFrameNanos single-element array storing previous frame time
-     * @return the computed deltaTime
+     * @return delta time in seconds, clamped to {@link #MAX_DT}
      */
-    @SuppressWarnings("PMD.UseVarargs") // single-element array used as mutable holder
     public static float computeDeltaTime(long[] lastFrameNanos) {
         long now = System.nanoTime();
         float dt = (lastFrameNanos[0] == 0) ? DEFAULT_DT : (now - lastFrameNanos[0]) / NANOS_PER_SECOND;

@@ -26,7 +26,7 @@ final class CanisterGasketOps {
      * @param be the canister block entity
      */
     static void registerAllGaskets(CanisterBlockEntity be) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisters.get(i).isEmpty()) {
                 registerSlotGaskets(be, i);
@@ -44,7 +44,18 @@ final class CanisterGasketOps {
         if (be.gasketRegistryAccess == null || !(be.getLevel() instanceof ServerLevel serverLevel)) { return; }
         ItemStack stack = be.containerState().canisters.get(slot);
         if (stack.isEmpty()) { return; }
-        CanisterMetadata meta = CanisterItem.getMetadata(stack);
+        registerBothFaces(be, slot, CanisterItem.getMetadata(stack), serverLevel);
+    }
+
+    /**
+     * Registers top and bottom gasket face locations for a single canister slot.
+     * @param be the canister block entity
+     * @param slot the slot index
+     * @param meta the canister slot metadata containing gasket UUIDs
+     * @param serverLevel the server level for dimension key lookup
+     */
+    private static void registerBothFaces(CanisterBlockEntity be, int slot,
+            CanisterMetadata meta, ServerLevel serverLevel) {
         GasketRegistry registry = be.gasketRegistryAccess.get();
         ResourceKey<Level> dimension = serverLevel.dimension();
         registerFace(registry, meta.topGasketId(),
@@ -95,7 +106,7 @@ final class CanisterGasketOps {
      * @param be the canister block entity
      */
     static void deregisterAllGaskets(CanisterBlockEntity be) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisters.get(i).isEmpty()) {
                 deregisterSlotGaskets(be, i);
@@ -110,7 +121,7 @@ final class CanisterGasketOps {
      * @param serverLevel the server level
      */
     static void forceAllTransmitterChunks(CanisterBlockEntity be, ServerLevel serverLevel) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             ItemStack stack = state.canisters.get(i);
             if (stack.isEmpty()) { continue; }

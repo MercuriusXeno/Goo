@@ -213,15 +213,25 @@ public final class BlobStacks {
         if (volumeMb <= 0) { return 0; }
         long remaining = volumeMb;
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining >= MB_PER_BLOB; i++) {
-            ItemStack slot = player.getInventory().getItem(i);
-            if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) { continue; }
-            int room = MAX_STACK - slot.getCount();
-            if (room <= 0) { continue; }
-            int add = (int) Math.min(room, remaining / MB_PER_BLOB);
-            slot.grow(add);
-            remaining -= add * MB_PER_BLOB;
+            remaining = tryMergeIntoSlot(player.getInventory().getItem(i), type, remaining);
         }
         return remaining;
+    }
+
+    /**
+     * Tops up a single blob stack slot if it matches the type, returning leftover volume.
+     * @param slot the inventory slot to try merging into
+     * @param type the goo type to match against
+     * @param remaining the volume still needing placement in microblobs
+     * @return the leftover volume after merging into this slot
+     */
+    private static long tryMergeIntoSlot(ItemStack slot, GooType type, long remaining) {
+        if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) { return remaining; }
+        int room = MAX_STACK - slot.getCount();
+        if (room <= 0) { return remaining; }
+        int add = (int) Math.min(room, remaining / MB_PER_BLOB);
+        slot.grow(add);
+        return remaining - add * MB_PER_BLOB;
     }
 
     /**

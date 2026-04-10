@@ -15,13 +15,13 @@ import java.util.function.Function;
 /**
  * Behavioral component that owns the mutable slot arrays and goo operations
  * shared by {@link CanisterBlockEntity} and {@link HubBlockEntity}. Each BE
- * holds one instance and delegates {@link ISlottedGooContainer} methods here,
+ * holds one instance and delegates {@link ICanisterHolder} methods here,
  * keeping framework overrides and gasket coordination on the BE itself.
  *
  * <p>Owns: canister stacks, per-slot fluid handlers, per-slot gasket pushers,
  * stream-state arrays, and the cached VoxelShape.</p>
  */
-public class SlottedContainerState {
+public class SlottedCanisterState {
 
     private final int maxSlots;
     private final Runnable syncCallback;
@@ -29,16 +29,8 @@ public class SlottedContainerState {
 
     /** Canister stacks stored in the grid, indexed 0 to maxSlots-1. */
     final List<ItemStack> canisters;
-    /** Live fluid handlers per slot - non-null when the slot is occupied. */
-    final @Nullable GooFluidHandler[] slotHandlers;
-    /** Per-slot gasket pushers - non-null when the slot has an active transmitter. */
-    final @Nullable IGasketPusher[] slotPushers;
-    /** Per-slot goo type of the active incoming stream, or null if idle. */
-    final @Nullable GooType[] slotStreamType;
-    /** Per-slot transfer rate of the active stream in mB/tick. */
-    final int[] slotStreamRate;
-    /** Per-slot game tick of the last stream event. */
-    final long[] slotStreamTick;
+    /** Per-slot tracking arrays for handlers, pushers, and stream state. */
+    final CanisterSlotArrays slots;
     /** Cached composite shape of all occupied slots. Null when dirty. */
     @Nullable VoxelShape cachedShape;
 
@@ -50,17 +42,26 @@ public class SlottedContainerState {
      * @param syncCallback  called when contents change (markDirtyAndSync)
      * @param shapeComputer computes the VoxelShape from the canister list
      */
-    public SlottedContainerState(int maxSlots, List<ItemStack> canisters,
+    public SlottedCanisterState(int maxSlots, List<ItemStack> canisters,
             Runnable syncCallback, Function<List<ItemStack>, VoxelShape> shapeComputer) {
         this.maxSlots = maxSlots;
         this.canisters = canisters;
         this.syncCallback = syncCallback;
         this.shapeComputer = shapeComputer;
-        this.slotHandlers = new GooFluidHandler[maxSlots];
-        this.slotPushers = new IGasketPusher[maxSlots];
-        this.slotStreamType = new GooType[maxSlots];
-        this.slotStreamRate = new int[maxSlots];
-        this.slotStreamTick = new long[maxSlots];
+        this.slots = new CanisterSlotArrays(maxSlots);
+    }
+
+    /** Per-slot arrays for fluid handlers, gasket pushers, and stream visualization state. */
+    record CanisterSlotArrays(
+            @Nullable GooFluidHandler[] handlers,
+            @Nullable IGasketPusher[] pushers,
+            @Nullable GooType[] streamType,
+            int[] streamRate,
+            long[] streamTick) {
+        CanisterSlotArrays(int size) {
+            this(new GooFluidHandler[size], new IGasketPusher[size],
+                 new GooType[size], new int[size], new long[size]);
+        }
     }
 
     /** Returns the maximum number of slots.
@@ -69,7 +70,7 @@ public class SlottedContainerState {
      */
     public int maxSlots() { return maxSlots; }
 
-    // --- ISlottedGooContainer delegates ---
+    // --- ICanisterHolder delegates ---
 
     /**
      * Returns the canister stack in the given slot, or EMPTY if out of range.
@@ -93,7 +94,7 @@ public class SlottedContainerState {
      * @return the goo contents, or EMPTY
      */
     public GooContents getSlotGooContents(int slot) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slotHandlers[slot] : null;
+        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         return h != null ? h.toGooContents() : GooContents.EMPTY;
     }
 
@@ -106,7 +107,7 @@ public class SlottedContainerState {
      * @return the amount actually inserted
      */
     public long insertGoo(int slot, GooType incomingType, long volume) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slotHandlers[slot] : null;
+        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0L; }
         return h.insertGoo(incomingType, (int) Math.min(volume, Integer.MAX_VALUE), false);
     }
@@ -120,7 +121,7 @@ public class SlottedContainerState {
      * @return the amount actually extracted
      */
     public long extractGoo(int slot, GooType type, long requested) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slotHandlers[slot] : null;
+        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0L; }
         return h.extractGoo(type, (int) Math.min(requested, Integer.MAX_VALUE), false);
     }
@@ -133,7 +134,7 @@ public class SlottedContainerState {
      */
     public boolean canAccept(int slot) {
         if (slot < 0 || slot >= maxSlots || canisters.get(slot).isEmpty()) { return false; }
-        GooFluidHandler h = slotHandlers[slot];
+        GooFluidHandler h = slots.handlers()[slot];
         if (h == null) { return false; }
         int compression = GooEnchantments.getCompressionLevel(canisters.get(slot));
         return h.totalVolume() < ContainerCapacity.canisterCapacity(compression);
@@ -160,7 +161,7 @@ public class SlottedContainerState {
      * @return the handler, or null
      */
     public @Nullable GooFluidHandler getSlotFluidHandler(int slot) {
-        return (slot >= 0 && slot < maxSlots) ? slotHandlers[slot] : null;
+        return (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
     }
 
     /**
@@ -172,7 +173,7 @@ public class SlottedContainerState {
      */
     public @Nullable GooType getSlotStreamType(int slot, long currentTick) {
         if (slot < 0 || slot >= maxSlots) { return null; }
-        return (currentTick - slotStreamTick[slot] <= 1) ? slotStreamType[slot] : null;
+        return (currentTick - slots.streamTick()[slot] <= 1) ? slots.streamType()[slot] : null;
     }
 
     /**
@@ -184,7 +185,7 @@ public class SlottedContainerState {
      */
     public int getSlotStreamRate(int slot, long currentTick) {
         if (slot < 0 || slot >= maxSlots) { return 0; }
-        return (currentTick - slotStreamTick[slot] <= 1) ? slotStreamRate[slot] : 0;
+        return (currentTick - slots.streamTick()[slot] <= 1) ? slots.streamRate()[slot] : 0;
     }
 
     // --- Shape ---
@@ -215,14 +216,25 @@ public class SlottedContainerState {
      * @return the amount routed
      */
     public long routeGoo(GooType type, long amount) {
+        long routed = distributeAcrossSlots(type, amount);
+        if (routed > 0) { syncCallback.run(); }
+        return routed;
+    }
+
+    /**
+     * Distributes goo across slots with remaining capacity, returning the total accepted.
+     * @param type the goo type to distribute
+     * @param amount the total volume in microblobs to distribute
+     * @return the total volume accepted across all slots
+     */
+    private long distributeAcrossSlots(GooType type, long amount) {
         long remaining = amount;
         for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            GooFluidHandler handler = slotHandlers[i];
+            GooFluidHandler handler = slots.handlers()[i];
             if (handler == null) { continue; }
             int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
             remaining -= handler.insertGoo(type, toInsert, false);
         }
-        if (remaining < amount) { syncCallback.run(); }
         return amount - remaining;
     }
 
@@ -230,7 +242,7 @@ public class SlottedContainerState {
 
     /** Ticks all active slot pushers. */
     public void tickPushers() {
-        for (IGasketPusher pusher : slotPushers) {
+        for (IGasketPusher pusher : slots.pushers()) {
             if (pusher != null) { pusher.tick(); }
         }
     }
@@ -238,10 +250,10 @@ public class SlottedContainerState {
     /** Disposes all active slot pushers (used during block removal). */
     public void disposeAllPushers() {
         for (int i = 0; i < maxSlots; i++) {
-            IGasketPusher existing = slotPushers[i];
+            IGasketPusher existing = slots.pushers()[i];
             if (existing != null) {
                 existing.dispose();
-                slotPushers[i] = null;
+                slots.pushers()[i] = null;
             }
         }
     }

@@ -7,6 +7,7 @@ import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.registry.GooItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -208,30 +209,46 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
 
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> {
-                TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0();
-                float u1 = sprite.getU1();
-                float v0 = sprite.getV0();
-                float v1 = sprite.getV1();
-                GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(u0, v0, u1, v1);
+            (pose, c) -> emitBlobFaces(pose, c, packedLight, type, cx, cy, cz, hw));
+    }
 
-                // Top and bottom faces
-                GooRenderUtil.faceY(pose, c, packedLight,
-                    cx - hw, cx + hw, cy + hw, cz - hw, cz + hw, uv, 1f);
-                GooRenderUtil.faceY(pose, c, packedLight,
-                    cx - hw, cx + hw, cy - hw, cz - hw, cz + hw, uv, NORMAL_NEG);
-                // East and west faces
-                GooRenderUtil.faceX(pose, c, packedLight,
-                    cx + hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, 1f);
-                GooRenderUtil.faceX(pose, c, packedLight,
-                    cx - hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, NORMAL_NEG);
-                // South and north faces
-                GooRenderUtil.faceZ(pose, c, packedLight,
-                    cx - hw, cx + hw, cy - hw, cy + hw, cz + hw, uv, 1f);
-                GooRenderUtil.faceZ(pose, c, packedLight,
-                    cx - hw, cx + hw, cy - hw, cy + hw, cz - hw, uv, NORMAL_NEG);
-            });
+    /**
+     * Emits all six faces of the held blob cuboid.
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer for geometry output
+     * @param packedLight the packed light value
+     * @param type the goo type determining the fluid texture
+     * @param cx the blob center X in block coords
+     * @param cy the blob center Y in block coords
+     * @param cz the blob center Z in block coords
+     * @param hw the half-width of the cuboid in block coords
+     */
+    private static void emitBlobFaces(PoseStack.Pose pose, VertexConsumer c, int packedLight,
+            GooType type, float cx, float cy, float cz, float hw) {
+        GooRenderUtil.UvRect uv = buildBlobUv(type);
+
+        GooRenderUtil.faceY(pose, c, packedLight,
+            cx - hw, cx + hw, cy + hw, cz - hw, cz + hw, uv, 1f);
+        GooRenderUtil.faceY(pose, c, packedLight,
+            cx - hw, cx + hw, cy - hw, cz - hw, cz + hw, uv, NORMAL_NEG);
+        GooRenderUtil.faceX(pose, c, packedLight,
+            cx + hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, 1f);
+        GooRenderUtil.faceX(pose, c, packedLight,
+            cx - hw, cy - hw, cy + hw, cz - hw, cz + hw, uv, NORMAL_NEG);
+        GooRenderUtil.faceZ(pose, c, packedLight,
+            cx - hw, cx + hw, cy - hw, cy + hw, cz + hw, uv, 1f);
+        GooRenderUtil.faceZ(pose, c, packedLight,
+            cx - hw, cx + hw, cy - hw, cy + hw, cz - hw, uv, NORMAL_NEG);
+    }
+
+    /**
+     * Builds the UV rectangle from the goo type's fluid sprite.
+     * @param type the goo type to look up the fluid sprite for
+     * @return the UV rectangle covering the full fluid sprite
+     */
+    private static GooRenderUtil.UvRect buildBlobUv(GooType type) {
+        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
+        return new GooRenderUtil.UvRect(sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1());
     }
 
     /**
@@ -240,7 +257,7 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      *
      * @param poseStack the pose stack for rendering
      * @param cx the center X in block coords
-     * @param cy the cy
+     * @param cy the center Y in block coords
      * @param cz the center Z in block coords
      */
     private static void captureBlobCenter(PoseStack poseStack,

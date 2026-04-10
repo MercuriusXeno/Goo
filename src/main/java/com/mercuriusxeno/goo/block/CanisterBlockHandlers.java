@@ -30,6 +30,9 @@ import java.util.UUID;
  */
 final class CanisterBlockHandlers {
 
+    /** Error message prefix for unexpected interaction types reaching dispatch. */
+    private static final String ERR_UNHANDLED = "Unhandled interaction: ";
+
     private CanisterBlockHandlers() {}
 
     /** Result of a successful goo extraction from a canister slot.
@@ -57,12 +60,32 @@ final class CanisterBlockHandlers {
             GooInteractionType interaction, CanisterBlockEntity canister, ItemStack stack,
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos,
             Level level, String errTunerPass) {
+        if (interaction == GooInteractionType.TUNER_PASS) {
+            throw new IllegalStateException(errTunerPass);
+        }
+        return dispatchNonTuner(interaction, canister, stack, player, hand, hitResult);
+    }
+
+    /**
+     * Dispatches a non-tuner interaction to the matching canister handler.
+     *
+     * @param interaction the classified interaction type (must not be TUNER_PASS)
+     * @param canister    the canister block entity
+     * @param stack       the held item stack
+     * @param player      the interacting player
+     * @param hand        the hand used
+     * @param hitResult   the ray trace hit result
+     * @return the interaction result
+     */
+    private static InteractionResult dispatchNonTuner(
+            GooInteractionType interaction, CanisterBlockEntity canister, ItemStack stack,
+            Player player, InteractionHand hand, BlockHitResult hitResult) {
         return switch (interaction) {
-            case TUNER_PASS       -> throw new IllegalStateException(errTunerPass);
             case CANISTER_INSERT  -> handleCanisterInsert(canister, hitResult, stack, player);
             case BLOB_INSERT      -> handleBlobInsert(canister, hitResult, stack, player);
             case BUCKET_INSERT    -> handleBucketInsert(canister, hitResult, stack, player, hand);
             case BUCKET_EXTRACT   -> handleBucketExtract(canister, hitResult, stack, player);
+            default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
 
@@ -167,14 +190,22 @@ final class CanisterBlockHandlers {
             CanisterBlockEntity canister, int slot, Player player) {
         ItemStack removed = canister.removeCanister(slot);
         if (removed.isEmpty()) { return InteractionResult.PASS; }
+        PlayerUtils.addOrDrop(player, removed);
+        onCanisterRemoved(canister, player);
+        return InteractionResult.SUCCESS;
+    }
 
+    /**
+     * Plays feedback, marks cooldown, and removes the block if all slots are empty.
+     * @param canister the canister block entity that lost a slot
+     * @param player the player who removed the canister
+     */
+    private static void onCanisterRemoved(CanisterBlockEntity canister, Player player) {
         var level = canister.getLevel();
         var pos = canister.getBlockPos();
-        PlayerUtils.addOrDrop(player, removed);
         level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
         InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
         removeBlockIfEmpty(level, canister, pos);
-        return InteractionResult.SUCCESS;
     }
 
     /**
@@ -264,15 +295,27 @@ final class CanisterBlockHandlers {
     private static @Nullable GooContents tryPourBucket(
             CanisterBlockEntity canister, int hitSlot, GooContents bucketGoo) {
         if (bucketGoo.isEmpty()) { return null; }
+        GooContents remaining = pourAllEntries(canister, hitSlot, bucketGoo);
+        return remaining.equals(bucketGoo) ? null : remaining;
+    }
+
+    /**
+     * Attempts to pour each goo entry into the canister, returning whatever remains.
+     * @param canister the canister block entity to pour into
+     * @param hitSlot the slot the player targeted, or -1
+     * @param bucketGoo the bucket's goo contents to pour
+     * @return goo contents remaining after pouring
+     */
+    private static GooContents pourAllEntries(
+            CanisterBlockEntity canister, int hitSlot, GooContents bucketGoo) {
         GooContents remaining = bucketGoo;
-        boolean inserted = false;
         for (var entry : bucketGoo.getAll().entrySet()) {
             long accepted = pourSingleEntry(canister, hitSlot, entry.getKey(), entry.getValue());
-            if (accepted <= 0) { continue; }
-            remaining = remaining.withRemoved(entry.getKey(), accepted);
-            inserted = true;
+            if (accepted > 0) {
+                remaining = remaining.withRemoved(entry.getKey(), accepted);
+            }
         }
-        return inserted ? remaining : null;
+        return remaining;
     }
 
     /**

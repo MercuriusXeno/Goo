@@ -5,10 +5,12 @@ import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -59,11 +61,30 @@ final class VatSerialization {
      */
     static void tryRedistribute(VatBlockEntity be) {
         Level level = be.getLevel();
-        if (be.redistributing || level == null || level.isClientSide()) { return; }
-        BlockState state = be.getBlockState();
-        if (state.getValue(VatBlock.VAT_ABOVE) || state.getValue(VatBlock.VAT_BELOW)) {
+        if (be.redistributing || !isServerLevel(level)) { return; }
+        if (isStacked(be.getBlockState())) {
             VatStackRedistributor.redistribute(level, be.getBlockPos());
         }
+    }
+
+    /**
+     * Returns true if the level is a non-null server level.
+     *
+     * @param level the level to check, or null
+     * @return true if the level exists and is server-side
+     */
+    private static boolean isServerLevel(@Nullable Level level) {
+        return level != null && !level.isClientSide();
+    }
+
+    /**
+     * Returns true if the vat has a neighbor above or below.
+     *
+     * @param state the vat block state
+     * @return true if VAT_ABOVE or VAT_BELOW is set
+     */
+    private static boolean isStacked(BlockState state) {
+        return state.getValue(VatBlock.VAT_ABOVE) || state.getValue(VatBlock.VAT_BELOW);
     }
 
     /** Writes all vat fields to the value output.
@@ -169,12 +190,21 @@ final class VatSerialization {
         if (compressionLevel > 0 && level != null) {
             level.registryAccess().lookup(Registries.ENCHANTMENT)
                 .flatMap(reg -> reg.get(GooEnchantments.COMPRESSION))
-                .ifPresent(holder -> {
-                    ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-                    mutable.set(holder, compressionLevel);
-                    builder.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
-                });
+                .ifPresent(holder -> applyCompression(builder, holder, compressionLevel));
         }
+    }
+
+    /**
+     * Writes a single compression enchantment entry to the component builder.
+     * @param builder the data component builder to write to
+     * @param holder the compression enchantment holder
+     * @param level the compression enchantment level
+     */
+    private static void applyCompression(DataComponentMap.Builder builder,
+            Holder<Enchantment> holder, int level) {
+        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+        mutable.set(holder, level);
+        builder.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
     }
 
     /** Writes goo contents to the data component builder.

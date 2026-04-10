@@ -98,6 +98,7 @@ class ConventionTest {
             .or(simpleName("TapBlockEntity"))
             .or(simpleName("CanisterFluidHandler"))
             .or(simpleName("BucketGooFluidHandler"))
+            .or(simpleName("GooItemFluidHandler"))
             .or(simpleName("GasketInstallation"))
             .or(simpleName("TapBlock"))
             .or(simpleName("PlexerBlock"))

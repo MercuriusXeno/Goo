@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.item.gasket;
 
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
-import com.mercuriusxeno.goo.block.ISlottedGooContainer;
+import com.mercuriusxeno.goo.block.ICanisterHolder;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
@@ -123,7 +123,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult dispatchSlottedIfApplicable(BlockEntity be, UseOnContext context) {
-        if (be instanceof ISlottedGooContainer container && be instanceof IGasketHolder holder) {
+        if (be instanceof ICanisterHolder container && be instanceof IGasketHolder holder) {
             return dispatchSlotted(context, container, holder);
         }
         return InteractionResult.PASS;
@@ -138,7 +138,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult dispatchSlotted(UseOnContext context,
-            ISlottedGooContainer container, IGasketHolder holder) {
+            ICanisterHolder container, IGasketHolder holder) {
         BlockPos pos = context.getClickedPos();
         BlockHitResult hit = GasketInstallHelper.buildHit(context, pos);
         int slot = holder.resolveSlot(hit);
@@ -246,9 +246,9 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult installOnSlottedMachine(UseOnContext context,
-            ISlottedGooContainer container, IGasketHolder holder, BlockHitResult hit) {
+            ICanisterHolder container, IGasketHolder holder, BlockHitResult hit) {
         int slot = holder.resolveSlot(hit);
-        if (slot < 0 || slot == IGasketHolder.SLOT_MISS) { return InteractionResult.PASS; }
+        if (slot < 0) { return InteractionResult.PASS; }
 
         if (container.getCanister(slot).isEmpty()) {
             return GasketInstallHelper.rejectWith(context, MSG_NO_CANISTER);
@@ -266,7 +266,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult commitSlotGasket(UseOnContext context,
-            ISlottedGooContainer container, GasketRole role, int slot) {
+            ICanisterHolder container, GasketRole role, int slot) {
         if (slotAlreadyHasGasket(container, slot, role)) {
             return GasketInstallHelper.rejectWith(context, MSG_ALREADY_HAS_GASKET);
         }
@@ -285,7 +285,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @param role      the gasket role (determines which face to check)
      * @return true if a gasket UUID already exists on that face
      */
-    private boolean slotAlreadyHasGasket(ISlottedGooContainer container, int slot, GasketRole role) {
+    private boolean slotAlreadyHasGasket(ICanisterHolder container, int slot, GasketRole role) {
         CanisterMetadata meta = container.getSlotMetadata(slot);
         UUID existing = role == GasketRole.RECEIVER ? meta.topGasketId() : meta.bottomGasketId();
         return existing != null;
@@ -299,7 +299,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      * @param role      the gasket role
      * @return the newly generated UUID
      */
-    private UUID applySlotGasket(ISlottedGooContainer container, int slot, GasketRole role) {
+    private UUID applySlotGasket(ICanisterHolder container, int slot, GasketRole role) {
         UUID newId = UUID.randomUUID();
         CanisterMetadata meta = container.getSlotMetadata(slot);
         CanisterMetadata updated = role == GasketRole.RECEIVER

@@ -2,6 +2,8 @@ package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.RenderCtx;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
@@ -17,6 +19,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
@@ -68,6 +71,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
 
     /** Center of the canister in block coordinates. */
     private static final float CENTER = 8f / 16f;
+
+    /** Min X/Z boundary of the canister body. */
+    private static final float BODY_MIN_XZ = CENTER - HW;
+
+    /** Max X/Z boundary of the canister body. */
+    private static final float BODY_MAX_XZ = CENTER + HW;
 
     // -- Gasket UV: choral_gasket.png, 16x16 --
 
@@ -270,69 +279,27 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     private static void submitEndcapBatch(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             Identifier texture, boolean top, boolean bottom) {
-        float x0 = CENTER - HW;
-        float x1 = CENTER + HW;
-        float z0 = CENTER - HW;
-        float z1 = CENTER + HW;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(texture),
-            (pose, c) -> renderEndcapPair(pose, c, packedLight,
-                x0, x1, z0, z1, top, bottom));
+            (pose, c) -> emitEndcapQuads(new RenderCtx(pose, c, packedLight), top, bottom));
     }
 
-    /** Renders top and/or bottom endcap geometry for a single canister.
+    /**
+     * Emits gasket box quads for the requested top and/or bottom endcaps.
      *
-     * @param pose   the pose matrix entry
-     * @param c      the vertex consumer for endcap geometry
-     * @param light  packed light value
-     * @param x0     minimum X of the canister quad
-     * @param x1     maximum X of the canister quad
-     * @param z0     minimum Z of the canister quad
-     * @param z1     maximum Z of the canister quad
+     * @param ctx    the render context
      * @param top    true to render the top endcap
      * @param bottom true to render the bottom endcap
      */
-    private static void renderEndcapPair(PoseStack.Pose pose, VertexConsumer c,
-            int light, float x0, float x1, float z0, float z1,
-            boolean top, boolean bottom) {
-        if (top) { renderTopEndcap(pose, c, light, x0, x1, z0, z1); }
-        if (bottom) { renderBottomEndcap(pose, c, light, x0, x1, z0, z1); }
-    }
-
-    /**
-     * Renders the upper gasket cap between BODY_TOP and GASKET_TOP.
-     *
-     * @param pose the pose matrix entry
-     * @param c    the vertex consumer
-     * @param light packed light value
-     * @param x0   minimum X
-     * @param x1   maximum X
-     * @param z0   minimum Z
-     * @param z1   maximum Z
-     */
-    private static void renderTopEndcap(PoseStack.Pose pose, VertexConsumer c,
-            int light, float x0, float x1, float z0, float z1) {
-        CanisterGeometry.gasketBox(pose, c, light,
-            x0, BODY_TOP, z0, x1, GASKET_TOP, z1,
-            GS_U0, GS_U1, GS_V1);
-    }
-
-    /**
-     * Renders the lower gasket cap between GASKET_BOT and BODY_BOT.
-     *
-     * @param pose the pose matrix entry
-     * @param c    the vertex consumer
-     * @param light packed light value
-     * @param x0   minimum X
-     * @param x1   maximum X
-     * @param z0   minimum Z
-     * @param z1   maximum Z
-     */
-    private static void renderBottomEndcap(PoseStack.Pose pose, VertexConsumer c,
-            int light, float x0, float x1, float z0, float z1) {
-        CanisterGeometry.gasketBox(pose, c, light,
-            x0, GASKET_BOT, z0, x1, BODY_BOT, z1,
-            GS_U0, GS_U1, GS_V1);
+    private static void emitEndcapQuads(RenderCtx ctx, boolean top, boolean bottom) {
+        if (top) {
+            ctx.gasketBox(new CuboidBounds(BODY_MIN_XZ, BODY_MAX_XZ, BODY_MIN_XZ, BODY_MAX_XZ,
+                BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+        }
+        if (bottom) {
+            ctx.gasketBox(new CuboidBounds(BODY_MIN_XZ, BODY_MAX_XZ, BODY_MIN_XZ, BODY_MAX_XZ,
+                GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+        }
     }
 
     /**
@@ -348,143 +315,68 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             GooType type, float fill) {
-        float x0 = CENTER - HW + FLUID_INSET;
-        float x1 = CENTER + HW - FLUID_INSET;
-        float z0 = CENTER - HW + FLUID_INSET;
-        float z1 = CENTER + HW - FLUID_INSET;
-        float y = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
+        CuboidBounds b = new CuboidBounds(
+            CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
+            CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
+            BODY_BOT, BODY_BOT + fill * (BODY_TOP - BODY_BOT));
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> emitFluidFaces(pose, c, packedLight, type, fill, x0, x1, z0, z1, y));
+            (pose, c) -> emitFluidFaces(new RenderCtx(pose, c, packedLight), b, type, fill));
     }
 
     /**
      * Renders the top face and four side faces for the fluid fill level.
      *
-     * @param pose        the pose matrix entry
-     * @param c           the vertex consumer
-     * @param packedLight the packed light value
-     * @param type        the goo type for sprite lookup
-     * @param fill        the fill fraction [0,1]
-     * @param x0          minimum X of the fluid cuboid
-     * @param x1          maximum X of the fluid cuboid
-     * @param z0          minimum Z of the fluid cuboid
-     * @param z1          maximum Z of the fluid cuboid
-     * @param y           the top Y of the fluid surface
+     * @param ctx  the render context
+     * @param b    the fluid cuboid bounds
+     * @param type the goo type for sprite lookup
+     * @param fill the fill fraction [0,1]
      */
-    private static void emitFluidFaces(PoseStack.Pose pose, VertexConsumer c,
-            int packedLight, GooType type, float fill,
-            float x0, float x1, float z0, float z1, float y) {
+    private static void emitFluidFaces(RenderCtx ctx, CuboidBounds b, GooType type, float fill) {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float cuboidWidth = x1 - x0;
-        float cuboidDepth = z1 - z0;
-        emitFluidTopFace(pose, c, packedLight, sprite, x0, x1, z0, z1, y, cuboidWidth, cuboidDepth);
-        emitFluidSideFaces(pose, c, packedLight, sprite, fill, x0, x1, z0, z1, y, cuboidWidth, cuboidDepth);
-    }
-
-    /**
-     * Renders the horizontal top surface of the fluid.
-     *
-     * @param pose        the pose matrix entry
-     * @param c           the vertex consumer
-     * @param packedLight the packed light value
-     * @param sprite      the fluid texture sprite
-     * @param x0          minimum X
-     * @param x1          maximum X
-     * @param z0          minimum Z
-     * @param z1          maximum Z
-     * @param y           the top Y of the fluid surface
-     * @param cuboidWidth width for UV scaling
-     * @param cuboidDepth depth for UV scaling
-     */
-    private static void emitFluidTopFace(PoseStack.Pose pose, VertexConsumer c,
-            int packedLight, TextureAtlasSprite sprite,
-            float x0, float x1, float z0, float z1, float y,
-            float cuboidWidth, float cuboidDepth) {
-        float su1 = sprite.getU0() + (sprite.getU1() - sprite.getU0()) * cuboidWidth;
-        float sv1 = sprite.getV0() + (sprite.getV1() - sprite.getV0()) * cuboidDepth;
-        GooRenderUtil.liquidSurface(pose, c, packedLight,
-            GooRenderUtil.OPAQUE_WHITE,
-            x0, z0, x1, z1, y, sprite.getU0(), su1, sprite.getV0(), sv1);
-    }
-
-    /**
-     * Renders the four vertical side faces of the fluid column.
-     *
-     * @param pose        the pose matrix entry
-     * @param c           the vertex consumer
-     * @param packedLight the packed light value
-     * @param sprite      the fluid texture sprite
-     * @param fill        the fill fraction [0,1]
-     * @param x0          minimum X
-     * @param x1          maximum X
-     * @param z0          minimum Z
-     * @param z1          maximum Z
-     * @param y           the top Y of the fluid surface
-     * @param cuboidWidth width for UV scaling
-     * @param cuboidDepth depth for UV scaling
-     */
-    private static void emitFluidSideFaces(PoseStack.Pose pose, VertexConsumer c,
-            int packedLight, TextureAtlasSprite sprite, float fill,
-            float x0, float x1, float z0, float z1, float y,
-            float cuboidWidth, float cuboidDepth) {
         float u0 = sprite.getU0();
-        float sideVSpan = (sprite.getV1() - sprite.getV0()) * (fill * (BODY_TOP - BODY_BOT));
         float v0 = sprite.getV0();
-        float sideXU1 = u0 + (sprite.getU1() - u0) * cuboidWidth;
-        float sideZU1 = u0 + (sprite.getU1() - u0) * cuboidDepth;
-        emitNorthSouth(pose, c, packedLight, x0, x1, z0, z1, y, u0, sideXU1, v0, sideVSpan);
-        emitWestEast(pose, c, packedLight, x0, x1, z0, z1, y, u0, sideZU1, v0, sideVSpan);
+        float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
+        float sv1 = v0 + (sprite.getV1() - v0) * (b.z1() - b.z0());
+        ctx.liquidSurface(GooRenderUtil.OPAQUE_WHITE, b, new GooRenderUtil.UvRect(u0, v0, su1, sv1));
+        emitFluidSides(ctx, b, sprite, u0, v0, fill);
     }
 
     /**
-     * Renders north and south fluid side faces.
+     * Emits the four side faces of the fluid cuboid with fill-scaled UVs.
      *
-     * @param pose        the pose matrix entry
-     * @param c           the vertex consumer
-     * @param packedLight the packed light value
-     * @param x0          minimum X
-     * @param x1          maximum X
-     * @param z0          minimum Z (north face position)
-     * @param z1          maximum Z (south face position)
-     * @param y           the top Y of the fluid surface
-     * @param u0          texture U start
-     * @param sideU1      texture U end for X-axis faces
-     * @param v0          texture V start
-     * @param sideVSpan   texture V span for the fill height
+     * @param ctx    the render context
+     * @param b      the fluid cuboid bounds
+     * @param sprite the fluid texture sprite
+     * @param u0     the sprite U origin
+     * @param v0     the sprite V origin
+     * @param fill   the fill fraction [0,1]
      */
-    private static void emitNorthSouth(PoseStack.Pose pose, VertexConsumer c,
-            int packedLight, float x0, float x1, float z0, float z1, float y,
-            float u0, float sideU1, float v0, float sideVSpan) {
-        CanisterGeometry.faceNorth(pose, c, packedLight,
-            x0, BODY_BOT, z0, x1, y, u0, sideU1, v0, v0 + sideVSpan);
-        CanisterGeometry.faceSouth(pose, c, packedLight,
-            x0, BODY_BOT, z1, x1, y, u0, sideU1, v0, v0 + sideVSpan);
+    private static void emitFluidSides(RenderCtx ctx, CuboidBounds b,
+            TextureAtlasSprite sprite, float u0, float v0, float fill) {
+        float sideVSpan = (sprite.getV1() - v0) * fill * (BODY_TOP - BODY_BOT);
+        float uRange = sprite.getU1() - u0;
+        GooRenderUtil.UvRect xUv = new GooRenderUtil.UvRect(u0, v0,
+            u0 + uRange * (b.x1() - b.x0()), v0 + sideVSpan);
+        GooRenderUtil.UvRect zUv = new GooRenderUtil.UvRect(u0, v0,
+            u0 + uRange * (b.z1() - b.z0()), v0 + sideVSpan);
+        emitAllSideFaces(ctx, b, xUv, zUv);
     }
 
     /**
-     * Renders west and east fluid side faces.
+     * Emits all four cardinal side faces using pre-computed UV rects.
      *
-     * @param pose        the pose matrix entry
-     * @param c           the vertex consumer
-     * @param packedLight the packed light value
-     * @param x0          minimum X (west face position)
-     * @param x1          maximum X (east face position)
-     * @param z0          minimum Z
-     * @param z1          maximum Z
-     * @param y           the top Y of the fluid surface
-     * @param u0          texture U start
-     * @param sideU1      texture U end for Z-axis faces
-     * @param v0          texture V start
-     * @param sideVSpan   texture V span for the fill height
+     * @param ctx the render context
+     * @param b   the cuboid bounds
+     * @param xUv UV rect for north/south faces
+     * @param zUv UV rect for west/east faces
      */
-    private static void emitWestEast(PoseStack.Pose pose, VertexConsumer c,
-            int packedLight, float x0, float x1, float z0, float z1, float y,
-            float u0, float sideU1, float v0, float sideVSpan) {
-        CanisterGeometry.faceWest(pose, c, packedLight,
-            x0, BODY_BOT, z0, y, z1, u0, sideU1, v0, v0 + sideVSpan);
-        CanisterGeometry.faceEast(pose, c, packedLight,
-            x1, BODY_BOT, z0, y, z1, u0, sideU1, v0, v0 + sideVSpan);
+    private static void emitAllSideFaces(RenderCtx ctx, CuboidBounds b,
+            GooRenderUtil.UvRect xUv, GooRenderUtil.UvRect zUv) {
+        ctx.emitFace(b, xUv, Direction.NORTH);
+        ctx.emitFace(b, xUv, Direction.SOUTH);
+        ctx.emitFace(b, zUv, Direction.WEST);
+        ctx.emitFace(b, zUv, Direction.EAST);
     }
 
     /**

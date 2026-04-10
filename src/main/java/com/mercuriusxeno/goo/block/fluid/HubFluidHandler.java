@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.block.fluid;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.SlottedContainerState;
+import com.mercuriusxeno.goo.block.SlottedCanisterState;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -15,7 +15,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 /**
  * Block-level fluid handler for the Hub. Presents 15 virtual tanks
  * (one per {@link GooType} ordinal) that aggregate volumes across all
- * internal canister items. Insert routes via {@link SlottedContainerState#routeGoo},
+ * internal canister items. Insert routes via {@link SlottedCanisterState#routeGoo},
  * extract scans canisters for the first match.
  *
  * <p>This is a read-through/write-through adapter: no data duplication.

@@ -32,6 +32,14 @@ final class GooConstantParser {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             parseOneConstant(entry.getKey(), entry.getValue(), state);
         }
+        logConstantCounts(state);
+    }
+
+    /**
+     * Logs the number of parsed scalar and tree constants at INFO level.
+     * @param state the mutable parsing state containing scalar and tree constant maps
+     */
+    private static void logConstantCounts(GooValueLoader.ParseState state) {
         if (Goo.LOGGER.isInfoEnabled()) {
             Goo.LOGGER.info(LOG_LOADED_CONSTANTS,
                     state.constants.size() + state.treeConstants.size(),

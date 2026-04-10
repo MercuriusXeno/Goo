@@ -157,8 +157,19 @@ final class ExpressionOperators {
             case OP_PLUS -> a + b;
             case OP_MINUS -> a - b;
             case OP_MULTIPLY -> a * b;
-            case OP_DIVIDE -> b == 0 ? 0 : a / b;
+            case OP_DIVIDE -> safeDivide(a, b);
             default -> a;
         };
+    }
+
+    /**
+     * Divides a by b, returning 0 when b is zero to avoid ArithmeticException.
+     *
+     * @param a the dividend
+     * @param b the divisor
+     * @return the quotient, or 0 if b is zero
+     */
+    private static int safeDivide(int a, int b) {
+        return b == 0 ? 0 : a / b;
     }
 }

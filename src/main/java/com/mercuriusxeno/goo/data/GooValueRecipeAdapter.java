@@ -110,6 +110,7 @@ final class GooValueRecipeAdapter {
      * @param ingredient the ingredient to inspect
      * @param containers accumulator for ingredient-to-remainder mappings
      */
+    @SuppressWarnings("deprecation") // getCraftingRemainder(ItemStack) referenced by @deprecated does not exist in 26.1 decomp
     private static void collectContainersFromIngredient(Ingredient ingredient,
             Map<Identifier, Identifier> containers) {
         for (Holder<Item> holder : resolveIngredientItems(ingredient)) {
@@ -132,14 +133,25 @@ final class GooValueRecipeAdapter {
         List<Set<Identifier>> slots = new ArrayList<>();
         List<Optional<Identifier>> tagIds = new ArrayList<>();
         for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
-            if (ingredient.isEmpty()) { continue; }
-            Set<Identifier> alternatives = adaptOneIngredient(ingredient);
-            if (!alternatives.isEmpty()) {
-                slots.add(alternatives);
-                tagIds.add(extractTagId(ingredient));
-            }
+            collectIngredientSlot(ingredient, slots, tagIds);
         }
         return new AdaptedIngredients(slots, tagIds);
+    }
+
+    /**
+     * Adapts a single ingredient into a slot entry if non-empty.
+     * @param ingredient the MC ingredient to adapt
+     * @param slots the accumulating list of item ID sets per slot
+     * @param tagIds the accumulating list of tag identifiers per slot
+     */
+    private static void collectIngredientSlot(Ingredient ingredient,
+            List<Set<Identifier>> slots, List<Optional<Identifier>> tagIds) {
+        if (ingredient.isEmpty()) { return; }
+        Set<Identifier> alternatives = adaptOneIngredient(ingredient);
+        if (!alternatives.isEmpty()) {
+            slots.add(alternatives);
+            tagIds.add(extractTagId(ingredient));
+        }
     }
 
     /**

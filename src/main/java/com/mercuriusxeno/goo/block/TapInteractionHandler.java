@@ -33,6 +33,8 @@ final class TapInteractionHandler {
 
     /** Error message for TUNER_PASS reaching dispatch. */
     private static final String ERR_TUNER_PASS = "TUNER_PASS handled in validate";
+    /** Error message prefix for unexpected interaction types reaching dispatch. */
+    private static final String ERR_UNHANDLED = "Unhandled interaction: ";
     /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
 
@@ -55,12 +57,31 @@ final class TapInteractionHandler {
     static InteractionResult dispatchCanisterRegion(
             GooInteractionType interaction, TapBlockEntity tap, ItemStack stack,
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
+        if (interaction == GooInteractionType.TUNER_PASS) {
+            throw new IllegalStateException(ERR_TUNER_PASS);
+        }
+        return dispatchCanisterRegionNonTuner(interaction, tap, stack, player, hand);
+    }
+
+    /**
+     * Dispatches a non-tuner canister-region interaction to the matching handler.
+     *
+     * @param interaction the classified interaction type (must not be TUNER_PASS)
+     * @param tap         the tap block entity
+     * @param stack       the held item stack
+     * @param player      the interacting player
+     * @param hand        the hand used
+     * @return the interaction result
+     */
+    private static InteractionResult dispatchCanisterRegionNonTuner(
+            GooInteractionType interaction, TapBlockEntity tap, ItemStack stack,
+            Player player, InteractionHand hand) {
         return switch (interaction) {
-            case TUNER_PASS      -> throw new IllegalStateException(ERR_TUNER_PASS);
             case CANISTER_INSERT -> InteractionResult.TRY_WITH_EMPTY_HAND;
             case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
             case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
             case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
+            default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
 
@@ -79,12 +100,31 @@ final class TapInteractionHandler {
     static InteractionResult dispatchTap(
             GooInteractionType interaction, TapBlockEntity tap, ItemStack stack,
             Player player, InteractionHand hand, BlockHitResult hitResult, BlockPos pos, Level level) {
+        if (interaction == GooInteractionType.TUNER_PASS) {
+            throw new IllegalStateException(ERR_TUNER_PASS);
+        }
+        return dispatchTapNonTuner(interaction, tap, stack, player, hand);
+    }
+
+    /**
+     * Dispatches a non-tuner tap interaction to the matching handler.
+     *
+     * @param interaction the classified interaction type (must not be TUNER_PASS)
+     * @param tap         the tap block entity
+     * @param stack       the held item stack
+     * @param player      the interacting player
+     * @param hand        the hand used
+     * @return the interaction result
+     */
+    private static InteractionResult dispatchTapNonTuner(
+            GooInteractionType interaction, TapBlockEntity tap, ItemStack stack,
+            Player player, InteractionHand hand) {
         return switch (interaction) {
-            case TUNER_PASS      -> throw new IllegalStateException(ERR_TUNER_PASS);
             case CANISTER_INSERT -> handleCanisterInsert(tap, stack, player);
             case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
             case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
             case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
+            default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
 

@@ -62,6 +62,16 @@ public final class GasketPushMath {
      */
     public static PushResult computePush(GooContents reservoir, BiFunction<GooType, Long, Long> acceptor) {
         if (reservoir.isEmpty()) { return new PushResult(GooContents.EMPTY, GooContents.EMPTY); }
+        return distributeEntries(reservoir, acceptor);
+    }
+
+    /**
+     * Iterates each goo entry, splitting volume between accepted and remaining.
+     * @param reservoir the source goo contents to distribute from
+     * @param acceptor function (type, volume) -> amount accepted per entry
+     * @return push result splitting volume into accepted and remaining
+     */
+    private static PushResult distributeEntries(GooContents reservoir, BiFunction<GooType, Long, Long> acceptor) {
         GooContents accepted = GooContents.EMPTY;
         GooContents remaining = GooContents.EMPTY;
         for (var entry : reservoir.getAll().entrySet()) {

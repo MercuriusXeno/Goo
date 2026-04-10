@@ -33,13 +33,13 @@ import java.util.UUID;
  * in a 3x3 grid within a single block space. Each sub-canister retains its
  * own gasket UUIDs for the transport network.
  *
- * <p>Slot state delegated to {@link SlottedContainerState}. Internal logic
+ * <p>Slot state delegated to {@link SlottedCanisterState}. Internal logic
  * delegated to: {@link CanisterSlotHandlers} (handler/pusher lifecycle),
  * {@link CanisterGasketOps} (gasket registration),
  * {@link CanisterEntitySerializer} (NBT),
  * {@link CanisterSlotLifecycle} (build/strip/shape/export).</p>
  */
-public class CanisterBlockEntity extends BlockEntity implements ISlottedGooContainer, IGasketHolder {
+public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder, IGasketHolder {
 
     /** Maximum number of canister slots in the 3x3 grid. */
     public static final int MAX_SLOTS = 9;
@@ -58,7 +58,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
     private final GasketState gasketState = GasketState.none();
 
     /** Behavioral component owning slot arrays, handlers, and stream state. */
-    private final SlottedContainerState state;
+    private final SlottedCanisterState state;
 
     /**
      * Creates a new canister block entity at the given position.
@@ -68,7 +68,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
      */
     public CanisterBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.CANISTER.get(), pos, state);
-        this.state = new SlottedContainerState(
+        this.state = new SlottedCanisterState(
             MAX_SLOTS,
             NonNullList.withSize(MAX_SLOTS, ItemStack.EMPTY),
             () -> BlockEntitySync.markDirtyAndSync(this),
@@ -77,7 +77,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
 
     /** {@inheritDoc} */
     @Override
-    public SlottedContainerState containerState() { return state; }
+    public SlottedCanisterState containerState() { return state; }
 
     // --- Public canister API (delegated to CanisterSlotHandlers/CanisterGasketOps) ---
 
@@ -186,7 +186,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
         super.saveAdditional(output);
         CanisterEntitySerializer.saveCanisterList(output, state.canisters);
         if (ownerUuid != null) { output.store(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC, ownerUuid); }
-        CanisterEntitySerializer.saveStreamState(output, state.slotStreamType, state.slotStreamRate, state.slotStreamTick, MAX_SLOTS);
+        CanisterEntitySerializer.saveStreamState(output, state.slots.streamType(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
     }
 
     /** {@inheritDoc} */
@@ -195,7 +195,7 @@ public class CanisterBlockEntity extends BlockEntity implements ISlottedGooConta
         super.loadAdditional(input);
         CanisterEntitySerializer.loadCanisterList(input, state.canisters, MAX_SLOTS);
         input.read(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC).ifPresent(u -> ownerUuid = u);
-        CanisterEntitySerializer.loadStreamState(input, state.slotStreamType, state.slotStreamRate, state.slotStreamTick, MAX_SLOTS);
+        CanisterEntitySerializer.loadStreamState(input, state.slots.streamType(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
         CanisterSlotHandlers.rebuildAllSlotHandlers(this);
         state.invalidateShape();
     }

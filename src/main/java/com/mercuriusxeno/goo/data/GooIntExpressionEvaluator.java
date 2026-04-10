@@ -142,18 +142,51 @@ final class GooIntExpressionEvaluator {
                                 Map<Identifier, GooValue> baseValues,
                                 Map<String, GooValue> treeConstants) {
         int result = evalAtom(tokens, pos, constants, baseValues, treeConstants);
-        while (pos[0] < tokens.size()) {
-            String token = tokens.get(pos[0]);
-            if (isMultiplicativeOp(token)) {
-                pos[0]++;
-                result = applyOperator(result, token, evalAtom(tokens, pos, constants, baseValues, treeConstants));
-            } else if (isAtomStart(token)) {
-                result = applyOperator(result, OP_MUL, evalAtom(tokens, pos, constants, baseValues, treeConstants));
-            } else {
-                break;
-            }
+        while (pos[0] < tokens.size() && isTermContinuation(tokens.get(pos[0]))) {
+            result = applyTermFactor(result, tokens, pos, constants, baseValues, treeConstants);
         }
         return result;
+    }
+
+    /**
+     * Returns true if the token continues a multiplicative term (explicit op or implicit multiply).
+     * @param token the next token in the expression
+     * @return true if the token is a multiplicative operator or can start a new atom
+     */
+    private static boolean isTermContinuation(String token) {
+        return isMultiplicativeOp(token) || isAtomStart(token);
+    }
+
+    /**
+     * Consumes and applies one multiplicative factor (explicit or implicit).
+     * @param result the accumulated value from previous factors
+     * @param tokens the token list from the tokenizer
+     * @param pos mutable position index into tokens
+     * @param constants scalar constant symbol table
+     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table
+     * @return the result after applying the next multiplicative factor
+     */
+    private static int applyTermFactor(int result, List<String> tokens, int[] pos,
+            Map<String, Integer> constants, Map<Identifier, GooValue> baseValues,
+            Map<String, GooValue> treeConstants) {
+        String op = consumeMultiplicativeOp(tokens, pos);
+        return applyOperator(result, op, evalAtom(tokens, pos, constants, baseValues, treeConstants));
+    }
+
+    /**
+     * Consumes an explicit multiplicative operator, or returns implicit multiply without advancing.
+     * @param tokens the token list from the tokenizer
+     * @param pos mutable position index into tokens
+     * @return the explicit operator token, or "*" for implicit multiplication
+     */
+    private static String consumeMultiplicativeOp(List<String> tokens, int[] pos) {
+        String token = tokens.get(pos[0]);
+        if (isMultiplicativeOp(token)) {
+            pos[0]++;
+            return token;
+        }
+        return OP_MUL;
     }
 
     /**
@@ -206,7 +239,6 @@ final class GooIntExpressionEvaluator {
      * @param pos    mutable position index into tokens
      * @return true if the current token is a unary minus
      */
-    @SuppressWarnings("PMD.UseVarargs") // int[] is a mutable position holder
     private static boolean isUnaryMinus(List<String> tokens, int[] pos) {
         return pos[0] < tokens.size() && OP_SUB.equals(tokens.get(pos[0]));
     }

@@ -469,12 +469,25 @@ public final class FluidTextureGenerator {
             for (int dy = NEIGHBOR_NEG; dy <= 1; dy++) {
                 for (int dx = NEIGHBOR_NEG; dx <= 1; dx++) {
                     if (dx == 0 && dy == 0) { continue; }
-                    int nx = (x + dx + SIZE) % SIZE;
-                    int ny = (y + dy + SIZE) % SIZE;
-                    float falloff = (dx == 0 || dy == 0) ? CARDINAL_FALLOFF : DIAGONAL_FALLOFF;
-                    newFlame[ny][nx] = Math.max(newFlame[ny][nx], params.ignitionStrength() * falloff);
+                    applyIgnitionFalloff(x + dx, y + dy, dx, dy, newFlame);
                 }
             }
+        }
+
+        /**
+         * Applies ignition falloff to a single neighbor cell, wrapping coordinates toroidally.
+         *
+         * @param rawX     the unwrapped neighbor x coordinate
+         * @param rawY     the unwrapped neighbor y coordinate
+         * @param dx       the x offset from the source (for cardinal/diagonal detection)
+         * @param dy       the y offset from the source (for cardinal/diagonal detection)
+         * @param newFlame the accumulator for next-tick flame values
+         */
+        private void applyIgnitionFalloff(int rawX, int rawY, int dx, int dy, float[]... newFlame) {
+            int nx = (rawX + SIZE) % SIZE;
+            int ny = (rawY + SIZE) % SIZE;
+            float falloff = (dx == 0 || dy == 0) ? CARDINAL_FALLOFF : DIAGONAL_FALLOFF;
+            newFlame[ny][nx] = Math.max(newFlame[ny][nx], params.ignitionStrength() * falloff);
         }
 
         /**
@@ -521,7 +534,7 @@ public final class FluidTextureGenerator {
          * @param colors    the destination colors array
          */
         private static void populateStops(Object[] args, int stops,
-                float[] positions, int[][] colors) {
+                float[] positions, int[]... colors) {
             for (int i = 0; i < stops; i++) {
                 positions[i] = ((Number) args[i * PALETTE_PAIR_SIZE]).floatValue();
                 colors[i] = parseHex((String) args[i * PALETTE_PAIR_SIZE + 1]);

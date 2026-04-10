@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.ThrowArc;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
+import com.mercuriusxeno.goo.client.ber.LineCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -136,9 +136,9 @@ final class ArcRenderer {
             Camera camera, Vec3[] points, int segments,
             int rgb, float dashOffset, float baseWidth) {
         Vec3 cam = camera.position();
-        VertexConsumer line = bufferSource.getBuffer(GooRenderTypes.LINES_GLOW);
+        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(GooRenderTypes.LINES_GLOW));
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
-            emitDashedPass(poseStack, line, cam, points, segments,
+            emitDashedPass(ctx, cam, points, segments,
                     dashOffset, computeGlowPassColor(rgb, pass),
                     baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP));
         }
@@ -161,22 +161,20 @@ final class ArcRenderer {
     /**
      * Emits one pass of dashed line segments for the arc polyline.
      *
-     * @param poseStack the pose stack for rendering
-     * @param line the line vertex consumer
-     * @param cam the camera position
-     * @param points the sampled arc polyline points
-     * @param segments the number of arc segments
+     * @param ctx        the line render context
+     * @param cam        the camera position
+     * @param points     the sampled arc polyline points
+     * @param segments   the number of arc segments
      * @param dashOffset the dash scroll offset
-     * @param color the ARGB color value
-     * @param width the line width
+     * @param color      the ARGB color value
+     * @param width      the line width
      */
     private static void emitDashedPass(
-            PoseStack poseStack, VertexConsumer line, Vec3 cam,
-            Vec3[] points, int segments,
+            LineCtx ctx, Vec3 cam, Vec3[] points, int segments,
             float dashOffset, int color, float width) {
         float arcLen = 0f;
         for (int i = 0; i < segments; i++) {
-            arcLen = emitDashSegment(poseStack, line, cam,
+            arcLen = emitDashSegment(ctx, cam,
                     points[i], points[i + 1],
                     arcLen, dashOffset, color, width);
         }
@@ -185,8 +183,7 @@ final class ArcRenderer {
     /**
      * Emits a single dash segment if it falls in the "on" phase of the pattern.
      *
-     * @param poseStack  the pose stack
-     * @param line       the vertex consumer
+     * @param ctx        the line render context
      * @param cam        camera position
      * @param a          segment start
      * @param b          segment end
@@ -197,15 +194,14 @@ final class ArcRenderer {
      * @return the updated accumulated arc length
      */
     private static float emitDashSegment(
-            PoseStack poseStack, VertexConsumer line, Vec3 cam,
-            Vec3 a, Vec3 b, float arcLen,
+            LineCtx ctx, Vec3 cam, Vec3 a, Vec3 b, float arcLen,
             float dashOffset, int color, float width) {
         float segLen = (float) a.distanceTo(b);
         if (isDashOn(arcLen + segLen * DASH_MID, dashOffset)) {
-            WireframeRenderer.emitEdge(poseStack, line,
-                    a.x - cam.x, a.y - cam.y, a.z - cam.z,
-                    b.x - cam.x, b.y - cam.y, b.z - cam.z,
-                    color, width);
+            ctx.emitEdge(
+                (float) (a.x - cam.x), (float) (a.y - cam.y), (float) (a.z - cam.z),
+                (float) (b.x - cam.x), (float) (b.y - cam.y), (float) (b.z - cam.z),
+                color, width);
         }
         return arcLen + segLen;
     }

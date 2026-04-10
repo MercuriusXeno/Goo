@@ -1,9 +1,12 @@
 package com.mercuriusxeno.goo.client.overlay;
 
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.FlatQuadCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 /**
  * Emits filled box quads and diagonal warning stripe geometry for gasket
@@ -81,88 +84,8 @@ final class GasketMeshEmitter {
     static void renderFilledBox(PoseStack poseStack, VertexConsumer consumer,
             AABB bounds, Vec3 ofs, int color) {
         float[] f = boundsToFloats(bounds, ofs);
-        PoseStack.Pose pose = poseStack.last();
-        emitYFaces(pose, consumer, f[0], f[VERT_Y], f[VERT_Z], f[BOX_X1], f[BOX_Y1], f[BOX_Z1], color);
-        emitZFaces(pose, consumer, f[0], f[VERT_Y], f[VERT_Z], f[BOX_X1], f[BOX_Y1], f[BOX_Z1], color);
-        emitXFaces(pose, consumer, f[0], f[VERT_Y], f[VERT_Z], f[BOX_X1], f[BOX_Y1], f[BOX_Z1], color);
-    }
-
-    /**
-     * Emits the bottom (Y-) and top (Y+) face quads.
-     *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
-     * @param x0 minimum X
-     * @param y0 minimum Y
-     * @param z0 minimum Z
-     * @param x1 maximum X
-     * @param y1 maximum Y
-     * @param z1 maximum Z
-     * @param color the ARGB color value
-     */
-    private static void emitYFaces(PoseStack.Pose pose, VertexConsumer consumer,
-            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
-        consumer.addVertex(pose, x0, y0, z0).setColor(color);
-        consumer.addVertex(pose, x1, y0, z0).setColor(color);
-        consumer.addVertex(pose, x1, y0, z1).setColor(color);
-        consumer.addVertex(pose, x0, y0, z1).setColor(color);
-
-        consumer.addVertex(pose, x0, y1, z1).setColor(color);
-        consumer.addVertex(pose, x1, y1, z1).setColor(color);
-        consumer.addVertex(pose, x1, y1, z0).setColor(color);
-        consumer.addVertex(pose, x0, y1, z0).setColor(color);
-    }
-
-    /**
-     * Emits the north (Z-) and south (Z+) face quads.
-     *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
-     * @param x0 minimum X
-     * @param y0 minimum Y
-     * @param z0 minimum Z
-     * @param x1 maximum X
-     * @param y1 maximum Y
-     * @param z1 maximum Z
-     * @param color the ARGB color value
-     */
-    private static void emitZFaces(PoseStack.Pose pose, VertexConsumer consumer,
-            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
-        consumer.addVertex(pose, x0, y0, z0).setColor(color);
-        consumer.addVertex(pose, x0, y1, z0).setColor(color);
-        consumer.addVertex(pose, x1, y1, z0).setColor(color);
-        consumer.addVertex(pose, x1, y0, z0).setColor(color);
-
-        consumer.addVertex(pose, x1, y0, z1).setColor(color);
-        consumer.addVertex(pose, x1, y1, z1).setColor(color);
-        consumer.addVertex(pose, x0, y1, z1).setColor(color);
-        consumer.addVertex(pose, x0, y0, z1).setColor(color);
-    }
-
-    /**
-     * Emits the west (X-) and east (X+) face quads.
-     *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
-     * @param x0 minimum X
-     * @param y0 minimum Y
-     * @param z0 minimum Z
-     * @param x1 maximum X
-     * @param y1 maximum Y
-     * @param z1 maximum Z
-     * @param color the ARGB color value
-     */
-    private static void emitXFaces(PoseStack.Pose pose, VertexConsumer consumer,
-            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
-        consumer.addVertex(pose, x0, y0, z1).setColor(color);
-        consumer.addVertex(pose, x0, y1, z1).setColor(color);
-        consumer.addVertex(pose, x0, y1, z0).setColor(color);
-        consumer.addVertex(pose, x0, y0, z0).setColor(color);
-
-        consumer.addVertex(pose, x1, y0, z0).setColor(color);
-        consumer.addVertex(pose, x1, y1, z0).setColor(color);
-        consumer.addVertex(pose, x1, y1, z1).setColor(color);
-        consumer.addVertex(pose, x1, y0, z1).setColor(color);
+        CuboidBounds box = new CuboidBounds(f[0], f[BOX_X1], f[VERT_Z], f[BOX_Z1], f[VERT_Y], f[BOX_Y1]);
+        new FlatQuadCtx(poseStack.last(), consumer).emitBox(color, box);
     }
 
     /**
@@ -178,10 +101,10 @@ final class GasketMeshEmitter {
     static void renderDiagonalStripes(PoseStack poseStack, VertexConsumer consumer,
             AABB bounds, Vec3 ofs, int color) {
         AABB inset = computeStripeInsetBounds(bounds, ofs);
-        PoseStack.Pose pose = poseStack.last();
-        renderHorizontalFaceStripes(pose, consumer, color, inset);
-        renderVerticalZFaceStripes(pose, consumer, color, inset);
-        renderVerticalXFaceStripes(pose, consumer, color, inset);
+        FlatQuadCtx ctx = new FlatQuadCtx(poseStack.last(), consumer);
+        renderHorizontalFaceStripes(ctx, color, inset);
+        renderVerticalZFaceStripes(ctx, color, inset);
+        renderVerticalXFaceStripes(ctx, color, inset);
     }
 
     /**
@@ -205,50 +128,43 @@ final class GasketMeshEmitter {
     /**
      * Renders diagonal stripes on the top (Y+) and bottom (Y-) horizontal faces.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderHorizontalFaceStripes(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, AABB b) {
-        renderHorizontalStripe(pose, consumer, color, b.minX, b.maxY, b.minZ, b.maxX, b.maxZ, true);
-        renderHorizontalStripe(pose, consumer, color, b.minX, b.minY, b.minZ, b.maxX, b.maxZ, false);
+    private static void renderHorizontalFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+        renderHorizontalStripe(ctx, color, b.minX, b.maxY, b.minZ, b.maxX, b.maxZ, true);
+        renderHorizontalStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxX, b.maxZ, false);
     }
 
     /**
      * Renders diagonal stripes on the north (Z-) and south (Z+) faces.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderVerticalZFaceStripes(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, AABB b) {
-        renderVerticalZStripe(pose, consumer, color, b.minX, b.minY, b.minZ, b.maxX, b.maxY, false);
-        renderVerticalZStripe(pose, consumer, color, b.minX, b.minY, b.maxZ, b.maxX, b.maxY, true);
+    private static void renderVerticalZFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+        renderVerticalZStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxX, b.maxY, false);
+        renderVerticalZStripe(ctx, color, b.minX, b.minY, b.maxZ, b.maxX, b.maxY, true);
     }
 
     /**
      * Renders diagonal stripes on the west (X-) and east (X+) faces.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderVerticalXFaceStripes(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, AABB b) {
-        renderVerticalXStripe(pose, consumer, color, b.minX, b.minY, b.minZ, b.maxY, b.maxZ, false);
-        renderVerticalXStripe(pose, consumer, color, b.maxX, b.minY, b.minZ, b.maxY, b.maxZ, true);
+    private static void renderVerticalXFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+        renderVerticalXStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxY, b.maxZ, false);
+        renderVerticalXStripe(ctx, color, b.maxX, b.minY, b.minZ, b.maxY, b.maxZ, true);
     }
 
     /**
      * Renders diagonal stripe bands on a horizontal face at a fixed Y coordinate.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param x0 minimum X
      * @param fixedY the Y coordinate of the face
@@ -257,19 +173,18 @@ final class GasketMeshEmitter {
      * @param z1 maximum Z
      * @param flip whether to reverse winding order
      */
-    private static void renderHorizontalStripe(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, double x0, double fixedY, double z0, double x1, double z1, boolean flip) {
+    private static void renderHorizontalStripe(FlatQuadCtx ctx, int color,
+            double x0, double fixedY, double z0, double x1, double z1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, x0, x1 - x0);
-            emitHorizontalStripeQuad(pose, consumer, color, flip, c, (float) fixedY, (float) z0, (float) z1);
+            emitHorizontalStripeQuad(ctx, color, flip, c, (float) fixedY, (float) z0, (float) z1);
         }
     }
 
     /**
      * Emits a single horizontal-face stripe quad from computed corners.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param flip whether to reverse winding order
      * @param c the four stripe corner X positions
@@ -277,18 +192,19 @@ final class GasketMeshEmitter {
      * @param z0 the near Z
      * @param z1 the far Z
      */
-    private static void emitHorizontalStripeQuad(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, boolean flip, float[] c, float y, float z0, float z1) {
-        emitQuad(pose, consumer, color, flip,
-                c[CORNER_NEAR_START], y, z0, c[CORNER_NEAR_END], y, z0,
-                c[CORNER_FAR_END], y, z1, c[CORNER_FAR_START], y, z1);
+    private static void emitHorizontalStripeQuad(FlatQuadCtx ctx, int color,
+            boolean flip, float[] c, float y, float z0, float z1) {
+        emitQuad(ctx, color, flip,
+                new Vector3f(c[CORNER_NEAR_START], y, z0),
+                new Vector3f(c[CORNER_NEAR_END], y, z0),
+                new Vector3f(c[CORNER_FAR_END], y, z1),
+                new Vector3f(c[CORNER_FAR_START], y, z1));
     }
 
     /**
      * Renders diagonal stripe bands on a vertical face at a fixed Z coordinate.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param x0 minimum X
      * @param y0 minimum Y
@@ -297,19 +213,18 @@ final class GasketMeshEmitter {
      * @param y1 maximum Y
      * @param flip whether to reverse winding order
      */
-    private static void renderVerticalZStripe(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, double x0, double y0, double fixedZ, double x1, double y1, boolean flip) {
+    private static void renderVerticalZStripe(FlatQuadCtx ctx, int color,
+            double x0, double y0, double fixedZ, double x1, double y1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, x0, x1 - x0);
-            emitVerticalZStripeQuad(pose, consumer, color, flip, c, (float) y0, (float) y1, (float) fixedZ);
+            emitVerticalZStripeQuad(ctx, color, flip, c, (float) y0, (float) y1, (float) fixedZ);
         }
     }
 
     /**
      * Emits a single Z-face stripe quad from computed corners.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param flip whether to reverse winding order
      * @param c the four stripe corner X positions
@@ -317,18 +232,19 @@ final class GasketMeshEmitter {
      * @param y1 the top Y
      * @param z the fixed Z coordinate
      */
-    private static void emitVerticalZStripeQuad(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, boolean flip, float[] c, float y0, float y1, float z) {
-        emitQuad(pose, consumer, color, flip,
-                c[CORNER_NEAR_START], y0, z, c[CORNER_NEAR_END], y0, z,
-                c[CORNER_FAR_END], y1, z, c[CORNER_FAR_START], y1, z);
+    private static void emitVerticalZStripeQuad(FlatQuadCtx ctx, int color,
+            boolean flip, float[] c, float y0, float y1, float z) {
+        emitQuad(ctx, color, flip,
+                new Vector3f(c[CORNER_NEAR_START], y0, z),
+                new Vector3f(c[CORNER_NEAR_END], y0, z),
+                new Vector3f(c[CORNER_FAR_END], y1, z),
+                new Vector3f(c[CORNER_FAR_START], y1, z));
     }
 
     /**
      * Renders diagonal stripe bands on X-facing vertical faces (stripes in ZY plane).
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param fixedX the fixed X coordinate
      * @param y0 the minimum Y bound
@@ -337,19 +253,18 @@ final class GasketMeshEmitter {
      * @param z1 the maximum Z bound
      * @param flip whether to reverse winding order
      */
-    private static void renderVerticalXStripe(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, double fixedX, double y0, double z0, double y1, double z1, boolean flip) {
+    private static void renderVerticalXStripe(FlatQuadCtx ctx, int color,
+            double fixedX, double y0, double z0, double y1, double z1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, z0, z1 - z0);
-            emitVerticalXStripeQuad(pose, consumer, color, flip, c, (float) fixedX, (float) y0, (float) y1);
+            emitVerticalXStripeQuad(ctx, color, flip, c, (float) fixedX, (float) y0, (float) y1);
         }
     }
 
     /**
      * Emits a single X-face stripe quad from computed corners.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param flip whether to reverse winding order
      * @param c the four stripe corner Z positions
@@ -357,11 +272,13 @@ final class GasketMeshEmitter {
      * @param y0 the bottom Y
      * @param y1 the top Y
      */
-    private static void emitVerticalXStripeQuad(PoseStack.Pose pose, VertexConsumer consumer,
-            int color, boolean flip, float[] c, float x, float y0, float y1) {
-        emitQuad(pose, consumer, color, flip,
-                x, y0, c[CORNER_NEAR_START], x, y0, c[CORNER_NEAR_END],
-                x, y1, c[CORNER_FAR_END], x, y1, c[CORNER_FAR_START]);
+    private static void emitVerticalXStripeQuad(FlatQuadCtx ctx, int color,
+            boolean flip, float[] c, float x, float y0, float y1) {
+        emitQuad(ctx, color, flip,
+                new Vector3f(x, y0, c[CORNER_NEAR_START]),
+                new Vector3f(x, y0, c[CORNER_NEAR_END]),
+                new Vector3f(x, y1, c[CORNER_FAR_END]),
+                new Vector3f(x, y1, c[CORNER_FAR_START]));
     }
 
     /**
@@ -389,58 +306,38 @@ final class GasketMeshEmitter {
      * Emits a single quad with four vertices. When flip is true, vertices are
      * emitted in reverse order (3,2,1,0) for correct face winding.
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
      * @param flip whether to reverse winding order
-     * @param x0 vertex 0 X
-     * @param y0 vertex 0 Y
-     * @param z0 vertex 0 Z
-     * @param x1 vertex 1 X
-     * @param y1 vertex 1 Y
-     * @param z1 vertex 1 Z
-     * @param x2 vertex 2 X
-     * @param y2 vertex 2 Y
-     * @param z2 vertex 2 Z
-     * @param x3 vertex 3 X
-     * @param y3 vertex 3 Y
-     * @param z3 vertex 3 Z
+     * @param v0 vertex 0 position
+     * @param v1 vertex 1 position
+     * @param v2 vertex 2 position
+     * @param v3 vertex 3 position
      */
-    private static void emitQuad(PoseStack.Pose pose, VertexConsumer consumer, int color,
-            boolean flip, float x0, float y0, float z0, float x1, float y1, float z1,
-            float x2, float y2, float z2, float x3, float y3, float z3) {
+    private static void emitQuad(FlatQuadCtx ctx, int color, boolean flip,
+            Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
         if (flip) {
-            emitQuadVertices(pose, consumer, color, x3, y3, z3, x2, y2, z2, x1, y1, z1, x0, y0, z0);
+            emitQuadVertices(ctx, color, v3, v2, v1, v0);
         } else {
-            emitQuadVertices(pose, consumer, color, x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3);
+            emitQuadVertices(ctx, color, v0, v1, v2, v3);
         }
     }
 
     /**
      * Emits four vertices in the given order (no winding logic).
      *
-     * @param pose the pose matrix entry
-     * @param consumer the vertex consumer
+     * @param ctx the flat quad rendering context
      * @param color the ARGB color value
-     * @param x0 vertex 0 X
-     * @param y0 vertex 0 Y
-     * @param z0 vertex 0 Z
-     * @param x1 vertex 1 X
-     * @param y1 vertex 1 Y
-     * @param z1 vertex 1 Z
-     * @param x2 vertex 2 X
-     * @param y2 vertex 2 Y
-     * @param z2 vertex 2 Z
-     * @param x3 vertex 3 X
-     * @param y3 vertex 3 Y
-     * @param z3 vertex 3 Z
+     * @param v0 vertex 0 position
+     * @param v1 vertex 1 position
+     * @param v2 vertex 2 position
+     * @param v3 vertex 3 position
      */
-    private static void emitQuadVertices(PoseStack.Pose pose, VertexConsumer consumer, int color,
-            float x0, float y0, float z0, float x1, float y1, float z1,
-            float x2, float y2, float z2, float x3, float y3, float z3) {
-        consumer.addVertex(pose, x0, y0, z0).setColor(color);
-        consumer.addVertex(pose, x1, y1, z1).setColor(color);
-        consumer.addVertex(pose, x2, y2, z2).setColor(color);
-        consumer.addVertex(pose, x3, y3, z3).setColor(color);
+    private static void emitQuadVertices(FlatQuadCtx ctx, int color,
+            Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
+        ctx.c().addVertex(ctx.pose(), v0.x, v0.y, v0.z).setColor(color);
+        ctx.c().addVertex(ctx.pose(), v1.x, v1.y, v1.z).setColor(color);
+        ctx.c().addVertex(ctx.pose(), v2.x, v2.y, v2.z).setColor(color);
+        ctx.c().addVertex(ctx.pose(), v3.x, v3.y, v3.z).setColor(color);
     }
 }

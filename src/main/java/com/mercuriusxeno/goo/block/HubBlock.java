@@ -314,15 +314,25 @@ public class HubBlock extends BaseEntityBlock {
      */
     public static int nearestSlot(double pixelX, double pixelZ) {
         int best = NO_SLOT;
-        double bestDist = MAX_SLOT_DISTANCE * MAX_SLOT_DISTANCE;
+        double bestDistSq = Double.MAX_VALUE;
         for (int i = 0; i < SLOT_CENTERS.length; i++) {
             double distSq = slotDistanceSq(pixelX, pixelZ, i);
-            if (distSq < bestDist) {
-                bestDist = distSq;
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
                 best = i;
             }
         }
-        return best;
+        return withinThreshold(best, bestDistSq);
+    }
+
+    /**
+     * Returns the slot index if the squared distance is within range, else NO_SLOT.
+     * @param slot the candidate slot index, or NO_SLOT
+     * @param distSq the squared distance to the slot center
+     * @return the slot index if within range, otherwise NO_SLOT (-1)
+     */
+    private static int withinThreshold(int slot, double distSq) {
+        return distSq <= MAX_SLOT_DISTANCE * MAX_SLOT_DISTANCE ? slot : NO_SLOT;
     }
 
     /**

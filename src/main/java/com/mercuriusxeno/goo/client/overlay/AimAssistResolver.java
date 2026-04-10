@@ -152,7 +152,6 @@ final class AimAssistResolver {
      * @param bestDist single-element array holding the best distance
      * @param best     single-element array holding the best entity
      */
-    @SuppressWarnings("PMD.UseVarargs") // arrays are mutable out-params, not varargs
     private static void updateNearest(
             Entity entity, double dist, double[] bestDist, Entity[] best) {
         if (dist < bestDist[0]) {
@@ -212,7 +211,6 @@ final class AimAssistResolver {
      * @param bestAngle single-element array holding the best cosine
      * @param best      single-element array holding the best entity
      */
-    @SuppressWarnings("PMD.UseVarargs") // arrays are mutable out-params, not varargs
     private static void updateBestAngle(
             Entity entity, double cos, double[] bestAngle, Entity[] best) {
         if (cos > bestAngle[0]) {
@@ -261,10 +259,24 @@ final class AimAssistResolver {
             List<Entity> candidates, Level level, Player player,
             Vec3 from, Vec3 lookDir, @Nullable Entity bestCone,
             @Nullable Entity previousTarget) {
-        if (previousTarget == null || previousTarget == bestCone) { return null; }
-        if (!previousTarget.isAlive() || !candidates.contains(previousTarget)) { return null; }
+        if (!isStickyCandidate(previousTarget, bestCone, candidates)) { return null; }
         if (isInStickyCone(level, player, from, lookDir, previousTarget)) { return previousTarget; }
         return null;
+    }
+
+    /**
+     * Returns true if the previous target is eligible for sticky retention checks.
+     *
+     * @param previousTarget the previous frame's target entity, or null
+     * @param bestCone       the cone-pass winner, or null
+     * @param candidates     the list of candidate entities
+     * @return true if the previous target should be tested for sticky retention
+     */
+    private static boolean isStickyCandidate(
+            @Nullable Entity previousTarget, @Nullable Entity bestCone,
+            List<Entity> candidates) {
+        if (previousTarget == null || previousTarget == bestCone) { return false; }
+        return previousTarget.isAlive() && candidates.contains(previousTarget);
     }
 
     /**

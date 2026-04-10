@@ -147,8 +147,20 @@ final class CrucibleInteraction {
         GooContents res = crucible.getReservoir();
         if (res.isEmpty()) { return false; }
         GooType type = res.largestType();
-        if (type == null) { return false; }
-        long added = CanisterItem.addGoo(stack, type, res.getVolume(type));
+        return type != null && transferDominantGoo(stack, crucible, type, res.getVolume(type));
+    }
+
+    /**
+     * Transfers the dominant goo type from the crucible reservoir into the canister.
+     * @param canister the canister item stack to fill
+     * @param crucible the crucible block entity to drain from
+     * @param type the dominant goo type to transfer
+     * @param available the volume available in the reservoir (mB)
+     * @return true if any goo was transferred
+     */
+    private static boolean transferDominantGoo(ItemStack canister, CrucibleBlockEntity crucible,
+            GooType type, long available) {
+        long added = CanisterItem.addGoo(canister, type, available);
         if (added <= 0) { return false; }
         crucible.extractGoo(type, added);
         return true;
@@ -165,11 +177,22 @@ final class CrucibleInteraction {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return false; }
         long volume = BlobStacks.volumeOf(stack);
-        if (volume <= 0) { return false; }
+        return volume > 0 && consumeBlobIntoCrucible(stack, crucible, player, type, volume);
+    }
+
+    /**
+     * Inserts the blob's goo into the crucible and consumes the item if not creative.
+     * @param stack the blob item stack to consume
+     * @param crucible the crucible block entity to insert into
+     * @param player the interacting player (creative skips consumption)
+     * @param type the goo type of the blob
+     * @param volume the volume of goo in the blob (mB)
+     * @return always true (insertion always succeeds)
+     */
+    private static boolean consumeBlobIntoCrucible(ItemStack stack, CrucibleBlockEntity crucible,
+            Player player, GooType type, long volume) {
         crucible.insertGoo(type, volume);
-        if (!player.isCreative()) {
-            stack.shrink(1);
-        }
+        if (!player.isCreative()) { stack.shrink(1); }
         return true;
     }
 

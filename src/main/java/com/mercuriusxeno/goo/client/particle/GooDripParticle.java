@@ -110,14 +110,19 @@ public class GooDripParticle extends SingleQuadParticle {
         this.zo = this.z;
         this.preMoveUpdate();
         if (!this.removed) {
-            this.yd -= this.gravity;
-            this.move(this.xd, this.yd, this.zd);
-            this.postMoveUpdate();
-            if (!this.removed) {
-                this.xd *= DRAG;
-                this.yd *= DRAG;
-                this.zd *= DRAG;
-            }
+            applyPhysics();
+        }
+    }
+
+    /** Applies gravity, moves the particle, runs post-move hooks, and damps velocity. */
+    private void applyPhysics() {
+        this.yd -= this.gravity;
+        this.move(this.xd, this.yd, this.zd);
+        this.postMoveUpdate();
+        if (!this.removed) {
+            this.xd *= DRAG;
+            this.yd *= DRAG;
+            this.zd *= DRAG;
         }
     }
 

@@ -206,10 +206,10 @@ public class ChainMarkerBER
             SubmitNodeCollector nodeCollector, int color, float half,
             GooRenderUtil.UvRect uv) {
         int light = LightCoordsUtil.FULL_BRIGHT;
+        CuboidBounds box = new CuboidBounds(-half, half, -half, half, -half, half);
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS),
-                (pose, c) -> ChainMarkerGeometry.renderCube(pose, c, light, color,
-                        -half, half, uv));
+                (pose, c) -> new RenderCtx(pose, c, light).emitBox(color, box, uv));
     }
 
     /**

@@ -87,8 +87,7 @@ public final class GooSourceScanner {
      * @return true if sufficient goo is available
      */
     public static boolean hasEnough(Player player, GooType type, long amount) {
-        if (amount <= 0) { return true; }
-        return scanForThreshold(player.getInventory(), type, amount) >= amount;
+        return amount <= 0 || scanForThreshold(player.getInventory(), type, amount) >= amount;
     }
 
     /**

@@ -60,13 +60,25 @@ final class VatGasketOps {
         boolean above = level.getBlockState(pos.above()).getBlock() instanceof VatBlock;
         boolean below = level.getBlockState(pos.below()).getBlock() instanceof VatBlock;
         BlockState updated = state.setValue(VatBlock.VAT_ABOVE, above).setValue(VatBlock.VAT_BELOW, below);
-        if (above && updated.getValue(VatBlock.GASKET_CAP)) {
-            updated = updated.setValue(VatBlock.GASKET_CAP, false);
+        return clearOccludedGaskets(updated, above, below);
+    }
+
+    /**
+     * Clears gasket flags on faces occluded by adjacent vats.
+     * @param state the current block state
+     * @param above true if a vat is stacked above
+     * @param below true if a vat is stacked below
+     * @return the updated block state with occluded gasket flags cleared
+     */
+    private static BlockState clearOccludedGaskets(BlockState state, boolean above, boolean below) {
+        BlockState result = state;
+        if (above && result.getValue(VatBlock.GASKET_CAP)) {
+            result = result.setValue(VatBlock.GASKET_CAP, false);
         }
-        if (below && updated.getValue(VatBlock.GASKET_BASE)) {
-            updated = updated.setValue(VatBlock.GASKET_BASE, false);
+        if (below && result.getValue(VatBlock.GASKET_BASE)) {
+            result = result.setValue(VatBlock.GASKET_BASE, false);
         }
-        return updated;
+        return result;
     }
 
     /**

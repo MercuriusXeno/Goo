@@ -120,9 +120,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         if (isMatchingBlob(target)) {
             return handleAbsorbFromSlot(omniblob, target, slot, action, player);
         }
-        if (action != ClickAction.SECONDARY) { return false; }
-        if (!target.isEmpty()) { return false; }
-        return placeSingleBlobInSlot(omniblob, slot, player);
+        return action == ClickAction.SECONDARY
+                && target.isEmpty()
+                && placeSingleBlobInSlot(omniblob, slot, player);
     }
 
     /**
@@ -222,8 +222,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
             return handleEmptyCursorExtract(omniblob, slot, cursorAccess);
         }
         if (isMatchingOmniblob(cursor)) { return handleOmniblobCombine(omniblob, cursor, cursorAccess); }
-        if (isMatchingBlob(cursor)) { return handleBlobAbsorb(omniblob, cursor, action, cursorAccess, player); }
-        return false;
+        return isMatchingBlob(cursor) && handleBlobAbsorb(omniblob, cursor, action, cursorAccess, player);
     }
 
     /**
@@ -332,7 +331,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private boolean handleBlobAbsorb(ItemStack omniblob, ItemStack cursor,
             ClickAction action, SlotAccess cursorAccess, Player player) {
-        int count = action == ClickAction.PRIMARY ? cursor.getCount() : (player.isShiftKeyDown() ? cursor.getCount() : 1);
+        int count = action == ClickAction.PRIMARY ? cursor.getCount() : player.isShiftKeyDown() ? cursor.getCount() : 1;
         setVolume(omniblob, getVolume(omniblob) + count * BlobStacks.MB_PER_BLOB);
         cursor.shrink(count);
         if (cursor.isEmpty()) {

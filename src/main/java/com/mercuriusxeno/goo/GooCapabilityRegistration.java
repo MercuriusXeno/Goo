@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.ISlottedGooContainer;
+import com.mercuriusxeno.goo.block.ICanisterHolder;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.block.fluid.PlayerInventorySlotHandler;
 import com.mercuriusxeno.goo.item.CanisterItem;
@@ -137,7 +137,7 @@ final class GooCapabilityRegistration {
      */
     static void registerHubGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.HUB.get(), (be, gasketId) -> resolveHubGasket(be, gasketId));
+            GooBlockEntities.HUB.get(), GooCapabilityRegistration::resolveHubGasket);
     }
 
     /**
@@ -210,7 +210,7 @@ final class GooCapabilityRegistration {
     static void registerGasketEntityCapabilities(RegisterCapabilitiesEvent event) {
         event.registerEntity(GooCapabilities.GASKET_ENTITY,
             net.minecraft.world.entity.EntityType.PLAYER,
-            (player, gasketId) -> findPlayerCanisterForGasket(player, gasketId));
+            GooCapabilityRegistration::findPlayerCanisterForGasket);
     }
 
     /**
@@ -223,7 +223,7 @@ final class GooCapabilityRegistration {
      */
     @Nullable
     private static GooFluidHandler findSlotForGasket(
-            ISlottedGooContainer container, int slotCount, UUID gasketId) {
+            ICanisterHolder container, int slotCount, UUID gasketId) {
         for (int i = 0; i < slotCount; i++) {
             if (container.getCanister(i).isEmpty()) { continue; }
             CanisterMetadata meta = container.getSlotMetadata(i);

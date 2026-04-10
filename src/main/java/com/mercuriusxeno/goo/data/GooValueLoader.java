@@ -124,16 +124,25 @@ final class GooValueLoader {
     static List<JsonObject> parseResourceLayers(List<Resource> stack) {
         List<JsonObject> layers = new ArrayList<>();
         for (Resource resource : stack) {
-            try (BufferedReader reader = resource.openAsReader()) {
-                layers.add(JsonParser.parseReader(reader).getAsJsonObject());
-            } catch (IOException e) {
-                if (Goo.LOGGER.isWarnEnabled()) {
-                    Goo.LOGGER.warn(LOG_READ_PACK_FAIL,
-                            resource.sourcePackId(), e.getMessage());
-                }
-            }
+            parseOneResourceLayer(resource, layers);
         }
         return layers;
+    }
+
+    /**
+     * Parses a single resource into a JsonObject, appending to the list on success.
+     * @param resource the datapack resource to parse
+     * @param layers the accumulating list of parsed JSON layers
+     */
+    private static void parseOneResourceLayer(Resource resource, List<JsonObject> layers) {
+        try (BufferedReader reader = resource.openAsReader()) {
+            layers.add(JsonParser.parseReader(reader).getAsJsonObject());
+        } catch (IOException e) {
+            if (Goo.LOGGER.isWarnEnabled()) {
+                Goo.LOGGER.warn(LOG_READ_PACK_FAIL,
+                        resource.sourcePackId(), e.getMessage());
+            }
+        }
     }
 
     /**
@@ -165,15 +174,24 @@ final class GooValueLoader {
     private static void parseItemValues(JsonObject json, ParseState state) {
         GooGroupParser.parseGroups(json, state);
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith(PREFIX_INTERNAL)) { continue; }
-            if (key.startsWith(PREFIX_TAG)) {
-                GooParallelCopy.expandPseudoTag(key.substring(1), entry.getValue(), state);
-                continue;
-            }
-            assignItemValue(Identifier.parse(key), entry.getValue(), state);
+            classifyItemEntry(entry.getKey(), entry.getValue(), state);
         }
         GooGroupParser.parseRestricted(json, state);
+    }
+
+    /**
+     * Dispatches a single JSON entry to internal skip, pseudo-tag expansion, or item assignment.
+     * @param key the JSON entry key (internal prefix, pseudo-tag, or item ID)
+     * @param value the JSON value to parse
+     * @param state mutable parsing state
+     */
+    private static void classifyItemEntry(String key, JsonElement value, ParseState state) {
+        if (key.startsWith(PREFIX_INTERNAL)) { return; }
+        if (key.startsWith(PREFIX_TAG)) {
+            GooParallelCopy.expandPseudoTag(key.substring(1), value, state);
+            return;
+        }
+        assignItemValue(Identifier.parse(key), value, state);
     }
 
     // ── Item assignment ────────────────────────────────────────────────

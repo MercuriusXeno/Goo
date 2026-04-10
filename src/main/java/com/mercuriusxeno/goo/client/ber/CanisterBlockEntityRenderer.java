@@ -131,10 +131,22 @@ public class CanisterBlockEntityRenderer
             state.slotType[slot] = null;
             state.slotFill[slot] = 0f;
         } else {
-            long cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
-            state.slotType[slot] = contents.largestType();
-            state.slotFill[slot] = logFill(contents.totalVolume(), cap);
+            populateFilledSlot(be, state, slot, contents);
         }
+    }
+
+    /**
+     * Populates render state for a slot with goo contents.
+     * @param be the block entity instance
+     * @param state the render state snapshot
+     * @param slot the slot index
+     * @param contents the non-empty goo contents for this slot
+     */
+    private static void populateFilledSlot(CanisterBlockEntity be,
+            CanisterRenderState state, int slot, GooContents contents) {
+        long cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
+        state.slotType[slot] = contents.largestType();
+        state.slotFill[slot] = logFill(contents.totalVolume(), cap);
     }
 
     /**
@@ -264,29 +276,37 @@ public class CanisterBlockEntityRenderer
         float anim = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllStreams(pose, c, light, anim, state));
+            (pose, c) -> renderAllStreams(new RenderCtx(pose, c, light), anim, state));
     }
 
     /**
      * Renders stream segments for all active slots in a single batch.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for stream geometry
-     * @param light the packed light level for shading
-     * @param anim the animation tick fraction
+     *
+     * @param ctx   the render context
+     * @param anim  the animation tick fraction
      * @param state the render state snapshot
      */
-    private static void renderAllStreams(PoseStack.Pose pose, VertexConsumer c,
-            int light, float anim, CanisterRenderState state) {
+    private static void renderAllStreams(RenderCtx ctx, float anim, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (state.streamType[i] == null) { continue; }
-            float cx = CanisterSlotLayout.SLOT_CENTERS[i][0] / BLOCK_PIXELS;
-            float cz = CanisterSlotLayout.SLOT_CENTERS[i][1] / BLOCK_PIXELS;
-            float yTop = STREAM_Y_TOP;
-            float yBottom = STREAM_Y_BOT + state.slotFill[i] * (STREAM_Y_TOP - STREAM_Y_BOT);
-            GooStreamRenderer.renderStream(pose, c, light,
-                cx, cz, yTop, yBottom,
-                state.streamType[i], state.streamRate[i], anim);
+            renderSlotStream(ctx, anim, state, i);
         }
+    }
+
+    /**
+     * Renders a single slot's goo stream segment.
+     * @param ctx the render context
+     * @param anim the animation tick fraction
+     * @param state the render state snapshot
+     * @param slot the slot index
+     */
+    private static void renderSlotStream(RenderCtx ctx, float anim, CanisterRenderState state, int slot) {
+        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
+        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
+        float yBottom = STREAM_Y_BOT + state.slotFill[slot] * (STREAM_Y_TOP - STREAM_Y_BOT);
+        GooStreamRenderer.renderStream(ctx,
+            cx, cz, STREAM_Y_TOP, yBottom,
+            state.streamType[slot], state.streamRate[slot], anim);
     }
 
     /**

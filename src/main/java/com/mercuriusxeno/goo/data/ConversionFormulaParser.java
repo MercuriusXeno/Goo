@@ -94,6 +94,17 @@ final class ConversionFormulaParser {
         if (m.group(GROUP_TARGET_TYPE) == null) {
             return new Formula(source, srcDiv, source, 1, 0);
         }
+        return buildTargetFormula(m, source, srcDiv);
+    }
+
+    /**
+     * Parses the target side of a formula from a successful regex match.
+     * @param m the regex matcher with captured target-side groups
+     * @param source the source goo type parsed from the formula
+     * @param srcDiv the source divisor parsed from the formula
+     * @return a Formula with fully resolved source and target parameters
+     */
+    private static Formula buildTargetFormula(Matcher m, GooType source, int srcDiv) {
         GooType target = GooType.valueOf(m.group(GROUP_TARGET_TYPE).toUpperCase(Locale.ROOT));
         int tgtVal = Integer.parseInt(m.group(GROUP_TARGET_VALUE));
         boolean isMultiplier = ASTERISK.equals(m.group(GROUP_TARGET_OP));

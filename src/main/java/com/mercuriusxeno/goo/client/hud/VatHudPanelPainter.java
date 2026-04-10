@@ -111,7 +111,8 @@ final class VatHudPanelPainter {
             String upgradeText, String stackText, float panelWidth, float panelHeight) {
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         float halfW = panelWidth / HALF_F;
-        InWorldHud.renderBackground(poseStack, buffers, -halfW, -panelHeight, panelWidth, panelHeight);
+        InWorldHud.renderBackground(poseStack, buffers,
+            new PanelRect(-halfW, -panelHeight, panelWidth, panelHeight));
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -panelHeight + InWorldHud.BORDER;
         int row = renderHeaders(font, buffers, poseStack, data, upgradeText, stackText, contentX, baseY);

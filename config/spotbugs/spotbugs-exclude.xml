@@ -68,4 +68,16 @@
         <Package name="~com\.mercuriusxeno\.goo\.data.*"/>
         <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
     </Match>
+
+    <!-- Mixin classes merge into the target at runtime; casting this to the target is correct -->
+    <Match>
+        <Bug pattern="BC_IMPOSSIBLE_CAST"/>
+        <Package name="~com\.mercuriusxeno\.goo\.mixin.*"/>
+    </Match>
+
+    <!-- Array initialized via pixel manipulation loops; SpotBugs can't see the writes -->
+    <Match>
+        <Bug pattern="SUA_SUSPICIOUS_UNINITIALIZED_ARRAY"/>
+        <Class name="com.mercuriusxeno.goo.tools.FluidTextureGenerator"/>
+    </Match>
 </FindBugsFilter>

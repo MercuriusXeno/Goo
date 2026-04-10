@@ -40,25 +40,22 @@ final class TunerActionExecutor {
     /**
      * Executes the resolved TunerAction via pattern matching.
      *
-     * @param action    the resolved tuner action
-     * @param state     the current tuner state
-     * @param player    the interacting player
-     * @param stack     the tuner item stack
-     * @param level     the current level
-     * @param pos       the block position
-     * @param slot      the slot index
-     * @param faceLabel the face label, or null
+     * @param action  the resolved tuner action
+     * @param state   the current tuner state
+     * @param player  the interacting player
+     * @param stack   the tuner item stack
+     * @param level   the current level
+     * @param clicked the gasket face that was targeted
      * @return the interaction result
      */
     static InteractionResult executeAction(
             TunerAction action, TunerState state, Player player,
-            ItemStack stack, Level level, BlockPos pos, int slot,
-            @Nullable String faceLabel) {
+            ItemStack stack, Level level, GasketClick clicked) {
         return switch (action) {
-            case TunerAction.CompleteLink a -> executeCompleteLink(a, state, player, stack, level, pos, slot, faceLabel);
+            case TunerAction.CompleteLink a -> executeCompleteLink(a, state, player, stack, level, clicked);
             case TunerAction.StartAwaiting a -> executeStartAwaiting(a, state, player, stack);
-            case TunerAction.PromptReplace a -> executePromptReplace(a, state, player, stack, pos, slot);
-            case TunerAction.PromptSever a -> executePromptSever(a, state, player, stack, pos, slot);
+            case TunerAction.PromptReplace a -> executePromptReplace(a, state, player, stack, clicked.pos(), clicked.slot());
+            case TunerAction.PromptSever a -> executePromptSever(a, state, player, stack, clicked.pos(), clicked.slot());
             default -> executeConfirmOrWarning(action, state, player, stack, level);
         };
     }
@@ -87,27 +84,25 @@ final class TunerActionExecutor {
     /**
      * Completes a link: registers in GasketRegistry, writes partners, clears selection.
      *
-     * @param link           the complete link action data
-     * @param state          the current tuner state
-     * @param player         the interacting player
-     * @param stack          the tuner item stack
-     * @param level          the current level
-     * @param inputPos       the input (receiver) block position
-     * @param inputSlot      the input slot index
-     * @param inputFaceLabel the input face label, or null
+     * @param link    the complete link action data
+     * @param state   the current tuner state
+     * @param player  the interacting player
+     * @param stack   the tuner item stack
+     * @param level   the current level
+     * @param clicked the gasket face that was targeted
      * @return the interaction result
      */
     private static InteractionResult executeCompleteLink(
             TunerAction.CompleteLink link, TunerState state,
             Player player, ItemStack stack, Level level,
-            BlockPos inputPos, int inputSlot, @Nullable String inputFaceLabel) {
+            GasketClick clicked) {
         if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.PASS; }
 
         GasketRegistry registry = GasketRegistry.get(serverLevel);
         GasketPartnerManager.clearDisplacedEndpoints(level, registry, link);
         registry.link(link.outputGasket(), link.inputGasket());
 
-        writePartnerInfoAndClear(level, state, player, stack, inputPos, inputSlot);
+        writePartnerInfoAndClear(level, state, player, stack, clicked.pos(), clicked.slot());
         return InteractionResult.SUCCESS;
     }
 

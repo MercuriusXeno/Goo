@@ -1,14 +1,12 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.client.model.CanisterGeometry;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -169,8 +167,19 @@ public class HubBlockEntityRenderer
             state.slotFill[slot] = 0f;
             return;
         }
-        int compression = GooEnchantments.getCompressionLevel(be.getCanister(slot));
-        long capacity = ContainerCapacity.canisterCapacity(compression);
+        populateFilledSlot(be, state, slot, contents);
+    }
+
+    /**
+     * Populates render state for a slot with goo contents.
+     * @param be the block entity instance
+     * @param state the render state snapshot
+     * @param slot the slot index
+     * @param contents the non-empty goo contents for this slot
+     */
+    private static void populateFilledSlot(HubBlockEntity be, HubRenderState state,
+            int slot, GooContents contents) {
+        long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
         state.slotType[slot] = contents.largestType();
         state.slotFill[slot] = Math.min(1f, (float) contents.totalVolume() / capacity);
     }
@@ -251,7 +260,7 @@ public class HubBlockEntityRenderer
             SubmitNodeCollector nodeCollector, int light, HubRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderCopperEndcaps(pose, c, light, state));
+            (pose, c) -> renderCopperEndcaps(new RenderCtx(pose, c, light), state));
     }
 
     /**
@@ -265,37 +274,31 @@ public class HubBlockEntityRenderer
             SubmitNodeCollector nodeCollector, int light, HubRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(CHORAL_GASKET),
-            (pose, c) -> renderChoralEndcaps(pose, c, light, state));
+            (pose, c) -> renderChoralEndcaps(new RenderCtx(pose, c, light), state));
     }
 
     /** Renders copper (non-choral) endcaps for all occupied hub slots.
      *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer for copper endcap geometry
-     * @param light packed light value
+     * @param ctx   the render context
      * @param state the hub render state snapshot
      */
-    private static void renderCopperEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, HubRenderState state) {
+    private static void renderCopperEndcaps(RenderCtx ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (!state.canisterPresent[i]) { continue; }
-            renderEndcaps(pose, c, light, i,
+            renderEndcaps(ctx, i,
                 !state.topGasketPresent[i], !state.bottomGasketPresent[i]);
         }
     }
 
     /** Renders choral endcaps for all occupied hub slots.
      *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer for choral endcap geometry
-     * @param light packed light value
+     * @param ctx   the render context
      * @param state the hub render state snapshot
      */
-    private static void renderChoralEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, HubRenderState state) {
+    private static void renderChoralEndcaps(RenderCtx ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (!state.canisterPresent[i]) { continue; }
-            renderEndcaps(pose, c, light, i,
+            renderEndcaps(ctx, i,
                 state.topGasketPresent[i], state.bottomGasketPresent[i]);
         }
     }
@@ -332,42 +335,30 @@ public class HubBlockEntityRenderer
     /**
      * Renders endcap boxes for a slot on the specified sides.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param slot the slot index
-     * @param top whether to render the top cap
+     * @param ctx    the render context
+     * @param slot   the slot index
+     * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      */
-    private static void renderEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, int slot, boolean top, boolean bottom) {
+    private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
         if (!top && !bottom) { return; }
-        float cx = CENTERS[slot][0];
-        float cz = CENTERS[slot][1];
-        renderEndcapBoxes(pose, c, light, cx, cz, top, bottom);
+        CuboidBounds base = slotBoundsXZ(slot);
+        if (top) {
+            ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+        }
+        if (bottom) {
+            ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+        }
     }
 
     /**
-     * Emits gasket boxes at the given center for the requested cap sides.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param cx   the slot center X coordinate
-     * @param cz   the slot center Z coordinate
-     * @param top    true to render the top endcap
-     * @param bottom true to render the bottom endcap
+     * Computes the XZ cuboid bounds for a hub slot at index.
+     * @param slot the slot index in the hub ring
+     * @return XZ cuboid bounds centered on the slot with Y zeroed
      */
-    private static void renderEndcapBoxes(PoseStack.Pose pose, VertexConsumer c,
-            int light, float cx, float cz, boolean top, boolean bottom) {
-        float x0 = cx - HW;
-        float x1 = cx + HW;
-        float z0 = cz - HW;
-        float z1 = cz + HW;
-        if (top) {
-            CanisterGeometry.gasketBox(pose, c, light, x0, BODY_TOP, z0, x1, GASKET_TOP, z1, GS_U0, GS_U1, GS_V1);
-        }
-        if (bottom) {
-            CanisterGeometry.gasketBox(pose, c, light, x0, GASKET_BOT, z0, x1, BODY_BOT, z1, GS_U0, GS_U1, GS_V1);
-        }
+    private static CuboidBounds slotBoundsXZ(int slot) {
+        float cx = CENTERS[slot][0];
+        float cz = CENTERS[slot][1];
+        return new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, 0, 0);
     }
 }

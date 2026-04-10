@@ -45,16 +45,26 @@ public class BlobVolumeDecorator implements IItemDecorator {
             renderTypeIcon(graphics, blob.getGooType(), xOffset, yOffset);
             return true;
         }
+        return stack.getItem() instanceof GooOmniblobItem omniblob
+                && renderOmniblob(graphics, font, stack, omniblob, xOffset, yOffset);
+    }
 
-        if (stack.getItem() instanceof GooOmniblobItem omniblob) {
-            long volume = GooOmniblobItem.getVolume(stack);
-            if (volume <= 0) { return false; }
-            renderTypeIcon(graphics, omniblob.getGooType(), xOffset, yOffset);
-            renderVolumeLabel(graphics, font, volume, xOffset, yOffset);
-            return true;
-        }
-
-        return false;
+    /**
+     * Renders the icon and volume label for an omniblob stack.
+     * @param graphics the GUI graphics context
+     * @param font the font renderer
+     * @param stack the omniblob item stack
+     * @param omniblob the omniblob item instance
+     * @param xOffset the horizontal slot position
+     * @param yOffset the vertical slot position
+     * @return true if decorations were rendered, false if the omniblob is empty
+     */
+    private boolean renderOmniblob(GuiGraphicsExtractor graphics, Font font, ItemStack stack, GooOmniblobItem omniblob, int xOffset, int yOffset) {
+        long volume = GooOmniblobItem.getVolume(stack);
+        if (volume <= 0) { return false; }
+        renderTypeIcon(graphics, omniblob.getGooType(), xOffset, yOffset);
+        renderVolumeLabel(graphics, font, volume, xOffset, yOffset);
+        return true;
     }
 
     /**

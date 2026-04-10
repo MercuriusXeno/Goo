@@ -85,7 +85,7 @@ final class PlexerShapeHelper {
      *
      * @param c the coordinate array {x1, z1, x2, z2}
      */
-    static void rotateCoordsOnce(double[] c) {
+    static void rotateCoordsOnce(double... c) {
         double tmpX1 = 1.0 - c[COORD_Z2];
         double tmpZ1 = c[0];
         double tmpX2 = 1.0 - c[1];

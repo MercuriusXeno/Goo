@@ -127,17 +127,35 @@ public class CanisterNamingScreen extends Screen {
     protected void init() {
         int centerX = width / HALF;
         int panelHeight = hasLink ? BASE_PANEL_HEIGHT + LINK_ROW_HEIGHT : BASE_PANEL_HEIGHT;
-        int centerY = height / HALF;
+        int panelTop = height / HALF - panelHeight / HALF;
         int panelLeft = centerX - PANEL_WIDTH / HALF;
-        int panelTop = centerY - panelHeight / HALF;
 
+        initLabelInput(panelLeft, panelTop);
+        int buttonY = panelTop + BUTTON_ROW_OFFSET;
+        initActionButtons(centerX, buttonY);
+        if (hasLink) { initSeverButton(centerX, buttonY); }
+        setFocused(labelInput);
+    }
+
+    /**
+     * Creates and adds the label text input field.
+     * @param panelLeft the left edge X of the dialog panel
+     * @param panelTop the top edge Y of the dialog panel
+     */
+    private void initLabelInput(int panelLeft, int panelTop) {
         labelInput = new EditBox(font, panelLeft + INPUT_INSET, panelTop + INPUT_TOP_OFFSET,
             PANEL_WIDTH - INPUT_INSET * HALF, INPUT_HEIGHT, Component.empty());
         labelInput.setMaxLength(ChoralTunerItem.MAX_LABEL_LENGTH);
         labelInput.setValue(initialLabel);
         addRenderableWidget(labelInput);
+    }
 
-        int buttonY = panelTop + BUTTON_ROW_OFFSET;
+    /**
+     * Creates and adds the confirm and cancel buttons.
+     * @param centerX the horizontal center of the screen
+     * @param buttonY the Y position for the button row
+     */
+    private void initActionButtons(int centerX, int buttonY) {
         addRenderableWidget(new TintedButton(
             centerX - BUTTON_WIDTH - BUTTON_GAP, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
             Component.literal(CONFIRM_LABEL).withStyle(Style.EMPTY.withColor(CONFIRM_LABEL_COLOR)),
@@ -146,19 +164,22 @@ public class CanisterNamingScreen extends Screen {
             centerX + BUTTON_GAP, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT,
             Component.literal(CANCEL_LABEL).withStyle(Style.EMPTY.withColor(CANCEL_LABEL_COLOR)),
             this::onCancel, SEVER_BG, SEVER_HOVER));
+    }
 
-        if (hasLink) {
-            int linkButtonY = buttonY + LINK_ROW_HEIGHT;
-            int linkButtonWidth = BUTTON_WIDTH * HALF + INPUT_INSET;
-            severButton = new TintedButton(
-                centerX - linkButtonWidth / HALF, linkButtonY,
-                linkButtonWidth, BUTTON_HEIGHT,
-                Component.literal(SEVER_LINK_TEXT),
-                this::onSeverLink, SEVER_BG, SEVER_HOVER);
-            addRenderableWidget(severButton);
-        }
-
-        setFocused(labelInput);
+    /**
+     * Creates and adds the "Sever Link" button below the action row.
+     * @param centerX the horizontal center of the screen
+     * @param buttonY the Y position of the main button row (sever button placed below)
+     */
+    private void initSeverButton(int centerX, int buttonY) {
+        int linkButtonY = buttonY + LINK_ROW_HEIGHT;
+        int linkButtonWidth = BUTTON_WIDTH * HALF + INPUT_INSET;
+        severButton = new TintedButton(
+            centerX - linkButtonWidth / HALF, linkButtonY,
+            linkButtonWidth, BUTTON_HEIGHT,
+            Component.literal(SEVER_LINK_TEXT),
+            this::onSeverLink, SEVER_BG, SEVER_HOVER);
+        addRenderableWidget(severButton);
     }
 
     @Override

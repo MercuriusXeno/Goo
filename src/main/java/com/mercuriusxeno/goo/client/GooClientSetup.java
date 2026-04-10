@@ -92,18 +92,52 @@ public final class GooClientSetup {
      */
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        registerMachineRenderers(event);
+        registerEffectRenderers(event);
+    }
+
+    /**
+     * Registers block entity renderers for machine blocks.
+     *
+     * @param event the renderer registration event
+     */
+    private static void registerMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        registerFluidMachineRenderers(event);
+        registerLogisticMachineRenderers(event);
+    }
+
+    /**
+     * Registers renderers for crucible, hub, and canister block entities.
+     * @param event the renderer registration event
+     */
+    private static void registerFluidMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CRUCIBLE.get(),
             CrucibleBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.HUB.get(),
             HubBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.CANISTER.get(),
             CanisterBlockEntityRenderer::new);
+    }
+
+    /**
+     * Registers renderers for vat, plexer, and tap block entities.
+     * @param event the renderer registration event
+     */
+    private static void registerLogisticMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.VAT.get(),
             VatBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.PLEXER.get(),
             PlexerBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.TAP.get(),
             TapBlockEntityRenderer::new);
+    }
+
+    /**
+     * Registers block entity renderers for world effect blocks.
+     *
+     * @param event the renderer registration event
+     */
+    private static void registerEffectRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CHAIN_MARKER.get(),
             ChainMarkerBER::new);
         event.registerBlockEntityRenderer(GooBlockEntities.FROST_FIELD.get(),

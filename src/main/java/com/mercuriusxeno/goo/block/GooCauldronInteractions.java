@@ -60,12 +60,26 @@ public final class GooCauldronInteractions {
         if (volume <= 0) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
 
         if (!level.isClientSide()) {
-            placeGooFluid(level, pos, type, volume);
-            if (!player.isCreative()) {
-                stack.consume(1, player);
-            }
+            pourBlobServerSide(level, pos, type, volume, stack, player);
         }
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Places the goo fluid and consumes the blob stack on the server side.
+     * @param level the current level
+     * @param pos the cauldron block position
+     * @param type the goo type to place
+     * @param volume volume in microblobs
+     * @param stack the blob item stack to consume
+     * @param player the interacting player (creative skips consumption)
+     */
+    private static void pourBlobServerSide(Level level, BlockPos pos, GooType type,
+            long volume, ItemStack stack, Player player) {
+        placeGooFluid(level, pos, type, volume);
+        if (!player.isCreative()) {
+            stack.consume(1, player);
+        }
     }
 
     /** Pours a goo bucket into an empty cauldron, replacing it with a fluid block.
@@ -83,16 +97,28 @@ public final class GooCauldronInteractions {
             Player player, InteractionHand hand, ItemStack stack) {
         GooContents contents = BucketOfGooItem.getContents(stack);
         if (!contents.isSingleType()) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
-
         GooType type = contents.getSingleType();
         long volume = contents.getVolume(type);
         if (volume < MICROBLOBS_PER_BLOB) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
-
-        if (!level.isClientSide()) {
-            placeGooFluid(level, pos, type, volume);
-            BucketOfGooItem.setOrRevert(stack, GooContents.EMPTY, player, hand);
-        }
+        pourBucketServerSide(level, pos, type, volume, stack, player, hand);
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Executes the server-side bucket pour: places goo fluid and empties the bucket.
+     * @param level the current level
+     * @param pos the cauldron block position
+     * @param type the goo type to place
+     * @param volume volume in microblobs
+     * @param stack the bucket item stack to empty
+     * @param player the interacting player
+     * @param hand the hand holding the bucket
+     */
+    private static void pourBucketServerSide(Level level, BlockPos pos, GooType type,
+            long volume, ItemStack stack, Player player, InteractionHand hand) {
+        if (level.isClientSide()) { return; }
+        placeGooFluid(level, pos, type, volume);
+        BucketOfGooItem.setOrRevert(stack, GooContents.EMPTY, player, hand);
     }
 
     /** Replaces the block at pos with a goo fluid block at the appropriate level.

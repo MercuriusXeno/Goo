@@ -337,18 +337,36 @@ public final class GooCommand {
     private static int createPack(CommandContext<CommandSourceStack> ctx,
                                    Path packRoot, Path valuesFile) {
         try {
-            Files.createDirectories(valuesFile.getParent());
-            Files.writeString(packRoot.resolve(PACK_MCMETA_FILE), PACK_MCMETA, StandardCharsets.UTF_8);
-            Files.writeString(valuesFile, STARTER_BASE_VALUES, StandardCharsets.UTF_8);
+            writePackFiles(packRoot, valuesFile);
         } catch (IOException e) {
             ctx.getSource().sendFailure(Component.literal(MSG_PACK_FAIL + e.getMessage()));
             return 0;
         }
+        sendPackCreatedFeedback(ctx, packRoot);
+        return 1;
+    }
+
+    /**
+     * Writes the pack.mcmeta and starter base-values files to disk.
+     * @param packRoot the datapack root directory to create files in
+     * @param valuesFile the destination path for the starter base_values.json
+     */
+    private static void writePackFiles(Path packRoot, Path valuesFile) throws IOException {
+        Files.createDirectories(valuesFile.getParent());
+        Files.writeString(packRoot.resolve(PACK_MCMETA_FILE), PACK_MCMETA, StandardCharsets.UTF_8);
+        Files.writeString(valuesFile, STARTER_BASE_VALUES, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Sends success messages after pack creation.
+     * @param ctx the command context for sending chat feedback
+     * @param packRoot the datapack root directory to report in the message
+     */
+    private static void sendPackCreatedFeedback(CommandContext<CommandSourceStack> ctx, Path packRoot) {
         ctx.getSource().sendSuccess(() ->
             Component.literal(MSG_PACK_CREATED + packRoot).withStyle(ChatFormatting.GREEN), true);
         ctx.getSource().sendSuccess(() ->
             Component.literal(MSG_EDIT_REGEN).withStyle(ChatFormatting.GRAY), false);
-        return 1;
     }
 
     /**

@@ -56,11 +56,26 @@ public final class GloveUseTracker {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null) {
-            holdTicks = 0;
-            selectedTypeAvailable = false;
+            resetState();
             return;
         }
 
+        trackGloveHold(player);
+        tickAvailabilityCheck(player);
+        BlobFlightManager.tick();
+    }
+
+    /** Clears hold and availability state when no player is present. */
+    private static void resetState() {
+        holdTicks = 0;
+        selectedTypeAvailable = false;
+    }
+
+    /**
+     * Tracks glove use-item hold and opens radial menu on threshold.
+     * @param player the local player to check for glove use-item input
+     */
+    private static void trackGloveHold(LocalPlayer player) {
         if (player.isUsingItem() && player.getUseItem().getItem() instanceof GooGloveItem) {
             holdTicks++;
             if (holdTicks >= GooGloveItem.RADIAL_THRESHOLD_TICKS) {
@@ -71,23 +86,25 @@ public final class GloveUseTracker {
         } else {
             holdTicks = 0;
         }
+    }
 
-        // Periodically check whether the selected goo type is still in inventory
+    /**
+     * Periodically re-checks whether the selected goo type is in inventory.
+     * @param player the local player whose inventory is checked for goo availability
+     */
+    private static void tickAvailabilityCheck(LocalPlayer player) {
         availabilityTick++;
         if (availabilityTick >= AVAILABILITY_CHECK_INTERVAL) {
             availabilityTick = 0;
             selectedTypeAvailable = checkSelectedTypeAvailable(player);
         }
-
-        // Advance blob flight animations each client tick
-        BlobFlightManager.tick();
     }
 
     /**
      * Returns true if the player holds a glove with a selected type they have in inventory.
      *
      * @param player the interacting player
-     * @return true if the condition is met
+     * @return true if the player has at least 1 mB of the selected goo type
      */
     private static boolean checkSelectedTypeAvailable(LocalPlayer player) {
         GooType type = readSelectedType(player);
@@ -98,7 +115,7 @@ public final class GloveUseTracker {
      * Reads the selected goo type from whichever hand holds a glove.
      *
      * @param player the interacting player
-     * @return the result
+     * @return the selected goo type, or null if no glove is held or no type is selected
      */
     private static @Nullable GooType readSelectedType(LocalPlayer player) {
         ItemStack main = player.getMainHandItem();

@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.client.overlay;
 
+import com.mercuriusxeno.goo.client.ber.LineCtx;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -195,8 +196,9 @@ final class GasketConnectionRenderer {
         for (int i = GLOW_PASSES - 1; i >= 0; i--) {
             int color = computeGlowPassColor(i, pulse);
             float width = baseWidth * (1.0f + i * GLOW_WIDTH_STEP);
-            WireframeRenderer.emitEdge(poseStack, lineConsumer,
-                    a.x, a.y, a.z, b.x, b.y, b.z, color, width);
+            new LineCtx(poseStack.last(), lineConsumer).emitEdge(
+                    (float) a.x, (float) a.y, (float) a.z,
+                    (float) b.x, (float) b.y, (float) b.z, color, width);
         }
     }
 

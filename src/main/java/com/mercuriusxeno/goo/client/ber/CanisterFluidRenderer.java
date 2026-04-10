@@ -4,13 +4,10 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
-import com.mercuriusxeno.goo.client.model.CanisterGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -48,6 +45,10 @@ final class CanisterFluidRenderer {
 
     /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
     private static final float FLUID_INSET = 0.5f / 16f;
+
+    /** Shared fluid geometry constants for canister slots. */
+    private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
+        new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
 
     /** Pixels per block for coordinate conversion. */
     private static final float BLOCK_PIXELS = 16f;
@@ -97,7 +98,7 @@ final class CanisterFluidRenderer {
             SubmitNodeCollector nodeCollector, int light, CanisterRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderCopperEndcaps(pose, c, light, state));
+            (pose, c) -> renderCopperEndcaps(new RenderCtx(pose, c, light), state));
     }
 
     /**
@@ -111,37 +112,31 @@ final class CanisterFluidRenderer {
             SubmitNodeCollector nodeCollector, int light, CanisterRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(CHORAL_GASKET),
-            (pose, c) -> renderChoralEndcaps(pose, c, light, state));
+            (pose, c) -> renderChoralEndcaps(new RenderCtx(pose, c, light), state));
     }
 
     /** Renders copper (non-choral) endcaps for all occupied slots.
      *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer for copper endcap geometry
-     * @param light packed light value
+     * @param ctx   the render context
      * @param state the canister render state snapshot
      */
-    private static void renderCopperEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, CanisterRenderState state) {
+    private static void renderCopperEndcaps(RenderCtx ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisterPresent[i]) { continue; }
-            renderEndcaps(pose, c, light, i,
+            renderEndcaps(ctx, i,
                 !state.topGasketPresent[i], !state.bottomGasketPresent[i]);
         }
     }
 
     /** Renders choral endcaps for all occupied slots.
      *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer for choral endcap geometry
-     * @param light packed light value
+     * @param ctx   the render context
      * @param state the canister render state snapshot
      */
-    private static void renderChoralEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, CanisterRenderState state) {
+    private static void renderChoralEndcaps(RenderCtx ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisterPresent[i]) { continue; }
-            renderEndcaps(pose, c, light, i,
+            renderEndcaps(ctx, i,
                 state.topGasketPresent[i], state.bottomGasketPresent[i]);
         }
     }
@@ -178,43 +173,31 @@ final class CanisterFluidRenderer {
     /**
      * Renders endcap boxes for a slot on the specified sides.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param slot the slot index
-     * @param top whether to render the top cap
+     * @param ctx    the render context
+     * @param slot   the slot index
+     * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      */
-    private static void renderEndcaps(PoseStack.Pose pose, VertexConsumer c,
-            int light, int slot, boolean top, boolean bottom) {
+    private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
         if (!top && !bottom) { return; }
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        renderEndcapBoxes(pose, c, light, cx, cz, top, bottom);
+        CuboidBounds base = slotBoundsXZ(slot);
+        if (top) {
+            ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+        }
+        if (bottom) {
+            ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+        }
     }
 
     /**
-     * Emits gasket boxes at the given center for the requested cap sides.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param cx   the slot center X coordinate
-     * @param cz   the slot center Z coordinate
-     * @param top    true to render the top endcap
-     * @param bottom true to render the bottom endcap
+     * Computes the XZ cuboid bounds for a canister slot at index.
+     * @param slot the slot index in the canister grid
+     * @return XZ cuboid bounds centered on the slot with Y zeroed
      */
-    private static void renderEndcapBoxes(PoseStack.Pose pose, VertexConsumer c,
-            int light, float cx, float cz, boolean top, boolean bottom) {
-        float x0 = cx - HW;
-        float x1 = cx + HW;
-        float z0 = cz - HW;
-        float z1 = cz + HW;
-        if (top) {
-            CanisterGeometry.gasketBox(pose, c, light, x0, BODY_TOP, z0, x1, GASKET_TOP, z1, GS_U0, GS_U1, GS_V1);
-        }
-        if (bottom) {
-            CanisterGeometry.gasketBox(pose, c, light, x0, GASKET_BOT, z0, x1, BODY_BOT, z1, GS_U0, GS_U1, GS_V1);
-        }
+    private static CuboidBounds slotBoundsXZ(int slot) {
+        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
+        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
+        return new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, 0, 0);
     }
 
     // -- Fluid rendering --
@@ -275,66 +258,9 @@ final class CanisterFluidRenderer {
     private static void renderFluidSurface(RenderCtx ctx, int slot, GooType type, float fill) {
         float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
         float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        CuboidBounds b = computeBounds(cx, cz, fill);
-        GooRenderUtil.UvRect topUv = scaledTopUv(b, type);
-        ctx.liquidSurface(GooRenderUtil.OPAQUE_WHITE, b, topUv);
-        emitFluidSides(ctx, b, type, fill);
-    }
-
-    /**
-     * Computes the XZ-inset fluid cuboid bounds for a canister slot.
-     *
-     * @param cx   the slot center X coordinate
-     * @param cz   the slot center Z coordinate
-     * @param fill the fluid fill fraction (0.0 to 1.0)
-     * @return the fluid cuboid bounds
-     */
-    private static CuboidBounds computeBounds(float cx, float cz, float fill) {
-        float x0 = cx - HW + FLUID_INSET;
-        float x1 = cx + HW - FLUID_INSET;
-        float z0 = cz - HW + FLUID_INSET;
-        float z1 = cz + HW - FLUID_INSET;
-        float yTop = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
-        return new CuboidBounds(x0, x1, z0, z1, BODY_BOT, yTop);
-    }
-
-    /**
-     * Computes a UV rect scaled to the cuboid's XZ footprint for the top face.
-     *
-     * @param b    the cuboid bounds
-     * @param type the goo type for sprite lookup
-     * @return the scaled UV rect
-     */
-    private static GooRenderUtil.UvRect scaledTopUv(CuboidBounds b, GooType type) {
+        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
-        float sv1 = v0 + (sprite.getV1() - v0) * (b.z1() - b.z0());
-        return new GooRenderUtil.UvRect(u0, v0, su1, sv1);
-    }
-
-    /**
-     * Emits the four side faces with UV scaled per axis.
-     *
-     * @param ctx  the render context
-     * @param b    the cuboid bounds
-     * @param type the goo type for sprite lookup
-     * @param fill the fluid fill fraction (0.0 to 1.0)
-     */
-    private static void emitFluidSides(RenderCtx ctx, CuboidBounds b, GooType type, float fill) {
-        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float fillHeight = fill * (BODY_TOP - BODY_BOT);
-        float sideVSpan = (sprite.getV1() - v0) * fillHeight;
-        GooRenderUtil.UvRect xUv = new GooRenderUtil.UvRect(u0, v0,
-            u0 + (sprite.getU1() - u0) * (b.x1() - b.x0()), v0 + sideVSpan);
-        GooRenderUtil.UvRect zUv = new GooRenderUtil.UvRect(u0, v0,
-            u0 + (sprite.getU1() - u0) * (b.z1() - b.z0()), v0 + sideVSpan);
-        ctx.emitFace(b, xUv, Direction.NORTH);
-        ctx.emitFace(b, xUv, Direction.SOUTH);
-        ctx.emitFace(b, zUv, Direction.WEST);
-        ctx.emitFace(b, zUv, Direction.EAST);
+        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
+        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
     }
 }

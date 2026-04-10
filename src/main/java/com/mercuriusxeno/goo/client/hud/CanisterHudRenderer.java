@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.ISlottedGooContainer;
+import com.mercuriusxeno.goo.block.ICanisterHolder;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -79,8 +79,9 @@ public final class CanisterHudRenderer {
             return;
         }
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        CanisterPanelPainter.renderPanel(poseStack, camera, data, trackedPos, trackedSlot,
-                trackedCx, trackedLift, trackedCz, trackedFace, trackedBlockAbove, currentPitch);
+        PanelAnchor anchor = new PanelAnchor(trackedCx, trackedLift, trackedCz,
+                trackedFace, trackedBlockAbove, currentPitch);
+        CanisterPanelPainter.renderPanel(poseStack, camera, data, trackedPos, trackedSlot, anchor);
     }
 
     /**
@@ -200,7 +201,7 @@ public final class CanisterHudRenderer {
         if (be instanceof TapBlockEntity tap && slot == CanisterTargetResolver.TAP_SLOT) {
             return lookupTapSlotData(tap);
         }
-        if (be instanceof ISlottedGooContainer holder) { return lookupContainerSlotData(holder, slot); }
+        if (be instanceof ICanisterHolder holder) { return lookupContainerSlotData(holder, slot); }
         return null;
     }
 
@@ -225,7 +226,7 @@ public final class CanisterHudRenderer {
      * @return the slot data, or null if the slot index is invalid
      */
     private static @Nullable SlotData lookupContainerSlotData(
-            ISlottedGooContainer holder, int slot) {
+            ICanisterHolder holder, int slot) {
         if (slot < 0) { return null; }
         CanisterMetadata meta = holder.getSlotMetadata(slot);
         ItemStack canister = holder.getCanister(slot);

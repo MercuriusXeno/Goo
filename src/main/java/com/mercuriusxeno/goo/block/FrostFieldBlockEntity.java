@@ -104,9 +104,13 @@ public class FrostFieldBlockEntity extends BlockEntity {
             be.thaw((ServerLevel) level, pos);
             return;
         }
-        boolean fadeZone = be.durationRemaining <= FADE_SYNC_THRESHOLD;
-        if (fadeZone || be.durationRemaining % SYNC_INTERVAL == 0) {
-            be.syncToClient();
+        be.syncIfNeeded();
+    }
+
+    /** Syncs to client during fade zone or at regular intervals. */
+    private void syncIfNeeded() {
+        if (durationRemaining <= FADE_SYNC_THRESHOLD || durationRemaining % SYNC_INTERVAL == 0) {
+            syncToClient();
         }
     }
 
@@ -118,20 +122,36 @@ public class FrostFieldBlockEntity extends BlockEntity {
      * @param center the center block position
      */
     private void thaw(ServerLevel level, BlockPos center) {
+        revertPackedIce(level, center);
+        level.removeBlock(center, false);
+    }
+
+    /**
+     * Converts all packed ice within the sphere radius back to regular ice.
+     * @param level the server level
+     * @param center the center block position of the frost field
+     */
+    private void revertPackedIce(ServerLevel level, BlockPos center) {
         int r2 = radius * radius;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     if (dx * dx + dy * dy + dz * dz > r2) { continue; }
-                    BlockPos target = center.offset(dx, dy, dz);
-                    if (level.getBlockState(target).is(Blocks.PACKED_ICE)) {
-                        level.setBlock(target, Blocks.ICE.defaultBlockState(),
-                                Block.UPDATE_ALL);
-                    }
+                    revertIfPackedIce(level, center.offset(dx, dy, dz));
                 }
             }
         }
-        level.removeBlock(center, false);
+    }
+
+    /**
+     * Replaces a single packed ice block with regular ice if present.
+     * @param level the server level
+     * @param target the position to check and revert
+     */
+    private void revertIfPackedIce(ServerLevel level, BlockPos target) {
+        if (level.getBlockState(target).is(Blocks.PACKED_ICE)) {
+            level.setBlock(target, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
+        }
     }
 
     // -- Accessors --------------------------------------------------------

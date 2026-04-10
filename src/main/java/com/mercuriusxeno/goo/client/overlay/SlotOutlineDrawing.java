@@ -1,5 +1,7 @@
 package com.mercuriusxeno.goo.client.overlay;
 
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.LineCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -164,11 +166,12 @@ final class SlotOutlineDrawing {
             MultiBufferSource.BufferSource bufferSource,
             AABB bounds, BlockPos pos, Vec3 camPos, int color) {
         float lineWidth = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.lines());
+        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
         AABB offset = bounds.move(pos.getX() - camPos.x, pos.getY() - camPos.y, pos.getZ() - camPos.z);
-        WireframeRenderer.renderWireframeCuboid(poseStack, consumer,
-                offset.minX, offset.minY, offset.minZ,
-                offset.maxX, offset.maxY, offset.maxZ, color, lineWidth);
+        ctx.emitWireframe(new CuboidBounds(
+            (float) offset.minX, (float) offset.maxX,
+            (float) offset.minZ, (float) offset.maxZ,
+            (float) offset.minY, (float) offset.maxY), color, lineWidth);
     }
 
     /**

@@ -170,20 +170,46 @@ public class GooValueRegistry implements IGooValueLookup {
      * @param server the running server whose resource manager provides the pack stack
      */
     public void loadBaseValuesFromPacks(MinecraftServer server) {
-        var state = new GooValueLoader.ParseState(
-                baseValues, effectiveValues, deniedItems, restrictedItems,
-                constants, treeConstants, pseudoTags);
+        var state = createParseState();
         GooValueLoader.clearRegistryState(state);
-        ResourceManager resourceManager = server.getResourceManager();
-        Identifier location = Identifier.fromNamespaceAndPath(
-                GooValueLoader.modNamespace(), GooValueLoader.baseValuesResource());
-        List<Resource> stack = resourceManager.getResourceStack(location);
-
+        List<Resource> stack = loadResourceStack(server);
         if (stack.isEmpty()) {
             Goo.LOGGER.error(ERROR_NO_DATAPACK);
             return;
         }
+        applyPackLayers(stack, state);
+    }
 
+    /**
+     * Creates a fresh ParseState backed by this registry's maps.
+     * @return a new ParseState wired to this registry's mutable maps
+     */
+    private GooValueLoader.ParseState createParseState() {
+        return new GooValueLoader.ParseState(
+                baseValues, effectiveValues, deniedItems, restrictedItems,
+                constants, treeConstants, pseudoTags);
+    }
+
+    /**
+     * Loads the datapack resource stack for base_values.json.
+     *
+     * @param server the server providing the resource manager
+     * @return the ordered resource stack
+     */
+    private static List<Resource> loadResourceStack(MinecraftServer server) {
+        ResourceManager resourceManager = server.getResourceManager();
+        Identifier location = Identifier.fromNamespaceAndPath(
+                GooValueLoader.modNamespace(), GooValueLoader.baseValuesResource());
+        return resourceManager.getResourceStack(location);
+    }
+
+    /**
+     * Parses and applies merged datapack layers, storing conversion state.
+     *
+     * @param stack the resource stack to merge
+     * @param state the parse state to populate
+     */
+    private void applyPackLayers(List<Resource> stack, GooValueLoader.ParseState state) {
         var layers = GooValueLoader.parseResourceLayers(stack);
         GooValueLoader.applyMergedLayers(layers, state);
         preConversions = state.preConversions;
@@ -350,14 +376,28 @@ public class GooValueRegistry implements IGooValueLookup {
         Set<Identifier> allRefs = new HashSet<>(baseValues.keySet());
         allRefs.addAll(deniedItems);
         allRefs.addAll(restrictedItems);
+        return buildSnapshot(Collections.unmodifiableSet(allRefs));
+    }
+
+    /**
+     * Builds the diagnostic snapshot, using empty defaults when no derivation has run yet.
+     *
+     * @param allRefs the complete set of referenced item identifiers
+     * @return the diagnostic snapshot
+     */
+    private DiagnosticSnapshot buildSnapshot(Set<Identifier> allRefs) {
+        if (lastDerivation == null) {
+            return new DiagnosticSnapshot(
+                    baseValues.size(), 0, List.of(), List.of(), List.of(), allRefs, Map.of());
+        }
         return new DiagnosticSnapshot(
                 baseValues.size(),
-                lastDerivation != null ? lastDerivation.derivedValues().size() : 0,
-                lastDerivation != null ? lastDerivation.cycles() : List.of(),
-                lastDerivation != null ? lastDerivation.conflicts() : List.of(),
-                lastDerivation != null ? lastDerivation.divisibilityLosses() : List.of(),
-                Collections.unmodifiableSet(allRefs),
-                lastDerivation != null ? lastDerivation.derivationSources() : Map.of()
+                lastDerivation.derivedValues().size(),
+                lastDerivation.cycles(),
+                lastDerivation.conflicts(),
+                lastDerivation.divisibilityLosses(),
+                allRefs,
+                lastDerivation.derivationSources()
         );
     }
 

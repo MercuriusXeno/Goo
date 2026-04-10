@@ -3,9 +3,7 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
-import com.mercuriusxeno.goo.client.model.CanisterGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -36,6 +34,10 @@ final class HubFluidRenderer {
 
     /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
     private static final float FLUID_INSET = 0.5f / 16f;
+
+    /** Shared fluid geometry constants for hub slots. */
+    private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
+        new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
 
     /** Body side U range: 4px / 16px = 0.25. */
     private static final float BODY_U1 = 0.25f;
@@ -73,8 +75,9 @@ final class HubFluidRenderer {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityCutout(CANISTER_SIDE),
             (pose, c) -> {
+                RenderCtx ctx = new RenderCtx(pose, c, light);
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.canisterPresent[i]) { renderBodySides(pose, c, light, i); }
+                    if (state.canisterPresent[i]) { renderBodySides(ctx, i); }
                 }
             });
     }
@@ -82,23 +85,15 @@ final class HubFluidRenderer {
     /**
      * Renders the 4 side faces of a canister body at the given slot.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
+     * @param ctx  the render context
      * @param slot the slot index
      */
-    private static void renderBodySides(PoseStack.Pose pose, VertexConsumer c,
-            int light, int slot) {
+    private static void renderBodySides(RenderCtx ctx, int slot) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
-        float x0 = cx - HW;
-        float x1 = cx + HW;
-        float z0 = cz - HW;
-        float z1 = cz + HW;
-        CanisterGeometry.faceNorth(pose, c, light, x0, BODY_BOT, z0, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceSouth(pose, c, light, x0, BODY_BOT, z1, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceWest(pose, c, light, x0, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceEast(pose, c, light, x1, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
+        CuboidBounds box = new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, BODY_BOT, BODY_TOP);
+        GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1);
+        ctx.emitSides(box, uv);
     }
 
     // -- Fluid rendering --
@@ -116,22 +111,19 @@ final class HubFluidRenderer {
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(pose, c, light, state));
+            (pose, c) -> renderAllFluids(new RenderCtx(pose, c, light), state));
     }
 
     /**
      * Renders fluid surfaces for all filled hub slots in a single batch.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
+     *
+     * @param ctx   the render context
      * @param state the render state snapshot
      */
-    private static void renderAllFluids(PoseStack.Pose pose, VertexConsumer c,
-            int light, HubRenderState state) {
+    private static void renderAllFluids(RenderCtx ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (state.slotType[i] != null && state.slotFill[i] > 0f) {
-                renderFluidSurface(pose, c, light, i,
-                    state.slotType[i], state.slotFill[i]);
+                renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
             }
         }
     }
@@ -152,79 +144,18 @@ final class HubFluidRenderer {
     /**
      * Renders fluid geometry for a single hub slot: top face + 4 side faces.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
+     * @param ctx  the render context
      * @param slot the slot index
      * @param type the goo type
      * @param fill the fill fraction in [0, 1]
      */
-    private static void renderFluidSurface(PoseStack.Pose pose, VertexConsumer c,
-            int light, int slot, GooType type, float fill) {
+    private static void renderFluidSurface(RenderCtx ctx, int slot, GooType type, float fill) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
-        CuboidBounds b = computeCuboidBounds(cx, cz, fill);
-
+        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        renderFluidTop(pose, c, light, b, sprite);
-        renderFluidSides(pose, c, light, b, sprite, fill);
-    }
-
-    /**
-     * Computes the XZ-inset fluid cuboid bounds for a hub slot.
-     * @param cx   the slot center X coordinate
-     * @param cz   the slot center Z coordinate
-     * @param fill the fluid fill fraction (0.0 to 1.0)
-     * @return the fluid cuboid bounds
-     */
-    private static CuboidBounds computeCuboidBounds(float cx, float cz, float fill) {
-        float x0 = cx - HW + FLUID_INSET;
-        float x1 = cx + HW - FLUID_INSET;
-        float z0 = cz - HW + FLUID_INSET;
-        float z1 = cz + HW - FLUID_INSET;
-        float yTop = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
-        return new CuboidBounds(x0, x1, z0, z1, BODY_BOT, yTop);
-    }
-
-    /**
-     * Renders the top face of a hub fluid surface with scaled UVs.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param b      the precomputed fluid cuboid bounds
-     * @param sprite the fluid texture atlas sprite
-     */
-    private static void renderFluidTop(PoseStack.Pose pose, VertexConsumer c,
-            int light, CuboidBounds b, TextureAtlasSprite sprite) {
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
-        float sv1 = v0 + (sprite.getV1() - v0) * (b.z1() - b.z0());
-        GooRenderUtil.liquidSurface(pose, c, light, GooRenderUtil.OPAQUE_WHITE,
-            b.x0(), b.z0(), b.x1(), b.z1(), b.yTop(), u0, su1, v0, sv1);
-    }
-
-    /**
-     * Renders the four side faces of a hub fluid surface.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param b      the precomputed fluid cuboid bounds
-     * @param sprite the fluid texture atlas sprite
-     * @param fill the fluid fill fraction (0.0 to 1.0)
-     */
-    private static void renderFluidSides(PoseStack.Pose pose, VertexConsumer c,
-            int light, CuboidBounds b, TextureAtlasSprite sprite, float fill) {
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float fillHeight = fill * (BODY_TOP - BODY_BOT);
-        float sideVSpan = (sprite.getV1() - v0) * fillHeight;
-        float sideXU1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
-        float sideZU1 = u0 + (sprite.getU1() - u0) * (b.z1() - b.z0());
-        CanisterGeometry.faceNorth(pose, c, light, b.x0(), BODY_BOT, b.z0(), b.x1(), b.yTop(), u0, sideXU1, v0, v0 + sideVSpan);
-        CanisterGeometry.faceSouth(pose, c, light, b.x0(), BODY_BOT, b.z1(), b.x1(), b.yTop(), u0, sideXU1, v0, v0 + sideVSpan);
-        CanisterGeometry.faceWest(pose, c, light, b.x0(), BODY_BOT, b.z0(), b.yTop(), b.z1(), u0, sideZU1, v0, v0 + sideVSpan);
-        CanisterGeometry.faceEast(pose, c, light, b.x1(), BODY_BOT, b.z0(), b.yTop(), b.z1(), u0, sideZU1, v0, v0 + sideVSpan);
+        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
+        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
     }
 
     // -- Stream rendering --
@@ -243,29 +174,37 @@ final class HubFluidRenderer {
         float anim = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllStreams(pose, c, light, anim, state));
+            (pose, c) -> renderAllStreams(new RenderCtx(pose, c, light), anim, state));
     }
 
     /**
      * Renders stream segments for all active hub slots in a single batch.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param anim the animation tick fraction
+     *
+     * @param ctx   the render context
+     * @param anim  the animation tick fraction
      * @param state the render state snapshot
      */
-    private static void renderAllStreams(PoseStack.Pose pose, VertexConsumer c,
-            int light, float anim, HubRenderState state) {
+    private static void renderAllStreams(RenderCtx ctx, float anim, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (state.streamType[i] == null) { continue; }
-            float cx = CENTERS[i][0];
-            float cz = CENTERS[i][1];
-            float yTop = BODY_TOP;
-            float yBottom = BODY_BOT + state.slotFill[i] * (BODY_TOP - BODY_BOT);
-            GooStreamRenderer.renderStream(pose, c, light,
-                cx, cz, yTop, yBottom,
-                state.streamType[i], state.streamRate[i], anim);
+            renderSlotStream(ctx, anim, state, i);
         }
+    }
+
+    /**
+     * Renders a single slot's goo stream segment.
+     * @param ctx the render context
+     * @param anim the animation tick fraction
+     * @param state the render state snapshot
+     * @param slot the slot index
+     */
+    private static void renderSlotStream(RenderCtx ctx, float anim, HubRenderState state, int slot) {
+        float cx = CENTERS[slot][0];
+        float cz = CENTERS[slot][1];
+        float yBottom = BODY_BOT + state.slotFill[slot] * (BODY_TOP - BODY_BOT);
+        GooStreamRenderer.renderStream(ctx,
+            cx, cz, BODY_TOP, yBottom,
+            state.streamType[slot], state.streamRate[slot], anim);
     }
 
     /**

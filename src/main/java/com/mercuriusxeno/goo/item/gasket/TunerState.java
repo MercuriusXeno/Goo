@@ -148,6 +148,14 @@ public record TunerState(
         GasketRole selectedRole = decodeOptionalRole(buf);
         int selectedSlot = ByteBufCodecs.VAR_INT.decode(buf);
         String selectedFaceLabel = decodeOptionalString(buf);
+        return decodeConfirmAndBuild(buf, ownerUuid, selectedGasketId,
+            selectedPos, selectedRole, selectedSlot, selectedFaceLabel);
+    }
+
+    /** Decodes the confirmation fields and assembles the final TunerState. */
+    private static TunerState decodeConfirmAndBuild(ByteBuf buf,
+            UUID ownerUuid, UUID selectedGasketId, BlockPos selectedPos,
+            GasketRole selectedRole, int selectedSlot, String selectedFaceLabel) {
         ConfirmAction pendingConfirm = ConfirmAction.STREAM_CODEC.decode(buf);
         BlockPos confirmTarget = decodeOptionalBlockPos(buf);
         int confirmSlot = ByteBufCodecs.VAR_INT.decode(buf);

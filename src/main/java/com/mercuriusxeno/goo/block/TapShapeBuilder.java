@@ -155,7 +155,6 @@ final class TapShapeBuilder {
      *
      * @param xz array of [x1, z1, x2, z2] to rotate in place
      */
-    @SuppressWarnings("PMD.UseVarargs") // array mutated in place
     private static void rotateCwOnce(double[] xz) {
         double tmpX1 = 1.0 - xz[XZ_Z2];
         double tmpZ1 = xz[XZ_X1];

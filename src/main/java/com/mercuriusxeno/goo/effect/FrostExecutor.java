@@ -103,9 +103,18 @@ public final class FrostExecutor {
     private static Block frostReplacement(BlockState state) {
         if (state.is(Blocks.WATER)) { return Blocks.PACKED_ICE; }
         if (state.is(Blocks.LAVA)) { return Blocks.OBSIDIAN; }
-        if (state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE)) { return Blocks.AIR; }
-        if (isPlant(state)) { return Blocks.AIR; }
+        if (isFire(state) || isPlant(state)) { return Blocks.AIR; }
         return null;
+    }
+
+    /**
+     * Returns true if the block state is any fire variant.
+     *
+     * @param state the block state to test
+     * @return true if the block is fire or soul fire
+     */
+    private static boolean isFire(BlockState state) {
+        return state.is(Blocks.FIRE) || state.is(Blocks.SOUL_FIRE);
     }
 
     /**

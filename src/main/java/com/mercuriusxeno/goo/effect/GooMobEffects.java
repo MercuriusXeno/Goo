@@ -164,7 +164,7 @@ public final class GooMobEffects {
      * @param target the entity to damage
      */
     private static void metalJavelin(LivingEntity target) {
-        target.hurt(target.damageSources().magic(), METAL_JAVELIN_DAMAGE);
+        target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), METAL_JAVELIN_DAMAGE);
     }
 
     /**
@@ -174,7 +174,7 @@ public final class GooMobEffects {
      * @param target the primary target entity
      */
     private static void crystalFlechettes(Level level, LivingEntity target) {
-        target.hurt(target.damageSources().magic(), CRYSTAL_PRIMARY_DAMAGE);
+        target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), CRYSTAL_PRIMARY_DAMAGE);
         splashDamageNearby(level, target);
         sendDamageParticles(level, target);
     }
@@ -188,7 +188,7 @@ public final class GooMobEffects {
         AABB area = target.getBoundingBox().inflate(CRYSTAL_AOE_RADIUS);
         for (LivingEntity nearby : level.getEntitiesOfClass(LivingEntity.class, area)) {
             if (nearby != target) {
-                nearby.hurt(nearby.damageSources().magic(), CRYSTAL_SPLASH_DAMAGE);
+                nearby.hurtServer((ServerLevel) nearby.level(), nearby.damageSources().magic(), CRYSTAL_SPLASH_DAMAGE);
             }
         }
     }
@@ -276,7 +276,7 @@ public final class GooMobEffects {
         MobEffectInstance existing = target.getEffect(net.minecraft.world.effect.MobEffects.SLOWNESS);
         if (existing != null && existing.getAmplifier() >= ROCK_PETRIFY_AMPLIFIER && level instanceof ServerLevel sl) {
             // Crush: kill and drop cobblestone
-            target.hurt(target.damageSources().magic(), Float.MAX_VALUE);
+            target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), Float.MAX_VALUE);
             target.spawnAtLocation(sl, new ItemStack(Items.COBBLESTONE, 1 + level.getRandom().nextInt(ROCK_CRUSH_DROP_BOUND)));
         }
     }
@@ -305,7 +305,7 @@ public final class GooMobEffects {
      */
     private static void frostSnap(LivingEntity target) {
         if (target.getType() == EntityType.WITHER || target.getType() == EntityType.ENDER_DRAGON) { return; }
-        target.hurt(target.damageSources().freeze(), FROST_SNAP_DAMAGE);
+        target.hurtServer((ServerLevel) target.level(), target.damageSources().freeze(), FROST_SNAP_DAMAGE);
         target.setTicksFrozen(target.getTicksFrozen() + FROST_FREEZE_BUILDUP); // add freeze buildup
         target.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS, FROST_SLOW_DURATION, FROST_SLOW_AMPLIFIER));
     }
@@ -327,7 +327,7 @@ public final class GooMobEffects {
     private static void glowSmite(LivingEntity target) {
         if (target.isInvertedHealAndHarm()) {
             // Undead  - solar damage
-            target.hurt(target.damageSources().magic(), GLOW_SMITE_DAMAGE);
+            target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), GLOW_SMITE_DAMAGE);
         }
         if (target.isAlive()) {
             target.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.GLOWING, GLOW_EFFECT_DURATION, 0));

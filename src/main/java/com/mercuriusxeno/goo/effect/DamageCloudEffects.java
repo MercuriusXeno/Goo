@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.effect;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.AreaEffectCloud;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -54,61 +54,56 @@ final class DamageCloudEffects {
 
     /**
      * Places a lingering damage cloud and deals immediate damage to nearby entities.
-     *
-     * @param level the current level
-     * @param pos   the target block position
+     * @param level the current level (server-side only)
+     * @param pos the target block position for the urchin cloud
      */
     static void metalUrchin(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel)) { return; }
-        // Place a damage cloud that hurts entities walking through
-        AreaEffectCloud cloud = new AreaEffectCloud(EntityType.AREA_EFFECT_CLOUD, level);
-        cloud.setPos(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + ABOVE_BLOCK_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
-        cloud.setRadius(URCHIN_CLOUD_RADIUS);
-        cloud.setDuration(URCHIN_CLOUD_DURATION);
-        cloud.setWaitTime(0);
-        cloud.setRadiusPerTick(0);
-        cloud.setCustomParticle(ParticleTypes.CRIT);
-        level.addFreshEntity(cloud);
-        // Damage entities in area immediately
+        spawnCloud(level, pos, URCHIN_CLOUD_RADIUS, URCHIN_CLOUD_DURATION, 0, ParticleTypes.CRIT);
         damageEntitiesInArea(level, pos, URCHIN_DAMAGE_RADIUS, URCHIN_DAMAGE);
     }
 
     /**
      * Places a shrinking crystal damage cloud and deals immediate AoE damage.
-     *
-     * @param level the current level
-     * @param pos   the target block position
+     * @param level the current level (server-side only)
+     * @param pos the target block position for the crystal cloud
      */
     static void crystalShards(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel)) { return; }
-        AreaEffectCloud cloud = new AreaEffectCloud(EntityType.AREA_EFFECT_CLOUD, level);
-        cloud.setPos(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + ABOVE_BLOCK_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
-        cloud.setRadius(CRYSTAL_CLOUD_RADIUS);
-        cloud.setDuration(CRYSTAL_CLOUD_DURATION);
-        cloud.setWaitTime(0);
-        cloud.setRadiusPerTick(CRYSTAL_CLOUD_SHRINK_RATE); // slowly shrinks
-        cloud.setCustomParticle(ParticleTypes.DAMAGE_INDICATOR);
-        level.addFreshEntity(cloud);
+        spawnCloud(level, pos, CRYSTAL_CLOUD_RADIUS, CRYSTAL_CLOUD_DURATION, CRYSTAL_CLOUD_SHRINK_RATE, ParticleTypes.DAMAGE_INDICATOR);
         damageEntitiesInArea(level, pos, CRYSTAL_DAMAGE_RADIUS, CRYSTAL_DAMAGE);
     }
 
     /**
      * Spawns a large witch-particle cloud to create a dark ensorcelled zone.
-     *
-     * @param level the current level
-     * @param pos   the target block position
+     * @param level the current level (server-side only)
+     * @param pos the target block position for the hex cloud
      */
     static void hexEnsorcelled(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel)) { return; }
-        // Spawn a few hostile mobs near the impact point
-        // For now, just spawn particles and make the area dark via area effect cloud
-        AreaEffectCloud cloud = new AreaEffectCloud(EntityType.AREA_EFFECT_CLOUD, level);
-        cloud.setPos(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + ABOVE_BLOCK_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
-        cloud.setRadius(HEX_CLOUD_RADIUS);
-        cloud.setDuration(HEX_CLOUD_DURATION);
+        spawnCloud(level, pos, HEX_CLOUD_RADIUS, HEX_CLOUD_DURATION, 0, ParticleTypes.WITCH);
+    }
+
+    /**
+     * Creates and spawns an AreaEffectCloud centered above the given block position.
+     * @param level the current level to spawn the cloud in
+     * @param pos the block position to center the cloud above
+     * @param radius the initial cloud radius
+     * @param duration the cloud lifetime in ticks
+     * @param shrinkRate the radius change per tick (negative to shrink)
+     * @param particle the particle type displayed by the cloud
+     */
+    private static void spawnCloud(Level level, BlockPos pos,
+            float radius, int duration, float shrinkRate, ParticleOptions particle) {
+        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
+        double cy = pos.getY() + ABOVE_BLOCK_OFFSET;
+        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
+        AreaEffectCloud cloud = new AreaEffectCloud(level, cx, cy, cz);
+        cloud.setRadius(radius);
+        cloud.setDuration(duration);
         cloud.setWaitTime(0);
-        cloud.setRadiusPerTick(0);
-        cloud.setCustomParticle(ParticleTypes.WITCH);
+        cloud.setRadiusPerTick(shrinkRate);
+        cloud.setCustomParticle(particle);
         level.addFreshEntity(cloud);
     }
 
@@ -121,9 +116,10 @@ final class DamageCloudEffects {
      * @param damage the damage amount
      */
     private static void damageEntitiesInArea(Level level, BlockPos pos, double radius, float damage) {
+        if (!(level instanceof ServerLevel serverLevel)) { return; }
         AABB area = new AABB(pos).inflate(radius);
-        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, area)) {
-            entity.hurt(level.damageSources().magic(), damage);
+        for (LivingEntity entity : serverLevel.getEntitiesOfClass(LivingEntity.class, area)) {
+            entity.hurtServer(serverLevel, serverLevel.damageSources().magic(), damage);
         }
     }
 }

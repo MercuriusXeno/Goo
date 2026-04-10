@@ -3,6 +3,8 @@ package com.mercuriusxeno.goo.client.throwing;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.RenderCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
@@ -178,9 +180,9 @@ public final class BlobFlightRenderer {
 
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entitySolid(BLOCK_ATLAS_TEXTURE));
-        PoseStack.Pose pose = poseStack.last();
-
-        emitCubeFaces(pose, c, FULL_BRIGHT, hw, uv);
+        RenderCtx ctx = new RenderCtx(poseStack.last(), c, FULL_BRIGHT);
+        CuboidBounds box = new CuboidBounds(-hw, hw, -hw, hw, -hw, hw);
+        ctx.emitBox(box, uv);
     }
 
     /**
@@ -196,9 +198,9 @@ public final class BlobFlightRenderer {
         int color = (SHELL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
-        PoseStack.Pose pose = poseStack.last();
-
-        ShellFaceEmitter.emitColoredCubeFaces(pose, c, FULL_BRIGHT, color, SHELL_HW, uv);
+        RenderCtx ctx = new RenderCtx(poseStack.last(), c, FULL_BRIGHT);
+        CuboidBounds box = new CuboidBounds(-SHELL_HW, SHELL_HW, -SHELL_HW, SHELL_HW, -SHELL_HW, SHELL_HW);
+        ctx.emitBox(color, box, uv);
     }
 
     /**
@@ -211,25 +213,6 @@ public final class BlobFlightRenderer {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         return new GooRenderUtil.UvRect(
                 sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1());
-    }
-
-    /**
-     * Emits six faces of an axis-aligned cube centered at the origin using white vertex color.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param hw the half-width of the cube
-     * @param uv the UV texture rectangle
-     */
-    private static void emitCubeFaces(PoseStack.Pose pose, VertexConsumer c, int light,
-            float hw, GooRenderUtil.UvRect uv) {
-        GooRenderUtil.faceY(pose, c, light, -hw, hw,  hw, -hw, hw, uv,  1f);
-        GooRenderUtil.faceY(pose, c, light, -hw, hw, -hw, -hw, hw, uv, NORMAL_NEG);
-        GooRenderUtil.faceX(pose, c, light,  hw, -hw, hw, -hw, hw, uv,  1f);
-        GooRenderUtil.faceX(pose, c, light, -hw, -hw, hw, -hw, hw, uv, NORMAL_NEG);
-        GooRenderUtil.faceZ(pose, c, light, -hw, hw, -hw, hw,  hw, uv,  1f);
-        GooRenderUtil.faceZ(pose, c, light, -hw, hw, -hw, hw, -hw, uv, NORMAL_NEG);
     }
 
     /**

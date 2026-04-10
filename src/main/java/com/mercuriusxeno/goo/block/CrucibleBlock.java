@@ -213,12 +213,26 @@ public class CrucibleBlock extends BaseEntityBlock {
      */
     private static InteractionResult serverItemInteraction(
             ItemStack stack, CrucibleBlockEntity crucible, Player player, InteractionHand hand) {
-        if (CrucibleInteraction.tryInsertFuel(stack, crucible, player)) { return InteractionResult.SUCCESS; }
-        if (CrucibleInteraction.tryPourBucket(stack, crucible, player, hand)) { return InteractionResult.SUCCESS; }
-        if (CrucibleInteraction.tryFillBucket(stack, crucible, player)) { return InteractionResult.SUCCESS; }
+        if (tryAnyFluidInteraction(stack, crucible, player, hand)) { return InteractionResult.SUCCESS; }
         if (CrucibleInteraction.tryCollectWithCanister(stack, crucible)) { return InteractionResult.SUCCESS; }
         if (CrucibleInteraction.tryInsertBlob(stack, crucible, player)) { return InteractionResult.SUCCESS; }
         return InteractionResult.TRY_WITH_EMPTY_HAND;
+    }
+
+    /**
+     * Tries fuel insertion, bucket pour, and bucket fill in priority order.
+     *
+     * @param stack    the held item stack
+     * @param crucible the crucible block entity
+     * @param player   the interacting player
+     * @param hand     the hand used
+     * @return true if any fluid interaction succeeded
+     */
+    private static boolean tryAnyFluidInteraction(
+            ItemStack stack, CrucibleBlockEntity crucible, Player player, InteractionHand hand) {
+        return CrucibleInteraction.tryInsertFuel(stack, crucible, player)
+            || CrucibleInteraction.tryPourBucket(stack, crucible, player, hand)
+            || CrucibleInteraction.tryFillBucket(stack, crucible, player);
     }
 
     /** Handles empty-hand interactions: shift = gasket/fuel removal, bare = goo extraction.

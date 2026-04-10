@@ -4,7 +4,6 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.FrostFieldBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -68,8 +67,6 @@ public class FrostFieldBER
     private static final int RGB_MASK = 0x00FFFFFF;
     /** Center offset in block units. */
     private static final float BLOCK_CENTER = 0.5f;
-    /** Negative face direction for normal inversion. */
-    private static final float NEG_FACE = -1f;
 
     public FrostFieldBER(BlockEntityRendererProvider.Context context) {
     }
@@ -95,49 +92,92 @@ public class FrostFieldBER
     @Override
     public void submit(FrostFieldRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
+        float scale = computeCompositeScale(state);
+        float fade = computeFade(state.durationRemaining, state.partialTick);
+        int coreColor = computeCoreColor(fade);
+        int shellColor = computeShellColor(state.targeted, fade);
+        GooRenderUtil.UvRect uv = buildFrostUv();
+        submitBothLayers(nodeCollector, poseStack, scale, coreColor, shellColor, uv);
+    }
+
+    /**
+     * Combines stack scale, breathing pulse, and target boost into one factor.
+     * @param state the frost field render state
+     * @return the composite scale factor for the orb
+     */
+    private static float computeCompositeScale(FrostFieldRenderState state) {
         float stackScale = computeStackScale(state.stacks);
         float breathe = computeBreathe(state.gameTime, state.partialTick);
-        float fade = computeFade(state.durationRemaining, state.partialTick);
         float targetBoost = state.targeted ? TARGET_SCALE_BOOST : 1f;
-        float scale = stackScale * (1f + breathe) * targetBoost;
+        return stackScale * (1f + breathe) * targetBoost;
+    }
 
-        float coreHalf = CORE_BASE * scale;
-        float shellHalf = SHELL_BASE * scale;
-
-        int light = LightCoordsUtil.FULL_BRIGHT;
-        int gooColor = GooType.FROST.getColor();
-        int baseShellAlpha = state.targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
+    /**
+     * Computes the fully opaque white core color modulated by fade.
+     * @param fade the fade-out fraction (1.0 = fully visible, 0.0 = invisible)
+     * @return packed ARGB color with white RGB and fade-modulated alpha
+     */
+    private static int computeCoreColor(float fade) {
         int coreAlpha = (int) (FULL_ALPHA * fade);
+        return (coreAlpha << ALPHA_SHIFT) | RGB_MASK;
+    }
+
+    /**
+     * Computes the translucent frost-tinted shell color modulated by fade.
+     * @param targeted whether the player is aiming at this block
+     * @param fade the fade-out fraction (1.0 = fully visible, 0.0 = invisible)
+     * @return packed ARGB color with frost RGB and fade-modulated alpha
+     */
+    private static int computeShellColor(boolean targeted, float fade) {
+        int baseShellAlpha = targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
         int shellAlpha = (int) (baseShellAlpha * fade);
-        int coreColor = (coreAlpha << ALPHA_SHIFT) | RGB_MASK;
-        int shellColor = (shellAlpha << ALPHA_SHIFT) | (gooColor & RGB_MASK);
+        int gooColor = GooType.FROST.getColor();
+        return (shellAlpha << ALPHA_SHIFT) | (gooColor & RGB_MASK);
+    }
 
+    /**
+     * Builds the UV rectangle from the frost fluid sprite.
+     * @return UV rect spanning the full frost fluid sprite
+     */
+    private static GooRenderUtil.UvRect buildFrostUv() {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(GooType.FROST);
-        float u0 = sprite.getU(0f);
-        float u1 = sprite.getU(1f);
-        float v0 = sprite.getV(0f);
-        float v1 = sprite.getV(1f);
+        return new GooRenderUtil.UvRect(
+                sprite.getU(0f), sprite.getV(0f), sprite.getU(1f), sprite.getV(1f));
+    }
 
+    /**
+     * Submits core and shell layers centered at block center.
+     * @param nodeCollector the render node collector
+     * @param poseStack the pose stack for rendering
+     * @param scale the composite size scale factor
+     * @param coreColor the packed ARGB color for the inner core
+     * @param shellColor the packed ARGB color for the outer shell
+     * @param uv the UV texture rectangle for the frost sprite
+     */
+    private static void submitBothLayers(SubmitNodeCollector nodeCollector,
+            PoseStack poseStack, float scale, int coreColor, int shellColor, GooRenderUtil.UvRect uv) {
         poseStack.pushPose();
         poseStack.translate(BLOCK_CENTER, BLOCK_CENTER, BLOCK_CENTER);
-
-        // Inner core: frost fluid texture
-        float ch = coreHalf;
-        GooRenderUtil.UvRect coreUv = new GooRenderUtil.UvRect(u0, v0, u1, v1);
-        nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityTranslucent(BLOCK_ATLAS),
-                (pose, c) -> renderCube(pose, c, light, coreColor,
-                        -ch, ch, coreUv));
-
-        // Outer shell: translucent frost-tinted cube
-        float sh = shellHalf;
-        GooRenderUtil.UvRect shellUv = new GooRenderUtil.UvRect(u0, v0, u1, v1);
-        nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityTranslucent(BLOCK_ATLAS),
-                (pose, c) -> renderCube(pose, c, light, shellColor,
-                        -sh, sh, shellUv));
-
+        submitLayer(nodeCollector, poseStack, CORE_BASE * scale, coreColor, uv);
+        submitLayer(nodeCollector, poseStack, SHELL_BASE * scale, shellColor, uv);
         poseStack.popPose();
+    }
+
+    /**
+     * Submits a single translucent cuboid layer centered at the origin.
+     * @param nodeCollector the render node collector
+     * @param poseStack the pose stack for rendering
+     * @param half the half-size of the cuboid in block units
+     * @param color the packed ARGB color for this layer
+     * @param uv the UV texture rectangle for the frost sprite
+     */
+    private static void submitLayer(SubmitNodeCollector nodeCollector,
+            PoseStack poseStack, float half, int color, GooRenderUtil.UvRect uv) {
+        int light = LightCoordsUtil.FULL_BRIGHT;
+        CuboidBounds box = new CuboidBounds(-half, half, -half, half, -half, half);
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entityTranslucent(BLOCK_ATLAS),
+                (pose, c) -> new RenderCtx(pose, c, light).emitBox(color, box, uv));
     }
 
     /**
@@ -177,73 +217,4 @@ public class FrostFieldBER
         return smooth / FADE_TICKS;
     }
 
-    /**
-     * Renders all 6 faces of an axis-aligned cube centered at the origin.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param color the ARGB color value
-     * @param min the min
-     * @param max the max
-     * @param uv the UV texture rectangle
-     */
-    private static void renderCube(PoseStack.Pose pose, VertexConsumer c,
-            int light, int color, float min, float max,
-            GooRenderUtil.UvRect uv) {
-        coloredFaceY(pose, c, light, color, min, max, max, min, max, uv, 1f);
-        coloredFaceY(pose, c, light, color, min, max, min, min, max, uv, NEG_FACE);
-        coloredFaceX(pose, c, light, color, max, min, max, min, max, uv, 1f);
-        coloredFaceX(pose, c, light, color, min, min, max, min, max, uv, NEG_FACE);
-        coloredFaceZ(pose, c, light, color, min, max, min, max, max, uv, 1f);
-        coloredFaceZ(pose, c, light, color, min, max, min, max, min, uv, NEG_FACE);
-    }
-
-    private static void coloredFaceY(PoseStack.Pose pose, VertexConsumer c,
-            int light, int color, float x0, float x1, float y,
-            float z0, float z1, GooRenderUtil.UvRect uv, float ny) {
-        if (ny > 0) {
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y, z0, uv.u0(), uv.v0(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y, z1, uv.u0(), uv.v1(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y, z1, uv.u1(), uv.v1(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y, z0, uv.u1(), uv.v0(), 0f, ny, 0f);
-        } else {
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y, z0, uv.u1(), uv.v0(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y, z1, uv.u1(), uv.v1(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y, z1, uv.u0(), uv.v1(), 0f, ny, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y, z0, uv.u0(), uv.v0(), 0f, ny, 0f);
-        }
-    }
-
-    private static void coloredFaceX(PoseStack.Pose pose, VertexConsumer c,
-            int light, int color, float x, float y0, float y1,
-            float z0, float z1, GooRenderUtil.UvRect uv, float nx) {
-        if (nx > 0) {
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y1, z1, uv.u1(), uv.v0(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y0, z1, uv.u1(), uv.v1(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y0, z0, uv.u0(), uv.v1(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y1, z0, uv.u0(), uv.v0(), nx, 0f, 0f);
-        } else {
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y1, z0, uv.u1(), uv.v0(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y0, z0, uv.u1(), uv.v1(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y0, z1, uv.u0(), uv.v1(), nx, 0f, 0f);
-            GooRenderUtil.vertexColored(pose, c, light, color, x, y1, z1, uv.u0(), uv.v0(), nx, 0f, 0f);
-        }
-    }
-
-    private static void coloredFaceZ(PoseStack.Pose pose, VertexConsumer c,
-            int light, int color, float x0, float x1, float y0,
-            float y1, float z, GooRenderUtil.UvRect uv, float nz) {
-        if (nz > 0) {
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y1, z, uv.u1(), uv.v0(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y0, z, uv.u1(), uv.v1(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y0, z, uv.u0(), uv.v1(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y1, z, uv.u0(), uv.v0(), 0f, 0f, nz);
-        } else {
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y1, z, uv.u0(), uv.v0(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x1, y0, z, uv.u0(), uv.v1(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y0, z, uv.u1(), uv.v1(), 0f, 0f, nz);
-            GooRenderUtil.vertexColored(pose, c, light, color, x0, y1, z, uv.u1(), uv.v0(), 0f, 0f, nz);
-        }
-    }
 }

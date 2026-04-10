@@ -104,17 +104,27 @@ final class GooValueArithmetic {
         if (divisor <= 1) { return self; }
         Map<GooType, Integer> result = new EnumMap<>(GooType.class);
         self.getAll().forEach((type, amount) -> {
-            if (amount % divisor != 0) {
-                throw new ArithmeticException(
-                        ERR_LOSSY_PREFIX + type.getId() + ERR_EQUALS + amount
-                        + ERR_DIV + divisor + ERR_REMAINDER + amount % divisor + ERR_REMAINDER_CLOSE);
-            }
+            assertDivisible(type, amount, divisor);
             int divided = amount / divisor;
             if (divided > 0) {
                 result.put(type, divided);
             }
         });
         return new GooValue(result);
+    }
+
+    /**
+     * Throws ArithmeticException if the amount is not evenly divisible.
+     * @param type the goo type being divided (used in error messages)
+     * @param amount the numerator to check for divisibility
+     * @param divisor the denominator to divide by
+     */
+    private static void assertDivisible(GooType type, int amount, int divisor) {
+        if (amount % divisor != 0) {
+            throw new ArithmeticException(
+                    ERR_LOSSY_PREFIX + type.getId() + ERR_EQUALS + amount
+                    + ERR_DIV + divisor + ERR_REMAINDER + amount % divisor + ERR_REMAINDER_CLOSE);
+        }
     }
 
     /**

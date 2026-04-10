@@ -6,9 +6,10 @@ import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.LineCtx;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -81,28 +82,65 @@ public final class CanisterPlacementOverlay {
      * placement position already has a canister block, shows the insertion
      * preview on it. Otherwise shows new-block placement preview.
      *
-     * @return the computed placement
+     * @return the placement target, or null if placement is not valid
      */
     private static @Nullable PlacementTarget computePlacement() {
         Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null || mc.level == null) { return null; }
-        if (!(player.getMainHandItem().getItem() instanceof CanisterItem)) { return null; }
-        if (!(mc.hitResult instanceof BlockHitResult bhr)) { return null; }
-        if (bhr.getType() == HitResult.Type.MISS) { return null; }
-
-        Block clickedBlock = mc.level.getBlockState(bhr.getBlockPos()).getBlock();
-        if (clickedBlock instanceof CanisterBlock || clickedBlock instanceof HubBlock
-                || clickedBlock instanceof TapBlock) {
-            return null;
-        }
+        if (!isHoldingCanister(mc)) { return null; }
+        BlockHitResult bhr = getValidBlockHit(mc);
+        if (bhr == null) { return null; }
+        if (isGooMachineBlock(mc.level.getBlockState(bhr.getBlockPos()).getBlock())) { return null; }
 
         BlockPos placePos = bhr.getBlockPos().relative(bhr.getDirection());
+        return resolveTarget(mc, bhr, placePos);
+    }
 
+    /**
+     * Returns true if the local player exists and is holding a canister in their main hand.
+     *
+     * @param mc the Minecraft client instance
+     * @return true if the player is holding a canister
+     */
+    private static boolean isHoldingCanister(Minecraft mc) {
+        LocalPlayer player = mc.player;
+        return player != null && mc.level != null
+            && player.getMainHandItem().getItem() instanceof CanisterItem;
+    }
+
+    /**
+     * Returns the current block hit result if it is a non-miss block target.
+     * @param mc the Minecraft client instance
+     * @return the block hit result, or null if the crosshair is not targeting a block
+     */
+    private static @Nullable BlockHitResult getValidBlockHit(Minecraft mc) {
+        if (!(mc.hitResult instanceof BlockHitResult bhr)) { return null; }
+        if (bhr.getType() == HitResult.Type.MISS) { return null; }
+        return bhr;
+    }
+
+    /**
+     * Returns true if the block is a canister, hub, or tap (not valid placement targets).
+     * @param block the block to check
+     * @return true if the block is a canister, hub, or tap
+     */
+    private static boolean isGooMachineBlock(Block block) {
+        return block instanceof CanisterBlock
+            || block instanceof HubBlock
+            || block instanceof TapBlock;
+    }
+
+    /**
+     * Resolves the placement target at placePos, handling insertion and new-block cases.
+     * @param mc the Minecraft client instance
+     * @param bhr the block hit result from the aimed surface
+     * @param placePos the block position where the new canister would be placed
+     * @return the resolved placement target, or null if placement is invalid
+     */
+    private static @Nullable PlacementTarget resolveTarget(
+            Minecraft mc, BlockHitResult bhr, BlockPos placePos) {
         if (mc.level.getBlockState(placePos).getBlock() instanceof CanisterBlock) {
             return computeInsertionTarget(mc, bhr, placePos);
         }
-
         if (!mc.level.getBlockState(placePos).canBeReplaced()) { return null; }
         int slot = slotFromHitLocation(bhr, placePos);
         return new PlacementTarget(placePos, slot);
@@ -112,10 +150,10 @@ public final class CanisterPlacementOverlay {
      * Computes which empty slot to preview when the placement position
      * already has a canister block. Uses nearest-slot from hit coordinates.
      *
-     * @param mc the mc
+     * @param mc the Minecraft client instance
      * @param bhr the block hit result
      * @param canisterPos the canister block position
-     * @return the computed insertionTarget
+     * @return the insertion target for the nearest empty slot, or null if none available
      */
     private static @Nullable PlacementTarget computeInsertionTarget(
             Minecraft mc, BlockHitResult bhr, BlockPos canisterPos) {
@@ -135,7 +173,7 @@ public final class CanisterPlacementOverlay {
      *
      * @param bhr the block hit result
      * @param placePos the placement block position
-     * @return the result
+     * @return the grid slot index for the hit location
      */
     private static int slotFromHitLocation(BlockHitResult bhr, BlockPos placePos) {
         Vec3 loc = bhr.getLocation();
@@ -189,7 +227,7 @@ public final class CanisterPlacementOverlay {
      * @param levelRenderState the level render state
      * @param targetPos the target block position
      * @param bounds the axis-aligned bounding box
-     * @return true if the condition is met
+     * @return false always (does not suppress other outline renderers)
      */
     private static boolean renderPreview(
             BlockOutlineRenderState renderState,
@@ -205,13 +243,28 @@ public final class CanisterPlacementOverlay {
         double oy = targetPos.getY() - camPos.y;
         double oz = targetPos.getZ() - camPos.z;
 
-        float lineWidth = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderTypes.lines());
-        WireframeRenderer.renderWireframeCuboid(poseStack, consumer,
-                bounds.minX + ox, bounds.minY + oy, bounds.minZ + oz,
-                bounds.maxX + ox, bounds.maxY + oy, bounds.maxZ + oz,
-                PREVIEW_COLOR, lineWidth);
-        bufferSource.endLastBatch();
+        emitPreviewWireframe(bufferSource, poseStack, bounds, ox, oy, oz);
         return false;
+    }
+
+    /**
+     * Draws the translucent green wireframe box at the camera-relative offset.
+     * @param bufferSource the buffer source for line rendering
+     * @param poseStack the pose stack for rendering
+     * @param bounds the slot bounding box in block-local coords
+     * @param ox the camera-relative X offset of the target block
+     * @param oy the camera-relative Y offset of the target block
+     * @param oz the camera-relative Z offset of the target block
+     */
+    private static void emitPreviewWireframe(MultiBufferSource.BufferSource bufferSource,
+            PoseStack poseStack, AABB bounds, double ox, double oy, double oz) {
+        float lineWidth = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
+        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
+        ctx.emitWireframe(new CuboidBounds(
+            (float) (bounds.minX + ox), (float) (bounds.maxX + ox),
+            (float) (bounds.minZ + oz), (float) (bounds.maxZ + oz),
+            (float) (bounds.minY + oy), (float) (bounds.maxY + oy)),
+            PREVIEW_COLOR, lineWidth);
+        bufferSource.endLastBatch();
     }
 }

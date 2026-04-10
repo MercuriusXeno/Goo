@@ -56,14 +56,29 @@ public final class CanisterPunchListener {
         }
         if (event.getAction() != PlayerInteractEvent.LeftClickBlock.Action.START) { return; }
 
-        boolean isCanister = event.getLevel().getBlockState(event.getPos())
-                .getBlock() instanceof CanisterBlock;
-
-        if (!isCanister) {
+        if (!isCanisterAt(event)) {
             clearState();
             return;
         }
 
+        handleCanisterPunch(event);
+    }
+
+    /**
+     * Returns true if the event targets a canister block.
+     * @param event the left-click block interaction event
+     * @return true if the targeted block is a CanisterBlock
+     */
+    private static boolean isCanisterAt(PlayerInteractEvent.LeftClickBlock event) {
+        return event.getLevel().getBlockState(event.getPos())
+                .getBlock() instanceof CanisterBlock;
+    }
+
+    /**
+     * Resolves the slot and either starts a new hold or ignores a duplicate click.
+     * @param event the left-click block interaction event targeting a canister
+     */
+    private static void handleCanisterPunch(PlayerInteractEvent.LeftClickBlock event) {
         int slot = resolveSlot(event.getPos());
         if (slot < 0) {
             clearState();
@@ -76,11 +91,20 @@ public final class CanisterPunchListener {
             return;
         }
 
-        activePos = event.getPos();
+        beginHold(event.getPos(), slot);
+        event.setCanceled(true);
+    }
+
+    /**
+     * Initializes the hold-to-break state for a new target.
+     * @param pos the block position of the canister being punched
+     * @param slot the resolved slot index within the canister
+     */
+    private static void beginHold(BlockPos pos, int slot) {
+        activePos = pos;
         activeSlot = slot;
         holdTicks = 0;
         active = true;
-        event.setCanceled(true);
     }
 
     /**
@@ -94,17 +118,26 @@ public final class CanisterPunchListener {
     public static void onClientTick(ClientTickEvent.Post event) {
         if (!active) { return; }
 
+        if (!isHoldValid()) {
+            clearState();
+            return;
+        }
+
+        advanceHoldTimer();
+    }
+
+    /**
+     * Returns true if the player is still holding attack and aiming at the target.
+     * @return true if the attack key is held and the player is still aiming at the active target
+     */
+    private static boolean isHoldValid() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !mc.options.keyAttack.isDown()) {
-            clearState();
-            return;
-        }
+        if (mc.player == null || !mc.options.keyAttack.isDown()) { return false; }
+        return isStillAimingAtTarget(mc);
+    }
 
-        if (!isStillAimingAtTarget(mc)) {
-            clearState();
-            return;
-        }
-
+    /** Increments the hold timer and fires the punch packet when complete. */
+    private static void advanceHoldTimer() {
         holdTicks++;
         if (holdTicks >= HOLD_TICKS) {
             sendPunchPacket(activePos, activeSlot);
@@ -115,8 +148,8 @@ public final class CanisterPunchListener {
     /**
      * Returns true if the player is still looking at the same canister slot.
      *
-     * @param mc the mc
-     * @return true if stillAimingAtTarget
+     * @param mc the Minecraft client instance
+     * @return true if the crosshair is on the same canister block and slot
      */
     private static boolean isStillAimingAtTarget(Minecraft mc) {
         if (!(mc.hitResult instanceof BlockHitResult blockHit)) { return false; }
@@ -130,7 +163,7 @@ public final class CanisterPunchListener {
      * Resolves the targeted slot using the client's precise hit result.
      *
      * @param pos the block position
-     * @return the resolved result, or null if unresolvable
+     * @return the slot index, or {@link #NO_SLOT} if the hit result is invalid
      */
     private static int resolveSlot(BlockPos pos) {
         HitResult hitResult = Minecraft.getInstance().hitResult;

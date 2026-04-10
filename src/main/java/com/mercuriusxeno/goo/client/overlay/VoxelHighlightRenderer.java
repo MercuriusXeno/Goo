@@ -1,8 +1,10 @@
 package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.FlatQuadCtx;
+import com.mercuriusxeno.goo.client.ber.LineCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -82,10 +84,13 @@ final class VoxelHighlightRenderer {
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             VoxelShape shape, double ox, double oy, double oz, int rgb) {
         int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
-        VertexConsumer quad = bufferSource.getBuffer(RenderTypes.debugQuads());
-        PoseStack.Pose pose = poseStack.last();
+        FlatQuadCtx ctx = new FlatQuadCtx(poseStack.last(),
+            bufferSource.getBuffer(RenderTypes.debugQuads()));
         shape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
-            emitOffsetBox(pose, quad, ox, oy, oz, x0, y0, z0, x1, y1, z1, fillColor);
+            ctx.emitBox(fillColor, new CuboidBounds(
+                offsetMin(ox, x0), offsetMax(ox, x1),
+                offsetMin(oz, z0), offsetMax(oz, z1),
+                offsetMin(oy, y0), offsetMax(oy, y1)));
         });
         bufferSource.endLastBatch();
     }
@@ -99,33 +104,6 @@ final class VoxelHighlightRenderer {
      */
     private static int colorWithAlpha(int rgb, int alpha) {
         return ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
-    }
-
-    /**
-     * Computes camera-relative face-offset coords and emits a box.
-     *
-     * @param pose     the pose matrix entry
-     * @param consumer the vertex consumer
-     * @param ox       camera-relative X offset
-     * @param oy       camera-relative Y offset
-     * @param oz       camera-relative Z offset
-     * @param x0       shape-local min X
-     * @param y0       shape-local min Y
-     * @param z0       shape-local min Z
-     * @param x1       shape-local max X
-     * @param y1       shape-local max Y
-     * @param z1       shape-local max Z
-     * @param color    the ARGB color
-     */
-    private static void emitOffsetBox(
-            PoseStack.Pose pose, VertexConsumer consumer,
-            double ox, double oy, double oz,
-            double x0, double y0, double z0,
-            double x1, double y1, double z1, int color) {
-        emitBox(pose, consumer,
-                offsetMin(ox, x0), offsetMin(oy, y0), offsetMin(oz, z0),
-                offsetMax(ox, x1), offsetMax(oy, y1), offsetMax(oz, z1),
-                color);
     }
 
     /**
@@ -168,182 +146,13 @@ final class VoxelHighlightRenderer {
             double ox, double oy, double oz, int rgb) {
         int wireColor = colorWithAlpha(rgb, WIRE_ALPHA);
         float lineWidth = mc.getWindow().getAppropriateLineWidth();
-        VertexConsumer line = bufferSource.getBuffer(RenderTypes.lines());
+        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
         shape.forAllEdges((x0, y0, z0, x1, y1, z1) ->
-            emitEdgeOffset(poseStack, line, ox, oy, oz,
-                    x0, y0, z0, x1, y1, z1, wireColor, lineWidth));
+            ctx.emitEdge(
+                (float) (ox + x0), (float) (oy + y0), (float) (oz + z0),
+                (float) (ox + x1), (float) (oy + y1), (float) (oz + z1),
+                wireColor, lineWidth));
         bufferSource.endLastBatch();
     }
 
-    /**
-     * Emits a single wireframe edge with camera-relative offsets applied.
-     *
-     * @param poseStack the pose stack
-     * @param line      the vertex consumer
-     * @param ox        camera-relative X offset
-     * @param oy        camera-relative Y offset
-     * @param oz        camera-relative Z offset
-     * @param x0        edge start X
-     * @param y0        edge start Y
-     * @param z0        edge start Z
-     * @param x1        edge end X
-     * @param y1        edge end Y
-     * @param z1        edge end Z
-     * @param color     the ARGB color
-     * @param width     the line width
-     */
-    private static void emitEdgeOffset(
-            PoseStack poseStack, VertexConsumer line,
-            double ox, double oy, double oz,
-            double x0, double y0, double z0,
-            double x1, double y1, double z1,
-            int color, float width) {
-        WireframeRenderer.emitEdge(poseStack, line,
-                ox + x0, oy + y0, oz + z0,
-                ox + x1, oy + y1, oz + z1,
-                color, width);
-    }
-
-    /**
-     * Emits six quads (one per face) for an axis-aligned box.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param x0 the minimum X bound
-     * @param y0 the minimum Y bound
-     * @param z0 the minimum Z bound
-     * @param x1 the maximum X bound
-     * @param y1 the maximum Y bound
-     * @param z1 the maximum Z bound
-     * @param color the ARGB color value
-     */
-    private static void emitBox(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y0, float z0, float x1, float y1, float z1, int color) {
-        emitFaceUp(pose, c, x0, y1, z0, x1, z1, color);
-        emitFaceDown(pose, c, x0, y0, z0, x1, z1, color);
-        emitFaceNorth(pose, c, x0, y0, z0, x1, y1, color);
-        emitFaceSouth(pose, c, x0, y0, z1, x1, y1, color);
-        emitFaceWest(pose, c, x0, y0, z0, y1, z1, color);
-        emitFaceEast(pose, c, x1, y0, z0, y1, z1, color);
-    }
-
-    /**
-     * Emits the +Y face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x0    min X
-     * @param y1    max Y
-     * @param z0    min Z
-     * @param x1    max X
-     * @param z1    max Z
-     * @param color the ARGB color
-     */
-    private static void emitFaceUp(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y1, float z0, float x1, float z1, int color) {
-        c.addVertex(pose, x0, y1, z0).setColor(color);
-        c.addVertex(pose, x0, y1, z1).setColor(color);
-        c.addVertex(pose, x1, y1, z1).setColor(color);
-        c.addVertex(pose, x1, y1, z0).setColor(color);
-    }
-
-    /**
-     * Emits the -Y face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x0    min X
-     * @param y0    min Y
-     * @param z0    min Z
-     * @param x1    max X
-     * @param z1    max Z
-     * @param color the ARGB color
-     */
-    private static void emitFaceDown(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y0, float z0, float x1, float z1, int color) {
-        c.addVertex(pose, x0, y0, z1).setColor(color);
-        c.addVertex(pose, x0, y0, z0).setColor(color);
-        c.addVertex(pose, x1, y0, z0).setColor(color);
-        c.addVertex(pose, x1, y0, z1).setColor(color);
-    }
-
-    /**
-     * Emits the -Z face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x0    min X
-     * @param y0    min Y
-     * @param z0    min Z (fixed Z)
-     * @param x1    max X
-     * @param y1    max Y
-     * @param color the ARGB color
-     */
-    private static void emitFaceNorth(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y0, float z0, float x1, float y1, int color) {
-        c.addVertex(pose, x0, y0, z0).setColor(color);
-        c.addVertex(pose, x0, y1, z0).setColor(color);
-        c.addVertex(pose, x1, y1, z0).setColor(color);
-        c.addVertex(pose, x1, y0, z0).setColor(color);
-    }
-
-    /**
-     * Emits the +Z face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x0    min X
-     * @param y0    min Y
-     * @param z1    max Z (fixed Z)
-     * @param x1    max X
-     * @param y1    max Y
-     * @param color the ARGB color
-     */
-    private static void emitFaceSouth(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y0, float z1, float x1, float y1, int color) {
-        c.addVertex(pose, x1, y0, z1).setColor(color);
-        c.addVertex(pose, x1, y1, z1).setColor(color);
-        c.addVertex(pose, x0, y1, z1).setColor(color);
-        c.addVertex(pose, x0, y0, z1).setColor(color);
-    }
-
-    /**
-     * Emits the -X face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x0    min X (fixed X)
-     * @param y0    min Y
-     * @param z0    min Z
-     * @param y1    max Y
-     * @param z1    max Z
-     * @param color the ARGB color
-     */
-    private static void emitFaceWest(PoseStack.Pose pose, VertexConsumer c,
-            float x0, float y0, float z0, float y1, float z1, int color) {
-        c.addVertex(pose, x0, y0, z1).setColor(color);
-        c.addVertex(pose, x0, y1, z1).setColor(color);
-        c.addVertex(pose, x0, y1, z0).setColor(color);
-        c.addVertex(pose, x0, y0, z0).setColor(color);
-    }
-
-    /**
-     * Emits the +X face quad.
-     *
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param x1    max X (fixed X)
-     * @param y0    min Y
-     * @param z0    min Z
-     * @param y1    max Y
-     * @param z1    max Z
-     * @param color the ARGB color
-     */
-    private static void emitFaceEast(PoseStack.Pose pose, VertexConsumer c,
-            float x1, float y0, float z0, float y1, float z1, int color) {
-        c.addVertex(pose, x1, y0, z0).setColor(color);
-        c.addVertex(pose, x1, y1, z0).setColor(color);
-        c.addVertex(pose, x1, y1, z1).setColor(color);
-        c.addVertex(pose, x1, y0, z1).setColor(color);
-    }
 }

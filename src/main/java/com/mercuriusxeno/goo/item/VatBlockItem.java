@@ -50,10 +50,7 @@ public class VatBlockItem extends BlockItem {
         if (cursor.isEmpty() && action == ClickAction.SECONDARY) {
             return handleEmptyCursorDrain(vat, cursorAccess);
         }
-        if (action == ClickAction.PRIMARY) {
-            return handlePrimaryClick(vat, cursor, cursorAccess);
-        }
-        return false;
+        return action == ClickAction.PRIMARY && handlePrimaryClick(vat, cursor, cursorAccess);
     }
 
     /**
@@ -74,10 +71,8 @@ public class VatBlockItem extends BlockItem {
         if (cursor.is(Items.BUCKET)) {
             return handleBucketDrain(vat, cursor, cursorAccess);
         }
-        if (cursor.getItem() instanceof BucketOfGooItem) {
-            return handlePartialBucketDrain(vat, cursor, cursorAccess);
-        }
-        return false;
+        return cursor.getItem() instanceof BucketOfGooItem
+                && handlePartialBucketDrain(vat, cursor, cursorAccess);
     }
 
     // --- Goo contents helpers (vat-specific capacity) ---
@@ -206,8 +201,7 @@ public class VatBlockItem extends BlockItem {
         GooContents contents = getGooContents(vat);
         if (contents.isEmpty()) { return false; }
         GooType dominant = contents.largestType();
-        if (dominant == null) { return false; }
-        return extractDominantAsBlobs(vat, cursorAccess, contents, dominant);
+        return dominant != null && extractDominantAsBlobs(vat, cursorAccess, contents, dominant);
     }
 
     /** Extracts the dominant type from the vat as blob output onto the cursor.
@@ -239,8 +233,7 @@ public class VatBlockItem extends BlockItem {
         GooContents contents = getGooContents(vat);
         if (contents.isEmpty()) { return false; }
         GooType dominant = contents.largestType();
-        if (dominant == null) { return false; }
-        return extractDominantIntoBucket(vat, cursorAccess, contents, dominant);
+        return dominant != null && extractDominantIntoBucket(vat, cursorAccess, contents, dominant);
     }
 
     /** Extracts the dominant type from the vat into a new bucket on the cursor.
@@ -271,8 +264,7 @@ public class VatBlockItem extends BlockItem {
     private static boolean handlePartialBucketDrain(ItemStack vat, ItemStack cursor, SlotAccess cursorAccess) {
         GooContents bucketContents = BucketOfGooItem.getContents(cursor);
         long remainingCap = ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
-        if (remainingCap <= 0) { return false; }
-        return drainIntoBucket(vat, cursor, bucketContents, remainingCap);
+        return remainingCap > 0 && drainIntoBucket(vat, cursor, bucketContents, remainingCap);
     }
 
     /** Drains dominant goo from the vat into the bucket up to the remaining capacity.

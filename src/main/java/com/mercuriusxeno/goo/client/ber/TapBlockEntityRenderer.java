@@ -4,13 +4,11 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
-import com.mercuriusxeno.goo.client.model.CanisterGeometry;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -64,6 +62,11 @@ public class TapBlockEntityRenderer
 
     /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
     private static final float FLUID_INSET = 0.5f / 16f;
+
+    /** Shared fluid geometry constants for tap canister slot. */
+    private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
+        new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
+
     /** Divisor for computing AABB center from min+max. */
     private static final double CENTER_DIVISOR = 2.0;
 
@@ -210,27 +213,11 @@ public class TapBlockEntityRenderer
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityCutout(CANISTER_SIDE),
-            (pose, c) -> renderBodyFaces(pose, c, light, cx, cz));
-    }
-
-    /**
-     * Emits the four side faces of the canister body.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param cx the center X in block coords
-     * @param cz the center Z in block coords
-     */
-    private static void renderBodyFaces(PoseStack.Pose pose, VertexConsumer c, int light, float cx, float cz) {
-        float x0 = cx - HW;
-        float x1 = cx + HW;
-        float z0 = cz - HW;
-        float z1 = cz + HW;
-        CanisterGeometry.faceNorth(pose, c, light, x0, BODY_BOT, z0, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceSouth(pose, c, light, x0, BODY_BOT, z1, x1, BODY_TOP, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceWest(pose, c, light, x0, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
-        CanisterGeometry.faceEast(pose, c, light, x1, BODY_BOT, z0, BODY_TOP, z1, 0, BODY_U1, 0, BODY_V1);
+            (pose, c) -> {
+                RenderCtx ctx = new RenderCtx(pose, c, light);
+                CuboidBounds box = new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, BODY_BOT, BODY_TOP);
+                ctx.emitSides(box, new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1));
+            });
     }
 
     /**
@@ -246,27 +233,30 @@ public class TapBlockEntityRenderer
             SubmitNodeCollector nodeCollector, TapRenderState state,
             float cx, float cz) {
         int light = state.lightCoords;
+        CuboidBounds base = tapBoundsXZ(cx, cz);
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderGasketBoxes(pose, c, light, cx, cz));
+            (pose, c) -> renderGasketPair(new RenderCtx(pose, c, light), base));
     }
 
     /**
-     * Emits upper and lower gasket endcaps.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
+     * Renders the top and bottom gasket endcaps for the tap.
+     * @param ctx the render context
+     * @param base the XZ cuboid bounds for the canister slot
+     */
+    private static void renderGasketPair(RenderCtx ctx, CuboidBounds base) {
+        ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+        ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+    }
+
+    /**
+     * Computes the XZ cuboid bounds for the tap at the given center.
      * @param cx the center X in block coords
      * @param cz the center Z in block coords
+     * @return XZ cuboid bounds centered on the canister with Y zeroed
      */
-    private static void renderGasketBoxes(PoseStack.Pose pose, VertexConsumer c, int light, float cx, float cz) {
-        float x0 = cx - HW;
-        float x1 = cx + HW;
-        float z0 = cz - HW;
-        float z1 = cz + HW;
-        CanisterGeometry.gasketBox(pose, c, light, x0, BODY_TOP, z0, x1, GASKET_TOP, z1, GS_U0, GS_U1, GS_V1);
-        CanisterGeometry.gasketBox(pose, c, light, x0, GASKET_BOT, z0, x1, BODY_BOT, z1, GS_U0, GS_U1, GS_V1);
+    private static CuboidBounds tapBoundsXZ(float cx, float cz) {
+        return new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, 0, 0);
     }
 
     /**
@@ -286,103 +276,24 @@ public class TapBlockEntityRenderer
         float fill = state.fill;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderFluidGeometry(pose, c, light, type, fill, cx, cz));
+            (pose, c) -> renderFluidGeometry(new RenderCtx(pose, c, light), type, fill, cx, cz));
     }
 
     /**
      * Emits top surface and four side faces for the fluid fill level.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
+     * @param ctx  the render context
      * @param type the goo type for texture lookup
      * @param fill the fill ratio [0, 1]
-     * @param cx the center X in block coords
-     * @param cz the center Z in block coords
+     * @param cx   the center X in block coords
+     * @param cz   the center Z in block coords
      */
-    private static void renderFluidGeometry(PoseStack.Pose pose, VertexConsumer c,
-            int light, GooType type, float fill, float cx, float cz) {
-        float x0 = cx - HW + FLUID_INSET;
-        float x1 = cx + HW - FLUID_INSET;
-        float z0 = cz - HW + FLUID_INSET;
-        float z1 = cz + HW - FLUID_INSET;
-        float y = BODY_BOT + fill * (BODY_TOP - BODY_BOT);
-
+    private static void renderFluidGeometry(RenderCtx ctx, GooType type, float fill,
+            float cx, float cz) {
+        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        renderFluidTop(pose, c, light, sprite, x0, z0, x1, z1, y);
-        renderFluidSides(pose, c, light, sprite, x0, z0, x1, z1, y, fill);
+        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
+        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
     }
 
-    /**
-     * Renders the horizontal liquid surface quad.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param sprite the fluid texture sprite
-     * @param x0 the minimum X bound
-     * @param z0 the minimum Z bound
-     * @param x1 the maximum X bound
-     * @param z1 the maximum Z bound
-     * @param y the Y coordinate of the surface
-     */
-    private static void renderFluidTop(PoseStack.Pose pose, VertexConsumer c,
-            int light, TextureAtlasSprite sprite,
-            float x0, float z0, float x1, float z1, float y) {
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float su1 = u0 + (sprite.getU1() - u0) * (x1 - x0);
-        float sv1 = v0 + (sprite.getV1() - v0) * (z1 - z0);
-        GooRenderUtil.liquidSurface(pose, c, light, GooRenderUtil.OPAQUE_WHITE,
-                x0, z0, x1, z1, y, u0, su1, v0, sv1);
-    }
-
-    /**
-     * Renders four side faces of the fluid column from body bottom to fill height.
-     *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param sprite the fluid texture sprite
-     * @param x0 the minimum X bound
-     * @param z0 the minimum Z bound
-     * @param x1 the maximum X bound
-     * @param z1 the maximum Z bound
-     * @param y the Y coordinate of the fill level
-     * @param fill the fill ratio [0, 1]
-     */
-    private static void renderFluidSides(PoseStack.Pose pose, VertexConsumer c,
-            int light, TextureAtlasSprite sprite,
-            float x0, float z0, float x1, float z1, float y, float fill) {
-        float[] uv = computeSideUvs(sprite, x1 - x0, z1 - z0, fill);
-        CanisterGeometry.faceNorth(pose, c, light, x0, BODY_BOT, z0, x1, y, uv[UV_U0], uv[UV_X_U1], uv[UV_V0], uv[UV_V1]);
-        CanisterGeometry.faceSouth(pose, c, light, x0, BODY_BOT, z1, x1, y, uv[UV_U0], uv[UV_X_U1], uv[UV_V0], uv[UV_V1]);
-        CanisterGeometry.faceWest(pose, c, light, x0, BODY_BOT, z0, y, z1, uv[UV_U0], uv[UV_Z_U1], uv[UV_V0], uv[UV_V1]);
-        CanisterGeometry.faceEast(pose, c, light, x1, BODY_BOT, z0, y, z1, uv[UV_U0], uv[UV_Z_U1], uv[UV_V0], uv[UV_V1]);
-    }
-
-    /** Side UV array indices. */
-    private static final int UV_U0 = 0;
-    private static final int UV_X_U1 = 1;
-    private static final int UV_V0 = 2;
-    private static final int UV_V1 = 3;
-    private static final int UV_Z_U1 = 4;
-
-    /**
-     * Computes side face UV coordinates: [u0, sideXU1, v0, v0+vSpan, sideZU1].
-     *
-     * @param sprite the fluid texture sprite
-     * @param cuboidW the width of the fluid cuboid
-     * @param cuboidD the depth of the fluid cuboid
-     * @param fill the fill ratio [0, 1]
-     * @return array of [u0, sideXU1, v0, v0+sideVSpan, sideZU1]
-     */
-    private static float[] computeSideUvs(TextureAtlasSprite sprite, float cuboidW, float cuboidD, float fill) {
-        float u0 = sprite.getU0();
-        float v0 = sprite.getV0();
-        float uRange = sprite.getU1() - u0;
-        float vRange = sprite.getV1() - v0;
-        float sideVSpan = vRange * fill * (BODY_TOP - BODY_BOT);
-        return new float[]{u0, u0 + uRange * cuboidW, v0, v0 + sideVSpan, u0 + uRange * cuboidD};
-    }
 }

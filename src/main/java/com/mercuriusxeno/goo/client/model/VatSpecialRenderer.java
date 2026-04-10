@@ -2,12 +2,15 @@ package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.RenderCtx;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.VatBlockItem;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -16,6 +19,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
@@ -150,50 +154,67 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             GooType type, float fill) {
+        CuboidBounds b = computeFluidBounds(fill);
+        nodeCollector.submitCustomGeometry(poseStack,
+            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
+            (pose, c) -> emitFluidGeometry(pose, c, packedLight, type, b));
+    }
+
+    /**
+     * Computes the fluid cuboid bounds inset from the vat walls.
+     * @param fill the fill fraction [0, 1]
+     * @return the cuboid bounds for the fluid volume inside the vat walls
+     */
+    private static CuboidBounds computeFluidBounds(float fill) {
         float x0 = WALL + FLUID_INSET;
         float x1 = 1f - WALL - FLUID_INSET;
         float z0 = WALL + FLUID_INSET;
         float z1 = 1f - WALL - FLUID_INSET;
         float yBot = BODY_BOT + Y_EPSILON;
         float y = yBot + fill * (BODY_TOP - yBot);
+        return new CuboidBounds(x0, x1, z0, z1, yBot, y);
+    }
 
-        nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> {
-                TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-                float u0 = sprite.getU0();
-                float u1 = sprite.getU1();
-                float v0 = sprite.getV0();
-                float v1 = sprite.getV1();
+    /**
+     * Emits the fluid top surface and four side faces.
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer for geometry output
+     * @param packedLight the packed light value
+     * @param type the goo type determining the fluid texture
+     * @param b the cuboid bounds for the fluid volume
+     */
+    private static void emitFluidGeometry(PoseStack.Pose pose, VertexConsumer c,
+            int packedLight, GooType type, CuboidBounds b) {
+        RenderCtx ctx = new RenderCtx(pose, c, packedLight);
+        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
+        float u0 = sprite.getU0();
+        float v0 = sprite.getV0();
+        float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
+        float sv1 = v0 + (sprite.getV1() - v0) * (b.z1() - b.z0());
+        ctx.liquidSurface(GooRenderUtil.OPAQUE_WHITE, b,
+            new GooRenderUtil.UvRect(u0, v0, su1, sv1));
+        emitFluidSides(ctx, b, sprite, u0, v0, su1);
+    }
 
-                float cuboidWidth = x1 - x0;
-                float cuboidDepth = z1 - z0;
-                float su1 = u0 + (u1 - u0) * cuboidWidth;
-                float sv1 = v0 + (v1 - v0) * cuboidDepth;
-
-                // Top face
-                GooRenderUtil.liquidSurface(pose, c, packedLight,
-                    GooRenderUtil.OPAQUE_WHITE,
-                    x0, z0, x1, z1, y, u0, su1, v0, sv1);
-
-                // Side faces
-                float fillHeight = y - yBot;
-                float sideVSpan = (v1 - v0) * fillHeight;
-                float sideXU1 = u0 + (u1 - u0) * cuboidWidth;
-                float sideZU1 = u0 + (u1 - u0) * cuboidDepth;
-                CanisterGeometry.faceNorth(pose, c, packedLight,
-                    x0, yBot, z0, x1, y,
-                    u0, sideXU1, v0, v0 + sideVSpan);
-                CanisterGeometry.faceSouth(pose, c, packedLight,
-                    x0, yBot, z1, x1, y,
-                    u0, sideXU1, v0, v0 + sideVSpan);
-                CanisterGeometry.faceWest(pose, c, packedLight,
-                    x0, yBot, z0, y, z1,
-                    u0, sideZU1, v0, v0 + sideVSpan);
-                CanisterGeometry.faceEast(pose, c, packedLight,
-                    x1, yBot, z0, y, z1,
-                    u0, sideZU1, v0, v0 + sideVSpan);
-            });
+    /**
+     * Emits the four side faces of the fluid volume.
+     * @param ctx the render context wrapping pose, vertex consumer, and light
+     * @param b the cuboid bounds for the fluid volume
+     * @param sprite the fluid texture atlas sprite
+     * @param u0 the minimum U texture coordinate
+     * @param v0 the minimum V texture coordinate
+     * @param su1 the scaled maximum U coordinate for width-proportional mapping
+     */
+    private static void emitFluidSides(RenderCtx ctx, CuboidBounds b,
+            TextureAtlasSprite sprite, float u0, float v0, float su1) {
+        float sideVSpan = (sprite.getV1() - v0) * (b.yTop() - b.yBot());
+        GooRenderUtil.UvRect xUv = new GooRenderUtil.UvRect(u0, v0, su1, v0 + sideVSpan);
+        GooRenderUtil.UvRect zUv = new GooRenderUtil.UvRect(u0, v0,
+            u0 + (sprite.getU1() - u0) * (b.z1() - b.z0()), v0 + sideVSpan);
+        ctx.emitFace(b, xUv, Direction.NORTH);
+        ctx.emitFace(b, xUv, Direction.SOUTH);
+        ctx.emitFace(b, zUv, Direction.WEST);
+        ctx.emitFace(b, zUv, Direction.EAST);
     }
 
     /**

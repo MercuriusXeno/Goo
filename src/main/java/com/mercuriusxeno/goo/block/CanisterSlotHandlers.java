@@ -5,8 +5,6 @@ import com.mercuriusxeno.goo.block.gasket.GasketPusher;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.registry.GooEnchantments;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -31,15 +29,37 @@ final class CanisterSlotHandlers {
      * @return true if inserted
      */
     static boolean insertCanister(CanisterBlockEntity be, int slot, ItemStack canisterStack, boolean stripGaskets) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         if (!canInsertAt(state, slot, canisterStack)) { return false; }
-        ItemStack copy = canisterStack.copyWithCount(1);
+        ItemStack copy = prepareCanisterCopy(canisterStack, stripGaskets);
+        placeAndActivate(be, state, slot, copy);
+        return true;
+    }
+
+    /**
+     * Copies a single canister, optionally stripping gasket metadata.
+     * @param stack the source canister item stack
+     * @param stripGaskets true to clear gasket UUIDs on the copy
+     * @return a single-count copy of the canister, optionally stripped
+     */
+    private static ItemStack prepareCanisterCopy(ItemStack stack, boolean stripGaskets) {
+        ItemStack copy = stack.copyWithCount(1);
         if (stripGaskets) { CanisterSlotLifecycle.stripGasketMetadata(copy); }
+        return copy;
+    }
+
+    /**
+     * Places a canister in the slot and wires up its handler and pusher.
+     * @param be the canister block entity
+     * @param state the container's current slot state
+     * @param slot the target slot index
+     * @param copy the canister item stack to place
+     */
+    private static void placeAndActivate(CanisterBlockEntity be, SlottedCanisterState state, int slot, ItemStack copy) {
         state.canisters.set(slot, copy);
-        state.slotHandlers[slot] = createSlotHandler(be, slot);
+        state.slots.handlers()[slot] = createSlotHandler(be, slot);
         rebuildSlotPusher(be, slot);
         onSlotStructureChanged(be, slot, true);
-        return true;
     }
 
     /**
@@ -49,7 +69,7 @@ final class CanisterSlotHandlers {
      * @param canisterStack the canister item stack being inserted
      * @return true if the slot is valid, empty, and the stack is a canister
      */
-    private static boolean canInsertAt(SlottedContainerState state, int slot, ItemStack canisterStack) {
+    private static boolean canInsertAt(SlottedCanisterState state, int slot, ItemStack canisterStack) {
         return slot >= 0 && slot < CanisterBlockEntity.MAX_SLOTS
                 && canisterStack.getItem() instanceof CanisterItem
                 && state.canisters.get(slot).isEmpty();
@@ -63,7 +83,7 @@ final class CanisterSlotHandlers {
      * @return the removed canister stack, or EMPTY
      */
     static ItemStack removeCanister(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         if (slot < 0 || slot >= CanisterBlockEntity.MAX_SLOTS
                 || state.canisters.get(slot).isEmpty()) { return ItemStack.EMPTY; }
         tearDownSlot(be, slot, state);
@@ -79,10 +99,10 @@ final class CanisterSlotHandlers {
      * @param slot  the slot index being torn down
      * @param state the container's current slot state
      */
-    private static void tearDownSlot(CanisterBlockEntity be, int slot, SlottedContainerState state) {
+    private static void tearDownSlot(CanisterBlockEntity be, int slot, SlottedCanisterState state) {
         disposeSlotPusher(be, slot);
         syncSlotToItemStack(be, slot);
-        state.slotHandlers[slot] = null;
+        state.slots.handlers()[slot] = null;
         CanisterGasketOps.deregisterSlotGaskets(be, slot);
     }
 
@@ -101,7 +121,7 @@ final class CanisterSlotHandlers {
      * @param slot the slot index
      */
     static void wireSlotAfterPlacement(CanisterBlockEntity be, int slot) {
-        be.containerState().slotHandlers[slot] = createSlotHandler(be, slot);
+        be.containerState().slots.handlers()[slot] = createSlotHandler(be, slot);
         onSlotStructureChanged(be, slot, true);
     }
 
@@ -120,56 +140,29 @@ final class CanisterSlotHandlers {
         BlockEntitySync.markDirtyAndSync(be);
     }
 
-    // --- Per-slot fluid handler lifecycle ---
+    // --- Per-slot fluid handler lifecycle (delegates to ICanisterHolder) ---
 
     /**
      * Creates a live handler for the given slot, loaded from the canister ItemStack.
+     * Delegates to {@link ICanisterHolder#createSlotHandler}.
      *
      * @param be   the canister block entity
      * @param slot the slot index
      * @return a new fluid handler for the slot
      */
     static GooFluidHandler createSlotHandler(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
-        ItemStack stack = state.canisters.get(slot);
-        int compression = GooEnchantments.getCompressionLevel(stack);
-        int capacity = (int) ContainerCapacity.canisterCapacity(compression);
-        GooFluidHandler handler = new GooFluidHandler(capacity,
-            () -> syncSlotToItemStack(be, slot),
-            () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0L);
-        handler.loadFrom(CanisterItem.getGooContents(stack));
-        return handler;
+        return ICanisterHolder.createSlotHandler(be, slot);
     }
 
     /**
      * Writes the slot handler's current state back to the canister ItemStack.
+     * Delegates to {@link ICanisterHolder#syncSlotToItemStack}.
      *
      * @param be   the canister block entity
      * @param slot the slot index
      */
     static void syncSlotToItemStack(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
-        ItemStack stack = state.canisters.get(slot);
-        if (stack.isEmpty() || state.slotHandlers[slot] == null) { return; }
-        CanisterItem.setGooContents(stack, state.slotHandlers[slot].toGooContents());
-        snapshotSlotStream(be, slot);
-        BlockEntitySync.markDirtyAndSync(be);
-    }
-
-    /**
-     * Copies the handler's transient stream state to the component's arrays for sync.
-     *
-     * @param be   the canister block entity
-     * @param slot the slot index
-     */
-    private static void snapshotSlotStream(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
-        GooFluidHandler h = state.slotHandlers[slot];
-        if (h == null) { return; }
-        long tick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
-        state.slotStreamType[slot] = h.getStreamType(tick);
-        state.slotStreamRate[slot] = h.getStreamRate(tick);
-        state.slotStreamTick[slot] = tick;
+        ICanisterHolder.syncSlotToItemStack(be, slot);
     }
 
     /** Rebuilds slot handlers for all occupied slots (used after deserialization).
@@ -177,9 +170,9 @@ final class CanisterSlotHandlers {
      * @param be the canister block entity
      */
     static void rebuildAllSlotHandlers(CanisterBlockEntity be) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            state.slotHandlers[i] = state.canisters.get(i).isEmpty() ? null : createSlotHandler(be, i);
+            state.slots.handlers()[i] = state.canisters.get(i).isEmpty() ? null : createSlotHandler(be, i);
         }
     }
 
@@ -192,16 +185,27 @@ final class CanisterSlotHandlers {
      * @param slot the slot index
      */
     static void rebuildSlotPusher(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
         disposeSlotPusher(be, slot);
         if (!slotNeedsPusher(be, slot)) { return; }
-        GasketPusher pusher = new GasketPusher(state.slotHandlers[slot],
+        SlottedCanisterState state = be.containerState();
+        state.slots.pushers()[slot] = buildPusher(be, state, slot);
+    }
+
+    /**
+     * Constructs a GasketPusher wired to the slot's bottom gasket metadata.
+     * @param be the canister block entity
+     * @param state the container's current slot state
+     * @param slot the slot index to build a pusher for
+     * @return a new GasketPusher wired to the slot's bottom gasket
+     */
+    private static GasketPusher buildPusher(CanisterBlockEntity be, SlottedCanisterState state, int slot) {
+        GasketPusher pusher = new GasketPusher(state.slots.handlers()[slot],
             () -> CanisterItem.getMetadata(state.canisters.get(slot)).bottomGasketId(),
             () -> CanisterItem.getMetadata(state.canisters.get(slot)).bottomPartner(),
             be::getLevel, be::getBlockPos,
             () -> syncSlotToItemStack(be, slot), be.gasketRegistryAccess);
         pusher.rebuildCache();
-        state.slotPushers[slot] = pusher;
+        return pusher;
     }
 
     /**
@@ -212,8 +216,8 @@ final class CanisterSlotHandlers {
      * @return true if a pusher should be created for this slot
      */
     private static boolean slotNeedsPusher(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
-        if (state.slotHandlers[slot] == null) { return false; }
+        SlottedCanisterState state = be.containerState();
+        if (state.slots.handlers()[slot] == null) { return false; }
         ItemStack stack = state.canisters.get(slot);
         if (stack.isEmpty()) { return false; }
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
@@ -227,11 +231,11 @@ final class CanisterSlotHandlers {
      * @param slot the slot index
      */
     static void disposeSlotPusher(CanisterBlockEntity be, int slot) {
-        SlottedContainerState state = be.containerState();
-        IGasketPusher existing = state.slotPushers[slot];
+        SlottedCanisterState state = be.containerState();
+        IGasketPusher existing = state.slots.pushers()[slot];
         if (existing != null) {
             existing.dispose();
-            state.slotPushers[slot] = null;
+            state.slots.pushers()[slot] = null;
         }
     }
 

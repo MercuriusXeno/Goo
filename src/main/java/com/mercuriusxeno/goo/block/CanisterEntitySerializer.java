@@ -134,7 +134,6 @@ final class CanisterEntitySerializer {
      * @param slotStreamRate per-slot stream rates (written in-place)
      * @param slotStreamTick per-slot stream ticks (written in-place)
      */
-    @SuppressWarnings("PMD.UseVarargs") // mutable out-params, not varargs
     private static void deserializeSlotStream(
             int slot, CompoundTag slotTag, @Nullable GooType[] slotStreamType,
             int[] slotStreamRate, long[] slotStreamTick) {
@@ -169,7 +168,6 @@ final class CanisterEntitySerializer {
      * @param slotStreamRate per-slot stream rates (written in-place)
      * @param slotStreamTick per-slot stream ticks (written in-place)
      */
-    @SuppressWarnings("PMD.UseVarargs") // mutable out-params, not varargs
     static void clearSlotStream(
             int slot, @Nullable GooType[] slotStreamType,
             int[] slotStreamRate, long[] slotStreamTick) {

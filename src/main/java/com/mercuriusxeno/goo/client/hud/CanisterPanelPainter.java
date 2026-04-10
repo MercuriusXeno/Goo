@@ -53,21 +53,14 @@ final class CanisterPanelPainter {
      * @param data the extracted render data
      * @param pos the block position
      * @param slot the slot index
-     * @param trackedCx the tracked center X
-     * @param trackedLift the tracked Y lift
-     * @param trackedCz the tracked center Z
-     * @param trackedFace the tracked face direction
-     * @param trackedBlockAbove whether a block is above
-     * @param currentPitch the current pitch
+     * @param anchor camera-relative positioning data for the panel
      */
     static void renderPanel(PoseStack poseStack, Camera camera,
             CanisterHudRenderer.SlotData data, BlockPos pos, int slot,
-            double trackedCx, double trackedLift, double trackedCz,
-            Direction trackedFace, boolean trackedBlockAbove, float currentPitch) {
+            PanelAnchor anchor) {
         poseStack.pushPose();
-        applyPanelTransform(poseStack, camera, pos, trackedCx, trackedLift, trackedCz,
-                trackedFace, trackedBlockAbove, currentPitch);
-        renderContent(poseStack, data, trackedFace);
+        applyPanelTransform(poseStack, camera, pos, anchor);
+        renderContent(poseStack, data, anchor.face());
         poseStack.popPose();
     }
 
@@ -79,19 +72,13 @@ final class CanisterPanelPainter {
      * @param poseStack the pose stack for rendering
      * @param camera the render camera
      * @param pos the block position
-     * @param cx the center X
-     * @param lift the Y lift
-     * @param cz the center Z
-     * @param face the face direction
-     * @param blockAbove whether a block is above
-     * @param pitch the current pitch
+     * @param anchor camera-relative positioning data for the panel
      */
     private static void applyPanelTransform(PoseStack poseStack,
-            Camera camera, BlockPos pos, double cx, double lift, double cz,
-            Direction face, boolean blockAbove, float pitch) {
-        translateToAnchor(poseStack, camera, pos, cx, lift, cz);
-        applyRotation(poseStack, camera, face, blockAbove, pitch);
-        float zNudge = isVerticalFace(face) ? Z_NUDGE_POS : Z_NUDGE_NEG;
+            Camera camera, BlockPos pos, PanelAnchor anchor) {
+        translateToAnchor(poseStack, camera, pos, anchor);
+        applyRotation(poseStack, camera, anchor.face(), anchor.blockAbove(), anchor.pitch());
+        float zNudge = isVerticalFace(anchor.face()) ? Z_NUDGE_POS : Z_NUDGE_NEG;
         poseStack.translate(0, 0, zNudge);
         poseStack.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
     }
@@ -102,17 +89,15 @@ final class CanisterPanelPainter {
      * @param poseStack the pose stack for rendering
      * @param camera the render camera
      * @param pos the block position
-     * @param cx the center X
-     * @param lift the Y lift
-     * @param cz the center Z
+     * @param anchor camera-relative positioning data for the panel
      */
     private static void translateToAnchor(PoseStack poseStack, Camera camera,
-            BlockPos pos, double cx, double lift, double cz) {
+            BlockPos pos, PanelAnchor anchor) {
         Vec3 cam = camera.position();
         poseStack.translate(
-            pos.getX() + cx - cam.x,
-            pos.getY() + lift - cam.y,
-            pos.getZ() + cz - cam.z);
+            pos.getX() + anchor.cx() - cam.x,
+            pos.getY() + anchor.lift() - cam.y,
+            pos.getZ() + anchor.cz() - cam.z);
     }
 
     /**
@@ -251,8 +236,8 @@ final class CanisterPanelPainter {
             MultiBufferSource.BufferSource buffers, CanisterHudRenderer.SlotData data,
             PanelMetrics metrics) {
         float halfW = metrics.width / HALF_F;
-        InWorldHud.renderBackground(poseStack, buffers, -halfW, -metrics.height,
-                metrics.width, metrics.height);
+        InWorldHud.renderBackground(poseStack, buffers,
+                new PanelRect(-halfW, -metrics.height, metrics.width, metrics.height));
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);

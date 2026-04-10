@@ -79,7 +79,18 @@ public class CanisterBlock extends BaseEntityBlock {
         float minZ = centerZ - SLOT_HALF_WIDTH;
         float maxX = centerX + SLOT_HALF_WIDTH;
         float maxZ = centerZ + SLOT_HALF_WIDTH;
+        buildSlotBoxes(slot, minX, minZ, maxX, maxZ);
+    }
 
+    /**
+     * Populates body, upper gasket, and lower gasket VoxelShapes for one slot.
+     * @param slot the slot index (0-8)
+     * @param minX left edge X in pixel coordinates
+     * @param minZ front edge Z in pixel coordinates
+     * @param maxX right edge X in pixel coordinates
+     * @param maxZ back edge Z in pixel coordinates
+     */
+    private static void buildSlotBoxes(int slot, float minX, float minZ, float maxX, float maxZ) {
         SLOT_SHAPES[slot] = box(minX, 0, minZ, maxX, BODY_HEIGHT, maxZ);
         UPPER_GASKET_SHAPES[slot] = box(
                 minX, BODY_HEIGHT - GASKET_HEIGHT, minZ, maxX, BODY_HEIGHT, maxZ);
@@ -279,12 +290,22 @@ public class CanisterBlock extends BaseEntityBlock {
         InteractionResult earlyOut = GooBlockInteraction.validateEmptyHand(level, pos, player);
         if (earlyOut != null) { return earlyOut; }
         if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity canister)) { return InteractionResult.PASS; }
+        return dispatchEmptyHand(canister, slot, player, hitResult);
+    }
 
-        // Sneak + empty hand: remove per-slot gasket if present
+    /**
+     * Routes empty-hand interaction to gasket removal (sneak) or canister removal (normal).
+     * @param canister the canister block entity
+     * @param slot the targeted slot index
+     * @param player the interacting player
+     * @param hitResult the ray trace hit result
+     * @return SUCCESS if handled, PASS otherwise
+     */
+    private InteractionResult dispatchEmptyHand(
+            CanisterBlockEntity canister, int slot, Player player, BlockHitResult hitResult) {
         if (player.isShiftKeyDown()) {
             return CanisterBlockHandlers.handleSlotGasketRemove(canister, slot, hitResult);
         }
-
         return CanisterBlockHandlers.handleCanisterRemove(canister, slot, player);
     }
 

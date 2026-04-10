@@ -46,20 +46,8 @@ public class Goo {
      * @param modContainer the mod container
      */
     public Goo(IEventBus modEventBus, ModContainer modContainer) {
-        GooFluidTypes.FLUID_TYPES.register(modEventBus);
-        GooFluids.FLUIDS.register(modEventBus);
-        GooBlocks.BLOCKS.register(modEventBus);
-        GooItems.ITEMS.register(modEventBus);
-        GooBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        GooEntities.ENTITIES.register(modEventBus);
-        GooDataComponents.DATA_COMPONENTS.register(modEventBus);
-        GooPotions.POTIONS.register(modEventBus);
-        GooParticles.PARTICLE_TYPES.register(modEventBus);
-        GooCreativeTabs.TABS.register(modEventBus);
-
-        modEventBus.addListener(GooCapabilityRegistration::registerCapabilities);
-        modEventBus.addListener(Goo::commonSetup);
-        modEventBus.addListener(GooTickets::register);
+        registerDeferredRegistries(modEventBus);
+        registerModListeners(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, GooConfig.SPEC);
 
@@ -69,6 +57,51 @@ public class Goo {
             FMLPaths.CONFIGDIR.get().resolve("goo_derived_values.json"));
 
         LOGGER.info("Goo mod initialized");
+    }
+
+    /**
+     * Registers all deferred registries with the mod event bus.
+     *
+     * @param modEventBus the mod event bus
+     */
+    private static void registerDeferredRegistries(IEventBus modEventBus) {
+        registerCoreRegistries(modEventBus);
+        registerContentRegistries(modEventBus);
+    }
+
+    /**
+     * Registers fluid, block, item, and entity registries.
+     * @param modEventBus the mod event bus to register on
+     */
+    private static void registerCoreRegistries(IEventBus modEventBus) {
+        GooFluidTypes.FLUID_TYPES.register(modEventBus);
+        GooFluids.FLUIDS.register(modEventBus);
+        GooBlocks.BLOCKS.register(modEventBus);
+        GooItems.ITEMS.register(modEventBus);
+        GooBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        GooEntities.ENTITIES.register(modEventBus);
+    }
+
+    /**
+     * Registers data component, potion, particle, and creative tab registries.
+     * @param modEventBus the mod event bus to register on
+     */
+    private static void registerContentRegistries(IEventBus modEventBus) {
+        GooDataComponents.DATA_COMPONENTS.register(modEventBus);
+        GooPotions.POTIONS.register(modEventBus);
+        GooParticles.PARTICLE_TYPES.register(modEventBus);
+        GooCreativeTabs.TABS.register(modEventBus);
+    }
+
+    /**
+     * Registers mod event bus listeners for capabilities, setup, and tickets.
+     *
+     * @param modEventBus the mod event bus
+     */
+    private static void registerModListeners(IEventBus modEventBus) {
+        modEventBus.addListener(GooCapabilityRegistration::registerCapabilities);
+        modEventBus.addListener(Goo::commonSetup);
+        modEventBus.addListener(GooTickets::register);
     }
 
     /**

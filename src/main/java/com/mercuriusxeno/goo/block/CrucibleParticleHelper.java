@@ -105,6 +105,18 @@ public final class CrucibleParticleHelper {
     /** Basin interior width in block-relative coords (6 pixels). */
     private static final double BASIN_INTERIOR_WIDTH = 6.0 / 16.0;
 
+    /** Spark shower velocity profile. */
+    private static final SparkProfile SPARK_PROFILE =
+        new SparkProfile(SPARK_BASE_SPEED, SPARK_RANDOM_SPEED, SPARK_BASE_FALL, SPARK_RANDOM_FALL);
+
+    /** Ember/ignition velocity profile. */
+    private static final SparkProfile EMBER_PROFILE =
+        new SparkProfile(EMBER_BASE_SPEED, EMBER_RANDOM_SPEED, EMBER_BASE_FALL, EMBER_RANDOM_FALL);
+
+    /** Velocity profile for radial spark emission. */
+    private record SparkProfile(double baseSpeed, double randomSpeed,
+            double baseFall, double randomFall) {}
+
     private CrucibleParticleHelper() {}
 
     /**
@@ -115,20 +127,9 @@ public final class CrucibleParticleHelper {
      * @param pos   the block position
      */
     public static void spawnSparkShower(ServerLevel level, BlockPos pos) {
-        double x = pos.getX() + BLOCK_CENTER;
-        double y = pos.getY() + FLAME_Y;
-        double z = pos.getZ() + BLOCK_CENTER;
         RandomSource random = level.getRandom();
         int count = SPARK_BASE_COUNT + random.nextInt(SPARK_RANDOM_COUNT);
-        for (int i = 0; i < count; i++) {
-            double angle = random.nextDouble() * TWO_PI;
-            double speed = SPARK_BASE_SPEED + random.nextDouble() * SPARK_RANDOM_SPEED;
-            double vx = Math.cos(angle) * speed;
-            double vz = Math.sin(angle) * speed;
-            double vy = SPARK_BASE_FALL - random.nextDouble() * SPARK_RANDOM_FALL;
-            level.sendParticles(GooParticles.GOO_SPARK.get(), x, y, z, 0,
-                vx, vy, vz, 1.0);
-        }
+        emitSparks(level, pos, random, count, SPARK_PROFILE);
     }
 
     /**
@@ -139,20 +140,9 @@ public final class CrucibleParticleHelper {
      * @param pos   the block position
      */
     public static void spawnIgnitionSparks(ServerLevel level, BlockPos pos) {
-        double x = pos.getX() + BLOCK_CENTER;
-        double y = pos.getY() + FLAME_Y;
-        double z = pos.getZ() + BLOCK_CENTER;
         RandomSource random = level.getRandom();
         int count = IGNITION_BASE_COUNT + random.nextInt(IGNITION_RANDOM_COUNT);
-        for (int i = 0; i < count; i++) {
-            double angle = random.nextDouble() * TWO_PI;
-            double speed = EMBER_BASE_SPEED + random.nextDouble() * EMBER_RANDOM_SPEED;
-            double vx = Math.cos(angle) * speed;
-            double vz = Math.sin(angle) * speed;
-            double vy = EMBER_BASE_FALL - random.nextDouble() * EMBER_RANDOM_FALL;
-            level.sendParticles(GooParticles.GOO_SPARK.get(), x, y, z, 0,
-                vx, vy, vz, 1.0);
-        }
+        emitSparks(level, pos, random, count, EMBER_PROFILE);
     }
 
     /**
@@ -169,19 +159,47 @@ public final class CrucibleParticleHelper {
             RandomSource random, boolean melting) {
         float chance = melting ? EMBER_CHANCE_MELTING : EMBER_CHANCE_IDLE;
         if (random.nextFloat() >= chance) { return; }
+        int count = 1 + random.nextInt(IGNITION_RANDOM_COUNT);
+        emitSparks(level, pos, random, count, EMBER_PROFILE);
+    }
+
+    /**
+     * Emits spark particles with radial velocity at the rod-basin contact point.
+     *
+     * @param level  the server level
+     * @param pos    the block position
+     * @param random the random source
+     * @param count  number of sparks to emit
+     * @param p      the velocity profile
+     */
+    private static void emitSparks(ServerLevel level, BlockPos pos,
+            RandomSource random, int count, SparkProfile p) {
         double x = pos.getX() + BLOCK_CENTER;
         double y = pos.getY() + FLAME_Y;
         double z = pos.getZ() + BLOCK_CENTER;
-        int count = 1 + random.nextInt(IGNITION_RANDOM_COUNT);
         for (int i = 0; i < count; i++) {
-            double angle = random.nextDouble() * TWO_PI;
-            double speed = EMBER_BASE_SPEED + random.nextDouble() * EMBER_RANDOM_SPEED;
-            double vx = Math.cos(angle) * speed;
-            double vz = Math.sin(angle) * speed;
-            double vy = EMBER_BASE_FALL - random.nextDouble() * EMBER_RANDOM_FALL;
-            level.sendParticles(GooParticles.GOO_SPARK.get(), x, y, z, 0,
-                vx, vy, vz, 1.0);
+            emitOneSpark(level, random, p, x, y, z);
         }
+    }
+
+    /**
+     * Emits a single spark with randomized radial velocity.
+     *
+     * @param level  the server level
+     * @param random the random source
+     * @param p      the velocity profile
+     * @param x      the spawn X coordinate
+     * @param y      the spawn Y coordinate
+     * @param z      the spawn Z coordinate
+     */
+    private static void emitOneSpark(ServerLevel level, RandomSource random,
+            SparkProfile p, double x, double y, double z) {
+        double angle = random.nextDouble() * TWO_PI;
+        double speed = p.baseSpeed() + random.nextDouble() * p.randomSpeed();
+        double vx = Math.cos(angle) * speed;
+        double vz = Math.sin(angle) * speed;
+        double vy = p.baseFall() - random.nextDouble() * p.randomFall();
+        level.sendParticles(GooParticles.GOO_SPARK.get(), x, y, z, 0, vx, vy, vz, 1.0);
     }
 
     /**

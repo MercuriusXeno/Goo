@@ -50,12 +50,30 @@ final class DualGasketState extends GasketState {
     @Override
     public @Nullable UUID ensureId(GasketRole role, Runnable syncCallback) {
         if (role == GasketRole.RECEIVER) {
-            if (capId == null) {
-                capId = UUID.randomUUID();
-                syncCallback.run();
-            }
-            return capId;
+            return ensureCapId(syncCallback);
         }
+        return ensureBaseId(syncCallback);
+    }
+
+    /**
+     * Lazily initializes and returns the cap (RECEIVER) gasket UUID.
+     * @param syncCallback called after generating a new UUID to persist the change
+     * @return the cap gasket UUID (created if absent)
+     */
+    private UUID ensureCapId(Runnable syncCallback) {
+        if (capId == null) {
+            capId = UUID.randomUUID();
+            syncCallback.run();
+        }
+        return capId;
+    }
+
+    /**
+     * Lazily initializes and returns the base (TRANSMITTER) gasket UUID.
+     * @param syncCallback called after generating a new UUID to persist the change
+     * @return the base gasket UUID (created if absent)
+     */
+    private UUID ensureBaseId(Runnable syncCallback) {
         if (baseId == null) {
             baseId = UUID.randomUUID();
             syncCallback.run();

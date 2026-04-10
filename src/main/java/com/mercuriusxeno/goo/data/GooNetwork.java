@@ -80,7 +80,6 @@ public final class GooNetwork {
             Set<UUID> white, Set<UUID> gray, Set<UUID> black,
             Set<UUID> inCycle) {
         List<DfsFrame> stack = new ArrayList<>();
-
         white.remove(start);
         gray.add(start);
         stack.add(new DfsFrame(start, 0));
@@ -88,24 +87,50 @@ public final class GooNetwork {
         while (!stack.isEmpty()) {
             DfsFrame current = stack.getLast();
             List<UUID> neighbors = graph.getOrDefault(current.node(), Collections.emptyList());
-
             if (current.childIndex() < neighbors.size()) {
-                UUID child = neighbors.get(current.childIndex());
-                stack.set(stack.size() - 1, new DfsFrame(current.node(), current.childIndex() + 1));
-
-                if (gray.contains(child)) {
-                    markCycleFromStack(stack, child, inCycle);
-                } else if (white.contains(child)) {
-                    white.remove(child);
-                    gray.add(child);
-                    stack.add(new DfsFrame(child, 0));
-                }
+                advanceChild(stack, current, neighbors, white, gray, inCycle);
             } else {
-                gray.remove(current.node());
-                black.add(current.node());
-                stack.removeLast();
+                finishNode(stack, current, gray, black);
             }
         }
+    }
+
+    /**
+     * Advances to the next child of the current DFS frame, detecting cycles or pushing new nodes.
+     * @param stack the DFS frame stack representing the current traversal path
+     * @param current the DFS frame being explored
+     * @param neighbors the adjacency list for the current node
+     * @param white unvisited nodes
+     * @param gray nodes on the current DFS path
+     * @param inCycle accumulator for nodes found in cycles
+     */
+    private static void advanceChild(
+            List<DfsFrame> stack, DfsFrame current, List<UUID> neighbors,
+            Set<UUID> white, Set<UUID> gray, Set<UUID> inCycle) {
+        UUID child = neighbors.get(current.childIndex());
+        stack.set(stack.size() - 1, new DfsFrame(current.node(), current.childIndex() + 1));
+        if (gray.contains(child)) {
+            markCycleFromStack(stack, child, inCycle);
+        } else if (white.contains(child)) {
+            white.remove(child);
+            gray.add(child);
+            stack.add(new DfsFrame(child, 0));
+        }
+    }
+
+    /**
+     * Pops a fully explored node from the DFS stack and marks it black.
+     * @param stack the DFS frame stack to pop from
+     * @param current the completed DFS frame being retired
+     * @param gray nodes on the current DFS path (node removed)
+     * @param black fully processed nodes (node added)
+     */
+    private static void finishNode(
+            List<DfsFrame> stack, DfsFrame current,
+            Set<UUID> gray, Set<UUID> black) {
+        gray.remove(current.node());
+        black.add(current.node());
+        stack.removeLast();
     }
 
     /**

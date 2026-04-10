@@ -3,11 +3,11 @@ package com.mercuriusxeno.goo.data;
 import com.google.gson.JsonElement;
 import com.mercuriusxeno.goo.Goo;
 import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 /**
  * Handles parallel copy operations during base_values.json loading.
@@ -65,15 +65,24 @@ final class GooParallelCopy {
     private static boolean tryParallelCopy(String name, JsonElement value,
                                             Set<Identifier> targetMembers, GooValueLoader.ParseState state) {
         if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) { return false; }
-        java.util.regex.Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
+        Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
         if (!m.matches()) { return false; }
         String sourceName = m.group(1);
-        int multiplier = m.group(PARALLEL_COPY_MULTIPLIER_GROUP) != null
-                ? Integer.parseInt(m.group(PARALLEL_COPY_MULTIPLIER_GROUP)) : 1;
-        int divisor = m.group(PARALLEL_COPY_DIVISOR_GROUP) != null
-                ? Integer.parseInt(m.group(PARALLEL_COPY_DIVISOR_GROUP)) : 1;
+        int multiplier = parseGroupOrDefault(m, PARALLEL_COPY_MULTIPLIER_GROUP);
+        int divisor = parseGroupOrDefault(m, PARALLEL_COPY_DIVISOR_GROUP);
         parallelCopyBaseValues(name, sourceName, targetMembers, multiplier, divisor, state);
         return true;
+    }
+
+    /**
+     * Parses a regex group as an integer, defaulting to 1 if the group did not match.
+     *
+     * @param m     the matcher with a successful match
+     * @param group the capture group index to parse
+     * @return the parsed integer, or 1 if the group is absent
+     */
+    private static int parseGroupOrDefault(Matcher m, int group) {
+        return m.group(group) != null ? Integer.parseInt(m.group(group)) : 1;
     }
 
     /**
@@ -90,7 +99,7 @@ final class GooParallelCopy {
                                          Set<Identifier> targetMembers,
                                          int multiplier, int divisor, GooValueLoader.ParseState state) {
         List<Identifier> sources = resolveSourceMembers(sourceName, state);
-        if (sources == null) { return; }
+        if (sources.isEmpty()) { return; }
         List<Identifier> targets = new ArrayList<>(targetMembers);
         if (!validateParallelSize(targetName, targets, sourceName, sources)) { return; }
         for (int i = 0; i < targets.size(); i++) {
@@ -99,16 +108,16 @@ final class GooParallelCopy {
     }
 
     /**
-     * Resolves a source pseudo-tag, returning null with an error log if empty.
+     * Resolves a source pseudo-tag, returning empty list with an error log if empty.
      * @param sourceName the pseudo-tag name to resolve
      * @param state      the current parse state with pseudo-tag definitions
-     * @return the resolved member list, or null if the tag is empty
+     * @return the resolved member list, or empty if the tag is empty
      */
-    private static @Nullable List<Identifier> resolveSourceMembers(String sourceName, GooValueLoader.ParseState state) {
+    private static List<Identifier> resolveSourceMembers(String sourceName, GooValueLoader.ParseState state) {
         Set<Identifier> sourceMembers = GooGroupParser.resolvePseudoTag(sourceName, state.pseudoTags);
         if (sourceMembers == null || sourceMembers.isEmpty()) {
             Goo.LOGGER.error(LOG_PARALLEL_SRC_EMPTY, sourceName);
-            return null;
+            return List.of();
         }
         return new ArrayList<>(sourceMembers);
     }

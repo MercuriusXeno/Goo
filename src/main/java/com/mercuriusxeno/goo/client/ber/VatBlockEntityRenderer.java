@@ -191,7 +191,21 @@ public class VatBlockEntityRenderer
     private static StackData collectStackData(Level level, BlockPos bottomPos,
             BlockPos selfPos, long gameTick) {
         StackAccumulator acc = new StackAccumulator();
-        BlockPos cursor = bottomPos;
+        walkStackUpward(level, bottomPos, selfPos, gameTick, acc);
+        return acc.toResult();
+    }
+
+    /**
+     * Walks the vat stack upward from the bottom, accumulating each vat's contribution.
+     * @param level the current level
+     * @param start the bottom-most vat position in the stack
+     * @param selfPos the position of the vat being rendered
+     * @param gameTick the current game tick
+     * @param acc the mutable accumulator collecting stack data
+     */
+    private static void walkStackUpward(Level level, BlockPos start,
+            BlockPos selfPos, long gameTick, StackAccumulator acc) {
+        BlockPos cursor = start;
         while (true) {
             BlockEntity curBe = level.getBlockEntity(cursor);
             if (curBe instanceof VatBlockEntity vat) {
@@ -200,7 +214,6 @@ public class VatBlockEntityRenderer
             if (!(level.getBlockState(cursor.above()).getBlock() instanceof VatBlock)) { break; }
             cursor = cursor.above();
         }
-        return acc.toResult();
     }
 
     /**
@@ -291,7 +304,7 @@ public class VatBlockEntityRenderer
         GooType type = state.dominantType;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> VatFluidRenderer.renderFluid(pose, c, light, type, state));
+            (pose, c) -> VatFluidRenderer.renderFluid(new RenderCtx(pose, c, light), type, state));
     }
 
     // --- Stream rendering ---
@@ -306,7 +319,7 @@ public class VatBlockEntityRenderer
     private static void submitStream(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, VatRenderState state) {
         float[] sb = computeStreamBounds(state);
-        if (sb == null) { return; }
+        if (sb.length == 0) { return; }
         int light = state.lightCoords;
         float anim = state.animationTime;
         GooType type = state.streamType;
@@ -330,7 +343,7 @@ public class VatBlockEntityRenderer
             GooType type, float rate, float yTop, float yBottom) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> GooStreamRenderer.renderStream(pose, c, light,
+            (pose, c) -> GooStreamRenderer.renderStream(new RenderCtx(pose, c, light),
                 VAT_CENTER_X, VAT_CENTER_Z, yTop, yBottom,
                 type, rate, anim));
     }
@@ -338,18 +351,18 @@ public class VatBlockEntityRenderer
     /**
      * Computes stream Y bounds, or null if the vat is fully submerged or inverted.
      * @param state the render state snapshot to populate
-     * @return the stream Y bounds {yBot, yTop}, or null if not visible
+     * @return the stream Y bounds {yBot, yTop}, or empty if not visible
      */
-    private static float @Nullable [] computeStreamBounds(VatRenderState state) {
+    private static float[] computeStreamBounds(VatRenderState state) {
         float localFloor = state.vatBelow ? 0f : BASE_FLOOR;
         float localCeiling = state.vatAbove ? 1.0f : CAP_CEILING;
         float localHeight = localCeiling - localFloor;
         float localFill = VatFluidRenderer.computeLocalFill(state, localFloor, localCeiling);
 
-        if (localFill >= localHeight - SUBMERSION_EPSILON) { return null; }
+        if (localFill >= localHeight - SUBMERSION_EPSILON) { return new float[0]; }
         float yTop = localCeiling;
         float yBottom = localFloor + Math.max(localFill, 0f);
-        if (yBottom >= yTop) { return null; }
+        if (yBottom >= yTop) { return new float[0]; }
         return new float[]{yTop, yBottom};
     }
 }

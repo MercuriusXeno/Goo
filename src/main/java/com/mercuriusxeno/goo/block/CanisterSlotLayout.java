@@ -58,15 +58,25 @@ public final class CanisterSlotLayout {
      */
     public static int nearestSlot(float px, float pz) {
         int best = NO_SLOT;
-        float bestDist = HIT_THRESHOLD * HIT_THRESHOLD;
+        float bestDistSq = Float.MAX_VALUE;
         for (int i = 0; i < SLOT_COUNT; i++) {
-            float dist = squaredDistToSlot(i, px, pz);
-            if (dist < bestDist) {
-                bestDist = dist;
+            float distSq = squaredDistToSlot(i, px, pz);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
                 best = i;
             }
         }
-        return best;
+        return withinThreshold(best, bestDistSq);
+    }
+
+    /**
+     * Returns the slot index if the squared distance is within the hit threshold, else NO_SLOT.
+     * @param slot the candidate slot index, or NO_SLOT
+     * @param distSq the squared distance to the slot center
+     * @return the slot index if within threshold, otherwise NO_SLOT (-1)
+     */
+    private static int withinThreshold(int slot, float distSq) {
+        return distSq <= HIT_THRESHOLD * HIT_THRESHOLD ? slot : NO_SLOT;
     }
 
     /** Returns the squared distance from a point to a slot's center.

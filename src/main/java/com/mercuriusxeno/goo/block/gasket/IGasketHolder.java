@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.block.gasket;
 
-import com.mercuriusxeno.goo.block.ISlottedGooContainer;
+import com.mercuriusxeno.goo.block.ICanisterHolder;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
@@ -16,7 +16,7 @@ import java.util.UUID;
  * TRANSMITTER (bottom/base). Machines expose only the roles they support.
  *
  * <p>Slot-aware overloads support multi-slot machines (canister grid, hub).
- * When the implementor also implements {@link ISlottedGooContainer} and
+ * When the implementor also implements {@link ICanisterHolder} and
  * slot >= 0, the defaults route through the slot's {@link CanisterMetadata}.
  * Non-slotted machines (vat, crucible) inherit defaults that ignore the slot.</p>
  *
@@ -109,7 +109,7 @@ public interface IGasketHolder {
      * @return the gasket id
      */
     default @Nullable UUID getGasketId(GasketRole role, int slot) {
-        if (slot >= 0 && this instanceof ISlottedGooContainer container) {
+        if (slot >= 0 && this instanceof ICanisterHolder container) {
             CanisterMetadata meta = container.getSlotMetadata(slot);
             return role == GasketRole.RECEIVER ? meta.topGasketId() : meta.bottomGasketId();
         }
@@ -123,7 +123,7 @@ public interface IGasketHolder {
      * @return the UUID, or null
      */
     default @Nullable UUID ensureGasketId(GasketRole role, int slot) {
-        if (slot >= 0 && this instanceof ISlottedGooContainer container) {
+        if (slot >= 0 && this instanceof ICanisterHolder container) {
             CanisterMetadata meta = container.getSlotMetadata(slot);
             CanisterMetadata ensured = meta.withGasketIds();
             if (ensured != meta) { container.setSlotMetadata(slot, ensured); }
@@ -139,7 +139,7 @@ public interface IGasketHolder {
      * @return the partner
      */
     default @Nullable GasketPartner getPartner(GasketRole role, int slot) {
-        if (slot >= 0 && this instanceof ISlottedGooContainer container) {
+        if (slot >= 0 && this instanceof ICanisterHolder container) {
             CanisterMetadata meta = container.getSlotMetadata(slot);
             return role == GasketRole.RECEIVER ? meta.topPartner() : meta.bottomPartner();
         }
@@ -153,7 +153,7 @@ public interface IGasketHolder {
      * @param partner the gasket partner, or null to clear
      */
     default void setPartner(GasketRole role, int slot, @Nullable GasketPartner partner) {
-        if (slot >= 0 && this instanceof ISlottedGooContainer container) {
+        if (slot >= 0 && this instanceof ICanisterHolder container) {
             CanisterMetadata updated = applyPartner(container.getSlotMetadata(slot), role, partner);
             container.setSlotMetadata(slot, updated);
             return;
@@ -223,13 +223,13 @@ public interface IGasketHolder {
 
     /**
      * Returns the machine's label at the given slot, or null if unnamed.
-     * Default: routes through {@link ISlottedGooContainer#getSlotMetadata(int)} for slotted machines.
+     * Default: routes through {@link ICanisterHolder#getSlotMetadata(int)} for slotted machines.
      *
      * @param slot the slot index
      * @return the machine label
      */
     default @Nullable String getMachineLabel(int slot) {
-        if (slot >= 0 && this instanceof ISlottedGooContainer container) {
+        if (slot >= 0 && this instanceof ICanisterHolder container) {
             return container.getSlotMetadata(slot).label();
         }
         return null;

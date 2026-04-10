@@ -34,12 +34,12 @@ import java.util.List;
  * Hub: holds up to 8 canisters in radial slots (N, NE, E, SE, S, SW, W, NW).
  * Central input on top auto-routes goo to canisters with remaining capacity.
  *
- * <p>Slot state delegated to {@link SlottedContainerState}. Internal logic
+ * <p>Slot state delegated to {@link SlottedCanisterState}. Internal logic
  * delegated to: {@link HubSlotLifecycle} (handler/pusher/shape),
  * {@link HubSerialization} (stream state + chunk forcing).
  * Intake gasket field storage owned by {@link GasketState#single}.</p>
  */
-public class HubBlockEntity extends BlockEntity implements ISlottedGooContainer, IGasketHolder, ICanisterAttachable {
+public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGasketHolder, ICanisterAttachable {
 
     public static final int MAX_CANISTERS = 8;
 
@@ -57,7 +57,7 @@ public class HubBlockEntity extends BlockEntity implements ISlottedGooContainer,
     private final GasketState gasketState = GasketState.single(GasketRole.RECEIVER, FACE_LABEL);
 
     /** Behavioral component owning slot arrays, handlers, and stream state. */
-    private final SlottedContainerState state;
+    private final SlottedCanisterState state;
 
     /** Creates a hub block entity at the given position.
      *
@@ -66,7 +66,7 @@ public class HubBlockEntity extends BlockEntity implements ISlottedGooContainer,
      */
     public HubBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.HUB.get(), pos, state);
-        this.state = new SlottedContainerState(
+        this.state = new SlottedCanisterState(
             MAX_CANISTERS,
             NonNullList.withSize(MAX_CANISTERS, ItemStack.EMPTY),
             () -> BlockEntitySync.markDirtyAndSync(this),
@@ -75,7 +75,7 @@ public class HubBlockEntity extends BlockEntity implements ISlottedGooContainer,
 
     /** {@inheritDoc} */
     @Override
-    public SlottedContainerState containerState() { return state; }
+    public SlottedCanisterState containerState() { return state; }
 
     /** Static tick entrypoint for the block entity ticker.
      *
@@ -137,16 +137,19 @@ public class HubBlockEntity extends BlockEntity implements ISlottedGooContainer,
     /** {@inheritDoc} Clears gasket and resets blockstate HAS_GASKET flag. */
     @Override
     public void clearGasket(GasketRole role) {
-        gasketState.clear(role, () -> {
-            if (getLevel() != null) {
-                BlockState bs = getLevel().getBlockState(getBlockPos());
-                if (bs.getValue(HubBlock.HAS_GASKET)) {
-                    getLevel().setBlock(getBlockPos(),
-                        bs.setValue(HubBlock.HAS_GASKET, false), BLOCK_UPDATE_FLAGS);
-                }
+        gasketState.clear(role, this::onGasketCleared);
+    }
+
+    /** Clears the HAS_GASKET blockstate flag and syncs to client. */
+    private void onGasketCleared() {
+        if (getLevel() != null) {
+            BlockState bs = getLevel().getBlockState(getBlockPos());
+            if (bs.getValue(HubBlock.HAS_GASKET)) {
+                getLevel().setBlock(getBlockPos(),
+                    bs.setValue(HubBlock.HAS_GASKET, false), BLOCK_UPDATE_FLAGS);
             }
-            BlockEntitySync.markDirtyAndSync(this);
-        });
+        }
+        BlockEntitySync.markDirtyAndSync(this);
     }
 
     /** {@inheritDoc} */

@@ -172,10 +172,10 @@ final class GooRadialRenderer {
      * @return the packed ARGB disabled color
      */
     private static int packDisabledColor(int r, int g, int b) {
-        r = (int) (r * DISABLED_DIM);
-        g = (int) (g * DISABLED_DIM);
-        b = (int) (b * DISABLED_DIM);
-        return (DISABLED_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
+        int dr = (int) (r * DISABLED_DIM);
+        int dg = (int) (g * DISABLED_DIM);
+        int db = (int) (b * DISABLED_DIM);
+        return (DISABLED_ALPHA << ALPHA_SHIFT) | (dr << RED_SHIFT) | (dg << GREEN_SHIFT) | db;
     }
 
     /**
@@ -187,10 +187,10 @@ final class GooRadialRenderer {
      * @return the packed ARGB hovered color
      */
     private static int packHoveredColor(int r, int g, int b) {
-        r = Math.min(MAX_CHANNEL, r + HOVER_BOOST);
-        g = Math.min(MAX_CHANNEL, g + HOVER_BOOST);
-        b = Math.min(MAX_CHANNEL, b + HOVER_BOOST);
-        return (HOVER_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
+        int hr = Math.min(MAX_CHANNEL, r + HOVER_BOOST);
+        int hg = Math.min(MAX_CHANNEL, g + HOVER_BOOST);
+        int hb = Math.min(MAX_CHANNEL, b + HOVER_BOOST);
+        return (HOVER_ALPHA << ALPHA_SHIFT) | (hr << RED_SHIFT) | (hg << GREEN_SHIFT) | hb;
     }
 
     /**

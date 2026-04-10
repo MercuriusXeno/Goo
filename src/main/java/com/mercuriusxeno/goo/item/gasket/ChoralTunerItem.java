@@ -367,16 +367,18 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
             TunerState state, Player player, ItemStack stack, Level level,
             GasketRole role, UUID gasketId, BlockPos pos, int slot,
             @Nullable String faceLabel) {
+        GasketClick clicked = new GasketClick(role, gasketId, pos, slot, faceLabel);
+        ConfirmContext confirm = new ConfirmContext(
+            state.pendingConfirm(), state.confirmTarget(), state.confirmSlot());
         UUID existingPartnerId = GasketPartnerManager.lookupPartner(level, gasketId);
 
         TunerAction action = TunerLinkLogic.resolve(
-            role, gasketId, existingPartnerId,
+            clicked, existingPartnerId,
             state.selectedRole(), state.selectedGasketId(),
-            state.pendingConfirm(), state.confirmTarget(), state.confirmSlot(),
-            pos, slot, faceLabel);
+            confirm);
 
         return TunerActionExecutor.executeAction(
-            action, state, player, stack, level, pos, slot, faceLabel);
+            action, state, player, stack, level, clicked);
     }
 
     /**

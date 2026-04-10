@@ -101,6 +101,18 @@ final class GrowthEffects {
      */
     static void shroomSpores(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel serverLevel)) { return; }
+        spreadShroomArea(level, pos);
+        serverLevel.sendParticles(ParticleTypes.SPORE_BLOSSOM_AIR,
+            pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + SHROOM_PARTICLE_Y_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET,
+            SHROOM_PARTICLE_COUNT, SHROOM_PARTICLE_H_SPREAD, SHROOM_PARTICLE_V_SPREAD, SHROOM_PARTICLE_H_SPREAD, 0.0);
+    }
+
+    /**
+     * Spreads mycelium and places mushrooms across the 5x5 area.
+     * @param level the current level containing the target area
+     * @param pos the center position of the 5x5 spore spread area
+     */
+    private static void spreadShroomArea(Level level, BlockPos pos) {
         for (int dx = -SHROOM_SPORE_RADIUS; dx <= SHROOM_SPORE_RADIUS; dx++) {
             for (int dz = -SHROOM_SPORE_RADIUS; dz <= SHROOM_SPORE_RADIUS; dz++) {
                 BlockPos target = pos.offset(dx, 0, dz);
@@ -108,9 +120,6 @@ final class GrowthEffects {
                 tryPlaceMushroom(level, target.above());
             }
         }
-        serverLevel.sendParticles(ParticleTypes.SPORE_BLOSSOM_AIR,
-            pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + SHROOM_PARTICLE_Y_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET,
-            SHROOM_PARTICLE_COUNT, SHROOM_PARTICLE_H_SPREAD, SHROOM_PARTICLE_V_SPREAD, SHROOM_PARTICLE_H_SPREAD, 0.0);
     }
 
     /**

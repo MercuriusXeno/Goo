@@ -9,7 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.world.item.ItemStack;
+import org.jspecify.annotations.Nullable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -45,34 +45,56 @@ final class CruciblePanelPainter {
      * @param be the block entity instance
      */
     static void renderPanel(PoseStack poseStack, CrucibleBlockEntity be) {
+        CrucibleSnapshot snap = buildSnapshot(be);
+        if (snap == null) { return; }
+        PanelLayout layout = measurePanelLayout(snap);
+        drawPanelWithBackground(poseStack, snap, layout);
+    }
+
+    /**
+     * Builds the crucible snapshot, or returns null if there is nothing to display.
+     *
+     * @param be the crucible block entity
+     * @return the snapshot, or null if the crucible has no displayable content
+     */
+    private static @Nullable CrucibleSnapshot buildSnapshot(CrucibleBlockEntity be) {
         GooContents reservoir = be.getReservoir();
         GooContents pool = getPoolContents(be);
         boolean hasFuel = !be.getFuelRod().isEmpty();
-        boolean hasGoo = !reservoir.isEmpty() || !pool.isEmpty();
-        if (!hasGoo && !hasFuel) { return; }
-        PanelLayout layout = measurePanelLayout(reservoir, pool, be.getFuelRod(), hasGoo, hasFuel);
-        drawPanelWithBackground(poseStack, reservoir, layout, be.getFuelRod(), hasGoo, hasFuel);
+        boolean hasGoo = hasAnyGoo(reservoir, pool);
+        if (!hasGoo && !hasFuel) { return null; }
+        GooContents total = hasGoo ? reservoir.mergeWith(pool) : GooContents.EMPTY;
+        Set<GooType> types = hasGoo ? allTypes(reservoir, pool) : Set.of();
+        return new CrucibleSnapshot(
+            reservoir, total, types, be.getFuelRod(), hasGoo, hasFuel);
+    }
+
+    /**
+     * Returns true if either the reservoir or pool contains any goo.
+     *
+     * @param reservoir the reservoir goo contents
+     * @param pool      the pool goo contents
+     * @return true if either is non-empty
+     */
+    private static boolean hasAnyGoo(GooContents reservoir, GooContents pool) {
+        return !reservoir.isEmpty() || !pool.isEmpty();
     }
 
     /**
      * Draws the panel background and content rows, then flushes the buffer.
      *
      * @param poseStack the pose stack for rendering
-     * @param reservoir the reservoir goo contents
+     * @param snap the crucible state snapshot
      * @param layout the pre-measured panel layout
-     * @param fuelRod the fuel rod item stack
-     * @param hasGoo whether goo is present
-     * @param hasFuel whether fuel is present
      */
-    private static void drawPanelWithBackground(PoseStack poseStack, GooContents reservoir,
-            PanelLayout layout, ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
+    private static void drawPanelWithBackground(PoseStack poseStack, CrucibleSnapshot snap,
+            PanelLayout layout) {
         MultiBufferSource.BufferSource buffers =
             Minecraft.getInstance().renderBuffers().bufferSource();
         float halfW = layout.panelWidth / HALF_F;
-        InWorldHud.renderBackground(poseStack, buffers, -halfW, -layout.panelHeight,
-            layout.panelWidth, layout.panelHeight);
-        renderContentAtOrigin(poseStack, buffers, reservoir, layout, halfW,
-            fuelRod, hasGoo, hasFuel);
+        InWorldHud.renderBackground(poseStack, buffers,
+            new PanelRect(-halfW, -layout.panelHeight, layout.panelWidth, layout.panelHeight));
+        renderContentAtOrigin(poseStack, buffers, snap, layout, halfW);
         buffers.endBatch();
     }
 
@@ -81,60 +103,43 @@ final class CruciblePanelPainter {
      *
      * @param poseStack the pose stack for rendering
      * @param buffers the buffer source
-     * @param reservoir the reservoir goo contents
+     * @param snap the crucible state snapshot
      * @param layout the pre-measured panel layout
      * @param halfW half the panel width
-     * @param fuelRod the fuel rod item stack
-     * @param hasGoo whether goo is present
-     * @param hasFuel whether fuel is present
      */
     private static void renderContentAtOrigin(PoseStack poseStack, MultiBufferSource buffers,
-            GooContents reservoir, PanelLayout layout, float halfW,
-            ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
+            CrucibleSnapshot snap, PanelLayout layout, float halfW) {
         float contentX = -halfW + InWorldHud.BORDER;
         float contentY = -layout.panelHeight + InWorldHud.BORDER;
-        renderPanelContent(poseStack, buffers, reservoir, layout.total, layout.types,
-            fuelRod, hasGoo, hasFuel, contentX, contentY);
+        renderPanelContent(poseStack, buffers, snap, contentX, contentY);
     }
 
     /**
-     * Measures panel dimensions from the crucible's goo and fuel state.
+     * Measures panel dimensions from the crucible snapshot.
      *
-     * @param reservoir the reservoir contents
-     * @param pool the pool contents
-     * @param fuelRod the fuel rod stack
-     * @param hasGoo whether goo is present
-     * @param hasFuel whether fuel is present
+     * @param snap the crucible state snapshot
      * @return the computed layout
      */
-    private static PanelLayout measurePanelLayout(GooContents reservoir, GooContents pool,
-            ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
-        GooContents total = hasGoo ? reservoir.mergeWith(pool) : GooContents.EMPTY;
-        Set<GooType> types = hasGoo ? allTypes(reservoir, pool) : Set.of();
-        float contentWidth = measureContentWidth(reservoir, total, types, fuelRod, hasGoo, hasFuel);
-        int rowCount = types.size() + (hasFuel ? 1 : 0);
+    private static PanelLayout measurePanelLayout(CrucibleSnapshot snap) {
+        float contentWidth = measureContentWidth(snap);
+        int rowCount = snap.types().size() + (snap.hasFuel() ? 1 : 0);
         return new PanelLayout(
             contentWidth + InWorldHud.BORDER * HALF,
-            InWorldHud.BORDER * HALF + rowCount * ROW_HEIGHT,
-            total, types);
+            InWorldHud.BORDER * HALF + rowCount * ROW_HEIGHT);
     }
 
     /**
      * Measures the widest content row across goo and fuel rows.
      *
-     * @param reservoir the reservoir goo contents
-     * @param total the merged total goo contents
-     * @param types the set of goo types present
-     * @param fuelRod the fuel rod item stack
-     * @param hasGoo whether goo is present
-     * @param hasFuel whether fuel is present
+     * @param snap the crucible state snapshot
      * @return the maximum content width in pixels
      */
-    private static float measureContentWidth(GooContents reservoir, GooContents total,
-            Set<GooType> types, ItemStack fuelRod, boolean hasGoo, boolean hasFuel) {
+    private static float measureContentWidth(CrucibleSnapshot snap) {
         Font font = Minecraft.getInstance().font;
-        float gooWidth = hasGoo ? measureMaxRowWidth(font, reservoir, total, types) : 0;
-        float fuelWidth = hasFuel ? CrucibleFuelDisplay.measureFuelRowWidth(font, fuelRod) : 0;
+        float gooWidth = snap.hasGoo()
+            ? measureMaxRowWidth(font, snap.reservoir(), snap.total(), snap.types()) : 0;
+        float fuelWidth = snap.hasFuel()
+            ? CrucibleFuelDisplay.measureFuelRowWidth(font, snap.fuelRod()) : 0;
         return Math.max(gooWidth, fuelWidth);
     }
 
@@ -143,25 +148,17 @@ final class CruciblePanelPainter {
      *
      * @param poseStack the pose stack
      * @param buffers the buffer source
-     * @param reservoir the reservoir contents
-     * @param total the merged total contents
-     * @param types the goo types present
-     * @param fuelRod the fuel rod stack
-     * @param hasGoo whether goo is present
-     * @param hasFuel whether fuel is present
+     * @param snap the crucible state snapshot
      * @param contentX the left X
      * @param contentY the top Y
      */
     private static void renderPanelContent(PoseStack poseStack, MultiBufferSource buffers,
-            GooContents reservoir, GooContents total, Set<GooType> types,
-            ItemStack fuelRod, boolean hasGoo, boolean hasFuel,
-            float contentX, float contentY) {
+            CrucibleSnapshot snap, float contentX, float contentY) {
         Font font = Minecraft.getInstance().font;
-        int gooRows = renderGooRowsIfPresent(poseStack, font, buffers,
-            reservoir, total, types, hasGoo, contentX, contentY);
-        if (hasFuel) {
+        int gooRows = renderGooRowsIfPresent(poseStack, font, buffers, snap, contentX, contentY);
+        if (snap.hasFuel()) {
             CrucibleFuelDisplay.renderFuelRow(poseStack, font, buffers,
-                fuelRod, contentX, contentY + gooRows * ROW_HEIGHT);
+                snap.fuelRod(), contentX, contentY + gooRows * ROW_HEIGHT);
         }
     }
 
@@ -171,20 +168,16 @@ final class CruciblePanelPainter {
      * @param poseStack the pose stack for rendering
      * @param font the font renderer
      * @param buffers the buffer source
-     * @param reservoir the reservoir goo contents
-     * @param total the merged total goo contents
-     * @param types the set of goo types present
-     * @param hasGoo whether goo is present
+     * @param snap the crucible state snapshot
      * @param x the left X coordinate
      * @param y the top Y coordinate
      * @return the number of goo rows rendered
      */
     private static int renderGooRowsIfPresent(PoseStack poseStack, Font font,
-            MultiBufferSource buffers, GooContents reservoir, GooContents total,
-            Set<GooType> types, boolean hasGoo, float x, float y) {
-        if (!hasGoo) { return 0; }
-        renderRows(poseStack, font, buffers, reservoir, total, types, x, y);
-        return types.size();
+            MultiBufferSource buffers, CrucibleSnapshot snap, float x, float y) {
+        if (!snap.hasGoo()) { return 0; }
+        renderRows(poseStack, font, buffers, snap.reservoir(), snap.total(), snap.types(), x, y);
+        return snap.types().size();
     }
 
     /**
@@ -341,8 +334,7 @@ final class CruciblePanelPainter {
         return x + font.width(text);
     }
 
-    /** Pre-computed panel dimensions and merged contents for rendering. */
-    record PanelLayout(float panelWidth, float panelHeight,
-            GooContents total, Set<GooType> types) {
+    /** Pre-computed panel dimensions for rendering. */
+    record PanelLayout(float panelWidth, float panelHeight) {
     }
 }

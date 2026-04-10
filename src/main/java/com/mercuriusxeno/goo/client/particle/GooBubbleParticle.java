@@ -73,9 +73,24 @@ public final class GooBubbleParticle extends SingleQuadParticle {
         super(level, x, y, z, sprites.first());
         this.sprites = sprites;
         this.sourcePos = BlockPos.containing(x, y, z);
+        applyColor(red, green, blue);
+        applyDefaults();
+    }
+
+    /**
+     * Sets the RGB color tint on this particle.
+     * @param red the red color component [0, 1]
+     * @param green the green color component [0, 1]
+     * @param blue the blue color component [0, 1]
+     */
+    private void applyColor(float red, float green, float blue) {
         this.rCol = red;
         this.gCol = green;
         this.bCol = blue;
+    }
+
+    /** Initializes lifetime, size, velocity, and physics to bubble defaults. */
+    private void applyDefaults() {
         this.lifetime = POP_END;
         this.quadSize = INITIAL_QUAD_SIZE;
         this.xd = 0;
@@ -128,10 +143,14 @@ public final class GooBubbleParticle extends SingleQuadParticle {
 
         if (tickSourceCrucible()) {
             skipToPop();
-            this.age++;
-            return;
+        } else {
+            tickPhase();
         }
+        this.age++;
+    }
 
+    /** Dispatches to the correct lifecycle phase handler based on current age. */
+    private void tickPhase() {
         if (age < EXPAND_END) {
             tickExpand();
         } else if (age < LINGER_END) {
@@ -141,8 +160,6 @@ public final class GooBubbleParticle extends SingleQuadParticle {
         } else {
             tickPop();
         }
-
-        this.age++;
     }
 
     /** EXPAND: frames 0-2 for first 3 ticks, then dome for remaining 7. */

@@ -41,7 +41,7 @@ final class HubSerialization {
      * @param output the value output to write to
      */
     static void saveStreamState(HubBlockEntity be, ValueOutput output) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         CompoundTag tag = new CompoundTag();
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             appendSlotStream(state, i, tag);
@@ -57,12 +57,12 @@ final class HubSerialization {
      * @param slot  the slot index
      * @param tag   the parent compound tag to append to
      */
-    private static void appendSlotStream(SlottedContainerState state, int slot, CompoundTag tag) {
-        if (state.slotStreamType[slot] == null) { return; }
+    private static void appendSlotStream(SlottedCanisterState state, int slot, CompoundTag tag) {
+        if (state.slots.streamType()[slot] == null) { return; }
         CompoundTag entry = new CompoundTag();
-        entry.putInt(TAG_TYPE, state.slotStreamType[slot].ordinal());
-        entry.putInt(TAG_RATE, state.slotStreamRate[slot]);
-        entry.putLong(TAG_TICK, state.slotStreamTick[slot]);
+        entry.putInt(TAG_TYPE, state.slots.streamType()[slot].ordinal());
+        entry.putInt(TAG_RATE, state.slots.streamRate()[slot]);
+        entry.putLong(TAG_TICK, state.slots.streamTick()[slot]);
         tag.put(String.valueOf(slot), entry);
     }
 
@@ -73,7 +73,7 @@ final class HubSerialization {
      * @param input the value input to read from
      */
     static void loadStreamState(HubBlockEntity be, ValueInput input) {
-        SlottedContainerState state = be.containerState();
+        SlottedCanisterState state = be.containerState();
         input.read(TAG_STREAMS, CompoundTag.CODEC).ifPresentOrElse(
             tag -> restoreAllSlotStreams(state, tag),
             () -> clearAllSlotStreams(state));
@@ -84,7 +84,7 @@ final class HubSerialization {
      * @param state the container state
      * @param tag   the compound tag containing slot stream data
      */
-    private static void restoreAllSlotStreams(SlottedContainerState state, CompoundTag tag) {
+    private static void restoreAllSlotStreams(SlottedCanisterState state, CompoundTag tag) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             restoreSlotStream(state, i, tag);
         }
@@ -96,25 +96,34 @@ final class HubSerialization {
      * @param slot  the slot index
      * @param tag   the parent compound tag
      */
-    private static void restoreSlotStream(SlottedContainerState state, int slot, CompoundTag tag) {
+    private static void restoreSlotStream(SlottedCanisterState state, int slot, CompoundTag tag) {
         String key = String.valueOf(slot);
         if (!tag.contains(key)) {
             clearSlotStream(state, slot);
             return;
         }
-        CompoundTag entry = tag.getCompoundOrEmpty(key);
+        applySlotStreamEntry(state, slot, tag.getCompoundOrEmpty(key));
+    }
+
+    /**
+     * Applies deserialized stream fields from a compound tag to a single slot.
+     * @param state the container state to update
+     * @param slot the slot index
+     * @param entry the compound tag containing type, rate, and tick fields
+     */
+    private static void applySlotStreamEntry(SlottedCanisterState state, int slot, CompoundTag entry) {
         int ordinal = entry.getIntOr(TAG_TYPE, INVALID_ORDINAL);
         GooType[] types = GooType.values();
-        state.slotStreamType[slot] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
-        state.slotStreamRate[slot] = entry.getIntOr(TAG_RATE, 0);
-        state.slotStreamTick[slot] = entry.getLongOr(TAG_TICK, 0);
+        state.slots.streamType()[slot] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
+        state.slots.streamRate()[slot] = entry.getIntOr(TAG_RATE, 0);
+        state.slots.streamTick()[slot] = entry.getLongOr(TAG_TICK, 0);
     }
 
     /** Clears stream state for all slots.
      *
      * @param state the container state
      */
-    private static void clearAllSlotStreams(SlottedContainerState state) {
+    private static void clearAllSlotStreams(SlottedCanisterState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             clearSlotStream(state, i);
         }
@@ -126,10 +135,10 @@ final class HubSerialization {
      * @param state the container state
      * @param slot  the slot index
      */
-    private static void clearSlotStream(SlottedContainerState state, int slot) {
-        state.slotStreamType[slot] = null;
-        state.slotStreamRate[slot] = 0;
-        state.slotStreamTick[slot] = 0;
+    private static void clearSlotStream(SlottedCanisterState state, int slot) {
+        state.slots.streamType()[slot] = null;
+        state.slots.streamRate()[slot] = 0;
+        state.slots.streamTick()[slot] = 0;
     }
 
     /**
@@ -154,7 +163,7 @@ final class HubSerialization {
      * @param pos         the block position
      */
     private static void forceSlotTransmitterChunks(
-            SlottedContainerState state, IGasketRegistryAccess access,
+            SlottedCanisterState state, IGasketRegistryAccess access,
             ServerLevel serverLevel, BlockPos pos) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             ItemStack stack = state.canisters.get(i);

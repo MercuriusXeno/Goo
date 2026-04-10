@@ -1,10 +1,8 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.client.GooRenderUtil;
-import com.mercuriusxeno.goo.client.model.CanisterGeometry;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Direction;
 
 /**
  * Fluid geometry and stack-fill computation helpers for {@link VatBlockEntityRenderer}.
@@ -38,14 +36,11 @@ final class VatFluidRenderer {
      * Computes local floor/ceiling from stack position, then determines
      * how much of this vat's interior is submerged.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param type the goo type
+     * @param ctx   the render context
+     * @param type  the goo type
      * @param state the block state
      */
-    static void renderFluid(PoseStack.Pose pose, VertexConsumer c,
-            int light, com.mercuriusxeno.goo.GooType type, VatRenderState state) {
+    static void renderFluid(RenderCtx ctx, com.mercuriusxeno.goo.GooType type, VatRenderState state) {
         float localFloor = state.vatBelow ? 0f : VatBlockEntityRenderer.BASE_FLOOR;
         float localCeiling = state.vatAbove ? 1.0f : VatBlockEntityRenderer.CAP_CEILING;
         float localFill = computeLocalFill(state, localFloor, localCeiling);
@@ -53,8 +48,8 @@ final class VatFluidRenderer {
 
         CuboidBounds b = computeVatCuboidBounds(state, localFloor, localFill);
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        renderVatTopFaces(pose, c, light, b, sprite, localCeiling - localFloor, localFill);
-        renderVatSideFaces(pose, c, light, b, sprite, localCeiling - localFloor);
+        renderVatTopFaces(ctx, b, sprite, localCeiling - localFloor, localFill);
+        renderVatSideFaces(ctx, b, sprite, localCeiling - localFloor);
     }
 
     /**
@@ -77,50 +72,54 @@ final class VatFluidRenderer {
 
     /**
      * Renders the top/bottom faces at the air-liquid interface if not fully submerged.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param b      the precomputed fluid cuboid bounds
-     * @param sprite the fluid texture atlas sprite
+     *
+     * @param ctx         the render context
+     * @param b           the precomputed fluid cuboid bounds
+     * @param sprite      the fluid texture atlas sprite
      * @param localHeight the total vat height in block units
      * @param localFill   the fill height in block units
      */
-    private static void renderVatTopFaces(PoseStack.Pose pose, VertexConsumer c,
-            int light, CuboidBounds b, TextureAtlasSprite sprite,
-            float localHeight, float localFill) {
+    private static void renderVatTopFaces(RenderCtx ctx, CuboidBounds b,
+            TextureAtlasSprite sprite, float localHeight, float localFill) {
         boolean isFullySubmerged = localFill >= localHeight - SUBMERSION_EPSILON;
         if (isFullySubmerged) { return; }
-        float u0 = sprite.getU0();
-        float u1 = sprite.getU1();
-        float v0 = sprite.getV0();
-        float v1 = sprite.getV1();
-        GooRenderUtil.liquidSurface(pose, c, light, GooRenderUtil.OPAQUE_WHITE,
-            b.x0(), b.z0(), b.x1(), b.z1(), b.yTop(), u0, u1, v0, v1);
-        GooRenderUtil.liquidSurfaceDown(pose, c, light, GooRenderUtil.OPAQUE_WHITE,
-            b.x0(), b.z0(), b.x1(), b.z1(), b.yTop(), u0, u1, v0, v1);
+        GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(
+            sprite.getU0(), sprite.getV0(), sprite.getU1(), sprite.getV1());
+        ctx.liquidSurface(GooRenderUtil.OPAQUE_WHITE, b, uv);
+        ctx.liquidSurfaceDown(GooRenderUtil.OPAQUE_WHITE, b, uv);
     }
 
     /**
      * Renders the four side faces with UV pinned at the bottom.
-     * @param pose the current pose matrix entry
-     * @param c    the vertex consumer for geometry emission
-     * @param light the packed light level for shading
-     * @param b      the precomputed fluid cuboid bounds
-     * @param sprite the fluid texture atlas sprite
+     *
+     * @param ctx         the render context
+     * @param b           the precomputed fluid cuboid bounds
+     * @param sprite      the fluid texture atlas sprite
      * @param localHeight the total vat height in block units
      */
-    private static void renderVatSideFaces(PoseStack.Pose pose, VertexConsumer c,
-            int light, CuboidBounds b, TextureAtlasSprite sprite, float localHeight) {
-        float u0 = sprite.getU0();
-        float u1 = sprite.getU1();
+    private static void renderVatSideFaces(RenderCtx ctx, CuboidBounds b,
+            TextureAtlasSprite sprite, float localHeight) {
+        GooRenderUtil.UvRect uv = computeSideUv(sprite, b, localHeight);
+        ctx.emitFace(b, uv, Direction.NORTH);
+        ctx.emitFace(b, uv, Direction.SOUTH);
+        ctx.emitFace(b, uv, Direction.WEST);
+        ctx.emitFace(b, uv, Direction.EAST);
+    }
+
+    /**
+     * Computes UV rect for side faces with the V range pinned at the bottom.
+     * @param sprite the fluid texture atlas sprite
+     * @param b the precomputed fluid cuboid bounds
+     * @param localHeight the total vat interior height in block units
+     * @return a UV rect with V pinned at the bottom edge
+     */
+    private static GooRenderUtil.UvRect computeSideUv(TextureAtlasSprite sprite,
+            CuboidBounds b, float localHeight) {
         float v0 = sprite.getV0();
         float v1 = sprite.getV1();
         float fillRatio = (b.yTop() - b.yBot()) / localHeight;
         float sideV0 = v1 - fillRatio * (v1 - v0);
-        CanisterGeometry.faceNorth(pose, c, light, b.x0(), b.yBot(), b.z0(), b.x1(), b.yTop(), u0, u1, sideV0, v1);
-        CanisterGeometry.faceSouth(pose, c, light, b.x0(), b.yBot(), b.z1(), b.x1(), b.yTop(), u0, u1, sideV0, v1);
-        CanisterGeometry.faceWest(pose, c, light, b.x0(), b.yBot(), b.z0(), b.yTop(), b.z1(), u0, u1, sideV0, v1);
-        CanisterGeometry.faceEast(pose, c, light, b.x1(), b.yBot(), b.z0(), b.yTop(), b.z1(), u0, u1, sideV0, v1);
+        return new GooRenderUtil.UvRect(sprite.getU0(), sideV0, sprite.getU1(), v1);
     }
 
     /**

@@ -107,9 +107,19 @@ public final class CrucibleHudRenderer {
             beginEmerge(target);
         } else if (target != null && retracting) {
             retracting = false;
-        } else if (target == null && trackedPos != null && !retracting) {
+        } else if (shouldBeginRetract(target)) {
             retracting = true;
         }
+    }
+
+    /**
+     * Returns true when the crosshair has left and retract should begin.
+     *
+     * @param target the current aim target, or null if not aiming at a crucible
+     * @return true if retract animation should start
+     */
+    private static boolean shouldBeginRetract(@Nullable BlockPos target) {
+        return target == null && trackedPos != null && !retracting;
     }
 
     /**
@@ -165,13 +175,24 @@ public final class CrucibleHudRenderer {
      */
     private static @Nullable BlockPos getTargetPos() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.hitResult == null) { return null; }
-        if (mc.hitResult.getType() != HitResult.Type.BLOCK) { return null; }
-        BlockHitResult hit = (BlockHitResult) mc.hitResult;
+        BlockHitResult hit = getBlockHitResult(mc);
+        if (hit == null) { return null; }
         BlockPos pos = hit.getBlockPos();
         if (!(mc.level.getBlockState(pos).getBlock() instanceof CrucibleBlock)) { return null; }
         if (hitsBelowBasin(hit, pos)) { return null; }
         return pos;
+    }
+
+    /**
+     * Returns the current block hit result, or null if the crosshair is not targeting a block.
+     *
+     * @param mc the Minecraft client instance
+     * @return the block hit result, or null
+     */
+    private static @Nullable BlockHitResult getBlockHitResult(Minecraft mc) {
+        if (mc.level == null || mc.hitResult == null) { return null; }
+        if (mc.hitResult.getType() != HitResult.Type.BLOCK) { return null; }
+        return (BlockHitResult) mc.hitResult;
     }
 
     /**

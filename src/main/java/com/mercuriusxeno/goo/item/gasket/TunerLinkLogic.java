@@ -36,50 +36,47 @@ public final class TunerLinkLogic {
     /**
      * Resolves the tuner action for a click on a gasket.
      *
-     * @param clickedRole the role of the gasket that was clicked
-     * @param clickedGasketId the UUID of the clicked gasket
+     * @param clicked           the gasket face that was targeted
      * @param existingPartnerId the existing partner of the clicked gasket, or null
-     * @param carriedRole the role stored in the tuner's selection, or null if empty
-     * @param carriedGasketId the gasket ID stored in the tuner's selection, or null
-     * @param pendingConfirm the current pending confirmation state
-     * @param confirmTarget the position being confirmed, or null
-     * @param confirmSlot the slot being confirmed
-     * @param clickedPos the position of the clicked block
-     * @param clickedSlot the slot of the clicked block
-     * @param clickedFaceLabel the face label of the clicked gasket
+     * @param carriedRole       the role stored in the tuner's selection, or null if empty
+     * @param carriedGasketId   the gasket ID stored in the tuner's selection, or null
+     * @param confirm           the pending confirmation context
      * @return the action to take
      */
     public static TunerAction resolve(
-            GasketRole clickedRole,
-            UUID clickedGasketId,
+            GasketClick clicked,
             @Nullable UUID existingPartnerId,
             @Nullable GasketRole carriedRole,
             @Nullable UUID carriedGasketId,
-            ConfirmAction pendingConfirm,
-            @Nullable BlockPos confirmTarget,
-            int confirmSlot,
-            BlockPos clickedPos,
-            int clickedSlot,
-            @Nullable String clickedFaceLabel) {
-
+            ConfirmContext confirm) {
         boolean hasCarried = carriedRole != null && carriedGasketId != null;
-        boolean sameTarget = isSameTarget(confirmTarget, confirmSlot,
-            clickedPos, clickedSlot);
-
-        if (hasCarried && carriedRole != clickedRole) {
-            return resolveOppositeRole(clickedRole, clickedGasketId,
-                carriedGasketId);
+        boolean sameTarget = isSameTarget(confirm, clicked);
+        if (hasCarried) {
+            return resolveWithCarried(clicked, carriedRole, carriedGasketId,
+                confirm.action(), sameTarget);
         }
+        return resolveNoCarried(clicked, existingPartnerId,
+            confirm.action(), sameTarget);
+    }
 
-        if (hasCarried && carriedRole == clickedRole) {
-            return resolveSameRole(clickedRole, clickedGasketId,
-                clickedPos, clickedSlot, clickedFaceLabel,
-                pendingConfirm, sameTarget);
+    /**
+     * Dispatches to opposite-role or same-role resolution when a carried selection exists.
+     *
+     * @param clicked        the gasket face that was targeted
+     * @param carriedRole    the role stored in the tuner's selection
+     * @param carriedGasketId the gasket ID stored in the tuner's selection
+     * @param pendingConfirm the current pending confirmation
+     * @param sameTarget     whether the confirm target matches
+     * @return the resolved action
+     */
+    private static TunerAction resolveWithCarried(
+            GasketClick clicked,
+            GasketRole carriedRole, UUID carriedGasketId,
+            ConfirmAction pendingConfirm, boolean sameTarget) {
+        if (carriedRole != clicked.role()) {
+            return resolveOppositeRole(clicked.role(), clicked.gasketId(), carriedGasketId);
         }
-
-        return resolveNoCarried(clickedRole, clickedGasketId,
-            existingPartnerId, clickedPos, clickedSlot, clickedFaceLabel,
-            pendingConfirm, sameTarget);
+        return resolveSameRole(clicked, pendingConfirm, sameTarget);
     }
 
     /**
@@ -102,74 +99,58 @@ public final class TunerLinkLogic {
     /**
      * Carried same role: prompt or confirm replacement.
      *
-     * @param clickedRole      the role of the clicked gasket
-     * @param clickedGasketId  the UUID of the clicked gasket
-     * @param clickedPos       the block position of the click
-     * @param clickedSlot      the slot of the click
-     * @param clickedFaceLabel the face label, or null
-     * @param pendingConfirm   the current pending confirmation
-     * @param sameTarget       whether the confirm target matches
+     * @param clicked        the gasket face that was targeted
+     * @param pendingConfirm the current pending confirmation
+     * @param sameTarget     whether the confirm target matches
      * @return a PromptReplace or ConfirmReplace action
      */
     private static TunerAction resolveSameRole(
-            GasketRole clickedRole, UUID clickedGasketId,
-            BlockPos clickedPos, int clickedSlot,
-            @Nullable String clickedFaceLabel,
+            GasketClick clicked,
             ConfirmAction pendingConfirm, boolean sameTarget) {
         if (pendingConfirm == ConfirmAction.REPLACE_LINK && sameTarget) {
-            return new TunerAction.ConfirmReplace(clickedGasketId,
-                clickedPos, clickedSlot, clickedRole, clickedFaceLabel);
+            return new TunerAction.ConfirmReplace(clicked.gasketId(),
+                clicked.pos(), clicked.slot(), clicked.role(), clicked.faceLabel());
         }
         return new TunerAction.PromptReplace(
-            PROMPT_REPLACE_PREFIX + clickedRole.getSerializedName()
+            PROMPT_REPLACE_PREFIX + clicked.role().getSerializedName()
                 + PROMPT_REPLACE_SUFFIX);
     }
 
     /**
      * No carried selection: sever, prompt sever, or start awaiting.
      *
-     * @param clickedRole      the role of the clicked gasket
-     * @param clickedGasketId  the UUID of the clicked gasket
+     * @param clicked           the gasket face that was targeted
      * @param existingPartnerId the existing partner UUID, or null
-     * @param clickedPos       the block position of the click
-     * @param clickedSlot      the slot of the click
-     * @param clickedFaceLabel the face label, or null
-     * @param pendingConfirm   the current pending confirmation
-     * @param sameTarget       whether the confirm target matches
+     * @param pendingConfirm    the current pending confirmation
+     * @param sameTarget        whether the confirm target matches
      * @return the appropriate action
      */
     private static TunerAction resolveNoCarried(
-            GasketRole clickedRole, UUID clickedGasketId,
+            GasketClick clicked,
             @Nullable UUID existingPartnerId,
-            BlockPos clickedPos, int clickedSlot,
-            @Nullable String clickedFaceLabel,
             ConfirmAction pendingConfirm, boolean sameTarget) {
         if (existingPartnerId != null) {
             if (pendingConfirm == ConfirmAction.SEVER_LINK && sameTarget) {
-                return new TunerAction.ConfirmSever(clickedGasketId);
+                return new TunerAction.ConfirmSever(clicked.gasketId());
             }
             return new TunerAction.PromptSever(
-                PROMPT_SEVER_PREFIX + clickedRole.getSerializedName()
+                PROMPT_SEVER_PREFIX + clicked.role().getSerializedName()
                     + PROMPT_SEVER_SUFFIX);
         }
-        return new TunerAction.StartAwaiting(clickedRole, clickedGasketId,
-            clickedPos, clickedSlot, clickedFaceLabel);
+        return new TunerAction.StartAwaiting(clicked.role(), clicked.gasketId(),
+            clicked.pos(), clicked.slot(), clicked.faceLabel());
     }
 
     /**
      * Returns true if the confirm target matches the clicked position and slot.
      *
-     * @param confirmTarget the position being confirmed, or null
-     * @param confirmSlot   the slot being confirmed
-     * @param clickedPos    the clicked block position
-     * @param clickedSlot   the clicked slot
+     * @param confirm the pending confirmation context
+     * @param clicked the gasket face that was targeted
      * @return true if both position and slot match
      */
-    private static boolean isSameTarget(
-            @Nullable BlockPos confirmTarget, int confirmSlot,
-            BlockPos clickedPos, int clickedSlot) {
-        if (confirmTarget == null) { return false; }
-        return confirmTarget.equals(clickedPos) && confirmSlot == clickedSlot;
+    private static boolean isSameTarget(ConfirmContext confirm, GasketClick clicked) {
+        if (confirm.target() == null) { return false; }
+        return confirm.target().equals(clicked.pos()) && confirm.slot() == clicked.slot();
     }
 
     /**

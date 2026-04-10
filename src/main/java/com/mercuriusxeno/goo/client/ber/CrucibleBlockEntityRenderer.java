@@ -83,6 +83,15 @@ public class CrucibleBlockEntityRenderer
     private static void extractPoolState(CrucibleBlockEntity be, CrucibleRenderState state) {
         state.poolVolume = be.getPoolVolume();
         state.reservoirVolume = be.getReservoir().totalVolume();
+        extractCrossfade(be, state);
+    }
+
+    /**
+     * Ticks the dominant-type fader and copies crossfade fields to the render state.
+     * @param be the crucible block entity
+     * @param state the render state to populate
+     */
+    private static void extractCrossfade(CrucibleBlockEntity be, CrucibleRenderState state) {
         if (be.getLevel() != null) {
             be.dominantTypeFader.tick(
                 be.getReservoir().largestType(), be.getLevel().getGameTime());
