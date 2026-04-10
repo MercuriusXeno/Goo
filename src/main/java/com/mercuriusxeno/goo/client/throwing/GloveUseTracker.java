@@ -63,12 +63,14 @@ public final class GloveUseTracker {
         trackGloveHold(player);
         tickAvailabilityCheck(player);
         BlobFlightManager.tick();
+        ThrowFreezeState.tick();
     }
 
     /** Clears hold and availability state when no player is present. */
     private static void resetState() {
         holdTicks = 0;
         selectedTypeAvailable = false;
+        ThrowFreezeState.clear();
     }
 
     /**

@@ -7,9 +7,11 @@ import com.mercuriusxeno.goo.block.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.FrostFieldBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
+import com.mercuriusxeno.goo.block.MagickedIceBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.VatBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -98,6 +100,20 @@ public class GooBlocks {
                     .noLootTable()
                     .noOcclusion()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
+
+    /**
+     * Magicked ice: a non-melting mod variant of vanilla ice, placed by frost
+     * chain effects under the coverage of a {@link FrostFieldBlock}. Visually,
+     * audibly, and mechanically identical to {@code minecraft:ice} (same
+     * texture, model, sound, friction, mining behavior). Silk-touch drops a
+     * vanilla ice item via the inherited loot table override; the block is
+     * not obtainable in its true form. The frost field's thaw pass swaps it
+     * back to vanilla ice on expiry so normal melting can resume.
+     */
+    public static final DeferredBlock<MagickedIceBlock> MAGICKED_ICE = BLOCKS.registerBlock(
+            "magicked_ice", MagickedIceBlock::new,
+            () -> BlockBehaviour.Properties.ofFullCopy(Blocks.ICE)
+                    .overrideLootTable(Blocks.ICE.getLootTable()));
 
     /** Goo type to vanilla map color mapping. */
     private static final Map<GooType, MapColor> GOO_MAP_COLORS = new EnumMap<>(Map.ofEntries(

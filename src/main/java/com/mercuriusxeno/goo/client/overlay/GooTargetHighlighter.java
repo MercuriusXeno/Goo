@@ -6,12 +6,14 @@ import com.mercuriusxeno.goo.ThrowArc;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
 import com.mercuriusxeno.goo.client.throwing.GloveUseTracker;
+import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.Entity;
@@ -63,10 +65,15 @@ public final class GooTargetHighlighter {
     /** Sentinel for no valid hand position frame. */
     private static final long NO_FRAME = -1;
 
-    // --- Entity outline state ---
+    // --- Aim hit state ---
 
-    /** The entity currently targeted by the glove, or null. Updated each tick. */
-    private static @Nullable Entity targetedEntity;
+    /**
+     * The aim hit currently resolved by the glove, or null. Updated each
+     * tick. Used as the sticky-retention seed for the next frame and as
+     * the source of truth for both the entity outline modifier and the
+     * ChainMarker BER highlighting accessor.
+     */
+    private static AimAssistResolver.@Nullable AimHit lastAimHit;
 
     /** Opaque ARGB outline color for the targeted entity, or 0 if none. */
     private static int targetOutlineColor;
@@ -103,24 +110,22 @@ public final class GooTargetHighlighter {
         updateTarget(mc.player, selectedType);
     }
 
-    /** Resets entity target and outline color when no valid aim exists. */
+    /** Resets aim hit and outline color when no valid aim exists. */
     private static void clearTarget() {
-        targetedEntity = null;
+        lastAimHit = null;
         targetOutlineColor = 0;
     }
 
     /**
-     * Resolves aim and updates the targeted entity and outline color.
+     * Resolves aim and updates the tracked aim hit and outline color.
      *
      * @param player       the local player
      * @param selectedType the currently selected goo type
      */
     private static void updateTarget(Player player, GooType selectedType) {
         TargetResult target = resolveTarget(player, 1.0f);
-        targetedEntity = (target instanceof TargetResult.EntityTarget et)
-                ? et.entity() : null;
-        targetOutlineColor = (targetedEntity != null)
-                ? ARGB.opaque(selectedType.getColor()) : 0;
+        boolean hasEntity = target instanceof TargetResult.EntityTarget;
+        targetOutlineColor = hasEntity ? ARGB.opaque(selectedType.getColor()) : 0;
     }
 
     /**
@@ -132,9 +137,25 @@ public final class GooTargetHighlighter {
      * @param state the block state
      */
     public static void modifyEntityRenderState(Entity entity, EntityRenderState state) {
-        if (entity == targetedEntity && targetOutlineColor != 0) {
+        if (targetOutlineColor == 0) { return; }
+        if (lastAimHit instanceof AimAssistResolver.AimHit.EntityHit eh
+                && eh.entity() == entity) {
             state.outlineColor = targetOutlineColor;
         }
+    }
+
+    /**
+     * Returns true if the chain-marker block at the given position is the
+     * current cone-assisted aim target. Consumed by {@code ChainMarkerBER}
+     * to persist the "targeted" visual across the freeze window and through
+     * the eager cone scan.
+     *
+     * @param pos the chain marker block position
+     * @return true if the aim assist is currently locked onto this marker
+     */
+    public static boolean isChainMarkerTargeted(BlockPos pos) {
+        return lastAimHit instanceof AimAssistResolver.AimHit.ChainMarkerHit cmh
+                && cmh.pos().equals(pos);
     }
 
     // --- Target resolution (public API for throw system) ---
@@ -149,6 +170,14 @@ public final class GooTargetHighlighter {
      * @return entity target, block face target, or NONE
      */
     public static TargetResult resolveTarget(Player player, float partialTick) {
+        // Sneak always cancels the post-throw freeze, matching the existing
+        // "shift bypasses aim assist" rule at line 169 below.
+        if (player.isShiftKeyDown()) {
+            ThrowFreezeState.clear();
+        } else {
+            TargetResult frozen = ThrowFreezeState.getFrozenTarget();
+            if (frozen != null) { return frozen; }
+        }
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 reach = eyePos.add(player.getViewVector(partialTick).scale(MAX_RANGE));
         TargetResult entityResult = resolveEntityTarget(player, eyePos, reach);
@@ -157,18 +186,30 @@ public final class GooTargetHighlighter {
     }
 
     /**
-     * Attempts entity targeting unless the player is sneaking.
+     * Attempts aim-assisted targeting (entities and chain markers) unless
+     * the player is sneaking. Updates the sticky seed {@code lastAimHit}
+     * as a side effect so the next frame can honor retention.
      *
      * @param player the local player
      * @param eyePos the eye position
      * @param reach  the maximum reach endpoint
-     * @return an entity target result, or null if none found or sneaking
+     * @return an entity or chain marker target result, or null if none / sneaking
      */
     private static @Nullable TargetResult resolveEntityTarget(
             Player player, Vec3 eyePos, Vec3 reach) {
-        if (player.isShiftKeyDown()) { return null; }
-        Entity entityHit = AimAssistResolver.findClosestEntity(player, eyePos, reach, targetedEntity);
-        if (entityHit != null) { return TargetResult.entity(entityHit); }
+        if (player.isShiftKeyDown()) {
+            lastAimHit = null;
+            return null;
+        }
+        AimAssistResolver.AimHit hit = AimAssistResolver.findClosestAimHit(
+                player, eyePos, reach, lastAimHit);
+        lastAimHit = hit;
+        if (hit instanceof AimAssistResolver.AimHit.EntityHit eh) {
+            return TargetResult.entity(eh.entity());
+        }
+        if (hit instanceof AimAssistResolver.AimHit.ChainMarkerHit cmh) {
+            return TargetResult.chainMarker(cmh.pos());
+        }
         return null;
     }
 
@@ -191,6 +232,9 @@ public final class GooTargetHighlighter {
 
     /**
      * Classifies a confirmed block hit as a granny-arc or normal face target.
+     * A granny arc is only offered when the block directly above the hit is
+     * air - otherwise the arc would collide with that block and the shot
+     * makes no sense, so it falls back to a normal side-face target.
      *
      * @param level the current level
      * @param hit   the confirmed block hit
@@ -198,7 +242,9 @@ public final class GooTargetHighlighter {
      */
     private static TargetResult classifyBlockHit(Level level, BlockHitResult hit) {
         Direction face = hit.getDirection();
-        if (face.getAxis() != Direction.Axis.Y && isUpperEdge(level, hit)) {
+        if (face.getAxis() != Direction.Axis.Y
+                && isUpperEdge(level, hit)
+                && level.getBlockState(hit.getBlockPos().above()).isAir()) {
             return TargetResult.grannyArc(hit.getBlockPos());
         }
         return TargetResult.block(hit.getBlockPos(), face);
@@ -263,9 +309,34 @@ public final class GooTargetHighlighter {
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
         if (target instanceof TargetResult.EntityTarget et) {
             renderEntityArc(ps, buf, camera, mc.player, et, selectedType, partialTick);
+        } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
+            renderChainMarkerArc(ps, buf, camera, mc.player, cmt, selectedType, partialTick);
         } else if (target instanceof TargetResult.BlockTarget bt) {
             renderBlockArcAndFace(ps, buf, camera, mc.player, bt, selectedType, partialTick);
         }
+    }
+
+    /**
+     * Renders the dashed arc toward a chain marker target. Chain markers
+     * behave like entities for targeting so they get an entity-style arc
+     * (no face voxel overlay). The ChainMarker BER handles the highlight
+     * visual on the block itself.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the render camera
+     * @param player       the local player
+     * @param cmt          the chain marker target
+     * @param gooType      the goo type for coloring
+     * @param partialTick  the partial tick for animation
+     */
+    private static void renderChainMarkerArc(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, Player player, TargetResult.ChainMarkerTarget cmt,
+            GooType gooType, float partialTick) {
+        Vec3 end = Vec3.atCenterOf(cmt.pos());
+        ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
+                player, end, gooType.getColor(), partialTick, false);
     }
 
     /**

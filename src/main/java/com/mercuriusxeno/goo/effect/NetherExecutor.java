@@ -5,103 +5,98 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.item.BlobStacks;
+import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Performs the nether chain effect: dissolves every block in a spherical
- * volume whose item form has a registered goo value, spawning the block's
- * goo composition as blob items. Blocks without a goo value are left
- * untouched — there is no hardness gate, no vanilla fallback, and no
- * hardness-based filtering. Goo value presence is the only gate.
+ * Nether chain effect: walks the spherical volume once, accumulates all
+ * recovered goo into a per-type mB map on the chain marker BE, removes the
+ * affected blocks immediately, then hands control off to the BE's
+ * {@link ChainMarkerBlockEntity.Phase#IMPLODING} phase. No intermediate
+ * {@code ItemEntity} is spawned - the implosion animates for N ticks and
+ * the BE emits one combined stack per goo type at the marker center during
+ * {@link ChainMarkerBlockEntity.Phase#POPPING}.
  *
- * <p>Effect blocks (chain markers, frost fields) in the radius are also
- * converted: they drop a single blob of their own goo type and are removed.
+ * <p>Effect blocks in the sphere (chain markers, frost fields) contribute
+ * their single-blob worth to the accumulator and are removed alongside
+ * valued blocks. Blocks without a registered goo value are left alone -
+ * the goo value registry is the only gate, there is no hardness fallback.
  */
 public final class NetherExecutor {
-
-    /** Offset to get block center from integer position. */
-    private static final double BLOCK_CENTER_OFFSET = 0.5;
-    /** Base soul particle count before stack scaling. */
-    private static final int SOUL_PARTICLE_BASE = 20;
-    /** Additional soul particles per stack. */
-    private static final int SOUL_PARTICLE_PER_STACK = 10;
-    /** Particle spread as a fraction of the conversion radius. */
-    private static final double SOUL_SPREAD_PER_RANGE = 0.5;
-    /** Soul particle velocity. */
-    private static final double SOUL_PARTICLE_SPEED = 0.05;
 
     private NetherExecutor() {}
 
     /**
-     * Fires the nether conversion. Iterates the spherical volume once;
-     * each block is either (a) an effect block that drops one blob of its
-     * own type, (b) a valued block that dissolves into one blob stack per
-     * goo type, or (c) left alone.
+     * Fires the nether conversion. Walks the sphere once, removes blocks,
+     * accumulates per-type totals, then seeds the chain marker BE with the
+     * implosion state. The BE takes over from here; this method returns
+     * without touching the marker block itself.
      *
      * @param level      the server level
      * @param pos        the anchor block position (the marker itself)
      * @param range      computed conversion radius
-     * @param stackCount the raw stack count
+     * @param stackCount the raw stack count (unused - the BE reads it from its own field)
      * @param placedFace the face the marker was attached to (unused)
      */
     public static void execute(ServerLevel level, BlockPos pos, int range,
                                int stackCount, Direction placedFace) {
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity marker)) { return; }
+        Map<GooType, Long> totals = new EnumMap<>(GooType.class);
         EffectMath.forEachInSphere(pos, range, target -> {
-            // Skip the marker block itself; the BE will remove it after we return.
             if (target.equals(pos)) { return; }
-            convertOne(level, target);
+            accumulateAndRemove(level, target, totals);
         });
-
-        spawnParticles(level, pos, range, stackCount);
+        marker.beginImplosion(new GooContents(totals), range);
     }
 
     /**
-     * Converts a single block position: effect block → single blob drop,
-     * valued block → composition drop, anything else → untouched.
+     * Processes a single position in the sphere: effect blocks contribute a
+     * single blob of their own type, valued blocks contribute their full
+     * composition, anything else is left untouched.
      *
      * @param level  the server level
      * @param target the block position to consider
+     * @param totals per-type accumulator to merge into
      */
-    private static void convertOne(ServerLevel level, BlockPos target) {
+    private static void accumulateAndRemove(ServerLevel level, BlockPos target,
+                                            Map<GooType, Long> totals) {
         BlockState state = level.getBlockState(target);
         if (state.isAir()) { return; }
-
-        if (tryConvertEffectBlock(level, target, state)) { return; }
-        tryConvertValuedBlock(level, target, state);
+        if (tryAccumulateEffectBlock(level, target, state, totals)) { return; }
+        tryAccumulateValuedBlock(level, target, state, totals);
     }
 
     /**
-     * If the block at {@code target} is a chain marker or frost field,
-     * drops one blob of its goo type and removes it.
+     * If the block at {@code target} is a chain marker or frost field, adds
+     * one blob of its goo type to {@code totals} and removes the block.
      *
      * @param level  the server level
      * @param target the block position
      * @param state  the block state at that position
-     * @return true if an effect block was converted
+     * @param totals per-type accumulator
+     * @return true if an effect block was handled
      */
-    private static boolean tryConvertEffectBlock(ServerLevel level, BlockPos target,
-                                                 BlockState state) {
+    private static boolean tryAccumulateEffectBlock(ServerLevel level, BlockPos target,
+                                                    BlockState state, Map<GooType, Long> totals) {
         if (state.is(GooBlocks.CHAIN_MARKER.get())) {
             if (level.getBlockEntity(target) instanceof ChainMarkerBlockEntity be) {
-                dropSingleBlob(level, target, be.getGooType());
+                totals.merge(be.getGooType(), BlobStacks.MB_PER_BLOB, Long::sum);
                 level.removeBlock(target, false);
             }
             return true;
         }
         if (state.is(GooBlocks.FROST_FIELD.get())) {
-            dropSingleBlob(level, target, GooType.FROST);
+            totals.merge(GooType.FROST, BlobStacks.MB_PER_BLOB, Long::sum);
             level.removeBlock(target, false);
             return true;
         }
@@ -109,76 +104,40 @@ public final class NetherExecutor {
     }
 
     /**
-     * If the block has a registered goo value, drops one blob stack per
-     * goo type in its composition and removes the block. Blocks without a
-     * goo value (including bedrock, obsidian, or anything else the registry
-     * doesn't know about) are deliberately left alone.
+     * If the block has a registered goo value, merges its full composition
+     * into {@code totals} and removes the block. Blocks without a goo value
+     * (bedrock, obsidian, or anything else the registry doesn't know about)
+     * are left alone.
      *
      * @param level  the server level
      * @param target the block position
      * @param state  the block state at that position
+     * @param totals per-type accumulator
      */
-    private static void tryConvertValuedBlock(ServerLevel level, BlockPos target,
-                                              BlockState state) {
+    private static void tryAccumulateValuedBlock(ServerLevel level, BlockPos target,
+                                                 BlockState state, Map<GooType, Long> totals) {
         Item item = state.getBlock().asItem();
         if (item == Items.AIR) { return; }
-
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
         GooValue value = Goo.GOO_VALUES.lookup(itemId);
         if (value == null || value.isEmpty()) { return; }
-
-        popValueAsBlobs(level, target, value);
+        mergeValue(totals, value);
         level.removeBlock(target, false);
     }
 
     /**
-     * Pops one blob stack for each goo type in the given value. GooValue
-     * amounts are stored in microblobs, matching createForOutput's unit.
+     * Pure helper: merges a {@link GooValue}'s per-type amounts into a
+     * shared totals map, widening {@code int} mB to {@code long} as it goes.
+     * Extracted so unit tests can verify accumulation without spinning up
+     * a server level.
      *
-     * @param level  the server level
-     * @param target the position to drop blobs at
-     * @param value  the block's goo composition
+     * @param totals the accumulator to merge into
+     * @param value  the goo value to add
      */
-    private static void popValueAsBlobs(ServerLevel level, BlockPos target, GooValue value) {
+    public static void mergeValue(Map<GooType, Long> totals, GooValue value) {
         for (Map.Entry<GooType, Integer> entry : value.getAll().entrySet()) {
             int amount = entry.getValue();
-            ItemStack stack = BlobStacks.createForOutput(entry.getKey(), amount);
-            if (!stack.isEmpty()) {
-                Block.popResource(level, target, stack);
-            }
+            totals.merge(entry.getKey(), (long) amount, Long::sum);
         }
-    }
-
-    /**
-     * Drops a single blob of the given goo type at the target position.
-     *
-     * @param level  the server level
-     * @param target the position to drop the blob at
-     * @param type   the goo type
-     */
-    private static void dropSingleBlob(ServerLevel level, BlockPos target, GooType type) {
-        ItemStack stack = BlobStacks.createForOutput(type, BlobStacks.MB_PER_BLOB);
-        if (!stack.isEmpty()) {
-            Block.popResource(level, target, stack);
-        }
-    }
-
-    /**
-     * Spawns a burst of SOUL particles at the marker position.
-     *
-     * @param level      the server level
-     * @param pos        the anchor block position
-     * @param range      the conversion radius
-     * @param stackCount the raw stack count
-     */
-    private static void spawnParticles(ServerLevel level, BlockPos pos,
-                                       int range, int stackCount) {
-        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
-        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
-        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
-        int count = SOUL_PARTICLE_BASE + SOUL_PARTICLE_PER_STACK * stackCount;
-        double spread = range * SOUL_SPREAD_PER_RANGE;
-        level.sendParticles(ParticleTypes.SOUL,
-                cx, cy, cz, count, spread, spread, spread, SOUL_PARTICLE_SPEED);
     }
 }

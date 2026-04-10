@@ -28,6 +28,7 @@ import com.mercuriusxeno.goo.client.particle.GooSparkParticle;
 import com.mercuriusxeno.goo.client.throwing.BlobFlightManager;
 import com.mercuriusxeno.goo.client.throwing.BlobSizeProperty;
 import com.mercuriusxeno.goo.client.throwing.BlobVolumeDecorator;
+import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooFluidTypes;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -300,6 +301,7 @@ public final class GooClientSetup {
         Goo.GOO_VALUES.clearAll();
         TunerAwaitState.clear();
         BlobFlightManager.clear();
+        ThrowFreezeState.clear();
     }
 
     /**

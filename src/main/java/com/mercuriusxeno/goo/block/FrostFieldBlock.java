@@ -16,8 +16,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Invisible field block that persists after frost goo freezes an area.
- * Prevents frozen blocks from melting (via packed ice) for a duration,
- * then converts packed ice back to regular ice on expiry and removes itself.
+ * Prevents frozen blocks from melting (via {@link MagickedIceBlock}, a
+ * non-melting mod ice variant) for a duration, then converts magicked ice
+ * back to vanilla ice on expiry and removes itself.
  */
 public class FrostFieldBlock extends AbstractEffectBlock {
 

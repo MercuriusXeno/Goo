@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
+import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -21,9 +22,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Ticking block entity for the frost melt-resist field. Counts down a
- * duration; on expiry converts packed ice back to regular ice within
- * its radius and removes itself. Stackable up to 4 by additional
- * frost blobs, which recompute radius and reset duration.
+ * duration; on expiry converts the mod's magicked-ice block back to
+ * vanilla ice within its radius and removes itself. Stackable up to 4
+ * by additional frost blobs, which recompute radius and reset duration.
  */
 public class FrostFieldBlockEntity extends BlockEntity {
 
@@ -115,41 +116,41 @@ public class FrostFieldBlockEntity extends BlockEntity {
     }
 
     /**
-     * Converts packed ice back to regular ice within the field radius,
+     * Converts magicked ice back to vanilla ice within the field radius,
      * then removes the field block.
      *
      * @param level  the current level
      * @param center the center block position
      */
     private void thaw(ServerLevel level, BlockPos center) {
-        revertPackedIce(level, center);
+        revertMagickedIce(level, center);
         level.removeBlock(center, false);
     }
 
     /**
-     * Converts all packed ice within the sphere radius back to regular ice.
+     * Converts all magicked ice within the sphere radius back to vanilla ice.
      * @param level the server level
      * @param center the center block position of the frost field
      */
-    private void revertPackedIce(ServerLevel level, BlockPos center) {
+    private void revertMagickedIce(ServerLevel level, BlockPos center) {
         int r2 = radius * radius;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     if (dx * dx + dy * dy + dz * dz > r2) { continue; }
-                    revertIfPackedIce(level, center.offset(dx, dy, dz));
+                    revertIfMagickedIce(level, center.offset(dx, dy, dz));
                 }
             }
         }
     }
 
     /**
-     * Replaces a single packed ice block with regular ice if present.
+     * Replaces a single magicked ice block with vanilla ice if present.
      * @param level the server level
      * @param target the position to check and revert
      */
-    private void revertIfPackedIce(ServerLevel level, BlockPos target) {
-        if (level.getBlockState(target).is(Blocks.PACKED_ICE)) {
+    private void revertIfMagickedIce(ServerLevel level, BlockPos target) {
+        if (level.getBlockState(target).is(GooBlocks.MAGICKED_ICE.get())) {
             level.setBlock(target, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
         }
     }

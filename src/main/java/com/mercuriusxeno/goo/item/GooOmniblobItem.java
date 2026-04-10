@@ -12,7 +12,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -31,12 +33,60 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private static final String NAME_SEPARATOR = " ";
     /** Divisor for splitting omniblob volume in half. */
     private static final long HALF_DIVISOR = 2;
-    /** Ground-absorb scan interval in ticks (20t = 1s). */
-    private static final int ABSORB_SCAN_INTERVAL = 20;
-    /** Horizontal inflation of the absorb search box. Wider than vanilla merge (0.5) to catch bouncing blobs. */
-    private static final double ABSORB_INFLATE_XZ = 1.0;
-    /** Vertical inflation of the absorb search box. Tighter than XZ to avoid jumping across vertical gaps. */
-    private static final double ABSORB_INFLATE_Y = 0.5;
+    /** Same-type neighbors within this radius gravitate toward each other. */
+    private static final double GRAVITATE_RADIUS = 3.0;
+    /** Near-collision radius: once the anchor is this close to a neighbor, it absorbs. */
+    private static final double MERGE_RADIUS = 0.3;
+    /** {@link #MERGE_RADIUS} squared, for distanceToSqr comparisons. */
+    private static final double MERGE_RADIUS_SQ = MERGE_RADIUS * MERGE_RADIUS;
+    /** Peak per-tick velocity in the pull direction. Also the max target when far from the stop point. */
+    private static final double PULL_SPEED_CAP = 0.15;
+    /** Target-velocity slope vs distance-to-stop-point. Target = min(distCent * APPROACH_SLOPE, CAP). */
+    private static final double APPROACH_SLOPE = 0.4;
+    /** Per-tick velocity increment when current speed is below target. */
+    private static final double ACCELERATION = 0.05;
+    /** Per-tick velocity decrement when current speed exceeds target (braking on approach). */
+    private static final double DECELERATION = 0.05;
+    /** Distance-squared floor below which the gravitation direction is ill-defined (avoid divide-by-zero). */
+    private static final double MIN_GRAV_DIST_SQ = 1e-6;
+    /** Below this |speedDelta| we skip the setDeltaMovement/needsSync churn. */
+    private static final double NEGLIGIBLE_SPEED_DELTA = 1e-6;
+
+    /**
+     * Cached state for one tick's gravitation pass. Computed once from the
+     * neighbor snapshot, then consumed by the velocity-ramp step.
+     *
+     * @param dirX      normalized pull direction X
+     * @param dirY      normalized pull direction Y
+     * @param dirZ      normalized pull direction Z
+     * @param asymmetry |sum of unit vectors to neighbors| / count, in [0, 1].
+     *                  1 means all neighbors are on one side (edge of cluster);
+     *                  0 means they cancel (center of cluster, no net force).
+     *                  Preserves cluster contraction: edge items pull harder
+     *                  than center items even though the absolute cap is shared.
+     * @param distCent  distance from self to the centroid of all cluster
+     *                  members (including self). The "stop point" — target
+     *                  velocity shrinks as this approaches zero.
+     */
+    private record PullState(double dirX, double dirY, double dirZ, double asymmetry, double distCent) {}
+
+    /**
+     * Raw accumulator for the neighbor-scan loop: sum of unit vectors toward
+     * each neighbor (for direction + asymmetry factor) and sum of relative
+     * positions (for centroid distance), plus the count of contributing
+     * neighbors. Extracted so {@link #computePullState} stays under the
+     * method-length threshold.
+     *
+     * @param sumUX sum of unit-vector X components
+     * @param sumUY sum of unit-vector Y components
+     * @param sumUZ sum of unit-vector Z components
+     * @param centX sum of relative X positions
+     * @param centY sum of relative Y positions
+     * @param centZ sum of relative Z positions
+     * @param count number of neighbors that contributed (outside the MIN_GRAV_DIST_SQ floor)
+     */
+    private record NeighborSums(double sumUX, double sumUY, double sumUZ,
+            double centX, double centY, double centZ, int count) {}
 
     private final GooType gooType;
 
@@ -113,9 +163,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
 
     /**
      * Per-tick hook patched into the head of {@link ItemEntity#tick()} by NeoForge.
-     * Runs the absorb scan as a side-effect on the server every
-     * {@link #ABSORB_SCAN_INTERVAL} ticks, then returns false so vanilla tick
-     * (gravity, despawn, pickup, pickupDelay) continues normally.
+     * Runs gravitation/absorb dispatch as a side-effect on the server every tick,
+     * then returns false so vanilla tick (gravity, despawn, pickup, pickupDelay)
+     * continues normally.
      *
      * @param stack the item stack on the entity
      * @param self  the item entity being ticked
@@ -123,39 +173,61 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     @Override
     public boolean onEntityItemUpdate(@NonNull ItemStack stack, @NonNull ItemEntity self) {
-        if (self.level().isClientSide())                { return false; }
-        if (self.isRemoved())                           { return false; }
-        if (self.tickCount % ABSORB_SCAN_INTERVAL != 0) { return false; }
-        absorbNeighbors(self, stack);
+        if (self.level().isClientSide()) { return false; }
+        if (self.isRemoved())            { return false; }
+        driveMerge(self, stack);
         return false;
     }
 
     /**
-     * Drives a single absorb pass: find same-type neighbors, run the pure
-     * merge computation, apply mutations if anything was absorbed.
+     * Applies symmetric gravitation every tick, then runs absorb if self is
+     * the cluster anchor (lowest-ID same-type member in range) AND a neighbor
+     * has drifted within {@link #MERGE_RADIUS}. Gravitation is mutual so
+     * items converge on their midpoint rather than one chasing the other,
+     * doubling the closing rate vs. the asymmetric version - fast enough that
+     * the near-collision gate reliably fires while still leaving a visible
+     * drift window before the merge happens.
      *
-     * @param self      the absorbing item entity
-     * @param selfStack the absorber's item stack (mutated with the combined volume)
+     * @param self      the item entity being ticked
+     * @param selfStack the absorber's item stack (mutated if an absorb fires)
      */
-    private void absorbNeighbors(ItemEntity self, ItemStack selfStack) {
+    private void driveMerge(ItemEntity self, ItemStack selfStack) {
         List<ItemEntity> nearby = findNearbyOmniblobs(self);
         if (nearby.isEmpty()) { return; }
-        OmniblobAbsorb.Result result = OmniblobAbsorb.compute(
-            self.getId(), getVolume(selfStack), self.getAge(), toCandidates(nearby));
-        if (result.discardIds().isEmpty()) { return; }
-        applyAbsorb(self, selfStack, nearby, result);
+        gravitateTowardCentroid(self, nearby);
+        if (OmniblobAbsorb.findAttractorId(self.getId(), toCandidates(nearby)) != OmniblobAbsorb.NO_ATTRACTOR) { return; }
+        tryAbsorbAsAnchor(self, selfStack, nearby);
     }
 
     /**
-     * Collects alive, same-type omniblob item entities in an inflated AABB
-     * around {@code self}, excluding {@code self} itself.
+     * Runs the near-collision absorb as the cluster anchor. Invoked only
+     * when self has no lower-ID same-type neighbor in range. Filters
+     * {@code nearby} down to the subset within {@link #MERGE_RADIUS} before
+     * delegating to the pure absorb computation.
      *
-     * @param self the absorbing item entity
+     * @param self      the anchor item entity
+     * @param selfStack the absorber's item stack (mutated if an absorb fires)
+     * @param nearby    full gravitation-range neighbor snapshot
+     */
+    private void tryAbsorbAsAnchor(ItemEntity self, ItemStack selfStack, List<ItemEntity> nearby) {
+        List<ItemEntity> touching = filterByMergeRange(self, nearby);
+        if (touching.isEmpty()) { return; }
+        OmniblobAbsorb.Result result = OmniblobAbsorb.compute(
+            self.getId(), getVolume(selfStack), self.getAge(), toCandidates(touching));
+        if (result.discardIds().isEmpty()) { return; }
+        applyAbsorb(self, selfStack, touching, result);
+    }
+
+    /**
+     * Collects alive, same-type omniblob item entities within the gravitation
+     * radius of {@code self}, excluding {@code self} itself.
+     *
+     * @param self the querying item entity
      * @return list of candidate neighbors (may be empty)
      */
     private List<ItemEntity> findNearbyOmniblobs(ItemEntity self) {
         AABB box = self.getBoundingBox()
-            .inflate(ABSORB_INFLATE_XZ, ABSORB_INFLATE_Y, ABSORB_INFLATE_XZ);
+            .inflate(GRAVITATE_RADIUS, GRAVITATE_RADIUS, GRAVITATE_RADIUS);
         return self.level().getEntitiesOfClass(
             ItemEntity.class, box,
             other -> other != self
@@ -164,8 +236,150 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     }
 
     /**
+     * Accelerates {@code self} toward a distance-capped target velocity in
+     * the cluster-aware pull direction. Two-phase:
+     * <ol>
+     *   <li>{@link #computePullState} builds direction + asymmetry factor +
+     *       distance to stop point from one loop over the neighbor snapshot.</li>
+     *   <li>{@link #applyPullVelocity} ramps current velocity toward a triple-
+     *       capped target ({@code asymmetry * CAP}, {@code distCent * SLOPE},
+     *       {@code CAP}) using {@link #ACCELERATION} / {@link #DECELERATION}.</li>
+     * </ol>
+     * The distance cap is what fixes the overshoot: as items approach the
+     * centroid, the target velocity shrinks to zero, so they naturally brake
+     * instead of blowing past each other.
+     *
+     * @param self   the entity being pulled
+     * @param nearby same-type neighbor snapshot from the gravitation query
+     */
+    private static void gravitateTowardCentroid(ItemEntity self, List<ItemEntity> nearby) {
+        PullState state = computePullState(self, nearby);
+        if (state == null) { return; }
+        applyPullVelocity(self, state);
+    }
+
+    /**
+     * Builds the per-tick pull state from the neighbor snapshot. Single pass
+     * that computes both the sum of unit vectors (direction + asymmetry
+     * factor) and the sum of relative positions (centroid distance).
+     *
+     * @param self   the querying item entity
+     * @param nearby same-type neighbor snapshot
+     * @return the pull state, or null if there is no valid pull direction
+     *         (all neighbors are effectively at the same spot, or their unit
+     *         vectors sum to near-zero)
+     */
+    private static @Nullable PullState computePullState(ItemEntity self, List<ItemEntity> nearby) {
+        NeighborSums sums = accumulateNeighborSums(self, nearby);
+        double sumUMagSq = sums.sumUX() * sums.sumUX() + sums.sumUY() * sums.sumUY() + sums.sumUZ() * sums.sumUZ();
+        if (sumUMagSq < MIN_GRAV_DIST_SQ) { return null; }
+        double sumUMag = Math.sqrt(sumUMagSq);
+        double invSumU = 1.0 / sumUMag;
+        int totalWithSelf = sums.count() + 1;
+        double distCent = Math.sqrt(
+            sums.centX() * sums.centX() + sums.centY() * sums.centY() + sums.centZ() * sums.centZ())
+            / totalWithSelf;
+        return new PullState(
+            sums.sumUX() * invSumU, sums.sumUY() * invSumU, sums.sumUZ() * invSumU,
+            sumUMag / sums.count(), distCent);
+    }
+
+    /**
+     * Walks the neighbor snapshot once and accumulates unit-vector sums and
+     * relative-position sums. Neighbors effectively at the same point as
+     * {@code self} are skipped (the {@link #MIN_GRAV_DIST_SQ} floor).
+     *
+     * @param self   the querying item entity
+     * @param nearby same-type neighbor snapshot
+     * @return the raw sums for {@link #computePullState}
+     */
+    private static NeighborSums accumulateNeighborSums(ItemEntity self, List<ItemEntity> nearby) {
+        double sumUX = 0;
+        double sumUY = 0;
+        double sumUZ = 0;
+        double centX = 0;
+        double centY = 0;
+        double centZ = 0;
+        int count = 0;
+        for (ItemEntity n : nearby) {
+            double dx = n.getX() - self.getX();
+            double dy = n.getY() - self.getY();
+            double dz = n.getZ() - self.getZ();
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < MIN_GRAV_DIST_SQ) { continue; }
+            double invDist = 1.0 / Math.sqrt(distSq);
+            sumUX += dx * invDist;
+            sumUY += dy * invDist;
+            sumUZ += dz * invDist;
+            centX += dx;
+            centY += dy;
+            centZ += dz;
+            count++;
+        }
+        return new NeighborSums(sumUX, sumUY, sumUZ, centX, centY, centZ, count);
+    }
+
+    /**
+     * Ramps {@code self}'s velocity in the pull direction toward a triple-
+     * capped target. The asymmetry cap preserves cluster contraction (center
+     * items move slower than edge items); the distance cap preserves the
+     * braking-on-approach behavior (items decelerate as they near the stop
+     * point); the absolute cap is the hard ceiling.
+     *
+     * @param self  the entity being pulled
+     * @param state the precomputed pull state for this tick
+     */
+    private static void applyPullVelocity(ItemEntity self, PullState state) {
+        double fromAsymmetry = state.asymmetry() * PULL_SPEED_CAP;
+        double fromDistance = state.distCent() * APPROACH_SLOPE;
+        double targetSpeed = Math.min(Math.min(fromAsymmetry, fromDistance), PULL_SPEED_CAP);
+        Vec3 delta = self.getDeltaMovement();
+        double currentSpeed = delta.x * state.dirX() + delta.y * state.dirY() + delta.z * state.dirZ();
+        double newSpeed = rampSpeed(currentSpeed, targetSpeed);
+        double speedDelta = newSpeed - currentSpeed;
+        if (Math.abs(speedDelta) < NEGLIGIBLE_SPEED_DELTA) { return; }
+        self.setDeltaMovement(delta.add(
+            state.dirX() * speedDelta, state.dirY() * speedDelta, state.dirZ() * speedDelta));
+        // Per-tick pull is below ItemEntity's 0.01 delta-change sync threshold,
+        // so vanilla falls back to the default tracker cadence and the client
+        // sees ~1s position snaps. Force an immediate sync every gravitation tick.
+        self.needsSync = true;
+    }
+
+    /**
+     * Ramps {@code current} toward {@code target}: accelerates by
+     * {@link #ACCELERATION} when below, decelerates by {@link #DECELERATION}
+     * when above, never overshoots.
+     *
+     * @param current current velocity in the pull direction
+     * @param target  target velocity this tick
+     * @return the clamped new velocity
+     */
+    private static double rampSpeed(double current, double target) {
+        if (current < target) { return Math.min(current + ACCELERATION, target); }
+        return Math.max(current - DECELERATION, target);
+    }
+
+    /**
+     * Returns the subset of {@code nearby} within {@link #MERGE_RADIUS} of
+     * {@code self}. Only invoked on the cluster anchor, so this is the set
+     * of higher-ID neighbors that have drifted into near-collision range.
+     *
+     * @param self   the anchor item entity
+     * @param nearby the gravitation-range snapshot
+     * @return neighbors within squared merge range
+     */
+    private static List<ItemEntity> filterByMergeRange(ItemEntity self, List<ItemEntity> nearby) {
+        List<ItemEntity> out = new ArrayList<>();
+        for (ItemEntity n : nearby) {
+            if (self.distanceToSqr(n) <= MERGE_RADIUS_SQ) { out.add(n); }
+        }
+        return out;
+    }
+
+    /**
      * Projects item entities to pure-data absorb candidates for
-     * {@link OmniblobAbsorb#compute}.
+     * {@link OmniblobAbsorb#compute} and {@link OmniblobAbsorb#findAttractorId}.
      *
      * @param entities nearby same-type omniblob entities
      * @return candidates in the same order

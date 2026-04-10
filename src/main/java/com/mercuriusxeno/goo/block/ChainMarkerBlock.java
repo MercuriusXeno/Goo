@@ -1,17 +1,31 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.item.BlobStacks;
+import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -19,10 +33,18 @@ import org.jspecify.annotations.Nullable;
  * Short-lived fuse block placed by chain world effects (Blaze, Frost,
  * Nether, Rock). No collision, no selection shape - purely visual.
  * The block entity ticks the fuse and fires the executor on expiry.
+ *
+ * <p>Implements {@link SimpleWaterloggedBlock} so chain markers can occupy
+ * water blocks without displacing them. This is required for effects that
+ * operate underwater (notably leaf goo's chain effect) and is harmless for
+ * effects that do not interact with water.</p>
  */
-public class ChainMarkerBlock extends AbstractEffectBlock {
+public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWaterloggedBlock {
 
     public static final MapCodec<ChainMarkerBlock> CODEC = simpleCodec(ChainMarkerBlock::new);
+
+    /** Waterlogged state property: true when this marker co-occupies a water block. */
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     /** Base ambient particle spread radius. */
     private static final double BASE_SPREAD = 0.25;
@@ -49,6 +71,50 @@ public class ChainMarkerBlock extends AbstractEffectBlock {
      */
     public ChainMarkerBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any().setValue(WATERLOGGED, false));
+    }
+
+    /** Registers the WATERLOGGED property in the state definition.
+     *
+     * @param builder the state definition builder
+     */
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
+        builder.add(WATERLOGGED);
+    }
+
+    /** Returns a water fluid state when waterlogged, otherwise empty.
+     *
+     * @param state the current block state
+     * @return water source fluid state when waterlogged, empty otherwise
+     */
+    @Override
+    protected @NonNull FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+    }
+
+    /** Schedules a water fluid tick when waterlogged so water flows correctly
+     * into and around the marker, matching the standard vanilla waterlogged idiom.
+     *
+     * @param state        the current block state
+     * @param level        the level reader
+     * @param ticks        scheduled tick access for fluid updates
+     * @param pos          the block position
+     * @param direction    the neighbor direction
+     * @param neighborPos  the neighbor position
+     * @param neighborState the neighbor state
+     * @param random       the random source
+     * @return the (possibly updated) block state
+     */
+    @Override
+    protected @NonNull BlockState updateShape(BlockState state, @NonNull LevelReader level,
+            @NonNull ScheduledTickAccess ticks, @NonNull BlockPos pos, @NonNull Direction direction,
+            @NonNull BlockPos neighborPos, @NonNull BlockState neighborState,
+            @NonNull RandomSource random) {
+        if (state.getValue(WATERLOGGED)) {
+            ticks.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
     /** Returns the codec for serialization.
@@ -87,6 +153,38 @@ public class ChainMarkerBlock extends AbstractEffectBlock {
         if (level.isClientSide()) { return null; }
         return createTickerHelper(type, GooBlockEntities.CHAIN_MARKER.get(),
                 ChainMarkerBlockEntity::serverTick);
+    }
+
+    /** Drops the partial accumulator at the marker position if the player
+     * breaks the block mid-implosion or mid-popping. Non-nether phases and
+     * empty accumulators fall through to vanilla handling unchanged.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param state  the block state being destroyed
+     * @param player the player breaking the block
+     * @return the (possibly updated) block state, forwarded to super
+     */
+    @Override
+    public @NonNull BlockState playerWillDestroy(@NonNull Level level, @NonNull BlockPos pos,
+            @NonNull BlockState state, @NonNull Player player) {
+        dropInterruptedAccumulator(level, pos);
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /** Drops the accumulator contents at {@code pos} when a mid-implosion
+     * chain marker is broken. No-op on the client, for empty accumulators,
+     * or if the block entity is missing.
+     *
+     * @param level the current level
+     * @param pos   the marker position
+     */
+    private static void dropInterruptedAccumulator(Level level, BlockPos pos) {
+        if (!(level instanceof ServerLevel server)) { return; }
+        if (!(server.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
+        GooContents accumulator = be.getAccumulator();
+        if (accumulator.isEmpty()) { return; }
+        BlobStacks.dropAll(accumulator, server, pos);
     }
 
     /** Spawns ambient particles based on the chain marker's goo type.

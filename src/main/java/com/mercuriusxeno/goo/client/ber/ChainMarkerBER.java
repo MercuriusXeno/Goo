@@ -3,6 +3,8 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
+import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -13,6 +15,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
@@ -105,7 +108,14 @@ public class ChainMarkerBER
             ChainMarkerRenderState state) {
         ChainProfile profile = ChainProfile.forType(be.getGooType());
         state.fuseTicks = profile != null ? profile.fuseTicks() : 1;
-        state.targeted = GooRenderUtil.isBlockTargeted(be.getBlockPos());
+        // Highlight when ANY source of aim is on this marker: vanilla
+        // crosshair (no-glove case), the goo cone-based aim assist
+        // (glove held), or the post-throw freeze window (aim locked from
+        // the previous throw and the marker was just placed on the spot).
+        BlockPos pos = be.getBlockPos();
+        state.targeted = GooRenderUtil.isBlockTargeted(pos)
+                || GooTargetHighlighter.isChainMarkerTargeted(pos)
+                || ThrowFreezeState.isFrozenOnChainMarker(pos);
         state.placedFace = be.getPlacedFace();
     }
 
