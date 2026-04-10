@@ -4,6 +4,9 @@ import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
 import net.minecraft.client.renderer.rendertype.OutputTarget;
@@ -41,6 +44,35 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /**
+     * Nether black-hole pipeline: POSITION_COLOR billboard quad with a custom
+     * vertex + fragment shader pair (nether_blackhole.vsh / .fsh). Reads the
+     * implosion progress from the vertex Color.r channel, animates a swirl
+     * with {@code GameTime}. Depth read, no depth write - the billboard
+     * occludes behind geometry correctly but does not write to the depth
+     * buffer, so distant stars/particles behind it remain visible (correct
+     * for a black-hole look).
+     */
+    public static final RenderPipeline NETHER_BLACKHOLE = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("goo", "pipeline/nether_blackhole"))
+            .withVertexShader(Identifier.fromNamespaceAndPath("goo", "core/nether_blackhole"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath("goo", "core/nether_blackhole"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the nether black-hole billboard quad. */
+    public static final RenderType NETHER_BLACKHOLE_TYPE = RenderType.create(
+            "goo_nether_blackhole",
+            RenderSetup.builder(NETHER_BLACKHOLE)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
     private GooRenderTypes() {}
 
     /**
@@ -50,5 +82,6 @@ public final class GooRenderTypes {
      */
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(LINES_ADDITIVE_GLOW);
+        event.registerPipeline(NETHER_BLACKHOLE);
     }
 }
