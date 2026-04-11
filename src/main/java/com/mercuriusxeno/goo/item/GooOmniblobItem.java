@@ -52,6 +52,8 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     /** Below this |speedDelta| we skip the setDeltaMovement/needsSync churn. */
     private static final double NEGLIGIBLE_SPEED_DELTA = 1e-6;
 
+    private final GooType gooType;
+
     /**
      * Cached state for one tick's gravitation pass. Computed once from the
      * neighbor snapshot, then consumed by the velocity-ramp step.
@@ -87,8 +89,6 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private record NeighborSums(double sumUX, double sumUY, double sumUZ,
             double centX, double centY, double centZ, int count) {}
-
-    private final GooType gooType;
 
     /**
      * Creates a new omniblob item for the given goo type.

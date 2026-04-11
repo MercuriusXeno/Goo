@@ -190,8 +190,10 @@ public class ChainMarkerBER
     private static void submitBlackholeSphere(ChainMarkerRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
             CameraRenderState cameraState) {
-        float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS,
-            state.implodeRadius * (1f - state.implodeProgress));
+        // Hold at full effect radius for the entire implosion so the sphere
+        // fully encompasses the destruction zone. BE removal at POPPING
+        // takes the visual with it, no shrink-ramp needed in the BER.
+        float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, state.implodeRadius);
         int color = packBlackholeColor(state.implodeProgress);
 
         poseStack.pushPose();

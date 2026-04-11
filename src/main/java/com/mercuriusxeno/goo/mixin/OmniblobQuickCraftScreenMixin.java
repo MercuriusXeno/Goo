@@ -26,10 +26,12 @@ import java.util.Set;
 @Mixin(AbstractContainerScreen.class)
 public abstract class OmniblobQuickCraftScreenMixin {
 
-    /** Mixin method target: mouseDragged. */
-    private static final String METHOD_MOUSE_DRAGGED = "mouseDragged";
-    /** Mixin method target: renderSlot. */
-    private static final String METHOD_RENDER_SLOT = "renderSlot";
+    /** Mixin method target: shouldAddSlotToQuickCraft. In 26.1 the quickcraft count/replace
+     *  gate lives here, not inlined in mouseDragged as in older versions. */
+    private static final String METHOD_SHOULD_ADD_SLOT = "shouldAddSlotToQuickCraft";
+    /** Mixin method target: extractSlot. In 26.1 the per-slot render pass was
+     *  renamed from renderSlot to extractSlot (render state extraction). */
+    private static final String METHOD_EXTRACT_SLOT = "extractSlot";
     /** Mixin injection point type: invoke. */
     private static final String AT_INVOKE = "INVOKE";
     /** Mixin target: ItemStack.getCount(). */
@@ -77,17 +79,18 @@ public abstract class OmniblobQuickCraftScreenMixin {
             ItemStack stack, Slot slot, String countString);
 
     /**
-     * Redirects the getCount() call in mouseDragged's quickcraft condition.
-     * For omniblobs, returns Integer.MAX_VALUE so the slot-collection condition
-     * always passes (actual limits enforced server-side).
+     * Redirects the getCount() call inside shouldAddSlotToQuickCraft's gate
+     * (carried.getCount() > quickCraftSlots.size() || quickCraftingType == 2).
+     * For omniblobs, returns Integer.MAX_VALUE so each dragged-over slot is
+     * collected regardless of stack count (omniblobs always have count=1).
      * For non-omniblobs, returns the real count (vanilla behavior).
      *
      * @param stack the item stack being checked
      * @return the effective count for the gate check
      */
     @Redirect(
-        method = METHOD_MOUSE_DRAGGED,
-        at = @At(value = AT_INVOKE, target = TARGET_GET_COUNT, ordinal = 1)
+        method = METHOD_SHOULD_ADD_SLOT,
+        at = @At(value = AT_INVOKE, target = TARGET_GET_COUNT)
     )
     private int goo$omniblobBypassCountGate(ItemStack stack) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(stack)) {
@@ -117,8 +120,8 @@ public abstract class OmniblobQuickCraftScreenMixin {
     }
 
     /**
-     * Redirects canItemQuickReplace in mouseDragged so that occupied same-type
-     * goo slots are collected into quickCraftSlots during drag.
+     * Redirects canItemQuickReplace in shouldAddSlotToQuickCraft so that
+     * occupied same-type goo slots are collected into quickCraftSlots during drag.
      * Without this, vanilla rejects them (maxStackSize=1, existing count=1).
      *
      * @param slot             the target slot
@@ -127,7 +130,7 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return true if the slot should be collected
      */
     @Redirect(
-        method = METHOD_MOUSE_DRAGGED,
+        method = METHOD_SHOULD_ADD_SLOT,
         at = @At(value = AT_INVOKE,
             target = TARGET_CAN_QUICK_REPLACE)
     )
@@ -146,7 +149,7 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return true if the slot should remain collected
      */
     @Redirect(
-        method = METHOD_RENDER_SLOT,
+        method = METHOD_EXTRACT_SLOT,
         at = @At(value = AT_INVOKE,
             target = TARGET_CAN_QUICK_REPLACE)
     )
@@ -165,7 +168,7 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return the place count (1 for omniblobs, vanilla result otherwise)
      */
     @Redirect(
-        method = METHOD_RENDER_SLOT,
+        method = METHOD_EXTRACT_SLOT,
         at = @At(value = AT_INVOKE,
             target = TARGET_GET_PLACE_COUNT)
     )
@@ -189,7 +192,7 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @param countString  the vanilla count string overlay
      */
     @Redirect(
-        method = METHOD_RENDER_SLOT,
+        method = METHOD_EXTRACT_SLOT,
         at = @At(value = AT_INVOKE,
             target = TARGET_RENDER_SLOT_CONTENTS)
     )

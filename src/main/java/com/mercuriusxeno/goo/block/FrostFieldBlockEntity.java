@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
-import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -150,7 +149,7 @@ public class FrostFieldBlockEntity extends BlockEntity {
      * @param target the position to check and revert
      */
     private void revertIfMagickedIce(ServerLevel level, BlockPos target) {
-        if (level.getBlockState(target).is(GooBlocks.MAGICKED_ICE.get())) {
+        if (level.getBlockState(target).getBlock() instanceof MagickedIceBlock) {
             level.setBlock(target, Blocks.ICE.defaultBlockState(), Block.UPDATE_ALL);
         }
     }

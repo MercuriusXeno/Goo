@@ -4,7 +4,6 @@ import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -22,6 +21,9 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
  * z-fighting against each other.
  */
 public final class GooRenderTypes {
+    /** Mod namespace for identifier construction. */
+    private static final String NAMESPACE = "goo";
+
     /**
      * Lines pipeline with LIGHTNING blend (SRC_ALPHA, ONE) and no depth write.
      * Reuses vanilla line shaders; only blend and depth state differ.
@@ -29,7 +31,7 @@ public final class GooRenderTypes {
      * @return the result
      */
     public static final RenderPipeline LINES_ADDITIVE_GLOW = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("goo", "pipeline/lines_additive_glow"))
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/lines_additive_glow"))
             .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
             .withDepthStencilState(new DepthStencilState(
                     DepthStencilState.DEFAULT.depthTest(), false))
@@ -47,21 +49,19 @@ public final class GooRenderTypes {
     /**
      * Nether black-hole pipeline: POSITION_COLOR billboard quad with a custom
      * vertex + fragment shader pair (nether_blackhole.vsh / .fsh). Reads the
-     * implosion progress from the vertex Color.r channel, animates a swirl
-     * with {@code GameTime}. Depth read, no depth write - the billboard
-     * occludes behind geometry correctly but does not write to the depth
-     * buffer, so distant stars/particles behind it remain visible (correct
-     * for a black-hole look).
+     * implosion progress from the vertex Color.r channel and animates swirl
+     * bands with {@code GameTime}. Depth write ON so the sphere solidly
+     * occludes whatever the nether effect has chewed out of the world.
      */
     public static final RenderPipeline NETHER_BLACKHOLE = RenderPipeline.builder(
                     RenderPipelines.MATRICES_PROJECTION_SNIPPET,
                     RenderPipelines.GLOBALS_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("goo", "pipeline/nether_blackhole"))
-            .withVertexShader(Identifier.fromNamespaceAndPath("goo", "core/nether_blackhole"))
-            .withFragmentShader(Identifier.fromNamespaceAndPath("goo", "core/nether_blackhole"))
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/nether_blackhole"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_blackhole"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_blackhole"))
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+            .withDepthStencilState(DepthStencilState.DEFAULT)
             .withCull(false)
             .build();
 
