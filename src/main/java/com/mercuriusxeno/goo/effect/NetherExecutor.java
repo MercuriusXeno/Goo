@@ -2,11 +2,8 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.data.GooValue;
-import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
-import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -24,10 +21,10 @@ import java.util.Map;
  * at the end of the implosion lifecycle. No intermediate
  * {@code ItemEntity} is spawned during the walk.
  *
- * <p>Effect blocks in the sphere (chain markers, frost fields) contribute
- * their single-blob worth to the accumulator and are removed alongside
- * valued blocks. Blocks without a registered goo value are left alone -
- * the goo value registry is the only gate, there is no hardness fallback.
+ * <p>The goo value registry is the sole gate: blocks with a registered
+ * {@link GooValue} are consumed and converted, everything else (including
+ * this mod's own effect blocks like chain markers and frost fields) is
+ * left alone. No hardness fallback.
  */
 public final class NetherExecutor {
 
@@ -54,9 +51,9 @@ public final class NetherExecutor {
     }
 
     /**
-     * Processes a single position in the sphere: effect blocks contribute a
-     * single blob of their own type, valued blocks contribute their full
-     * composition, anything else is left untouched.
+     * Processes a single position in the sphere: blocks with a registered
+     * goo value contribute their full composition and are removed, anything
+     * else is left untouched.
      *
      * @param level  the server level
      * @param target the block position to consider
@@ -66,35 +63,7 @@ public final class NetherExecutor {
                                             Map<GooType, Long> totals) {
         BlockState state = level.getBlockState(target);
         if (state.isAir()) { return; }
-        if (tryAccumulateEffectBlock(level, target, state, totals)) { return; }
         tryAccumulateValuedBlock(level, target, state, totals);
-    }
-
-    /**
-     * If the block at {@code target} is a chain marker or frost field, adds
-     * one blob of its goo type to {@code totals} and removes the block.
-     *
-     * @param level  the server level
-     * @param target the block position
-     * @param state  the block state at that position
-     * @param totals per-type accumulator
-     * @return true if an effect block was handled
-     */
-    private static boolean tryAccumulateEffectBlock(ServerLevel level, BlockPos target,
-                                                    BlockState state, Map<GooType, Long> totals) {
-        if (state.is(GooBlocks.CHAIN_MARKER.get())) {
-            if (level.getBlockEntity(target) instanceof ChainMarkerBlockEntity be) {
-                totals.merge(be.getGooType(), BlobStacks.MB_PER_BLOB, Long::sum);
-                level.removeBlock(target, false);
-            }
-            return true;
-        }
-        if (state.is(GooBlocks.FROST_FIELD.get())) {
-            totals.merge(GooType.FROST, BlobStacks.MB_PER_BLOB, Long::sum);
-            level.removeBlock(target, false);
-            return true;
-        }
-        return false;
     }
 
     /**
