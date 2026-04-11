@@ -8,7 +8,6 @@ import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -20,12 +19,10 @@ import java.util.Map;
 
 /**
  * Nether chain effect: walks the spherical volume once, accumulates all
- * recovered goo into a per-type mB map on the chain marker BE, removes the
- * affected blocks immediately, then hands control off to the BE's
- * {@link ChainMarkerBlockEntity.Phase#IMPLODING} phase. No intermediate
- * {@code ItemEntity} is spawned - the implosion animates for N ticks and
- * the BE emits one combined stack per goo type at the marker center during
- * {@link ChainMarkerBlockEntity.Phase#POPPING}.
+ * recovered goo into a per-type mB map, removes the affected blocks, and
+ * returns the totals so the calling {@link NetherBehavior} can drop them
+ * at the end of the implosion lifecycle. No intermediate
+ * {@code ItemEntity} is spawned during the walk.
  *
  * <p>Effect blocks in the sphere (chain markers, frost fields) contribute
  * their single-blob worth to the accumulator and are removed alongside
@@ -37,30 +34,10 @@ public final class NetherExecutor {
     private NetherExecutor() {}
 
     /**
-     * Fires the nether conversion. Seeds the chain marker BE's phase
-     * machine; the actual destruction (sphere walk + block removal) is
-     * deferred to {@link #walkAndDestroy}, which the BE calls at the
-     * EXPAND → CONTRACT transition so the sphere is fully grown and
-     * occluding before anything vanishes.
-     *
-     * @param level      the server level
-     * @param pos        the anchor block position (the marker itself)
-     * @param range      computed conversion radius
-     * @param stackCount the raw stack count (unused - the BE reads its own field)
-     * @param placedFace the face the marker was attached to (unused)
-     */
-    public static void execute(ServerLevel level, BlockPos pos, int range,
-                               int stackCount, Direction placedFace) {
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity marker)) { return; }
-        marker.beginImplosion(level, pos, range);
-    }
-
-    /**
      * Walks the spherical volume once, accumulates per-type mB totals,
-     * and removes the affected blocks. Called by
-     * {@link ChainMarkerBlockEntity} at the EXPAND → CONTRACT transition,
-     * i.e. at the moment the black-hole sphere is fully grown and
-     * visually occluding the blast zone.
+     * and removes the affected blocks. Called by {@link NetherBehavior}
+     * at the EXPAND -&gt; HOLD transition, i.e. at the moment the black-hole
+     * sphere is fully grown and visually occluding the blast zone.
      *
      * @param level  the server level
      * @param pos    the marker position (skipped during the walk)

@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -173,8 +174,8 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     }
 
     /** Drops the accumulator contents at {@code pos} when a mid-implosion
-     * chain marker is broken. No-op on the client, for empty accumulators,
-     * or if the block entity is missing.
+     * chain marker is broken. No-op on the client, for non-nether markers,
+     * for empty accumulators, or if the block entity is missing.
      *
      * @param level the current level
      * @param pos   the marker position
@@ -182,7 +183,8 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     private static void dropInterruptedAccumulator(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel server)) { return; }
         if (!(server.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
-        GooContents accumulator = be.getAccumulator();
+        if (!(be.getBehavior() instanceof NetherBehavior nether)) { return; }
+        GooContents accumulator = nether.getAccumulator();
         if (accumulator.isEmpty()) { return; }
         BlobStacks.dropAll(accumulator, server, pos);
     }

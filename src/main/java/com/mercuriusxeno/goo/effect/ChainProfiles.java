@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.IntUnaryOperator;
+import java.util.function.Supplier;
 
 /**
  * Central registry for chain effect profiles. Each goo type with a chain
@@ -56,27 +57,45 @@ public final class ChainProfiles {
 
     /** Called once from {@link com.mercuriusxeno.goo.Goo#commonSetup}. */
     public static void registerAll() {
+        registerBlaze();
+        registerRock();
+        registerNether();
+    }
+
+    /** Registers the blaze chain profile (legacy one-shot executor path). */
+    private static void registerBlaze() {
         ChainProfile.register(GooType.BLAZE, new ChainProfile(
                 BLAZE_FUSE_TICKS,
                 BLAZE_MAX_STACKS,
                 stacks -> (int) EffectMath.computeExplosionRadius(stacks),
                 ChainProfiles::blazeExecutor,
+                null,
                 null
         ));
+    }
+
+    /** Registers the rock chain profile (legacy per-layer executor path). */
+    private static void registerRock() {
         ChainProfile.register(GooType.ROCK, new ChainProfile(
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
                 EffectMath::computeImplosionDepth,
                 null,
                 (level, pos, step, stacks, face) ->
-                        RockExecutor.mineLayer(level, pos, face, step, stacks)
+                        RockExecutor.mineLayer(level, pos, face, step, stacks),
+                null
         ));
+    }
+
+    /** Registers the nether chain profile (new-style ChainBehavior path). */
+    private static void registerNether() {
         ChainProfile.register(GooType.NETHER, new ChainProfile(
                 NETHER_FUSE_TICKS,
                 NETHER_MAX_STACKS,
                 EffectMath::computeNetherRadius,
-                NetherExecutor::execute,
-                null
+                null,
+                null,
+                NetherBehavior::new
         ));
     }
 
@@ -169,24 +188,31 @@ public final class ChainProfiles {
 
     /**
      * Defines the behavior of a chain effect for a specific goo type.
-     * Exactly one of {@code executor} or {@code layerExecutor} should be
-     * non-null: {@code executor} fires the full effect in a single call on
-     * fuse expiry, while {@code layerExecutor} is driven once per tick by
-     * the chain marker BE for effects that break down over time (e.g. rock
-     * progressive mining).
+     * Exactly one of {@code executor}, {@code layerExecutor}, or
+     * {@code behaviorFactory} should be non-null. The chain marker BE
+     * picks the first non-null path at fuse expiry:
+     * <ul>
+     *   <li>{@code behaviorFactory} - creates a {@link ChainBehavior}
+     *       that owns the whole post-fuse lifecycle (preferred for new
+     *       types; nether uses this).</li>
+     *   <li>{@code executor} - legacy instant one-shot fired on fuse expiry.</li>
+     *   <li>{@code layerExecutor} - legacy per-tick progressive effect.</li>
+     * </ul>
      *
-     * @param fuseTicks     how long the fuse window lasts
-     * @param maxStacks     maximum stack count (additional blobs during fuse)
-     * @param rangeFormula  computes range/depth from stack count
-     * @param executor      instant executor; null for progressive effects
-     * @param layerExecutor per-layer executor; null for instant effects
+     * @param fuseTicks       how long the fuse window lasts
+     * @param maxStacks       maximum stack count (additional blobs during fuse)
+     * @param rangeFormula    computes range/depth from stack count
+     * @param executor        instant executor; null for progressive effects or behaviors
+     * @param layerExecutor   per-layer executor; null for instant effects or behaviors
+     * @param behaviorFactory factory that creates a fresh {@link ChainBehavior}; null for legacy profiles
      */
     public record ChainProfile(
             int fuseTicks,
             int maxStacks,
             IntUnaryOperator rangeFormula,
             @Nullable ChainExecutor executor,
-            @Nullable LayerExecutor layerExecutor
+            @Nullable LayerExecutor layerExecutor,
+            @Nullable Supplier<ChainBehavior> behaviorFactory
     ) {
         private static final Map<GooType, ChainProfile> PROFILES = new EnumMap<>(GooType.class);
 

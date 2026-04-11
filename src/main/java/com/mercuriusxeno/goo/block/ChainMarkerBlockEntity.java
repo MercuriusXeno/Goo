@@ -1,42 +1,35 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;
-import com.mercuriusxeno.goo.effect.NetherExecutor;
-import com.mercuriusxeno.goo.item.BlobStacks;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
-import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
- * Ticking block entity for chain effects. Counts down a fuse; additional
- * blobs landing during the window increment stacks. On expiry, computes
- * range from the profile's formula and fires the executor, then removes
- * itself.
+ * Ticking block entity for chain effects. Owns only the shared state:
+ * goo type, stack count, fuse countdown, placed face. The type-specific
+ * post-fuse behavior is delegated to a {@link ChainBehavior} instance
+ * created from the goo type's profile at fuse expiry.
+ *
+ * <p>Rock progressive mining is currently still inline here under the
+ * legacy {@code layerExecutor} path; it will be extracted into a
+ * RockBehavior in a follow-up pass.
  */
 public class ChainMarkerBlockEntity extends BlockEntity {
 
@@ -47,78 +40,17 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_PLACED_FACE = "PlacedFace";
     private static final String TAG_MINING_STEP = "MiningStep";
     private static final String TAG_MINING_DEPTH = "MiningDepth";
-    private static final String TAG_PHASE = "Phase";
-    private static final String TAG_EXPAND_REMAINING = "ExpandRemaining";
-    private static final String TAG_EXPAND_INITIAL = "ExpandInitial";
-    private static final String TAG_HOLD_REMAINING = "HoldRemaining";
-    private static final String TAG_HOLD_INITIAL = "HoldInitial";
-    private static final String TAG_CONTRACT_REMAINING = "ContractRemaining";
-    private static final String TAG_CONTRACT_INITIAL = "ContractInitial";
-    private static final String TAG_IMPLODE_RADIUS = "ImplodeRadius";
-    private static final String TAG_ACCUMULATOR = "Accumulator";
     /** Default goo type id when loading from NBT. */
     private static final String DEFAULT_GOO_TYPE = "rock";
     /** Default face name when loading from NBT. */
     private static final String DEFAULT_FACE = "up";
     /** Sentinel: no progressive mining in progress. */
     private static final int MINING_INACTIVE = -1;
-    /** Ticks the black-hole sphere takes to grow from 0 to full size (0.75 s). */
-    public static final int EXPAND_DURATION = 15;
-    /** Ticks the black-hole sphere holds at full size while the blocks are destroyed (1 s). */
-    public static final int HOLD_DURATION = 20;
-    /** Ticks the black-hole sphere takes to shrink from full size back to 0 (0.75 s). */
-    public static final int CONTRACT_DURATION = 15;
-    /** Extra blindness ticks applied past the EXPAND + HOLD + CONTRACT window so entities inside get a clean fade-out. */
-    private static final int BLINDNESS_EXTRA_TICKS = 20;
-    /** Base soul particle count per implosion tick. */
-    private static final int IMPLODE_PARTICLE_BASE = 1;
-    /** Additional soul particles per stack. */
-    private static final int IMPLODE_PARTICLE_PER_STACK = 1;
-    /** Placeholder particle spread as a fraction of the implosion radius. */
-    private static final double IMPLODE_PARTICLE_SPREAD_PER_RANGE = 0.6;
-    /** Placeholder particle velocity. */
-    private static final double IMPLODE_PARTICLE_SPEED = 0.02;
-    /** Offset to get block center from integer position. */
-    private static final double BLOCK_CENTER_OFFSET = 0.5;
-    /** Volume for the black-hole sound at EXPAND entry. */
-    private static final float BLACK_HOLE_SOUND_VOLUME = 1.0f;
-    /** Pitch for the black-hole sound at EXPAND entry. */
-    private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
-    /** Fraction of current HP shaved off any living entity caught inside the
-     * blast at the EXPAND -> HOLD transition. Binary in/out: no distance
-     * falloff. Pre-wounded mobs die faster, healthy mobs lose half their bar. */
-    private static final float DAMAGE_FRACTION = 0.5f;
-    /** Per-tick velocity nudge magnitude (blocks/tick) applied toward the
-     * marker center during EXPAND and HOLD. Tuned to feel like an
-     * inescapable gravitic tug. Knockback resistance still applies. */
-    private static final double PULL_SPEED = 0.18;
-    /** Pull radius is this multiple of the blast radius. The well of
-     * gravity extends well past the visible event horizon so distant
-     * entities still feel something dragging them in. */
-    private static final int PULL_RADIUS_MULT = 3;
-    /** Floor on squared distance-to-center before applying the pull, to
-     * avoid divide-by-zero (and absurd impulse spikes) when an entity is
-     * standing exactly on the marker. */
-    private static final double PULL_MIN_DIST_SQ = 0.25;
-    /** Outer darkness radius is this multiple of the blast radius. The outer
-     * band gives the "approaching dread" feel before entities enter the blast. */
-    private static final int OUTER_DARK_RADIUS_MULT = 2;
-    /** Vanilla DARKNESS amplifier inside the blast sphere. Higher amplifier
-     * shortens the pulse period, so the inside flicker is faster and harder
-     * than the outside. */
-    private static final int INNER_DARK_AMPLIFIER = 2;
-    /** Vanilla DARKNESS amplifier in the outer warning band. */
-    private static final int OUTER_DARK_AMPLIFIER = 0;
 
-    /**
-     * Lifecycle phase of the chain marker. Most profiles stay in {@link #FUSE}
-     * forever and the BE is removed when the fuse expires. Nether additionally
-     * transitions through {@link #EXPAND} (sphere grows, blocks untouched),
-     * {@link #HOLD} (sphere holds at max size, blocks destroyed on entry),
-     * {@link #CONTRACT} (sphere shrinks back to 0, blocks stay gone), and
-     * {@link #POPPING} (drops accumulated items + self-removal).
-     */
-    public enum Phase { FUSE, EXPAND, HOLD, CONTRACT, POPPING }
+    /** How often to sync fuse to client (every N ticks). */
+    private static final int SYNC_INTERVAL = 5;
+    /** Ticks before detonation where we sync every tick for smooth implosion. */
+    private static final int IMPLOSION_SYNC_THRESHOLD = 8;
 
     private GooType gooType = GooType.ROCK;
     private int stackCount = 1;
@@ -129,30 +61,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int miningStep = MINING_INACTIVE;
     /** Total number of layers to mine when progressive mining is active. */
     private int miningDepth;
-    /** Lifecycle phase. See {@link Phase}. */
-    private Phase phase = Phase.FUSE;
-    /** Ticks remaining in the EXPAND phase. Counts down from {@link #initialExpandTicks} to 0. */
-    private int expandTicksRemaining;
-    /** Initial EXPAND duration (usually {@link #EXPAND_DURATION}). Used for progress normalization. */
-    private int initialExpandTicks;
-    /** Ticks remaining in the HOLD phase. Counts down from {@link #initialHoldTicks} to 0. */
-    private int holdTicksRemaining;
-    /** Initial HOLD duration (usually {@link #HOLD_DURATION}). */
-    private int initialHoldTicks;
-    /** Ticks remaining in the CONTRACT phase. Counts down from {@link #initialContractTicks} to 0. */
-    private int contractTicksRemaining;
-    /** Initial CONTRACT duration (usually {@link #CONTRACT_DURATION}). */
-    private int initialContractTicks;
-    /** Effect radius of the nether blast in blocks. Exposed for goal-013's BER. */
-    private int implodeRadius;
-    /** Per-type mB totals filled during CONTRACT entry (when blocks are destroyed), dropped at POPPING. */
-    private GooContents accumulator = GooContents.EMPTY;
-
-    /** How often to sync fuse to client (every N ticks). */
-    private static final int SYNC_INTERVAL = 5;
-
-    /** Ticks before detonation where we sync every tick for smooth implosion. */
-    private static final int IMPLOSION_SYNC_THRESHOLD = 8;
+    /** Active post-fuse behavior; null during FUSE phase. Set at fuse
+     * expiry when the profile has a behavior factory, and nulled out
+     * implicitly when the BE removes itself. */
+    @Nullable
+    private ChainBehavior behavior;
 
     /** Creates a chain marker block entity at the given position.
      *
@@ -189,7 +102,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * Attempts to increment the stack count. Returns true if successful.
      * Resets the fuse timer on each successful stack.
      *
-     * @return the result of stack
+     * @return true if the stack count was incremented
      */
     public boolean tryStack() {
         if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
@@ -203,7 +116,9 @@ public class ChainMarkerBlockEntity extends BlockEntity {
 
     // ── Tick ──────────────────────────────────────────────────────────────
 
-    /** Server tick: dispatches to the current phase's handler.
+    /** Server tick: either a post-fuse behavior is active (delegate) or
+     * the fuse is still counting down (or rock progressive mining is
+     * running under the legacy path).
      *
      * @param level the current level
      * @param pos   the block position
@@ -213,46 +128,21 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     public static void serverTick(Level level, BlockPos pos, BlockState state,
                                   ChainMarkerBlockEntity be) {
         ServerLevel server = (ServerLevel) level;
-        if (be.phase == Phase.FUSE) {
-            be.tickFuse(server, pos);
+        if (be.behavior != null) {
+            be.behavior.serverTick(server, pos, be);
+            if (!be.behavior.isActive()) {
+                server.removeBlock(pos, false);
+                return;
+            }
+            be.setChanged();
+            be.syncToClient();
             return;
         }
-        be.tickImplosionPhase(server, pos);
+        be.tickFuse(server, pos);
     }
 
-    /** Dispatches the EXPAND / HOLD phase handlers, delegating the later
-     * CONTRACT / POPPING phases to {@link #tickLatePhase} so no single
-     * method exceeds the cyclomatic complexity threshold.
-     *
-     * @param server the server level
-     * @param pos    the marker position
-     */
-    private void tickImplosionPhase(ServerLevel server, BlockPos pos) {
-        if (phase == Phase.EXPAND) {
-            tickExpand(server, pos);
-            return;
-        }
-        if (phase == Phase.HOLD) {
-            tickHold(server, pos);
-            return;
-        }
-        tickLatePhase(server, pos);
-    }
-
-    /** Dispatches the CONTRACT / POPPING phase handlers.
-     *
-     * @param server the server level
-     * @param pos    the marker position
-     */
-    private void tickLatePhase(ServerLevel server, BlockPos pos) {
-        if (phase == Phase.CONTRACT) {
-            tickContract(server, pos);
-            return;
-        }
-        tickPopping(server, pos);
-    }
-
-    /** FUSE-phase tick: progressive mining passthrough or fuse countdown + detonate on expiry.
+    /** FUSE-phase tick: progressive mining passthrough (legacy rock path)
+     * or fuse countdown + detonate on expiry.
      *
      * @param level the server level
      * @param pos   the block position
@@ -270,242 +160,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncIfNeeded();
     }
 
-    /** EXPAND-phase tick: countdown + particle burst. On expiry, walks the
-     * sphere to destroy blocks + fill the accumulator, then transitions to
-     * HOLD so the sphere sits at max size for the destruction moment.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void tickExpand(ServerLevel level, BlockPos pos) {
-        expandTicksRemaining--;
-        spawnImplosionParticles(level, pos);
-        pullEntitiesTowardCenter(level, pos, implodeRadius);
-        if (expandTicksRemaining <= 0) {
-            accumulator = NetherExecutor.walkAndDestroy(level, pos, implodeRadius);
-            damageEntitiesInSphere(level, pos, implodeRadius);
-            phase = Phase.HOLD;
-            initialHoldTicks = HOLD_DURATION;
-            holdTicksRemaining = HOLD_DURATION;
-        }
-        setChanged();
-        syncToClient();
-    }
-
-    /** HOLD-phase tick: sphere sits at full size while the destroyed area
-     * settles. Transitions to CONTRACT on expiry.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void tickHold(ServerLevel level, BlockPos pos) {
-        holdTicksRemaining--;
-        spawnImplosionParticles(level, pos);
-        pullEntitiesTowardCenter(level, pos, implodeRadius);
-        if (holdTicksRemaining <= 0) {
-            phase = Phase.CONTRACT;
-            initialContractTicks = CONTRACT_DURATION;
-            contractTicksRemaining = CONTRACT_DURATION;
-        }
-        setChanged();
-        syncToClient();
-    }
-
-    /** CONTRACT-phase tick: countdown + particle burst. On expiry, transitions
-     * to POPPING; the next tick drops the accumulator at the marker center.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void tickContract(ServerLevel level, BlockPos pos) {
-        contractTicksRemaining--;
-        spawnImplosionParticles(level, pos);
-        if (contractTicksRemaining <= 0) {
-            phase = Phase.POPPING;
-        }
-        setChanged();
-        syncToClient();
-    }
-
-    /** POPPING-phase tick: single-tick drop of the accumulator + self-removal.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void tickPopping(ServerLevel level, BlockPos pos) {
-        BlobStacks.dropAll(accumulator, level, pos);
-        level.removeBlock(pos, false);
-    }
-
-    /** Placeholder visual for the implosion animation. Replaced by a real
-     * shader sphere in goal-013 once Phase 2 is stable.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void spawnImplosionParticles(ServerLevel level, BlockPos pos) {
-        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
-        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
-        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
-        int count = IMPLODE_PARTICLE_BASE + IMPLODE_PARTICLE_PER_STACK * stackCount;
-        double spread = implodeRadius * IMPLODE_PARTICLE_SPREAD_PER_RANGE;
-        level.sendParticles(ParticleTypes.SOUL,
-            cx, cy, cz, count, spread, spread, spread, IMPLODE_PARTICLE_SPEED);
-    }
-
-    /**
-     * Seeds this BE with the implosion radius and transitions into EXPAND.
-     * Called by {@code NetherExecutor.execute} when the fuse expires. The
-     * sphere grows visually during EXPAND, then the actual sphere walk
-     * (accumulate totals + remove blocks) happens at the EXPAND → CONTRACT
-     * transition, so the world destruction is fully hidden behind the fully-
-     * grown occluding sphere.
-     *
-     * @param level  the server level (used to apply area blindness)
-     * @param pos    the marker position
-     * @param radius effect radius in blocks, exposed via {@link #getCurrentRadius()}
-     */
-    public void beginImplosion(@NonNull ServerLevel level, @NonNull BlockPos pos, int radius) {
-        this.implodeRadius = radius;
-        this.accumulator = GooContents.EMPTY;
-        this.initialExpandTicks = EXPAND_DURATION;
-        this.expandTicksRemaining = EXPAND_DURATION;
-        this.initialHoldTicks = 0;
-        this.holdTicksRemaining = 0;
-        this.initialContractTicks = 0;
-        this.contractTicksRemaining = 0;
-        this.phase = Phase.EXPAND;
-        blindEntitiesInSphere(level, pos, radius);
-        applyAreaDarkness(level, pos, radius);
-        level.playSound(null, pos, GooSounds.BLACK_HOLE.get(), SoundSource.BLOCKS,
-            BLACK_HOLE_SOUND_VOLUME, BLACK_HOLE_SOUND_PITCH);
-        setChanged();
-        syncToClient();
-    }
-
-    /**
-     * Blinds living entities inside the implosion sphere for the full
-     * EXPAND + CONTRACT duration, plus a short fade-out tail. Applied once
-     * at EXPAND entry; entities that wander into the sphere mid-effect are
-     * not re-blinded (edge case).
-     *
-     * @param level  the server level
-     * @param pos    the marker position
-     * @param radius effect radius in blocks
-     */
-    private static void blindEntitiesInSphere(ServerLevel level, BlockPos pos, int radius) {
-        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
-        forEntitiesInSphere(level, pos, radius, entity ->
-            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0, false, false)));
-    }
-
-    /**
-     * Iterates every {@link LivingEntity} whose center lies within {@code radius}
-     * blocks of the marker's block center, calling {@code action} on each. The
-     * shared sphere walk for blind/damage/pull/darkness effects: AABB query
-     * followed by squared-distance filter.
-     *
-     * @param level  the server level
-     * @param pos    the marker position
-     * @param radius sphere radius in blocks
-     * @param action action to apply to each entity inside the sphere
-     */
-    private static void forEntitiesInSphere(ServerLevel level, BlockPos pos, int radius,
-                                            Consumer<LivingEntity> action) {
-        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
-        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
-        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
-        AABB box = new AABB(cx - radius, cy - radius, cz - radius,
-            cx + radius, cy + radius, cz + radius);
-        double radiusSq = (double) radius * radius;
-        List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
-        for (LivingEntity entity : entities) {
-            if (entity.distanceToSqr(cx, cy, cz) > radiusSq) { continue; }
-            action.accept(entity);
-        }
-    }
-
-    /**
-     * Shaves {@link #DAMAGE_FRACTION} off the current HP of every living
-     * entity inside the blast sphere at the destruction instant. Magic-typed
-     * so armor does not mitigate. Called once at the EXPAND -> HOLD transition,
-     * never as a tick effect: the cut is binary, in or out.
-     *
-     * @param level  the server level
-     * @param pos    the marker position
-     * @param radius effect radius in blocks
-     */
-    private static void damageEntitiesInSphere(ServerLevel level, BlockPos pos, int radius) {
-        forEntitiesInSphere(level, pos, radius, entity -> {
-            float damage = entity.getHealth() * DAMAGE_FRACTION;
-            entity.hurtServer(level, level.damageSources().magic(), damage);
-        });
-    }
-
-    /**
-     * Per-tick gravitic tug toward the marker center. Called from EXPAND and
-     * HOLD ticks (never CONTRACT - the sphere is already dissipating). Each
-     * affected entity receives a small velocity delta of magnitude
-     * {@link #PULL_SPEED}, scaled by the unit vector from entity to center,
-     * via {@link LivingEntity#push} so knockback resistance still applies.
-     * Entities exactly on the center are skipped to avoid divide-by-zero.
-     *
-     * @param level  the server level
-     * @param pos    the marker position
-     * @param radius pull radius in blocks (matches the blast radius)
-     */
-    private static void pullEntitiesTowardCenter(ServerLevel level, BlockPos pos, int radius) {
-        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
-        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
-        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
-        forEntitiesInSphere(level, pos, radius * PULL_RADIUS_MULT, entity -> {
-            double dx = cx - entity.getX();
-            double dy = cy - entity.getY();
-            double dz = cz - entity.getZ();
-            double distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq < PULL_MIN_DIST_SQ) { return; }
-            double scale = PULL_SPEED / Math.sqrt(distSq);
-            entity.push(dx * scale, dy * scale, dz * scale);
-            entity.hurtMarked = true;
-        });
-    }
-
-    /**
-     * Two-tier vanilla {@link MobEffects#DARKNESS} application: a wide outer
-     * band at low amplifier ({@link #OUTER_DARK_AMPLIFIER}) and a narrower
-     * inner band matching the blast radius at higher amplifier
-     * ({@link #INNER_DARK_AMPLIFIER}). Entities inside the inner sphere get
-     * the stronger version because {@link LivingEntity#addEffect} replaces
-     * weaker amplifiers. Layered with the existing blindness for full
-     * "what's happening" disorientation inside the sphere. Called once at
-     * EXPAND entry.
-     *
-     * @param level  the server level
-     * @param pos    the marker position
-     * @param radius blast radius in blocks (inner band)
-     */
-    private static void applyAreaDarkness(ServerLevel level, BlockPos pos, int radius) {
-        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
-        int outerRadius = radius * OUTER_DARK_RADIUS_MULT;
-        applyDarknessBand(level, pos, outerRadius, OUTER_DARK_AMPLIFIER, duration);
-        applyDarknessBand(level, pos, radius, INNER_DARK_AMPLIFIER, duration);
-    }
-
-    /**
-     * Applies vanilla DARKNESS to every living entity inside a sphere.
-     *
-     * @param level     the server level
-     * @param pos       the marker position
-     * @param radius    sphere radius in blocks
-     * @param amplifier DARKNESS amplifier
-     * @param duration  effect duration in ticks
-     */
-    private static void applyDarknessBand(ServerLevel level, BlockPos pos, int radius,
-                                          int amplifier, int duration) {
-        forEntitiesInSphere(level, pos, radius, entity ->
-            entity.addEffect(new MobEffectInstance(MobEffects.DARKNESS, duration, amplifier, false, false)));
-    }
-
     /** Sends a client sync packet when entering implosion zone or at regular intervals. */
     private void syncIfNeeded() {
         boolean implosionZone = fuseRemaining <= IMPLOSION_SYNC_THRESHOLD;
@@ -514,9 +168,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    /** Fires the chain executor and removes the block, unless the executor
-     * transitioned this BE out of {@link Phase#FUSE} (nether's phase machine
-     * keeps the marker alive to drive EXPAND / CONTRACT / POPPING on its own).
+    /** Fires the chain effect for this goo type. Prefers the profile's
+     * {@code behaviorFactory} (new-style {@link ChainBehavior}) if one is
+     * registered; otherwise falls back to the legacy {@code executor} /
+     * {@code layerExecutor} one-shot paths.
      *
      * @param level the current level
      * @param pos   the block position
@@ -527,6 +182,40 @@ public class ChainMarkerBlockEntity extends BlockEntity {
             level.removeBlock(pos, false);
             return;
         }
+        if (profile.behaviorFactory() != null) {
+            detonateBehavior(level, pos, profile);
+            return;
+        }
+        detonateLegacy(level, pos, profile);
+    }
+
+    /** Behavior path: creates the behavior, invokes {@code onFuseExpired},
+     * and removes the BE immediately if the behavior already finished
+     * (instant one-shots via the behavior API).
+     *
+     * @param level   the current level
+     * @param pos     the block position
+     * @param profile the chain profile for the current goo type
+     */
+    private void detonateBehavior(ServerLevel level, BlockPos pos, ChainProfile profile) {
+        behavior = profile.behaviorFactory().get();
+        behavior.onFuseExpired(level, pos, this);
+        if (!behavior.isActive()) {
+            level.removeBlock(pos, false);
+            return;
+        }
+        setChanged();
+        syncToClient();
+    }
+
+    /** Legacy path: routes to the old {@code executor} or
+     * {@code layerExecutor} depending on which the profile provides.
+     *
+     * @param level   the current level
+     * @param pos     the block position
+     * @param profile the chain profile for the current goo type
+     */
+    private void detonateLegacy(ServerLevel level, BlockPos pos, ChainProfile profile) {
         int range = profile.rangeFormula().applyAsInt(stackCount);
         if (profile.layerExecutor() != null) {
             beginProgressiveMining(range);
@@ -535,14 +224,12 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         if (profile.executor() != null) {
             profile.executor().execute(level, pos, range, stackCount, placedFace);
         }
-        if (phase == Phase.FUSE) {
-            level.removeBlock(pos, false);
-        }
+        level.removeBlock(pos, false);
     }
 
-    /** Transitions this marker into progressive mining mode. The BE will
-     * remain in place, ticking one layer per server tick until {@code depth}
-     * layers have been processed.
+    /** Transitions this marker into progressive mining mode (legacy rock
+     * path). The BE remains in place, ticking one layer per server tick
+     * until {@code depth} layers have been processed.
      *
      * @param depth total layers to mine
      */
@@ -615,66 +302,15 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return placedFace;
     }
 
-    /** Returns the current lifecycle phase (FUSE, EXPAND, CONTRACT, POPPING).
+    /** Returns the active post-fuse behavior, or null if still in FUSE.
+     * The BER calls this to {@code instanceof}-check for type-specific
+     * render paths (e.g. nether black-hole sphere).
      *
-     * @return the current phase
+     * @return the active chain behavior, or null
      */
-    public Phase getPhase() {
-        return phase;
-    }
-
-    /** Returns the per-type mB accumulator. Empty during FUSE and EXPAND,
-     * populated at the EXPAND → CONTRACT transition, dropped at POPPING.
-     *
-     * @return the accumulator
-     */
-    public GooContents getAccumulator() {
-        return accumulator;
-    }
-
-    /** Returns the radius of the in-progress implosion, or 0 if not imploding.
-     * Exposed for goal-013's shader BER hand-off contract.
-     *
-     * @return the current effect radius in blocks
-     */
-    public int getCurrentRadius() {
-        return implodeRadius;
-    }
-
-    /** Returns the visible scale of the black-hole sphere in [0, 1]:
-     * grows 0 → 1 across EXPAND, stays at 1 at the transition instant,
-     * shrinks 1 → 0 across CONTRACT, and is 0 otherwise. The BER
-     * multiplies this by the effective radius to size the billboard.
-     *
-     * @return the current visible scale of the sphere
-     */
-    public float getVisibleScale() {
-        return switch (phase) {
-            case EXPAND -> expandProgress();
-            case HOLD -> 1f;
-            case CONTRACT -> 1f - contractProgress();
-            default -> 0f;
-        };
-    }
-
-    /** Returns the EXPAND phase progress in [0, 1]: 0 at entry, 1 just
-     * before the EXPAND → CONTRACT transition. Defined only during EXPAND.
-     *
-     * @return the expand progress
-     */
-    private float expandProgress() {
-        if (initialExpandTicks <= 0) { return 0f; }
-        return 1f - ((float) expandTicksRemaining / initialExpandTicks);
-    }
-
-    /** Returns the CONTRACT phase progress in [0, 1]: 0 at entry, 1 just
-     * before the CONTRACT → POPPING transition. Defined only during CONTRACT.
-     *
-     * @return the contract progress
-     */
-    private float contractProgress() {
-        if (initialContractTicks <= 0) { return 0f; }
-        return 1f - ((float) contractTicksRemaining / initialContractTicks);
+    @Nullable
+    public ChainBehavior getBehavior() {
+        return behavior;
     }
 
     // ── Persistence ───────────────────────────────────────────────────────
@@ -686,15 +322,17 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
-        loadGooState(input);
+        loadSharedFields(input);
         placedFace = loadFace(input);
+        reconstituteBehaviorIfNeeded(input);
     }
 
-    /** Restores goo type, stack count, max stacks, and fuse from persistent data.
+    /** Restores goo type, stack count, max stacks, fuse, and mining state
+     * from persistent data.
      *
      * @param input the value input to read from
      */
-    private void loadGooState(ValueInput input) {
+    private void loadSharedFields(ValueInput input) {
         GooType loaded = GooType.fromId(input.getStringOr(TAG_GOO_TYPE, DEFAULT_GOO_TYPE));
         gooType = loaded != null ? loaded : GooType.ROCK;
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
@@ -702,37 +340,20 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
         miningStep = input.getIntOr(TAG_MINING_STEP, MINING_INACTIVE);
         miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
-        loadPhaseState(input);
     }
 
-    /** Restores the phase state machine fields from persistent data.
-     * Non-nether profiles load {@link Phase#FUSE} and empty accumulator.
+    /** If the fuse has already expired, re-creates the behavior instance
+     * via the profile factory and lets it reload its own state from the
+     * same value stream. Called after the shared fields have been loaded.
      *
      * @param input the value input to read from
      */
-    private void loadPhaseState(ValueInput input) {
-        phase = parsePhase(input.getStringOr(TAG_PHASE, Phase.FUSE.name()));
-        expandTicksRemaining = input.getIntOr(TAG_EXPAND_REMAINING, 0);
-        initialExpandTicks = input.getIntOr(TAG_EXPAND_INITIAL, 0);
-        holdTicksRemaining = input.getIntOr(TAG_HOLD_REMAINING, 0);
-        initialHoldTicks = input.getIntOr(TAG_HOLD_INITIAL, 0);
-        contractTicksRemaining = input.getIntOr(TAG_CONTRACT_REMAINING, 0);
-        initialContractTicks = input.getIntOr(TAG_CONTRACT_INITIAL, 0);
-        implodeRadius = input.getIntOr(TAG_IMPLODE_RADIUS, 0);
-        accumulator = input.read(TAG_ACCUMULATOR, GooContents.CODEC).orElse(GooContents.EMPTY);
-    }
-
-    /** Parses a phase name, defaulting to FUSE on any unknown/legacy value.
-     *
-     * @param name stored phase name
-     * @return the phase, or FUSE if unrecognized
-     */
-    private static Phase parsePhase(String name) {
-        try {
-            return Phase.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            return Phase.FUSE;
-        }
+    private void reconstituteBehaviorIfNeeded(ValueInput input) {
+        if (fuseRemaining > 0) { return; }
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile == null || profile.behaviorFactory() == null) { return; }
+        behavior = profile.behaviorFactory().get();
+        behavior.loadAdditional(input);
     }
 
     /** Loads the placed face direction, defaulting to UP if unrecognized.
@@ -760,16 +381,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putString(TAG_PLACED_FACE, placedFace.getName());
         output.putInt(TAG_MINING_STEP, miningStep);
         output.putInt(TAG_MINING_DEPTH, miningDepth);
-        output.putString(TAG_PHASE, phase.name());
-        output.putInt(TAG_EXPAND_REMAINING, expandTicksRemaining);
-        output.putInt(TAG_EXPAND_INITIAL, initialExpandTicks);
-        output.putInt(TAG_HOLD_REMAINING, holdTicksRemaining);
-        output.putInt(TAG_HOLD_INITIAL, initialHoldTicks);
-        output.putInt(TAG_CONTRACT_REMAINING, contractTicksRemaining);
-        output.putInt(TAG_CONTRACT_INITIAL, initialContractTicks);
-        output.putInt(TAG_IMPLODE_RADIUS, implodeRadius);
-        if (!accumulator.isEmpty()) {
-            output.store(TAG_ACCUMULATOR, GooContents.CODEC, accumulator);
+        if (behavior != null) {
+            behavior.saveAdditional(output);
         }
     }
 

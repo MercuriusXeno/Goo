@@ -1,14 +1,14 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.core.Direction;
 
 /**
  * Render state snapshot for the chain marker BER. Captures goo type,
  * stack count, and fuse progress for the slime-like orb visual, plus
- * the phase-machine state used by the nether black-hole shader.
+ * a flag + sphere fields populated when a nether {@code ChainBehavior}
+ * is active so the BER can submit the black-hole shader sphere.
  */
 public class ChainMarkerRenderState extends BlockEntityRenderState {
 
@@ -36,15 +36,20 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;
 
-    /** Lifecycle phase: FUSE for the orb visual, EXPAND / HOLD / CONTRACT for the shader sphere. */
-    public ChainMarkerBlockEntity.Phase phase = ChainMarkerBlockEntity.Phase.FUSE;
+    /** True when a nether black-hole behavior is active on this marker.
+     * The BER uses this flag to branch between the orb visual (false) and
+     * the shader sphere (true). */
+    public boolean netherActive;
 
-    /** Visible scale of the sphere in [0, 1]: grows through EXPAND, 1 during HOLD, shrinks through CONTRACT. */
+    /** Visible scale of the sphere in [0, 1]: grows through EXPAND, 1
+     * during HOLD, shrinks through CONTRACT. Only meaningful when
+     * {@link #netherActive} is true. */
     public float visibleScale;
 
-    /** Effect radius of the nether blast in blocks. */
+    /** Effect radius of the nether blast in blocks. Only meaningful
+     * when {@link #netherActive} is true. */
     public float implodeRadius;
 
-    /** Cycling animation phase in [0, 1] used by the shader's swirl. Advanced by the BE per tick. */
+    /** Cycling animation phase in [0, 1] used by the shader's swirl. */
     public float animationTime;
 }

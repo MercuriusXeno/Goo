@@ -7,6 +7,7 @@ import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
+import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -141,18 +142,24 @@ public class ChainMarkerBER
     }
 
     /**
-     * Copies the phase machine state so the submit pass can branch between
-     * the orb and the black-hole shader sphere.
+     * Copies type-specific render state off the active {@link ChainBehavior}
+     * (if any) so the submit pass can branch between the orb and the
+     * black-hole shader sphere. Only nether markers populate the sphere
+     * fields; everything else leaves {@code netherActive} false.
      *
      * @param be    the block entity
      * @param state the render state to populate
      */
     private static void extractImplosionFields(ChainMarkerBlockEntity be,
             ChainMarkerRenderState state) {
-        state.phase = be.getPhase();
-        state.visibleScale = be.getVisibleScale();
-        state.implodeRadius = be.getCurrentRadius();
-        state.animationTime = computeAnimationTime(be);
+        if (be.getBehavior() instanceof NetherBehavior nether) {
+            state.netherActive = true;
+            state.visibleScale = nether.getVisibleScale();
+            state.implodeRadius = nether.getCurrentRadius();
+            state.animationTime = computeAnimationTime(be);
+            return;
+        }
+        state.netherActive = false;
     }
 
     /** Derives a deterministic [0, 1) animation phase from the BE's level
@@ -208,22 +215,11 @@ public class ChainMarkerBER
     @Override
     public void submit(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (isBlackholePhase(state.phase)) {
+        if (state.netherActive) {
             submitBlackholeSphere(state, poseStack, nodeCollector);
             return;
         }
         submitFuseOrb(state, poseStack, nodeCollector);
-    }
-
-    /** True if the given phase renders the black-hole sphere.
-     *
-     * @param phase the phase to check
-     * @return true for EXPAND, HOLD, CONTRACT; false otherwise
-     */
-    private static boolean isBlackholePhase(ChainMarkerBlockEntity.Phase phase) {
-        return phase == ChainMarkerBlockEntity.Phase.EXPAND
-            || phase == ChainMarkerBlockEntity.Phase.HOLD
-            || phase == ChainMarkerBlockEntity.Phase.CONTRACT;
     }
 
     /**
