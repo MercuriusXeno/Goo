@@ -10,6 +10,6 @@ final class RockEffect implements WorldEffect {
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        ChainAndFrostEffects.rockImplosion(level, pos, targetFace);
+        EffectBlockPlacement.rockImplosion(level, pos, targetFace);
     }
 }

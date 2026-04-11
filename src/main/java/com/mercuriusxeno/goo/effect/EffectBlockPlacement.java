@@ -19,17 +19,24 @@ import net.minecraft.world.level.material.Fluids;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Chain-marker and frost-field world effects extracted from WorldEffects.
- * Rock, blaze, and nether place waterloggable chain markers; frost places
- * a freeze field with stacking and the "freeze-and-rise" water handling.
+ * Shared on-hit placement for blob-impact effect blocks. The four per-type
+ * {@link WorldEffect} implementations ({@code RockEffect},
+ * {@code BlazeEffect}, {@code NetherEffect}, {@code FrostEffect}) forward
+ * to the entry points below, which build a {@link ChainPlacementRules}
+ * candidate state for the hit and face-adjacent positions, apply the
+ * decision, and initialize the resulting chain marker or frost field.
  *
- * <p>Placement is decided by {@link ChainPlacementRules}: stack onto existing
- * same-type markers first, then try the hit block, then the face-adjacent
- * block. The hit block is now a first-class placement target (for fire,
- * tall grass, snow, water, etc.), which fixes the previous behavior where
- * non-solid targets always pushed the marker one block off the face.</p>
+ * <p>Rock, blaze, and nether place waterloggable {@code ChainMarkerBlock}s;
+ * frost places a {@code FrostFieldBlock} with stacking and the
+ * "freeze-and-rise" water handling.</p>
+ *
+ * <p>Placement rule: stack onto an existing same-type effect block first,
+ * then try the hit block, then the face-adjacent block. The hit block is
+ * a first-class placement target (fire, tall grass, snow, water, etc.),
+ * so non-solid targets do not always push the marker one block off the
+ * face.</p>
  */
-final class ChainAndFrostEffects {
+final class EffectBlockPlacement {
 
     /** Block update flags for setBlock calls. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
@@ -38,7 +45,7 @@ final class ChainAndFrostEffects {
     /** Fallback face used when the hit direction is unknown. */
     private static final Direction DEFAULT_FACE = Direction.UP;
 
-    private ChainAndFrostEffects() {}
+    private EffectBlockPlacement() {}
 
     /**
      * Rock: chain implosion. Places a chain marker on the hit block (if

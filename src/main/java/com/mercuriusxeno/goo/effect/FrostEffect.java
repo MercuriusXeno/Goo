@@ -10,6 +10,6 @@ final class FrostEffect implements WorldEffect {
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        ChainAndFrostEffects.frostFreeze(level, pos, targetFace);
+        EffectBlockPlacement.frostFreeze(level, pos, targetFace);
     }
 }
