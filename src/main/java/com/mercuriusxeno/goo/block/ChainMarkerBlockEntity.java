@@ -155,10 +155,12 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    /** Fires the chain effect for this goo type. Prefers the profile's
-     * {@code behaviorFactory} (new-style {@link ChainBehavior}) if one is
-     * registered; otherwise falls back to the legacy {@code executor} /
-     * {@code layerExecutor} one-shot paths.
+    /** Fires the chain effect for this goo type by creating the profile's
+     * {@link ChainBehavior} and invoking {@code onFuseExpired}. If the
+     * behavior finishes immediately (instant one-shot like blaze), the BE
+     * is removed on the same tick; otherwise the BE stays and
+     * {@link #serverTick} will delegate to {@link ChainBehavior#serverTick}
+     * on subsequent ticks.
      *
      * @param level the current level
      * @param pos   the block position
@@ -169,22 +171,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
             level.removeBlock(pos, false);
             return;
         }
-        if (profile.behaviorFactory() != null) {
-            detonateBehavior(level, pos, profile);
-            return;
-        }
-        detonateLegacy(level, pos, profile);
-    }
-
-    /** Behavior path: creates the behavior, invokes {@code onFuseExpired},
-     * and removes the BE immediately if the behavior already finished
-     * (instant one-shots via the behavior API).
-     *
-     * @param level   the current level
-     * @param pos     the block position
-     * @param profile the chain profile for the current goo type
-     */
-    private void detonateBehavior(ServerLevel level, BlockPos pos, ChainProfile profile) {
         behavior = profile.behaviorFactory().get();
         behavior.onFuseExpired(level, pos, this);
         if (!behavior.isActive()) {
@@ -193,21 +179,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
         setChanged();
         syncToClient();
-    }
-
-    /** Legacy path: routes to the old one-shot {@code executor} for any
-     * profile that has not yet been migrated to the behavior API.
-     *
-     * @param level   the current level
-     * @param pos     the block position
-     * @param profile the chain profile for the current goo type
-     */
-    private void detonateLegacy(ServerLevel level, BlockPos pos, ChainProfile profile) {
-        int range = profile.rangeFormula().applyAsInt(stackCount);
-        if (profile.executor() != null) {
-            profile.executor().execute(level, pos, range, stackCount, placedFace);
-        }
-        level.removeBlock(pos, false);
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────
