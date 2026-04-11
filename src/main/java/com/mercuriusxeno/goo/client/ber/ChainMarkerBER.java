@@ -72,6 +72,8 @@ public class ChainMarkerBER
     private static final float BLOCK_CENTER = 0.5f;
     /** Minimum visible radius for the black-hole sphere so it never collapses to a single pixel. */
     private static final float BLACKHOLE_MIN_RADIUS = 0.25f;
+    /** Extra world-space margin added to the effective implosion radius so the sphere fully occludes the blast zone. */
+    private static final float OCCLUSION_MARGIN = 2f;
     /** Solid alpha (0xFF) for the blackhole quad vertices; progress lives in the R channel. */
     private static final int BLACKHOLE_ALPHA = 0xFF;
     /** Maximum byte value for a progress-in-R channel mapping. */
@@ -131,7 +133,7 @@ public class ChainMarkerBER
     private static void extractImplosionFields(ChainMarkerBlockEntity be,
             ChainMarkerRenderState state) {
         state.phase = be.getPhase();
-        state.implodeProgress = be.getProgress();
+        state.visibleScale = be.getVisibleScale();
         state.implodeRadius = be.getCurrentRadius();
     }
 
@@ -175,7 +177,8 @@ public class ChainMarkerBER
     @Override
     public void submit(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (state.phase == ChainMarkerBlockEntity.Phase.IMPLODING) {
+        if (state.phase == ChainMarkerBlockEntity.Phase.EXPAND
+                || state.phase == ChainMarkerBlockEntity.Phase.CONTRACT) {
             submitBlackholeSphere(state, poseStack, nodeCollector, cameraState);
             return;
         }
@@ -223,8 +226,9 @@ public class ChainMarkerBER
     private static void submitBlackholeSphere(ChainMarkerRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
             CameraRenderState cameraState) {
-        float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, state.implodeRadius);
-        int color = packBlackholeColor(state.implodeProgress);
+        float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
+        float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, fullRadius * state.visibleScale);
+        int color = packBlackholeColor(state.visibleScale);
         BillboardBasis basis = computeBillboardBasis(state.blockPos, cameraState.pos, visibleRadius);
         if (basis == null) { return; }
 

@@ -37,26 +37,43 @@ public final class NetherExecutor {
     private NetherExecutor() {}
 
     /**
-     * Fires the nether conversion. Walks the sphere once, removes blocks,
-     * accumulates per-type totals, then seeds the chain marker BE with the
-     * implosion state. The BE takes over from here; this method returns
-     * without touching the marker block itself.
+     * Fires the nether conversion. Seeds the chain marker BE's phase
+     * machine; the actual destruction (sphere walk + block removal) is
+     * deferred to {@link #walkAndDestroy}, which the BE calls at the
+     * EXPAND → CONTRACT transition so the sphere is fully grown and
+     * occluding before anything vanishes.
      *
      * @param level      the server level
      * @param pos        the anchor block position (the marker itself)
      * @param range      computed conversion radius
-     * @param stackCount the raw stack count (unused - the BE reads it from its own field)
+     * @param stackCount the raw stack count (unused - the BE reads its own field)
      * @param placedFace the face the marker was attached to (unused)
      */
     public static void execute(ServerLevel level, BlockPos pos, int range,
                                int stackCount, Direction placedFace) {
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity marker)) { return; }
+        marker.beginImplosion(level, pos, range);
+    }
+
+    /**
+     * Walks the spherical volume once, accumulates per-type mB totals,
+     * and removes the affected blocks. Called by
+     * {@link ChainMarkerBlockEntity} at the EXPAND → CONTRACT transition,
+     * i.e. at the moment the black-hole sphere is fully grown and
+     * visually occluding the blast zone.
+     *
+     * @param level  the server level
+     * @param pos    the marker position (skipped during the walk)
+     * @param range  effect radius in blocks
+     * @return the accumulated totals, ready to be dropped at POPPING
+     */
+    public static GooContents walkAndDestroy(ServerLevel level, BlockPos pos, int range) {
         Map<GooType, Long> totals = new EnumMap<>(GooType.class);
         EffectMath.forEachInSphere(pos, range, target -> {
             if (target.equals(pos)) { return; }
             accumulateAndRemove(level, target, totals);
         });
-        marker.beginImplosion(new GooContents(totals), range);
+        return new GooContents(totals);
     }
 
     /**

@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.block;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;
+import com.mercuriusxeno.goo.effect.NetherExecutor;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -15,13 +16,18 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.List;
 
 /**
  * Ticking block entity for chain effects. Counts down a fuse; additional
@@ -39,8 +45,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_MINING_STEP = "MiningStep";
     private static final String TAG_MINING_DEPTH = "MiningDepth";
     private static final String TAG_PHASE = "Phase";
-    private static final String TAG_IMPLODE_REMAINING = "ImplodeRemaining";
-    private static final String TAG_IMPLODE_INITIAL = "ImplodeInitial";
+    private static final String TAG_EXPAND_REMAINING = "ExpandRemaining";
+    private static final String TAG_EXPAND_INITIAL = "ExpandInitial";
+    private static final String TAG_CONTRACT_REMAINING = "ContractRemaining";
+    private static final String TAG_CONTRACT_INITIAL = "ContractInitial";
     private static final String TAG_IMPLODE_RADIUS = "ImplodeRadius";
     private static final String TAG_ACCUMULATOR = "Accumulator";
     /** Default goo type id when loading from NBT. */
@@ -49,8 +57,12 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String DEFAULT_FACE = "up";
     /** Sentinel: no progressive mining in progress. */
     private static final int MINING_INACTIVE = -1;
-    /** Default implosion duration in ticks (1.25 seconds). */
-    public static final int IMPLODE_DURATION = 25;
+    /** Ticks the black-hole sphere takes to grow from 0 to full size (0.75 s). */
+    public static final int EXPAND_DURATION = 15;
+    /** Ticks the black-hole sphere takes to shrink from full size back to 0 (0.75 s). */
+    public static final int CONTRACT_DURATION = 15;
+    /** Extra blindness ticks applied past the EXPAND+CONTRACT window so entities inside get a clean fade-out. */
+    private static final int BLINDNESS_EXTRA_TICKS = 20;
     /** Base placeholder soul particle count per implosion tick. */
     private static final int IMPLODE_PARTICLE_BASE = 3;
     /** Additional placeholder soul particles per stack. */
@@ -65,10 +77,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     /**
      * Lifecycle phase of the chain marker. Most profiles stay in {@link #FUSE}
      * forever and the BE is removed when the fuse expires. Nether additionally
-     * transitions through {@link #IMPLODING} (accumulator priming + animation)
-     * and {@link #POPPING} (single-tick drop + self-remove).
+     * transitions through {@link #EXPAND} (sphere grows, blocks untouched),
+     * {@link #CONTRACT} (blocks destroyed, sphere shrinks), and
+     * {@link #POPPING} (drops accumulated items + self-removal).
      */
-    public enum Phase { FUSE, IMPLODING, POPPING }
+    public enum Phase { FUSE, EXPAND, CONTRACT, POPPING }
 
     private GooType gooType = GooType.ROCK;
     private int stackCount = 1;
@@ -81,13 +94,17 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int miningDepth;
     /** Lifecycle phase. See {@link Phase}. */
     private Phase phase = Phase.FUSE;
-    /** Ticks remaining in the current implosion animation. Only meaningful when phase == IMPLODING. */
-    private int implodeTicksRemaining;
-    /** Total implosion duration for progress calculation. */
-    private int initialImplodeTicks;
-    /** Radius of the effect sphere, exposed for goal-013's BER. */
+    /** Ticks remaining in the EXPAND phase. Counts down from {@link #initialExpandTicks} to 0. */
+    private int expandTicksRemaining;
+    /** Initial EXPAND duration (usually {@link #EXPAND_DURATION}). Used for progress normalization. */
+    private int initialExpandTicks;
+    /** Ticks remaining in the CONTRACT phase. Counts down from {@link #initialContractTicks} to 0. */
+    private int contractTicksRemaining;
+    /** Initial CONTRACT duration (usually {@link #CONTRACT_DURATION}). */
+    private int initialContractTicks;
+    /** Effect radius of the nether blast in blocks. Exposed for goal-013's BER. */
     private int implodeRadius;
-    /** Per-type mB totals accumulated during sphere walk, dropped at POPPING. */
+    /** Per-type mB totals filled during CONTRACT entry (when blocks are destroyed), dropped at POPPING. */
     private GooContents accumulator = GooContents.EMPTY;
 
     /** How often to sync fuse to client (every N ticks). */
@@ -157,7 +174,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         ServerLevel server = (ServerLevel) level;
         switch (be.phase) {
             case FUSE -> be.tickFuse(server, pos);
-            case IMPLODING -> be.tickImplosion(server, pos);
+            case EXPAND -> be.tickExpand(server, pos);
+            case CONTRACT -> be.tickContract(server, pos);
             case POPPING -> be.tickPopping(server, pos);
         }
     }
@@ -180,15 +198,36 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncIfNeeded();
     }
 
-    /** IMPLODING-phase tick: countdown, particle burst, transition to POPPING on expiry.
+    /** EXPAND-phase tick: countdown + particle burst. On expiry, walks the
+     * sphere to destroy blocks + fill the accumulator, then transitions to
+     * CONTRACT.
      *
      * @param level the server level
      * @param pos   the marker position
      */
-    private void tickImplosion(ServerLevel level, BlockPos pos) {
-        implodeTicksRemaining--;
+    private void tickExpand(ServerLevel level, BlockPos pos) {
+        expandTicksRemaining--;
         spawnImplosionParticles(level, pos);
-        if (implodeTicksRemaining <= 0) {
+        if (expandTicksRemaining <= 0) {
+            accumulator = NetherExecutor.walkAndDestroy(level, pos, implodeRadius);
+            phase = Phase.CONTRACT;
+            initialContractTicks = CONTRACT_DURATION;
+            contractTicksRemaining = CONTRACT_DURATION;
+        }
+        setChanged();
+        syncToClient();
+    }
+
+    /** CONTRACT-phase tick: countdown + particle burst. On expiry, transitions
+     * to POPPING; the next tick drops the accumulator at the marker center.
+     *
+     * @param level the server level
+     * @param pos   the marker position
+     */
+    private void tickContract(ServerLevel level, BlockPos pos) {
+        contractTicksRemaining--;
+        spawnImplosionParticles(level, pos);
+        if (contractTicksRemaining <= 0) {
             phase = Phase.POPPING;
         }
         setChanged();
@@ -222,21 +261,53 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Seeds this BE with the nether accumulator totals and transitions into
-     * IMPLODING. Called by {@code NetherExecutor.execute} after it walks the
-     * sphere and removes the affected blocks.
+     * Seeds this BE with the implosion radius and transitions into EXPAND.
+     * Called by {@code NetherExecutor.execute} when the fuse expires. The
+     * sphere grows visually during EXPAND, then the actual sphere walk
+     * (accumulate totals + remove blocks) happens at the EXPAND → CONTRACT
+     * transition, so the world destruction is fully hidden behind the fully-
+     * grown occluding sphere.
      *
-     * @param totals per-type mB totals to drop on POPPING
-     * @param radius effect radius, exposed to the BER as {@link #getCurrentRadius()}
+     * @param level  the server level (used to apply area blindness)
+     * @param pos    the marker position
+     * @param radius effect radius in blocks, exposed via {@link #getCurrentRadius()}
      */
-    public void beginImplosion(@NonNull GooContents totals, int radius) {
-        this.accumulator = totals;
+    public void beginImplosion(@NonNull ServerLevel level, @NonNull BlockPos pos, int radius) {
         this.implodeRadius = radius;
-        this.initialImplodeTicks = IMPLODE_DURATION;
-        this.implodeTicksRemaining = IMPLODE_DURATION;
-        this.phase = Phase.IMPLODING;
+        this.accumulator = GooContents.EMPTY;
+        this.initialExpandTicks = EXPAND_DURATION;
+        this.expandTicksRemaining = EXPAND_DURATION;
+        this.initialContractTicks = 0;
+        this.contractTicksRemaining = 0;
+        this.phase = Phase.EXPAND;
+        blindEntitiesInSphere(level, pos, radius);
         setChanged();
         syncToClient();
+    }
+
+    /**
+     * Blinds living entities inside the implosion sphere for the full
+     * EXPAND + CONTRACT duration, plus a short fade-out tail. Applied once
+     * at EXPAND entry; entities that wander into the sphere mid-effect are
+     * not re-blinded (edge case).
+     *
+     * @param level  the server level
+     * @param pos    the marker position
+     * @param radius effect radius in blocks
+     */
+    private static void blindEntitiesInSphere(ServerLevel level, BlockPos pos, int radius) {
+        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
+        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
+        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
+        AABB box = new AABB(cx - radius, cy - radius, cz - radius,
+            cx + radius, cy + radius, cz + radius);
+        int duration = EXPAND_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
+        double radiusSq = (double) radius * radius;
+        List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
+        for (LivingEntity entity : entities) {
+            if (entity.distanceToSqr(cx, cy, cz) > radiusSq) { continue; }
+            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0, false, false));
+        }
     }
 
     /** Sends a client sync packet when entering implosion zone or at regular intervals. */
@@ -249,7 +320,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
 
     /** Fires the chain executor and removes the block, unless the executor
      * transitioned this BE out of {@link Phase#FUSE} (nether's phase machine
-     * keeps the marker alive to drive IMPLODING + POPPING on its own).
+     * keeps the marker alive to drive EXPAND / CONTRACT / POPPING on its own).
      *
      * @param level the current level
      * @param pos   the block position
@@ -348,7 +419,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return placedFace;
     }
 
-    /** Returns the current lifecycle phase (FUSE, IMPLODING, POPPING).
+    /** Returns the current lifecycle phase (FUSE, EXPAND, CONTRACT, POPPING).
      *
      * @return the current phase
      */
@@ -356,8 +427,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return phase;
     }
 
-    /** Returns the per-type mB accumulator. Empty during FUSE, populated
-     * from sphere walk during IMPLODING, dropped at POPPING.
+    /** Returns the per-type mB accumulator. Empty during FUSE and EXPAND,
+     * populated at the EXPAND → CONTRACT transition, dropped at POPPING.
      *
      * @return the accumulator
      */
@@ -374,14 +445,39 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return implodeRadius;
     }
 
-    /** Returns the implosion progress in [0, 1]: 0 at entry, 1 just before POPPING.
-     * Exposed for goal-013's shader BER hand-off contract.
+    /** Returns the visible scale of the black-hole sphere in [0, 1]:
+     * grows 0 → 1 across EXPAND, stays at 1 at the transition instant,
+     * shrinks 1 → 0 across CONTRACT, and is 0 otherwise. The BER
+     * multiplies this by the effective radius to size the billboard.
      *
-     * @return the implosion progress
+     * @return the current visible scale of the sphere
      */
-    public float getProgress() {
-        if (initialImplodeTicks <= 0) { return 0f; }
-        return 1f - ((float) implodeTicksRemaining / initialImplodeTicks);
+    public float getVisibleScale() {
+        return switch (phase) {
+            case EXPAND -> expandProgress();
+            case CONTRACT -> 1f - contractProgress();
+            default -> 0f;
+        };
+    }
+
+    /** Returns the EXPAND phase progress in [0, 1]: 0 at entry, 1 just
+     * before the EXPAND → CONTRACT transition. Defined only during EXPAND.
+     *
+     * @return the expand progress
+     */
+    private float expandProgress() {
+        if (initialExpandTicks <= 0) { return 0f; }
+        return 1f - ((float) expandTicksRemaining / initialExpandTicks);
+    }
+
+    /** Returns the CONTRACT phase progress in [0, 1]: 0 at entry, 1 just
+     * before the CONTRACT → POPPING transition. Defined only during CONTRACT.
+     *
+     * @return the contract progress
+     */
+    private float contractProgress() {
+        if (initialContractTicks <= 0) { return 0f; }
+        return 1f - ((float) contractTicksRemaining / initialContractTicks);
     }
 
     // ── Persistence ───────────────────────────────────────────────────────
@@ -419,8 +515,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     private void loadPhaseState(ValueInput input) {
         phase = parsePhase(input.getStringOr(TAG_PHASE, Phase.FUSE.name()));
-        implodeTicksRemaining = input.getIntOr(TAG_IMPLODE_REMAINING, 0);
-        initialImplodeTicks = input.getIntOr(TAG_IMPLODE_INITIAL, 0);
+        expandTicksRemaining = input.getIntOr(TAG_EXPAND_REMAINING, 0);
+        initialExpandTicks = input.getIntOr(TAG_EXPAND_INITIAL, 0);
+        contractTicksRemaining = input.getIntOr(TAG_CONTRACT_REMAINING, 0);
+        initialContractTicks = input.getIntOr(TAG_CONTRACT_INITIAL, 0);
         implodeRadius = input.getIntOr(TAG_IMPLODE_RADIUS, 0);
         accumulator = input.read(TAG_ACCUMULATOR, GooContents.CODEC).orElse(GooContents.EMPTY);
     }
@@ -464,8 +562,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_MINING_STEP, miningStep);
         output.putInt(TAG_MINING_DEPTH, miningDepth);
         output.putString(TAG_PHASE, phase.name());
-        output.putInt(TAG_IMPLODE_REMAINING, implodeTicksRemaining);
-        output.putInt(TAG_IMPLODE_INITIAL, initialImplodeTicks);
+        output.putInt(TAG_EXPAND_REMAINING, expandTicksRemaining);
+        output.putInt(TAG_EXPAND_INITIAL, initialExpandTicks);
+        output.putInt(TAG_CONTRACT_REMAINING, contractTicksRemaining);
+        output.putInt(TAG_CONTRACT_INITIAL, initialContractTicks);
         output.putInt(TAG_IMPLODE_RADIUS, implodeRadius);
         if (!accumulator.isEmpty()) {
             output.store(TAG_ACCUMULATOR, GooContents.CODEC, accumulator);

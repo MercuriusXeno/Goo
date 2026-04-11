@@ -36,12 +36,12 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;
 
-    /** Lifecycle phase: FUSE for the orb visual, IMPLODING for the shader sphere. */
+    /** Lifecycle phase: FUSE for the orb visual, EXPAND / CONTRACT for the shader sphere. */
     public ChainMarkerBlockEntity.Phase phase = ChainMarkerBlockEntity.Phase.FUSE;
 
-    /** Implosion progress in [0, 1]: 0 at IMPLODING entry, 1 just before POPPING. */
-    public float implodeProgress;
+    /** Visible scale of the sphere in [0, 1]: grows through EXPAND, shrinks through CONTRACT. */
+    public float visibleScale;
 
-    /** Effect radius at IMPLODING entry, in blocks. The billboard shrinks from here. */
+    /** Effect radius of the nether blast in blocks. */
     public float implodeRadius;
 }
