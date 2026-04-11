@@ -103,6 +103,38 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /**
+     * Nether black-hole accretion-disk pipeline: third render pass that
+     * emits a flat annular ring in the world XZ plane around the sphere,
+     * inner radius pinned to the main sphere radius and outer radius at
+     * {@code DISK_OUTER_SCALE * main}. Additive LIGHTNING blend with
+     * depth write off, so the disk layers onto whatever was drawn behind
+     * it. The fragment shader decodes a per-vertex radial distance
+     * from {@code Color.r} and discards any fragment whose interpolated
+     * radial distance is below the main sphere radius (strictly "no
+     * geometry inside the sphere").
+     */
+    public static final RenderPipeline NETHER_DISK = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/nether_disk"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_disk"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_disk"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the accretion-disk pass. */
+    public static final RenderType NETHER_DISK_TYPE = RenderType.create(
+            "goo_nether_disk",
+            RenderSetup.builder(NETHER_DISK)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
     private GooRenderTypes() {}
 
     /**
@@ -114,5 +146,6 @@ public final class GooRenderTypes {
         event.registerPipeline(LINES_ADDITIVE_GLOW);
         event.registerPipeline(NETHER_BLACKHOLE);
         event.registerPipeline(NETHER_CORONA);
+        event.registerPipeline(NETHER_DISK);
     }
 }
