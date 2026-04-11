@@ -135,6 +135,36 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /**
+     * Cube black-hole edge-glow pipeline used by the
+     * {@code CubeHoleStyle} experiment. Same shape budget as the
+     * corona — additive LIGHTNING blend, depth test on, depth write
+     * off — but drawn over a cube mesh with a fragment shader that
+     * highlights the per-face edges instead of the fresnel silhouette.
+     * Each vertex carries its intra-face UV in {@code Color.rg} so the
+     * shader can compute edge distance without any ray math.
+     */
+    public static final RenderPipeline NETHER_CUBE_EDGE = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/nether_cube_edge"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_cube_edge"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_cube_edge"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the cube edge-glow pass. */
+    public static final RenderType NETHER_CUBE_EDGE_TYPE = RenderType.create(
+            "goo_nether_cube_edge",
+            RenderSetup.builder(NETHER_CUBE_EDGE)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
     private GooRenderTypes() {}
 
     /**
@@ -147,5 +177,6 @@ public final class GooRenderTypes {
         event.registerPipeline(NETHER_BLACKHOLE);
         event.registerPipeline(NETHER_CORONA);
         event.registerPipeline(NETHER_DISK);
+        event.registerPipeline(NETHER_CUBE_EDGE);
     }
 }
