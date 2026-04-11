@@ -3,14 +3,11 @@ package com.mercuriusxeno.goo.client.ber.style;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
-import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * Cube-shaped nether black-hole experiment. Mirrors the three-pass
@@ -157,7 +154,19 @@ public final class CubeHoleStyle implements NetherHoleStyle {
             state.diskExpansionScale = nether.getDiskExpansionScale();
             state.implodeRadius = nether.getCurrentRadius();
             state.animationTime = computeAnimationTime(be);
-            markLensActive(be, state);
+            // Intentionally NOT calling NetherLensEffect.markHoleActive
+            // here. The lens shader paints a round event-horizon disc
+            // and a circular photon ring sized to the passed world
+            // radius; both look like "a sphere floating inside the
+            // cube" because the cube's corners extend to
+            // sqrt(3) * halfExtent while the ring sits at 1.5 *
+            // halfExtent. The lens also applies a radial UV warp that
+            // ignores the cube silhouette entirely, curving its
+            // straight edges. Letting the lens go stale (no mark this
+            // frame) deactivates it via NetherLensEffect's frame
+            // staleness check; sphere style keeps marking and keeps
+            // the lens. A cube-aware lens (square horizon, no photon
+            // ring) is a separate follow-up.
             return;
         }
         state.netherActive = false;
@@ -197,28 +206,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
         // untouched on this experiment branch.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_DISK_TYPE,
             (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
-    }
-
-    // ── Lens markup ──────────────────────────────────────────────────
-
-    /** Reports this hole to the screen-space lens post-effect at the
-     * cube's canonical radius (its half-extent). The lens stays
-     * circular per the (b)-scope experiment, so the cube pokes through
-     * a round lens.
-     *
-     * @param be    the chain marker block entity
-     * @param state the populated render state for this frame
-     */
-    private static void markLensActive(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
-        if (state.visibleScale <= 0f) { return; }
-        BlockPos pos = be.getBlockPos();
-        Vec3 center = new Vec3(
-                pos.getX() + BLOCK_CENTER,
-                pos.getY() + BLOCK_CENTER,
-                pos.getZ() + BLOCK_CENTER);
-        float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
-        float visibleHalfExtent = Math.max(CUBE_MIN_HALF_EXTENT, fullRadius * state.visibleScale);
-        NetherLensEffect.markHoleActive(center, visibleHalfExtent);
     }
 
     // ── Cube mesh emit ───────────────────────────────────────────────
