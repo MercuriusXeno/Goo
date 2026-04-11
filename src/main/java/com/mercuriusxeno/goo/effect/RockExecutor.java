@@ -76,6 +76,7 @@ public final class RockExecutor {
         int destroyed = mineFootprint(level, layerCenter, blastAxis);
         if (destroyed > 0) {
             spawnLayerDust(level, layerCenter, blastAxis, destroyed);
+            spawnLayerSonicBoom(level, layerCenter);
             playLayerSound(level, layerCenter, stackCount, stepIndex);
         }
         return destroyed;
@@ -174,6 +175,21 @@ public final class RockExecutor {
         double spreadZ = blastAxis == Direction.Axis.Z ? DUST_ALONG_SPREAD : DUST_PERP_SPREAD;
         level.sendParticles(ParticleTypes.DUST_PLUME,
                 cx, cy, cz, count, spreadX, spreadY, spreadZ, DUST_PARTICLE_SPEED);
+    }
+
+    /**
+     * Spawns one Warden-style sonic-boom particle at the layer center
+     * each tick the blast advances. Reads as a punching shockwave driving
+     * deeper into the wall, layered on top of the dust slice.
+     *
+     * @param level       the server level
+     * @param layerCenter the layer center position
+     */
+    private static void spawnLayerSonicBoom(ServerLevel level, BlockPos layerCenter) {
+        double cx = layerCenter.getX() + BLOCK_CENTER_OFFSET;
+        double cy = layerCenter.getY() + BLOCK_CENTER_OFFSET;
+        double cz = layerCenter.getZ() + BLOCK_CENTER_OFFSET;
+        level.sendParticles(ParticleTypes.SONIC_BOOM, cx, cy, cz, 1, 0.0, 0.0, 0.0, 0.0);
     }
 
     /**
