@@ -84,6 +84,17 @@ public class ChainMarkerBER
     private static final int RED_CHANNEL_SHIFT = 16;
     /** Bit shift for the green channel in an ARGB color. */
     private static final int GREEN_CHANNEL_SHIFT = 8;
+    /** Bit shift for the blue channel in an ARGB color. Used to encode the
+     * main sphere's visible radius (pre-corona scaling) for the corona
+     * fragment shader's geometric ray test. */
+    private static final int BLUE_CHANNEL_SHIFT = 0;
+    /** Maximum encodable radius for the Color.b channel (in world blocks).
+     * The BER encodes {@code visibleRadius / MAX_ENCODED_RADIUS} as a 0-255
+     * byte, and the corona vertex shader decodes as {@code Color.b * MAX_ENCODED_RADIUS}.
+     * Must match the constant of the same name in nether_corona.vsh. 16
+     * is chosen to sit safely above the max actual visible radius (~11
+     * for stack-4 nether) so the encoding does not saturate. */
+    private static final float MAX_ENCODED_RADIUS = 16f;
     /** Half-extent of the render bounding box around a chain marker, in blocks. Must exceed the maximum implosion radius (nether max = 9). */
     private static final double RENDER_BOX_HALF_EXTENT = 12.0;
     /** Number of latitude bands on the sphere mesh (excluding poles). Doubled from the first iteration for smoother silhouette. */
@@ -92,6 +103,12 @@ public class ChainMarkerBER
     private static final int SPHERE_LON_SEGMENTS = 64;
     /** Vertices per quad in the sphere mesh (matches VertexFormat.Mode.QUADS). */
     private static final int VERTICES_PER_QUAD = 4;
+    /** Radius multiplier for the corona pass. The corona mesh is the
+     * same unit sphere rendered at this scale relative to the main
+     * sphere, creating the annular ring in which the halo draws. Must
+     * stay pinned to the fragment shader's INNER_BOUND constant -
+     * changing one without the other will visually misplace the ring. */
+    private static final float CORONA_SCALE = 1.15f;
     /** Cycle length in ticks for the swirl animation time. */
     private static final int ANIMATION_CYCLE_TICKS = 64;
     /** Latitude offset subtracted from {@code lat / latSegments} to center phi on zero. */
@@ -263,27 +280,47 @@ public class ChainMarkerBER
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
         float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, fullRadius * state.visibleScale);
-        int color = packBlackholeColor(state.visibleScale, state.animationTime);
+        int color = packBlackholeColor(state.visibleScale, state.animationTime, visibleRadius);
+        float coronaRadius = visibleRadius * CORONA_SCALE;
 
+        // Main sphere: solid-black occluder with depth write on.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_BLACKHOLE_TYPE,
             (pose, c) -> emitSphereMesh(pose, c, visibleRadius, color));
+        // Corona halo: same mesh at CORONA_SCALE, additive blend. The
+        // fragment shader does a proper ray-sphere test against the
+        // main sphere (decoded from Color.b) to discard pixels inside
+        // the main silhouette, so the visible output is an annular ring.
+        nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_CORONA_TYPE,
+            (pose, c) -> emitSphereMesh(pose, c, coronaRadius, color));
     }
 
     /**
-     * Packs {@code visibleScale} into the ARGB R channel and
-     * {@code animationTime} into the G channel, so the fragment shader
-     * can read both as normalized floats in the vertex Color attribute.
+     * Packs the per-frame state the blackhole/corona shaders need into
+     * the vertex ARGB Color. Channels:
+     * <ul>
+     *   <li>R: implosion {@code visibleScale} in [0, 1]</li>
+     *   <li>G: swirl {@code animationTime} in [0, 1] (currently unused by
+     *       the stripped main shader; retained for future use)</li>
+     *   <li>B: main sphere's visible radius, normalized by
+     *       {@link #MAX_ENCODED_RADIUS} - the corona vertex shader
+     *       decodes this to compute the sphere center and radius for
+     *       its geometric ray test</li>
+     *   <li>A: fixed {@link #BLACKHOLE_ALPHA}</li>
+     * </ul>
      *
-     * @param scale         implosion visible scale in [0, 1]
-     * @param animationTime swirl animation phase in [0, 1] (cycling)
+     * @param scale          implosion visible scale in [0, 1]
+     * @param animationTime  swirl animation phase in [0, 1] (cycling)
+     * @param visibleRadius  main sphere's current visible radius in world blocks
      * @return the packed ARGB color
      */
-    private static int packBlackholeColor(float scale, float animationTime) {
+    private static int packBlackholeColor(float scale, float animationTime, float visibleRadius) {
         int scaleByte = Math.round(clamp01(scale) * PROGRESS_BYTE_MAX);
         int animByte = Math.round(clamp01(animationTime) * PROGRESS_BYTE_MAX);
+        int radiusByte = Math.round(clamp01(visibleRadius / MAX_ENCODED_RADIUS) * PROGRESS_BYTE_MAX);
         return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
             | (scaleByte << RED_CHANNEL_SHIFT)
-            | (animByte << GREEN_CHANNEL_SHIFT);
+            | (animByte << GREEN_CHANNEL_SHIFT)
+            | (radiusByte << BLUE_CHANNEL_SHIFT);
     }
 
     /** Clamps {@code v} to {@code [0, 1]}.
