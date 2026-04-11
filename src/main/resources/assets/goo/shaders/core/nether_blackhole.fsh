@@ -1,7 +1,6 @@
 #version 330
 
 in vec3 viewNormal;
-in vec3 worldNormal;
 in float progress;
 in float animationTime;
 
@@ -22,16 +21,16 @@ const vec3 CORE_COLOR = vec3(0.01, 0.00, 0.03);  // near-black purple
 const vec3 RIM_COLOR  = vec3(0.35, 0.08, 0.55);  // darker violet, subdued
 
 void main() {
-    // Fresnel factor: 0 at center of the sphere (facing camera), 1 at silhouette.
+    // Fresnel factor: 0 at center of the sphere (facing camera), 1 at
+    // silhouette. Also the radial coordinate of the vortex (distance
+    // from the view axis through the sphere center).
     float fresnel = 1.0 - abs(viewNormal.z);
 
-    // Longitude around the world Y axis, computed from the world-space
-    // normal so the pattern stays pinned to the sphere in world space.
-    // Walking around the black hole no longer rotates the bands with the
-    // camera - they stay attached to the world. The radial (fresnel)
-    // term below is still camera-space, so the spiral center continues
-    // to track the visible face.
-    float angle = atan(worldNormal.z, worldNormal.x);
+    // Roll angle around the view axis. Together with fresnel this defines
+    // polar coordinates on the disc the camera is looking at, so the
+    // vortex's center is always the point of the sphere facing the camera
+    // regardless of where the camera is relative to the black hole.
+    float angle = atan(viewNormal.y, viewNormal.x);
 
     // animationTime cycles 0..1 every N ticks; multiply by TWO_PI for phase.
     float swirlPhase = animationTime * TWO_PI * SWIRL_ROTATIONS_PER_CYCLE;
