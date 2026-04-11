@@ -2,13 +2,15 @@ package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
+import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,9 +32,12 @@ import java.util.List;
  *       main radius (decoded from {@code Color.b}) to carve out the
  *       annular ring.</li>
  *   <li>Additive accretion disk via {@link GooRenderTypes#NETHER_DISK_TYPE}
- *       - flat annulus in the XZ plane, inner radius equal to the main
- *       radius, outer radius at {@link #DISK_OUTER_SCALE}, with a strict
- *       "no fragment inside the sphere" discard in the fragment shader.</li>
+ *       - flat annulus ring in the XZ plane. Inner radius floats just
+ *       past the sphere silhouette, outer radius is driven by a
+ *       separate expansion curve on {@link NetherBehavior} so the disk
+ *       sweeps outward independent of the sphere's growth (not in
+ *       lockstep). Brightness is strictly radial in the shader, so the
+ *       ring reads identically from any viewing angle.</li>
  * </ol>
  */
 public final class NetherBlackHoleRender {
@@ -69,39 +74,44 @@ public final class NetherBlackHoleRender {
     /** Vertices per quad (matches {@code VertexFormat.Mode.QUADS}). */
     private static final int VERTICES_PER_QUAD = 4;
     /** Radius multiplier for the corona pass. Must match
-     * {@code CORONA_SCALE} in {@code nether_corona.vsh}. */
+     * {@code CORONA_SCALE} in {@code nether_corona.vsh}. Good values
+     * are 1.08 for a thin corona, 1.15 for a thicker one. */
     private static final float CORONA_SCALE = 1.15f;
-    /** Distance from the sphere center to the centerline of the disk's
-     * tube, as a multiple of the main sphere radius. With the radial
-     * extent below, this places the tube's inner edge at 1.05 *
-     * mainRadius (just outside the sphere surface to avoid z-fighting
-     * with the sphere's equatorial silhouette, which used to swallow
-     * the inner edge whole) and the outer edge at 2.05 * mainRadius. */
-    private static final float DISK_MAJOR_RADIUS = 1.55f;
-    /** Half-width of the disk's tube in the radial direction, as a
-     * multiple of the main sphere radius. Together with
-     * {@link #DISK_MAJOR_RADIUS} this controls where the tube's inner
-     * and outer edges land: inner at {@code DISK_MAJOR_RADIUS - DISK_RADIAL_EXTENT}
-     * (1.05), outer at {@code DISK_MAJOR_RADIUS + DISK_RADIAL_EXTENT}
-     * (2.05). Lower than the initial 0.75 so the whole tube is
-     * visually narrower. */
-    private static final float DISK_RADIAL_EXTENT = 0.50f;
-    /** Half-height of the disk's tube in the Y direction, as a multiple
-     * of the main sphere radius. This is the "Y extrusion" that gives
-     * the disk visible thickness when viewed edge-on and lets the
-     * inner edge feather smoothly into the corona. */
-    private static final float DISK_VERTICAL_EXTENT = 0.15f;
-    /** Number of radial segments around the disk's major axis (around
-     * the world Y axis). Matches {@link #SPHERE_LON_SEGMENTS} so the
-     * ring has the same angular tessellation as the sphere's equator. */
-    private static final int DISK_MAJOR_SEGMENTS = 64;
-    /** Number of segments around the tube's cross-section (the minor
-     * angle phi). 16 is dense enough to smooth the tube's inner and
-     * outer curves without blowing up vertex count. */
-    private static final int DISK_MINOR_SEGMENTS = 16;
-    /** Scale used to map {@code (1 - cos(phi))} from {@code [0, 2]} to
-     * the innerness parameter range {@code [0, 1]}. */
-    private static final double INNERNESS_HALF_SCALE = 0.5;
+    /** Disk's inner edge, as a multiple of the current sphere radius.
+     * Sits just past the sphere surface so the inner rim hugs the
+     * silhouette without z-fighting the sphere's equator. */
+    private static final float DISK_INNER_SPHERE_MULT = 1.06f;
+    /** Disk's outer edge at full {@code diskExpansionScale}, as a
+     * multiple of the full (pre-scaled) blast radius. The disk sweeps
+     * from the inner edge out to this multiple over the effect
+     * lifetime on a curve independent of the sphere's visible scale. */
+    private static final float DISK_OUTER_FULL_MULT = 2.8f;
+    /** Minimum outer edge overshoot past the inner edge, as a multiple
+     * of the current sphere radius. Prevents the ring from collapsing
+     * to zero width when the expansion curve is near zero at the very
+     * start of the effect. */
+    private static final float DISK_MIN_RING_WIDTH = 0.25f;
+    /** Number of angular segments around the annulus. Matches
+     * {@link #SPHERE_LON_SEGMENTS} so the disc has the same angular
+     * tessellation as the sphere's equator. */
+    private static final int DISK_ANGULAR_SEGMENTS = 64;
+    /** Floats per entry in {@link #DISK_ANGULAR_SAMPLES}. Each angular
+     * sample packs {@code (cos, sin, angularT)} as three consecutive
+     * floats. */
+    private static final int DISK_SAMPLE_STRIDE = 3;
+    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the cos component. */
+    private static final int DISK_SAMPLE_COS_OFFSET = 0;
+    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the sin component. */
+    private static final int DISK_SAMPLE_SIN_OFFSET = 1;
+    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the angularT component. */
+    private static final int DISK_SAMPLE_ANG_OFFSET = 2;
+    /** Radial T value packed into Color.r for inner-edge vertices. */
+    private static final float RADIAL_T_INNER = 0f;
+    /** Radial T value packed into Color.r for outer-edge vertices. */
+    private static final float RADIAL_T_OUTER = 1f;
     /** Cycle length in ticks for the swirl animation time. */
     private static final int ANIMATION_CYCLE_TICKS = 64;
     /** Latitude offset subtracted from {@code lat / latSegments} to center phi on zero. */
@@ -113,14 +123,12 @@ public final class NetherBlackHoleRender {
      * one quad. Each vertex's XYZ doubles as the unit outward normal. */
     private static final List<Vector3f> SPHERE_MESH = buildSphereMesh();
 
-    /** Pre-generated unit torus mesh for the accretion disk. Every 4
-     * consecutive entries form one quad. Each {@link Vector4f} packs the
-     * unit-space XYZ position in {@code xyz} and the per-vertex
-     * "innerness" parameter (0 at outer edge, 1 at inner edge,
-     * 0.5 at top/bottom of the tube) in {@code w}. The BER scales the
-     * position by the main sphere's radius at emit time and packs the
-     * innerness into {@code Color.r}. */
-    private static final List<Vector4f> DISK_MESH = buildDiskMesh();
+    /** Pre-computed angular samples around the disc. Entry {@code i}
+     * holds {@code (cosTheta_i, sinTheta_i, angularT_i)} where
+     * {@code angularT_i = i / DISK_ANGULAR_SEGMENTS} in [0, 1]. Emitting
+     * the disc quads just reads pairs of consecutive entries and does
+     * the inner/outer radius multiply per frame. */
+    private static final float[] DISK_ANGULAR_SAMPLES = buildDiskAngularSamples();
 
     private NetherBlackHoleRender() {}
 
@@ -136,11 +144,38 @@ public final class NetherBlackHoleRender {
         if (be.getBehavior() instanceof NetherBehavior nether) {
             state.netherActive = true;
             state.visibleScale = nether.getVisibleScale();
+            state.diskExpansionScale = nether.getDiskExpansionScale();
             state.implodeRadius = nether.getCurrentRadius();
             state.animationTime = computeAnimationTime(be);
+            markLensActive(be, state);
             return;
         }
         state.netherActive = false;
+    }
+
+    /** Reports this hole to the screen-space lens post-effect so it
+     * can warp the main framebuffer around the sphere's screen
+     * position. Uses the current visible sphere radius (not the full
+     * implode radius) so the lens contracts with the sphere during
+     * EXPAND/CONTRACT phases instead of always occupying the full
+     * blast radius. Skips marking when the sphere is invisible
+     * (visibleScale <= 0) so a DONE-phase behavior doesn't leave a
+     * stale lens in place for the frame or two before the BE removes
+     * itself.
+     *
+     * @param be    the chain marker block entity
+     * @param state the populated render state for this frame
+     */
+    private static void markLensActive(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
+        if (state.visibleScale <= 0f) { return; }
+        BlockPos pos = be.getBlockPos();
+        Vec3 center = new Vec3(
+                pos.getX() + BLOCK_CENTER,
+                pos.getY() + BLOCK_CENTER,
+                pos.getZ() + BLOCK_CENTER);
+        float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
+        float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, fullRadius * state.visibleScale);
+        NetherLensEffect.markHoleActive(center, visibleRadius);
     }
 
     /**
@@ -160,6 +195,19 @@ public final class NetherBlackHoleRender {
         int color = packBlackholeColor(state.visibleScale, state.animationTime, visibleRadius);
         float coronaRadius = visibleRadius * CORONA_SCALE;
 
+        // Decouple disk geometry from sphere scale. The disk's inner
+        // edge pins just past the current sphere surface (so the rim
+        // hugs the silhouette as the sphere grows), while the outer
+        // edge sweeps outward on its own curve (diskExpansionScale)
+        // reaching DISK_OUTER_FULL_MULT * fullRadius at peak expansion.
+        // This breaks the "balloon in lockstep with sphere" look and
+        // reads as a shockwave-style outward bloom instead.
+        float diskInnerRadius = visibleRadius * DISK_INNER_SPHERE_MULT;
+        float diskOuterRadiusRaw = fullRadius * DISK_OUTER_FULL_MULT * state.diskExpansionScale;
+        float diskOuterRadius = Math.max(
+                diskInnerRadius + visibleRadius * DISK_MIN_RING_WIDTH,
+                diskOuterRadiusRaw);
+
         // Main sphere: solid-black occluder with depth write on.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_BLACKHOLE_TYPE,
             (pose, c) -> emitSphereMesh(pose, c, visibleRadius, color));
@@ -169,14 +217,17 @@ public final class NetherBlackHoleRender {
         // main silhouette, so the visible output is an annular ring.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_CORONA_TYPE,
             (pose, c) -> emitSphereMesh(pose, c, coronaRadius, color));
-        // Accretion disk: horizontal annulus in the world XZ plane.
-        // Inner radius = visibleRadius, outer = visibleRadius * DISK_OUTER_SCALE.
-        // Each vertex carries its own block-local radial distance in
-        // Color.r for the fragment shader's strict "no fragments inside
-        // the sphere" discard.
-        final float diskMainRadius = visibleRadius;
+        // Accretion disk: flat annular ring in the world XZ plane.
+        // Brightness is strictly radial in the fragment shader (no
+        // minor-angle term), so the ring reads the same from any
+        // viewing angle. "Edge-on shows a line" is intentional — the
+        // far rim gets folded back into view once Phase C's lensing
+        // post-process is wired in.
+        final float innerR = diskInnerRadius;
+        final float outerR = diskOuterRadius;
+        final float animPhase = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_DISK_TYPE,
-            (pose, c) -> emitDiskMesh(pose, c, diskMainRadius));
+            (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
     }
 
     // ── Mesh emit helpers ──────────────────────────────────────────────
@@ -203,28 +254,72 @@ public final class NetherBlackHoleRender {
     }
 
     /**
-     * Emits the pre-generated unit torus mesh scaled to the main
-     * sphere's radius. Each vertex stores its unit-space position in
-     * {@code xyz} and a per-vertex "innerness" parameter in {@code w};
-     * the position is multiplied by {@code mainRadius} and translated
-     * to the block center, and the innerness is encoded into the red
-     * channel so the fragment shader can drive its brightness falloff.
+     * Emits the flat accretion-disc annulus as a ring of quads in the
+     * world XZ plane. Inner vertices sit on a circle at {@code innerR},
+     * outer vertices on a circle at {@code outerR}. Each vertex packs
+     * the radial T (0 at inner, 1 at outer), the angular T (0..1 around
+     * the ring), and the global animation phase into the vertex color
+     * so the fragment shader can drive its radial brightness curve and
+     * swirl animation without any uniform setup.
      *
-     * @param pose       the current pose entry
-     * @param c          the vertex consumer
-     * @param mainRadius world-space main sphere radius in blocks
+     * @param pose      the current pose entry
+     * @param c         the vertex consumer
+     * @param innerR    disc inner edge radius in world blocks
+     * @param outerR    disc outer edge radius in world blocks
+     * @param animPhase global animation phase in [0, 1]
      */
-    private static void emitDiskMesh(PoseStack.Pose pose, VertexConsumer c, float mainRadius) {
-        for (Vector4f v : DISK_MESH) {
-            int innernessByte = Math.round(clamp01(v.w()) * PROGRESS_BYTE_MAX);
-            int color = packDiskColor(innernessByte);
-            c.addVertex(pose,
-                    BLOCK_CENTER + v.x() * mainRadius,
-                    BLOCK_CENTER + v.y() * mainRadius,
-                    BLOCK_CENTER + v.z() * mainRadius)
-                .setColor(color)
-                .setNormal(pose, 0f, 1f, 0f);
+    private static void emitDiskMesh(PoseStack.Pose pose, VertexConsumer c,
+            float innerR, float outerR, float animPhase) {
+        int animByte = Math.round(clamp01(animPhase) * PROGRESS_BYTE_MAX);
+        // DISK_ANGULAR_SAMPLES is laid out as DISK_SAMPLE_STRIDE-float
+        // triples {cos, sin, angularT}; see the field docstring. The
+        // trailing sample at index DISK_ANGULAR_SEGMENTS wraps back to
+        // 0 with angularT = 1 to close the ring on a continuous UV.
+        for (int i = 0; i < DISK_ANGULAR_SEGMENTS; i++) {
+            int i0 = i * DISK_SAMPLE_STRIDE;
+            int i1 = (i + 1) * DISK_SAMPLE_STRIDE;
+            float cos0 = DISK_ANGULAR_SAMPLES[i0 + DISK_SAMPLE_COS_OFFSET];
+            float sin0 = DISK_ANGULAR_SAMPLES[i0 + DISK_SAMPLE_SIN_OFFSET];
+            float ang0 = DISK_ANGULAR_SAMPLES[i0 + DISK_SAMPLE_ANG_OFFSET];
+            float cos1 = DISK_ANGULAR_SAMPLES[i1 + DISK_SAMPLE_COS_OFFSET];
+            float sin1 = DISK_ANGULAR_SAMPLES[i1 + DISK_SAMPLE_SIN_OFFSET];
+            float ang1 = DISK_ANGULAR_SAMPLES[i1 + DISK_SAMPLE_ANG_OFFSET];
+            // Quad winding (inner0 → inner1 → outer1 → outer0) keeps the
+            // ring's top face oriented +Y. Culling is disabled so the
+            // winding doesn't matter for visibility, but consistent
+            // winding keeps any future depth/normal usage sane.
+            emitDiskVertex(pose, c, cos0, sin0, innerR, ang0, RADIAL_T_INNER, animByte);
+            emitDiskVertex(pose, c, cos1, sin1, innerR, ang1, RADIAL_T_INNER, animByte);
+            emitDiskVertex(pose, c, cos1, sin1, outerR, ang1, RADIAL_T_OUTER, animByte);
+            emitDiskVertex(pose, c, cos0, sin0, outerR, ang0, RADIAL_T_OUTER, animByte);
         }
+    }
+
+    /** Writes a single disc vertex. Position is at block center offset
+     * by {@code (cos * r, 0, sin * r)}, color packs radial/angular T
+     * and the shared animation phase, normal is the disc's +Y face.
+     *
+     * @param pose      current pose entry
+     * @param c         vertex consumer
+     * @param cosT      cos of the angular coordinate
+     * @param sinT      sin of the angular coordinate
+     * @param radius    world-space radius for this vertex (inner or outer)
+     * @param angularT  angular coordinate in [0, 1]
+     * @param radialT   radial coordinate (0 inner, 1 outer)
+     * @param animByte  pre-computed animation phase byte
+     */
+    private static void emitDiskVertex(PoseStack.Pose pose, VertexConsumer c,
+            float cosT, float sinT, float radius,
+            float angularT, float radialT, int animByte) {
+        int radialByte = Math.round(clamp01(radialT) * PROGRESS_BYTE_MAX);
+        int angularByte = Math.round(clamp01(angularT) * PROGRESS_BYTE_MAX);
+        int color = packDiskColor(radialByte, angularByte, animByte);
+        c.addVertex(pose,
+                BLOCK_CENTER + cosT * radius,
+                BLOCK_CENTER,
+                BLOCK_CENTER + sinT * radius)
+            .setColor(color)
+            .setNormal(pose, 0f, 1f, 0f);
     }
 
     // ── Color packing ──────────────────────────────────────────────────
@@ -251,16 +346,20 @@ public final class NetherBlackHoleRender {
     }
 
     /**
-     * Packs the per-vertex innerness value for the disk (torus) shader:
-     * R = innerness ({@code (1 - cos(phi)) / 2}, where phi is the tube's
-     * minor angle). All other channels are unused.
+     * Packs per-vertex disc coordinates for the accretion-disc shader:
+     * R = radialT (0 inner, 1 outer), G = angularT (0..1 around the ring),
+     * B = animPhase (0..1 global animation phase), A = fixed opaque.
      *
-     * @param innernessByte the innerness value already encoded to a byte
+     * @param radialByte  radialT already encoded to a byte
+     * @param angularByte angularT already encoded to a byte
+     * @param animByte    animation phase already encoded to a byte
      * @return the packed ARGB color
      */
-    private static int packDiskColor(int innernessByte) {
+    private static int packDiskColor(int radialByte, int angularByte, int animByte) {
         return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
-            | (innernessByte << RED_CHANNEL_SHIFT);
+            | (radialByte << RED_CHANNEL_SHIFT)
+            | (angularByte << GREEN_CHANNEL_SHIFT)
+            | (animByte << BLUE_CHANNEL_SHIFT);
     }
 
     // ── Mesh builders ──────────────────────────────────────────────────
@@ -305,72 +404,29 @@ public final class NetherBlackHoleRender {
     }
 
     /**
-     * Builds a unit torus mesh for the accretion disk as a list of
-     * {@link Vector4f}s. The tube has an elliptical cross-section:
-     * wide in the radial direction ({@link #DISK_RADIAL_EXTENT}) and
-     * narrow in Y ({@link #DISK_VERTICAL_EXTENT}), giving the disk
-     * visible Y thickness when viewed edge-on while still reading as
-     * a flat ring from above.
+     * Pre-computes the angular samples used by {@link #emitDiskMesh} at
+     * emit time. Returns a float array laid out as
+     * {@link #DISK_SAMPLE_STRIDE}-float triples
+     * {@code (cosTheta, sinTheta, angularT)} of length
+     * {@code (DISK_ANGULAR_SEGMENTS + 1) * DISK_SAMPLE_STRIDE}. The
+     * trailing sample (index {@link #DISK_ANGULAR_SEGMENTS}) wraps back
+     * to {@code cos(0)} and {@code sin(0)} but with {@code angularT = 1},
+     * so the seam quad has a continuous angular UV instead of wrapping
+     * from 1 back to 0.
      *
-     * <p>Every four consecutive entries form one quad matching
-     * {@code VertexFormat.Mode.QUADS}. Each vertex packs its unit-space
-     * XYZ position in {@code xyz} and a per-vertex "innerness" parameter
-     * in {@code w}, computed from the tube's minor angle phi as
-     * {@code (1 - cos(phi)) / 2}: 0 at the outer edge, 1 at the inner
-     * edge touching the sphere's equator, 0.5 at the top and bottom of
-     * the tube. The fragment shader uses this for the brightness
-     * gradient that blends the inner edge smoothly into the corona.
-     *
-     * <p>Inner edge radius: {@code DISK_MAJOR_RADIUS - DISK_RADIAL_EXTENT}
-     * (1.0 in unit space). Outer edge radius:
-     * {@code DISK_MAJOR_RADIUS + DISK_RADIAL_EXTENT}
-     * ({@link #DISK_MAJOR_RADIUS} + {@link #DISK_RADIAL_EXTENT} = 2.5).
-     * Both are multiplied by the main sphere's radius at emit time.
-     *
-     * @return the unit torus vertex list
+     * @return the angular sample table
      */
-    private static List<Vector4f> buildDiskMesh() {
-        int capacity = DISK_MAJOR_SEGMENTS * DISK_MINOR_SEGMENTS * VERTICES_PER_QUAD;
-        List<Vector4f> out = new ArrayList<>(capacity);
-        for (int i = 0; i < DISK_MAJOR_SEGMENTS; i++) {
-            double theta0 = TWO_PI * i / DISK_MAJOR_SEGMENTS;
-            double theta1 = TWO_PI * (i + 1) / DISK_MAJOR_SEGMENTS;
-            for (int j = 0; j < DISK_MINOR_SEGMENTS; j++) {
-                double phi0 = TWO_PI * j / DISK_MINOR_SEGMENTS;
-                double phi1 = TWO_PI * (j + 1) / DISK_MINOR_SEGMENTS;
-                // Quad wrapping the tube: (theta_i, phi_j), (theta_{i+1}, phi_j),
-                // (theta_{i+1}, phi_{j+1}), (theta_i, phi_{j+1}).
-                out.add(torusVertex(theta0, phi0));
-                out.add(torusVertex(theta1, phi0));
-                out.add(torusVertex(theta1, phi1));
-                out.add(torusVertex(theta0, phi1));
-            }
+    private static float[] buildDiskAngularSamples() {
+        int sampleCount = DISK_ANGULAR_SEGMENTS + 1;
+        float[] out = new float[sampleCount * DISK_SAMPLE_STRIDE];
+        for (int i = 0; i < sampleCount; i++) {
+            double theta = TWO_PI * i / DISK_ANGULAR_SEGMENTS;
+            int base = i * DISK_SAMPLE_STRIDE;
+            out[base + DISK_SAMPLE_COS_OFFSET] = (float) Math.cos(theta);
+            out[base + DISK_SAMPLE_SIN_OFFSET] = (float) Math.sin(theta);
+            out[base + DISK_SAMPLE_ANG_OFFSET] = (float) i / DISK_ANGULAR_SEGMENTS;
         }
         return out;
-    }
-
-    /** Builds one unit-torus vertex at (theta, phi). Theta is the major
-     * angle around the world Y axis; phi is the minor angle around the
-     * tube's cross-section. The resulting position lies on an elliptical
-     * torus centered at the block origin with horizontal major radius
-     * {@link #DISK_MAJOR_RADIUS}, radial tube half-extent
-     * {@link #DISK_RADIAL_EXTENT}, and vertical tube half-extent
-     * {@link #DISK_VERTICAL_EXTENT}. The w component encodes innerness:
-     * {@code (1 - cos(phi)) / 2}.
-     *
-     * @param theta major angle in radians, {@code [0, 2*PI]}
-     * @param phi   minor angle in radians, {@code [0, 2*PI]}
-     * @return the unit-torus vertex with position in xyz and innerness in w
-     */
-    private static Vector4f torusVertex(double theta, double phi) {
-        double cosPhi = Math.cos(phi);
-        double sinPhi = Math.sin(phi);
-        double radial = DISK_MAJOR_RADIUS + DISK_RADIAL_EXTENT * cosPhi;
-        float x = (float) (radial * Math.cos(theta));
-        float y = (float) (DISK_VERTICAL_EXTENT * sinPhi);
-        float z = (float) (radial * Math.sin(theta));
-        float innerness = (float) ((1.0 - cosPhi) * INNERNESS_HALF_SCALE);
-        return new Vector4f(x, y, z, innerness);
     }
 
     // ── Utilities ──────────────────────────────────────────────────────

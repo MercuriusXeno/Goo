@@ -7,16 +7,26 @@ in vec3 Position;
 in vec4 Color;
 in vec3 Normal;
 
-out float innerness;
+out float radialT;
+out float angularT;
+out float animPhase;
 
 void main() {
     gl_Position = ProjMat * (ModelViewMat * vec4(Position, 1.0));
 
-    // The BER packs a per-vertex "innerness" parameter into Color.r:
-    //   0.0 at the outer edge of the torus tube (dimmest)
-    //   1.0 at the inner edge touching the sphere equator (brightest)
-    //   0.5 at the top and bottom of the tube (Y-extrusion, feathering)
-    // Derived from the tube's minor angle phi as (1 - cos(phi)) / 2, so
-    // the value correctly interpolates the ring's cross-section.
-    innerness = Color.r;
+    // Per-vertex disc coordinates packed by NetherBlackHoleRender:
+    //   Color.r = radialT  — 0 at the inner edge (just outside the
+    //                         sphere's silhouette), 1 at the outer edge
+    //                         of the swept disc. Drives the radial
+    //                         brightness curve and the inner-to-outer
+    //                         color ramp.
+    //   Color.g = angularT — 0..1 parametric angle around the ring,
+    //                         drives the swirl band lookups.
+    //   Color.b = animPhase — 0..1 global animation phase, rotates the
+    //                         swirl pattern over time.
+    // There is no minor-angle term here: brightness is radial-only, so
+    // the same falloff reads from any viewing angle.
+    radialT = Color.r;
+    angularT = Color.g;
+    animPhase = Color.b;
 }

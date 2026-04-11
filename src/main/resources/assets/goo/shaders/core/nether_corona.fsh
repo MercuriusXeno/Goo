@@ -6,15 +6,20 @@ in float mainRadiusSq;
 
 out vec4 fragColor;
 
-// Must match the vertex shader's CORONA_SCALE (1.15). Squared form is
-// used for the outer-edge normalization below. 1.15^2 = 1.3225.
+// Must match the vertex shader's CORONA_SCALE (1.08). Squared form is
+// used for the outer-edge normalization below. 1.08^2 = 1.1664.
+// another option is 1.15^2 = 1.3225
 const float CORONA_SCALE_SQ = 1.3225;
 
 // Pure white halo. Kept as a constant so live tuning is one line.
 const vec3 CORONA_WHITE = vec3(1.0, 1.0, 1.0);
 
 // Additive-blend brightness multiplier. Bump for harder blow-out.
-const float CORONA_INTENSITY = 3.0;
+// Dropped from 3.0 after the sphere pop-in curve was sped up; a full-
+// size corona sitting on-screen for the entire HOLD phase reads much
+// brighter than one that was growing over EXPAND, so the absolute
+// brightness needed to come down to compensate.
+const float CORONA_INTENSITY = 1.5;
 
 // Falloff curve across the annular ring. 1.0 is linear, lower values
 // bias more of the ring toward full brightness, higher values tighten

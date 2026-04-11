@@ -361,30 +361,76 @@ public final class NetherBehavior implements ChainBehavior {
         return accumulator;
     }
 
-    /** Visible scale of the black-hole sphere in {@code [0, 1]}: grows
-     * 0 to 1 across EXPAND, stays at 1 at the transition instant, shrinks
-     * 1 to 0 across CONTRACT, and is 0 otherwise. The BER multiplies this
-     * by the effective radius to size the shader sphere.
+    /** Visible scale of the black-hole sphere in {@code [0, 1]}. Uses a
+     * cubic ease-out across EXPAND so the sphere pops to ~87% in the
+     * first third of the expand window and creeps the rest, holds at 1,
+     * and eases back to 0 across CONTRACT on the same curve. This
+     * replaces the old linear ramp so the sphere no longer grows in
+     * lockstep with the disc (which used the same driver and produced
+     * a "balloon inflating" look).
      *
      * @return the current visible scale
      */
     public float getVisibleScale() {
         return switch (phase) {
-            case EXPAND -> expandProgress();
+            case EXPAND -> easeOutCubic(expandProgress());
             case HOLD -> 1f;
+            case CONTRACT -> easeOutCubic(1f - contractProgress());
+            default -> 0f;
+        };
+    }
+
+    /** Independent disc-expansion curve in {@code [0, 1]}, driving how
+     * far past the sphere surface the accretion disc's outer edge has
+     * swept. Runs on a different timing than {@link #getVisibleScale()}
+     * so the disc reads as a shockwave propagating outward while the
+     * sphere holds steady, rather than as a single inflating volume:
+     *
+     * <ul>
+     *   <li>EXPAND: 0 → {@value #DISK_EXPAND_PEAK} (slow start)</li>
+     *   <li>HOLD:   {@value #DISK_EXPAND_PEAK} → 1 (sweeps outward)</li>
+     *   <li>CONTRACT: 1 → 0 (collapses back with the sphere)</li>
+     * </ul>
+     *
+     * @return the current disc expansion scale
+     */
+    public float getDiskExpansionScale() {
+        return switch (phase) {
+            case EXPAND -> DISK_EXPAND_PEAK * expandProgress();
+            case HOLD -> DISK_EXPAND_PEAK + (1f - DISK_EXPAND_PEAK) * holdProgress();
             case CONTRACT -> 1f - contractProgress();
             default -> 0f;
         };
     }
+
+    /** Disc-expansion value at the EXPAND → HOLD transition. Low enough
+     * that the disc is still tight around the sphere when the sphere
+     * finishes forming, then the ring sweeps outward across HOLD. */
+    private static final float DISK_EXPAND_PEAK = 0.25f;
 
     private float expandProgress() {
         if (initialExpandTicks <= 0) { return 0f; }
         return 1f - ((float) expandTicksRemaining / initialExpandTicks);
     }
 
+    private float holdProgress() {
+        if (initialHoldTicks <= 0) { return 0f; }
+        return 1f - ((float) holdTicksRemaining / initialHoldTicks);
+    }
+
     private float contractProgress() {
         if (initialContractTicks <= 0) { return 0f; }
         return 1f - ((float) contractTicksRemaining / initialContractTicks);
+    }
+
+    /** Cubic ease-out: {@code 1 - (1 - t)^3}. Fast start, gentle tail.
+     *
+     * @param t linear progress in [0, 1]
+     * @return eased progress in [0, 1]
+     */
+    private static float easeOutCubic(float t) {
+        float inv = 1f - t;
+        return 1f - inv * inv * inv;
     }
 
     // ── Persistence ──────────────────────────────────────────────────

@@ -46,6 +46,12 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
      * {@link #netherActive} is true. */
     public float visibleScale;
 
+    /** Accretion disc expansion scale in [0, 1]. Runs on a separate
+     * curve from {@link #visibleScale} so the disc sweeps outward past
+     * the sphere instead of inflating in lockstep with it. Only
+     * meaningful when {@link #netherActive} is true. */
+    public float diskExpansionScale;
+
     /** Effect radius of the nether blast in blocks. Only meaningful
      * when {@link #netherActive} is true. */
     public float implodeRadius;
