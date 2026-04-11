@@ -74,7 +74,7 @@ public class ChainMarkerBER
     /** Minimum visible radius for the black-hole sphere so it never collapses to a single pixel. */
     private static final float BLACKHOLE_MIN_RADIUS = 0.25f;
     /** Extra world-space margin added to the effective implosion radius so the sphere fully occludes the blast zone. */
-    private static final float OCCLUSION_MARGIN = 2f;
+    private static final float OCCLUSION_MARGIN = 0.75f;
     /** Solid alpha (0xFF) for the blackhole sphere vertices. */
     private static final int BLACKHOLE_ALPHA = 0xFF;
     /** Maximum byte value for a progress-in-R channel mapping. */
@@ -85,10 +85,10 @@ public class ChainMarkerBER
     private static final int GREEN_CHANNEL_SHIFT = 8;
     /** Half-extent of the render bounding box around a chain marker, in blocks. Must exceed the maximum implosion radius (nether max = 9). */
     private static final double RENDER_BOX_HALF_EXTENT = 12.0;
-    /** Number of latitude bands on the sphere mesh (excluding poles). */
-    private static final int SPHERE_LAT_SEGMENTS = 12;
-    /** Number of longitude segments around the sphere mesh. */
-    private static final int SPHERE_LON_SEGMENTS = 24;
+    /** Number of latitude bands on the sphere mesh (excluding poles). Doubled from the first iteration for smoother silhouette. */
+    private static final int SPHERE_LAT_SEGMENTS = 32;
+    /** Number of longitude segments around the sphere mesh. Doubled from the first iteration for smoother silhouette. */
+    private static final int SPHERE_LON_SEGMENTS = 64;
     /** Vertices per quad in the sphere mesh (matches VertexFormat.Mode.QUADS). */
     private static final int VERTICES_PER_QUAD = 4;
     /** Cycle length in ticks for the swirl animation time. */
