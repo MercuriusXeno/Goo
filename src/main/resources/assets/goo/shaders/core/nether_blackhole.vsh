@@ -4,20 +4,25 @@
 #moj_import <minecraft:dynamictransforms.glsl>
 
 in vec3 Position;
-in vec2 UV0;
 in vec4 Color;
+in vec3 Normal;
 
-out vec2 quadUv;
+out vec3 viewNormal;
 out float progress;
+out float animationTime;
 
 void main() {
-    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+    vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
+    gl_Position = ProjMat * viewPos;
 
-    // BER emits explicit UVs spanning [0, 1] across the quad so the billboard
-    // can be constructed in world-space coordinates directly, without relying
-    // on mulPose(camera.orientation).
-    quadUv = UV0;
+    // Transform the unit-sphere normal into view space so the fragment
+    // shader can compute a fresnel factor (|viewNormal.z| == 1 at the
+    // center facing the camera, == 0 at the silhouette).
+    viewNormal = normalize((ModelViewMat * vec4(Normal, 0.0)).xyz);
 
-    // Implosion progress is baked into Color.r on every vertex.
+    // Color.r carries the implosion progress (visible scale 0..1).
+    // Color.g carries the BE's animation phase (0..1 cycling) so the
+    // swirl rotates deterministically regardless of GameTime plumbing.
     progress = Color.r;
+    animationTime = Color.g;
 }

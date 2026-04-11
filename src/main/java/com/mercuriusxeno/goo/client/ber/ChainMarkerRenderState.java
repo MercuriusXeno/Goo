@@ -36,12 +36,15 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;
 
-    /** Lifecycle phase: FUSE for the orb visual, EXPAND / CONTRACT for the shader sphere. */
+    /** Lifecycle phase: FUSE for the orb visual, EXPAND / HOLD / CONTRACT for the shader sphere. */
     public ChainMarkerBlockEntity.Phase phase = ChainMarkerBlockEntity.Phase.FUSE;
 
-    /** Visible scale of the sphere in [0, 1]: grows through EXPAND, shrinks through CONTRACT. */
+    /** Visible scale of the sphere in [0, 1]: grows through EXPAND, 1 during HOLD, shrinks through CONTRACT. */
     public float visibleScale;
 
     /** Effect radius of the nether blast in blocks. */
     public float implodeRadius;
+
+    /** Cycling animation phase in [0, 1] used by the shader's swirl. Advanced by the BE per tick. */
+    public float animationTime;
 }

@@ -47,6 +47,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_PHASE = "Phase";
     private static final String TAG_EXPAND_REMAINING = "ExpandRemaining";
     private static final String TAG_EXPAND_INITIAL = "ExpandInitial";
+    private static final String TAG_HOLD_REMAINING = "HoldRemaining";
+    private static final String TAG_HOLD_INITIAL = "HoldInitial";
     private static final String TAG_CONTRACT_REMAINING = "ContractRemaining";
     private static final String TAG_CONTRACT_INITIAL = "ContractInitial";
     private static final String TAG_IMPLODE_RADIUS = "ImplodeRadius";
@@ -59,9 +61,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final int MINING_INACTIVE = -1;
     /** Ticks the black-hole sphere takes to grow from 0 to full size (0.75 s). */
     public static final int EXPAND_DURATION = 15;
+    /** Ticks the black-hole sphere holds at full size while the blocks are destroyed (1 s). */
+    public static final int HOLD_DURATION = 20;
     /** Ticks the black-hole sphere takes to shrink from full size back to 0 (0.75 s). */
     public static final int CONTRACT_DURATION = 15;
-    /** Extra blindness ticks applied past the EXPAND+CONTRACT window so entities inside get a clean fade-out. */
+    /** Extra blindness ticks applied past the EXPAND + HOLD + CONTRACT window so entities inside get a clean fade-out. */
     private static final int BLINDNESS_EXTRA_TICKS = 20;
     /** Base placeholder soul particle count per implosion tick. */
     private static final int IMPLODE_PARTICLE_BASE = 3;
@@ -78,10 +82,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * Lifecycle phase of the chain marker. Most profiles stay in {@link #FUSE}
      * forever and the BE is removed when the fuse expires. Nether additionally
      * transitions through {@link #EXPAND} (sphere grows, blocks untouched),
-     * {@link #CONTRACT} (blocks destroyed, sphere shrinks), and
+     * {@link #HOLD} (sphere holds at max size, blocks destroyed on entry),
+     * {@link #CONTRACT} (sphere shrinks back to 0, blocks stay gone), and
      * {@link #POPPING} (drops accumulated items + self-removal).
      */
-    public enum Phase { FUSE, EXPAND, CONTRACT, POPPING }
+    public enum Phase { FUSE, EXPAND, HOLD, CONTRACT, POPPING }
 
     private GooType gooType = GooType.ROCK;
     private int stackCount = 1;
@@ -98,6 +103,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int expandTicksRemaining;
     /** Initial EXPAND duration (usually {@link #EXPAND_DURATION}). Used for progress normalization. */
     private int initialExpandTicks;
+    /** Ticks remaining in the HOLD phase. Counts down from {@link #initialHoldTicks} to 0. */
+    private int holdTicksRemaining;
+    /** Initial HOLD duration (usually {@link #HOLD_DURATION}). */
+    private int initialHoldTicks;
     /** Ticks remaining in the CONTRACT phase. Counts down from {@link #initialContractTicks} to 0. */
     private int contractTicksRemaining;
     /** Initial CONTRACT duration (usually {@link #CONTRACT_DURATION}). */
@@ -172,12 +181,43 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     public static void serverTick(Level level, BlockPos pos, BlockState state,
                                   ChainMarkerBlockEntity be) {
         ServerLevel server = (ServerLevel) level;
-        switch (be.phase) {
-            case FUSE -> be.tickFuse(server, pos);
-            case EXPAND -> be.tickExpand(server, pos);
-            case CONTRACT -> be.tickContract(server, pos);
-            case POPPING -> be.tickPopping(server, pos);
+        if (be.phase == Phase.FUSE) {
+            be.tickFuse(server, pos);
+            return;
         }
+        be.tickImplosionPhase(server, pos);
+    }
+
+    /** Dispatches the EXPAND / HOLD phase handlers, delegating the later
+     * CONTRACT / POPPING phases to {@link #tickLatePhase} so no single
+     * method exceeds the cyclomatic complexity threshold.
+     *
+     * @param server the server level
+     * @param pos    the marker position
+     */
+    private void tickImplosionPhase(ServerLevel server, BlockPos pos) {
+        if (phase == Phase.EXPAND) {
+            tickExpand(server, pos);
+            return;
+        }
+        if (phase == Phase.HOLD) {
+            tickHold(server, pos);
+            return;
+        }
+        tickLatePhase(server, pos);
+    }
+
+    /** Dispatches the CONTRACT / POPPING phase handlers.
+     *
+     * @param server the server level
+     * @param pos    the marker position
+     */
+    private void tickLatePhase(ServerLevel server, BlockPos pos) {
+        if (phase == Phase.CONTRACT) {
+            tickContract(server, pos);
+            return;
+        }
+        tickPopping(server, pos);
     }
 
     /** FUSE-phase tick: progressive mining passthrough or fuse countdown + detonate on expiry.
@@ -200,7 +240,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
 
     /** EXPAND-phase tick: countdown + particle burst. On expiry, walks the
      * sphere to destroy blocks + fill the accumulator, then transitions to
-     * CONTRACT.
+     * HOLD so the sphere sits at max size for the destruction moment.
      *
      * @param level the server level
      * @param pos   the marker position
@@ -210,6 +250,24 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         spawnImplosionParticles(level, pos);
         if (expandTicksRemaining <= 0) {
             accumulator = NetherExecutor.walkAndDestroy(level, pos, implodeRadius);
+            phase = Phase.HOLD;
+            initialHoldTicks = HOLD_DURATION;
+            holdTicksRemaining = HOLD_DURATION;
+        }
+        setChanged();
+        syncToClient();
+    }
+
+    /** HOLD-phase tick: sphere sits at full size while the destroyed area
+     * settles. Transitions to CONTRACT on expiry.
+     *
+     * @param level the server level
+     * @param pos   the marker position
+     */
+    private void tickHold(ServerLevel level, BlockPos pos) {
+        holdTicksRemaining--;
+        spawnImplosionParticles(level, pos);
+        if (holdTicksRemaining <= 0) {
             phase = Phase.CONTRACT;
             initialContractTicks = CONTRACT_DURATION;
             contractTicksRemaining = CONTRACT_DURATION;
@@ -277,6 +335,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.accumulator = GooContents.EMPTY;
         this.initialExpandTicks = EXPAND_DURATION;
         this.expandTicksRemaining = EXPAND_DURATION;
+        this.initialHoldTicks = 0;
+        this.holdTicksRemaining = 0;
         this.initialContractTicks = 0;
         this.contractTicksRemaining = 0;
         this.phase = Phase.EXPAND;
@@ -301,7 +361,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
         AABB box = new AABB(cx - radius, cy - radius, cz - radius,
             cx + radius, cy + radius, cz + radius);
-        int duration = EXPAND_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
+        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
         double radiusSq = (double) radius * radius;
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
         for (LivingEntity entity : entities) {
@@ -455,6 +515,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     public float getVisibleScale() {
         return switch (phase) {
             case EXPAND -> expandProgress();
+            case HOLD -> 1f;
             case CONTRACT -> 1f - contractProgress();
             default -> 0f;
         };
@@ -517,6 +578,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         phase = parsePhase(input.getStringOr(TAG_PHASE, Phase.FUSE.name()));
         expandTicksRemaining = input.getIntOr(TAG_EXPAND_REMAINING, 0);
         initialExpandTicks = input.getIntOr(TAG_EXPAND_INITIAL, 0);
+        holdTicksRemaining = input.getIntOr(TAG_HOLD_REMAINING, 0);
+        initialHoldTicks = input.getIntOr(TAG_HOLD_INITIAL, 0);
         contractTicksRemaining = input.getIntOr(TAG_CONTRACT_REMAINING, 0);
         initialContractTicks = input.getIntOr(TAG_CONTRACT_INITIAL, 0);
         implodeRadius = input.getIntOr(TAG_IMPLODE_RADIUS, 0);
@@ -564,6 +627,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putString(TAG_PHASE, phase.name());
         output.putInt(TAG_EXPAND_REMAINING, expandTicksRemaining);
         output.putInt(TAG_EXPAND_INITIAL, initialExpandTicks);
+        output.putInt(TAG_HOLD_REMAINING, holdTicksRemaining);
+        output.putInt(TAG_HOLD_INITIAL, initialHoldTicks);
         output.putInt(TAG_CONTRACT_REMAINING, contractTicksRemaining);
         output.putInt(TAG_CONTRACT_INITIAL, initialContractTicks);
         output.putInt(TAG_IMPLODE_RADIUS, implodeRadius);

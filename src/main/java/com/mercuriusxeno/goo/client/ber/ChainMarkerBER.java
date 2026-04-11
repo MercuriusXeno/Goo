@@ -23,9 +23,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Renders the chain marker as a slime-like glowing orb. Two layers:
@@ -74,18 +75,34 @@ public class ChainMarkerBER
     private static final float BLACKHOLE_MIN_RADIUS = 0.25f;
     /** Extra world-space margin added to the effective implosion radius so the sphere fully occludes the blast zone. */
     private static final float OCCLUSION_MARGIN = 2f;
-    /** Solid alpha (0xFF) for the blackhole quad vertices; progress lives in the R channel. */
+    /** Solid alpha (0xFF) for the blackhole sphere vertices. */
     private static final int BLACKHOLE_ALPHA = 0xFF;
     /** Maximum byte value for a progress-in-R channel mapping. */
     private static final int PROGRESS_BYTE_MAX = 255;
     /** Bit shift for the red channel in an ARGB color. */
     private static final int RED_CHANNEL_SHIFT = 16;
-    /** Squared floor: if the camera is closer than this to the block center, skip billboarding (no valid direction). */
-    private static final double MIN_CAM_DIST_SQ = 1e-6;
-    /** Minimum basis-vector length before we fall back to a default "right" axis (camera directly above/below). */
-    private static final double MIN_BASIS_LEN = 1e-6;
+    /** Bit shift for the green channel in an ARGB color. */
+    private static final int GREEN_CHANNEL_SHIFT = 8;
     /** Half-extent of the render bounding box around a chain marker, in blocks. Must exceed the maximum implosion radius (nether max = 9). */
     private static final double RENDER_BOX_HALF_EXTENT = 12.0;
+    /** Number of latitude bands on the sphere mesh (excluding poles). */
+    private static final int SPHERE_LAT_SEGMENTS = 12;
+    /** Number of longitude segments around the sphere mesh. */
+    private static final int SPHERE_LON_SEGMENTS = 24;
+    /** Vertices per quad in the sphere mesh (matches VertexFormat.Mode.QUADS). */
+    private static final int VERTICES_PER_QUAD = 4;
+    /** Cycle length in ticks for the swirl animation time. */
+    private static final int ANIMATION_CYCLE_TICKS = 64;
+    /** Latitude offset subtracted from {@code lat / latSegments} to center phi on zero. */
+    private static final double LATITUDE_HALF_OFFSET = 0.5;
+    /** Full circle in radians. */
+    private static final double TWO_PI = 2.0 * Math.PI;
+
+    /** One vertex of the pre-generated unit sphere mesh; coordinates double as the unit normal. */
+    private record SphereVertex(float nx, float ny, float nz) {}
+
+    /** Pre-generated unit sphere mesh. Every 4 consecutive elements form one quad. */
+    private static final List<SphereVertex> SPHERE_MESH = buildSphereMesh();
 
     public ChainMarkerBER(BlockEntityRendererProvider.Context context) {
     }
@@ -135,6 +152,20 @@ public class ChainMarkerBER
         state.phase = be.getPhase();
         state.visibleScale = be.getVisibleScale();
         state.implodeRadius = be.getCurrentRadius();
+        state.animationTime = computeAnimationTime(be);
+    }
+
+    /** Derives a deterministic [0, 1) animation phase from the BE's level
+     * game time, cycling every {@link #ANIMATION_CYCLE_TICKS} ticks.
+     *
+     * @param be the chain marker block entity
+     * @return the animation phase for the shader
+     */
+    private static float computeAnimationTime(ChainMarkerBlockEntity be) {
+        var level = be.getLevel();
+        if (level == null) { return 0f; }
+        long tick = level.getGameTime() % ANIMATION_CYCLE_TICKS;
+        return (float) tick / ANIMATION_CYCLE_TICKS;
     }
 
     /**
@@ -177,12 +208,22 @@ public class ChainMarkerBER
     @Override
     public void submit(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (state.phase == ChainMarkerBlockEntity.Phase.EXPAND
-                || state.phase == ChainMarkerBlockEntity.Phase.CONTRACT) {
-            submitBlackholeSphere(state, poseStack, nodeCollector, cameraState);
+        if (isBlackholePhase(state.phase)) {
+            submitBlackholeSphere(state, poseStack, nodeCollector);
             return;
         }
         submitFuseOrb(state, poseStack, nodeCollector);
+    }
+
+    /** True if the given phase renders the black-hole sphere.
+     *
+     * @param phase the phase to check
+     * @return true for EXPAND, HOLD, CONTRACT; false otherwise
+     */
+    private static boolean isBlackholePhase(ChainMarkerBlockEntity.Phase phase) {
+        return phase == ChainMarkerBlockEntity.Phase.EXPAND
+            || phase == ChainMarkerBlockEntity.Phase.HOLD
+            || phase == ChainMarkerBlockEntity.Phase.CONTRACT;
     }
 
     /**
@@ -205,173 +246,118 @@ public class ChainMarkerBER
     }
 
     /**
-     * Draws the goal-013 black-hole billboard quad during IMPLODING. Builds
-     * the billboard basis (right, up) manually in world space from the
-     * camera-to-block direction so the quad truly faces the camera without
-     * relying on {@code mulPose(cameraState.orientation)} — which, in the
-     * 26.1 BER path, was leaving the quad effectively locked to screen
-     * space rather than rotating it into world space.
+     * Emits the goal-013 black-hole as a real 3D UV sphere mesh during
+     * EXPAND / HOLD / CONTRACT. Depth writes are on, so every triangle of
+     * the sphere occludes what is behind it in the depth buffer — the
+     * destroyed volume is actually hidden inside the sphere.
      *
-     * <p>The four corners are emitted as world-space positions (relative to
-     * the BER pose's current frame, which is the block corner in camera-
-     * relative coords). UVs are supplied explicitly via the
-     * {@code POSITION_TEX_COLOR} vertex format, so the fragment shader can
-     * read a clean {@code [0, 1]} UV and the sphere is symmetric.
+     * <p>Vertices carry {@code POSITION_COLOR_NORMAL}. Position is the
+     * block-local world position of the scaled sphere surface. Normal is
+     * the unit-sphere direction (equal to the local vertex offset since
+     * the sphere is at the origin). Color.r carries {@code visibleScale};
+     * Color.g carries a deterministic animation phase derived from the
+     * level game time so the swirl rotates without depending on the
+     * {@code GameTime} uniform plumbing.
      *
      * @param state         the render state snapshot
      * @param poseStack     the pose stack for rendering (already at block corner)
      * @param nodeCollector the render node collector
-     * @param cameraState   camera state; we read {@code pos} only
      */
     private static void submitBlackholeSphere(ChainMarkerRenderState state,
-            PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            CameraRenderState cameraState) {
+            PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
         float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, fullRadius * state.visibleScale);
-        int color = packBlackholeColor(state.visibleScale);
-        BillboardBasis basis = computeBillboardBasis(state.blockPos, cameraState.pos, visibleRadius);
-        if (basis == null) { return; }
+        int color = packBlackholeColor(state.visibleScale, state.animationTime);
 
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_BLACKHOLE_TYPE,
-            (pose, c) -> emitWorldSpaceQuad(pose, c, basis, color));
+            (pose, c) -> emitSphereMesh(pose, c, visibleRadius, color));
     }
 
     /**
-     * Four corners of a camera-facing quad expressed in block-local
-     * coordinates (relative to the block's lower corner, so block center is
-     * {@code (0.5, 0.5, 0.5)}). Filled in by
-     * {@link #computeBillboardBasis}.
+     * Packs {@code visibleScale} into the ARGB R channel and
+     * {@code animationTime} into the G channel, so the fragment shader
+     * can read both as normalized floats in the vertex Color attribute.
      *
-     * @param c00 bottom-left corner (UV 0,0)
-     * @param c10 bottom-right corner (UV 1,0)
-     * @param c11 top-right corner (UV 1,1)
-     * @param c01 top-left corner (UV 0,1)
-     */
-    private record BillboardBasis(Vector3f c00, Vector3f c10, Vector3f c11, Vector3f c01) {}
-
-    /**
-     * Computes the four corners of a camera-facing quad at the block's
-     * center, using the world-space camera position to derive a right/up
-     * basis via cross products. Returns null if the camera is exactly at
-     * the block center (no valid direction).
-     *
-     * @param blockPos block position in world coordinates
-     * @param cameraPos camera position in world coordinates
-     * @param radius world-space half-extent of the quad in blocks
-     * @return the basis, or null if the camera is degenerate
-     */
-    private static @Nullable BillboardBasis computeBillboardBasis(BlockPos blockPos,
-            Vec3 cameraPos, float radius) {
-        double dx = cameraPos.x() - (blockPos.getX() + BLOCK_CENTER);
-        double dy = cameraPos.y() - (blockPos.getY() + BLOCK_CENTER);
-        double dz = cameraPos.z() - (blockPos.getZ() + BLOCK_CENTER);
-        double dSq = dx * dx + dy * dy + dz * dz;
-        if (dSq < MIN_CAM_DIST_SQ) { return null; }
-        double invD = 1.0 / Math.sqrt(dSq);
-        Vector3f right = computeRight(dx * invD, dz * invD);
-        Vector3f up = computeUp(dx * invD, dy * invD, dz * invD, right);
-        return buildCornersFromBasis(right, up, radius);
-    }
-
-    /**
-     * {@code right = normalize(worldUp × toCamera)} where worldUp is
-     * {@code (0, 1, 0)}. If toCamera is near-vertical (camera directly above
-     * or below the block), the cross product degenerates; falls back to
-     * world {@code +X} as "right".
-     *
-     * @param tcx toCamera x component (already normalized)
-     * @param tcz toCamera z component (already normalized)
-     * @return the right basis vector (unit length, y = 0)
-     */
-    private static Vector3f computeRight(double tcx, double tcz) {
-        double rx = tcz;
-        double rz = -tcx;
-        double rLen = Math.sqrt(rx * rx + rz * rz);
-        if (rLen < MIN_BASIS_LEN) { return new Vector3f(1f, 0f, 0f); }
-        return new Vector3f((float) (rx / rLen), 0f, (float) (rz / rLen));
-    }
-
-    /**
-     * {@code up = toCamera × right}. Unit length because toCamera and right
-     * are unit and perpendicular.
-     *
-     * @param tcx   toCamera x
-     * @param tcy   toCamera y
-     * @param tcz   toCamera z
-     * @param right right basis vector
-     * @return the up basis vector
-     */
-    private static Vector3f computeUp(double tcx, double tcy, double tcz, Vector3f right) {
-        double ux = tcy * right.z - tcz * right.y;
-        double uy = tcz * right.x - tcx * right.z;
-        double uz = tcx * right.y - tcy * right.x;
-        return new Vector3f((float) ux, (float) uy, (float) uz);
-    }
-
-    /**
-     * Builds the four quad corners from a right/up basis, scaled and
-     * centered at the block's local center {@code (0.5, 0.5, 0.5)}.
-     *
-     * @param right  right basis vector
-     * @param up     up basis vector
-     * @param radius half-extent in blocks
-     * @return the four corners: bottom-left, bottom-right, top-right, top-left
-     */
-    private static BillboardBasis buildCornersFromBasis(Vector3f right, Vector3f up, float radius) {
-        float rx = right.x * radius, ry = right.y * radius, rz = right.z * radius;
-        float ux = up.x * radius, uy = up.y * radius, uz = up.z * radius;
-        return new BillboardBasis(
-            new Vector3f(BLOCK_CENTER - rx - ux, BLOCK_CENTER - ry - uy, BLOCK_CENTER - rz - uz),
-            new Vector3f(BLOCK_CENTER + rx - ux, BLOCK_CENTER + ry - uy, BLOCK_CENTER + rz - uz),
-            new Vector3f(BLOCK_CENTER + rx + ux, BLOCK_CENTER + ry + uy, BLOCK_CENTER + rz + uz),
-            new Vector3f(BLOCK_CENTER - rx + ux, BLOCK_CENTER - ry + uy, BLOCK_CENTER - rz + uz));
-    }
-
-    /**
-     * Packs the implosion progress into an ARGB color's R channel so the
-     * vertex shader can forward it to the fragment shader via
-     * {@code Color.r}. Alpha is solid; G and B are unused.
-     *
-     * @param progress implosion progress in [0, 1]
+     * @param scale         implosion visible scale in [0, 1]
+     * @param animationTime swirl animation phase in [0, 1] (cycling)
      * @return the packed ARGB color
      */
-    private static int packBlackholeColor(float progress) {
-        float clamped = Math.min(1f, Math.max(0f, progress));
-        int progressByte = Math.round(clamped * PROGRESS_BYTE_MAX);
-        return (BLACKHOLE_ALPHA << ALPHA_SHIFT) | (progressByte << RED_CHANNEL_SHIFT);
+    private static int packBlackholeColor(float scale, float animationTime) {
+        int scaleByte = Math.round(clamp01(scale) * PROGRESS_BYTE_MAX);
+        int animByte = Math.round(clamp01(animationTime) * PROGRESS_BYTE_MAX);
+        return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
+            | (scaleByte << RED_CHANNEL_SHIFT)
+            | (animByte << GREEN_CHANNEL_SHIFT);
+    }
+
+    /** Clamps {@code v} to {@code [0, 1]}.
+     *
+     * @param v the value to clamp
+     * @return the clamped value
+     */
+    private static float clamp01(float v) {
+        return Math.min(1f, Math.max(0f, v));
     }
 
     /**
-     * Emits a quad whose corners are pre-computed in block-local space.
-     * Uses {@code POSITION_TEX_COLOR} so each vertex carries explicit UV
-     * alongside position and color.
+     * Emits the pre-generated unit sphere mesh with each vertex scaled to
+     * {@code radius} and translated to the block center. Iterates the
+     * vertex record list directly; consecutive four-tuples form quads.
      *
-     * @param pose  the current pose entry (block corner in camera-relative world coords)
-     * @param c     the vertex consumer
-     * @param basis the four pre-computed world-space corners
-     * @param color ARGB vertex color (progress in R, solid alpha)
+     * @param pose   the current pose entry (block corner in camera-relative world coords)
+     * @param c      the vertex consumer
+     * @param radius world-space sphere radius in blocks
+     * @param color  ARGB vertex color (visibleScale in R, animationTime in G)
      */
-    private static void emitWorldSpaceQuad(PoseStack.Pose pose, VertexConsumer c,
-            BillboardBasis basis, int color) {
-        emitQuadVertex(pose, c, basis.c00(), 0f, 0f, color);
-        emitQuadVertex(pose, c, basis.c10(), 1f, 0f, color);
-        emitQuadVertex(pose, c, basis.c11(), 1f, 1f, color);
-        emitQuadVertex(pose, c, basis.c01(), 0f, 1f, color);
+    private static void emitSphereMesh(PoseStack.Pose pose, VertexConsumer c,
+            float radius, int color) {
+        for (SphereVertex v : SPHERE_MESH) {
+            c.addVertex(pose,
+                    BLOCK_CENTER + v.nx() * radius,
+                    BLOCK_CENTER + v.ny() * radius,
+                    BLOCK_CENTER + v.nz() * radius)
+                .setColor(color)
+                .setNormal(pose, v.nx(), v.ny(), v.nz());
+        }
     }
 
     /**
-     * Emits one POSITION_TEX_COLOR vertex.
+     * Builds a UV sphere mesh as a list of {@link SphereVertex}. Every
+     * four consecutive entries form one quad matching
+     * {@link VertexFormat.Mode#QUADS}. Called once at class init.
      *
-     * @param pose  the pose entry
-     * @param c     the vertex consumer
-     * @param pos   block-local position
-     * @param u     UV x
-     * @param v     UV y
-     * @param color ARGB color
+     * @return the unit sphere vertex list
      */
-    private static void emitQuadVertex(PoseStack.Pose pose, VertexConsumer c,
-            Vector3f pos, float u, float v, int color) {
-        c.addVertex(pose, pos.x, pos.y, pos.z).setUv(u, v).setColor(color);
+    private static List<SphereVertex> buildSphereMesh() {
+        int capacity = SPHERE_LAT_SEGMENTS * SPHERE_LON_SEGMENTS * VERTICES_PER_QUAD;
+        List<SphereVertex> out = new ArrayList<>(capacity);
+        for (int lat = 0; lat < SPHERE_LAT_SEGMENTS; lat++) {
+            double phi0 = Math.PI * ((double) lat / SPHERE_LAT_SEGMENTS - LATITUDE_HALF_OFFSET);
+            double phi1 = Math.PI * ((double) (lat + 1) / SPHERE_LAT_SEGMENTS - LATITUDE_HALF_OFFSET);
+            for (int lon = 0; lon < SPHERE_LON_SEGMENTS; lon++) {
+                double theta0 = TWO_PI * lon / SPHERE_LON_SEGMENTS;
+                double theta1 = TWO_PI * (lon + 1) / SPHERE_LON_SEGMENTS;
+                out.add(sphereVertex(phi0, theta0));
+                out.add(sphereVertex(phi1, theta0));
+                out.add(sphereVertex(phi1, theta1));
+                out.add(sphereVertex(phi0, theta1));
+            }
+        }
+        return out;
+    }
+
+    /** Builds one unit-sphere vertex at spherical coordinates (phi, theta).
+     *
+     * @param phi   latitude in radians, {@code [-PI/2, PI/2]}
+     * @param theta longitude in radians, {@code [0, 2*PI]}
+     * @return the unit-sphere vertex
+     */
+    private static SphereVertex sphereVertex(double phi, double theta) {
+        double cosPhi = Math.cos(phi);
+        return new SphereVertex(
+            (float) (cosPhi * Math.cos(theta)),
+            (float) Math.sin(phi),
+            (float) (cosPhi * Math.sin(theta)));
     }
 
     /**
