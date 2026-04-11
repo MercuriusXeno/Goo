@@ -7,6 +7,7 @@ import com.mercuriusxeno.goo.effect.NetherExecutor;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
+import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -16,6 +17,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -77,6 +79,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final double IMPLODE_PARTICLE_SPEED = 0.02;
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
+    /** Volume for the black-hole sound at EXPAND entry. */
+    private static final float BLACK_HOLE_SOUND_VOLUME = 1.0f;
+    /** Pitch for the black-hole sound at EXPAND entry. */
+    private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
 
     /**
      * Lifecycle phase of the chain marker. Most profiles stay in {@link #FUSE}
@@ -341,6 +347,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.contractTicksRemaining = 0;
         this.phase = Phase.EXPAND;
         blindEntitiesInSphere(level, pos, radius);
+        level.playSound(null, pos, GooSounds.BLACK_HOLE.get(), SoundSource.BLOCKS,
+            BLACK_HOLE_SOUND_VOLUME, BLACK_HOLE_SOUND_PITCH);
         setChanged();
         syncToClient();
     }

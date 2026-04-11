@@ -1,0 +1,11 @@
+{
+  "effects.black_hole": {
+    "category": "blocks",
+    "sounds": [
+      {
+        "name": "goo:effects/black_hole",
+        "stream": false
+      }
+    ]
+  }
+}
