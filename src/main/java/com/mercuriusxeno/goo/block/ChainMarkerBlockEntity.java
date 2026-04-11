@@ -69,10 +69,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     public static final int CONTRACT_DURATION = 15;
     /** Extra blindness ticks applied past the EXPAND + HOLD + CONTRACT window so entities inside get a clean fade-out. */
     private static final int BLINDNESS_EXTRA_TICKS = 20;
-    /** Base placeholder soul particle count per implosion tick. */
-    private static final int IMPLODE_PARTICLE_BASE = 3;
-    /** Additional placeholder soul particles per stack. */
-    private static final int IMPLODE_PARTICLE_PER_STACK = 2;
+    /** Base soul particle count per implosion tick. */
+    private static final int IMPLODE_PARTICLE_BASE = 1;
+    /** Additional soul particles per stack. */
+    private static final int IMPLODE_PARTICLE_PER_STACK = 1;
     /** Placeholder particle spread as a fraction of the implosion radius. */
     private static final double IMPLODE_PARTICLE_SPREAD_PER_RANGE = 0.6;
     /** Placeholder particle velocity. */
