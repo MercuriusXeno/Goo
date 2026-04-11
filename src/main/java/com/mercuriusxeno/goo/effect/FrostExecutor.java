@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.effect;
 
+import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -12,8 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Performs the instant freeze effect for frost goo. Converts liquids
  * to solid forms, extinguishes fires, and destroys plants in a sphere.
- * Frozen water becomes packed ice (melt-proof) while the frost field
- * is active; the field swaps it back to regular ice on expiry.
+ * Frozen water becomes a non-melting mod ice block for the field's
+ * lifetime; on field expiry the mod ice is swapped to vanilla ice by
+ * {@link com.mercuriusxeno.goo.block.FrostFieldBlockEntity}, at which
+ * point it can melt normally.
  */
 public final class FrostExecutor {
 
@@ -34,8 +37,9 @@ public final class FrostExecutor {
 
     /**
      * Freezes all convertible blocks in a sphere around the center.
-     * Water becomes packed ice (melt-resistant), lava becomes obsidian,
-     * fires are extinguished, and plants are destroyed.
+     * Water becomes a non-melting mod ice block (melt-protected for the
+     * field's lifetime, swapped to vanilla ice on expiry), lava becomes
+     * obsidian, fires are extinguished, and plants are destroyed.
      *
      * @param level  the server level
      * @param center the center of the freeze sphere
@@ -101,7 +105,7 @@ public final class FrostExecutor {
      * @return the replacement block, or null
      */
     private static Block frostReplacement(BlockState state) {
-        if (state.is(Blocks.WATER)) { return Blocks.PACKED_ICE; }
+        if (state.is(Blocks.WATER)) { return GooBlocks.MAGICKED_ICE.get(); }
         if (state.is(Blocks.LAVA)) { return Blocks.OBSIDIAN; }
         if (isFire(state) || isPlant(state)) { return Blocks.AIR; }
         return null;

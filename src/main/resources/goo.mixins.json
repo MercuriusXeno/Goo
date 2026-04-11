@@ -3,6 +3,8 @@
   "package": "com.mercuriusxeno.goo.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ContainerShiftClickMergeMixin",
+    "InventoryPickupMergeMixin",
     "OmniblobQuickCraftMixin"
   ],
   "client": [

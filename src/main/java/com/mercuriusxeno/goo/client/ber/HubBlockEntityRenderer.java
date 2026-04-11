@@ -100,6 +100,14 @@ public class HubBlockEntityRenderer
         { 3f / 16f,  3f / 16f},   // slot 7 (NW)
     };
 
+    /** Y ranges describing where gasket boxes land in a hub slot. */
+    private static final GasketCapRenderer.GasketYRanges GASKET_Y =
+        new GasketCapRenderer.GasketYRanges(BODY_BOT, BODY_TOP, GASKET_BOT, GASKET_TOP);
+
+    /** Gasket side UV region (uniform across container types). */
+    private static final GasketCapRenderer.GasketUv GASKET_UV =
+        new GasketCapRenderer.GasketUv(GS_U0, GS_U1, GS_V1);
+
     /**
      * Creates a hub BER. Context is unused.
      *
@@ -244,7 +252,7 @@ public class HubBlockEntityRenderer
         if (hasAnyCopperCap(state)) {
             submitCopperCaps(poseStack, nodeCollector, light, state);
         }
-        if (hasAnyChoralCap(state)) {
+        if (GasketCapRenderer.hasAnyCap(state.topGasketPresent, state.bottomGasketPresent)) {
             submitChoralCaps(poseStack, nodeCollector, light, state);
         }
     }
@@ -320,20 +328,8 @@ public class HubBlockEntityRenderer
     }
 
     /**
-     * Returns true if any occupied slot has a choral gasket on either end.
-     *
-     * @param state the block state
-     * @return true if anyChoralCap is present
-     */
-    private static boolean hasAnyChoralCap(HubRenderState state) {
-        for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.topGasketPresent[i] || state.bottomGasketPresent[i]) { return true; }
-        }
-        return false;
-    }
-
-    /**
-     * Renders endcap boxes for a slot on the specified sides.
+     * Delegates to {@link GasketCapRenderer#renderEndcaps} with this container's
+     * Y ranges and UV constants.
      *
      * @param ctx    the render context
      * @param slot   the slot index
@@ -341,24 +337,18 @@ public class HubBlockEntityRenderer
      * @param bottom whether to render the bottom cap
      */
     private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
-        if (!top && !bottom) { return; }
-        CuboidBounds base = slotBoundsXZ(slot);
-        if (top) {
-            ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
-        }
-        if (bottom) {
-            ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
-        }
+        GasketCapRenderer.renderEndcaps(ctx, slotBoundsXZ(slot), GASKET_Y, GASKET_UV, top, bottom);
     }
 
     /**
-     * Computes the XZ cuboid bounds for a hub slot at index.
+     * Computes the XZ cuboid bounds for a hub slot at index. Hub centers are
+     * already in block-local space, so they are passed to
+     * {@link GasketCapRenderer#slotBoundsXZ} unchanged.
+     *
      * @param slot the slot index in the hub ring
      * @return XZ cuboid bounds centered on the slot with Y zeroed
      */
     private static CuboidBounds slotBoundsXZ(int slot) {
-        float cx = CENTERS[slot][0];
-        float cz = CENTERS[slot][1];
-        return new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, 0, 0);
+        return GasketCapRenderer.slotBoundsXZ(CENTERS[slot][0], CENTERS[slot][1], HW);
     }
 }

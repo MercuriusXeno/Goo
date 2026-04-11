@@ -165,6 +165,36 @@ public final class BlobStacks {
     }
 
     /**
+     * Pure math: the new omniblob sink volume after absorbing a source volume.
+     * Extracted so the arithmetic is covered by tests without bootstrapping Minecraft.
+     *
+     * @param sourceVolumeMb   volume being absorbed, in microblobs (>=0)
+     * @param omniblobVolumeMb current omniblob sink volume, in microblobs (>=0)
+     * @return the combined volume in microblobs
+     */
+    public static long absorbedVolume(long sourceVolumeMb, long omniblobVolumeMb) {
+        return omniblobVolumeMb + sourceVolumeMb;
+    }
+
+    /**
+     * Dumps the entire volume of {@code source} (blob stack or omniblob of any goo type)
+     * into the omniblob sitting in {@code omniblobStack}. Clears {@code source} by setting
+     * its count to 0. Caller is responsible for {@code slot.setChanged()} if the sink
+     * lives in a container slot.
+     *
+     * <p>No type check is performed here - the caller must verify that the two stacks
+     * share a goo type before calling.</p>
+     *
+     * @param source        the source goo stack; count becomes 0 on return
+     * @param omniblobStack the sink omniblob stack; volume is grown in place
+     */
+    public static void absorbIntoOmniblobSlot(ItemStack source, ItemStack omniblobStack) {
+        long total = absorbedVolume(volumeOf(source), GooOmniblobItem.getVolume(omniblobStack));
+        GooOmniblobItem.setVolume(omniblobStack, total);
+        source.setCount(0);
+    }
+
+    /**
      * Merges goo volume into a player's inventory, stacking with existing items.
      * Tries to add to existing omniblobs first, then tops up blob stacks, then
      * creates new items for the remainder.

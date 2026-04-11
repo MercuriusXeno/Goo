@@ -29,6 +29,17 @@ public sealed interface TargetResult {
      */
     record BlockTarget(BlockPos pos, Direction face, boolean grannyArc) implements TargetResult {}
 
+    /**
+     * The player is aiming at a placed chain marker block, which in the
+     * aim-assist system behaves exactly like a living entity (cone scan,
+     * sticky retention, sneak bypass). The throw payload still encodes as
+     * a block target, but the render path draws an entity-style arc rather
+     * than a block-face voxel overlay.
+     *
+     * @param pos the targeted chain marker block position
+     */
+    record ChainMarkerTarget(BlockPos pos) implements TargetResult {}
+
     /** Nothing targetable within throw range. */
     record None() implements TargetResult {}
 
@@ -56,4 +67,12 @@ public sealed interface TargetResult {
      * @return the result
      */
     static TargetResult grannyArc(BlockPos pos) { return new BlockTarget(pos, Direction.UP, true); }
+
+    /**
+     * Factory for a chain marker target.
+     *
+     * @param pos the chain marker block position
+     * @return the result
+     */
+    static TargetResult chainMarker(BlockPos pos) { return new ChainMarkerTarget(pos); }
 }

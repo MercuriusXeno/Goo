@@ -6,6 +6,7 @@ import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.network.BlobThrowPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.player.Player;
 
@@ -34,6 +35,10 @@ public final class GloveThrowSender {
         TargetResult target = resolveAimTarget(player);
         BlobThrowPayload payload = targetToPayload(target, gooType);
         if (payload != null) {
+            // Arm the freeze optimistically: the half-second aim lock must
+            // kick in on send, not on server ack, so the next throw in the
+            // window stays glued to the same spot.
+            ThrowFreezeState.arm(target);
             sendPayload(payload);
         }
     }
@@ -59,6 +64,11 @@ public final class GloveThrowSender {
         return switch (target) {
             case TargetResult.EntityTarget et -> new BlobThrowPayload(gooType.getId(), et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
             case TargetResult.BlockTarget bt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
+            // Chain marker throws encode as a block target at the marker's
+            // position with UP face; the server stack-vs-place logic in
+            // ChainAndFrostEffects.placeOrStackChain treats a hit on an
+            // existing chain marker as a stack operation.
+            case TargetResult.ChainMarkerTarget cmt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, cmt.pos(), Direction.UP.ordinal(), false);
             case TargetResult.None ignored -> null;
         };
     }

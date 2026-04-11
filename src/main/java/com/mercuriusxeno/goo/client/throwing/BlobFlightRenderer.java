@@ -104,7 +104,7 @@ public final class BlobFlightRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         float gameTime = mc.level.getGameTime() + partialTick;
-        return new RenderContext(poseStack, buffers, camera, gameTime);
+        return new RenderContext(poseStack, buffers, camera, gameTime, partialTick);
     }
 
     /**
@@ -114,23 +114,28 @@ public final class BlobFlightRenderer {
      * @param buffers the buffer source for rendering
      * @param camera the render camera
      * @param gameTime the level game time including partial tick
+     * @param partialTick the sub-tick interpolation factor for this frame
      */
     private record RenderContext(
             PoseStack poseStack,
             MultiBufferSource.BufferSource buffers,
             Camera camera,
-            float gameTime
+            float gameTime,
+            float partialTick
     ) {}
 
     /**
-     * Renders a single flight: core, shell, tail, and particles.
+     * Renders a single flight: core, shell, tail, and particles. The
+     * flight position and velocity are sampled at the current partial
+     * tick so the blob interpolates smoothly at render FPS rather than
+     * snapping once per 20 Hz client tick.
      *
      * @param ctx the per-frame render context
      * @param flight the flight to render
      */
     private static void renderFlight(RenderContext ctx, BlobFlightManager.BlobFlight flight) {
-        Vec3 pos = flight.getPosition(0f);
-        Vec3 vel = flight.getVelocity(0f);
+        Vec3 pos = flight.getPosition(ctx.partialTick);
+        Vec3 vel = flight.getVelocity(ctx.partialTick);
 
         translateToFlight(ctx, pos);
         renderFlightLayers(ctx, flight.gooType, vel);

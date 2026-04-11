@@ -13,6 +13,7 @@ import com.mercuriusxeno.goo.registry.GooFluids;
 import com.mercuriusxeno.goo.registry.GooItems;
 import com.mercuriusxeno.goo.registry.GooParticles;
 import com.mercuriusxeno.goo.registry.GooPotions;
+import com.mercuriusxeno.goo.registry.GooSounds;
 import com.mercuriusxeno.goo.registry.GooTickets;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
@@ -90,6 +91,7 @@ public class Goo {
         GooDataComponents.DATA_COMPONENTS.register(modEventBus);
         GooPotions.POTIONS.register(modEventBus);
         GooParticles.PARTICLE_TYPES.register(modEventBus);
+        GooSounds.SOUND_EVENTS.register(modEventBus);
         GooCreativeTabs.TABS.register(modEventBus);
     }
 

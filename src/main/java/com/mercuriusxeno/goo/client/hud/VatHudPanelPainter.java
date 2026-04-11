@@ -1,15 +1,11 @@
 package com.mercuriusxeno.goo.client.hud;
 
-import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.client.GooTooltipHandler;
 import com.mercuriusxeno.goo.client.VatStackAggregator.VatStackData;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.Direction;
-import java.util.Map;
 
 /**
  * Renders the vat HUD panel content: background, header rows, and goo rows.
@@ -116,7 +112,7 @@ final class VatHudPanelPainter {
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -panelHeight + InWorldHud.BORDER;
         int row = renderHeaders(font, buffers, poseStack, data, upgradeText, stackText, contentX, baseY);
-        renderGooRows(poseStack, font, buffers, data.contents(), contentX, baseY, row);
+        InWorldHud.renderGooRows(poseStack, font, buffers, data.contents(), contentX, baseY, row);
         buffers.endBatch();
     }
 
@@ -164,26 +160,4 @@ final class VatHudPanelPainter {
         return 1;
     }
 
-    /**
-     * Renders all goo type rows starting at the given row offset.
-     *
-     * @param poseStack the pose stack
-     * @param font the font renderer
-     * @param buffers the buffer source
-     * @param contents the goo contents to render
-     * @param x the left X
-     * @param baseY the panel content top Y
-     * @param startRow the first row index for goo rows
-     */
-    static void renderGooRows(PoseStack poseStack, Font font,
-            MultiBufferSource buffers, GooContents contents,
-            float x, float baseY, int startRow) {
-        int row = startRow;
-        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
-            float rowY = baseY + row * InWorldHud.ROW_HEIGHT;
-            String amountText = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
-            InWorldHud.renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, x, rowY);
-            row++;
-        }
-    }
 }

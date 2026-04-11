@@ -111,13 +111,8 @@ public class VatBlockItem extends BlockItem {
      * @return the amount actually accepted
      */
     public static long addGoo(ItemStack stack, GooType type, long amount) {
-        if (amount <= 0) { return 0; }
-        GooContents contents = getGooContents(stack);
         long capacity = ContainerCapacity.vatCapacity(GooEnchantments.getCompressionLevel(stack));
-        long accepted = contents.cappedAddAmount(amount, capacity);
-        if (accepted <= 0) { return 0; }
-        setGooContents(stack, contents.withAdded(type, accepted));
-        return accepted;
+        return GooContentsOps.addGoo(stack, type, amount, capacity);
     }
 
     /**
@@ -129,13 +124,7 @@ public class VatBlockItem extends BlockItem {
      * @return the amount actually removed
      */
     public static long removeGoo(ItemStack stack, GooType type, long amount) {
-        GooContents contents = getGooContents(stack);
-        if (contents.isEmpty()) { return 0; }
-        long available = contents.getVolume(type);
-        long toRemove = Math.min(amount, available);
-        if (toRemove <= 0) { return 0; }
-        setGooContents(stack, contents.withRemoved(type, toRemove));
-        return toRemove;
+        return GooContentsOps.removeGoo(stack, type, amount);
     }
 
     // --- Interaction handlers ---

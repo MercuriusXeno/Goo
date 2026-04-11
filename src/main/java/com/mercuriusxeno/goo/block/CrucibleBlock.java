@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -12,10 +13,12 @@ import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -23,6 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -45,6 +49,8 @@ public class CrucibleBlock extends BaseEntityBlock {
 
     public static final MapCodec<CrucibleBlock> CODEC = simpleCodec(CrucibleBlock::new);
 
+    /** Horizontal facing direction - orients the crucible's front (fire-glow) face toward the player. */
+    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
     /** Redstone signal present: crucible is disabled when true. */
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
     /** Whether the crucible is actively melting (drives on/off model state). */
@@ -73,9 +79,21 @@ public class CrucibleBlock extends BaseEntityBlock {
     public CrucibleBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
+            .setValue(FACING, Direction.NORTH)
             .setValue(POWERED, false)
             .setValue(LIT, false)
             .setValue(HAS_GASKET, false));
+    }
+
+    /** Places the crucible so its front face points toward the player.
+     *
+     * @param context the block placement context
+     * @return the state for placement
+     */
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState()
+            .setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     /** Returns the codec for serialization.
@@ -93,7 +111,7 @@ public class CrucibleBlock extends BaseEntityBlock {
      */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(POWERED, LIT, HAS_GASKET);
+        builder.add(FACING, POWERED, LIT, HAS_GASKET);
     }
 
     /** Returns MODEL render shape since the crucible uses a block model.

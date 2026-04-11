@@ -179,4 +179,30 @@ class BlobStacksTest {
         assertEquals(1, BlobStacks.computeExtractCount(1500L, false));
         assertEquals(1, BlobStacks.computeExtractCount(1500L, true));
     }
+
+    // -- absorbedVolume (sink-into-omniblob math) --
+
+    /** Absorbing into an empty omniblob yields the source volume. */
+    @Test
+    void absorbedVolume_emptyOmniblob() {
+        assertEquals(1000L, BlobStacks.absorbedVolume(1000L, 0L));
+    }
+
+    /** Absorbing into a non-empty omniblob sums the two volumes. */
+    @Test
+    void absorbedVolume_withExistingVolume() {
+        assertEquals(5500L, BlobStacks.absorbedVolume(500L, 5000L));
+    }
+
+    /** Absorbing a full blob stack worth (64,000 mB) into a partial omniblob. */
+    @Test
+    void absorbedVolume_maxBlobStackIntoPartial() {
+        assertEquals(64_500L, BlobStacks.absorbedVolume(64_000L, 500L));
+    }
+
+    /** Zero source leaves the omniblob unchanged. */
+    @Test
+    void absorbedVolume_zeroSource() {
+        assertEquals(5000L, BlobStacks.absorbedVolume(0L, 5000L));
+    }
 }
