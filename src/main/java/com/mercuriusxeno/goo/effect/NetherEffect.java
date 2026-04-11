@@ -10,6 +10,6 @@ final class NetherEffect implements WorldEffect {
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        ChainAndFrostEffects.netherConvert(level, pos, targetFace);
+        EffectBlockPlacement.netherConvert(level, pos, targetFace);
     }
 }

@@ -73,6 +73,68 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /**
+     * Nether black-hole corona pipeline: second render pass that emits
+     * the same sphere mesh at a slightly larger radius with additive
+     * LIGHTNING blend and depth-write OFF, producing an emissive halo
+     * that sits in the annular gap just outside the main sphere's
+     * silhouette. Uses {@code nether_corona.vsh / .fsh} which discards
+     * pixels inside the main silhouette based on the corona mesh's
+     * fresnel value.
+     */
+    public static final RenderPipeline NETHER_CORONA = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/nether_corona"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_corona"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_corona"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the corona halo pass. */
+    public static final RenderType NETHER_CORONA_TYPE = RenderType.create(
+            "goo_nether_corona",
+            RenderSetup.builder(NETHER_CORONA)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
+    /**
+     * Nether black-hole accretion-disk pipeline: third render pass that
+     * emits a flat annular ring in the world XZ plane around the sphere,
+     * inner radius pinned to the main sphere radius and outer radius at
+     * {@code DISK_OUTER_SCALE * main}. Additive LIGHTNING blend with
+     * depth write off, so the disk layers onto whatever was drawn behind
+     * it. The fragment shader decodes a per-vertex radial distance
+     * from {@code Color.r} and discards any fragment whose interpolated
+     * radial distance is below the main sphere radius (strictly "no
+     * geometry inside the sphere").
+     */
+    public static final RenderPipeline NETHER_DISK = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/nether_disk"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_disk"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/nether_disk"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the accretion-disk pass. */
+    public static final RenderType NETHER_DISK_TYPE = RenderType.create(
+            "goo_nether_disk",
+            RenderSetup.builder(NETHER_DISK)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
     private GooRenderTypes() {}
 
     /**
@@ -83,5 +145,7 @@ public final class GooRenderTypes {
     public static void registerPipelines(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(LINES_ADDITIVE_GLOW);
         event.registerPipeline(NETHER_BLACKHOLE);
+        event.registerPipeline(NETHER_CORONA);
+        event.registerPipeline(NETHER_DISK);
     }
 }

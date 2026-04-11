@@ -10,6 +10,6 @@ final class BlazeEffect implements WorldEffect {
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        ChainAndFrostEffects.blazeExplosion(level, pos, targetFace);
+        EffectBlockPlacement.blazeExplosion(level, pos, targetFace);
     }
 }

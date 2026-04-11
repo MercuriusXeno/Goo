@@ -52,9 +52,9 @@ public final class RockExecutor {
     /**
      * Mines a single 3x3 layer of the implosion column at the given
      * {@code stepIndex} into the wall, and emits dust + break sound
-     * localized to that layer. Called once per tick by
-     * {@link com.mercuriusxeno.goo.block.ChainMarkerBlockEntity} while
-     * progressive mining is active.
+     * localized to that layer. The sonic-boom shockwave preview for
+     * this layer is emitted separately (earlier) via
+     * {@link #previewLayer} so it leads the destruction by a few ticks.
      *
      * @param level      the server level
      * @param origin     the anchor (marker) block position
@@ -66,19 +66,45 @@ public final class RockExecutor {
     public static int mineLayer(ServerLevel level, BlockPos origin,
                                 Direction placedFace, int stepIndex,
                                 int stackCount) {
-        Direction blastDir = placedFace.getOpposite();
-        Direction.Axis blastAxis = blastDir.getAxis();
-        // Marker sits in the air block adjacent to the hit face; the first
-        // layer (stepIndex 0) must land on the hit block itself, one step
-        // into the wall from the marker. Offsetting by stepIndex + 1 keeps
-        // the blob's own air block out of the footprint.
-        BlockPos layerCenter = origin.relative(blastDir, stepIndex + 1);
+        Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
+        BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
         int destroyed = mineFootprint(level, layerCenter, blastAxis);
         if (destroyed > 0) {
             spawnLayerDust(level, layerCenter, blastAxis, destroyed);
             playLayerSound(level, layerCenter, stackCount, stepIndex);
         }
         return destroyed;
+    }
+
+    /**
+     * Emits the warden-style sonic-boom shockwave particle at the layer
+     * center for {@code stepIndex}, without touching blocks. The caller
+     * schedules this a few ticks ahead of {@link #mineLayer} for the
+     * same {@code stepIndex} so the shockwave visually leads the break.
+     *
+     * @param level      the server level
+     * @param origin     the anchor (marker) block position
+     * @param placedFace the face the marker was attached to
+     * @param stepIndex  zero-based layer offset along the blast direction
+     */
+    public static void previewLayer(ServerLevel level, BlockPos origin,
+                                    Direction placedFace, int stepIndex) {
+        BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
+        spawnLayerSonicBoom(level, layerCenter);
+    }
+
+    /** Marker sits in the air block adjacent to the hit face; the first
+     * layer (stepIndex 0) must land on the hit block itself, one step into
+     * the wall from the marker. Offsetting by {@code stepIndex + 1} keeps
+     * the blob's own air block out of the footprint.
+     *
+     * @param origin     the anchor (marker) block position
+     * @param placedFace the face the marker was attached to
+     * @param stepIndex  zero-based layer offset along the blast direction
+     * @return the block position at the center of the given blast layer
+     */
+    private static BlockPos resolveLayerCenter(BlockPos origin, Direction placedFace, int stepIndex) {
+        return origin.relative(placedFace.getOpposite(), stepIndex + 1);
     }
 
     /**
@@ -174,6 +200,21 @@ public final class RockExecutor {
         double spreadZ = blastAxis == Direction.Axis.Z ? DUST_ALONG_SPREAD : DUST_PERP_SPREAD;
         level.sendParticles(ParticleTypes.DUST_PLUME,
                 cx, cy, cz, count, spreadX, spreadY, spreadZ, DUST_PARTICLE_SPEED);
+    }
+
+    /**
+     * Spawns one Warden-style sonic-boom particle at the layer center
+     * each tick the blast advances. Reads as a punching shockwave driving
+     * deeper into the wall, layered on top of the dust slice.
+     *
+     * @param level       the server level
+     * @param layerCenter the layer center position
+     */
+    private static void spawnLayerSonicBoom(ServerLevel level, BlockPos layerCenter) {
+        double cx = layerCenter.getX() + BLOCK_CENTER_OFFSET;
+        double cy = layerCenter.getY() + BLOCK_CENTER_OFFSET;
+        double cz = layerCenter.getZ() + BLOCK_CENTER_OFFSET;
+        level.sendParticles(ParticleTypes.SONIC_BOOM, cx, cy, cz, 1, 0.0, 0.0, 0.0, 0.0);
     }
 
     /**
