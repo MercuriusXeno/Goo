@@ -38,14 +38,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String TAG_MAX_STACKS = "MaxStacks";
     private static final String TAG_FUSE_REMAINING = "FuseRemaining";
     private static final String TAG_PLACED_FACE = "PlacedFace";
-    private static final String TAG_MINING_STEP = "MiningStep";
-    private static final String TAG_MINING_DEPTH = "MiningDepth";
     /** Default goo type id when loading from NBT. */
     private static final String DEFAULT_GOO_TYPE = "rock";
     /** Default face name when loading from NBT. */
     private static final String DEFAULT_FACE = "up";
-    /** Sentinel: no progressive mining in progress. */
-    private static final int MINING_INACTIVE = -1;
 
     /** How often to sync fuse to client (every N ticks). */
     private static final int SYNC_INTERVAL = 5;
@@ -57,10 +53,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int maxStacks = 1;
     private int fuseRemaining;
     private Direction placedFace = Direction.UP;
-    /** Next layer index to mine while progressive mining is active; -1 otherwise. */
-    private int miningStep = MINING_INACTIVE;
-    /** Total number of layers to mine when progressive mining is active. */
-    private int miningDepth;
     /** Active post-fuse behavior; null during FUSE phase. Set at fuse
      * expiry when the profile has a behavior factory, and nulled out
      * implicitly when the BE removes itself. */
@@ -141,17 +133,12 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         be.tickFuse(server, pos);
     }
 
-    /** FUSE-phase tick: progressive mining passthrough (legacy rock path)
-     * or fuse countdown + detonate on expiry.
+    /** FUSE-phase tick: counts the fuse down and detonates on expiry.
      *
      * @param level the server level
      * @param pos   the block position
      */
     private void tickFuse(ServerLevel level, BlockPos pos) {
-        if (miningStep != MINING_INACTIVE) {
-            tickProgressiveMining(level, pos);
-            return;
-        }
         fuseRemaining--;
         if (!EffectMath.isFuseLive(fuseRemaining)) {
             detonate(level, pos);
@@ -208,8 +195,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    /** Legacy path: routes to the old {@code executor} or
-     * {@code layerExecutor} depending on which the profile provides.
+    /** Legacy path: routes to the old one-shot {@code executor} for any
+     * profile that has not yet been migrated to the behavior API.
      *
      * @param level   the current level
      * @param pos     the block position
@@ -217,47 +204,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     private void detonateLegacy(ServerLevel level, BlockPos pos, ChainProfile profile) {
         int range = profile.rangeFormula().applyAsInt(stackCount);
-        if (profile.layerExecutor() != null) {
-            beginProgressiveMining(range);
-            return;
-        }
         if (profile.executor() != null) {
             profile.executor().execute(level, pos, range, stackCount, placedFace);
         }
         level.removeBlock(pos, false);
-    }
-
-    /** Transitions this marker into progressive mining mode (legacy rock
-     * path). The BE remains in place, ticking one layer per server tick
-     * until {@code depth} layers have been processed.
-     *
-     * @param depth total layers to mine
-     */
-    private void beginProgressiveMining(int depth) {
-        miningDepth = depth;
-        miningStep = 0;
-        setChanged();
-    }
-
-    /** Advances progressive mining by one layer. Removes the marker once
-     * all layers have been processed.
-     *
-     * @param level the server level
-     * @param pos   the marker position
-     */
-    private void tickProgressiveMining(ServerLevel level, BlockPos pos) {
-        ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile == null || profile.layerExecutor() == null) {
-            level.removeBlock(pos, false);
-            return;
-        }
-        profile.layerExecutor().tickLayer(level, pos, miningStep, stackCount, placedFace);
-        miningStep++;
-        if (miningStep >= miningDepth) {
-            level.removeBlock(pos, false);
-            return;
-        }
-        setChanged();
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────
@@ -327,8 +277,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         reconstituteBehaviorIfNeeded(input);
     }
 
-    /** Restores goo type, stack count, max stacks, fuse, and mining state
-     * from persistent data.
+    /** Restores goo type, stack count, max stacks, and fuse from
+     * persistent data.
      *
      * @param input the value input to read from
      */
@@ -338,8 +288,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
         maxStacks = input.getIntOr(TAG_MAX_STACKS, 1);
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
-        miningStep = input.getIntOr(TAG_MINING_STEP, MINING_INACTIVE);
-        miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
     }
 
     /** If the fuse has already expired, re-creates the behavior instance
@@ -379,8 +327,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_MAX_STACKS, maxStacks);
         output.putInt(TAG_FUSE_REMAINING, fuseRemaining);
         output.putString(TAG_PLACED_FACE, placedFace.getName());
-        output.putInt(TAG_MINING_STEP, miningStep);
-        output.putInt(TAG_MINING_DEPTH, miningDepth);
         if (behavior != null) {
             behavior.saveAdditional(output);
         }

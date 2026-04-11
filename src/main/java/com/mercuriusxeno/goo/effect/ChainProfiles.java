@@ -74,16 +74,15 @@ public final class ChainProfiles {
         ));
     }
 
-    /** Registers the rock chain profile (legacy per-layer executor path). */
+    /** Registers the rock chain profile (new-style ChainBehavior path). */
     private static void registerRock() {
         ChainProfile.register(GooType.ROCK, new ChainProfile(
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
                 EffectMath::computeImplosionDepth,
                 null,
-                (level, pos, step, stacks, face) ->
-                        RockExecutor.mineLayer(level, pos, face, step, stacks),
-                null
+                null,
+                RockBehavior::new
         ));
     }
 
