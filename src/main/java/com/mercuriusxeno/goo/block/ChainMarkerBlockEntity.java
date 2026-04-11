@@ -30,6 +30,7 @@ import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Ticking block entity for chain effects. Counts down a fuse; additional
@@ -83,6 +84,31 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final float BLACK_HOLE_SOUND_VOLUME = 1.0f;
     /** Pitch for the black-hole sound at EXPAND entry. */
     private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
+    /** Fraction of current HP shaved off any living entity caught inside the
+     * blast at the EXPAND -> HOLD transition. Binary in/out: no distance
+     * falloff. Pre-wounded mobs die faster, healthy mobs lose half their bar. */
+    private static final float DAMAGE_FRACTION = 0.5f;
+    /** Per-tick velocity nudge magnitude (blocks/tick) applied toward the
+     * marker center during EXPAND and HOLD. Tuned to feel like an
+     * inescapable gravitic tug. Knockback resistance still applies. */
+    private static final double PULL_SPEED = 0.18;
+    /** Pull radius is this multiple of the blast radius. The well of
+     * gravity extends well past the visible event horizon so distant
+     * entities still feel something dragging them in. */
+    private static final int PULL_RADIUS_MULT = 3;
+    /** Floor on squared distance-to-center before applying the pull, to
+     * avoid divide-by-zero (and absurd impulse spikes) when an entity is
+     * standing exactly on the marker. */
+    private static final double PULL_MIN_DIST_SQ = 0.25;
+    /** Outer darkness radius is this multiple of the blast radius. The outer
+     * band gives the "approaching dread" feel before entities enter the blast. */
+    private static final int OUTER_DARK_RADIUS_MULT = 2;
+    /** Vanilla DARKNESS amplifier inside the blast sphere. Higher amplifier
+     * shortens the pulse period, so the inside flicker is faster and harder
+     * than the outside. */
+    private static final int INNER_DARK_AMPLIFIER = 2;
+    /** Vanilla DARKNESS amplifier in the outer warning band. */
+    private static final int OUTER_DARK_AMPLIFIER = 0;
 
     /**
      * Lifecycle phase of the chain marker. Most profiles stay in {@link #FUSE}
@@ -254,8 +280,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private void tickExpand(ServerLevel level, BlockPos pos) {
         expandTicksRemaining--;
         spawnImplosionParticles(level, pos);
+        pullEntitiesTowardCenter(level, pos, implodeRadius);
         if (expandTicksRemaining <= 0) {
             accumulator = NetherExecutor.walkAndDestroy(level, pos, implodeRadius);
+            damageEntitiesInSphere(level, pos, implodeRadius);
             phase = Phase.HOLD;
             initialHoldTicks = HOLD_DURATION;
             holdTicksRemaining = HOLD_DURATION;
@@ -273,6 +301,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private void tickHold(ServerLevel level, BlockPos pos) {
         holdTicksRemaining--;
         spawnImplosionParticles(level, pos);
+        pullEntitiesTowardCenter(level, pos, implodeRadius);
         if (holdTicksRemaining <= 0) {
             phase = Phase.CONTRACT;
             initialContractTicks = CONTRACT_DURATION;
@@ -347,6 +376,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.contractTicksRemaining = 0;
         this.phase = Phase.EXPAND;
         blindEntitiesInSphere(level, pos, radius);
+        applyAreaDarkness(level, pos, radius);
         level.playSound(null, pos, GooSounds.BLACK_HOLE.get(), SoundSource.BLOCKS,
             BLACK_HOLE_SOUND_VOLUME, BLACK_HOLE_SOUND_PITCH);
         setChanged();
@@ -364,18 +394,116 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * @param radius effect radius in blocks
      */
     private static void blindEntitiesInSphere(ServerLevel level, BlockPos pos, int radius) {
+        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
+        forEntitiesInSphere(level, pos, radius, entity ->
+            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0, false, false)));
+    }
+
+    /**
+     * Iterates every {@link LivingEntity} whose center lies within {@code radius}
+     * blocks of the marker's block center, calling {@code action} on each. The
+     * shared sphere walk for blind/damage/pull/darkness effects: AABB query
+     * followed by squared-distance filter.
+     *
+     * @param level  the server level
+     * @param pos    the marker position
+     * @param radius sphere radius in blocks
+     * @param action action to apply to each entity inside the sphere
+     */
+    private static void forEntitiesInSphere(ServerLevel level, BlockPos pos, int radius,
+                                            Consumer<LivingEntity> action) {
         double cx = pos.getX() + BLOCK_CENTER_OFFSET;
         double cy = pos.getY() + BLOCK_CENTER_OFFSET;
         double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
         AABB box = new AABB(cx - radius, cy - radius, cz - radius,
             cx + radius, cy + radius, cz + radius);
-        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
         double radiusSq = (double) radius * radius;
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
         for (LivingEntity entity : entities) {
             if (entity.distanceToSqr(cx, cy, cz) > radiusSq) { continue; }
-            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0, false, false));
+            action.accept(entity);
         }
+    }
+
+    /**
+     * Shaves {@link #DAMAGE_FRACTION} off the current HP of every living
+     * entity inside the blast sphere at the destruction instant. Magic-typed
+     * so armor does not mitigate. Called once at the EXPAND -> HOLD transition,
+     * never as a tick effect: the cut is binary, in or out.
+     *
+     * @param level  the server level
+     * @param pos    the marker position
+     * @param radius effect radius in blocks
+     */
+    private static void damageEntitiesInSphere(ServerLevel level, BlockPos pos, int radius) {
+        forEntitiesInSphere(level, pos, radius, entity -> {
+            float damage = entity.getHealth() * DAMAGE_FRACTION;
+            entity.hurtServer(level, level.damageSources().magic(), damage);
+        });
+    }
+
+    /**
+     * Per-tick gravitic tug toward the marker center. Called from EXPAND and
+     * HOLD ticks (never CONTRACT - the sphere is already dissipating). Each
+     * affected entity receives a small velocity delta of magnitude
+     * {@link #PULL_SPEED}, scaled by the unit vector from entity to center,
+     * via {@link LivingEntity#push} so knockback resistance still applies.
+     * Entities exactly on the center are skipped to avoid divide-by-zero.
+     *
+     * @param level  the server level
+     * @param pos    the marker position
+     * @param radius pull radius in blocks (matches the blast radius)
+     */
+    private static void pullEntitiesTowardCenter(ServerLevel level, BlockPos pos, int radius) {
+        double cx = pos.getX() + BLOCK_CENTER_OFFSET;
+        double cy = pos.getY() + BLOCK_CENTER_OFFSET;
+        double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
+        forEntitiesInSphere(level, pos, radius * PULL_RADIUS_MULT, entity -> {
+            double dx = cx - entity.getX();
+            double dy = cy - entity.getY();
+            double dz = cz - entity.getZ();
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq < PULL_MIN_DIST_SQ) { return; }
+            double scale = PULL_SPEED / Math.sqrt(distSq);
+            entity.push(dx * scale, dy * scale, dz * scale);
+            entity.hurtMarked = true;
+        });
+    }
+
+    /**
+     * Two-tier vanilla {@link MobEffects#DARKNESS} application: a wide outer
+     * band at low amplifier ({@link #OUTER_DARK_AMPLIFIER}) and a narrower
+     * inner band matching the blast radius at higher amplifier
+     * ({@link #INNER_DARK_AMPLIFIER}). Entities inside the inner sphere get
+     * the stronger version because {@link LivingEntity#addEffect} replaces
+     * weaker amplifiers. Layered with the existing blindness for full
+     * "what's happening" disorientation inside the sphere. Called once at
+     * EXPAND entry.
+     *
+     * @param level  the server level
+     * @param pos    the marker position
+     * @param radius blast radius in blocks (inner band)
+     */
+    private static void applyAreaDarkness(ServerLevel level, BlockPos pos, int radius) {
+        int duration = EXPAND_DURATION + HOLD_DURATION + CONTRACT_DURATION + BLINDNESS_EXTRA_TICKS;
+        int outerRadius = radius * OUTER_DARK_RADIUS_MULT;
+        applyDarknessBand(level, pos, outerRadius, OUTER_DARK_AMPLIFIER, duration);
+        applyDarknessBand(level, pos, radius, INNER_DARK_AMPLIFIER, duration);
+    }
+
+    /**
+     * Applies vanilla DARKNESS to every living entity inside a sphere.
+     *
+     * @param level     the server level
+     * @param pos       the marker position
+     * @param radius    sphere radius in blocks
+     * @param amplifier DARKNESS amplifier
+     * @param duration  effect duration in ticks
+     */
+    private static void applyDarknessBand(ServerLevel level, BlockPos pos, int radius,
+                                          int amplifier, int duration) {
+        forEntitiesInSphere(level, pos, radius, entity ->
+            entity.addEffect(new MobEffectInstance(MobEffects.DARKNESS, duration, amplifier, false, false)));
     }
 
     /** Sends a client sync packet when entering implosion zone or at regular intervals. */
