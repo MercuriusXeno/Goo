@@ -7,18 +7,18 @@ in float animationTime;
 out vec4 fragColor;
 
 // Tunables - iterate live via F3+T.
-const float RIM_FADE_START = 0.00;  // fresnel value where the swirl begins to appear
-const float RIM_FADE_END   = 0.55;  // fresnel value at which the swirl reaches full intensity
-const float SWIRL_FREQ = 10.0;
-const float SWIRL_ROTATIONS_PER_CYCLE = 4.0;
+const float RIM_FADE_START = 0.02;  // fresnel value where the swirl begins to appear
+const float RIM_FADE_END   = 0.96;  // fresnel value at which the swirl reaches full intensity
+const float SWIRL_FREQ = 36.0;
+const float SWIRL_ROTATIONS_PER_CYCLE = 12.0;
 // How tight the spiral curls. This is the phase offset added across the
 // full fresnel range (0 at center, 1 at silhouette). Values >= PI produce
 // visibly curved bands; larger values wind the spiral more aggressively.
-const float TWIST_STRENGTH = 8.0;
+const float TWIST_STRENGTH = 6.0;
 const float TWO_PI = 6.28318530718;
 
 const vec3 CORE_COLOR = vec3(0.01, 0.00, 0.03);  // near-black purple
-const vec3 RIM_COLOR  = vec3(0.35, 0.08, 0.55);  // darker violet, subdued
+const vec3 RIM_COLOR  = vec3(0.35, 0.05, 0.44);  // darker violet, subdued
 
 void main() {
     // Fresnel factor: 0 at center of the sphere (facing camera), 1 at

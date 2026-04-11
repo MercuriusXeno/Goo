@@ -24,7 +24,7 @@ public final class BlobThrowHandler {
     /** Cost of one throw in microblobs (1 blob = 1,000 mB). */
     public static final long THROW_COST = 1000;
     /** Maximum throw range in blocks. */
-    public static final double MAX_RANGE = 32.0;
+    public static final double MAX_RANGE = 64.0;
     private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
 
     /** Block center offset (half-block). */

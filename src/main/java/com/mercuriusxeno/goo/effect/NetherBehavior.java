@@ -51,15 +51,15 @@ public final class NetherBehavior implements ChainBehavior {
 
     // ── Phase timings ────────────────────────────────────────────────
 
-    /** Ticks the sphere takes to grow from 0 to full size (0.75 s). */
+    /** Ticks the sphere takes to grow from 0 to full size (.75 s). */
     public static final int EXPAND_DURATION = 15;
-    /** Ticks the sphere holds at full size while blocks are destroyed (1 s). */
-    public static final int HOLD_DURATION = 20;
-    /** Ticks the sphere takes to shrink from full size back to 0 (0.75 s). */
-    public static final int CONTRACT_DURATION = 15;
+    /** Ticks the sphere holds at full size while blocks are destroyed (0.75 s). */
+    public static final int HOLD_DURATION = 15;
+    /** Ticks the sphere takes to shrink from full size back to 0 (1.5 s). */
+    public static final int CONTRACT_DURATION = 30;
     /** Extra blindness/darkness ticks past the full EXPAND+HOLD+CONTRACT
      * window so entities inside get a clean fade-out. */
-    private static final int BLINDNESS_EXTRA_TICKS = 20;
+    private static final int BLINDNESS_EXTRA_TICKS = 10;
 
     // ── Particle + sound constants ───────────────────────────────────
 
@@ -74,7 +74,7 @@ public final class NetherBehavior implements ChainBehavior {
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
     /** Volume for the black-hole sound at EXPAND entry. */
-    private static final float BLACK_HOLE_SOUND_VOLUME = 1.0f;
+    private static final float BLACK_HOLE_SOUND_VOLUME = 6.0f;
     /** Pitch for the black-hole sound at EXPAND entry. */
     private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
 
@@ -88,11 +88,11 @@ public final class NetherBehavior implements ChainBehavior {
     /** Per-tick velocity nudge magnitude (blocks/tick) applied toward the
      * marker center during EXPAND and HOLD. Tuned to feel like an
      * inescapable gravitic tug. Knockback resistance still applies. */
-    private static final double PULL_SPEED = 0.18;
+    private static final double PULL_SPEED = 0.15;
     /** Pull radius is this multiple of the blast radius. The well of
      * gravity extends well past the visible event horizon so distant
      * entities still feel something dragging them in. */
-    private static final int PULL_RADIUS_MULT = 3;
+    private static final int PULL_RADIUS_MULT = 2;
     /** Floor on squared distance-to-center before applying the pull, to
      * avoid divide-by-zero (and absurd impulse spikes) when an entity is
      * standing exactly on the marker. */
@@ -100,13 +100,13 @@ public final class NetherBehavior implements ChainBehavior {
     /** Outer darkness radius is this multiple of the blast radius. The
      * outer band gives the "approaching dread" feel before entities enter
      * the blast. */
-    private static final int OUTER_DARK_RADIUS_MULT = 2;
+    private static final int OUTER_DARK_RADIUS_MULT = 3;
     /** Vanilla DARKNESS amplifier inside the blast sphere. Higher amplifier
      * shortens the pulse period, so the inside flicker is faster and
      * harder than the outside. */
     private static final int INNER_DARK_AMPLIFIER = 2;
     /** Vanilla DARKNESS amplifier in the outer warning band. */
-    private static final int OUTER_DARK_AMPLIFIER = 0;
+    private static final int OUTER_DARK_AMPLIFIER = 1;
 
     // ── Persistence tags (behavior owns its own tag namespace) ───────
 

@@ -26,7 +26,7 @@ public final class RockBehavior implements ChainBehavior {
     /** Number of ticks the sonic-boom preview leads the actual break
      * for any given layer. Tuned to let the warden shockwave visually
      * register before the blocks crumble. */
-    private static final int PREVIEW_DELAY_TICKS = 5;
+    private static final int PREVIEW_DELAY_TICKS = 8;
 
     private static final String TAG_PIPELINE_TICK = "RockPipelineTick";
     private static final String TAG_MINING_DEPTH = "RockMiningDepth";
