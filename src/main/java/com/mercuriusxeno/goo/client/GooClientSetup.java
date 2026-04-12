@@ -25,6 +25,7 @@ import com.mercuriusxeno.goo.client.particle.GooBubbleParticle;
 import com.mercuriusxeno.goo.client.particle.GooDripParticle;
 import com.mercuriusxeno.goo.client.particle.GooFogParticle;
 import com.mercuriusxeno.goo.client.particle.GooSparkParticle;
+import com.mercuriusxeno.goo.client.particle.OrientedBoomParticle;
 import com.mercuriusxeno.goo.client.throwing.BlobFlightManager;
 import com.mercuriusxeno.goo.client.throwing.BlobSizeProperty;
 import com.mercuriusxeno.goo.client.throwing.BlobVolumeDecorator;
@@ -188,6 +189,7 @@ public final class GooClientSetup {
         event.registerSpriteSet(GooParticles.GOO_DRIP.get(), GooDripParticle.Provider::new);
         event.registerSpriteSet(GooParticles.GOO_DRIP_LAND.get(), GooDripParticle.LandProvider::new);
         event.registerSpriteSet(GooParticles.GOO_FOG.get(), GooFogParticle.Provider::new);
+        event.registerSpriteSet(GooParticles.ORIENTED_BOOM.get(), OrientedBoomParticle.Provider::new);
     }
 
     /**

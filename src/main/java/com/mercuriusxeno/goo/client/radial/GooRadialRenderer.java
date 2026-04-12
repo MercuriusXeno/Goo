@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.client.radial;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -31,9 +32,6 @@ final class GooRadialRenderer {
     /** Darkening factor for unavailable wedges (multiplied per channel). */
     private static final float DISABLED_DIM = 0.4f;
 
-    /** Brightness boost for hovered wedges (added per channel, clamped). */
-    private static final int HOVER_BOOST = 40;
-
     /** Bit shift for red channel in ARGB packing. */
     private static final int RED_SHIFT = 16;
 
@@ -45,9 +43,6 @@ final class GooRadialRenderer {
 
     /** Bit shift for alpha channel in ARGB packing. */
     private static final int ALPHA_SHIFT = 24;
-
-    /** Maximum channel value for clamping. */
-    private static final int MAX_CHANNEL = 255;
 
     // --- Cancel zone constants ---
 
@@ -141,7 +136,8 @@ final class GooRadialRenderer {
             long qty = available.getOrDefault(types[i], 0L);
             boolean hovered = i == hoveredIndex;
             boolean disabled = qty <= 0;
-            wedgeColors[i] = computeWedgeColor(types[i].getColor(), hovered, disabled);
+            int baseRgb = hovered ? GooColors.bright(types[i]) : GooColors.wheel(types[i]);
+            wedgeColors[i] = computeWedgeColor(baseRgb, hovered, disabled);
         }
     }
 
@@ -187,10 +183,7 @@ final class GooRadialRenderer {
      * @return the packed ARGB hovered color
      */
     private static int packHoveredColor(int r, int g, int b) {
-        int hr = Math.min(MAX_CHANNEL, r + HOVER_BOOST);
-        int hg = Math.min(MAX_CHANNEL, g + HOVER_BOOST);
-        int hb = Math.min(MAX_CHANNEL, b + HOVER_BOOST);
-        return (HOVER_ALPHA << ALPHA_SHIFT) | (hr << RED_SHIFT) | (hg << GREEN_SHIFT) | hb;
+        return (HOVER_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
     }
 
     /**

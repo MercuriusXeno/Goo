@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.client.overlay;
 
+import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.FlatQuadContext;
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 final class VoxelHighlightRenderer {
     /** Face highlight alpha (translucent enough to see texture beneath). */
-    private static final int FACE_ALPHA = 80;
+    private static final int FACE_ALPHA = 0x1A;
 
     /** Wireframe outline alpha for block face edges. */
     private static final int WIRE_ALPHA = 200;
@@ -50,9 +51,10 @@ final class VoxelHighlightRenderer {
         VoxelShape shape = mc.level.getBlockState(pos).getShape(mc.level, pos);
         if (shape.isEmpty()) { return; }
         Vec3 offset = cameraOffset(pos, camera);
-        int rgb = type.getColor();
-        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, rgb);
-        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, rgb);
+        int highlightRgb = GooColors.highlight(type);
+        int edgeRgb = GooColors.edge(type);
+        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, highlightRgb);
+        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, edgeRgb);
     }
 
     /**
@@ -73,9 +75,78 @@ final class VoxelHighlightRenderer {
         VoxelShape shape = mc.level.getBlockState(pos).getShape(mc.level, pos);
         if (shape.isEmpty()) { return; }
         Vec3 offset = cameraOffset(pos, camera);
-        int rgb = type.getColor();
-        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, rgb);
-        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, rgb);
+        int highlightRgb = GooColors.highlight(type);
+        int edgeRgb = GooColors.edge(type);
+        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, highlightRgb);
+        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, edgeRgb);
+    }
+
+    /**
+     * Renders a full 1x1x1 cube highlight at the given position.
+     * Used for water blocks whose VoxelShape is empty.
+     *
+     * @param poseStack    the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera       the render camera
+     * @param pos          the block position
+     * @param type         the goo type
+     */
+    static void renderFullCube(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, BlockPos pos, GooType type) {
+        Minecraft mc = Minecraft.getInstance();
+        Vec3 offset = cameraOffset(pos, camera);
+        int rgb = GooColors.highlight(type);
+        int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
+        CuboidBounds box = new CuboidBounds(
+                offsetMin(offset.x, 0), offsetMax(offset.x, 1),
+                offsetMin(offset.z, 0), offsetMax(offset.z, 1),
+                offsetMin(offset.y, 0), offsetMax(offset.y, 1));
+        FlatQuadContext ctx = new FlatQuadContext(poseStack.last(),
+                bufferSource.getBuffer(RenderTypes.debugQuads()));
+        ctx.emitBox(fillColor, box);
+        bufferSource.endLastBatch();
+
+        int wireColor = colorWithAlpha(GooColors.edge(type), WIRE_ALPHA);
+        float lineWidth = mc.getWindow().getAppropriateLineWidth();
+        LineContext lineCtx = new LineContext(poseStack.last(),
+                bufferSource.getBuffer(RenderTypes.lines()));
+        emitCubeEdges(lineCtx, offset.x, offset.y, offset.z, wireColor, lineWidth);
+        bufferSource.endLastBatch();
+    }
+
+    /** Emits the 12 edges of a unit cube at the given camera-relative offset.
+     *
+     * @param ctx       the line rendering context
+     * @param ox        camera-relative X offset
+     * @param oy        camera-relative Y offset
+     * @param oz        camera-relative Z offset
+     * @param color     the ARGB color
+     * @param lineWidth the line width
+     */
+    private static void emitCubeEdges(LineContext ctx, double ox, double oy, double oz,
+                                       int color, float lineWidth) {
+        float x0 = (float) ox;
+        float y0 = (float) oy;
+        float z0 = (float) oz;
+        float x1 = (float) (ox + 1);
+        float y1 = (float) (oy + 1);
+        float z1 = (float) (oz + 1);
+        // Bottom face edges
+        ctx.emitEdge(x0, y0, z0, x1, y0, z0, color, lineWidth);
+        ctx.emitEdge(x1, y0, z0, x1, y0, z1, color, lineWidth);
+        ctx.emitEdge(x1, y0, z1, x0, y0, z1, color, lineWidth);
+        ctx.emitEdge(x0, y0, z1, x0, y0, z0, color, lineWidth);
+        // Top face edges
+        ctx.emitEdge(x0, y1, z0, x1, y1, z0, color, lineWidth);
+        ctx.emitEdge(x1, y1, z0, x1, y1, z1, color, lineWidth);
+        ctx.emitEdge(x1, y1, z1, x0, y1, z1, color, lineWidth);
+        ctx.emitEdge(x0, y1, z1, x0, y1, z0, color, lineWidth);
+        // Vertical edges
+        ctx.emitEdge(x0, y0, z0, x0, y1, z0, color, lineWidth);
+        ctx.emitEdge(x1, y0, z0, x1, y1, z0, color, lineWidth);
+        ctx.emitEdge(x1, y0, z1, x1, y1, z1, color, lineWidth);
+        ctx.emitEdge(x0, y0, z1, x0, y1, z1, color, lineWidth);
     }
 
     /**

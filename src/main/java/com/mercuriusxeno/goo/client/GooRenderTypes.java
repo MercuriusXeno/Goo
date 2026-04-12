@@ -81,6 +81,23 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /** Quads pipeline with additive blend (SRC_ALPHA, ONE) and no depth test.
+     * Used for the ghost fill brightening pass. */
+    public static final RenderPipeline QUADS_ADDITIVE_NO_DEPTH_PIPELINE = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/quads_additive_no_depth"))
+            .withCull(false)
+            .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING))
+            .withDepthStencilState(DEPTH_ALWAYS)
+            .build();
+
+    /** RenderType for additive-blend see-through quads (ghost fill glow pass). */
+    public static final RenderType QUADS_ADDITIVE_NO_DEPTH = RenderType.create(
+            "goo_quads_additive_no_depth",
+            RenderSetup.builder(QUADS_ADDITIVE_NO_DEPTH_PIPELINE)
+                    .sortOnUpload()
+                    .createRenderSetup()
+    );
+
     /**
      * Nether black-hole pipeline: POSITION_COLOR billboard quad with a custom
      * vertex + fragment shader pair (nether_blackhole.vsh / .fsh). Reads the
@@ -215,5 +232,6 @@ public final class GooRenderTypes {
         event.registerPipeline(NETHER_CUBE_EDGE);
         event.registerPipeline(LINES_NO_DEPTH_PIPELINE);
         event.registerPipeline(QUADS_NO_DEPTH_PIPELINE);
+        event.registerPipeline(QUADS_ADDITIVE_NO_DEPTH_PIPELINE);
     }
 }

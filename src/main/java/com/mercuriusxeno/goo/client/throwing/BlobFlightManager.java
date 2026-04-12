@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
+import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.network.BlobFlightPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -22,9 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class BlobFlightManager {
 
     /** Active flights, keyed by a monotonically increasing ID. */
-    /** Half-block offset for centering on a face. */
-    private static final double FACE_CENTER_OFFSET = 0.5;
-    /** Divisor for computing entity vertical center. */
+/** Divisor for computing entity vertical center. */
     private static final double ENTITY_CENTER_DIVISOR = 2.0;
     /** Epsilon for near-zero length detection in direction vectors. */
     private static final double DIRECTION_EPSILON = 1e-6;
@@ -54,7 +53,8 @@ public final class BlobFlightManager {
         boolean grannyArc = payload.grannyArc();
         int id = nextId;
         nextId++;
-        FLIGHTS.put(id, new BlobFlight(start, blockEnd, targetEntityId, type, travelTicks, grannyArc));
+        FLIGHTS.put(id, new BlobFlight(start, blockEnd, targetEntityId,
+                payload.targetPos(), type, travelTicks, grannyArc));
     }
 
     /** Called each client tick to advance flights and remove arrivals. */
@@ -64,6 +64,9 @@ public final class BlobFlightManager {
             BlobFlight flight = it.next().getValue();
             flight.ticksElapsed++;
             if (flight.ticksElapsed >= flight.travelTicks) {
+                if (flight.targetEntityId < 0) {
+                    GloveThrowSender.onFlightArrived(flight.targetBlockPos);
+                }
                 it.remove();
             }
         }
@@ -85,16 +88,17 @@ public final class BlobFlightManager {
     }
 
     /**
-     * Resolves block face center from the payload.
+     * Resolves block face center from the payload via the shared
+     * {@link TargetResult#resolveEndpoint()} method.
      *
      * @param payload the network payload
-     * @return the resolved result, or null if unresolvable
+     * @return the resolved endpoint position
      */
     private static Vec3 resolveBlockTargetPos(BlobFlightPayload payload) {
         BlockPos pos = payload.targetPos();
         Direction face = (payload.targetFace() >= 0 && payload.targetFace() < Direction.values().length)
                 ? Direction.values()[payload.targetFace()] : Direction.UP;
-        return Vec3.atCenterOf(pos).add(face.getUnitVec3().scale(FACE_CENTER_OFFSET));
+        return TargetResult.block(pos, face).resolveEndpoint();
     }
 
     /**
@@ -118,16 +122,20 @@ public final class BlobFlightManager {
         public final Vec3 blockEnd;
         /** Target entity ID, or -1 for block targets. */
         public final int targetEntityId;
+        /** Target block position for in-flight tracking. */
+        public final BlockPos targetBlockPos;
         public final GooType gooType;
         public final int travelTicks;
         public final boolean grannyArc;
         public int ticksElapsed;
 
         public BlobFlight(Vec3 start, Vec3 blockEnd, int targetEntityId,
-                          GooType gooType, int travelTicks, boolean grannyArc) {
+                          BlockPos targetBlockPos, GooType gooType,
+                          int travelTicks, boolean grannyArc) {
             this.start = start;
             this.blockEnd = blockEnd;
             this.targetEntityId = targetEntityId;
+            this.targetBlockPos = targetBlockPos;
             this.gooType = gooType;
             this.travelTicks = travelTicks;
             this.grannyArc = grannyArc;

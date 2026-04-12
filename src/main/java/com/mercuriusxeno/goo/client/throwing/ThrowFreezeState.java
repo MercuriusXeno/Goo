@@ -25,6 +25,8 @@ public final class ThrowFreezeState {
 
     private static int ticksRemaining;
     private static @Nullable TargetResult frozenTarget;
+    /** Ticks remaining on the throw-block (prevents new throws at max stacks). */
+    private static int throwBlockRemaining;
 
     private ThrowFreezeState() {}
 
@@ -40,21 +42,39 @@ public final class ThrowFreezeState {
     }
 
     /**
-     * Decrements the remaining tick count. When it reaches zero, clears
-     * the frozen target.
+     * Arms the throw-block: prevents new throws for {@link #FREEZE_TICKS}
+     * ticks. Called when a chain marker reaches max stacks.
      */
-    public static void tick() {
-        if (ticksRemaining <= 0) { return; }
-        ticksRemaining--;
-        if (ticksRemaining == 0) {
-            frozenTarget = null;
-        }
+    public static void armThrowBlock() {
+        throwBlockRemaining = FREEZE_TICKS;
     }
 
-    /** Full reset: zero ticks, no target. */
+    /**
+     * Returns true if new throws are blocked (max-stack signal active).
+     *
+     * @return true while the throw-block timer is running
+     */
+    public static boolean isThrowBlocked() {
+        return throwBlockRemaining > 0;
+    }
+
+    /**
+     * Decrements the remaining tick count. When it reaches zero, clears
+     * the frozen target. Also ticks the throw-block timer.
+     */
+    public static void tick() {
+        if (ticksRemaining > 0) {
+            ticksRemaining--;
+            if (ticksRemaining == 0) { frozenTarget = null; }
+        }
+        if (throwBlockRemaining > 0) { throwBlockRemaining--; }
+    }
+
+    /** Full reset: zero ticks, no target, no throw block. */
     public static void clear() {
         ticksRemaining = 0;
         frozenTarget = null;
+        throwBlockRemaining = 0;
     }
 
     /**

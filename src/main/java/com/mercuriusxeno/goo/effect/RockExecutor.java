@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.data.GooValue;
+import com.mercuriusxeno.goo.registry.GooParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -27,7 +28,7 @@ import java.util.List;
  * Performs the rock chain effect: a directional implosion that mines
  * rock-compatible blocks in a 3x3 column travelling into the surface
  * the marker was attached to. Depth scales with stack count via
- * {@link EffectMath#computeImplosionDepth}. Mining is progressive: the
+ * {@link ChainFootprint#tunnelDepth}. Mining is progressive: the
  * chain marker block entity calls {@link #mineLayer} once per server
  * tick, so the total break duration scales with depth.
  */
@@ -120,7 +121,7 @@ public final class RockExecutor {
     public static void previewLayer(ServerLevel level, BlockPos origin,
                                     Direction placedFace, int stepIndex) {
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
-        spawnLayerSonicBoom(level, layerCenter);
+        spawnLayerSonicBoom(level, layerCenter, placedFace.getOpposite());
     }
 
     /** Marker sits in the air block adjacent to the hit face; the first
@@ -285,18 +286,21 @@ public final class RockExecutor {
     }
 
     /**
-     * Spawns one Warden-style sonic-boom particle at the layer center
-     * each tick the blast advances. Reads as a punching shockwave driving
-     * deeper into the wall, layered on top of the dust slice.
+     * Spawns an oriented sonic-boom particle at the layer center, flat
+     * against the blast plane. The direction ordinal is encoded in
+     * xDist so the client particle provider can orient the quad.
      *
      * @param level       the server level
      * @param layerCenter the layer center position
+     * @param blastDir    the blast travel direction
      */
-    private static void spawnLayerSonicBoom(ServerLevel level, BlockPos layerCenter) {
+    private static void spawnLayerSonicBoom(ServerLevel level, BlockPos layerCenter,
+                                            Direction blastDir) {
         double cx = layerCenter.getX() + BLOCK_CENTER_OFFSET;
         double cy = layerCenter.getY() + BLOCK_CENTER_OFFSET;
         double cz = layerCenter.getZ() + BLOCK_CENTER_OFFSET;
-        level.sendParticles(ParticleTypes.SONIC_BOOM, cx, cy, cz, 1, 0.0, 0.0, 0.0, 0.0);
+        level.sendParticles(GooParticles.ORIENTED_BOOM.get(),
+                cx, cy, cz, 0, blastDir.ordinal(), 0.0, 0.0, 1.0);
     }
 
     /**

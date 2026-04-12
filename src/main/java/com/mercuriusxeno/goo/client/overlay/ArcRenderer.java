@@ -46,6 +46,8 @@ final class ArcRenderer {
     private static final float DASH_MID = 0.5f;
     /** Width of the fade zone at each dash edge in world units. */
     private static final float DASH_FADE = 0.12f;
+    /** Perspective scaling factor: how much to expand dashes per block of distance. */
+    private static final float PERSPECTIVE_FACTOR = 0.04f;
 
     /** Ticks-per-second divisor for converting game time to seconds. */
     private static final float TICKS_PER_SECOND = 20.0f;
@@ -199,7 +201,10 @@ final class ArcRenderer {
             LineContext ctx, Vec3 cam, Vec3 a, Vec3 b, float arcLen,
             float dashOffset, int color, float width) {
         float segLen = (float) a.distanceTo(b);
-        float alpha = dashAlpha(arcLen + segLen * DASH_MID, dashOffset);
+        Vec3 mid = a.add(b).scale(DASH_MID);
+        float camDist = (float) cam.distanceTo(mid);
+        float perspScale = 1f + camDist * PERSPECTIVE_FACTOR;
+        float alpha = dashAlpha(arcLen + segLen * DASH_MID, dashOffset, perspScale);
         if (alpha > 0f) {
             int fadedColor = scaleAlpha(color, alpha);
             ctx.emitEdge(
@@ -225,16 +230,22 @@ final class ArcRenderer {
     /**
      * Returns an alpha multiplier [0..1] for the dash at the given arc-length.
      * Full brightness in the dash interior, fading to zero at the edges.
+     * The dash cycle is scaled by {@code perspScale} so distant segments
+     * appear longer, compensating for perspective compression.
      *
-     * @param midArcLen the arc-length at the segment midpoint
+     * @param midArcLen  the arc-length at the segment midpoint
      * @param dashOffset the dash scroll offset
+     * @param perspScale perspective scale factor (1.0 = no scaling)
      * @return 0 in the gap, 1 in the dash interior, smooth fade at edges
      */
-    private static float dashAlpha(float midArcLen, float dashOffset) {
-        float phase = (midArcLen - dashOffset) % DASH_CYCLE;
-        if (phase < 0) { phase += DASH_CYCLE; }
-        if (phase >= DASH_ON) { return 0f; }
-        float edgeDist = Math.min(phase, DASH_ON - phase);
-        return Math.min(edgeDist / DASH_FADE, 1f);
+    private static float dashAlpha(float midArcLen, float dashOffset, float perspScale) {
+        float scaledCycle = DASH_CYCLE * perspScale;
+        float scaledOn = DASH_ON * perspScale;
+        float scaledFade = DASH_FADE * perspScale;
+        float phase = (midArcLen - dashOffset * perspScale) % scaledCycle;
+        if (phase < 0) { phase += scaledCycle; }
+        if (phase >= scaledOn) { return 0f; }
+        float edgeDist = Math.min(phase, scaledOn - phase);
+        return Math.min(edgeDist / scaledFade, 1f);
     }
 }

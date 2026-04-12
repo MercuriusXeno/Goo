@@ -57,6 +57,8 @@ public class Goo {
         GOO_VALUES.setEffectiveCachePath(
             FMLPaths.CONFIGDIR.get().resolve("goo_derived_values.json"));
 
+        GooColors.load(FMLPaths.CONFIGDIR.get());
+
         LOGGER.info("Goo mod initialized");
     }
 
@@ -156,5 +158,9 @@ public class Goo {
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         com.mercuriusxeno.goo.network.BlobThrowHandler.onServerTick(event);
+        if (com.mercuriusxeno.goo.block.ChainMarkerFallScheduler.hasPending()) {
+            com.mercuriusxeno.goo.block.ChainMarkerFallScheduler
+                    .drainArrivedFalls(event.getServer().getTickCount());
+        }
     }
 }

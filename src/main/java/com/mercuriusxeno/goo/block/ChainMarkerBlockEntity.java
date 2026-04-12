@@ -106,11 +106,33 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
         ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
-        fuseRemaining = profile.fuseTicks();
         lastStackTick = level != null ? level.getGameTime() : 0;
+        if (stackCount >= maxStacks) {
+            fuseRemaining = 0;
+        } else {
+            fuseRemaining = profile.fuseTicks();
+        }
         setChanged();
         syncToClient();
         return true;
+    }
+
+    /**
+     * Restores full state after a fall re-placement. Called by
+     * {@link ChainMarkerFallScheduler} after the flight animation completes.
+     *
+     * @param stacks  the snapshotted stack count
+     * @param max     the snapshotted max stacks
+     * @param fuse    the snapshotted fuse remaining
+     * @param flat    the snapshotted flat mode
+     */
+    public void restoreFromFall(int stacks, int max, int fuse, boolean flat) {
+        this.stackCount = stacks;
+        this.maxStacks = max;
+        this.fuseRemaining = fuse;
+        this.flatMode = flat;
+        setChanged();
+        syncToClient();
     }
 
     // ── Flat mode toggle ───────────────────────────────────────────────────

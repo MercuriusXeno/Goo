@@ -35,6 +35,10 @@ public class GooParticles {
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_DRIP_LAND =
         PARTICLE_TYPES.register("goo_drip_land", GooParticles::colorParticleType);
 
+    /** Sonic-boom-style particle oriented along the blast axis. */
+    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ORIENTED_BOOM =
+        PARTICLE_TYPES.register("oriented_boom", () -> new SimpleParticleType(false));
+
     /** Radial gradient fog puff for blob flight trails. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_FOG =
         PARTICLE_TYPES.register("goo_fog", GooParticles::colorParticleType);
