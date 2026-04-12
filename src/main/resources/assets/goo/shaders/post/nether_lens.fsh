@@ -65,7 +65,7 @@ out vec4 fragColor;
 const float HORIZON_AA = 0.006;
 
 // Sharpness of the photon-ring highlight. Higher = thinner ring.
-const float RING_SHARPNESS = 180.0;
+const float RING_SHARPNESS = 600.0;
 
 // Shape-mode discriminator threshold for the LensTuning.w branch.
 const float SHAPE_MODE_HEX_THRESHOLD = 0.5;

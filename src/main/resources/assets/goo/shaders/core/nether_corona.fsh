@@ -9,7 +9,7 @@ out vec4 fragColor;
 // Must match the vertex shader's CORONA_SCALE (1.08). Squared form is
 // used for the outer-edge normalization below. 1.08^2 = 1.1664.
 // another option is 1.15^2 = 1.3225
-const float CORONA_SCALE_SQ = 1.3225;
+const float CORONA_SCALE_SQ = 1.1664;
 
 // Pure white halo. Kept as a constant so live tuning is one line.
 const vec3 CORONA_WHITE = vec3(1.0, 1.0, 1.0);
@@ -24,7 +24,7 @@ const float CORONA_INTENSITY = 1.5;
 // Falloff curve across the annular ring. 1.0 is linear, lower values
 // bias more of the ring toward full brightness, higher values tighten
 // the ring against the inner (main-silhouette) edge.
-const float FALLOFF_POWER = 1.5;
+const float FALLOFF_POWER = 2.0;
 
 void main() {
     // Ray from the camera (view-space origin) to this fragment.

@@ -28,7 +28,7 @@ public final class NetherHoleStyles {
      * to switch implementations. Defaults to {@link #CUBE} on this
      * experiment branch so "just run the client" shows the cube; flip
      * to {@link #SPHERE} for an A/B comparison. */
-    public static final NetherHoleStyle ACTIVE = CUBE;
+    public static final NetherHoleStyle ACTIVE = SPHERE;
 
     /** Kill switch for the screen-space {@code NetherLensEffect}
      * post-process. When {@code false}, {@code applyPerFrame}
