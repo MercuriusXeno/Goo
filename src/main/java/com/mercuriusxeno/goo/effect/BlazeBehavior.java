@@ -40,7 +40,7 @@ public final class BlazeBehavior implements ChainBehavior {
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
     /** Particles per stack for the flame burst. */
-    private static final int FLAME_PARTICLES_PER_STACK = 20;
+    private static final int FLAME_PARTICLES_PER_STACK = 40;
     /** Spread multiplier applied to the explosion range for particle distribution. */
     private static final double FLAME_SPREAD_FACTOR = 0.6;
     /** Upward velocity for flame particles. */
@@ -53,6 +53,12 @@ public final class BlazeBehavior implements ChainBehavior {
     private static final double SMOKE_SPREAD_MULTIPLIER = 1.5;
     /** Upward velocity for smoke particles. */
     private static final double SMOKE_PARTICLE_SPEED = 0.02;
+    /** Ember (small flame) particles per stack - lingering embers after the burst. */
+    private static final int EMBER_PARTICLES_PER_STACK = 25;
+    /** Speed for ember particles - slower, floatier than main flames. */
+    private static final double EMBER_PARTICLE_SPEED = 0.03;
+    /** Spread multiplier for embers - wider than the main burst. */
+    private static final double EMBER_SPREAD_FACTOR = 0.8;
     /** Fortune level applied to ore drops. */
     private static final int FORTUNE_LEVEL = 3;
     /** Block break level event ID (sends break particles to clients). */
@@ -190,5 +196,9 @@ public final class BlazeBehavior implements ChainBehavior {
         level.sendParticles(ParticleTypes.SMOKE,
                 cx, cy + BLOCK_CENTER_OFFSET, cz, particleCount / SMOKE_PARTICLE_DIVISOR,
                 spread, spread * SMOKE_SPREAD_MULTIPLIER, spread, SMOKE_PARTICLE_SPEED);
+        double emberSpread = range * EMBER_SPREAD_FACTOR;
+        level.sendParticles(ParticleTypes.SMALL_FLAME,
+                cx, cy, cz, EMBER_PARTICLES_PER_STACK * stackCount,
+                emberSpread, emberSpread, emberSpread, EMBER_PARTICLE_SPEED);
     }
 }
