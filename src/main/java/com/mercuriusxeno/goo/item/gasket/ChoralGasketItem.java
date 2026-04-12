@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Choral Gasket: attaches to machine faces to enable remote goo transfer.
@@ -230,7 +231,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         if (newId == null) { return InteractionResult.PASS; }
 
         GasketInstallHelper.flipHubIntakeBlockstate(context.getLevel(), context.getClickedPos());
-        GasketInstallHelper.registerGasketLocation(context.getLevel(), context.getClickedPos(), newId, true, GasketPartner.NO_SLOT);
+        GasketInstallHelper.registerGasketLocation(context.getLevel(), context.getClickedPos(), newId, true, NO_SLOT);
         return GasketInstallHelper.finishInstall(context, MSG_INTAKE_INSTALLED);
     }
 

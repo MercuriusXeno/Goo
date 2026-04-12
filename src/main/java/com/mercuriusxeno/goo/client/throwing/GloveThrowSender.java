@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.network.BlobThrowPayload;
@@ -64,13 +65,25 @@ public final class GloveThrowSender {
         return switch (target) {
             case TargetResult.EntityTarget et -> new BlobThrowPayload(gooType.getId(), et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
             case TargetResult.BlockTarget bt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
-            // Chain marker throws encode as a block target at the marker's
-            // position with UP face; the server stack-vs-place logic in
-            // ChainAndFrostEffects.placeOrStackChain treats a hit on an
-            // existing chain marker as a stack operation.
-            case TargetResult.ChainMarkerTarget cmt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, cmt.pos(), Direction.UP.ordinal(), false);
+            case TargetResult.ChainMarkerTarget cmt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, cmt.pos(), resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal(), false);
             case TargetResult.None ignored -> null;
         };
+    }
+
+    /**
+     * Reads the placed face from the chain marker BE so the flight
+     * destination lands at the orb's face boundary position.
+     *
+     * @param pos the chain marker block position
+     * @return the placed face, or UP if the BE is unavailable
+     */
+    private static Direction resolveChainMarkerFace(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null
+                && mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) {
+            return be.getPlacedFace();
+        }
+        return Direction.UP;
     }
 
     /** Sends a custom payload packet to the server.

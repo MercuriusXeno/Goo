@@ -33,8 +33,6 @@ import java.util.List;
  */
 public final class RockExecutor {
 
-    /** Half-width of the 3x3 footprint. */
-    private static final int FOOTPRINT_HALF = 1;
     /** Offset to get block center from integer position. */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
     /** Dust particles per destroyed block in a single layer. */
@@ -72,16 +70,20 @@ public final class RockExecutor {
      * @param placedFace the face the marker was attached to
      * @param stepIndex  zero-based layer offset along the blast direction
      * @param stackCount the raw stack count (scales sound volume)
+     * @param flatMode   true for flat (taxicab circle) footprint
      * @return the number of blocks destroyed in this layer
      */
     public static int mineLayer(ServerLevel level, BlockPos origin,
                                 Direction placedFace, int stepIndex,
-                                int stackCount) {
+                                int stackCount, boolean flatMode) {
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
         ItemStack silkTool = buildSilkTouchTool(level);
         List<ItemStack> drops = new ArrayList<>();
-        int destroyed = mineFootprint(level, layerCenter, blastAxis, silkTool, drops);
+        List<int[]> footprint = flatMode
+                ? ChainFootprint.flatFootprint(stackCount)
+                : ChainFootprint.layerFootprint(stackCount);
+        int destroyed = mineFootprint(level, layerCenter, blastAxis, silkTool, drops, footprint);
         if (destroyed > 0) {
             ejectDrops(level, origin, placedFace, drops);
             spawnLayerDust(level, layerCenter, blastAxis, destroyed);
@@ -136,26 +138,24 @@ public final class RockExecutor {
     }
 
     /**
-     * Mines the 3x3 footprint at the given layer center, perpendicular
-     * to the blast axis. Uses silk touch loot context for drops.
-     * Drops are accumulated into the provided list for bulk ejection.
+     * Mines the footprint at the given layer center using the provided
+     * 2D offsets perpendicular to the blast axis.
      *
      * @param level       the server level
      * @param layerCenter the center of the current layer
      * @param blastAxis   the axis the blast travels along
      * @param tool        the silk-touch tool for loot context
      * @param drops       accumulator for mined block drops
+     * @param footprint   2D offsets from {@link ChainFootprint}
      * @return the number of blocks destroyed in this layer
      */
     private static int mineFootprint(ServerLevel level, BlockPos layerCenter,
                                      Direction.Axis blastAxis, ItemStack tool,
-                                     List<ItemStack> drops) {
+                                     List<ItemStack> drops, List<int[]> footprint) {
         int destroyed = 0;
-        for (int a = -FOOTPRINT_HALF; a <= FOOTPRINT_HALF; a++) {
-            for (int b = -FOOTPRINT_HALF; b <= FOOTPRINT_HALF; b++) {
-                BlockPos target = offsetPerpendicular(layerCenter, blastAxis, a, b);
-                if (tryMineBlock(level, target, tool, drops)) { destroyed++; }
-            }
+        for (int[] offset : footprint) {
+            BlockPos target = offsetPerpendicular(layerCenter, blastAxis, offset[0], offset[1]);
+            if (tryMineBlock(level, target, tool, drops)) { destroyed++; }
         }
         return destroyed;
     }

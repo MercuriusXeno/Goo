@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.item.gasket;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Unit tests for GasketPartner record: field access, coordinate formatting,
@@ -20,12 +21,12 @@ class GasketPartnerTest {
 
     @Test
     void noSlotSentinel_isNegativeOne() {
-        assertEquals(-1, GasketPartner.NO_SLOT);
+        assertEquals(-1, NO_SLOT);
     }
 
     @Test
     void noSlot_forSingleGasketMachines() {
-        GasketPartner partner = new GasketPartner(BlockPos.ZERO, GasketPartner.NO_SLOT);
+        GasketPartner partner = new GasketPartner(BlockPos.ZERO, NO_SLOT);
         assertEquals(-1, partner.slot());
     }
 

@@ -16,6 +16,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Resolves crosshair aim into a canister/hub/tap target with spatial
@@ -55,7 +56,6 @@ final class CanisterTargetResolver {
     static final int TAP_SLOT = -2;
 
     /** Sentinel value for no tracked slot. */
-    static final int NO_SLOT = -1;
 
     /** Block-local coordinate to pixel conversion factor. */
     private static final double BLOCK_PIXELS = 16.0;

@@ -10,6 +10,7 @@ import net.minecraft.network.codec.StreamCodec;
 import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Denormalized reference to a gasket partner: the block position and slot
@@ -30,7 +31,6 @@ import java.util.UUID;
 public record GasketPartner(BlockPos pos, int slot, @Nullable UUID entityId) {
 
     /** Slot value indicating a single-gasket machine (vat, crucible). */
-    public static final int NO_SLOT = -1;
     /** Coordinate label prefix for X axis. */
     private static final String COORD_X = "X: ";
     /** Coordinate label prefix for Y axis. */

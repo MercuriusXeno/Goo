@@ -9,7 +9,6 @@ import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooBlobItem;
 import com.mercuriusxeno.goo.item.GooOmniblobItem;
 import com.mercuriusxeno.goo.item.gasket.ChoralGasketItem;
-import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -22,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Stateless dispatch and handler methods for vat block interactions.
@@ -144,7 +144,7 @@ final class VatInteractionHandler {
             GasketRegistry registry = GasketRegistry.get(serverLevel);
             registry.updateLocation(newId,
                 new GasketLocation(serverLevel.dimension(), pos,
-                    role == GasketRole.RECEIVER, GasketPartner.NO_SLOT));
+                    role == GasketRole.RECEIVER, NO_SLOT));
         }
     }
 

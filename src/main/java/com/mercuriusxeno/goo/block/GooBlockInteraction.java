@@ -12,6 +12,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Shared interaction infrastructure for slot-based goo blocks.
@@ -24,7 +25,6 @@ public final class GooBlockInteraction {
     private static final String UNCHECKED = "unchecked";
 
     /** Sentinel value: no matching slot found. */
-    private static final int NO_SLOT = -1;
 
     private GooBlockInteraction() {}
 

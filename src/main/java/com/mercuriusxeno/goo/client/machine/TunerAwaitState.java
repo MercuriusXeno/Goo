@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.machine;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import org.jspecify.annotations.Nullable;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Client-side singleton tracking which machine gasket is awaiting a link.
@@ -15,7 +16,6 @@ import org.jspecify.annotations.Nullable;
 public final class TunerAwaitState {
 
     /** Default slot value when no slot is selected. */
-    private static final int NO_SLOT = -1;
     /** Ellipsis cycle interval in milliseconds. */
     private static final long ELLIPSIS_INTERVAL_MS = 500;
     /** Number of ellipsis phases (., .., ...). */

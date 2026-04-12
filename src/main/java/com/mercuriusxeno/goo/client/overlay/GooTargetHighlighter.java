@@ -321,12 +321,15 @@ public final class GooTargetHighlighter {
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         TargetResult target = resolveTarget(mc.player, partialTick);
         cacheArc(target, selectedType, partialTick);
+        PoseStack ps = event.getPoseStack();
+        MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
+        Camera camera = mc.gameRenderer.getMainCamera();
         if (target instanceof TargetResult.BlockTarget bt) {
-            PoseStack ps = event.getPoseStack();
-            MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
-            Camera camera = mc.gameRenderer.getMainCamera();
             VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
                     bt.pos(), bt.face(), selectedType);
+        } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
+            VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
+                    cmt.pos(), selectedType);
         }
     }
 

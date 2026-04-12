@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Block entity that owns one or more gasket slots for the transport network.
@@ -184,7 +185,7 @@ public interface IGasketHolder {
      * @return the integer value
      */
     default int resolveSlot(BlockHitResult hit) {
-        return GasketPartner.NO_SLOT;
+        return NO_SLOT;
     }
 
     /**

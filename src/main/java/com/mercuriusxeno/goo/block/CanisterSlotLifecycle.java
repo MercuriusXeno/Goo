@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.GooConstants;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -21,7 +22,7 @@ import java.util.List;
 final class CanisterSlotLifecycle {
 
     /** Sentinel value indicating no occupied slot was found. */
-    private static final int NO_SLOT_FOUND = -1;
+    
 
     private CanisterSlotLifecycle() {}
 
@@ -109,10 +110,10 @@ final class CanisterSlotLifecycle {
      * @return the single occupied slot index, or -1
      */
     static int findSingleOccupiedSlot(List<ItemStack> canisters, int maxSlots) {
-        int found = NO_SLOT_FOUND;
+        int found = GooConstants.NO_SLOT;
         for (int i = 0; i < maxSlots; i++) {
             if (!canisters.get(i).isEmpty()) {
-                if (found != NO_SLOT_FOUND) { return NO_SLOT_FOUND; }
+                if (found != GooConstants.NO_SLOT) { return GooConstants.NO_SLOT; }
                 found = i;
             }
         }

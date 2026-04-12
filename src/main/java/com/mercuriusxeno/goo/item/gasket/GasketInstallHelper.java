@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Shared helpers for gasket installation: blockstate flipping, registry updates,
@@ -82,7 +83,7 @@ final class GasketInstallHelper {
         if (be instanceof IGasketHolder holder) {
             UUID newId = holder.ensureGasketId(role);
             if (newId != null) {
-                registerGasketLocation(level, pos, newId, isTop, GasketPartner.NO_SLOT);
+                registerGasketLocation(level, pos, newId, isTop, NO_SLOT);
             }
         }
     }
