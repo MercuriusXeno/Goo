@@ -45,9 +45,9 @@ public final class GooStreamRenderer {
      * @param rate          transfer rate in mB/tick (controls width)
      * @param animationTime game time + partial tick for sin wave
      */
-    public static void renderStream(RenderCtx ctx,
-            float cx, float cz, float yTop, float yBottom,
-            GooType type, float rate, float animationTime) {
+    public static void renderStream(RenderContext ctx,
+                                    float cx, float cz, float yTop, float yBottom,
+                                    GooType type, float rate, float animationTime) {
         if (yTop <= yBottom) { return; }
 
         float hw = computeHalfWidth(rate, animationTime);

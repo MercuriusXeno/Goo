@@ -138,8 +138,8 @@ public final class GooRenderTypes {
     /**
      * Cube black-hole edge-glow pipeline used by the
      * {@code CubeHoleStyle} experiment. Same shape budget as the
-     * corona — additive LIGHTNING blend, depth test on, depth write
-     * off — but drawn over a cube mesh with a fragment shader that
+     * corona - additive LIGHTNING blend, depth test on, depth write
+     * off - but drawn over a cube mesh with a fragment shader that
      * highlights the per-face edges instead of the fresnel silhouette.
      * Each vertex carries its intra-face UV in {@code Color.rg} so the
      * shader can compute edge distance without any ray math.

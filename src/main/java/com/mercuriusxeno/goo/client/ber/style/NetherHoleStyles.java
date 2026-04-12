@@ -1,5 +1,7 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
+import com.mercuriusxeno.goo.client.ber.NetherBlackHoleRenderer;
+
 /**
  * Registry of available {@link NetherHoleStyle} implementations and the
  * one-field swap point for selecting which is currently active on the
@@ -7,19 +9,19 @@ package com.mercuriusxeno.goo.client.ber.style;
  * implementations live side by side, neither is deleted, and the BER
  * dispatch reads from here so no other code has to change.
  *
- * <p>This is a dev-side experimentation seam — there is no config, no
+ * <p>This is a dev-side experimentation seam - there is no config, no
  * keybind, no runtime UI. If a style is worth promoting out of the
  * experiment branch, wire it behind a proper config entry then.
  */
 public final class NetherHoleStyles {
 
-    /** Canonical sphere implementation — the shipped black-hole visual
+    /** Canonical sphere implementation - the shipped black-hole visual
      * with a UV sphere occluder, ray-sphere fresnel corona, and a flat
      * accretion disc. Delegates entirely to the existing
-     * {@link com.mercuriusxeno.goo.client.ber.NetherBlackHoleRender}. */
+     * {@link NetherBlackHoleRenderer}. */
     public static final NetherHoleStyle SPHERE = new SphereHoleStyle();
 
-    /** Cube experiment — a cube occluder with a cube-edge glow shader
+    /** Cube experiment - a cube occluder with a cube-edge glow shader
      * standing in for the corona, reusing the existing flat accretion
      * disc. See {@link CubeHoleStyle} for the geometry and shader. */
     public static final NetherHoleStyle CUBE = new CubeHoleStyle();

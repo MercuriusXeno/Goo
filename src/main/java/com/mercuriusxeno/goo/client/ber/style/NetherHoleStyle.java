@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -9,13 +10,13 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
  * Swap-in strategy for the nether black-hole visual. Each implementation
  * is free to own its geometry, shaders, lens-markup behavior, and any
  * style-specific per-frame state it stashes on {@link ChainMarkerRenderState}.
- * {@link com.mercuriusxeno.goo.client.ber.ChainMarkerBER} dispatches extract
+ * {@link ChainMarkerBlockEntityRenderer} dispatches extract
  * and submit through {@link NetherHoleStyles#active()} so flipping the
  * active style is a one-field change with no touching of either
  * implementation.
  *
  * <p>Conventions: implementations must be stateless except for cached
- * meshes / constants — one instance is reused for every active nether
+ * meshes / constants - one instance is reused for every active nether
  * hole on the client. Per-hole state lives on the render state passed
  * to extract and submit.
  */

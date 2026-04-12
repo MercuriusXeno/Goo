@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Nether black-hole render path: the three-pass sphere/corona/disk
- * submission triggered from {@link ChainMarkerBER} when a nether
+ * submission triggered from {@link ChainMarkerBlockEntityRenderer} when a nether
  * {@code ChainBehavior} is active on the chain marker BE. All nether-
  * specific geometry, mesh caches, color packing, and render-state
  * extraction for the black-hole visual lives here so the generic BER
@@ -40,7 +40,7 @@ import java.util.List;
  *       ring reads identically from any viewing angle.</li>
  * </ol>
  */
-public final class NetherBlackHoleRender {
+public final class NetherBlackHoleRenderer {
 
     /** Offset to get block center from integer position. */
     private static final float BLOCK_CENTER = 0.5f;
@@ -130,7 +130,7 @@ public final class NetherBlackHoleRender {
      * the inner/outer radius multiply per frame. */
     private static final float[] DISK_ANGULAR_SAMPLES = buildDiskAngularSamples();
 
-    private NetherBlackHoleRender() {}
+    private NetherBlackHoleRenderer() {}
 
     /**
      * Populates the render state's nether fields by querying the active
@@ -220,7 +220,7 @@ public final class NetherBlackHoleRender {
         // Accretion disk: flat annular ring in the world XZ plane.
         // Brightness is strictly radial in the fragment shader (no
         // minor-angle term), so the ring reads the same from any
-        // viewing angle. "Edge-on shows a line" is intentional — the
+        // viewing angle. "Edge-on shows a line" is intentional - the
         // far rim gets folded back into view once Phase C's lensing
         // post-process is wired in.
         final float innerR = diskInnerRadius;

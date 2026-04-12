@@ -2,12 +2,26 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Blaze chain behavior: instant explosion + flame particles + scattered
@@ -39,14 +53,10 @@ public final class BlazeBehavior implements ChainBehavior {
     private static final double SMOKE_SPREAD_MULTIPLIER = 1.5;
     /** Upward velocity for smoke particles. */
     private static final double SMOKE_PARTICLE_SPEED = 0.02;
-    /** Fires placed per stack in the scatter phase. */
-    private static final int FIRES_PER_STACK = 3;
-    /** Attempts per desired fire placement to account for misses. */
-    private static final int FIRE_ATTEMPT_MULTIPLIER = 4;
-    /** Vertical range divisor for the fire scatter (half the horizontal range). */
-    private static final int FIRE_VERTICAL_RANGE_DIVISOR = 2;
-    /** Block update flags for setBlock calls. */
-    private static final int BLOCK_UPDATE_FLAGS = 3;
+    /** Fortune level applied to ore drops. */
+    private static final int FORTUNE_LEVEL = 3;
+    /** Block break level event ID (sends break particles to clients). */
+    private static final int BREAK_EFFECT_EVENT = 2001;
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
@@ -56,11 +66,13 @@ public final class BlazeBehavior implements ChainBehavior {
         double cy = pos.getY() + BLOCK_CENTER_OFFSET;
         double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
 
+        // Entity damage + knockback only; blocks handled separately
+        // with fortune 3 + auto-smelt and no random drop destruction.
         level.explode(null, cx, cy, cz, (float) range,
-                Level.ExplosionInteraction.TNT);
+                Level.ExplosionInteraction.NONE);
 
+        breakBlocksInRadius(level, pos, range);
         emitParticles(level, cx, cy, cz, range, stackCount);
-        scatterFires(level, pos, range, stackCount);
     }
 
     @Override
@@ -83,6 +95,81 @@ public final class BlazeBehavior implements ChainBehavior {
         // No state.
     }
 
+    // ── Custom fortune + smelt block breaking ─────────────────────────────
+
+    /** Breaks all destructible blocks in the explosion sphere, dropping
+     * fortune-3 loot auto-smelted via furnace recipes. No random drop
+     * destruction - every item survives.
+     *
+     * @param level the server level
+     * @param center the explosion center
+     * @param range the explosion radius
+     */
+    private static void breakBlocksInRadius(ServerLevel level, BlockPos center, int range) {
+        ItemStack fortuneTool = buildFortuneTool(level);
+        EffectMath.forEachInSphere(center, range, pos -> {
+            tryBreakBlock(level, pos, fortuneTool);
+        });
+    }
+
+    /** Creates a diamond pickaxe with fortune 3 for loot context.
+     *
+     * @param level the server level (provides registry access)
+     * @return a fortune-3 diamond pickaxe
+     */
+    private static ItemStack buildFortuneTool(ServerLevel level) {
+        ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
+        Holder<Enchantment> fortune = level.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.FORTUNE);
+        tool.enchant(fortune, FORTUNE_LEVEL);
+        return tool;
+    }
+
+    /** Breaks a single block if destructible, spawning fortune + smelted drops.
+     *
+     * @param level the server level
+     * @param pos   the block position
+     * @param tool  the fortune-enchanted tool for loot context
+     */
+    private static void tryBreakBlock(ServerLevel level, BlockPos pos, ItemStack tool) {
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir()) { return; }
+        if (state.getDestroySpeed(level, pos) < 0) { return; }
+        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+
+        List<ItemStack> drops = Block.getDrops(state, level, pos, blockEntity, null, tool);
+        for (ItemStack drop : drops) {
+            ItemStack smelted = trySmelting(level, drop);
+            Block.popResource(level, pos, smelted);
+        }
+        state.spawnAfterBreak(level, pos, tool, true);
+
+        level.levelEvent(BREAK_EFFECT_EVENT, pos, Block.getId(state));
+        level.removeBlock(pos, false);
+    }
+
+    /** Attempts to smelt an item via furnace recipe. Returns the smelted
+     * result at the same stack count, or the original if no recipe exists.
+     *
+     * @param level the server level
+     * @param drop  the item to try smelting
+     * @return smelted result or the original drop
+     */
+    private static ItemStack trySmelting(ServerLevel level, ItemStack drop) {
+        Optional<RecipeHolder<SmeltingRecipe>> recipe = level.recipeAccess()
+                .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(drop), level);
+        if (recipe.isPresent()) {
+            ItemStack result = recipe.get().value()
+                    .assemble(new SingleRecipeInput(drop));
+            result.setCount(drop.getCount());
+            return result;
+        }
+        return drop;
+    }
+
+    // ── Particles ────────────────────────────────────────────────────────
+
     /** Sends flame, lava, and smoke particles scaled by explosion range and stack count.
      *
      * @param level      the server level to spawn particles in
@@ -103,42 +190,5 @@ public final class BlazeBehavior implements ChainBehavior {
         level.sendParticles(ParticleTypes.SMOKE,
                 cx, cy + BLOCK_CENTER_OFFSET, cz, particleCount / SMOKE_PARTICLE_DIVISOR,
                 spread, spread * SMOKE_SPREAD_MULTIPLIER, spread, SMOKE_PARTICLE_SPEED);
-    }
-
-    /** Places fire on random air blocks above solid surfaces in the blast radius.
-     *
-     * @param level      the server level
-     * @param center     the explosion center position
-     * @param range      the blast radius
-     * @param stackCount the raw stack count
-     */
-    private static void scatterFires(ServerLevel level, BlockPos center,
-                                     int range, int stackCount) {
-        int fireCount = FIRES_PER_STACK * stackCount;
-        var random = level.getRandom();
-        int vertRange = range / FIRE_VERTICAL_RANGE_DIVISOR;
-        for (int i = 0; i < fireCount * FIRE_ATTEMPT_MULTIPLIER; i++) {
-            if (fireCount <= 0) { break; }
-            BlockPos target = center.offset(
-                    random.nextIntBetweenInclusive(-range, range),
-                    random.nextIntBetweenInclusive(-vertRange, vertRange),
-                    random.nextIntBetweenInclusive(-range, range));
-            if (tryPlaceFire(level, target)) {
-                fireCount--;
-            }
-        }
-    }
-
-    /** Places fire at the target if it is air above a solid surface.
-     *
-     * @param level  the server level to place fire in
-     * @param target the candidate position for fire placement
-     * @return true if fire was successfully placed
-     */
-    private static boolean tryPlaceFire(ServerLevel level, BlockPos target) {
-        if (!level.getBlockState(target).isAir()) { return false; }
-        if (!level.getBlockState(target.below()).isSolidRender()) { return false; }
-        level.setBlock(target, Blocks.FIRE.defaultBlockState(), BLOCK_UPDATE_FLAGS);
-        return true;
     }
 }

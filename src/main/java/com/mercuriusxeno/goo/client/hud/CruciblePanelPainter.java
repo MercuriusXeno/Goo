@@ -93,7 +93,7 @@ final class CruciblePanelPainter {
             Minecraft.getInstance().renderBuffers().bufferSource();
         float halfW = layout.panelWidth / HALF_F;
         InWorldHud.renderBackground(poseStack, buffers,
-            new PanelRect(-halfW, -layout.panelHeight, layout.panelWidth, layout.panelHeight));
+            new PanelRectangle(-halfW, -layout.panelHeight, layout.panelWidth, layout.panelHeight));
         renderContentAtOrigin(poseStack, buffers, snap, layout, halfW);
         buffers.endBatch();
     }

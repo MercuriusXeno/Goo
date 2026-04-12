@@ -86,11 +86,11 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
 
     /**
      * Returns the last captured camera-relative blob center. No age
-     * check — once captured, the value is always valid. The position
+     * check - once captured, the value is always valid. The position
      * updates every frame the glove's held blob renders, so staleness
      * is at most one frame (~16ms at 60fps). Returns null only if the
      * item renderer has never fired (first frame after world load,
-     * before the glove has ever been held — in practice unreachable
+     * before the glove has ever been held - in practice unreachable
      * because the arc handler only runs when you're holding the glove).
      *
      * @return camera-relative blob center, or null if never captured

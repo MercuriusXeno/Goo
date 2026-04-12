@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * @param pose the current pose matrix entry
  * @param c    the vertex consumer for geometry emission
  */
-public record FlatQuadCtx(PoseStack.Pose pose, VertexConsumer c) {
+public record FlatQuadContext(PoseStack.Pose pose, VertexConsumer c) {
 
     /**
      * Emits a single flat-colored vertex.

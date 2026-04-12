@@ -24,6 +24,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -48,7 +49,7 @@ import org.jspecify.annotations.Nullable;
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GooTargetHighlighter {
     /** Maximum range for blob throwing in blocks. */
-    public static final double MAX_RANGE = 32.0;
+    public static final double MAX_RANGE = 64.0;
 
     /**
      * Granny-arc threshold: when a side-face hit lands in the upper 15% of
@@ -220,20 +221,39 @@ public final class GooTargetHighlighter {
     }
 
     /**
-     * Clips against blocks and returns a block or granny-arc target, or NONE.
+     * Clips against blocks and returns a block or granny-arc target.
+     * On a miss, projects to max range along the look vector so the
+     * arc always renders toward the aimed direction.
      *
      * @param player the local player
      * @param eyePos the eye position
      * @param reach  the maximum reach endpoint
-     * @return the resolved block target or NONE
+     * @return the resolved block target, or max-range projection on miss
      */
     private static TargetResult resolveBlockTarget(Player player, Vec3 eyePos, Vec3 reach) {
         BlockHitResult hit = player.level().clip(new ClipContext(
-                eyePos, reach, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+                eyePos, reach, ClipContext.Block.OUTLINE, ClipContext.Fluid.SOURCE_ONLY, player));
         if (hit.getType() != HitResult.Type.BLOCK) {
-            return TargetResult.NONE;
+            return projectToGround(player.level(), reach);
         }
         return classifyBlockHit(player.level(), hit);
+    }
+
+    /** Projects straight down from the max-range endpoint to find the
+     * ground, so the arc lands on terrain instead of dangling in the sky.
+     *
+     * @param level the current level
+     * @param reach the max-range endpoint along the look vector
+     * @return a block target on the ground, or NONE if no ground found
+     */
+    private static TargetResult projectToGround(Level level, Vec3 reach) {
+        Vec3 down = new Vec3(reach.x, level.getMinY(), reach.z);
+        BlockHitResult ground = level.clip(new ClipContext(
+                reach, down, ClipContext.Block.OUTLINE, ClipContext.Fluid.SOURCE_ONLY, CollisionContext.empty()));
+        if (ground.getType() != HitResult.Type.BLOCK) {
+            return TargetResult.NONE;
+        }
+        return TargetResult.block(ground.getBlockPos(), Direction.UP);
     }
 
     /**
@@ -430,7 +450,7 @@ public final class GooTargetHighlighter {
 
     /**
      * Returns the world-space arc origin from the blob center captured
-     * during item rendering. Uses the last capture unconditionally —
+     * during item rendering. Uses the last capture unconditionally -
      * no age check, no fallback formula. The capture updates every
      * frame the glove renders. If no capture exists yet (first frame
      * of world load, before the item renderer has ever fired), returns

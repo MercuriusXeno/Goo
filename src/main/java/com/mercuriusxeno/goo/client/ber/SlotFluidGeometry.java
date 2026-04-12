@@ -50,7 +50,7 @@ final class SlotFluidGeometry {
      * @param b      the precomputed fluid cuboid bounds
      * @param sprite the fluid texture atlas sprite
      */
-    static void renderFluidTop(RenderCtx ctx, CuboidBounds b, TextureAtlasSprite sprite) {
+    static void renderFluidTop(RenderContext ctx, CuboidBounds b, TextureAtlasSprite sprite) {
         float u0 = sprite.getU0();
         float v0 = sprite.getV0();
         float su1 = u0 + (sprite.getU1() - u0) * (b.x1() - b.x0());
@@ -67,8 +67,8 @@ final class SlotFluidGeometry {
      * @param fill   the fluid fill fraction (0.0 to 1.0)
      * @param g      the slot geometry constants for V-span computation
      */
-    static void renderFluidSides(RenderCtx ctx, CuboidBounds b,
-            TextureAtlasSprite sprite, float fill, SlotGeometry g) {
+    static void renderFluidSides(RenderContext ctx, CuboidBounds b,
+                                 TextureAtlasSprite sprite, float fill, SlotGeometry g) {
         float sideVSpan = computeSideVSpan(sprite, fill, g);
         GooRenderUtil.UvRect xUv = sideUvRect(sprite, b.x1() - b.x0(), sideVSpan);
         GooRenderUtil.UvRect zUv = sideUvRect(sprite, b.z1() - b.z0(), sideVSpan);

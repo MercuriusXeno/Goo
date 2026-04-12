@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.ThrowArc;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
-import com.mercuriusxeno.goo.client.ber.LineCtx;
+import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -28,7 +28,7 @@ final class ArcRenderer {
     /** Core alpha for the arc dashes. */
     private static final int ARC_ALPHA = 180;
     /** Distance between polyline sample points on the arc. */
-    private static final float SAMPLE_SPACING = 0.25f;
+    private static final float SAMPLE_SPACING = 0.05f;
     /** Number of bloom passes for the glow effect (core + outer halos). */
     private static final int ARC_GLOW_PASSES = 3;
     /** Width multiplier step per bloom pass. */
@@ -39,11 +39,13 @@ final class ArcRenderer {
     /** Minimum arc segment count. */
     private static final int MIN_ARC_SEGMENTS = 8;
     /** Maximum arc segment count. */
-    private static final int MAX_ARC_SEGMENTS = 128;
+    private static final int MAX_ARC_SEGMENTS = 1280;
     /** Maximum alpha channel value. */
     private static final int MAX_ALPHA = 255;
     /** Half segment midpoint for dash calculations. */
     private static final float DASH_MID = 0.5f;
+    /** Width of the fade zone at each dash edge in world units. */
+    private static final float DASH_FADE = 0.12f;
 
     /** Ticks-per-second divisor for converting game time to seconds. */
     private static final float TICKS_PER_SECOND = 20.0f;
@@ -136,7 +138,7 @@ final class ArcRenderer {
             Camera camera, Vec3[] points, int segments,
             int rgb, float dashOffset, float baseWidth) {
         Vec3 cam = camera.position();
-        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(GooRenderTypes.LINES_GLOW));
+        LineContext ctx = new LineContext(poseStack.last(), bufferSource.getBuffer(GooRenderTypes.LINES_GLOW));
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
             emitDashedPass(ctx, cam, points, segments,
                     dashOffset, computeGlowPassColor(rgb, pass),
@@ -170,7 +172,7 @@ final class ArcRenderer {
      * @param width      the line width
      */
     private static void emitDashedPass(
-            LineCtx ctx, Vec3 cam, Vec3[] points, int segments,
+            LineContext ctx, Vec3 cam, Vec3[] points, int segments,
             float dashOffset, int color, float width) {
         float arcLen = 0f;
         for (int i = 0; i < segments; i++) {
@@ -194,28 +196,45 @@ final class ArcRenderer {
      * @return the updated accumulated arc length
      */
     private static float emitDashSegment(
-            LineCtx ctx, Vec3 cam, Vec3 a, Vec3 b, float arcLen,
+            LineContext ctx, Vec3 cam, Vec3 a, Vec3 b, float arcLen,
             float dashOffset, int color, float width) {
         float segLen = (float) a.distanceTo(b);
-        if (isDashOn(arcLen + segLen * DASH_MID, dashOffset)) {
+        float alpha = dashAlpha(arcLen + segLen * DASH_MID, dashOffset);
+        if (alpha > 0f) {
+            int fadedColor = scaleAlpha(color, alpha);
             ctx.emitEdge(
                 (float) (a.x - cam.x), (float) (a.y - cam.y), (float) (a.z - cam.z),
                 (float) (b.x - cam.x), (float) (b.y - cam.y), (float) (b.z - cam.z),
-                color, width);
+                fadedColor, width);
         }
         return arcLen + segLen;
     }
 
     /**
-     * Returns true if the dash at the given arc-length is in the "on" phase.
+     * Scales the alpha channel of an ARGB color by a [0..1] factor.
      *
-     * @param midArcLen the midArcLen
-     * @param dashOffset the dash scroll offset
-     * @return true if dashOn
+     * @param argb   the source ARGB color
+     * @param factor the alpha scale factor [0..1]
+     * @return the color with scaled alpha
      */
-    private static boolean isDashOn(float midArcLen, float dashOffset) {
+    private static int scaleAlpha(int argb, float factor) {
+        int a = Mth.clamp((int) (ARGB.alpha(argb) * factor), 0, MAX_ALPHA);
+        return ARGB.color(a, ARGB.red(argb), ARGB.green(argb), ARGB.blue(argb));
+    }
+
+    /**
+     * Returns an alpha multiplier [0..1] for the dash at the given arc-length.
+     * Full brightness in the dash interior, fading to zero at the edges.
+     *
+     * @param midArcLen the arc-length at the segment midpoint
+     * @param dashOffset the dash scroll offset
+     * @return 0 in the gap, 1 in the dash interior, smooth fade at edges
+     */
+    private static float dashAlpha(float midArcLen, float dashOffset) {
         float phase = (midArcLen - dashOffset) % DASH_CYCLE;
         if (phase < 0) { phase += DASH_CYCLE; }
-        return phase < DASH_ON;
+        if (phase >= DASH_ON) { return 0f; }
+        float edgeDist = Math.min(phase, DASH_ON - phase);
+        return Math.min(edgeDist / DASH_FADE, 1f);
     }
 }

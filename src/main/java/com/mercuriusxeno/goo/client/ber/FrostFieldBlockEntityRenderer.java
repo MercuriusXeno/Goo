@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
  * shell. Gentle breathing pulse driven by game time. Scales with
  * stack count. Vanishes instantly on field expiry.
  */
-public class FrostFieldBER
+public class FrostFieldBlockEntityRenderer
         implements BlockEntityRenderer<FrostFieldBlockEntity, FrostFieldRenderState> {
 
     private static final Identifier BLOCK_ATLAS =
@@ -68,7 +68,7 @@ public class FrostFieldBER
     /** Center offset in block units. */
     private static final float BLOCK_CENTER = 0.5f;
 
-    public FrostFieldBER(BlockEntityRendererProvider.Context context) {
+    public FrostFieldBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
@@ -177,7 +177,7 @@ public class FrostFieldBER
         CuboidBounds box = new CuboidBounds(-half, half, -half, half, -half, half);
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS),
-                (pose, c) -> new RenderCtx(pose, c, light).emitBox(color, box, uv));
+                (pose, c) -> new RenderContext(pose, c, light).emitBox(color, box, uv));
     }
 
     /**

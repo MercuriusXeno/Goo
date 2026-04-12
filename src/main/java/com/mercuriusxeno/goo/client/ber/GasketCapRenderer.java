@@ -23,7 +23,7 @@ public final class GasketCapRenderer {
     public record GasketYRanges(float bodyBot, float bodyTop, float gasketBot, float gasketTop) {}
 
     /**
-     * UV region used by {@link RenderCtx#gasketBox} for the gasket side strips.
+     * UV region used by {@link RenderContext#gasketBox} for the gasket side strips.
      *
      * @param u0 left U
      * @param u1 right U
@@ -71,8 +71,8 @@ public final class GasketCapRenderer {
      * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      */
-    public static void renderEndcaps(RenderCtx ctx, CuboidBounds base,
-            GasketYRanges y, GasketUv uv, boolean top, boolean bottom) {
+    public static void renderEndcaps(RenderContext ctx, CuboidBounds base,
+                                     GasketYRanges y, GasketUv uv, boolean top, boolean bottom) {
         if (!top && !bottom) { return; }
         if (top) {
             ctx.gasketBox(base.withY(y.bodyTop(), y.gasketTop()), uv.u0(), uv.u1(), uv.v1());

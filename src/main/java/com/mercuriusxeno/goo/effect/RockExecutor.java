@@ -4,15 +4,24 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.data.GooValue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Performs the rock chain effect: a directional implosion that mines
@@ -46,6 +55,8 @@ public final class RockExecutor {
     private static final float LAYER_PITCH_STEP = 0.03f;
     /** Minimum pitch after step-based reduction. */
     private static final float LAYER_PITCH_MIN = 0.45f;
+    /** Block break level event ID (sends break particles to clients). */
+    private static final int BREAK_EFFECT_EVENT = 2001;
 
     private RockExecutor() {}
 
@@ -68,12 +79,29 @@ public final class RockExecutor {
                                 int stackCount) {
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
-        int destroyed = mineFootprint(level, layerCenter, blastAxis);
+        ItemStack silkTool = buildSilkTouchTool(level);
+        List<ItemStack> drops = new ArrayList<>();
+        int destroyed = mineFootprint(level, layerCenter, blastAxis, silkTool, drops);
         if (destroyed > 0) {
+            ejectDrops(level, origin, placedFace, drops);
             spawnLayerDust(level, layerCenter, blastAxis, destroyed);
             playLayerSound(level, layerCenter, stackCount, stepIndex);
         }
         return destroyed;
+    }
+
+    /** Creates a diamond pickaxe with silk touch for loot context.
+     *
+     * @param level the server level (provides registry access)
+     * @return a silk-touch diamond pickaxe
+     */
+    private static ItemStack buildSilkTouchTool(ServerLevel level) {
+        ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
+        Holder<Enchantment> silkTouch = level.registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT)
+                .getOrThrow(Enchantments.SILK_TOUCH);
+        tool.enchant(silkTouch, 1);
+        return tool;
     }
 
     /**
@@ -109,20 +137,24 @@ public final class RockExecutor {
 
     /**
      * Mines the 3x3 footprint at the given layer center, perpendicular
-     * to the blast axis.
+     * to the blast axis. Uses silk touch loot context for drops.
+     * Drops are accumulated into the provided list for bulk ejection.
      *
      * @param level       the server level
      * @param layerCenter the center of the current layer
      * @param blastAxis   the axis the blast travels along
+     * @param tool        the silk-touch tool for loot context
+     * @param drops       accumulator for mined block drops
      * @return the number of blocks destroyed in this layer
      */
     private static int mineFootprint(ServerLevel level, BlockPos layerCenter,
-                                     Direction.Axis blastAxis) {
+                                     Direction.Axis blastAxis, ItemStack tool,
+                                     List<ItemStack> drops) {
         int destroyed = 0;
         for (int a = -FOOTPRINT_HALF; a <= FOOTPRINT_HALF; a++) {
             for (int b = -FOOTPRINT_HALF; b <= FOOTPRINT_HALF; b++) {
                 BlockPos target = offsetPerpendicular(layerCenter, blastAxis, a, b);
-                if (tryMineBlock(level, target)) { destroyed++; }
+                if (tryMineBlock(level, target, tool, drops)) { destroyed++; }
             }
         }
         return destroyed;
@@ -130,19 +162,69 @@ public final class RockExecutor {
 
     /**
      * Attempts to mine a single block if it is in-bounds, non-air, and
-     * rock-compatible.
+     * rock-compatible. Drops use silk touch loot context so blocks drop
+     * themselves (e.g. stone drops stone, not cobblestone). Drops are
+     * accumulated into the provided list rather than spawned in-place.
      *
      * @param level  the server level
      * @param target the position to attempt
+     * @param tool   the silk-touch tool for loot context
+     * @param drops  accumulator for block drops
      * @return true if a block was destroyed
      */
-    private static boolean tryMineBlock(ServerLevel level, BlockPos target) {
+    private static boolean tryMineBlock(ServerLevel level, BlockPos target,
+                                        ItemStack tool, List<ItemStack> drops) {
         if (!level.isInWorldBounds(target)) { return false; }
         BlockState state = level.getBlockState(target);
         if (state.isAir()) { return false; }
         if (!isRockBlock(level, state)) { return false; }
-        level.destroyBlock(target, true);
+        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(target) : null;
+
+        mergeDrops(drops, Block.getDrops(state, level, target, blockEntity, null, tool));
+        state.spawnAfterBreak(level, target, tool, true);
+
+        level.levelEvent(BREAK_EFFECT_EVENT, target, Block.getId(state));
+        level.removeBlock(target, false);
         return true;
+    }
+
+    /**
+     * Merges new drops into an accumulator, stacking with existing entries
+     * where possible so the final ejection produces fewer item entities.
+     *
+     * @param accumulator the running drop list
+     * @param newDrops    drops from a single block break
+     */
+    private static void mergeDrops(List<ItemStack> accumulator, List<ItemStack> newDrops) {
+        for (ItemStack drop : newDrops) {
+            boolean merged = false;
+            for (ItemStack existing : accumulator) {
+                if (ItemStack.isSameItemSameComponents(existing, drop)
+                        && existing.getCount() + drop.getCount() <= existing.getMaxStackSize()) {
+                    existing.grow(drop.getCount());
+                    merged = true;
+                    break;
+                }
+            }
+            if (!merged) { accumulator.add(drop.copy()); }
+        }
+    }
+
+    /**
+     * Ejects accumulated drops behind the marker (the face the player
+     * placed on), so all items land in a pile at the origin.
+     *
+     * @param level      the server level
+     * @param origin     the marker block position
+     * @param placedFace the face the marker was attached to
+     * @param drops      the accumulated drops to eject
+     */
+    private static void ejectDrops(ServerLevel level, BlockPos origin,
+                                   Direction placedFace, List<ItemStack> drops) {
+        BlockPos ejectPos = origin.relative(placedFace);
+        for (ItemStack stack : drops) {
+            Block.popResource(level, ejectPos, stack);
+        }
     }
 
     /**

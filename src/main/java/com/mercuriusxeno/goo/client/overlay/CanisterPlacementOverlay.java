@@ -7,7 +7,7 @@ import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.LineCtx;
+import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -259,7 +259,7 @@ public final class CanisterPlacementOverlay {
     private static void emitPreviewWireframe(MultiBufferSource.BufferSource bufferSource,
             PoseStack poseStack, AABB bounds, double ox, double oy, double oz) {
         float lineWidth = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
-        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
+        LineContext ctx = new LineContext(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
         ctx.emitWireframe(new CuboidBounds(
             (float) (bounds.minX + ox), (float) (bounds.maxX + ox),
             (float) (bounds.minZ + oz), (float) (bounds.maxZ + oz),

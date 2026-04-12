@@ -4,7 +4,6 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.RenderCtx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
@@ -185,7 +184,7 @@ public final class BlobFlightRenderer {
 
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entitySolid(BLOCK_ATLAS_TEXTURE));
-        RenderCtx ctx = new RenderCtx(poseStack.last(), c, FULL_BRIGHT);
+        com.mercuriusxeno.goo.client.ber.RenderContext ctx = new com.mercuriusxeno.goo.client.ber.RenderContext(poseStack.last(), c, FULL_BRIGHT);
         CuboidBounds box = new CuboidBounds(-hw, hw, -hw, hw, -hw, hw);
         ctx.emitBox(box, uv);
     }
@@ -203,7 +202,7 @@ public final class BlobFlightRenderer {
         int color = (SHELL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
-        RenderCtx ctx = new RenderCtx(poseStack.last(), c, FULL_BRIGHT);
+        com.mercuriusxeno.goo.client.ber.RenderContext ctx = new com.mercuriusxeno.goo.client.ber.RenderContext(poseStack.last(), c, FULL_BRIGHT);
         CuboidBounds box = new CuboidBounds(-SHELL_HW, SHELL_HW, -SHELL_HW, SHELL_HW, -SHELL_HW, SHELL_HW);
         ctx.emitBox(color, box, uv);
     }

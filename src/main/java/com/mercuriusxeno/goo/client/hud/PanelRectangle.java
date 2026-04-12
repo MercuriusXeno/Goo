@@ -8,4 +8,4 @@ package com.mercuriusxeno.goo.client.hud;
  * @param w width
  * @param h height
  */
-public record PanelRect(float x, float y, float w, float h) {}
+public record PanelRectangle(float x, float y, float w, float h) {}

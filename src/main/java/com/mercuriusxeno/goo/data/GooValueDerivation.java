@@ -266,12 +266,3 @@ final class GooValueDerivation {
     }
 }
 
-/** Immutable result of one full derivation run. */
-record DerivationResult(
-    Map<Identifier, GooValue> derivedValues,
-    Map<Identifier, RecipeInput> derivationSources,
-    Map<Identifier, GooValue> effectiveValues,
-    List<GooValueRegistry.ValueConflict> conflicts,
-    List<GooValueRegistry.RecipeCycle> cycles,
-    List<GooValueRegistry.DivisibilityLoss> divisibilityLosses
-) {}

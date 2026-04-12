@@ -106,7 +106,7 @@ final class CanisterFluidRenderer {
             SubmitNodeCollector nodeCollector, int light, CanisterRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderCopperEndcaps(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderCopperEndcaps(new RenderContext(pose, c, light), state));
     }
 
     /**
@@ -120,7 +120,7 @@ final class CanisterFluidRenderer {
             SubmitNodeCollector nodeCollector, int light, CanisterRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(CHORAL_GASKET),
-            (pose, c) -> renderChoralEndcaps(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderChoralEndcaps(new RenderContext(pose, c, light), state));
     }
 
     /** Renders copper (non-choral) endcaps for all occupied slots.
@@ -128,7 +128,7 @@ final class CanisterFluidRenderer {
      * @param ctx   the render context
      * @param state the canister render state snapshot
      */
-    private static void renderCopperEndcaps(RenderCtx ctx, CanisterRenderState state) {
+    private static void renderCopperEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisterPresent[i]) { continue; }
             renderEndcaps(ctx, i,
@@ -141,7 +141,7 @@ final class CanisterFluidRenderer {
      * @param ctx   the render context
      * @param state the canister render state snapshot
      */
-    private static void renderChoralEndcaps(RenderCtx ctx, CanisterRenderState state) {
+    private static void renderChoralEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (!state.canisterPresent[i]) { continue; }
             renderEndcaps(ctx, i,
@@ -175,7 +175,7 @@ final class CanisterFluidRenderer {
      * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      */
-    private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
+    private static void renderEndcaps(RenderContext ctx, int slot, boolean top, boolean bottom) {
         GasketCapRenderer.renderEndcaps(ctx, slotBoundsXZ(slot), GASKET_Y, GASKET_UV, top, bottom);
     }
 
@@ -209,7 +209,7 @@ final class CanisterFluidRenderer {
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderAllFluids(new RenderContext(pose, c, light), state));
     }
 
     /**
@@ -218,7 +218,7 @@ final class CanisterFluidRenderer {
      * @param ctx   the render context
      * @param state the render state snapshot
      */
-    private static void renderAllFluids(RenderCtx ctx, CanisterRenderState state) {
+    private static void renderAllFluids(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (state.slotType[i] != null && state.slotFill[i] > 0f) {
                 renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
@@ -249,7 +249,7 @@ final class CanisterFluidRenderer {
      * @param type the goo type
      * @param fill the fill fraction in [0, 1]
      */
-    private static void renderFluidSurface(RenderCtx ctx, int slot, GooType type, float fill) {
+    private static void renderFluidSurface(RenderContext ctx, int slot, GooType type, float fill) {
         float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
         float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
         CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);

@@ -38,7 +38,7 @@ import org.jspecify.annotations.Nullable;
  * active on the BE. The BER itself only knows about the orb and the
  * thin dispatch check.
  */
-public class ChainMarkerBER
+public class ChainMarkerBlockEntityRenderer
         implements BlockEntityRenderer<ChainMarkerBlockEntity, ChainMarkerRenderState> {
 
     /** Block atlas path for fluid sprite lookups. */
@@ -78,7 +78,7 @@ public class ChainMarkerBER
     /** Half-extent of the render bounding box around a chain marker, in blocks. Must exceed the maximum implosion radius (nether max = 9). */
     private static final double RENDER_BOX_HALF_EXTENT = 12.0;
 
-    public ChainMarkerBER(BlockEntityRendererProvider.Context context) {
+    public ChainMarkerBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
@@ -267,7 +267,7 @@ public class ChainMarkerBER
         CuboidBounds box = new CuboidBounds(-half, half, -half, half, -half, half);
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS),
-                (pose, c) -> new RenderCtx(pose, c, light).emitBox(color, box, uv));
+                (pose, c) -> new RenderContext(pose, c, light).emitBox(color, box, uv));
     }
 
     /**

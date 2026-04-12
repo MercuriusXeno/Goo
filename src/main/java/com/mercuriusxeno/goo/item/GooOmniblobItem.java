@@ -67,7 +67,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      *                  Preserves cluster contraction: edge items pull harder
      *                  than center items even though the absolute cap is shared.
      * @param distCent  distance from self to the centroid of all cluster
-     *                  members (including self). The "stop point" — target
+     *                  members (including self). The "stop point" - target
      *                  velocity shrinks as this approaches zero.
      */
     private record PullState(double dirX, double dirY, double dirZ, double asymmetry, double distCent) {}
