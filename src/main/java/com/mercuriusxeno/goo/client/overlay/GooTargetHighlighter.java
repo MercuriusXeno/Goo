@@ -239,17 +239,21 @@ public final class GooTargetHighlighter {
         return classifyBlockHit(player.level(), hit);
     }
 
-    /** Projects straight down from the max-range endpoint to find the
-     * ground, so the arc lands on terrain instead of dangling in the sky.
+    /** Raycasts down from the max-range endpoint to find the ground.
+     * If the endpoint is above max build height (looking upward), starts
+     * the downward cast from build height at the same XZ.
      *
      * @param level the current level
      * @param reach the max-range endpoint along the look vector
      * @return a block target on the ground, or NONE if no ground found
      */
     private static TargetResult projectToGround(Level level, Vec3 reach) {
-        Vec3 down = new Vec3(reach.x, level.getMinY(), reach.z);
+        double topY = Math.min(reach.y, level.getMaxY());
+        Vec3 top = new Vec3(reach.x, topY, reach.z);
+        Vec3 bottom = new Vec3(reach.x, level.getMinY(), reach.z);
         BlockHitResult ground = level.clip(new ClipContext(
-                reach, down, ClipContext.Block.OUTLINE, ClipContext.Fluid.SOURCE_ONLY, CollisionContext.empty()));
+                top, bottom, ClipContext.Block.OUTLINE,
+                ClipContext.Fluid.SOURCE_ONLY, CollisionContext.empty()));
         if (ground.getType() != HitResult.Type.BLOCK) {
             return TargetResult.NONE;
         }
