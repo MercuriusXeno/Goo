@@ -10,15 +10,15 @@ public enum GooType implements StringRepresentable {
     AEON("aeon", 0xDAA520),
     BLAZE("blaze", 0xFF6600),
     CRYSTAL("crystal", 0x4FC1E9),
-    ENDER("ender", 0x00CED1),
+    ENDER("ender", 0x2E8B8B),
     FROST("frost", 0xADD8E6),
     GLOW("glow", 0xFFD700),
-    HEX("hex", 0x2C3E50),
+    HEX("hex", 0x5B4BA0),
     LEAF("leaf", 0x7EC850),
     METAL("metal", 0xC0C0C0),
     NETHER("nether", 0x8B0000),
     PULSE("pulse", 0xCC0000),
-    ROCK("rock", 0x808080),
+    ROCK("rock", 0xC2A868),
     SHROOM("shroom", 0x8E44AD),
     TYPHOON("typhoon", 0xD5F5E3),
     VITAL("vital", 0xE74C3C);
@@ -45,10 +45,20 @@ public enum GooType implements StringRepresentable {
 
     /**
      * Returns the RGB color used for rendering this goo type.
+     * Reads from the JSON color config, falling back to the hardcoded default.
      *
      * @return the RGB color int
      */
     public int getColor() {
+        return GooColors.get(this);
+    }
+
+    /**
+     * Returns the hardcoded default RGB color for this goo type.
+     *
+     * @return the default RGB color int
+     */
+    public int getDefaultColor() {
         return color;
     }
 

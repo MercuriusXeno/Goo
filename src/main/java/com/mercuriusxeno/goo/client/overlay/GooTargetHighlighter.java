@@ -1,8 +1,12 @@
 package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.TargetResult;
+import com.mercuriusxeno.goo.client.hud.InWorldHud;
+import com.mercuriusxeno.goo.client.hud.PanelRectangle;
 import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
 import com.mercuriusxeno.goo.client.throwing.GloveUseTracker;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
@@ -10,6 +14,7 @@ import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.core.BlockPos;
@@ -132,7 +137,7 @@ public final class GooTargetHighlighter {
     private static void updateTarget(Player player, GooType selectedType) {
         TargetResult target = resolveTarget(player, 1.0f);
         boolean hasEntity = target instanceof TargetResult.EntityTarget;
-        targetOutlineColor = hasEntity ? ARGB.opaque(selectedType.getColor()) : 0;
+        targetOutlineColor = hasEntity ? ARGB.opaque(GooColors.highlight(selectedType)) : 0;
     }
 
     /**
@@ -325,12 +330,84 @@ public final class GooTargetHighlighter {
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
         Camera camera = mc.gameRenderer.getMainCamera();
         if (target instanceof TargetResult.BlockTarget bt) {
-            VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
-                    bt.pos(), bt.face(), selectedType);
+            if (isWaterSource(mc.level, bt.pos())) {
+                VoxelHighlightRenderer.renderFullCube(ps, buf, camera, bt.pos(), selectedType);
+            } else {
+                VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
+                        bt.pos(), bt.face(), selectedType);
+            }
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
             VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
                     cmt.pos(), selectedType);
+            renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
         }
+    }
+
+    // ── Water source detection ──────────────────────────────────────────
+
+    /**
+     * Returns true if the block at the given position is a water source.
+     *
+     * @param level the client level
+     * @param pos   the block position
+     * @return true if water source
+     */
+    private static boolean isWaterSource(Level level, BlockPos pos) {
+        return level.getFluidState(pos).isSource()
+                && level.getFluidState(pos).getType() == net.minecraft.world.level.material.Fluids.WATER;
+    }
+
+    // ── Chain marker billboard ─────────────────────────────────────────
+
+    /** Vertical offset above the block center for the billboard origin. */
+    private static final float BILLBOARD_Y_OFFSET = 0.75f;
+    /** Padding inside the nine-slice background. */
+    private static final float BILLBOARD_PADDING = 4f;
+    /** Multiplier for padding on both sides (left+right or top+bottom). */
+    private static final int PADDING_BOTH_SIDES = 2;
+    /** Divisor to halve a dimension for centering. */
+    private static final float HALF_DIVISOR = 2f;
+    /** Separator between stack count and max stacks in the billboard. */
+    private static final String STACK_SEPARATOR = " / ";
+
+    /**
+     * Renders a floating billboard above a targeted chain marker showing
+     * its stack count (e.g. "3 / 28") with the goo type icon.
+     *
+     * @param ps      the pose stack
+     * @param buf     the buffer source
+     * @param camera  the render camera
+     * @param mc      the Minecraft client instance
+     * @param pos     the chain marker block position
+     * @param gooType the goo type for coloring/icon
+     */
+    private static void renderChainMarkerBillboard(PoseStack ps, MultiBufferSource.BufferSource buf,
+            Camera camera, Minecraft mc, BlockPos pos, GooType gooType) {
+        if (mc.level == null) { return; }
+        if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
+        String text = be.getStackCount() + STACK_SEPARATOR + be.getMaxStacks();
+        Font font = mc.font;
+        float textWidth = font.width(text);
+        float rowWidth = InWorldHud.ICON_SIZE + InWorldHud.ICON_TEXT_GAP + textWidth;
+        float panelW = rowWidth + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
+        float panelH = InWorldHud.ROW_HEIGHT + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
+
+        Vec3 cam = camera.position();
+        ps.pushPose();
+        ps.translate(
+                pos.getX() + FACE_CENTER_OFFSET - cam.x,
+                pos.getY() + FACE_CENTER_OFFSET + BILLBOARD_Y_OFFSET - cam.y,
+                pos.getZ() + FACE_CENTER_OFFSET - cam.z);
+        InWorldHud.applyBillboardRotation(ps, camera, 1f);
+        ps.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
+
+        float halfW = panelW / HALF_DIVISOR;
+        float halfH = panelH / HALF_DIVISOR;
+        InWorldHud.renderBackgroundSeeThrough(ps, buf,
+                new PanelRectangle(-halfW, -halfH, panelW, panelH));
+        InWorldHud.renderGooRow(ps, font, buf, gooType, text,
+                -halfW + BILLBOARD_PADDING, -halfH + BILLBOARD_PADDING);
+        ps.popPose();
     }
 
     /** Renders the deferred throw-arc line after translucent blocks so
@@ -376,81 +453,27 @@ public final class GooTargetHighlighter {
      * @param selectedType the cached goo type
      * @param partialTick  the cached partial tick
      */
+    /**
+     * Renders the arc to the target's endpoint. Granny arc is only active
+     * for block targets that were classified as upper-edge hits.
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the active camera
+     * @param player       the local player
+     * @param target       the cached target
+     * @param selectedType the cached goo type
+     * @param partialTick  the cached partial tick
+     */
     private static void dispatchArcForTarget(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Player player, TargetResult target,
             GooType selectedType, float partialTick) {
-        if (target instanceof TargetResult.EntityTarget et) {
-            renderEntityArc(poseStack, bufferSource, camera, player, et, selectedType, partialTick);
-        } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
-            renderChainMarkerArc(poseStack, bufferSource, camera, player, cmt, selectedType, partialTick);
-        } else if (target instanceof TargetResult.BlockTarget bt) {
-            renderBlockArc(poseStack, bufferSource, camera, player, bt, selectedType, partialTick);
-        }
-    }
-
-    /**
-     * Renders the dashed arc toward a chain marker target. Chain markers
-     * behave like entities for targeting so they get an entity-style arc
-     * (no face voxel overlay). The ChainMarker BER handles the highlight
-     * visual on the block itself.
-     *
-     * @param poseStack    the pose stack
-     * @param bufferSource the buffer source
-     * @param camera       the render camera
-     * @param player       the local player
-     * @param cmt          the chain marker target
-     * @param gooType      the goo type for coloring
-     * @param partialTick  the partial tick for animation
-     */
-    private static void renderChainMarkerArc(
-            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
-            Camera camera, Player player, TargetResult.ChainMarkerTarget cmt,
-            GooType gooType, float partialTick) {
-        Vec3 end = Vec3.atCenterOf(cmt.pos());
+        Vec3 end = target.resolveEndpoint();
+        if (end == null) { return; }
+        boolean grannyArc = target instanceof TargetResult.BlockTarget bt && bt.grannyArc();
         ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
-                player, end, gooType.getColor(), partialTick, false);
-    }
-
-    /**
-     * Renders the dashed arc toward an entity target.
-     *
-     * @param poseStack    the pose stack
-     * @param bufferSource the buffer source
-     * @param camera       the render camera
-     * @param player       the local player
-     * @param et           the entity target
-     * @param gooType      the goo type for coloring
-     * @param partialTick  the partial tick for animation
-     */
-    private static void renderEntityArc(
-            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
-            Camera camera, Player player, TargetResult.EntityTarget et,
-            GooType gooType, float partialTick) {
-        Vec3 end = et.entity().getBoundingBox().getCenter();
-        ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
-                player, end, gooType.getColor(), partialTick, false);
-    }
-
-    /** Renders only the throw-arc line for a block target. The face
-     * highlight is drawn separately in the opaque stage.
-     *
-     * @param poseStack    the pose stack
-     * @param bufferSource the buffer source
-     * @param camera       the render camera
-     * @param player       the local player
-     * @param bt           the block target
-     * @param gooType      the goo type for coloring
-     * @param partialTick  the partial tick for animation
-     */
-    private static void renderBlockArc(
-            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
-            Camera camera, Player player, TargetResult.BlockTarget bt,
-            GooType gooType, float partialTick) {
-        Vec3 end = Vec3.atCenterOf(bt.pos())
-                .add(bt.face().getUnitVec3().scale(FACE_CENTER_OFFSET));
-        ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
-                player, end, gooType.getColor(), partialTick, bt.grannyArc());
+                player, end, GooColors.highlight(selectedType), partialTick, grannyArc);
     }
 
     // --- Hand position ---

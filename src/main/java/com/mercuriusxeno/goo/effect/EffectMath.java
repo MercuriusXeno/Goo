@@ -26,10 +26,6 @@ public final class EffectMath {
 
     /** Majority threshold multiplier: rockTotal * 2 > total means >50%. */
     private static final int MAJORITY_MULTIPLIER = 2;
-    /** Base explosion radius before stacking. */
-    private static final float EXPLOSION_BASE_RADIUS = 1.0f;
-    /** Radius added per stack for blaze explosion. */
-    private static final float EXPLOSION_RADIUS_PER_STACK = 2.0f;
     /** Base freeze radius before stacking. */
     private static final int FREEZE_BASE_RADIUS = 2;
     /** Duration multiplier per unit of radius for frost fields. */
@@ -117,16 +113,6 @@ public final class EffectMath {
     // ── Chain effect range formulas ───────────────────────────────────────
 
     /**
-     * Blaze explosion radius. Formula: 1 + 2n.
-     *
-     * @param stackCount 1-based stack level
-     * @return explosion radius (3, 5, 7, 9)
-     */
-    public static float computeExplosionRadius(int stackCount) {
-        return EXPLOSION_BASE_RADIUS + EXPLOSION_RADIUS_PER_STACK * stackCount;
-    }
-
-    /**
      * Frost freeze radius. Formula: 2 + n.
      *
      * @param stackCount 1-based stack level
@@ -156,13 +142,4 @@ public final class EffectMath {
         return NETHER_BASE_RADIUS + NETHER_RADIUS_PER_STACK * stackCount;
     }
 
-    /**
-     * Rock implosion depth. Formula: n².
-     *
-     * @param stackCount 1-based stack level
-     * @return column depth (1, 4, 9, 16, 25)
-     */
-    public static int computeImplosionDepth(int stackCount) {
-        return stackCount * stackCount;
-    }
 }

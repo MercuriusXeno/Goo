@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Result of resolving the player's aim target for blob throwing.
@@ -10,15 +11,32 @@ import net.minecraft.world.entity.Entity;
  */
 public sealed interface TargetResult {
 
+    /** Half-block offset for face center calculations. */
+    double FACE_CENTER_OFFSET = 0.5;
+
     /** Singleton for the empty/no-target case. */
     TargetResult NONE = new None();
+
+    /**
+     * Returns the world-space Vec3 destination for this target. Used by
+     * both the arc renderer and the blob flight manager so the endpoint
+     * computation is not duplicated.
+     *
+     * @return the endpoint position, or null for {@link None}
+     */
+    Vec3 resolveEndpoint();
 
     /**
      * The player is aiming at a living entity within throw range.
      *
      * @param entity the targeted entity
      */
-    record EntityTarget(Entity entity) implements TargetResult {}
+    record EntityTarget(Entity entity) implements TargetResult {
+        @Override
+        public Vec3 resolveEndpoint() {
+            return entity.getBoundingBox().getCenter();
+        }
+    }
 
     /**
      * The player is aiming at a specific block face within throw range.
@@ -27,7 +45,12 @@ public sealed interface TargetResult {
      * @param face      the targeted block face
      * @param grannyArc whether to use the boosted arc trajectory
      */
-    record BlockTarget(BlockPos pos, Direction face, boolean grannyArc) implements TargetResult {}
+    record BlockTarget(BlockPos pos, Direction face, boolean grannyArc) implements TargetResult {
+        @Override
+        public Vec3 resolveEndpoint() {
+            return Vec3.atCenterOf(pos).add(face.getUnitVec3().scale(FACE_CENTER_OFFSET));
+        }
+    }
 
     /**
      * The player is aiming at a placed chain marker block, which in the
@@ -38,10 +61,20 @@ public sealed interface TargetResult {
      *
      * @param pos the targeted chain marker block position
      */
-    record ChainMarkerTarget(BlockPos pos) implements TargetResult {}
+    record ChainMarkerTarget(BlockPos pos) implements TargetResult {
+        @Override
+        public Vec3 resolveEndpoint() {
+            return Vec3.atCenterOf(pos);
+        }
+    }
 
     /** Nothing targetable within throw range. */
-    record None() implements TargetResult {}
+    record None() implements TargetResult {
+        @Override
+        public Vec3 resolveEndpoint() {
+            return null;
+        }
+    }
 
     /**
      * Factory for an entity target.

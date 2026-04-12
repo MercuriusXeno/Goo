@@ -31,6 +31,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
@@ -276,6 +277,68 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (level.isClientSide()) { return null; }
         return createTickerHelper(type, GooBlockEntities.CHAIN_MARKER.get(),
                 ChainMarkerBlockEntity::serverTick);
+    }
+
+    /**
+     * Detects when the support block (along placedFace direction) is
+     * removed. When this happens during fuse phase, initiates a fall:
+     * removes the marker, broadcasts a flight animation, and schedules
+     * re-placement at the landing position.
+     *
+     * @param state         the current block state
+     * @param level         the current level
+     * @param pos           the block position
+     * @param neighborBlock the block that changed
+     * @param orientation   the redstone orientation, or null
+     * @param movedByPiston true if moved by piston
+     */
+    @Override
+    protected void neighborChanged(@NonNull BlockState state, @NonNull Level level,
+            @NonNull BlockPos pos, @NonNull Block neighborBlock,
+            @Nullable Orientation orientation,
+            boolean movedByPiston) {
+        if (level.isClientSide()) { return; }
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
+        if (be.getBehavior() != null) { return; }
+
+        Direction face = be.getPlacedFace();
+        BlockPos supportPos = pos.relative(face);
+        if (!level.getBlockState(supportPos).isAir()) { return; }
+
+        BlockPos landing = findLandingBelow(level, pos);
+        if (landing == null) { return; }
+
+        GooType gooType = be.getGooType();
+        int stacks = be.getStackCount();
+        int max = be.getMaxStacks();
+        int fuse = be.getFuseRemaining();
+        boolean flat = be.isFlatMode();
+
+        level.removeBlock(pos, false);
+        ChainMarkerFallScheduler.scheduleFall((ServerLevel) level, pos, landing,
+                state.getBlock(), gooType, stacks, max, fuse, face, flat);
+    }
+
+    /**
+     * Raycasts straight down from the marker to find the first solid
+     * surface. The landing position is the air block adjacent to that
+     * surface (where the marker will be re-placed).
+     *
+     * @param level the current level
+     * @param from  the starting position
+     * @return the landing block position, or null if no surface found
+     */
+    @Nullable
+    private static BlockPos findLandingBelow(Level level, BlockPos from) {
+        BlockPos.MutableBlockPos cursor = from.mutable();
+        int minY = level.getMinY();
+        while (cursor.getY() > minY) {
+            cursor.move(Direction.DOWN);
+            if (!level.getBlockState(cursor).isAir()) {
+                return cursor.above().immutable();
+            }
+        }
+        return null;
     }
 
     /** Drops the partial accumulator at the marker position if the player

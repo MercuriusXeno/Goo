@@ -1,0 +1,17 @@
+{
+  "aeon":    { "wheel": "DAA520", "bright": "FFC948", "highlight": "E9B42F", "edge": "F8C33E" },
+  "blaze":   { "wheel": "FF6600", "bright": "FF8E28", "highlight": "FF750F", "edge": "FF841E" },
+  "crystal": { "wheel": "4FC1E9", "bright": "77E9FF", "highlight": "5ED0F8", "edge": "6DDFFF" },
+  "ender":   { "wheel": "2E8B8B", "bright": "56B3B3", "highlight": "3D9A9A", "edge": "4CA9A9" },
+  "frost":   { "wheel": "ADD8E6", "bright": "D5FFFF", "highlight": "BCE7F5", "edge": "CBF6FF" },
+  "glow":    { "wheel": "FFD700", "bright": "FFFF28", "highlight": "FFE60F", "edge": "FFF51E" },
+  "hex":     { "wheel": "5B4BA0", "bright": "8373C8", "highlight": "6A5AAF", "edge": "7969BE" },
+  "leaf":    { "wheel": "7EC850", "bright": "A6F078", "highlight": "8DD75F", "edge": "9CE66E" },
+  "metal":   { "wheel": "C0C0C0", "bright": "E8E8E8", "highlight": "CFCFCF", "edge": "DEDEDE" },
+  "nether":  { "wheel": "8B0000", "bright": "B32828", "highlight": "9A0F0F", "edge": "A91E1E" },
+  "pulse":   { "wheel": "CC0000", "bright": "F42828", "highlight": "DB0F0F", "edge": "EA1E1E" },
+  "rock":    { "wheel": "C2A868", "bright": "EAD090", "highlight": "D1B777", "edge": "E0C686" },
+  "shroom":  { "wheel": "8E44AD", "bright": "B66CD5", "highlight": "9D53BC", "edge": "AC62CB" },
+  "typhoon": { "wheel": "D5F5E3", "bright": "FDFFFF", "highlight": "E4FFF2", "edge": "F3FFFF" },
+  "vital":   { "wheel": "E74C3C", "bright": "FF7464", "highlight": "F65B4B", "edge": "FF6A5A" }
+}

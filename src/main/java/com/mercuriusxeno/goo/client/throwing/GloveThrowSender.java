@@ -10,37 +10,112 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.player.Player;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Client-only helper that resolves the player's aim target and sends
- * a {@link BlobThrowPayload} to the server. Lives in the client package
- * to keep server-safe code in {@link com.mercuriusxeno.goo.item.GooGloveItem}
- * free of client-only imports.
+ * a {@link BlobThrowPayload} to the server. Tracks in-flight blob
+ * counts per chain marker so the client can block throws that would
+ * exceed max stacks without waiting for server acknowledgement.
  */
 public final class GloveThrowSender {
 
     /** Sentinel value indicating no entity target. */
     private static final int NO_ENTITY = -1;
 
+    /** In-flight throws toward chain markers, keyed by block position. */
+    private static final Map<BlockPos, Integer> IN_FLIGHT = new HashMap<>();
+
     private GloveThrowSender() {}
 
     /**
      * Resolves the current aim target and sends the throw packet.
-     * Must only be called on the client side.
+     * Blocks the throw if in-flight blobs would exceed the marker's
+     * max stacks, and arms a throw-block freeze when maxed.
      *
      * @param player the local player
      * @param gooType the selected goo type to throw
      */
     public static void sendThrow(Player player, GooType gooType) {
         if (!GloveUseTracker.isSelectedTypeAvailable()) { return; }
+        if (ThrowFreezeState.isThrowBlocked()) { return; }
         TargetResult target = resolveAimTarget(player);
+        if (wouldExceedMaxStacks(target)) {
+            ThrowFreezeState.armThrowBlock();
+            return;
+        }
         BlobThrowPayload payload = targetToPayload(target, gooType);
         if (payload != null) {
-            // Arm the freeze optimistically: the half-second aim lock must
-            // kick in on send, not on server ack, so the next throw in the
-            // window stays glued to the same spot.
             ThrowFreezeState.arm(target);
+            trackInFlight(target);
             sendPayload(payload);
+        }
+    }
+
+    /**
+     * Called each client tick to decrement in-flight counters as blobs
+     * arrive. Wire to the same client tick as {@link ThrowFreezeState#tick()}.
+     */
+    public static void tick() {
+        // In-flight counts are decremented when BlobFlightManager removes
+        // arrived flights. This tick cleans up stale entries.
+        Iterator<Map.Entry<BlockPos, Integer>> it = IN_FLIGHT.entrySet().iterator();
+        while (it.hasNext()) {
+            if (it.next().getValue() <= 0) { it.remove(); }
+        }
+    }
+
+    /**
+     * Decrements the in-flight count for a chain marker when a blob
+     * arrives. Called by BlobFlightManager on flight completion.
+     *
+     * @param pos the chain marker position
+     */
+    public static void onFlightArrived(BlockPos pos) {
+        IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null);
+    }
+
+    /** Clears all in-flight tracking (on disconnect or dimension change). */
+    public static void clearInFlight() {
+        IN_FLIGHT.clear();
+    }
+
+    /**
+     * Returns the number of blobs currently in flight toward the given position.
+     *
+     * @param pos the target position
+     * @return the in-flight count
+     */
+    public static int getInFlightCount(BlockPos pos) {
+        return IN_FLIGHT.getOrDefault(pos, 0);
+    }
+
+    /**
+     * Returns true if this throw would push a chain marker past max stacks,
+     * counting both current stacks and in-flight blobs.
+     *
+     * @param target the resolved aim target
+     * @return true if the throw should be blocked
+     */
+    private static boolean wouldExceedMaxStacks(TargetResult target) {
+        if (!(target instanceof TargetResult.ChainMarkerTarget cmt)) { return false; }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) { return false; }
+        if (!(mc.level.getBlockEntity(cmt.pos()) instanceof ChainMarkerBlockEntity be)) { return false; }
+        int current = be.getStackCount();
+        int pending = IN_FLIGHT.getOrDefault(cmt.pos(), 0);
+        return current + pending >= be.getMaxStacks();
+    }
+
+    /** Increments the in-flight count when a throw targets a chain marker.
+     *
+     * @param target the resolved aim target
+     */
+    private static void trackInFlight(TargetResult target) {
+        if (target instanceof TargetResult.ChainMarkerTarget cmt) {
+            IN_FLIGHT.merge(cmt.pos(), 1, Integer::sum);
         }
     }
 
