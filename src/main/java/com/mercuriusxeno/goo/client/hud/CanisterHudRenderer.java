@@ -19,6 +19,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jspecify.annotations.Nullable;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Renders an in-world HUD panel when the player's crosshair targets a canister
@@ -38,7 +39,7 @@ public final class CanisterHudRenderer {
 
     // --- Animation state ---
     private static @Nullable BlockPos trackedPos;
-    private static int trackedSlot = CanisterTargetResolver.NO_SLOT;
+    private static int trackedSlot = NO_SLOT;
     private static double trackedCx = 0.5;
     private static double trackedCz = 0.5;
     private static double trackedLift = BODY_HEIGHT;
@@ -182,7 +183,7 @@ public final class CanisterHudRenderer {
     /** Resets all state. */
     private static void clearState() {
         trackedPos = null;
-        trackedSlot = CanisterTargetResolver.NO_SLOT;
+        trackedSlot = NO_SLOT;
         currentPitch = 0f;
         retracting = false;
     }

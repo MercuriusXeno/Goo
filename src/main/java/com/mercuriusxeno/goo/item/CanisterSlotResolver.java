@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import java.util.Set;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Pure-static slot resolution for canister grids.
@@ -17,7 +18,6 @@ public final class CanisterSlotResolver {
     /** Pixels per block: converts block-space [0..1] to pixel-space [0..16]. */
     static final double PIXELS_PER_BLOCK = 16.0;
     /** Sentinel value: no empty slot found. */
-    static final int NO_SLOT = -1;
 
     private CanisterSlotResolver() {
         // static utility

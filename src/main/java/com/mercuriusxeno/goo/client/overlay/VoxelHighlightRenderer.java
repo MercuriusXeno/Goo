@@ -56,6 +56,29 @@ final class VoxelHighlightRenderer {
     }
 
     /**
+     * Renders goo-colored translucent fill and wireframe edges tracing the
+     * block's full voxel shape. Used for chain marker highlighting where
+     * no specific face is targeted.
+     *
+     * @param poseStack    the pose stack for rendering
+     * @param bufferSource the buffer source for rendering
+     * @param camera       the render camera
+     * @param pos          the block position
+     * @param type         the goo type
+     */
+    static void renderBlockShape(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, BlockPos pos, GooType type) {
+        Minecraft mc = Minecraft.getInstance();
+        VoxelShape shape = mc.level.getBlockState(pos).getShape(mc.level, pos);
+        if (shape.isEmpty()) { return; }
+        Vec3 offset = cameraOffset(pos, camera);
+        int rgb = type.getColor();
+        emitFillBoxes(poseStack, bufferSource, shape, offset.x, offset.y, offset.z, rgb);
+        emitWireframeEdges(poseStack, bufferSource, mc, shape, offset.x, offset.y, offset.z, rgb);
+    }
+
+    /**
      * Computes the camera-relative offset for a block position.
      *
      * @param pos    the block position

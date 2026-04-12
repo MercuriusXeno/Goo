@@ -26,6 +26,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Hub block: central hub with 8 radial pipes for attaching canisters.
@@ -91,7 +92,6 @@ public class HubBlock extends BaseEntityBlock {
     /** Max XZ pixel distance from a slot center to count as a hit (4px covers 4x4 canister). */
     private static final double MAX_SLOT_DISTANCE = 4.0;
     /** Sentinel value: no matching slot found. */
-    private static final int NO_SLOT = -1;
 
     /** Per-slot shapes, indexed 0-7. */
     private static final VoxelShape[] SLOT_SHAPES = {

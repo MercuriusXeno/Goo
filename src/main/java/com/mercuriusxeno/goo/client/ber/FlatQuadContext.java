@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client.ber;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.core.Direction;
 
 /**
  * Vertex context for flat-colored quads (no UV, light, overlay, or normal).
@@ -11,6 +12,28 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * @param c    the vertex consumer for geometry emission
  */
 public record FlatQuadContext(PoseStack.Pose pose, VertexConsumer c) {
+
+    /** Functional interface for per-face quad emission. */
+    @FunctionalInterface
+    private interface FaceEmitter {
+        /** Emits one face quad.
+         *
+         * @param ctx   the quad context
+         * @param color the ARGB color
+         * @param box   the bounds
+         */
+        void emit(FlatQuadContext ctx, int color, CuboidBounds box);
+    }
+
+    /** Lookup table indexed by Direction.ordinal() for face dispatch. */
+    private static final FaceEmitter[] FACE_EMITTERS = {
+        FlatQuadContext::faceDown,   // DOWN = 0
+        FlatQuadContext::faceUp,     // UP = 1
+        FlatQuadContext::faceNorth,  // NORTH = 2
+        FlatQuadContext::faceSouth,  // SOUTH = 3
+        FlatQuadContext::faceWest,   // WEST = 4
+        FlatQuadContext::faceEast    // EAST = 5
+    };
 
     /**
      * Emits a single flat-colored vertex.
@@ -22,6 +45,17 @@ public record FlatQuadContext(PoseStack.Pose pose, VertexConsumer c) {
      */
     public void vertex(float x, float y, float z, int color) {
         c.addVertex(pose, x, y, z).setColor(color);
+    }
+
+    /**
+     * Emits a single face quad on the specified side of the box.
+     *
+     * @param color the ARGB color
+     * @param box   the axis-aligned bounds
+     * @param dir   the face direction to emit
+     */
+    public void emitFace(int color, CuboidBounds box, Direction dir) {
+        FACE_EMITTERS[dir.ordinal()].emit(this, color, box);
     }
 
     /**

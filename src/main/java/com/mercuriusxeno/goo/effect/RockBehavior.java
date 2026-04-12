@@ -8,49 +8,36 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * Rock progressive-mining behavior for rock chain markers. On fuse
- * expiry, snapshots the stack count and placed face, computes the
- * column depth via {@link EffectMath#computeImplosionDepth} (stack^2,
- * capped), and then runs a pipelined sequence of per-layer previews
- * and breaks: each layer's sonic-boom shockwave is emitted
- * {@link #PREVIEW_DELAY_TICKS} ticks before the actual 3x3 destruction
- * lands for that layer, so the warden-style particle visually leads
- * the break.
- *
- * <p>Mining advances along {@code placedFace.getOpposite()}, so a
- * blob thrown at a cave wall mines horizontally into the wall rather
- * than downward.
+ * Rock progressive-mining behavior. On fuse expiry, snapshots state
+ * and pipelines per-layer sonic-boom previews followed by block
+ * destruction. Footprint and depth scale with stack count via
+ * {@link ChainFootprint}. Flat mode mines a single taxicab-circle
+ * layer instead of a deep tunnel.
  */
 public final class RockBehavior implements ChainBehavior {
 
-    /** Number of ticks the sonic-boom preview leads the actual break
-     * for any given layer. Tuned to let the warden shockwave visually
-     * register before the blocks crumble. */
+    /** Ticks the sonic-boom preview leads the actual break. */
     private static final int PREVIEW_DELAY_TICKS = 8;
 
     private static final String TAG_PIPELINE_TICK = "RockPipelineTick";
     private static final String TAG_MINING_DEPTH = "RockMiningDepth";
     private static final String TAG_STACK_SNAPSHOT = "RockStackSnapshot";
     private static final String TAG_FACE_SNAPSHOT = "RockFace";
+    private static final String TAG_FLAT_MODE = "RockFlatMode";
     private static final String DEFAULT_FACE_NAME = "up";
 
-    /** Pipeline step counter. On step {@code t}, layer {@code t} is
-     * previewed (sonic boom) and layer {@code t - PREVIEW_DELAY_TICKS}
-     * is actually mined. Runs from 0 to
-     * {@code miningDepth + PREVIEW_DELAY_TICKS}. */
     private int pipelineTick;
-    /** Total number of layers to mine; computed at fuse expiry. */
     private int miningDepth;
-    /** Snapshot of the BE's stack count at fuse expiry. */
     private int stackCount;
-    /** Snapshot of the BE's placed face at fuse expiry. */
     private Direction placedFace = Direction.UP;
+    private boolean flatMode;
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.stackCount = be.getStackCount();
         this.placedFace = be.getPlacedFace();
-        this.miningDepth = EffectMath.computeImplosionDepth(stackCount);
+        this.flatMode = be.isFlatMode();
+        this.miningDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
         this.pipelineTick = 0;
     }
 
@@ -61,7 +48,8 @@ public final class RockBehavior implements ChainBehavior {
         }
         int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
         if (breakIndex >= 0 && breakIndex < miningDepth) {
-            RockExecutor.mineLayer(level, pos, placedFace, breakIndex, stackCount);
+            RockExecutor.mineLayer(level, pos, placedFace, breakIndex,
+                    stackCount, flatMode);
         }
         pipelineTick++;
     }
@@ -77,6 +65,7 @@ public final class RockBehavior implements ChainBehavior {
         output.putInt(TAG_MINING_DEPTH, miningDepth);
         output.putInt(TAG_STACK_SNAPSHOT, stackCount);
         output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
+        output.putBoolean(TAG_FLAT_MODE, flatMode);
     }
 
     @Override
@@ -84,6 +73,7 @@ public final class RockBehavior implements ChainBehavior {
         pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
         miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
         stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
+        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE_NAME);
         Direction dir = Direction.byName(faceName);
         placedFace = dir != null ? dir : Direction.UP;

@@ -42,6 +42,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String DEFAULT_GOO_TYPE = "rock";
     /** Default face name when loading from NBT. */
     private static final String DEFAULT_FACE = "up";
+    private static final String TAG_FLAT_MODE = "FlatMode";
+    private static final String TAG_LAST_STACK_TICK = "LastStackTick";
 
     /** How often to sync fuse to client (every N ticks). */
     private static final int SYNC_INTERVAL = 5;
@@ -53,6 +55,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int maxStacks = 1;
     private int fuseRemaining;
     private Direction placedFace = Direction.UP;
+    /** True when the marker is in flat (perpendicular) mining mode. */
+    private boolean flatMode;
+    /** Game tick when the last stack was added (for client pulse animation). */
+    private long lastStackTick;
     /** Active post-fuse behavior; null during FUSE phase. Set at fuse
      * expiry when the profile has a behavior factory, and nulled out
      * implicitly when the BE removes itself. */
@@ -101,9 +107,44 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
         fuseRemaining = profile.fuseTicks();
+        lastStackTick = level != null ? level.getGameTime() : 0;
         setChanged();
         syncToClient();
         return true;
+    }
+
+    // ── Flat mode toggle ───────────────────────────────────────────────────
+
+    /**
+     * Toggles between tunnel and flat mining mode. Resets the fuse
+     * so the player has time to stack more after toggling.
+     */
+    public void toggleFlatMode() {
+        flatMode = !flatMode;
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile != null) {
+            fuseRemaining = profile.fuseTicks();
+        }
+        setChanged();
+        syncToClient();
+    }
+
+    /**
+     * Returns true if this marker is in flat mining mode.
+     *
+     * @return true for flat mode, false for tunnel
+     */
+    public boolean isFlatMode() {
+        return flatMode;
+    }
+
+    /**
+     * Returns the game tick when the last blob was stacked.
+     *
+     * @return the game tick of the last stack event
+     */
+    public long getLastStackTick() {
+        return lastStackTick;
     }
 
     // ── Tick ──────────────────────────────────────────────────────────────
@@ -259,6 +300,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
         maxStacks = input.getIntOr(TAG_MAX_STACKS, 1);
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
+        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
+        lastStackTick = input.getLongOr(TAG_LAST_STACK_TICK, 0);
     }
 
     /** If the fuse has already expired, re-creates the behavior instance
@@ -298,6 +341,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_MAX_STACKS, maxStacks);
         output.putInt(TAG_FUSE_REMAINING, fuseRemaining);
         output.putString(TAG_PLACED_FACE, placedFace.getName());
+        output.putBoolean(TAG_FLAT_MODE, flatMode);
+        output.putLong(TAG_LAST_STACK_TICK, lastStackTick);
         if (behavior != null) {
             behavior.saveAdditional(output);
         }

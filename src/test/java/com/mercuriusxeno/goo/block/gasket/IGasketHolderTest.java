@@ -7,10 +7,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Tests for IGasketHolder default methods and concrete dispatch contracts.
@@ -28,7 +31,7 @@ class IGasketHolderTest {
 
     @Test
     void resolveSlot_default_returnsNoSlot() {
-        assertEquals(GasketPartner.NO_SLOT, new StubHolder().resolveSlot(null));
+        assertEquals(NO_SLOT, new StubHolder().resolveSlot(null));
     }
 
     // --- supportsRole default ---
@@ -53,7 +56,7 @@ class IGasketHolderTest {
 
     @Test
     void getMachineLabel_default_negativeSlot_isNull() {
-        assertNull(new StubHolder().getMachineLabel(GasketPartner.NO_SLOT));
+        assertNull(new StubHolder().getMachineLabel(NO_SLOT));
     }
 
     // --- allowsTuning default ---
@@ -81,7 +84,7 @@ class IGasketHolderTest {
 
     @Test
     void slotMiss_distinctFromNoSlot() {
-        assertNotEquals(GasketPartner.NO_SLOT, IGasketHolder.SLOT_MISS);
+        assertNotEquals(NO_SLOT, IGasketHolder.SLOT_MISS);
     }
 
     // --- Canister allowsTuning contract ---

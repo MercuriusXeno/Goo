@@ -14,6 +14,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.jspecify.annotations.Nullable;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Client-side hold-to-break state machine for canister blocks.
@@ -24,7 +25,6 @@ import org.jspecify.annotations.Nullable;
 public final class CanisterPunchListener {
     /** Number of ticks the player must hold left-click before the canister pops. */
     /** Sentinel value indicating no valid slot was resolved. */
-    private static final int NO_SLOT = -1;
 
     private static final int HOLD_TICKS = 10;
 

@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block;
 
 import net.minecraft.core.Direction;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Pure layout constants and hit detection for the 3x3 canister grid.
@@ -19,7 +20,6 @@ public final class CanisterSlotLayout {
     /** Maximum valid grid index (GRID_SIZE - 1). */
     private static final int MAX_GRID_INDEX = 2;
     /** Sentinel value: no matching slot found. */
-    private static final int NO_SLOT = -1;
 
     /** Hit detection threshold in pixels: max distance from slot center. */
     public static final float HIT_THRESHOLD = 4.0f;

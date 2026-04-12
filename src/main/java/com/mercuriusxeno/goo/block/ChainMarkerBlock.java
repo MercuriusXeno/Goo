@@ -10,8 +10,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
@@ -27,6 +31,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -59,6 +65,22 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     private static final double DUST_FALL_SPEED = -0.02;
     /** Lava particle spawn chance denominator (1 in N). */
     private static final int LAVA_CHANCE = 3;
+    /** Sound pitch when toggling to flat mode. */
+    private static final float FLAT_MODE_PITCH = 1.5f;
+    /** Sound pitch when toggling to tunnel mode. */
+    private static final float TUNNEL_MODE_PITCH = 0.8f;
+    /** Base core half-size in pixels (matches BER CORE_BASE). */
+    private static final float SHAPE_CORE_PX = 2f;
+    /** Shell margin in pixels (matches BER SHELL_MARGIN). */
+    private static final float SHAPE_SHELL_PX = 1f;
+    /** Core growth per stack in pixels (matches BER CORE_GROWTH * 16). */
+    private static final float SHAPE_GROWTH_PX = 0.5f;
+    /** Splat width multiplier (sqrt 2). */
+    private static final float SHAPE_SPLAT_WIDE = 1.414f;
+    /** Splat height multiplier (half). */
+    private static final float SHAPE_SPLAT_THIN = 0.5f;
+    /** Center of a block in pixels (for shape positioning). */
+    private static final float SHAPE_CENTER_PX = 8f;
     /** Base soul particle count for nether effects. */
     private static final int NETHER_BASE_PARTICLES = 2;
     /** Downward drift speed for soul particles. */
@@ -118,6 +140,106 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
 
+    /**
+     * Returns a splatted shape matching the BER orb, positioned at the
+     * placed face. Falls back to the parent selection shape if no BE.
+     *
+     * @param state   the block state
+     * @param level   the block getter
+     * @param pos     the block position
+     * @param context the collision context
+     * @return the splatted voxel shape
+     */
+    @Override
+    protected @NonNull VoxelShape getShape(@NonNull BlockState state, @NonNull BlockGetter level,
+            @NonNull BlockPos pos, @NonNull CollisionContext context) {
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return SELECTION_SHAPE;
+        }
+        return computeOrbShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
+    }
+
+    /**
+     * Prevents breaking chain markers during fuse phase so punches
+     * only toggle flat mode. Post-fuse markers break normally.
+     *
+     * @param state  the block state
+     * @param player the player
+     * @param level  the block getter
+     * @param pos    the block position
+     * @return 0 during fuse (unbreakable), normal otherwise
+     */
+    @Override
+    protected float getDestroyProgress(@NonNull BlockState state, @NonNull Player player,
+            @NonNull BlockGetter level, @NonNull BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be
+                && be.getBehavior() == null) {
+            return 0.0f;
+        }
+        return super.getDestroyProgress(state, player, level, pos);
+    }
+
+    /**
+     * Prevents block removal during fuse phase. Covers creative mode
+     * which bypasses getDestroyProgress entirely.
+     *
+     * @param level     the server level
+     * @param pos       the block position
+     * @param player    the player breaking the block
+     * @param toolStack the tool used
+     * @param canHarvest whether the player can harvest drops
+     * @param fluidState the fluid state at the position
+     * @return false during fuse (block stays), true otherwise
+     */
+    @Override
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
+            Player player, ItemStack toolStack, boolean canHarvest, FluidState fluidState) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be
+                && be.getBehavior() == null) {
+            if (canToggleFlatMode(level, pos) && !level.isClientSide()) {
+                be.toggleFlatMode();
+                level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON,
+                        SoundSource.BLOCKS, 1.0f,
+                        be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
+            }
+            return false;
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
+    }
+
+    /**
+     * Builds a voxel shape matching the BER orb at the face boundary.
+     * Splatted (squished) only when in flat mode.
+     *
+     * @param stacks   the current stack count
+     * @param face     the placed face direction
+     * @param flatMode true to apply splat deformation
+     * @return the computed voxel shape
+     */
+    private static VoxelShape computeOrbShape(int stacks, Direction face, boolean flatMode) {
+        float totalPx = SHAPE_CORE_PX + SHAPE_SHELL_PX + (stacks - 1) * SHAPE_GROWTH_PX;
+
+        float hPerp;
+        float hFace;
+        if (flatMode) {
+            hPerp = totalPx * SHAPE_SPLAT_WIDE;
+            hFace = totalPx * SHAPE_SPLAT_THIN;
+        } else {
+            hPerp = totalPx;
+            hFace = totalPx;
+        }
+
+        float cx = SHAPE_CENTER_PX - face.getStepX() * SHAPE_CENTER_PX;
+        float cy = SHAPE_CENTER_PX - face.getStepY() * SHAPE_CENTER_PX;
+        float cz = SHAPE_CENTER_PX - face.getStepZ() * SHAPE_CENTER_PX;
+
+        float hx = face.getAxis() == Direction.Axis.X ? hFace : hPerp;
+        float hy = face.getAxis() == Direction.Axis.Y ? hFace : hPerp;
+        float hz = face.getAxis() == Direction.Axis.Z ? hFace : hPerp;
+
+        return box(cx - hx, cy - hy, cz - hz, cx + hx, cy + hy, cz + hz);
+    }
+
     /** Returns the codec for serialization.
      *
      * @return the codec
@@ -172,6 +294,22 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         dropInterruptedAccumulator(level, pos);
         return super.playerWillDestroy(level, pos, state, player);
     }
+
+
+    /**
+     * Returns true if the marker at pos is a rock/blaze type still in fuse phase.
+     *
+     * @param level the current level
+     * @param pos   the marker block position
+     * @return true if flat mode can be toggled
+     */
+    private static boolean canToggleFlatMode(Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (be.getBehavior() != null) { return false; }
+        GooType type = be.getGooType();
+        return type == GooType.ROCK || type == GooType.BLAZE;
+    }
+
 
     /** Drops the accumulator contents at {@code pos} when a mid-implosion
      * chain marker is broken. No-op on the client, for non-nether markers,

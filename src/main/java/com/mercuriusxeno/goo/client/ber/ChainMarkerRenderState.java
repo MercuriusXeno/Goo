@@ -33,6 +33,15 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** True when the player's crosshair is on this block. */
     public boolean targeted;
 
+    /** True when flat mining mode is active. */
+    public boolean flatMode;
+
+    /** Game tick when the last stack was added (for pulse animation). */
+    public long lastStackTick;
+
+    /** Current game time including partial tick, for pulse calculation. */
+    public float gameTime;
+
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;
 

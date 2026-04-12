@@ -19,6 +19,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import java.util.Locale;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Choral Tuner: player-keyed tool for linking gaskets and naming machines.
@@ -431,7 +432,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         }
 
         return resolveAndExecuteAction(state, player, stack, level,
-            GasketRole.RECEIVER, gasketId, pos, GasketPartner.NO_SLOT, LABEL_INTAKE);
+            GasketRole.RECEIVER, gasketId, pos, NO_SLOT, LABEL_INTAKE);
     }
 
     /**

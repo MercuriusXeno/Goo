@@ -46,6 +46,41 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /** Depth state that always passes (see-through rendering). */
+    private static final DepthStencilState DEPTH_ALWAYS = new DepthStencilState(
+            com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false);
+
+    /** Lines pipeline with depth test disabled for see-through ghost outlines. */
+    public static final RenderPipeline LINES_NO_DEPTH_PIPELINE = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/lines_no_depth"))
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(DEPTH_ALWAYS)
+            .build();
+
+    /** RenderType for see-through wireframe lines (ghost outline). */
+    public static final RenderType LINES_NO_DEPTH = RenderType.create(
+            "goo_lines_no_depth",
+            RenderSetup.builder(LINES_NO_DEPTH_PIPELINE)
+                    .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                    .createRenderSetup()
+    );
+
+    /** Quads pipeline with depth test disabled for see-through ghost fill. */
+    public static final RenderPipeline QUADS_NO_DEPTH_PIPELINE = RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/quads_no_depth"))
+            .withCull(false)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(DEPTH_ALWAYS)
+            .build();
+
+    /** RenderType for see-through translucent fill quads (ghost outline). */
+    public static final RenderType QUADS_NO_DEPTH = RenderType.create(
+            "goo_quads_no_depth",
+            RenderSetup.builder(QUADS_NO_DEPTH_PIPELINE)
+                    .sortOnUpload()
+                    .createRenderSetup()
+    );
+
     /**
      * Nether black-hole pipeline: POSITION_COLOR billboard quad with a custom
      * vertex + fragment shader pair (nether_blackhole.vsh / .fsh). Reads the
@@ -178,5 +213,7 @@ public final class GooRenderTypes {
         event.registerPipeline(NETHER_CORONA);
         event.registerPipeline(NETHER_DISK);
         event.registerPipeline(NETHER_CUBE_EDGE);
+        event.registerPipeline(LINES_NO_DEPTH_PIPELINE);
+        event.registerPipeline(QUADS_NO_DEPTH_PIPELINE);
     }
 }

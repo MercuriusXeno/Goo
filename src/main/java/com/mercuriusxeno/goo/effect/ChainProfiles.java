@@ -16,9 +16,9 @@ import java.util.function.Supplier;
 public final class ChainProfiles {
 
     private static final int BLAZE_FUSE_TICKS = 30;
-    private static final int BLAZE_MAX_STACKS = 4;
+    private static final int BLAZE_MAX_STACKS = ChainFootprint.MAX_STACKS;
     private static final int ROCK_FUSE_TICKS = 30;
-    private static final int ROCK_MAX_STACKS = 5;
+    private static final int ROCK_MAX_STACKS = ChainFootprint.MAX_STACKS;
     private static final int NETHER_FUSE_TICKS = 30;
     private static final int NETHER_MAX_STACKS = 5;
 
@@ -36,7 +36,7 @@ public final class ChainProfiles {
         ChainProfile.register(GooType.BLAZE, new ChainProfile(
                 BLAZE_FUSE_TICKS,
                 BLAZE_MAX_STACKS,
-                stacks -> (int) EffectMath.computeExplosionRadius(stacks),
+                ChainFootprint::tunnelDepth,
                 BlazeBehavior::new
         ));
     }
@@ -46,7 +46,7 @@ public final class ChainProfiles {
         ChainProfile.register(GooType.ROCK, new ChainProfile(
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
-                EffectMath::computeImplosionDepth,
+                ChainFootprint::tunnelDepth,
                 RockBehavior::new
         ));
     }

@@ -11,6 +11,7 @@ import net.minecraft.network.codec.StreamCodec;
 import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 import java.util.UUID;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Data component storing a choral tuner's owner, in-progress role-aware gasket
@@ -84,7 +85,6 @@ public record TunerState(
     /** Format pattern for sub-block hundredths (zero-padded to 2 digits). */
     private static final String HUNDREDTHS_FORMAT = "%02d";
     /** Sentinel slot value meaning no sub-slot selection. */
-    private static final int NO_SLOT = -1;
     /** Coordinate separator in formatted strings. */
     private static final String COORD_SEP = ", ";
     /** Decimal point for sub-block coordinate formatting. */

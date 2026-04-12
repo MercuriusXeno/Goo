@@ -11,6 +11,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
  * Server-to-client payload: sends tuner feedback for HUD display.
@@ -32,7 +33,6 @@ public record TunerFeedbackPayload(
 ) implements CustomPacketPayload {
 
     /** Sentinel slot value meaning no sub-slot awaiting. */
-    private static final int NO_SLOT = -1;
 
     /** Payload type ID for registration. */
     public static final Type<TunerFeedbackPayload> TYPE =
