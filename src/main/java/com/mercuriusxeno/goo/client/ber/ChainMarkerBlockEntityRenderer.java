@@ -11,7 +11,6 @@ import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -95,7 +94,7 @@ public class ChainMarkerBlockEntityRenderer
     /** Center offset in block units. */
     private static final float BLOCK_CENTER = 0.5f;
     /** Alpha for the ghost fill quads. */
-    private static final int GHOST_FILL_ALPHA = 0x1A;
+    private static final int GHOST_FILL_ALPHA = 0x26;
     /** Alpha for the perimeter wireframe. */
     private static final int GHOST_WIRE_ALPHA = 0xC0;
     /** Line width for the perimeter wireframe. */
@@ -192,6 +191,8 @@ public class ChainMarkerBlockEntityRenderer
                 || GooTargetHighlighter.isChainMarkerTargeted(pos)
                 || ThrowFreezeState.isFrozenOnChainMarker(pos);
         state.placedFace = be.getPlacedFace();
+        state.behaviorActive = be.getBehavior() != null;
+        state.minedLayers = be.getBehavior() != null ? be.getBehavior().getMinedLayers() : 0;
     }
 
     @Override
@@ -370,12 +371,13 @@ public class ChainMarkerBlockEntityRenderer
      */
     private static void submitGhostOutline(ChainMarkerRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
-        if (state.fuseRemaining <= 0) { return; }
+        if (state.fuseRemaining <= 0 && !state.behaviorActive) { return; }
         GooType type = state.gooType;
         if (type != GooType.ROCK && type != GooType.BLAZE) { return; }
 
-        List<int[]> offsets = ChainFootprint.computeRegionOffsets(
+        List<int[]> allOffsets = ChainFootprint.computeRegionOffsets(
                 state.stackCount, state.flatMode, state.placedFace);
+        List<int[]> offsets = excludeMinedLayers(allOffsets, state.placedFace, state.minedLayers);
         Set<Long> filled = new HashSet<>(offsets.size());
         for (int[] o : offsets) {
             filled.add(packPos(o[X], o[Y], o[Z]));
@@ -387,8 +389,33 @@ public class ChainMarkerBlockEntityRenderer
 
         submitGhostFill(poseStack, nodeCollector, offsets, filled, fillColor);
         submitGhostWireframe(poseStack, nodeCollector, offsets, filled, wireColor);
-        submitGhostFadeWalls(poseStack, nodeCollector, offsets, filled,
-                fillColor, state.placedFace, state.gameTime);
+        AuroraFadeWallRenderer.submit(poseStack, nodeCollector, offsets,
+                filled, fillColor, state.placedFace, state.gameTime);
+    }
+
+    /**
+     * Filters out block offsets belonging to layers already mined.
+     * Depth is measured along the blast direction (placedFace opposite).
+     * Layer 0 is the block immediately behind the marker.
+     *
+     * @param offsets     all block offsets in the region
+     * @param placedFace  the placed face direction
+     * @param minedLayers the number of layers already mined
+     * @return the filtered offset list
+     */
+    private static List<int[]> excludeMinedLayers(List<int[]> offsets,
+            Direction placedFace, int minedLayers) {
+        if (minedLayers <= 0) { return offsets; }
+        Direction blast = placedFace.getOpposite();
+        int bx = blast.getStepX();
+        int by = blast.getStepY();
+        int bz = blast.getStepZ();
+        List<int[]> result = new java.util.ArrayList<>(offsets.size());
+        for (int[] o : offsets) {
+            int depth = o[X] * bx + o[Y] * by + o[Z] * bz;
+            if (depth >= minedLayers) { result.add(o); }
+        }
+        return result;
     }
 
     /**
@@ -482,7 +509,7 @@ public class ChainMarkerBlockEntityRenderer
      * @param filled      packed position set for neighbor checks
      * @return true if the neighbor has an exterior face on the same side
      */
-    private static boolean isCoplanarNeighbor(int[] pos, Direction faceDir,
+    static boolean isCoplanarNeighbor(int[] pos, Direction faceDir,
             Direction neighborDir, Set<Long> filled) {
         int adjX = pos[X] + neighborDir.getStepX();
         int adjY = pos[Y] + neighborDir.getStepY();
@@ -520,183 +547,15 @@ public class ChainMarkerBlockEntityRenderer
                      color, GHOST_LINE_WIDTH);
     }
 
-    /** Height of the fade wall quads in blocks (8/16 = half block). */
-    private static final float FADE_WALL_HEIGHT = 8f / 16f;
-    /** Sine oscillation speed: 2*pi / 15 ticks = 0.75 second full cycle. */
-    private static final float FADE_PULSE_SPEED = (float) (2 * Math.PI / 15);
-    /** Minimum alpha multiplier at the sine valley. */
-    private static final float FADE_PULSE_MIN = 0.3f;
-    /** Base alpha for fade wall quads at the block edge (75% opaque). */
-    private static final int FADE_WALL_ALPHA = 0xC0;
-
-    /**
-     * Emits gradient quads rising from perimeter edges of the ghost outline.
-     * Each quad extends perpendicular to the highlighted surface toward air,
-     * fading from the fill color at the base to transparent at the top.
-     *
-     * @param poseStack     the pose stack
-     * @param nodeCollector the render node collector
-     * @param offsets       all 3D block offsets in the region
-     * @param filled        packed position set for neighbor checks
-     * @param baseColor     the ARGB fill color at the base
-     * @param placedFace    the face the blob was placed on
-     * @param gameTime      the current game time for sine oscillation
-     */
-    private static void submitGhostFadeWalls(PoseStack poseStack,
-            SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, int baseColor, Direction placedFace,
-            float gameTime) {
-        float pulse = FADE_PULSE_MIN + (1f - FADE_PULSE_MIN)
-                * (HALF + HALF * (float) Math.sin(gameTime * FADE_PULSE_SPEED));
-        int pulsedAlpha = (int) (FADE_WALL_ALPHA * pulse);
-        int pulsedBase = (pulsedAlpha << ALPHA_SHIFT) | (baseColor & RGB_MASK);
-        int transparentColor = baseColor & RGB_MASK;
-        Set<Long> blobMost = computeBlobMostLayer(offsets, placedFace);
-        nodeCollector.submitCustomGeometry(poseStack,
-                GooRenderTypes.QUADS_ADDITIVE_NO_DEPTH,
-                (pose, c) -> {
-                    for (int[] o : offsets) {
-                        if (!blobMost.contains(packPos(o[X], o[Y], o[Z]))) { continue; }
-                        emitFadeWallEdges(pose, c, o, placedFace, filled,
-                                pulsedBase, transparentColor);
-                    }
-                });
-    }
-
-    /**
-     * For each perpendicular column along the blast axis, finds the block
-     * closest to the blob (highest offset in the placed-face direction).
-     * Only these blocks get fade walls.
-     *
-     * @param offsets    all 3D block offsets in the region
-     * @param placedFace the face the blob was placed on
-     * @return packed positions of the blob-most block per column
-     */
-    private static Set<Long> computeBlobMostLayer(List<int[]> offsets, Direction placedFace) {
-        java.util.Map<Long, int[]> bestPerColumn = new java.util.HashMap<>();
-        int ax = placedFace.getStepX();
-        int ay = placedFace.getStepY();
-        int az = placedFace.getStepZ();
-        for (int[] o : offsets) {
-            int depth = o[X] * ax + o[Y] * ay + o[Z] * az;
-            long columnKey = packPerpendicular(o, placedFace);
-            int[] current = bestPerColumn.get(columnKey);
-            if (current == null || depth > (current[X] * ax + current[Y] * ay + current[Z] * az)) {
-                bestPerColumn.put(columnKey, o);
-            }
-        }
-        Set<Long> result = new HashSet<>(bestPerColumn.size());
-        for (int[] o : bestPerColumn.values()) {
-            result.add(packPos(o[X], o[Y], o[Z]));
-        }
-        return result;
-    }
-
-    /**
-     * Packs the two perpendicular coordinates of a block offset into a
-     * single long for use as a column key.
-     *
-     * @param pos  the block offset
-     * @param face the placed face (defines the blast axis)
-     * @return packed perpendicular coordinates
-     */
-    private static long packPerpendicular(int[] pos, Direction face) {
-        return switch (face.getAxis()) {
-            case X -> packPos(0, pos[Y], pos[Z]);
-            case Y -> packPos(pos[X], 0, pos[Z]);
-            case Z -> packPos(pos[X], pos[Y], 0);
-        };
-    }
-
-    /**
-     * For one exterior face, emits gradient wall quads on perimeter edges.
-     *
-     * @param pose             the pose matrix
-     * @param consumer         the vertex consumer
-     * @param pos              the block offset
-     * @param faceDir          the exterior face direction
-     * @param filled           packed position set
-     * @param baseColor        opaque base color
-     * @param transparentColor fully transparent version
-     */
-    private static void emitFadeWallEdges(PoseStack.Pose pose,
-            VertexConsumer consumer,
-            int[] pos, Direction faceDir, Set<Long> filled,
-            int baseColor, int transparentColor) {
-        FaceEdge[] edges = getFaceEdges(faceDir);
-        float cx = pos[X] + HALF + faceDir.getStepX() * HALF;
-        float cy = pos[Y] + HALF + faceDir.getStepY() * HALF;
-        float cz = pos[Z] + HALF + faceDir.getStepZ() * HALF;
-
-        for (FaceEdge edge : edges) {
-            if (isCoplanarNeighbor(pos, faceDir, edge.neighborDir, filled)) {
-                continue;
-            }
-            emitFadeWallQuad(pose, consumer, cx, cy, cz,
-                    faceDir, edge, baseColor, transparentColor);
-        }
-    }
-
-    /**
-     * Emits one gradient quad extending from a perimeter edge outward
-     * along the face direction.
-     *
-     * @param pose             the pose matrix
-     * @param consumer         the vertex consumer
-     * @param cx               face center X
-     * @param cy               face center Y
-     * @param cz               face center Z
-     * @param faceDir          the outward face direction
-     * @param edge             the edge descriptor
-     * @param baseColor        opaque base color
-     * @param transparentColor fully transparent version
-     */
-    private static void emitFadeWallQuad(PoseStack.Pose pose,
-            VertexConsumer consumer,
-            float cx, float cy, float cz, Direction faceDir, FaceEdge edge,
-            int baseColor, int transparentColor) {
-        float nx = edge.neighborDir.getStepX() * HALF;
-        float ny = edge.neighborDir.getStepY() * HALF;
-        float nz = edge.neighborDir.getStepZ() * HALF;
-        float rx = edge.runDir.getStepX() * HALF;
-        float ry = edge.runDir.getStepY() * HALF;
-        float rz = edge.runDir.getStepZ() * HALF;
-        float ex = cx + nx;
-        float ey = cy + ny;
-        float ez = cz + nz;
-        // Base edge (two corners of the perimeter edge)
-        float bx0 = ex - rx;
-        float by0 = ey - ry;
-        float bz0 = ez - rz;
-        float bx1 = ex + rx;
-        float by1 = ey + ry;
-        float bz1 = ez + rz;
-        // Top edge: offset along faceDir by FADE_WALL_HEIGHT
-        float dx = faceDir.getStepX() * FADE_WALL_HEIGHT;
-        float dy = faceDir.getStepY() * FADE_WALL_HEIGHT;
-        float dz = faceDir.getStepZ() * FADE_WALL_HEIGHT;
-        float tx0 = bx0 + dx;
-        float ty0 = by0 + dy;
-        float tz0 = bz0 + dz;
-        float tx1 = bx1 + dx;
-        float ty1 = by1 + dy;
-        float tz1 = bz1 + dz;
-        // Quad: base0 -> base1 -> top1 -> top0 (CCW when viewed from outside)
-        consumer.addVertex(pose, bx0, by0, bz0).setColor(baseColor)
-                .setLight(LightCoordsUtil.FULL_BRIGHT);
-        consumer.addVertex(pose, bx1, by1, bz1).setColor(baseColor)
-                .setLight(LightCoordsUtil.FULL_BRIGHT);
-        consumer.addVertex(pose, tx1, ty1, tz1).setColor(transparentColor)
-                .setLight(LightCoordsUtil.FULL_BRIGHT);
-        consumer.addVertex(pose, tx0, ty0, tz0).setColor(transparentColor)
-                .setLight(LightCoordsUtil.FULL_BRIGHT);
-    }
 
     /**
      * Describes one edge of a face quad: which neighboring block shares
      * this edge (neighborDir) and which axis the edge runs along (runDir).
+     *
+     * @param neighborDir the direction to the adjacent block sharing this edge
+     * @param runDir      the axis the edge runs along
      */
-    private record FaceEdge(Direction neighborDir, Direction runDir) {}
+    record FaceEdge(Direction neighborDir, Direction runDir) {}
 
     /**
      * Returns the 4 edges of a face, each identified by the adjacent
@@ -705,7 +564,7 @@ public class ChainMarkerBlockEntityRenderer
      * @param face the face direction
      * @return the four face edge descriptors
      */
-    private static FaceEdge[] getFaceEdges(Direction face) {
+    static FaceEdge[] getFaceEdges(Direction face) {
         return switch (face.getAxis()) {
             case X -> new FaceEdge[]{
                 new FaceEdge(Direction.UP, Direction.NORTH),
@@ -751,7 +610,7 @@ public class ChainMarkerBlockEntityRenderer
      * @param z the Z coordinate
      * @return the packed position
      */
-    private static long packPos(int x, int y, int z) {
+    static long packPos(int x, int y, int z) {
         long px = x & PACK_MASK;
         long py = (y & PACK_MASK) << PACK_Y_SHIFT;
         long pz = (z & PACK_MASK) << PACK_Z_SHIFT;

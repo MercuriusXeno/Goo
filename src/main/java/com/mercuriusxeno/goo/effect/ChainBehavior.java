@@ -70,6 +70,17 @@ public interface ChainBehavior {
     boolean isActive();
 
     /**
+     * Returns the number of depth layers already mined. Used by the
+     * ghost outline renderer to shrink the preview as the effect
+     * progresses. Behaviors that don't mine progressively return 0.
+     *
+     * @return the count of completed (mined) layers
+     */
+    default int getMinedLayers() {
+        return 0;
+    }
+
+    /**
      * Persists this behavior's state onto the BE's shared value stream.
      * Implementations should only write their own tag keys; the BE writes
      * the shared-field tags separately.
