@@ -6,6 +6,12 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -14,12 +20,13 @@ import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,6 +66,16 @@ public final class BlazeBehavior implements ChainBehavior {
     private static final double EMBER_PARTICLE_SPEED = 0.03;
     /** Spread multiplier for embers - wider than the main burst. */
     private static final double EMBER_SPREAD_FACTOR = 0.8;
+    /** Base explosion sound volume. */
+    private static final float EXPLOSION_VOLUME_BASE = 4.0f;
+    /** Extra volume per range unit. */
+    private static final float EXPLOSION_VOLUME_PER_RANGE = 0.1f;
+    /** Explosion sound pitch. */
+    private static final float EXPLOSION_PITCH = 0.9f;
+    /** Base explosion damage at the center. */
+    private static final float EXPLOSION_DAMAGE = 10f;
+    /** Knockback strength at the center. */
+    private static final double KNOCKBACK_STRENGTH = 1.5;
     /** Fortune level applied to ore drops. */
     private static final int FORTUNE_LEVEL = 3;
     /** Block break level event ID (sends break particles to clients). */
@@ -72,12 +89,9 @@ public final class BlazeBehavior implements ChainBehavior {
         double cy = pos.getY() + BLOCK_CENTER_OFFSET;
         double cz = pos.getZ() + BLOCK_CENTER_OFFSET;
 
-        // Entity damage + knockback only; blocks handled separately
-        // with fortune 3 + auto-smelt and no random drop destruction.
-        level.explode(null, cx, cy, cz, (float) range,
-                Level.ExplosionInteraction.NONE);
-
         breakBlocksInRadius(level, pos, range);
+        damageEntities(level, cx, cy, cz, range);
+        emitExplosionEffects(level, cx, cy, cz, range);
         emitParticles(level, cx, cy, cz, range, stackCount);
     }
 
@@ -200,5 +214,57 @@ public final class BlazeBehavior implements ChainBehavior {
         level.sendParticles(ParticleTypes.SMALL_FLAME,
                 cx, cy, cz, EMBER_PARTICLES_PER_STACK * stackCount,
                 emberSpread, emberSpread, emberSpread, EMBER_PARTICLE_SPEED);
+    }
+
+    // ── Explosion visuals ─────────────────────────────────────────────
+
+    /**
+     * Plays the vanilla explosion sound and spawns the explosion emitter
+     * particle, replicating the audiovisual feedback of {@code level.explode}
+     * without the entity/block damage.
+     *
+     * @param level the server level
+     * @param cx    explosion center X
+     * @param cy    explosion center Y
+     * @param cz    explosion center Z
+     * @param range the blast radius (scales sound volume)
+     */
+    private static void emitExplosionEffects(ServerLevel level,
+                                             double cx, double cy, double cz, int range) {
+        level.playSound(null, cx, cy, cz, SoundEvents.GENERIC_EXPLODE,
+                SoundSource.BLOCKS, EXPLOSION_VOLUME_BASE + range * EXPLOSION_VOLUME_PER_RANGE,
+                EXPLOSION_PITCH);
+        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
+                cx, cy, cz, 1, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    // ── Entity damage (skips items) ─────────────────────────────────────
+
+    /**
+     * Damages and knocks back living entities in the blast radius.
+     * Item entities are explicitly skipped so drops survive.
+     *
+     * @param level the server level
+     * @param cx    explosion center X
+     * @param cy    explosion center Y
+     * @param cz    explosion center Z
+     * @param range the blast radius
+     */
+    private static void damageEntities(ServerLevel level,
+                                       double cx, double cy, double cz, int range) {
+        Vec3 center = new Vec3(cx, cy, cz);
+        AABB area = new AABB(cx - range, cy - range, cz - range,
+                             cx + range, cy + range, cz + range);
+        for (Entity entity : level.getEntities(null, area)) {
+            if (entity instanceof ItemEntity) { continue; }
+            if (!(entity instanceof LivingEntity)) { continue; }
+            double dist = entity.position().distanceTo(center);
+            if (dist > range) { continue; }
+            float falloff = 1f - (float) (dist / range);
+            entity.hurtServer(level, level.damageSources().source(DamageTypes.EXPLOSION), EXPLOSION_DAMAGE * falloff);
+            Vec3 knockback = entity.position().subtract(center).normalize().scale(KNOCKBACK_STRENGTH * falloff);
+            entity.setDeltaMovement(entity.getDeltaMovement().add(knockback));
+            entity.hurtMarked = true;
+        }
     }
 }
