@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.ThrowArc;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
 import com.mercuriusxeno.goo.client.throwing.GloveUseTracker;
@@ -31,7 +30,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -61,9 +59,6 @@ public final class GooTargetHighlighter {
 
     /** Half block offset for face center calculations. */
     private static final double FACE_CENTER_OFFSET = 0.5;
-
-    /** Sentinel for no valid hand position frame. */
-    private static final long NO_FRAME = -1;
 
     // --- Aim hit state ---
 
@@ -434,40 +429,22 @@ public final class GooTargetHighlighter {
     // --- Hand position ---
 
     /**
-     * Returns the world-space arc origin. Prefers the exact blob center
-     * captured during item rendering (pixel-accurate). Falls back to a
-     * camera-basis approximation when the blob wasn't rendered this frame.
+     * Returns the world-space arc origin from the blob center captured
+     * during item rendering. Uses the last capture unconditionally —
+     * no age check, no fallback formula. The capture updates every
+     * frame the glove renders. If no capture exists yet (first frame
+     * of world load, before the item renderer has ever fired), returns
+     * the camera position as a degenerate origin until the first
+     * capture arrives next frame.
      *
      * @param player the interacting player
      * @param camera the render camera
-     * @return the gloveHandPosition
+     * @return the world-space hand position
      */
     public static Vec3 getGloveHandPosition(Player player, Camera camera) {
-        Minecraft mc = Minecraft.getInstance();
-        long frame = mc.level != null ? mc.level.getGameTime() : NO_FRAME;
-        Vec3 captured = GloveSpecialRenderer.getBlobCenterCamRel(frame);
-        if (captured != null) {
-            return camera.position().add(captured);
-        }
-        return computeCameraFallback(player, camera);
-    }
-
-    /**
-     * Computes a camera-basis hand position when the blob wasn't rendered this frame.
-     *
-     * @param player the local player
-     * @param camera the render camera
-     * @return the fallback hand position in world space
-     */
-    private static Vec3 computeCameraFallback(Player player, Camera camera) {
-        float side = ThrowArc.gloveSide(player.getMainHandItem(), player.getMainArm());
-        Vector3fc left = camera.leftVector();
-        Vector3fc up = camera.upVector();
-        Vec3 offset = ThrowArc.handOffset(
-                new Vec3(-left.x(), -left.y(), -left.z()),
-                new Vec3(up.x(), up.y(), up.z()),
-                side, player.getScale());
-        return camera.position().add(offset);
+        Vec3 captured = GloveSpecialRenderer.getLastBlobCenterCamRel();
+        if (captured == null) { return camera.position(); }
+        return camera.position().add(captured);
     }
 
     // --- Glove detection ---
