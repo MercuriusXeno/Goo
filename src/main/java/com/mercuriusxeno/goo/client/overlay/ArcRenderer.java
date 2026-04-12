@@ -26,7 +26,7 @@ final class ArcRenderer {
     /** Scroll speed in world units per second - dashes flow toward the target. */
     private static final float SCROLL_SPEED = 1.5f;
     /** Core alpha for the arc dashes. */
-    private static final int ARC_ALPHA = 180;
+    private static final int ARC_ALPHA = 120;
     /** Distance between polyline sample points on the arc. */
     private static final float SAMPLE_SPACING = 0.05f;
     /** Number of bloom passes for the glow effect (core + outer halos). */
@@ -34,7 +34,7 @@ final class ArcRenderer {
     /** Width multiplier step per bloom pass. */
     private static final float ARC_GLOW_WIDTH_STEP = 1.5f;
     /** Alpha decay per bloom pass (exponential). */
-    private static final float ARC_GLOW_ALPHA_DECAY = 0.35f;
+    private static final float ARC_GLOW_ALPHA_DECAY = 0.55f;
 
     /** Minimum arc segment count. */
     private static final int MIN_ARC_SEGMENTS = 8;
@@ -142,9 +142,14 @@ final class ArcRenderer {
         Vec3 cam = camera.position();
         LineContext ctx = new LineContext(poseStack.last(), bufferSource.getBuffer(GooRenderTypes.LINES_GLOW));
         for (int pass = ARC_GLOW_PASSES - 1; pass >= 0; pass--) {
-            emitDashedPass(ctx, cam, points, segments,
-                    dashOffset, computeGlowPassColor(rgb, pass),
-                    baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP));
+            float width = baseWidth * (1.0f + pass * ARC_GLOW_WIDTH_STEP);
+            int color = computeGlowPassColor(rgb, pass);
+            if (pass == 0) {
+                emitSolidPass(ctx, cam, points, segments, color, width);
+            } else {
+                emitDashedPass(ctx, cam, points, segments,
+                        dashOffset, color, width);
+            }
         }
         bufferSource.endLastBatch();
     }
@@ -160,6 +165,29 @@ final class ArcRenderer {
         float alphaScale = (float) Math.pow(ARC_GLOW_ALPHA_DECAY, pass);
         int alpha = Mth.clamp((int) (ARC_ALPHA * alphaScale), 0, MAX_ALPHA);
         return ARGB.color(alpha, ARGB.red(rgb), ARGB.green(rgb), ARGB.blue(rgb));
+    }
+
+    /**
+     * Emits a solid (unbroken) line for the core pass of the arc.
+     *
+     * @param ctx      the line render context
+     * @param cam      the camera position
+     * @param points   the sampled arc polyline points
+     * @param segments the number of arc segments
+     * @param color    the ARGB color value
+     * @param width    the line width
+     */
+    private static void emitSolidPass(
+            LineContext ctx, Vec3 cam, Vec3[] points, int segments,
+            int color, float width) {
+        for (int i = 0; i < segments; i++) {
+            Vec3 a = points[i];
+            Vec3 b = points[i + 1];
+            ctx.emitEdge(
+                (float) (a.x - cam.x), (float) (a.y - cam.y), (float) (a.z - cam.z),
+                (float) (b.x - cam.x), (float) (b.y - cam.y), (float) (b.z - cam.z),
+                color, width);
+        }
     }
 
     /**

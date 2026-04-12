@@ -45,6 +45,12 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      */
     private static volatile Vec3 blobCenterCamRel;
 
+    /** Smoothed blob center for arc origin - filters out swing jitter. */
+    private static volatile Vec3 smoothedBlobCenter;
+
+    /** Smoothing factor per frame (lower = more smoothing). */
+    private static final float ARC_SMOOTH_FACTOR = 0.15f;
+
     /** Pixels per block for coordinate conversion. */
     private static final float BLOCK_PIXELS = 16f;
 
@@ -95,8 +101,20 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      *
      * @return camera-relative blob center, or null if never captured
      */
+    /** Returns the raw captured blob center (includes swing).
+     *
+     * @return camera-relative blob center, or null if never captured
+     */
     public static @Nullable Vec3 getLastBlobCenterCamRel() {
         return blobCenterCamRel;
+    }
+
+    /** Returns the smoothed blob center for arc origin (swing filtered out).
+     *
+     * @return smoothed camera-relative blob center, or null if never captured
+     */
+    public static @Nullable Vec3 getSmoothedBlobCenterCamRel() {
+        return smoothedBlobCenter;
     }
 
     /** Creates a glove special renderer. */
@@ -254,7 +272,10 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
                                           float cx, float cy, float cz) {
         Vector4f pos = new Vector4f(cx, cy, cz, 1.0f);
         poseStack.last().pose().transform(pos);
-        blobCenterCamRel = new Vec3(pos.x(), pos.y(), pos.z());
+        Vec3 raw = new Vec3(pos.x(), pos.y(), pos.z());
+        blobCenterCamRel = raw;
+        Vec3 prev = smoothedBlobCenter;
+        smoothedBlobCenter = prev == null ? raw : prev.lerp(raw, ARC_SMOOTH_FACTOR);
     }
 
     /**

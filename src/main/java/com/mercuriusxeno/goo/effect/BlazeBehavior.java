@@ -61,6 +61,12 @@ public final class BlazeBehavior implements ChainBehavior {
     }
 
     @Override
+    public int getMinedLayers() {
+        int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
+        return Math.max(0, breakIndex);
+    }
+
+    @Override
     public void saveAdditional(ValueOutput output) {
         output.putInt(TAG_PIPELINE_TICK, pipelineTick);
         output.putInt(TAG_MINING_DEPTH, miningDepth);

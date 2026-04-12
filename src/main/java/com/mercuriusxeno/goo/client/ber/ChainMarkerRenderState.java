@@ -45,6 +45,13 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** The face this marker was placed on (for directional rendering). */
     public Direction placedFace = Direction.UP;
 
+    /** True when a non-nether chain behavior (rock/blaze) is actively
+     * mining. The ghost outline persists through the mining phase. */
+    public boolean behaviorActive;
+
+    /** Number of depth layers already mined by the active behavior. */
+    public int minedLayers;
+
     /** True when a nether black-hole behavior is active on this marker.
      * The BER uses this flag to branch between the orb visual (false) and
      * the shader sphere (true). */
