@@ -9,7 +9,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
@@ -46,14 +45,6 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
      */
     private static volatile Vec3 blobCenterCamRel;
 
-    /** Frame counter to detect stale captures. */
-    private static long captureFrame = -1;
-
-    /** Max tick age before a capture is considered stale. Hand rendering
-     *  may occur after arc rendering within the same frame, so we tolerate
-     *  a one-tick lag to avoid first-frame-of-tick fallback flicker. */
-    private static final long MAX_CAPTURE_AGE = 1;
-
     /** Pixels per block for coordinate conversion. */
     private static final float BLOCK_PIXELS = 16f;
 
@@ -75,9 +66,6 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
     /** Normal direction for negative-facing surfaces. */
     private static final float NORMAL_NEG = -1f;
 
-    /** Sentinel value for stale frame counter. */
-    private static final int STALE_FRAME = -1;
-
     /** Minimum extent X in model pixels. */
     private static final float EXTENT_MIN_X_PX = 4.5f;
 
@@ -97,16 +85,18 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
     private static final float EXTENT_MAX_Z_PX = 11.5f;
 
     /**
-     * Returns the camera-relative blob center if captured recently.
-     * Tolerates a one-tick lag because first-person hand rendering can
-     * fire after AfterOpaqueFeatures within the same render frame.
+     * Returns the last captured camera-relative blob center. No age
+     * check — once captured, the value is always valid. The position
+     * updates every frame the glove's held blob renders, so staleness
+     * is at most one frame (~16ms at 60fps). Returns null only if the
+     * item renderer has never fired (first frame after world load,
+     * before the glove has ever been held — in practice unreachable
+     * because the arc handler only runs when you're holding the glove).
      *
-     * @param currentTick the current game tick
-     * @return camera-relative blob center, or null if stale
+     * @return camera-relative blob center, or null if never captured
      */
-    public static @Nullable Vec3 getBlobCenterCamRel(long currentTick) {
-        long age = currentTick - captureFrame;
-        return age >= 0 && age <= MAX_CAPTURE_AGE ? blobCenterCamRel : null;
+    public static @Nullable Vec3 getLastBlobCenterCamRel() {
+        return blobCenterCamRel;
     }
 
     /** Creates a glove special renderer. */
@@ -265,8 +255,6 @@ public class GloveSpecialRenderer implements SpecialModelRenderer<GloveSpecialRe
         Vector4f pos = new Vector4f(cx, cy, cz, 1.0f);
         poseStack.last().pose().transform(pos);
         blobCenterCamRel = new Vec3(pos.x(), pos.y(), pos.z());
-        Minecraft mc = Minecraft.getInstance();
-        captureFrame = mc.level != null ? mc.level.getGameTime() : STALE_FRAME;
     }
 
     /**
