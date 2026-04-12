@@ -3,11 +3,14 @@ package com.mercuriusxeno.goo.client.ber.style;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
+import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Cube-shaped nether black-hole experiment. Mirrors the three-pass
@@ -154,22 +157,33 @@ public final class CubeHoleStyle implements NetherHoleStyle {
             state.diskExpansionScale = nether.getDiskExpansionScale();
             state.implodeRadius = nether.getCurrentRadius();
             state.animationTime = computeAnimationTime(be);
-            // Intentionally NOT calling NetherLensEffect.markHoleActive
-            // here. The lens shader paints a round event-horizon disc
-            // and a circular photon ring sized to the passed world
-            // radius; both look like "a sphere floating inside the
-            // cube" because the cube's corners extend to
-            // sqrt(3) * halfExtent while the ring sits at 1.5 *
-            // halfExtent. The lens also applies a radial UV warp that
-            // ignores the cube silhouette entirely, curving its
-            // straight edges. Letting the lens go stale (no mark this
-            // frame) deactivates it via NetherLensEffect's frame
-            // staleness check; sphere style keeps marking and keeps
-            // the lens. A cube-aware lens (square horizon, no photon
-            // ring) is a separate follow-up.
+            markLensActive(be, state);
             return;
         }
         state.netherActive = false;
+    }
+
+    /** Reports this hole to the screen-space lens post-effect with
+     * {@link NetherLensEffect.LensShape#HEX}, passing the cube's
+     * current half-extent as the world radius. The lens projects
+     * the eight cube corners each frame and builds the screen-space
+     * convex hull, so the event horizon and photon ring trace the
+     * actual cube silhouette (rectangle face-on, hexagon from a
+     * corner) instead of a circular approximation.
+     *
+     * @param be    the chain marker block entity
+     * @param state the populated render state for this frame
+     */
+    private static void markLensActive(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
+        if (state.visibleScale <= 0f) { return; }
+        BlockPos pos = be.getBlockPos();
+        Vec3 center = new Vec3(
+                pos.getX() + BLOCK_CENTER,
+                pos.getY() + BLOCK_CENTER,
+                pos.getZ() + BLOCK_CENTER);
+        float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
+        float visibleHalfExtent = Math.max(CUBE_MIN_HALF_EXTENT, fullRadius * state.visibleScale);
+        NetherLensEffect.markHoleActive(center, visibleHalfExtent, NetherLensEffect.LensShape.HEX);
     }
 
     @Override
