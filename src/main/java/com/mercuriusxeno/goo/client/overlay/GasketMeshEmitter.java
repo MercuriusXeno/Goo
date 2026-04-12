@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.FlatQuadCtx;
+import com.mercuriusxeno.goo.client.ber.FlatQuadContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.phys.AABB;
@@ -85,7 +85,7 @@ final class GasketMeshEmitter {
             AABB bounds, Vec3 ofs, int color) {
         float[] f = boundsToFloats(bounds, ofs);
         CuboidBounds box = new CuboidBounds(f[0], f[BOX_X1], f[VERT_Z], f[BOX_Z1], f[VERT_Y], f[BOX_Y1]);
-        new FlatQuadCtx(poseStack.last(), consumer).emitBox(color, box);
+        new FlatQuadContext(poseStack.last(), consumer).emitBox(color, box);
     }
 
     /**
@@ -101,7 +101,7 @@ final class GasketMeshEmitter {
     static void renderDiagonalStripes(PoseStack poseStack, VertexConsumer consumer,
             AABB bounds, Vec3 ofs, int color) {
         AABB inset = computeStripeInsetBounds(bounds, ofs);
-        FlatQuadCtx ctx = new FlatQuadCtx(poseStack.last(), consumer);
+        FlatQuadContext ctx = new FlatQuadContext(poseStack.last(), consumer);
         renderHorizontalFaceStripes(ctx, color, inset);
         renderVerticalZFaceStripes(ctx, color, inset);
         renderVerticalXFaceStripes(ctx, color, inset);
@@ -132,7 +132,7 @@ final class GasketMeshEmitter {
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderHorizontalFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+    private static void renderHorizontalFaceStripes(FlatQuadContext ctx, int color, AABB b) {
         renderHorizontalStripe(ctx, color, b.minX, b.maxY, b.minZ, b.maxX, b.maxZ, true);
         renderHorizontalStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxX, b.maxZ, false);
     }
@@ -144,7 +144,7 @@ final class GasketMeshEmitter {
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderVerticalZFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+    private static void renderVerticalZFaceStripes(FlatQuadContext ctx, int color, AABB b) {
         renderVerticalZStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxX, b.maxY, false);
         renderVerticalZStripe(ctx, color, b.minX, b.minY, b.maxZ, b.maxX, b.maxY, true);
     }
@@ -156,7 +156,7 @@ final class GasketMeshEmitter {
      * @param color the ARGB color value
      * @param b the inset bounds
      */
-    private static void renderVerticalXFaceStripes(FlatQuadCtx ctx, int color, AABB b) {
+    private static void renderVerticalXFaceStripes(FlatQuadContext ctx, int color, AABB b) {
         renderVerticalXStripe(ctx, color, b.minX, b.minY, b.minZ, b.maxY, b.maxZ, false);
         renderVerticalXStripe(ctx, color, b.maxX, b.minY, b.minZ, b.maxY, b.maxZ, true);
     }
@@ -173,8 +173,8 @@ final class GasketMeshEmitter {
      * @param z1 maximum Z
      * @param flip whether to reverse winding order
      */
-    private static void renderHorizontalStripe(FlatQuadCtx ctx, int color,
-            double x0, double fixedY, double z0, double x1, double z1, boolean flip) {
+    private static void renderHorizontalStripe(FlatQuadContext ctx, int color,
+                                               double x0, double fixedY, double z0, double x1, double z1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, x0, x1 - x0);
             emitHorizontalStripeQuad(ctx, color, flip, c, (float) fixedY, (float) z0, (float) z1);
@@ -192,8 +192,8 @@ final class GasketMeshEmitter {
      * @param z0 the near Z
      * @param z1 the far Z
      */
-    private static void emitHorizontalStripeQuad(FlatQuadCtx ctx, int color,
-            boolean flip, float[] c, float y, float z0, float z1) {
+    private static void emitHorizontalStripeQuad(FlatQuadContext ctx, int color,
+                                                 boolean flip, float[] c, float y, float z0, float z1) {
         emitQuad(ctx, color, flip,
                 new Vector3f(c[CORNER_NEAR_START], y, z0),
                 new Vector3f(c[CORNER_NEAR_END], y, z0),
@@ -213,8 +213,8 @@ final class GasketMeshEmitter {
      * @param y1 maximum Y
      * @param flip whether to reverse winding order
      */
-    private static void renderVerticalZStripe(FlatQuadCtx ctx, int color,
-            double x0, double y0, double fixedZ, double x1, double y1, boolean flip) {
+    private static void renderVerticalZStripe(FlatQuadContext ctx, int color,
+                                              double x0, double y0, double fixedZ, double x1, double y1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, x0, x1 - x0);
             emitVerticalZStripeQuad(ctx, color, flip, c, (float) y0, (float) y1, (float) fixedZ);
@@ -232,8 +232,8 @@ final class GasketMeshEmitter {
      * @param y1 the top Y
      * @param z the fixed Z coordinate
      */
-    private static void emitVerticalZStripeQuad(FlatQuadCtx ctx, int color,
-            boolean flip, float[] c, float y0, float y1, float z) {
+    private static void emitVerticalZStripeQuad(FlatQuadContext ctx, int color,
+                                                boolean flip, float[] c, float y0, float y1, float z) {
         emitQuad(ctx, color, flip,
                 new Vector3f(c[CORNER_NEAR_START], y0, z),
                 new Vector3f(c[CORNER_NEAR_END], y0, z),
@@ -253,8 +253,8 @@ final class GasketMeshEmitter {
      * @param z1 the maximum Z bound
      * @param flip whether to reverse winding order
      */
-    private static void renderVerticalXStripe(FlatQuadCtx ctx, int color,
-            double fixedX, double y0, double z0, double y1, double z1, boolean flip) {
+    private static void renderVerticalXStripe(FlatQuadContext ctx, int color,
+                                              double fixedX, double y0, double z0, double y1, double z1, boolean flip) {
         for (int i = 0; i < STRIPE_COUNT; i++) {
             float[] c = computeStripeCorners(i, z0, z1 - z0);
             emitVerticalXStripeQuad(ctx, color, flip, c, (float) fixedX, (float) y0, (float) y1);
@@ -272,8 +272,8 @@ final class GasketMeshEmitter {
      * @param y0 the bottom Y
      * @param y1 the top Y
      */
-    private static void emitVerticalXStripeQuad(FlatQuadCtx ctx, int color,
-            boolean flip, float[] c, float x, float y0, float y1) {
+    private static void emitVerticalXStripeQuad(FlatQuadContext ctx, int color,
+                                                boolean flip, float[] c, float x, float y0, float y1) {
         emitQuad(ctx, color, flip,
                 new Vector3f(x, y0, c[CORNER_NEAR_START]),
                 new Vector3f(x, y0, c[CORNER_NEAR_END]),
@@ -314,8 +314,8 @@ final class GasketMeshEmitter {
      * @param v2 vertex 2 position
      * @param v3 vertex 3 position
      */
-    private static void emitQuad(FlatQuadCtx ctx, int color, boolean flip,
-            Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
+    private static void emitQuad(FlatQuadContext ctx, int color, boolean flip,
+                                 Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
         if (flip) {
             emitQuadVertices(ctx, color, v3, v2, v1, v0);
         } else {
@@ -333,8 +333,8 @@ final class GasketMeshEmitter {
      * @param v2 vertex 2 position
      * @param v3 vertex 3 position
      */
-    private static void emitQuadVertices(FlatQuadCtx ctx, int color,
-            Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
+    private static void emitQuadVertices(FlatQuadContext ctx, int color,
+                                         Vector3f v0, Vector3f v1, Vector3f v2, Vector3f v3) {
         ctx.c().addVertex(ctx.pose(), v0.x, v0.y, v0.z).setColor(color);
         ctx.c().addVertex(ctx.pose(), v1.x, v1.y, v1.z).setColor(color);
         ctx.c().addVertex(ctx.pose(), v2.x, v2.y, v2.z).setColor(color);

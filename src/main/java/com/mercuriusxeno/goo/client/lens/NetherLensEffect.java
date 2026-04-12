@@ -33,12 +33,12 @@ import java.nio.ByteBuffer;
  *
  * <p>Supports two lens shapes via the {@link LensShape} enum:
  * <ul>
- *   <li>{@link LensShape#ROUND} — the canonical sphere lens. Classic
+ *   <li>{@link LensShape#ROUND} - the canonical sphere lens. Classic
  *       Euclidean distance-from-center math, pixel-for-pixel
  *       equivalent to the shipped sphere-style behavior. Default for
  *       the two-arg {@link #markHoleActive(Vec3, float)} overload so
  *       all existing sphere-style callers keep working unchanged.</li>
- *   <li>{@link LensShape#HEX} — the cube lens. Projects the cube's
+ *   <li>{@link LensShape#HEX} - the cube lens. Projects the cube's
  *       eight corners to UV space each frame, computes the 2D convex
  *       hull (always 4 – 6 vertices for a cube projection), pads to
  *       six, and uploads the resulting polygon as three
@@ -67,10 +67,10 @@ public final class NetherLensEffect {
 
     /** Shape of the event horizon and photon ring drawn by the lens. */
     public enum LensShape {
-        /** Classic circular lens — Euclidean distance from a point
+        /** Classic circular lens - Euclidean distance from a point
          * center. Used by the sphere black-hole style. */
         ROUND,
-        /** Hex lens — convex-polygon signed distance using the
+        /** Hex lens - convex-polygon signed distance using the
          * screen-projected hull of the cube's eight corners. Used by
          * the cube black-hole style. Falls back to {@link #ROUND} on
          * frames where the cube projection would fail (e.g. corners
@@ -332,7 +332,7 @@ public final class NetherLensEffect {
      * success; on failure (any corner behind the camera) leaves
      * {@code LENS_TUNING.w} at {@link #SHAPE_MODE_ROUND} so the
      * shader falls back to the round path with the already-staged
-     * center and radius — no flash, no disappearing lens.
+     * center and radius - no flash, no disappearing lens.
      *
      * @param mc           the client instance
      * @param gameRenderer the active game renderer
@@ -452,7 +452,7 @@ public final class NetherLensEffect {
 
     /** Insertion-sorts {@code idx[0..n)} by {@code (x, y)} on the
      * corresponding points in {@link #CUBE_CORNERS_UV}. Stable and
-     * O(n^2) — fine for n = {@link #CUBE_CORNERS}.
+     * O(n^2) - fine for n = {@link #CUBE_CORNERS}.
      *
      * @param idx the index array to sort in place
      * @param n   the number of valid entries in {@code idx}

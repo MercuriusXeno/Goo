@@ -20,7 +20,7 @@ public final class ChainProfiles {
     private static final int ROCK_FUSE_TICKS = 30;
     private static final int ROCK_MAX_STACKS = 5;
     private static final int NETHER_FUSE_TICKS = 30;
-    private static final int NETHER_MAX_STACKS = 4;
+    private static final int NETHER_MAX_STACKS = 5;
 
     private ChainProfiles() {}
 

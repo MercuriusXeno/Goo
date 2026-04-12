@@ -40,7 +40,7 @@ final class VatFluidRenderer {
      * @param type  the goo type
      * @param state the block state
      */
-    static void renderFluid(RenderCtx ctx, com.mercuriusxeno.goo.GooType type, VatRenderState state) {
+    static void renderFluid(RenderContext ctx, com.mercuriusxeno.goo.GooType type, VatRenderState state) {
         float localFloor = state.vatBelow ? 0f : VatBlockEntityRenderer.BASE_FLOOR;
         float localCeiling = state.vatAbove ? 1.0f : VatBlockEntityRenderer.CAP_CEILING;
         float localFill = computeLocalFill(state, localFloor, localCeiling);
@@ -79,8 +79,8 @@ final class VatFluidRenderer {
      * @param localHeight the total vat height in block units
      * @param localFill   the fill height in block units
      */
-    private static void renderVatTopFaces(RenderCtx ctx, CuboidBounds b,
-            TextureAtlasSprite sprite, float localHeight, float localFill) {
+    private static void renderVatTopFaces(RenderContext ctx, CuboidBounds b,
+                                          TextureAtlasSprite sprite, float localHeight, float localFill) {
         boolean isFullySubmerged = localFill >= localHeight - SUBMERSION_EPSILON;
         if (isFullySubmerged) { return; }
         GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(
@@ -97,8 +97,8 @@ final class VatFluidRenderer {
      * @param sprite      the fluid texture atlas sprite
      * @param localHeight the total vat height in block units
      */
-    private static void renderVatSideFaces(RenderCtx ctx, CuboidBounds b,
-            TextureAtlasSprite sprite, float localHeight) {
+    private static void renderVatSideFaces(RenderContext ctx, CuboidBounds b,
+                                           TextureAtlasSprite sprite, float localHeight) {
         GooRenderUtil.UvRect uv = computeSideUv(sprite, b, localHeight);
         ctx.emitFace(b, uv, Direction.NORTH);
         ctx.emitFace(b, uv, Direction.SOUTH);

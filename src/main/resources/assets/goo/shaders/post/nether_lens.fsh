@@ -87,7 +87,7 @@ const float HEX_NORMAL_EPS = 1e-5;
 // edge-interior and the vertex-closest cases), takes the global
 // minimum, and signs it via a CCW inside test (cross-product sign
 // against every edge). This is the version that works correctly at
-// cube corners — the previous half-plane approximation produced
+// cube corners - the previous half-plane approximation produced
 // kinked iso-contours where two edges' outward normals disagreed, and
 // the photon ring and warp direction both "zig-zagged" in those
 // zones.
@@ -95,7 +95,7 @@ const float HEX_NORMAL_EPS = 1e-5;
 // Outputs the result as a {@code vec3} where {@code .x} is the signed
 // distance (negative inside, positive outside) and {@code .yz} is the
 // unit outward direction from the closest point on the polygon to
-// {@code p} — used as the (negated) warp direction so samples get
+// {@code p} - used as the (negated) warp direction so samples get
 // pulled toward the nearest point on the cube silhouette, whether
 // that point lies on an edge interior or at a vertex.
 vec3 hexSignedDistance(vec2 p,
@@ -180,7 +180,7 @@ void main() {
     // offsets on both axes regardless of viewport aspect. "warpDir"
     // is converted back to raw UV space before being added to
     // texCoord: the X component gets divided by aspect to undo the
-    // stretch. Both normalize identically — negative r means inside,
+    // stretch. Both normalize identically - negative r means inside,
     // positive r means outside.
     float r;
     vec2 warpDir;
@@ -234,7 +234,7 @@ void main() {
     // their samples INTO the cube/sphere silhouette (pure black in
     // the framebuffer, from the occluder pass), which blended with
     // the photon ring's additive glow produces a dim-orange-on-black
-    // band hugging the silhouette — the "black mixing in the photon
+    // band hugging the silhouette - the "black mixing in the photon
     // edge" artifact. Clamping keeps the sample just outside the
     // horizon so the lensed color is always real scene rather than
     // occluder black.

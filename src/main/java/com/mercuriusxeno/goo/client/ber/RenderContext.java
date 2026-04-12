@@ -15,7 +15,7 @@ import net.minecraft.core.Direction;
  * @param c     the vertex consumer for geometry emission
  * @param light the packed light level for shading
  */
-public record RenderCtx(PoseStack.Pose pose, VertexConsumer c, int light) {
+public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
 
     /** Full white opaque color. */
     private static final int OPAQUE_WHITE = 0xFFFFFFFF;

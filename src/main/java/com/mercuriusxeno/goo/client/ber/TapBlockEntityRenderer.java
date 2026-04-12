@@ -214,7 +214,7 @@ public class TapBlockEntityRenderer
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityCutout(CANISTER_SIDE),
             (pose, c) -> {
-                RenderCtx ctx = new RenderCtx(pose, c, light);
+                RenderContext ctx = new RenderContext(pose, c, light);
                 CuboidBounds box = new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, BODY_BOT, BODY_TOP);
                 ctx.emitSides(box, new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1));
             });
@@ -236,7 +236,7 @@ public class TapBlockEntityRenderer
         CuboidBounds base = tapBoundsXZ(cx, cz);
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderGasketPair(new RenderCtx(pose, c, light), base));
+            (pose, c) -> renderGasketPair(new RenderContext(pose, c, light), base));
     }
 
     /**
@@ -244,7 +244,7 @@ public class TapBlockEntityRenderer
      * @param ctx the render context
      * @param base the XZ cuboid bounds for the canister slot
      */
-    private static void renderGasketPair(RenderCtx ctx, CuboidBounds base) {
+    private static void renderGasketPair(RenderContext ctx, CuboidBounds base) {
         ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
         ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
     }
@@ -276,7 +276,7 @@ public class TapBlockEntityRenderer
         float fill = state.fill;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderFluidGeometry(new RenderCtx(pose, c, light), type, fill, cx, cz));
+            (pose, c) -> renderFluidGeometry(new RenderContext(pose, c, light), type, fill, cx, cz));
     }
 
     /**
@@ -288,8 +288,8 @@ public class TapBlockEntityRenderer
      * @param cx   the center X in block coords
      * @param cz   the center Z in block coords
      */
-    private static void renderFluidGeometry(RenderCtx ctx, GooType type, float fill,
-            float cx, float cz) {
+    private static void renderFluidGeometry(RenderContext ctx, GooType type, float fill,
+                                            float cx, float cz) {
         CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         SlotFluidGeometry.renderFluidTop(ctx, b, sprite);

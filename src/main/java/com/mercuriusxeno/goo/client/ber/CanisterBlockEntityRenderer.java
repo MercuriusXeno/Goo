@@ -276,7 +276,7 @@ public class CanisterBlockEntityRenderer
         float anim = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllStreams(new RenderCtx(pose, c, light), anim, state));
+            (pose, c) -> renderAllStreams(new RenderContext(pose, c, light), anim, state));
     }
 
     /**
@@ -286,7 +286,7 @@ public class CanisterBlockEntityRenderer
      * @param anim  the animation tick fraction
      * @param state the render state snapshot
      */
-    private static void renderAllStreams(RenderCtx ctx, float anim, CanisterRenderState state) {
+    private static void renderAllStreams(RenderContext ctx, float anim, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (state.streamType[i] == null) { continue; }
             renderSlotStream(ctx, anim, state, i);
@@ -300,7 +300,7 @@ public class CanisterBlockEntityRenderer
      * @param state the render state snapshot
      * @param slot the slot index
      */
-    private static void renderSlotStream(RenderCtx ctx, float anim, CanisterRenderState state, int slot) {
+    private static void renderSlotStream(RenderContext ctx, float anim, CanisterRenderState state, int slot) {
         float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
         float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
         float yBottom = STREAM_Y_BOT + state.slotFill[slot] * (STREAM_Y_TOP - STREAM_Y_BOT);

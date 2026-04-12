@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.client.model;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
-import com.mercuriusxeno.goo.client.ber.RenderCtx;
+import com.mercuriusxeno.goo.client.ber.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
@@ -279,7 +279,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
             Identifier texture, boolean top, boolean bottom) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(texture),
-            (pose, c) -> emitEndcapQuads(new RenderCtx(pose, c, packedLight), top, bottom));
+            (pose, c) -> emitEndcapQuads(new RenderContext(pose, c, packedLight), top, bottom));
     }
 
     /**
@@ -289,7 +289,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      * @param top    true to render the top endcap
      * @param bottom true to render the bottom endcap
      */
-    private static void emitEndcapQuads(RenderCtx ctx, boolean top, boolean bottom) {
+    private static void emitEndcapQuads(RenderContext ctx, boolean top, boolean bottom) {
         if (top) {
             ctx.gasketBox(new CuboidBounds(BODY_MIN_XZ, BODY_MAX_XZ, BODY_MIN_XZ, BODY_MAX_XZ,
                 BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
@@ -320,7 +320,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> FluidFaceEmitter.emitFluidFaces(
-                new RenderCtx(pose, c, packedLight), b, type));
+                new RenderContext(pose, c, packedLight), b, type));
     }
 
     /**

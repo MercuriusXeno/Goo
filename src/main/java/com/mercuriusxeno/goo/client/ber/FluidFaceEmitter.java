@@ -29,7 +29,7 @@ public final class FluidFaceEmitter {
      * @param b    the fluid cuboid - its Y range must already encode the fill height
      * @param type the goo type, used for sprite lookup
      */
-    public static void emitFluidFaces(RenderCtx ctx, CuboidBounds b, GooType type) {
+    public static void emitFluidFaces(RenderContext ctx, CuboidBounds b, GooType type) {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         float u0 = sprite.getU0();
         float v0 = sprite.getV0();
@@ -54,8 +54,8 @@ public final class FluidFaceEmitter {
      * @param su1    scaled right U edge reused from the top-face computation
      *               ({@code u0 + spriteUWidth * cuboidXWidth}) - avoids one multiply
      */
-    private static void emitFluidSides(RenderCtx ctx, CuboidBounds b,
-            TextureAtlasSprite sprite, float u0, float v0, float su1) {
+    private static void emitFluidSides(RenderContext ctx, CuboidBounds b,
+                                       TextureAtlasSprite sprite, float u0, float v0, float su1) {
         float sideVSpan = (sprite.getV1() - v0) * (b.yTop() - b.yBot());
         GooRenderUtil.UvRect xUv = new GooRenderUtil.UvRect(u0, v0,
             su1, v0 + sideVSpan);
@@ -74,8 +74,8 @@ public final class FluidFaceEmitter {
      * @param xUv UV rect for the north/south faces (U scaled to X extent)
      * @param zUv UV rect for the west/east faces (U scaled to Z extent)
      */
-    private static void emitAllSideFaces(RenderCtx ctx, CuboidBounds b,
-            GooRenderUtil.UvRect xUv, GooRenderUtil.UvRect zUv) {
+    private static void emitAllSideFaces(RenderContext ctx, CuboidBounds b,
+                                         GooRenderUtil.UvRect xUv, GooRenderUtil.UvRect zUv) {
         ctx.emitFace(b, xUv, Direction.NORTH);
         ctx.emitFace(b, xUv, Direction.SOUTH);
         ctx.emitFace(b, zUv, Direction.WEST);

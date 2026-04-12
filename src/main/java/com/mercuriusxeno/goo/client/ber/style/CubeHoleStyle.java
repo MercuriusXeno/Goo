@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.ber.style;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
+import com.mercuriusxeno.goo.client.ber.NetherBlackHoleRenderer;
 import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,20 +15,20 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Cube-shaped nether black-hole experiment. Mirrors the three-pass
- * structure of {@link com.mercuriusxeno.goo.client.ber.NetherBlackHoleRender}
+ * structure of {@link NetherBlackHoleRenderer}
  * but with cube geometry for the occluder and a cube-edge-glow shader
  * in place of the fresnel corona:
  * <ol>
  *   <li>Solid cube occluder reusing {@link GooRenderTypes#NETHER_BLACKHOLE_TYPE}
- *       — the sphere occluder shader reads only {@code Position}, so
+ *       - the sphere occluder shader reads only {@code Position}, so
  *       feeding it cube vertices produces a black cube with correct
  *       depth write.</li>
  *   <li>Cube edge glow via {@link GooRenderTypes#NETHER_CUBE_EDGE_TYPE}
- *       — same cube mesh at {@link #EDGE_SCALE} the occluder size, with
+ *       - same cube mesh at {@link #EDGE_SCALE} the occluder size, with
  *       per-vertex intra-face UVs packed into {@code Color.rg} so the
  *       fragment shader can compute distance to the nearest face edge.</li>
  *   <li>Flat accretion disc via {@link GooRenderTypes#NETHER_DISK_TYPE}
- *       — same annulus geometry as the sphere style, duplicated here
+ *       - same annulus geometry as the sphere style, duplicated here
  *       (mesh data + emit) so {@code NetherBlackHoleRender} itself does
  *       not need to expose any helpers on this experiment branch.</li>
  * </ol>
@@ -103,9 +104,9 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     /** Vertices per face when emitting as {@code VertexFormat.Mode.QUADS}. */
     private static final int CUBE_VERTICES_PER_FACE = 4;
     /** Floats per entry in {@link #CUBE_FACE_POSITIONS} and
-     * {@link #CUBE_FACE_NORMALS} — an {@code (x, y, z)} triple. */
+     * {@link #CUBE_FACE_NORMALS} - an {@code (x, y, z)} triple. */
     private static final int CUBE_POS_STRIDE = 3;
-    /** Floats per entry in {@link #CUBE_FACE_UVS} — a {@code (u, v)}
+    /** Floats per entry in {@link #CUBE_FACE_UVS} - a {@code (u, v)}
      * pair. */
     private static final int CUBE_UV_STRIDE = 2;
     /** Offset of the Z component inside a stride-3 position or normal
@@ -205,7 +206,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
         final float outerR = diskOuterRadius;
         final float animPhase = state.animationTime;
 
-        // Pass 1: cube occluder. Reuses the sphere occluder pipeline —
+        // Pass 1: cube occluder. Reuses the sphere occluder pipeline -
         // its shader only reads Position so cube vertices produce a
         // black cube with correct depth write and nothing else.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_BLACKHOLE_TYPE,
@@ -215,7 +216,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
         // brightens toward each face edge.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_CUBE_EDGE_TYPE,
             (pose, c) -> emitCubeMesh(pose, c, edgeHalf, true));
-        // Pass 3: flat accretion disc — identical geometry to the
+        // Pass 3: flat accretion disc - identical geometry to the
         // sphere style, duplicated here so NetherBlackHoleRender stays
         // untouched on this experiment branch.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_DISK_TYPE,
@@ -298,7 +299,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     }
 
     /** Packs the occluder vertex color. The occluder shader ignores
-     * the vertex color entirely — any opaque value works — but we use
+     * the vertex color entirely - any opaque value works - but we use
      * opaque white so render-debug overlays read sensibly.
      *
      * @return the packed ARGB color

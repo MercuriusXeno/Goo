@@ -75,7 +75,7 @@ final class HubFluidRenderer {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityCutout(CANISTER_SIDE),
             (pose, c) -> {
-                RenderCtx ctx = new RenderCtx(pose, c, light);
+                RenderContext ctx = new RenderContext(pose, c, light);
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
                     if (state.canisterPresent[i]) { renderBodySides(ctx, i); }
                 }
@@ -88,7 +88,7 @@ final class HubFluidRenderer {
      * @param ctx  the render context
      * @param slot the slot index
      */
-    private static void renderBodySides(RenderCtx ctx, int slot) {
+    private static void renderBodySides(RenderContext ctx, int slot) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
         CuboidBounds box = new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, BODY_BOT, BODY_TOP);
@@ -111,7 +111,7 @@ final class HubFluidRenderer {
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderAllFluids(new RenderContext(pose, c, light), state));
     }
 
     /**
@@ -120,7 +120,7 @@ final class HubFluidRenderer {
      * @param ctx   the render context
      * @param state the render state snapshot
      */
-    private static void renderAllFluids(RenderCtx ctx, HubRenderState state) {
+    private static void renderAllFluids(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (state.slotType[i] != null && state.slotFill[i] > 0f) {
                 renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
@@ -149,7 +149,7 @@ final class HubFluidRenderer {
      * @param type the goo type
      * @param fill the fill fraction in [0, 1]
      */
-    private static void renderFluidSurface(RenderCtx ctx, int slot, GooType type, float fill) {
+    private static void renderFluidSurface(RenderContext ctx, int slot, GooType type, float fill) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
         CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
@@ -174,7 +174,7 @@ final class HubFluidRenderer {
         float anim = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllStreams(new RenderCtx(pose, c, light), anim, state));
+            (pose, c) -> renderAllStreams(new RenderContext(pose, c, light), anim, state));
     }
 
     /**
@@ -184,7 +184,7 @@ final class HubFluidRenderer {
      * @param anim  the animation tick fraction
      * @param state the render state snapshot
      */
-    private static void renderAllStreams(RenderCtx ctx, float anim, HubRenderState state) {
+    private static void renderAllStreams(RenderContext ctx, float anim, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (state.streamType[i] == null) { continue; }
             renderSlotStream(ctx, anim, state, i);
@@ -198,7 +198,7 @@ final class HubFluidRenderer {
      * @param state the render state snapshot
      * @param slot the slot index
      */
-    private static void renderSlotStream(RenderCtx ctx, float anim, HubRenderState state, int slot) {
+    private static void renderSlotStream(RenderContext ctx, float anim, HubRenderState state, int slot) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
         float yBottom = BODY_BOT + state.slotFill[slot] * (BODY_TOP - BODY_BOT);

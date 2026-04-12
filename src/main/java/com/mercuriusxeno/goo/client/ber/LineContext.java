@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * @param pose the current pose matrix entry
  * @param c    the vertex consumer for line geometry
  */
-public record LineCtx(PoseStack.Pose pose, VertexConsumer c) {
+public record LineContext(PoseStack.Pose pose, VertexConsumer c) {
 
     /**
      * Emits a single line segment (two vertices with direction-derived normal).

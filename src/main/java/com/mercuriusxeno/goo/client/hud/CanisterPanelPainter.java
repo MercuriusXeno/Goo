@@ -234,7 +234,7 @@ final class CanisterPanelPainter {
             PanelMetrics metrics) {
         float halfW = metrics.width / HALF_F;
         InWorldHud.renderBackground(poseStack, buffers,
-                new PanelRect(-halfW, -metrics.height, metrics.width, metrics.height));
+                new PanelRectangle(-halfW, -metrics.height, metrics.width, metrics.height));
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);

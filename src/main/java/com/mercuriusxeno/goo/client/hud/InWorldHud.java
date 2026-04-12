@@ -81,7 +81,7 @@ public final class InWorldHud {
      * @param rect the panel rectangle (position + size)
      */
     public static void renderBackground(PoseStack poseStack, MultiBufferSource buffers,
-            PanelRect rect) {
+            PanelRectangle rect) {
         renderBackgroundInternal(poseStack, buffers, rect, false);
     }
 
@@ -93,7 +93,7 @@ public final class InWorldHud {
      * @param rect the panel rectangle (position + size)
      */
     public static void renderBackgroundSeeThrough(PoseStack poseStack, MultiBufferSource buffers,
-            PanelRect rect) {
+            PanelRectangle rect) {
         renderBackgroundInternal(poseStack, buffers, rect, true);
     }
 
@@ -106,7 +106,7 @@ public final class InWorldHud {
      * @param seeThrough whether to disable depth testing
      */
     private static void renderBackgroundInternal(PoseStack poseStack, MultiBufferSource buffers,
-            PanelRect rect, boolean seeThrough) {
+                                                 PanelRectangle rect, boolean seeThrough) {
         VertexConsumer vc = buffers.getBuffer(
             seeThrough ? RenderTypes.textSeeThrough(BG_TEXTURE) : RenderTypes.text(BG_TEXTURE));
         PoseStack.Pose pose = poseStack.last();
@@ -129,7 +129,7 @@ public final class InWorldHud {
      * @param y2 the bottom edge before border inset
      */
     private static void emitCorners(VertexConsumer vc, PoseStack.Pose pose,
-            PanelRect rect,
+            PanelRectangle rect,
             float x1, float x2, float y1, float y2) {
         float uB = BORDER_UV;
         float x = rect.x();
@@ -153,7 +153,7 @@ public final class InWorldHud {
      * @param y2 the bottom edge before border inset
      */
     private static void emitEdgesAndCenter(VertexConsumer vc, PoseStack.Pose pose,
-            PanelRect rect,
+            PanelRectangle rect,
             float x1, float x2, float y1, float y2) {
         float uB = BORDER_UV;
         float x = rect.x();

@@ -304,7 +304,7 @@ public class VatBlockEntityRenderer
         GooType type = state.dominantType;
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> VatFluidRenderer.renderFluid(new RenderCtx(pose, c, light), type, state));
+            (pose, c) -> VatFluidRenderer.renderFluid(new RenderContext(pose, c, light), type, state));
     }
 
     // --- Stream rendering ---
@@ -343,7 +343,7 @@ public class VatBlockEntityRenderer
             GooType type, float rate, float yTop, float yBottom) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> GooStreamRenderer.renderStream(new RenderCtx(pose, c, light),
+            (pose, c) -> GooStreamRenderer.renderStream(new RenderContext(pose, c, light),
                 VAT_CENTER_X, VAT_CENTER_Z, yTop, yBottom,
                 type, rate, anim));
     }

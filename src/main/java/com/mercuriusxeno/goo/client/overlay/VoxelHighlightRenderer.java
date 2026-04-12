@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.FlatQuadCtx;
-import com.mercuriusxeno.goo.client.ber.LineCtx;
+import com.mercuriusxeno.goo.client.ber.FlatQuadContext;
+import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -84,7 +84,7 @@ final class VoxelHighlightRenderer {
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             VoxelShape shape, double ox, double oy, double oz, int rgb) {
         int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
-        FlatQuadCtx ctx = new FlatQuadCtx(poseStack.last(),
+        FlatQuadContext ctx = new FlatQuadContext(poseStack.last(),
             bufferSource.getBuffer(RenderTypes.debugQuads()));
         shape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
             ctx.emitBox(fillColor, new CuboidBounds(
@@ -146,7 +146,7 @@ final class VoxelHighlightRenderer {
             double ox, double oy, double oz, int rgb) {
         int wireColor = colorWithAlpha(rgb, WIRE_ALPHA);
         float lineWidth = mc.getWindow().getAppropriateLineWidth();
-        LineCtx ctx = new LineCtx(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
+        LineContext ctx = new LineContext(poseStack.last(), bufferSource.getBuffer(RenderTypes.lines()));
         shape.forAllEdges((x0, y0, z0, x1, y1, z1) ->
             ctx.emitEdge(
                 (float) (ox + x0), (float) (oy + y0), (float) (oz + z0),

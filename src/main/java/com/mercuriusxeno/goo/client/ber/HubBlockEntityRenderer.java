@@ -268,7 +268,7 @@ public class HubBlockEntityRenderer
             SubmitNodeCollector nodeCollector, int light, HubRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(COPPER_GASKET),
-            (pose, c) -> renderCopperEndcaps(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderCopperEndcaps(new RenderContext(pose, c, light), state));
     }
 
     /**
@@ -282,7 +282,7 @@ public class HubBlockEntityRenderer
             SubmitNodeCollector nodeCollector, int light, HubRenderState state) {
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entitySolid(CHORAL_GASKET),
-            (pose, c) -> renderChoralEndcaps(new RenderCtx(pose, c, light), state));
+            (pose, c) -> renderChoralEndcaps(new RenderContext(pose, c, light), state));
     }
 
     /** Renders copper (non-choral) endcaps for all occupied hub slots.
@@ -290,7 +290,7 @@ public class HubBlockEntityRenderer
      * @param ctx   the render context
      * @param state the hub render state snapshot
      */
-    private static void renderCopperEndcaps(RenderCtx ctx, HubRenderState state) {
+    private static void renderCopperEndcaps(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (!state.canisterPresent[i]) { continue; }
             renderEndcaps(ctx, i,
@@ -303,7 +303,7 @@ public class HubBlockEntityRenderer
      * @param ctx   the render context
      * @param state the hub render state snapshot
      */
-    private static void renderChoralEndcaps(RenderCtx ctx, HubRenderState state) {
+    private static void renderChoralEndcaps(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
             if (!state.canisterPresent[i]) { continue; }
             renderEndcaps(ctx, i,
@@ -336,7 +336,7 @@ public class HubBlockEntityRenderer
      * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      */
-    private static void renderEndcaps(RenderCtx ctx, int slot, boolean top, boolean bottom) {
+    private static void renderEndcaps(RenderContext ctx, int slot, boolean top, boolean bottom) {
         GasketCapRenderer.renderEndcaps(ctx, slotBoundsXZ(slot), GASKET_Y, GASKET_UV, top, bottom);
     }
 

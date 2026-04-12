@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.client.model;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
-import com.mercuriusxeno.goo.client.ber.RenderCtx;
+import com.mercuriusxeno.goo.client.ber.RenderContext;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.VatBlockItem;
@@ -155,7 +155,7 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
         nodeCollector.submitCustomGeometry(poseStack,
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> FluidFaceEmitter.emitFluidFaces(
-                new RenderCtx(pose, c, packedLight), b, type));
+                new RenderContext(pose, c, packedLight), b, type));
     }
 
     /**

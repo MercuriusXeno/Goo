@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.client.overlay;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.LineCtx;
+import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -230,7 +230,7 @@ public final class GasketOverlayRenderer {
             AABB bounds, Vec3 ofs, GasketRole role, Minecraft mc) {
         int wireColor = role == GasketRole.RECEIVER ? RECEIVER_WIRE : TRANSMITTER_WIRE;
         float lineWidth = mc.getWindow().getAppropriateLineWidth();
-        LineCtx ctx = new LineCtx(poseStack.last(), line);
+        LineContext ctx = new LineContext(poseStack.last(), line);
         ctx.emitWireframe(new CuboidBounds(
             (float) (bounds.minX + ofs.x), (float) (bounds.maxX + ofs.x),
             (float) (bounds.minZ + ofs.z), (float) (bounds.maxZ + ofs.z),
