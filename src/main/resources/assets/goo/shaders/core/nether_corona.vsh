@@ -16,7 +16,7 @@ out float mainRadiusSq;
 // sphere, so if this changes the BER constant must change with it.
 // Tightened from 1.15 to 1.08 so the halo reads as a thin rim hugging
 // the silhouette rather than a thick shell.
-const float CORONA_SCALE = 1.15;
+const float CORONA_SCALE = 1.08;
 
 // Must match ChainMarkerBER.MAX_ENCODED_RADIUS exactly. The BER packs
 // {@code visibleRadius / MAX_ENCODED_RADIUS} into the vertex Color.b

@@ -76,7 +76,7 @@ public final class NetherBlackHoleRender {
     /** Radius multiplier for the corona pass. Must match
      * {@code CORONA_SCALE} in {@code nether_corona.vsh}. Good values
      * are 1.08 for a thin corona, 1.15 for a thicker one. */
-    private static final float CORONA_SCALE = 1.15f;
+    private static final float CORONA_SCALE = 1.08f;
     /** Disk's inner edge, as a multiple of the current sphere radius.
      * Sits just past the sphere surface so the inner rim hugs the
      * silhouette without z-fighting the sphere's equator. */

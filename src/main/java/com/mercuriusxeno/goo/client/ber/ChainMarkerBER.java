@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ber.style.NetherHoleStyles;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
@@ -110,7 +111,7 @@ public class ChainMarkerBER
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         extractCoreFields(be, state, partialTick);
         extractFuseAndTarget(be, state);
-        NetherBlackHoleRender.extract(be, state);
+        NetherHoleStyles.ACTIVE.extract(be, state);
     }
 
     /**
@@ -154,7 +155,7 @@ public class ChainMarkerBER
     public void submit(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
         if (state.netherActive) {
-            NetherBlackHoleRender.submit(state, poseStack, nodeCollector);
+            NetherHoleStyles.ACTIVE.submit(state, poseStack, nodeCollector);
             return;
         }
         submitFuseOrb(state, poseStack, nodeCollector);
