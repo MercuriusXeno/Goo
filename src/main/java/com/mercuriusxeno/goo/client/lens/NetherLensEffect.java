@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.client.lens;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.client.ber.style.NetherHoleStyles;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -237,6 +238,16 @@ public final class NetherLensEffect {
     public static void applyPerFrame(Minecraft mc) {
         int frame = ++markFrameStamp;
         GameRenderer gameRenderer = mc.gameRenderer;
+        // Dev kill switch: when the lens is globally disabled via the
+        // NetherHoleStyles flag, clear any currently-active post
+        // effect and drop the tracked hole. Markers keep calling
+        // markHoleActive (it's a cheap static write) but nothing
+        // drains the state, so the lens never runs.
+        if (!NetherHoleStyles.LENS_ENABLED) {
+            deactivateIfActive(gameRenderer);
+            activeHoleCenter = null;
+            return;
+        }
         boolean fresh = (frame - lastMarkFrame) <= 1 && activeHoleCenter != null;
         if (!fresh) {
             deactivateIfActive(gameRenderer);
@@ -373,10 +384,15 @@ public final class NetherLensEffect {
         return true;
     }
 
-    /** Projects a single displacement {@code (dx, dy, dz)} into UV
-     * space at slot {@code i} of {@link #CUBE_CORNERS_UV}. Extracted
-     * so {@link #projectCubeCorners} stays under the method-length
-     * limit and so the per-corner math stays readable.
+    /** Projects a single displacement {@code (dx, dy, dz)} into
+     * aspect-corrected UV space at slot {@code i} of
+     * {@link #CUBE_CORNERS_UV}. The X component is multiplied by
+     * {@code aspect} after the NDC-to-UV conversion so the hull the
+     * SDF sees is in the same "screen-proportional square" space the
+     * round path uses via {@code dAspect}. Distances computed in this
+     * space correspond to equal pixel offsets on both axes, so the
+     * photon ring sits at uniform pixel distance from the cube
+     * silhouette regardless of viewport aspect.
      *
      * @param camera     the active camera
      * @param i          corner index (0..7)
@@ -394,9 +410,11 @@ public final class NetherLensEffect {
         float vRight = viewRightComponent(camera, dx, dy, dz);
         float ndcX = vRight / (vForward * tanHalfFov * aspect);
         float ndcY = vUp / (vForward * tanHalfFov);
+        float uvX = ndcX * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
+        float uvY = ndcY * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
         int slot = i * POINT_STRIDE;
-        CUBE_CORNERS_UV[slot] = ndcX * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
-        CUBE_CORNERS_UV[slot + POINT_Y] = ndcY * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
+        CUBE_CORNERS_UV[slot] = uvX * aspect;
+        CUBE_CORNERS_UV[slot + POINT_Y] = uvY;
     }
 
     /** Computes the 2D convex hull of the 8 points in

@@ -65,24 +65,34 @@ const float RING_SHARPNESS = 180.0;
 // Shape-mode discriminator threshold for the LensTuning.w branch.
 const float SHAPE_MODE_HEX_THRESHOLD = 0.5;
 
-// Epsilon for edge-length degeneracy test in the hex SDF loop. Edges
-// shorter than this are treated as degenerate padding (from
-// repeated-vertex hull padding) and skipped.
-const float HEX_DEGENERATE_EDGE = 1e-5;
+// Squared epsilon for edge-length degeneracy test in the hex SDF loop.
+// Edges with squared length below this are treated as zero-length
+// padding (from repeated-vertex hull padding) and skipped.
+const float HEX_DEGENERATE_EDGE_SQ = 1e-10;
+
+// Epsilon for normalizing the (p - closest) vector when the fragment
+// sits exactly on the polygon boundary.
+const float HEX_NORMAL_EPS = 1e-5;
 
 // ── Convex-polygon signed distance ────────────────────────────────────
 
-// Returns the signed distance from point {@code p} to the convex hex
-// hull {@code v[0..5]} using the "max over outward half-plane
-// distances" approach. For a CCW-ordered convex polygon this is exact
-// along each edge interior and slightly underestimates near vertices
-// (corner regions), which is visually fine for a lens warp.
+// Returns the true signed distance from point {@code p} to the convex
+// hex hull {@code v[0..5]}. For each edge the function computes the
+// point-to-segment distance (which correctly handles both the
+// edge-interior and the vertex-closest cases), takes the global
+// minimum, and signs it via a CCW inside test (cross-product sign
+// against every edge). This is the version that works correctly at
+// cube corners — the previous half-plane approximation produced
+// kinked iso-contours where two edges' outward normals disagreed, and
+// the photon ring and warp direction both "zig-zagged" in those
+// zones.
 //
 // Outputs the result as a {@code vec3} where {@code .x} is the signed
 // distance (negative inside, positive outside) and {@code .yz} is the
-// outward normal of the closest edge — used as the (negated) warp
-// direction so samples get pulled perpendicular to the nearest cube
-// silhouette edge.
+// unit outward direction from the closest point on the polygon to
+// {@code p} — used as the (negated) warp direction so samples get
+// pulled toward the nearest point on the cube silhouette, whether
+// that point lies on an edge interior or at a vertex.
 vec3 hexSignedDistance(vec2 p,
         vec2 v0, vec2 v1, vec2 v2, vec2 v3, vec2 v4, vec2 v5) {
     vec2 verts[6];
@@ -93,25 +103,52 @@ vec3 hexSignedDistance(vec2 p,
     verts[4] = v4;
     verts[5] = v5;
 
-    float bestSdf = -1e9;
-    vec2 bestNormal = vec2(0.0, 1.0);
+    float bestDistSq = 1e20;
+    vec2 bestClosest = p;
+    bool inside = true;
     for (int i = 0; i < 6; i++) {
         int j = (i + 1) == 6 ? 0 : (i + 1);
         vec2 a = verts[i];
         vec2 b = verts[j];
         vec2 edge = b - a;
-        float edgeLen = length(edge);
-        if (edgeLen < HEX_DEGENERATE_EDGE) { continue; }
-        // CCW winding: outward normal of edge (a→b) is
-        // (edge.y, -edge.x) / |edge|.
-        vec2 n = vec2(edge.y, -edge.x) / edgeLen;
-        float d = dot(p - a, n);
-        if (d > bestSdf) {
-            bestSdf = d;
-            bestNormal = n;
+        float edgeLenSq = dot(edge, edge);
+        // Skip degenerate padding edges (repeated vertices from the
+        // convex-hull padding in NetherLensEffect). Zero-length edges
+        // would produce NaN in the projection below and contribute
+        // nothing useful to either the distance or the inside test.
+        if (edgeLenSq < HEX_DEGENERATE_EDGE_SQ) { continue; }
+
+        vec2 diff = p - a;
+        // Project p onto the edge segment, clamped to [0, 1] so the
+        // closest point is inside the segment (edge-interior case) or
+        // at an endpoint (vertex case).
+        float t = clamp(dot(diff, edge) / edgeLenSq, 0.0, 1.0);
+        vec2 closest = a + t * edge;
+        vec2 offset = p - closest;
+        float distSq = dot(offset, offset);
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            bestClosest = closest;
+        }
+
+        // Inside test: for a CCW-oriented convex polygon, p is inside
+        // iff cross(edge, diff) >= 0 for every edge. As soon as any
+        // edge says "right side" (negative cross) we know p is
+        // outside and stop updating the flag.
+        float crossEdge = edge.x * diff.y - edge.y * diff.x;
+        if (crossEdge < 0.0) {
+            inside = false;
         }
     }
-    return vec3(bestSdf, bestNormal);
+
+    float dist = sqrt(bestDistSq);
+    vec2 toP = p - bestClosest;
+    float toPLen = length(toP);
+    // Degenerate case: p sits exactly on the polygon boundary. Any
+    // unit vector works for the warp direction since dist == 0 means
+    // the fragment is inside the horizon AA band anyway.
+    vec2 outward = toPLen > HEX_NORMAL_EPS ? (toP / toPLen) : vec2(0.0, 1.0);
+    return vec3(inside ? -dist : dist, outward);
 }
 
 void main() {
@@ -133,27 +170,36 @@ void main() {
 
     // "r" is the signed distance to the event horizon in the two
     // modes: r = length(d) - eventRadius for round, r = polygon SDF
-    // for hex. "warpDir" is the unit vector pointing from the
-    // fragment toward the horizon (ie the direction samples get
-    // pulled when we lens). Both normalize identically — negative r
-    // means inside, positive r means outside.
+    // for hex. Both are computed in aspect-corrected UV space (X
+    // multiplied by aspect) so distances correspond to equal pixel
+    // offsets on both axes regardless of viewport aspect. "warpDir"
+    // is converted back to raw UV space before being added to
+    // texCoord: the X component gets divided by aspect to undo the
+    // stretch. Both normalize identically — negative r means inside,
+    // positive r means outside.
     float r;
     vec2 warpDir;
     if (isHex) {
-        vec3 sdfRes = hexSignedDistance(texCoord,
+        // Hull vertices were pre-multiplied by aspect on the Java
+        // side (see NetherLensEffect.projectToCornerSlot), so we run
+        // the SDF on texCoord's aspect-corrected counterpart to stay
+        // in the same space as the hull.
+        vec2 pAspect = vec2(texCoord.x * aspect, texCoord.y);
+        vec3 sdfRes = hexSignedDistance(pAspect,
                 HoleHull0.xy, HoleHull0.zw,
                 HoleHull1.xy, HoleHull1.zw,
                 HoleHull2.xy, HoleHull2.zw);
         r = sdfRes.x;
-        warpDir = -sdfRes.yz;
+        // Outward direction from the SDF is in aspect space; undo
+        // the aspect stretch on X so the warp lands on the right
+        // texel in UV space.
+        warpDir = -vec2(sdfRes.y / aspect, sdfRes.z);
     } else {
         vec2 d = texCoord - holeUv;
         vec2 dAspect = vec2(d.x * aspect, d.y);
         float dist = length(dAspect);
         r = dist - eventRadius;
         vec2 unitDirAspect = -dAspect / max(dist, 1e-5);
-        // Undo the aspect stretch so the warp lands on the right
-        // texel in UV space.
         warpDir = vec2(unitDirAspect.x / aspect, unitDirAspect.y);
     }
 

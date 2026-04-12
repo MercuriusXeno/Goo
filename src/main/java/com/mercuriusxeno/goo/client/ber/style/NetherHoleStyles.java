@@ -30,5 +30,18 @@ public final class NetherHoleStyles {
      * to {@link #SPHERE} for an A/B comparison. */
     public static final NetherHoleStyle ACTIVE = CUBE;
 
+    /** Kill switch for the screen-space {@code NetherLensEffect}
+     * post-process. When {@code false}, {@code applyPerFrame}
+     * short-circuits and deactivates the post effect; both styles
+     * continue to call {@code markHoleActive} (cheap static-field
+     * writes) but nothing drains the state into a uniform upload, so
+     * the lens never runs. Flip to {@code false} to kill the lens
+     * for debugging without touching the markers. The extract and
+     * apply methods in
+     * {@link com.mercuriusxeno.goo.client.lens.NetherLensEffect} are
+     * intentionally left in place so toggling this flag is a clean
+     * on/off. */
+    public static final boolean LENS_ENABLED = true;
+
     private NetherHoleStyles() {}
 }
