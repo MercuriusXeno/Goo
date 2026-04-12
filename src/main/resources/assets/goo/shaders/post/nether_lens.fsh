@@ -56,8 +56,13 @@ layout(std140) uniform LensConfig {
 
 out vec4 fragColor;
 
-// Edge softness for the event-horizon occluder, in UV units.
-const float HORIZON_AA = 0.002;
+// Edge softness for the event-horizon occluder, in UV units. Wide
+// enough (~6 pixels at 1080p vertical) to hide any sub-pixel
+// disagreement between the hex SDF's hull-derived horizon and the
+// actual cube silhouette rendered into the main framebuffer (the
+// two projections can drift under active FOV modifiers like sprint
+// bob or bow zoom).
+const float HORIZON_AA = 0.006;
 
 // Sharpness of the photon-ring highlight. Higher = thinner ring.
 const float RING_SHARPNESS = 180.0;
@@ -224,6 +229,16 @@ void main() {
     // previous implementation.
     float denom = r + eventRadius;
     float warpMag = (eventRadius * eventRadius) / max(denom * denom, 1e-8) * lensStrength;
+    // Clamp the warp so the sample never crosses the event horizon.
+    // Without this, fragments within ~warpMag of the horizon pull
+    // their samples INTO the cube/sphere silhouette (pure black in
+    // the framebuffer, from the occluder pass), which blended with
+    // the photon ring's additive glow produces a dim-orange-on-black
+    // band hugging the silhouette — the "black mixing in the photon
+    // edge" artifact. Clamping keeps the sample just outside the
+    // horizon so the lensed color is always real scene rather than
+    // occluder black.
+    warpMag = min(warpMag, max(r - HORIZON_AA, 0.0));
     vec2 warpedUv = clamp(texCoord + warpDir * warpMag, vec2(0.0), vec2(1.0));
     vec4 warped = texture(InSampler, warpedUv);
 
