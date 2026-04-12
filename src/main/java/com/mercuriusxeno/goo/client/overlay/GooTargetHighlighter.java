@@ -78,6 +78,17 @@ public final class GooTargetHighlighter {
     /** Opaque ARGB outline color for the targeted entity, or 0 if none. */
     private static int targetOutlineColor;
 
+    // --- Frame-scoped arc deferral ---
+
+    /** Target cached by the opaque-stage handler for the translucent
+     * arc-render stage to consume. Null when no valid target was
+     * resolved this frame or the arc has already been consumed. */
+    private static @Nullable TargetResult cachedArcTarget;
+    /** Goo type for the cached arc target. */
+    private static @Nullable GooType cachedArcType;
+    /** Partial tick captured at the opaque-stage handler. */
+    private static float cachedArcPartialTick;
+
     private GooTargetHighlighter() {}
 
     /**
@@ -282,6 +293,7 @@ public final class GooTargetHighlighter {
      */
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
+        clearCachedArc();
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) { return; }
         if (!mc.options.getCameraType().isFirstPerson()) { return; }
@@ -289,30 +301,69 @@ public final class GooTargetHighlighter {
         if (selectedType == null) { return; }
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         TargetResult target = resolveTarget(mc.player, partialTick);
-        dispatchTargetRendering(event, mc, target, selectedType, partialTick);
+        cacheArc(target, selectedType, partialTick);
+        if (target instanceof TargetResult.BlockTarget bt) {
+            PoseStack ps = event.getPoseStack();
+            MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
+            Camera camera = mc.gameRenderer.getMainCamera();
+            VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
+                    bt.pos(), bt.face(), selectedType);
+        }
     }
 
-    /**
-     * Dispatches arc and face rendering based on target type.
+    /** Renders the deferred throw-arc line after translucent blocks so
+     * the depth buffer contains both opaque and water depth for
+     * correct sorting.
      *
-     * @param event        the render event for pose stack access
-     * @param mc           the Minecraft instance
-     * @param target       the resolved aim target
-     * @param selectedType the selected goo type
-     * @param partialTick  the partial tick for animation
+     * @param event the event instance
      */
-    private static void dispatchTargetRendering(
-            RenderLevelStageEvent.AfterOpaqueFeatures event, Minecraft mc,
-            TargetResult target, GooType selectedType, float partialTick) {
+    @SubscribeEvent
+    public static void onAfterTranslucentBlocks(RenderLevelStageEvent.AfterTranslucentBlocks event) {
+        TargetResult target = cachedArcTarget;
+        GooType type = cachedArcType;
+        float partialTick = cachedArcPartialTick;
+        clearCachedArc();
+        if (target == null || type == null) { return; }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) { return; }
         Camera camera = mc.gameRenderer.getMainCamera();
         PoseStack ps = event.getPoseStack();
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
+        dispatchArcForTarget(ps, buf, camera, mc.player, target, type, partialTick);
+    }
+
+    private static void cacheArc(TargetResult target, GooType type, float partialTick) {
+        cachedArcTarget = target;
+        cachedArcType = type;
+        cachedArcPartialTick = partialTick;
+    }
+
+    private static void clearCachedArc() {
+        cachedArcTarget = null;
+        cachedArcType = null;
+        cachedArcPartialTick = 0f;
+    }
+
+    /** Dispatches arc rendering only (face already drawn at opaque stage).
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the active camera
+     * @param player       the local player
+     * @param target       the cached target
+     * @param selectedType the cached goo type
+     * @param partialTick  the cached partial tick
+     */
+    private static void dispatchArcForTarget(
+            PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
+            Camera camera, Player player, TargetResult target,
+            GooType selectedType, float partialTick) {
         if (target instanceof TargetResult.EntityTarget et) {
-            renderEntityArc(ps, buf, camera, mc.player, et, selectedType, partialTick);
+            renderEntityArc(poseStack, bufferSource, camera, player, et, selectedType, partialTick);
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
-            renderChainMarkerArc(ps, buf, camera, mc.player, cmt, selectedType, partialTick);
+            renderChainMarkerArc(poseStack, bufferSource, camera, player, cmt, selectedType, partialTick);
         } else if (target instanceof TargetResult.BlockTarget bt) {
-            renderBlockArcAndFace(ps, buf, camera, mc.player, bt, selectedType, partialTick);
+            renderBlockArc(poseStack, bufferSource, camera, player, bt, selectedType, partialTick);
         }
     }
 
@@ -359,8 +410,8 @@ public final class GooTargetHighlighter {
                 player, end, gooType.getColor(), partialTick, false);
     }
 
-    /**
-     * Renders the dashed arc and face highlight for a block target.
+    /** Renders only the throw-arc line for a block target. The face
+     * highlight is drawn separately in the opaque stage.
      *
      * @param poseStack    the pose stack
      * @param bufferSource the buffer source
@@ -370,7 +421,7 @@ public final class GooTargetHighlighter {
      * @param gooType      the goo type for coloring
      * @param partialTick  the partial tick for animation
      */
-    private static void renderBlockArcAndFace(
+    private static void renderBlockArc(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Player player, TargetResult.BlockTarget bt,
             GooType gooType, float partialTick) {
@@ -378,8 +429,6 @@ public final class GooTargetHighlighter {
                 .add(bt.face().getUnitVec3().scale(FACE_CENTER_OFFSET));
         ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
                 player, end, gooType.getColor(), partialTick, bt.grannyArc());
-        VoxelHighlightRenderer.renderBlockFace(poseStack, bufferSource, camera,
-                bt.pos(), bt.face(), gooType);
     }
 
     // --- Hand position ---
