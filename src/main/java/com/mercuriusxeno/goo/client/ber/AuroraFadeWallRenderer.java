@@ -89,9 +89,6 @@ public final class AuroraFadeWallRenderer {
     /** Lerp range: maps [0,1] fraction to [-1,1] for run-axis interpolation. */
     private static final float LERP_RANGE = 2.0f;
 
-    /** Epsilon for near-zero run length checks. */
-    private static final float EPSILON = 1e-6f;
-
     /** Hash prime A for edge seed computation. */
     private static final int HASH_PRIME_A = 31;
 
@@ -290,8 +287,36 @@ public final class AuroraFadeWallRenderer {
         float edgeZ = cz + nz;
 
         float edgeSeed = computeEdgeSeed(cx, cy, cz, nx, ny, nz, rx, ry, rz);
-        float stepFrac = 1.0f / AURORA_STRIPS;
+        emitStripLoop(pose, consumer, edgeX, edgeY, edgeZ,
+                rx, ry, rz, faceDir, baseColor, transparentColor,
+                gameTime, heightFn, bandFn, edgeSeed);
+    }
 
+    /** Emits the per-strip quads along the edge with height and band modulation.
+     *
+     * @param pose             the current pose matrix
+     * @param consumer         the vertex consumer
+     * @param edgeX            edge origin X
+     * @param edgeY            edge origin Y
+     * @param edgeZ            edge origin Z
+     * @param rx               edge run direction X
+     * @param ry               edge run direction Y
+     * @param rz               edge run direction Z
+     * @param faceDir          the face direction for normal
+     * @param baseColor        the opaque base color
+     * @param transparentColor the fully transparent color
+     * @param gameTime         current game time for animation
+     * @param heightFn         function computing aurora height
+     * @param bandFn           function computing aurora band alpha
+     * @param edgeSeed         per-edge seed for variation
+     */
+    private static void emitStripLoop(PoseStack.Pose pose, VertexConsumer consumer,
+            float edgeX, float edgeY, float edgeZ,
+            float rx, float ry, float rz, Direction faceDir,
+            int baseColor, int transparentColor, float gameTime,
+            HeightFunction heightFn, BiFunction<Float, Float, Float> bandFn,
+            float edgeSeed) {
+        float stepFrac = 1.0f / AURORA_STRIPS;
         float prevWorldPos = computeWorldPos(edgeX, edgeY, edgeZ, rx, ry, rz, 0f);
         float prevHeight = heightFn.compute(prevWorldPos, gameTime, edgeSeed);
         float prevBand = bandFn.apply(prevWorldPos, gameTime);
@@ -299,18 +324,15 @@ public final class AuroraFadeWallRenderer {
         for (int i = 0; i < AURORA_STRIPS; i++) {
             float t0 = i * stepFrac;
             float t1 = (i + 1) * stepFrac;
-
             float nextWorldPos = computeWorldPos(edgeX, edgeY, edgeZ, rx, ry, rz, t1);
             float nextHeight = heightFn.compute(nextWorldPos, gameTime, edgeSeed);
             float nextBand = bandFn.apply(nextWorldPos, gameTime);
-
             float bandAlpha = (prevBand + nextBand) * HALF;
             emitAuroraQuadPerVertex(pose, consumer,
                     edgeX, edgeY, edgeZ, rx, ry, rz, faceDir,
                     t0, t1, prevHeight, nextHeight,
                     scaleColorAlpha(baseColor, bandAlpha),
                     transparentColor);
-
             prevHeight = nextHeight;
             prevBand = nextBand;
         }

@@ -12,7 +12,7 @@ import org.jspecify.annotations.NonNull;
 
 /**
  * Shared scaffolding for invisible, non-colliding, BE-backed effect blocks
- * like {@link ChainMarkerBlock} and {@link FrostFieldBlock}. Subclasses
+ * like {@link ChainMarkerBlock}. Subclasses
  * supply their {@code codec()}, {@code newBlockEntity()}, {@code getTicker()}
  * and {@code animateTick()} overrides; this base covers the uniform render
  * shape, empty collision, and small selection outline.

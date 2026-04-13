@@ -5,7 +5,6 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
-import com.mercuriusxeno.goo.block.FrostFieldBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.MagickedIceBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
@@ -91,24 +90,11 @@ public class GooBlocks {
                     .noOcclusion()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
 
-    /** Frost field: invisible melt-resist zone placed by frost goo. */
-    public static final DeferredBlock<FrostFieldBlock> FROST_FIELD = BLOCKS.registerBlock(
-            "frost_field", FrostFieldBlock::new,
-            () -> BlockBehaviour.Properties.of()
-                    .noCollision()
-                    .instabreak()
-                    .noLootTable()
-                    .noOcclusion()
-                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
-
     /**
-     * Magicked ice: a non-melting mod variant of vanilla ice, placed by frost
-     * chain effects under the coverage of a {@link FrostFieldBlock}. Visually,
-     * audibly, and mechanically identical to {@code minecraft:ice} (same
-     * texture, model, sound, friction, mining behavior). Silk-touch drops a
-     * vanilla ice item via the inherited loot table override; the block is
-     * not obtainable in its true form. The frost field's thaw pass swaps it
-     * back to vanilla ice on expiry so normal melting can resume.
+     * Magicked ice: a non-melting mod variant of vanilla ice, placed
+     * permanently by the frost cold snap. Visually, audibly, and
+     * mechanically identical to {@code minecraft:ice}. Silk-touch drops
+     * vanilla ice; the block is not obtainable in its true form.
      */
     public static final DeferredBlock<MagickedIceBlock> MAGICKED_ICE = BLOCKS.registerBlock(
             "magicked_ice", MagickedIceBlock::new,

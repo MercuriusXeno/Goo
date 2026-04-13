@@ -4,7 +4,6 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
-import com.mercuriusxeno.goo.block.FrostFieldBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
 import com.mercuriusxeno.goo.block.PlexerBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
@@ -46,7 +45,4 @@ public class GooBlockEntities {
         BLOCK_ENTITIES.register("chain_marker",
             () -> new BlockEntityType<>(ChainMarkerBlockEntity::new, GooBlocks.CHAIN_MARKER.get()));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FrostFieldBlockEntity>> FROST_FIELD =
-        BLOCK_ENTITIES.register("frost_field",
-            () -> new BlockEntityType<>(FrostFieldBlockEntity::new, GooBlocks.FROST_FIELD.get()));
 }

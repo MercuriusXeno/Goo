@@ -195,17 +195,29 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
             Player player, ItemStack toolStack, boolean canHarvest, FluidState fluidState) {
-        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be
-                && be.getBehavior() == null) {
-            if (canToggleFlatMode(level, pos) && !level.isClientSide()) {
-                be.toggleFlatMode();
-                level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON,
-                        SoundSource.BLOCKS, 1.0f,
-                        be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
-            }
-            return false;
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
         }
-        return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
+        if (be.getBehavior() != null) {
+            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
+        }
+        tryToggleFlatMode(level, pos, be);
+        return false;
+    }
+
+    /** Toggles flat mode on the marker if the goo type supports it.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @param be    the chain marker block entity
+     */
+    private static void tryToggleFlatMode(Level level, BlockPos pos, ChainMarkerBlockEntity be) {
+        if (!canToggleFlatMode(level, pos)) { return; }
+        if (level.isClientSide()) { return; }
+        be.toggleFlatMode();
+        level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON,
+                SoundSource.BLOCKS, 1.0f,
+                be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
     }
 
     /**
@@ -299,25 +311,37 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
             @Nullable Orientation orientation,
             boolean movedByPiston) {
         if (level.isClientSide()) { return; }
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
-        if (be.getBehavior() != null) { return; }
+        if (!isFusingMarkerWithNoSupport(level, pos)) { return; }
+        initiateFall(state, (ServerLevel) level, pos);
+    }
 
-        Direction face = be.getPlacedFace();
-        BlockPos supportPos = pos.relative(face);
-        if (!level.getBlockState(supportPos).isAir()) { return; }
+    /** Returns true if the marker at pos is in fuse phase and its support block is air.
+     *
+     * @param level the current level
+     * @param pos   the marker block position
+     * @return true if the marker is fusing and has no support
+     */
+    private static boolean isFusingMarkerWithNoSupport(Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (be.getBehavior() != null) { return false; }
+        BlockPos supportPos = pos.relative(be.getPlacedFace());
+        return level.getBlockState(supportPos).isAir();
+    }
 
+    /** Removes the marker and schedules a fall to the landing position.
+     *
+     * @param state the block state
+     * @param level the server level
+     * @param pos   the marker block position
+     */
+    private static void initiateFall(BlockState state, ServerLevel level, BlockPos pos) {
         BlockPos landing = findLandingBelow(level, pos);
         if (landing == null) { return; }
-
-        GooType gooType = be.getGooType();
-        int stacks = be.getStackCount();
-        int max = be.getMaxStacks();
-        int fuse = be.getFuseRemaining();
-        boolean flat = be.isFlatMode();
-
+        ChainMarkerBlockEntity be = (ChainMarkerBlockEntity) level.getBlockEntity(pos);
         level.removeBlock(pos, false);
-        ChainMarkerFallScheduler.scheduleFall((ServerLevel) level, pos, landing,
-                state.getBlock(), gooType, stacks, max, fuse, face, flat);
+        ChainMarkerFallScheduler.scheduleFall(level, pos, landing,
+                state.getBlock(), be.getGooType(), be.getStackCount(),
+                be.getMaxStacks(), be.getFuseRemaining(), be.getPlacedFace(), be.isFlatMode());
     }
 
     /**
@@ -370,8 +394,17 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     private static boolean canToggleFlatMode(Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
         if (be.getBehavior() != null) { return false; }
-        GooType type = be.getGooType();
-        return type == GooType.ROCK || type == GooType.BLAZE;
+        return supportsFlatMode(be.getGooType());
+    }
+
+    /** Goo types that support flat/tunnel mode toggling.
+     *
+     * @param type the goo type to check
+     * @return true if the type supports flat mode
+     */
+    private static boolean supportsFlatMode(GooType type) {
+        return type == GooType.ROCK || type == GooType.BLAZE
+                || type == GooType.FROST || type == GooType.METAL;
     }
 
 
@@ -439,6 +472,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
             case BLAZE -> spawnBlazeParticles(stacks, cx, cy, cz, spread, level, random);
             case ROCK -> spawnRockParticles(stacks, cx, cy, cz, spread, level, random);
             case NETHER -> spawnNetherParticles(stacks, cx, cy, cz, spread, level, random);
+            case METAL -> spawnMetalParticles(stacks, cx, cy, cz, spread, level, random);
             default -> {}
         }
     }
@@ -523,6 +557,26 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         }
         if (random.nextInt(NETHER_SMOKE_CHANCE) == 0) {
             level.addParticle(ParticleTypes.SMOKE, cx, cy, cz, 0, 0, 0);
+        }
+    }
+
+    /**
+     * Emits metallic crit particles for metal chain markers.
+     * @param stacks the current stack count
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void spawnMetalParticles(int stacks, double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        if (random.nextInt(LAVA_CHANCE) == 0) {
+            double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            level.addParticle(ParticleTypes.CRIT, cx + ox, cy + oy, cz + oz, 0, 0, 0);
         }
     }
 }

@@ -293,33 +293,71 @@ public final class NetherLensEffect {
     private static boolean stageRoundUniforms(
             Minecraft mc, GameRenderer gameRenderer, Vec3 center) {
         Camera camera = gameRenderer.getMainCamera();
-        Vec3 cam = camera.position();
-        double rx = center.x - cam.x;
-        double ry = center.y - cam.y;
-        double rz = center.z - cam.z;
-        Vector3fc forward = camera.forwardVector();
-        float vForward = (float) (forward.x() * rx + forward.y() * ry + forward.z() * rz);
+        float vForward = forwardDepth(camera, center);
         if (vForward <= 0f) {
             deactivateIfActive(gameRenderer);
             return false;
         }
         float tanHalfFov = computeTanHalfFov(mc);
         float aspect = computeAspect(mc);
+        float eventRadiusUv = computeEventRadiusUv(vForward, tanHalfFov);
+        if (eventRadiusUv <= 0f) {
+            deactivateIfActive(gameRenderer);
+            return false;
+        }
+        writeRoundParams(camera, center, vForward, tanHalfFov, aspect, eventRadiusUv);
+        return true;
+    }
+
+    /** Computes the forward-depth of center relative to the camera.
+     *
+     * @param camera the active camera
+     * @param center the world-space center
+     * @return signed forward distance from camera to center
+     */
+    private static float forwardDepth(Camera camera, Vec3 center) {
+        Vec3 cam = camera.position();
+        double rx = center.x - cam.x;
+        double ry = center.y - cam.y;
+        double rz = center.z - cam.z;
+        Vector3fc forward = camera.forwardVector();
+        return (float) (forward.x() * rx + forward.y() * ry + forward.z() * rz);
+    }
+
+    /** Computes the event horizon radius in UV space.
+     *
+     * @param vForward   forward distance to the hole center
+     * @param tanHalfFov tangent of half the player's vertical FOV
+     * @return the event radius in UV coordinates
+     */
+    private static float computeEventRadiusUv(float vForward, float tanHalfFov) {
+        return (activeHoleRadius / (vForward * tanHalfFov)) * NDC_TO_UV_SCALE;
+    }
+
+    /** Writes the round-mode hole params and lens tuning uniforms.
+     *
+     * @param camera        the active camera
+     * @param center        the hole's world-space center
+     * @param vForward      forward distance to the center
+     * @param tanHalfFov    tangent of half the player's vertical FOV
+     * @param aspect        viewport aspect ratio
+     * @param eventRadiusUv the event radius in UV coordinates
+     */
+    private static void writeRoundParams(Camera camera, Vec3 center,
+            float vForward, float tanHalfFov, float aspect, float eventRadiusUv) {
+        Vec3 cam = camera.position();
+        double rx = center.x - cam.x;
+        double ry = center.y - cam.y;
+        double rz = center.z - cam.z;
         float vUp = viewUpComponent(camera, rx, ry, rz);
         float vRight = viewRightComponent(camera, rx, ry, rz);
         float ndcX = vRight / (vForward * tanHalfFov * aspect);
         float ndcY = vUp / (vForward * tanHalfFov);
         float uvX = ndcX * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
         float uvY = ndcY * NDC_TO_UV_SCALE + NDC_TO_UV_OFFSET;
-        float eventRadiusUv = (activeHoleRadius / (vForward * tanHalfFov)) * NDC_TO_UV_SCALE;
-        if (eventRadiusUv <= 0f) {
-            deactivateIfActive(gameRenderer);
-            return false;
-        }
         float photonOffsetUv = eventRadiusUv * (PHOTON_RING_RADIUS_MULT - 1f);
         HOLE_PARAMS.set(uvX, uvY, eventRadiusUv, photonOffsetUv);
         LENS_TUNING.set(LENS_STRENGTH, aspect, PHOTON_RING_BRIGHTNESS, SHAPE_MODE_ROUND);
-        return true;
     }
 
     /** Projects the 8 corners of an axis-aligned cube of half-extent
@@ -371,16 +409,35 @@ public final class NetherLensEffect {
         double cz = center.z - cam.z;
         float half = activeHoleRadius;
         for (int i = 0; i < CUBE_CORNERS; i++) {
-            double sx = ((i & CORNER_BIT_X) == 0) ? -half : half;
-            double sy = ((i & CORNER_BIT_Y) == 0) ? -half : half;
-            double sz = ((i & CORNER_BIT_Z) == 0) ? -half : half;
-            double dx = cx + sx;
-            double dy = cy + sy;
-            double dz = cz + sz;
-            float vForward = (float) (forward.x() * dx + forward.y() * dy + forward.z() * dz);
-            if (vForward <= 0f) { return false; }
-            projectToCornerSlot(camera, i, dx, dy, dz, vForward, tanHalfFov, aspect);
+            if (!projectSingleCorner(camera, forward, i, cx, cy, cz, half, tanHalfFov, aspect)) {
+                return false;
+            }
         }
+        return true;
+    }
+
+    /** Projects one cube corner into UV space. Returns false if behind camera.
+     *
+     * @param camera     the active camera
+     * @param forward    the camera forward vector
+     * @param i          corner index (0..7)
+     * @param cx         camera-relative center X
+     * @param cy         camera-relative center Y
+     * @param cz         camera-relative center Z
+     * @param half       half-extent of the cube
+     * @param tanHalfFov tangent of half the player's vertical FOV
+     * @param aspect     viewport aspect ratio
+     * @return true if the corner is in front of the camera
+     */
+    private static boolean projectSingleCorner(Camera camera, Vector3fc forward, int i,
+            double cx, double cy, double cz, float half,
+            float tanHalfFov, float aspect) {
+        double dx = cx + (((i & CORNER_BIT_X) == 0) ? -half : half);
+        double dy = cy + (((i & CORNER_BIT_Y) == 0) ? -half : half);
+        double dz = cz + (((i & CORNER_BIT_Z) == 0) ? -half : half);
+        float vForward = (float) (forward.x() * dx + forward.y() * dy + forward.z() * dz);
+        if (vForward <= 0f) { return false; }
+        projectToCornerSlot(camera, i, dx, dy, dz, vForward, tanHalfFov, aspect);
         return true;
     }
 
@@ -428,6 +485,18 @@ public final class NetherLensEffect {
     private static int convexHull8() {
         for (int i = 0; i < CUBE_CORNERS; i++) { HULL_SORT_IDX[i] = i; }
         sortIndicesByXy(HULL_SORT_IDX, CUBE_CORNERS);
+        int k = buildLowerHull();
+        int lowerEnd = k + 1;
+        k = buildUpperHull(k, lowerEnd);
+        // Drop the duplicate closing vertex.
+        return k - 1;
+    }
+
+    /** Builds the lower hull via Andrew's monotone chain.
+     *
+     * @return the chain length after building the lower hull
+     */
+    private static int buildLowerHull() {
         int k = 0;
         for (int i = 0; i < CUBE_CORNERS; i++) {
             while (k >= MONOTONE_MIN_CHAIN && crossAt(
@@ -435,10 +504,16 @@ public final class NetherLensEffect {
                     HULL_CHAIN_SCRATCH[k - 1], HULL_SORT_IDX[i]) <= 0f) { k--; }
             HULL_CHAIN_SCRATCH[k++] = HULL_SORT_IDX[i];
         }
-        int lowerEnd = k + 1;
-        // Upper hull walks backward from the second-to-last sorted
-        // point (the last one is already the endpoint of the lower
-        // hull) to the first, skipping index 0 on the final step.
+        return k;
+    }
+
+    /** Builds the upper hull, appending to the chain after lower hull.
+     *
+     * @param k        current chain length from lower hull
+     * @param lowerEnd the exclusive end index of the lower hull
+     * @return the updated chain length
+     */
+    private static int buildUpperHull(int k, int lowerEnd) {
         int upperStart = CUBE_CORNERS - MONOTONE_MIN_CHAIN;
         for (int i = upperStart; i >= 0; i--) {
             while (k >= lowerEnd && crossAt(
@@ -446,8 +521,7 @@ public final class NetherLensEffect {
                     HULL_CHAIN_SCRATCH[k - 1], HULL_SORT_IDX[i]) <= 0f) { k--; }
             HULL_CHAIN_SCRATCH[k++] = HULL_SORT_IDX[i];
         }
-        // Drop the duplicate closing vertex.
-        return k - 1;
+        return k;
     }
 
     /** Insertion-sorts {@code idx[0..n)} by {@code (x, y)} on the
@@ -460,19 +534,40 @@ public final class NetherLensEffect {
     private static void sortIndicesByXy(int[] idx, int n) {
         for (int i = 1; i < n; i++) {
             int v = idx[i];
-            float vx = CUBE_CORNERS_UV[v * POINT_STRIDE];
-            float vy = CUBE_CORNERS_UV[v * POINT_STRIDE + POINT_Y];
-            int j = i;
-            while (j > 0) {
-                int k = idx[j - 1];
-                float kx = CUBE_CORNERS_UV[k * POINT_STRIDE];
-                float ky = CUBE_CORNERS_UV[k * POINT_STRIDE + POINT_Y];
-                if (kx < vx || (kx == vx && ky < vy)) { break; }
-                idx[j] = idx[j - 1];
-                j--;
-            }
+            int j = insertionPoint(idx, i, v);
             idx[j] = v;
         }
+    }
+
+    /** Finds the insertion point for value v by shifting larger entries right.
+     *
+     * @param idx the index array
+     * @param end the exclusive end of the sorted region
+     * @param v   the value to insert
+     * @return the insertion index
+     */
+    private static int insertionPoint(int[] idx, int end, int v) {
+        float vx = CUBE_CORNERS_UV[v * POINT_STRIDE];
+        float vy = CUBE_CORNERS_UV[v * POINT_STRIDE + POINT_Y];
+        int j = end;
+        while (j > 0 && !isBeforeInXy(idx[j - 1], vx, vy)) {
+            idx[j] = idx[j - 1];
+            j--;
+        }
+        return j;
+    }
+
+    /** Returns true if the point at index k sorts before (vx, vy).
+     *
+     * @param k  the point index to test
+     * @param vx the reference X coordinate
+     * @param vy the reference Y coordinate
+     * @return true if point k sorts before (vx, vy)
+     */
+    private static boolean isBeforeInXy(int k, float vx, float vy) {
+        float kx = CUBE_CORNERS_UV[k * POINT_STRIDE];
+        float ky = CUBE_CORNERS_UV[k * POINT_STRIDE + POINT_Y];
+        return kx < vx || (kx == vx && ky < vy);
     }
 
     /** Cross product of edges {@code (o→a)} and {@code (o→b)} on

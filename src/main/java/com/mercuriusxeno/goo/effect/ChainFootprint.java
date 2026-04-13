@@ -150,18 +150,39 @@ public final class ChainFootprint {
         List<int[]> result = new ArrayList<>(budget);
         int i = 0;
         while (i < sorted.size()) {
-            int tierStart = i;
-            int dist = sqDist(sorted.get(i));
-            while (i < sorted.size() && sqDist(sorted.get(i)) == dist) {
-                i++;
-            }
-            int tierSize = i - tierStart;
+            int tierEnd = findTierEnd(sorted, i);
+            int tierSize = tierEnd - i;
             if (result.size() + tierSize > budget) { break; }
-            for (int j = tierStart; j < i; j++) {
-                result.add(sorted.get(j));
-            }
+            addRange(result, sorted, i, tierEnd);
+            i = tierEnd;
         }
         return result;
+    }
+
+    /** Returns the exclusive end index of the tier starting at {@code from}.
+     *
+     * @param sorted the sorted offset list
+     * @param from   the start index
+     * @return the exclusive end index of the tier
+     */
+    private static int findTierEnd(List<int[]> sorted, int from) {
+        int dist = sqDist(sorted.get(from));
+        int i = from;
+        while (i < sorted.size() && sqDist(sorted.get(i)) == dist) { i++; }
+        return i;
+    }
+
+    /** Adds elements from sorted[start..end) to the result list.
+     *
+     * @param result the destination list
+     * @param sorted the source list
+     * @param start  the inclusive start index
+     * @param end    the exclusive end index
+     */
+    private static void addRange(List<int[]> result, List<int[]> sorted, int start, int end) {
+        for (int j = start; j < end; j++) {
+            result.add(sorted.get(j));
+        }
     }
 
     private static int sqDist(int[] pos) {
@@ -210,9 +231,19 @@ public final class ChainFootprint {
         List<int[]> footprint = flatMode ? flatFootprint(stacks) : layerFootprint(stacks);
         int depth = flatMode ? 1 : tunnelDepth(stacks);
         Direction blastDir = face.getOpposite();
+        return expandLayers(footprint, depth, blastDir);
+    }
+
+    /** Expands a 2D footprint into 3D offsets along the blast direction.
+     *
+     * @param footprint the 2D footprint offsets
+     * @param depth     the number of layers
+     * @param blastDir  the blast direction
+     * @return list of 3D {dx, dy, dz} offsets
+     */
+    private static List<int[]> expandLayers(List<int[]> footprint, int depth, Direction blastDir) {
         Direction.Axis axis = blastDir.getAxis();
         int step = blastDir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : NEG;
-
         List<int[]> result = new ArrayList<>(footprint.size() * depth);
         for (int layer = 0; layer < depth; layer++) {
             int depthOffset = (layer + 1) * step;
@@ -238,6 +269,33 @@ public final class ChainFootprint {
             case Y -> new int[]{a, d, b};
             case Z -> new int[]{a, b, d};
         };
+    }
+
+    /**
+     * Returns all 3D block offsets in a sphere centered one block into
+     * the wall from the marker. Used by frost and other spheroid effects.
+     *
+     * @param radius the sphere radius in blocks
+     * @param face   the placed face (determines center offset direction)
+     * @return list of {dx, dy, dz} offsets relative to the marker
+     */
+    public static List<int[]> computeSphereOffsets(int radius, Direction face) {
+        Direction blastDir = face.getOpposite();
+        int cx = blastDir.getStepX();
+        int cy = blastDir.getStepY();
+        int cz = blastDir.getStepZ();
+        int r2 = radius * radius;
+        List<int[]> result = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (dx * dx + dy * dy + dz * dz <= r2) {
+                        result.add(new int[]{dx + cx, dy + cy, dz + cz});
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     // ── Bounds ───────────────────────────────────────────────────────
