@@ -7,7 +7,6 @@ import com.mercuriusxeno.goo.ISidedProxy;
 import com.mercuriusxeno.goo.client.ber.CanisterBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.CrucibleBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.FrostFieldBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.HubBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.PlexerBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.TapBlockEntityRenderer;
@@ -142,8 +141,6 @@ public final class GooClientSetup {
     private static void registerEffectRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CHAIN_MARKER.get(),
             ChainMarkerBlockEntityRenderer::new);
-        event.registerBlockEntityRenderer(GooBlockEntities.FROST_FIELD.get(),
-            FrostFieldBlockEntityRenderer::new);
     }
 
     /**

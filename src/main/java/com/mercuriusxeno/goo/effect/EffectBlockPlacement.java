@@ -3,8 +3,6 @@ package com.mercuriusxeno.goo.effect;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.block.FrostFieldBlockEntity;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.Action;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.CandidateState;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.Decision;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.WaterHandling;
@@ -24,11 +22,10 @@ import org.jspecify.annotations.Nullable;
  * {@code BlazeEffect}, {@code NetherEffect}, {@code FrostEffect}) forward
  * to the entry points below, which build a {@link ChainPlacementRules}
  * candidate state for the hit and face-adjacent positions, apply the
- * decision, and initialize the resulting chain marker or frost field.
+ * decision, and initialize the resulting chain marker.
  *
- * <p>Rock, blaze, and nether place waterloggable {@code ChainMarkerBlock}s;
- * frost places a {@code FrostFieldBlock} with stacking and the
- * "freeze-and-rise" water handling.</p>
+ * <p>All chain effects (rock, blaze, nether, frost) place waterloggable
+ * {@code ChainMarkerBlock}s via {@link #placeChainMarker}.</p>
  *
  * <p>Placement rule: stack onto an existing same-type effect block first,
  * then try the hit block, then the face-adjacent block. The hit block is
@@ -41,7 +38,6 @@ final class EffectBlockPlacement {
     /** Block update flags for setBlock calls. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
     /** Initial frost field stack count on first placement. */
-    private static final int INITIAL_FROST_STACK = 1;
     /** Fallback face used when the hit direction is unknown. */
     private static final Direction DEFAULT_FACE = Direction.UP;
 
@@ -102,19 +98,30 @@ final class EffectBlockPlacement {
      * @param pos        the target block position
      * @param targetFace the face that was hit, or null
      */
-    static void frostFreeze(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel serverLevel)) { return; }
-        Direction resolvedFace = targetFace == null ? DEFAULT_FACE : targetFace;
-        BlockPos adjacentPos = pos.relative(resolvedFace);
+    /**
+     * Frost: chain marker cold snap. Places a chain marker that freezes
+     * a spheroid on fuse expiry. Uses the same placement path as rock/blaze.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void frostColdSnap(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeChainMarker(level, pos, targetFace, GooType.FROST);
+    }
 
-        Decision decision = decideFrostPlacement(serverLevel, pos, adjacentPos);
-        if (decision.action() == Action.STACK) {
-            applyFrostStack(serverLevel, pickCandidate(decision, pos, adjacentPos));
-            return;
-        }
-        // Fresh placement path: run the initial radius-1 freeze first, then apply.
-        FrostExecutor.execute(serverLevel, pos, EffectMath.computeFreezeRadius(INITIAL_FROST_STACK));
-        applyFrostPlacement(serverLevel, decision, pos, adjacentPos);
+    /**
+     * Metal: chain marker spike trap. Places a chain marker that becomes
+     * a spike trap on fuse expiry.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void metalSpikeTrap(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeChainMarker(level, pos, targetFace, GooType.METAL);
     }
 
     // ── Chain marker placement ─────────────────────────────────────────
@@ -227,132 +234,6 @@ final class EffectBlockPlacement {
         if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) {
             be.initChain(type, face);
         }
-    }
-
-    // ── Frost field placement ──────────────────────────────────────────
-
-    /**
-     * Runs the {@link ChainPlacementRules} decision for a frost field
-     * placement using FREEZE_AND_RISE water handling.
-     *
-     * @param level    the server level
-     * @param hitPos   the hit block position
-     * @param adjPos   the face-adjacent block position
-     * @return the placement decision
-     */
-    private static Decision decideFrostPlacement(ServerLevel level, BlockPos hitPos, BlockPos adjPos) {
-        CandidateState hitState = frostCandidateState(level, hitPos);
-        CandidateState adjacentState = frostCandidateState(level, adjPos);
-        return ChainPlacementRules.decide(hitState, adjacentState, WaterHandling.FREEZE_AND_RISE);
-    }
-
-    /**
-     * Builds a CandidateState for frost field placement. The aboveIsPlaceable
-     * field is consulted for the freeze-and-rise path so it is computed here.
-     *
-     * @param level the server level
-     * @param pos   the candidate position
-     * @return the candidate state snapshot
-     */
-    private static CandidateState frostCandidateState(ServerLevel level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        FluidState fluid = state.getFluidState();
-        return new CandidateState(
-                isExistingFrostField(level, pos, state),
-                state.isAir(),
-                state.canBeReplaced(),
-                fluid.is(Fluids.WATER),
-                fluid.is(Fluids.LAVA),
-                isAboveAirOrReplaceableNonFluid(level, pos));
-    }
-
-    /**
-     * Returns true if the block at {@code pos} is an existing frost field.
-     *
-     * @param level the current level
-     * @param pos   the position to test
-     * @param state the block state at {@code pos}
-     * @return true if a frost field is present
-     */
-    private static boolean isExistingFrostField(Level level, BlockPos pos, BlockState state) {
-        return state.is(GooBlocks.FROST_FIELD.get())
-                && level.getBlockEntity(pos) instanceof FrostFieldBlockEntity;
-    }
-
-    /**
-     * Returns true if the block directly above {@code pos} is air or a
-     * non-fluid replaceable block (grass, fire, snow layer, etc.). Used
-     * by the freeze-and-rise path to check whether the field can actually
-     * sit on top of the frozen water.
-     *
-     * @param level the current level
-     * @param pos   the candidate position (the position that will be frozen)
-     * @return true if the block above can receive a frost field
-     */
-    private static boolean isAboveAirOrReplaceableNonFluid(Level level, BlockPos pos) {
-        BlockState above = level.getBlockState(pos.above());
-        return above.isAir() || (above.canBeReplaced() && above.getFluidState().isEmpty());
-    }
-
-    /**
-     * Dispatches a frost placement decision (no-op for STACK - handled
-     * earlier in {@link #frostFreeze}).
-     *
-     * @param level    the server level
-     * @param decision the decision to apply
-     * @param hitPos   the hit block position
-     * @param adjPos   the face-adjacent block position
-     */
-    private static void applyFrostPlacement(ServerLevel level, Decision decision,
-            BlockPos hitPos, BlockPos adjPos) {
-        BlockPos target = pickCandidate(decision, hitPos, adjPos);
-        switch (decision.action()) {
-            case DISPLACE -> placeFreshFrostField(level, target);
-            case FREEZE_AND_RISE -> freezeAndRiseFrostField(level, target);
-            case STACK, WATERLOG, NONE -> { /* STACK handled in frostFreeze; others are no-op */ }
-        }
-    }
-
-    /**
-     * Stacking path: bumps the existing field's stack count and, if the bump
-     * actually took effect, re-runs the freeze at the new (larger) radius.
-     *
-     * @param level the server level
-     * @param pos   the existing frost field position
-     */
-    private static void applyFrostStack(ServerLevel level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof FrostFieldBlockEntity be && be.tryStack()) {
-            FrostExecutor.execute(level, pos, be.getRadius());
-        }
-    }
-
-    /**
-     * Places a fresh frost field at {@code pos} and initializes its block entity.
-     *
-     * @param level the server level
-     * @param pos   the placement position
-     */
-    private static void placeFreshFrostField(ServerLevel level, BlockPos pos) {
-        level.setBlock(pos, GooBlocks.FROST_FIELD.get().defaultBlockState(), BLOCK_UPDATE_FLAGS);
-        if (level.getBlockEntity(pos) instanceof FrostFieldBlockEntity be) {
-            be.initField(INITIAL_FROST_STACK);
-        }
-    }
-
-    /**
-     * Frost-field special: freezes the water at {@code waterPos} to the mod's
-     * non-melting magicked ice block and places the field at
-     * {@code waterPos.above()}. The above position was pre-validated by the
-     * placement rubric via {@link #isAboveAirOrReplaceableNonFluid}. The
-     * magicked-ice block is reverted to vanilla ice by the field's thaw pass
-     * on expiry, matching the behavior of the radius-freeze pass.
-     *
-     * @param level    the server level
-     * @param waterPos the water-containing candidate position
-     */
-    private static void freezeAndRiseFrostField(ServerLevel level, BlockPos waterPos) {
-        level.setBlock(waterPos, GooBlocks.MAGICKED_ICE.get().defaultBlockState(), BLOCK_UPDATE_FLAGS);
-        placeFreshFrostField(level, waterPos.above());
     }
 
     // ── Shared helpers ─────────────────────────────────────────────────

@@ -83,15 +83,19 @@ public final class GloveThrowSender {
      * @param pos the target position from the flight payload
      */
     public static void onFlightArrived(BlockPos pos) {
-        if (IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null) != null) {
-            return;
-        }
+        if (decrementInFlight(pos)) { return; }
         for (Direction dir : Direction.values()) {
-            BlockPos adj = pos.relative(dir);
-            if (IN_FLIGHT.computeIfPresent(adj, (k, v) -> v > 1 ? v - 1 : null) != null) {
-                return;
-            }
+            if (decrementInFlight(pos.relative(dir))) { return; }
         }
+    }
+
+    /** Decrements the in-flight count at pos. Returns true if the entry existed.
+     *
+     * @param pos the block position to decrement
+     * @return true if an in-flight entry existed at pos
+     */
+    private static boolean decrementInFlight(BlockPos pos) {
+        return IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null) != null;
     }
 
     /** Clears all in-flight tracking (on disconnect or dimension change). */
@@ -151,15 +155,25 @@ public final class GloveThrowSender {
             return cmt.pos();
         }
         if (target instanceof TargetResult.BlockTarget bt) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) { return null; }
-            if (mc.level.getBlockEntity(bt.pos()) instanceof ChainMarkerBlockEntity) {
-                return bt.pos();
-            }
-            BlockPos adjacent = bt.pos().relative(bt.face());
-            if (mc.level.getBlockEntity(adjacent) instanceof ChainMarkerBlockEntity) {
-                return adjacent;
-            }
+            return findMarkerAtOrAdjacent(bt);
+        }
+        return null;
+    }
+
+    /** Checks the hit pos and its adjacent face for a chain marker block entity.
+     *
+     * @param bt the block target to check
+     * @return the marker position, or null if none found
+     */
+    private static @Nullable BlockPos findMarkerAtOrAdjacent(TargetResult.BlockTarget bt) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) { return null; }
+        if (mc.level.getBlockEntity(bt.pos()) instanceof ChainMarkerBlockEntity) {
+            return bt.pos();
+        }
+        BlockPos adjacent = bt.pos().relative(bt.face());
+        if (mc.level.getBlockEntity(adjacent) instanceof ChainMarkerBlockEntity) {
+            return adjacent;
         }
         return null;
     }

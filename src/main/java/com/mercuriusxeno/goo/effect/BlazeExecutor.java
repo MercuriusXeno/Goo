@@ -216,10 +216,8 @@ public final class BlazeExecutor {
      */
     private static boolean tryMineBlock(ServerLevel level, BlockPos pos,
                                         ItemStack tool, List<ItemStack> drops) {
-        if (!level.isInWorldBounds(pos)) { return false; }
+        if (!canMineAt(level, pos)) { return false; }
         BlockState state = level.getBlockState(pos);
-        if (state.isAir()) { return false; }
-        if (state.getDestroySpeed(level, pos) < 0) { return false; }
         BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
 
         List<ItemStack> rawDrops = Block.getDrops(state, level, pos, blockEntity, null, tool);
@@ -231,6 +229,18 @@ public final class BlazeExecutor {
         level.levelEvent(BREAK_EFFECT_EVENT, pos, Block.getId(state));
         level.removeBlock(pos, false);
         return true;
+    }
+
+    /** Returns true if the block at pos is in-bounds, non-air, and destructible.
+     *
+     * @param level the server level
+     * @param pos   the block position to check
+     * @return true if the block can be mined
+     */
+    private static boolean canMineAt(ServerLevel level, BlockPos pos) {
+        if (!level.isInWorldBounds(pos)) { return false; }
+        BlockState state = level.getBlockState(pos);
+        return !state.isAir() && state.getDestroySpeed(level, pos) >= 0;
     }
 
     /** Attempts to smelt an item via furnace recipe. Returns the smelted

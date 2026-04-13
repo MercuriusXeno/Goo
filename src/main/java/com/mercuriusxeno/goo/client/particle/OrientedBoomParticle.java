@@ -25,6 +25,8 @@ public class OrientedBoomParticle extends HugeExplosionParticle {
     private static final int BOOM_LIFETIME = 16;
     /** Base quad size for the boom particle. */
     private static final float BOOM_QUAD_SIZE = 1.5F;
+    /** Pre-computed rotation templates per direction, copied on use. */
+    private static final Quaternionf[] ROTATIONS = buildRotationTable();
 
     private final Quaternionf fixedRotation;
     private final Quaternionf flippedRotation;
@@ -55,22 +57,24 @@ public class OrientedBoomParticle extends HugeExplosionParticle {
         this.extractRotatedQuad(state, camera, flippedRotation, partialTick);
     }
 
-    /** Computes a quaternion that orients the quad perpendicular to the
-     * given direction. Default particle quad faces +Z (toward camera),
-     * so we rotate to face the blast direction.
+    private static Quaternionf[] buildRotationTable() {
+        Quaternionf[] table = new Quaternionf[Direction.values().length];
+        table[Direction.UP.ordinal()] = new Quaternionf().rotationX(-HALF_PI);
+        table[Direction.DOWN.ordinal()] = new Quaternionf().rotationX(HALF_PI);
+        table[Direction.NORTH.ordinal()] = new Quaternionf().identity();
+        table[Direction.SOUTH.ordinal()] = new Quaternionf().rotationY((float) Math.PI);
+        table[Direction.EAST.ordinal()] = new Quaternionf().rotationY(-HALF_PI);
+        table[Direction.WEST.ordinal()] = new Quaternionf().rotationY(HALF_PI);
+        return table;
+    }
+
+    /** Returns a fresh copy of the pre-computed rotation for the given direction.
      *
      * @param dir the blast direction
      * @return the orientation quaternion
      */
     private static Quaternionf computeRotation(Direction dir) {
-        return switch (dir) {
-            case UP -> new Quaternionf().rotationX(-HALF_PI);
-            case DOWN -> new Quaternionf().rotationX(HALF_PI);
-            case NORTH -> new Quaternionf().identity();
-            case SOUTH -> new Quaternionf().rotationY((float) Math.PI);
-            case EAST -> new Quaternionf().rotationY(-HALF_PI);
-            case WEST -> new Quaternionf().rotationY(HALF_PI);
-        };
+        return new Quaternionf(ROTATIONS[dir.ordinal()]);
     }
 
     /** Provider that reads blast direction from the xAux parameter. */

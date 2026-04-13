@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -9,14 +10,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import java.util.List;
 
 /**
- * Performs the instant freeze effect for frost goo. Converts liquids
- * to solid forms, extinguishes fires, and destroys plants in a sphere.
- * Frozen water becomes a non-melting mod ice block for the field's
- * lifetime; on field expiry the mod ice is swapped to vanilla ice by
- * {@link com.mercuriusxeno.goo.block.FrostFieldBlockEntity}, at which
- * point it can melt normally.
+ * Performs the cold snap freeze effect for frost goo. Converts liquids
+ * to solid forms, extinguishes fires, and destroys plants. Frozen
+ * water becomes permanent non-melting magicked ice; lava becomes
+ * obsidian. Supports both spheroid and flat-mode footprints.
  */
 public final class FrostExecutor {
 
@@ -32,6 +32,8 @@ public final class FrostExecutor {
     private static final float ICE_CRACK_VOLUME = 1.0f;
     /** Sound pitch for the ice-crack effect. */
     private static final float ICE_CRACK_PITCH = 0.5f;
+    /** Array index for Z component in offset triples. */
+    private static final int Z_INDEX = 2;
 
     private FrostExecutor() {}
 
@@ -48,6 +50,47 @@ public final class FrostExecutor {
     public static void execute(ServerLevel level, BlockPos center, int radius) {
         convertSphere(level, center, radius);
         spawnEffects(level, center, radius);
+    }
+
+    /**
+     * Freezes all convertible blocks in a flat Euclidean circle footprint.
+     * Used when the frost chain marker is in flat mode.
+     *
+     * @param level      the server level
+     * @param origin     the chain marker position
+     * @param placedFace the face the marker was placed on
+     * @param stackCount the blob stack count
+     */
+    public static void executeFlatMode(ServerLevel level, BlockPos origin,
+            Direction placedFace, int stackCount) {
+        List<int[]> offsets = ChainFootprint.computeRegionOffsets(
+                stackCount, true, placedFace);
+        for (int[] o : offsets) {
+            convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
+        }
+        int radius = EffectMath.computeFreezeRadius(stackCount);
+        spawnEffects(level, origin, radius);
+    }
+
+    /**
+     * Freezes all convertible blocks in a tunnel footprint (same shape
+     * as rock/blaze). Used when the frost marker is underwater to
+     * convert the area ahead instead of a sphere around the player.
+     *
+     * @param level      the server level
+     * @param origin     the chain marker position
+     * @param placedFace the face the marker was placed on
+     * @param stackCount the blob stack count
+     */
+    public static void executeTunnel(ServerLevel level, BlockPos origin,
+            Direction placedFace, int stackCount) {
+        List<int[]> offsets = ChainFootprint.computeRegionOffsets(
+                stackCount, false, placedFace);
+        for (int[] o : offsets) {
+            convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
+        }
+        int radius = EffectMath.computeFreezeRadius(stackCount);
+        spawnEffects(level, origin, radius);
     }
 
     /**

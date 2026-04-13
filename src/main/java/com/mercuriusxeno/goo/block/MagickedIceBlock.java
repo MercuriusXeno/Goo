@@ -4,9 +4,14 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.IceBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A non-melting mod variant of vanilla {@link IceBlock}, used internally by
@@ -16,14 +21,10 @@ import org.jspecify.annotations.NonNull;
  * vanilla {@code minecraft:ice} item via the block properties' loot table
  * override).
  *
- * <p>The only difference is that this block has no random-tick melt path.
- * {@link FrostFieldBlockEntity} places it during the freeze and reverts it to
- * vanilla ice on expiry, after which normal ice melting resumes.</p>
- *
- * <p>There is no item form for this block; it is unobtainable in its true
- * form. The mod-only block id {@code goo:magicked_ice} exists solely for
- * internal identification by {@link FrostFieldBlockEntity}'s thaw pass and
- * for F3 debug / mod interop.</p>
+ * <p>The only difference is that this block never melts. Placed permanently
+ * by the frost cold snap effect. There is no item form; it is unobtainable
+ * in its true form. The block id {@code goo:magicked_ice} exists for
+ * internal identification and mod interop.</p>
  */
 public class MagickedIceBlock extends IceBlock {
 
@@ -43,9 +44,25 @@ public class MagickedIceBlock extends IceBlock {
     }
 
     /**
-     * Anti-melt override: suppresses the inherited light-driven melt that
-     * {@link IceBlock#randomTick} applies. The block remains ice-shaped until
-     * {@link FrostFieldBlockEntity} swaps it to vanilla ice on field expiry.
+     * Overrides vanilla ice break behavior: drops the ice item normally
+     * instead of converting to water. No silk touch required.
+     *
+     * @param level         the current level
+     * @param player        the player breaking the block
+     * @param pos           the block position
+     * @param state         the block state
+     * @param blockEntity   the block entity, or null
+     * @param destroyedWith the tool used
+     */
+    @Override
+    public void playerDestroy(@NonNull Level level, @NonNull Player player,
+            @NonNull BlockPos pos, @NonNull BlockState state,
+            @Nullable BlockEntity blockEntity, @NonNull ItemStack destroyedWith) {
+        dropResources(state, level, pos, blockEntity, player, destroyedWith);
+    }
+
+    /**
+     * Anti-melt: suppresses the inherited light-driven melt.
      *
      * @param state  the current block state
      * @param level  the server level
@@ -55,7 +72,7 @@ public class MagickedIceBlock extends IceBlock {
     @Override
     protected void randomTick(@NonNull BlockState state, @NonNull ServerLevel level,
                               @NonNull BlockPos pos, @NonNull RandomSource random) {
-        // No-op: magicked ice does not melt while a frost field protects it.
+        // No-op: magicked ice never melts.
     }
 
     /**

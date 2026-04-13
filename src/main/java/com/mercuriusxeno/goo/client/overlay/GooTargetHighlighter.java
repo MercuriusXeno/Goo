@@ -329,27 +329,66 @@ public final class GooTargetHighlighter {
         PoseStack ps = event.getPoseStack();
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
         Camera camera = mc.gameRenderer.getMainCamera();
+        renderTargetHighlight(target, mc, ps, buf, camera, selectedType);
+    }
+
+    /** Dispatches highlight rendering based on target type.
+     *
+     * @param target       the resolved aim target
+     * @param mc           the Minecraft client instance
+     * @param ps           the pose stack
+     * @param buf          the buffer source
+     * @param camera       the render camera
+     * @param selectedType the selected goo type
+     */
+    private static void renderTargetHighlight(TargetResult target, Minecraft mc,
+            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
         if (target instanceof TargetResult.BlockTarget bt) {
-            BlockPos markerPos = findAdjacentMarker(mc.level, bt.pos(), bt.face());
-            if (markerPos != null) {
-                if (canAcceptMoreBlobs(mc.level, markerPos)) {
-                    VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
-                            markerPos, selectedType);
-                }
-                renderChainMarkerBillboard(ps, buf, camera, mc, markerPos, selectedType);
-            } else if (isWaterSource(mc.level, bt.pos())) {
-                VoxelHighlightRenderer.renderFullCube(ps, buf, camera, bt.pos(), selectedType);
-            } else {
-                VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
-                        bt.pos(), bt.face(), selectedType);
-            }
+            renderBlockTargetHighlight(bt, mc, ps, buf, camera, selectedType);
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
-            if (canAcceptMoreBlobs(mc.level, cmt.pos())) {
-                VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
-                        cmt.pos(), selectedType);
-            }
-            renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
+            renderChainMarkerHighlight(cmt, mc, ps, buf, camera, selectedType);
         }
+    }
+
+    /** Renders highlight for a block target, detecting adjacent chain markers.
+     *
+     * @param bt           the block target
+     * @param mc           the Minecraft client instance
+     * @param ps           the pose stack
+     * @param buf          the buffer source
+     * @param camera       the render camera
+     * @param selectedType the selected goo type
+     */
+    private static void renderBlockTargetHighlight(TargetResult.BlockTarget bt, Minecraft mc,
+            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
+        BlockPos markerPos = findAdjacentMarker(mc.level, bt.pos(), bt.face());
+        if (markerPos != null) {
+            if (canAcceptMoreBlobs(mc.level, markerPos)) {
+                VoxelHighlightRenderer.renderBlockShape(ps, buf, camera, markerPos, selectedType);
+            }
+            renderChainMarkerBillboard(ps, buf, camera, mc, markerPos, selectedType);
+        } else if (isWaterSource(mc.level, bt.pos())) {
+            VoxelHighlightRenderer.renderFullCube(ps, buf, camera, bt.pos(), selectedType);
+        } else {
+            VoxelHighlightRenderer.renderBlockFace(ps, buf, camera, bt.pos(), bt.face(), selectedType);
+        }
+    }
+
+    /** Renders highlight for a direct chain marker target.
+     *
+     * @param cmt          the chain marker target
+     * @param mc           the Minecraft client instance
+     * @param ps           the pose stack
+     * @param buf          the buffer source
+     * @param camera       the render camera
+     * @param selectedType the selected goo type
+     */
+    private static void renderChainMarkerHighlight(TargetResult.ChainMarkerTarget cmt, Minecraft mc,
+            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
+        if (canAcceptMoreBlobs(mc.level, cmt.pos())) {
+            VoxelHighlightRenderer.renderBlockShape(ps, buf, camera, cmt.pos(), selectedType);
+        }
+        renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
     }
 
     // ── Water source detection ──────────────────────────────────────────
@@ -394,9 +433,7 @@ public final class GooTargetHighlighter {
      */
     private static boolean canAcceptMoreBlobs(Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
-        if (be.getBehavior() != null) { return false; }
-        if (be.getStackCount() >= be.getMaxStacks()) { return false; }
-        return true;
+        return be.getBehavior() == null && be.getStackCount() < be.getMaxStacks();
     }
 
     // ── Chain marker billboard ─────────────────────────────────────────
@@ -436,12 +473,25 @@ public final class GooTargetHighlighter {
         if (mc.level == null) { return; }
         if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
         String text = be.getStackCount() + STACK_SEPARATOR + be.getMaxStacks();
-        Font font = mc.font;
-        float textWidth = font.width(text);
+        float textWidth = mc.font.width(text);
         float rowWidth = InWorldHud.ICON_SIZE + InWorldHud.ICON_TEXT_GAP + textWidth;
         float panelW = rowWidth + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
         float panelH = InWorldHud.ROW_HEIGHT + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
 
+        positionBillboard(ps, camera, pos, be);
+        renderBillboardContent(ps, buf, mc.font, gooType, text, panelW, panelH);
+        ps.popPose();
+    }
+
+    /** Translates and rotates the pose stack to position the billboard above the orb.
+     *
+     * @param ps     the pose stack
+     * @param camera the render camera
+     * @param pos    the chain marker block position
+     * @param be     the chain marker block entity
+     */
+    private static void positionBillboard(PoseStack ps, Camera camera,
+            BlockPos pos, ChainMarkerBlockEntity be) {
         float orbRadius = (BER_CORE_BASE + (be.getStackCount() - 1) * BER_CORE_GROWTH
                 + BER_SHELL_MARGIN) * BER_MAX_SCALE;
         Direction face = be.getPlacedFace();
@@ -464,14 +514,26 @@ public final class GooTargetHighlighter {
                 orbCenterZ + face.getStepZ() * pullForward - cam.z);
         InWorldHud.applyBillboardRotation(ps, camera, 1f);
         ps.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
+    }
 
+    /** Renders the billboard background panel and goo row text.
+     *
+     * @param ps      the pose stack
+     * @param buf     the buffer source
+     * @param font    the font renderer
+     * @param gooType the goo type for icon
+     * @param text    the text to display
+     * @param panelW  the panel width
+     * @param panelH  the panel height
+     */
+    private static void renderBillboardContent(PoseStack ps, MultiBufferSource.BufferSource buf,
+            Font font, GooType gooType, String text, float panelW, float panelH) {
         float halfW = panelW / HALF_DIVISOR;
         float halfH = panelH / HALF_DIVISOR;
         InWorldHud.renderBackgroundSeeThrough(ps, buf,
                 new PanelRectangle(-halfW, -halfH, panelW, panelH));
         InWorldHud.renderGooRow(ps, font, buf, gooType, text,
                 -halfW + BILLBOARD_PADDING, -halfH + BILLBOARD_PADDING);
-        ps.popPose();
     }
 
     /** Renders the deferred throw-arc line after translucent blocks so

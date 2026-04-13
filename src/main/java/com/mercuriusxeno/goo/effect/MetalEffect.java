@@ -5,11 +5,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
-/** Metal goo: lingering damage cloud with immediate AoE. */
+/** Metal goo: chain marker spike trap that stabs mobs entering its radius. */
 final class MetalEffect implements WorldEffect {
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        DamageCloudEffects.metalUrchin(level, pos);
+        EffectBlockPlacement.metalSpikeTrap(level, pos, targetFace);
     }
 }

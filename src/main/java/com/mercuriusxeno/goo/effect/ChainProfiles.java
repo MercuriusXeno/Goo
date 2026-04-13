@@ -21,6 +21,10 @@ public final class ChainProfiles {
     private static final int ROCK_MAX_STACKS = ChainFootprint.MAX_STACKS;
     private static final int NETHER_FUSE_TICKS = 30;
     private static final int NETHER_MAX_STACKS = 5;
+    private static final int FROST_FUSE_TICKS = 30;
+    private static final int FROST_MAX_STACKS = 4;
+    private static final int METAL_FUSE_TICKS = 30;
+    private static final int METAL_MAX_STACKS = 8;
 
     private ChainProfiles() {}
 
@@ -29,6 +33,8 @@ public final class ChainProfiles {
         registerBlaze();
         registerRock();
         registerNether();
+        registerFrost();
+        registerMetal();
     }
 
     /** Registers the blaze chain profile. */
@@ -48,6 +54,26 @@ public final class ChainProfiles {
                 ROCK_MAX_STACKS,
                 ChainFootprint::tunnelDepth,
                 RockBehavior::new
+        ));
+    }
+
+    /** Registers the frost chain profile. */
+    private static void registerFrost() {
+        ChainProfile.register(GooType.FROST, new ChainProfile(
+                FROST_FUSE_TICKS,
+                FROST_MAX_STACKS,
+                EffectMath::computeFreezeRadius,
+                FrostBehavior::new
+        ));
+    }
+
+    /** Registers the metal chain profile. */
+    private static void registerMetal() {
+        ChainProfile.register(GooType.METAL, new ChainProfile(
+                METAL_FUSE_TICKS,
+                METAL_MAX_STACKS,
+                stacks -> 1,
+                MetalBehavior::new
         ));
     }
 

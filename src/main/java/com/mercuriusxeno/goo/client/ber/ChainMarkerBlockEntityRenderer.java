@@ -10,7 +10,11 @@ import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
+import com.mercuriusxeno.goo.effect.EffectMath;
+import com.mercuriusxeno.goo.effect.MetalBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -27,6 +31,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -117,6 +122,20 @@ public class ChainMarkerBlockEntityRenderer
     private static final int Z = 2;
     /** Half-extent of the render bounding box around a chain marker, in blocks. Must exceed the maximum implosion radius (nether max = 9). */
     private static final double RENDER_BOX_HALF_EXTENT = 12.0;
+    /** Spike cone base radius in blocks. */
+    private static final float SPIKE_BASE_RADIUS = 0.08f;
+    /** Number of triangular faces on the spike cone. */
+    private static final int SPIKE_SIDES = 3;
+    /** Two pi for angle computation. */
+    private static final float TWO_PI = (float) (2 * Math.PI);
+    /** Divisor for spike anim progress to compute extend fraction. */
+    private static final float SPIKE_ANIM_HALF_DIVISOR = 2f;
+    /** Alpha for spike cone color. */
+    private static final int SPIKE_ALPHA = 0xCC;
+    /** Epsilon for near-zero spike length checks. */
+    private static final float SPIKE_EPSILON = 1e-4f;
+    /** Threshold for choosing perpendicular basis vector. */
+    private static final float DIRECTION_THRESHOLD = 0.9f;
 
     public ChainMarkerBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -151,6 +170,7 @@ public class ChainMarkerBlockEntityRenderer
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         extractCoreFields(be, state, partialTick);
         extractFuseAndTarget(be, state);
+        extractMetalState(be, state);
         NetherHoleStyles.ACTIVE.extract(be, state);
     }
 
@@ -197,6 +217,27 @@ public class ChainMarkerBlockEntityRenderer
         state.minedLayers = be.getBehavior() != null ? be.getBehavior().getMinedLayers() : 0;
     }
 
+    /**
+     * Extracts metal spike trap state from the block entity.
+     *
+     * @param be    the block entity
+     * @param state the render state to populate
+     */
+    private static void extractMetalState(ChainMarkerBlockEntity be,
+            ChainMarkerRenderState state) {
+        if (be.getBehavior() instanceof MetalBehavior metal) {
+            state.metalActive = true;
+            state.spikeTargets = new ArrayList<>(metal.getActiveSpikes());
+            state.metalCharges = metal.getChargesRemaining();
+            state.spikeAnimTick = metal.getSpikeAnimTick();
+        } else {
+            state.metalActive = false;
+            state.spikeTargets = List.of();
+            state.metalCharges = 0;
+            state.spikeAnimTick = 0;
+        }
+    }
+
     @Override
     public void submit(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
@@ -206,6 +247,9 @@ public class ChainMarkerBlockEntityRenderer
         }
         submitFuseOrb(state, poseStack, nodeCollector);
         submitGhostOutline(state, poseStack, nodeCollector);
+        if (state.metalActive && state.spikeAnimTick > 0) {
+            submitMetalSpikes(state, poseStack, nodeCollector);
+        }
     }
 
     /**
@@ -359,6 +403,157 @@ public class ChainMarkerBlockEntityRenderer
         return 1f - t * (1f - IMPLOSION_MIN);
     }
 
+    // ── Metal spike rendering ──────────────────────────────────────────
+
+    /**
+     * Renders 3-triangle pyramid cone spikes extending from the orb
+     * center toward each stabbed entity.
+     *
+     * @param state         the render state
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     */
+    private static void submitMetalSpikes(ChainMarkerRenderState state,
+            PoseStack poseStack, SubmitNodeCollector nodeCollector) {
+        float progress = (float) state.spikeAnimTick / MetalBehavior.SPIKE_ANIM_TICKS;
+        float extendFrac = progress > HALF ? 1f : progress * SPIKE_ANIM_HALF_DIVISOR;
+        int color = (SPIKE_ALPHA << ALPHA_SHIFT) | (GooColors.highlight(GooType.METAL) & RGB_MASK);
+        BlockPos pos = state.blockPos;
+        float cx = HALF;
+        float cy = HALF;
+        float cz = HALF;
+
+        nodeCollector.submitCustomGeometry(poseStack,
+                GooRenderTypes.QUADS_NO_DEPTH,
+                (pose, consumer) -> {
+                    for (Vec3 target : state.spikeTargets) {
+                        float dx = (float) (target.x - pos.getX()) - cx;
+                        float dy = (float) (target.y - pos.getY()) - cy;
+                        float dz = (float) (target.z - pos.getZ()) - cz;
+                        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        if (len < SPIKE_EPSILON) { continue; }
+                        float tipDist = Math.min(len, (float) MetalBehavior.SPIKE_RADIUS)
+                                * extendFrac;
+                        emitSpikeCone(pose, consumer, cx, cy, cz,
+                                dx / len, dy / len, dz / len,
+                                tipDist, color);
+                    }
+                });
+    }
+
+    /**
+     * Emits a 3-sided cone from the base point toward the direction.
+     *
+     * @param pose      the pose matrix
+     * @param consumer  the vertex consumer
+     * @param bx        base center X
+     * @param by        base center Y
+     * @param bz        base center Z
+     * @param dirX      normalized direction X
+     * @param dirY      normalized direction Y
+     * @param dirZ      normalized direction Z
+     * @param length    the cone length
+     * @param color     the ARGB color
+     */
+    private static void emitSpikeCone(PoseStack.Pose pose,
+            VertexConsumer consumer,
+            float bx, float by, float bz,
+            float dirX, float dirY, float dirZ,
+            float length, int color) {
+        float tipX = bx + dirX * length;
+        float tipY = by + dirY * length;
+        float tipZ = bz + dirZ * length;
+
+        float[] basis = computeConeBasis(dirX, dirY, dirZ);
+        emitConeFaces(pose, consumer, bx, by, bz, tipX, tipY, tipZ, basis, color);
+    }
+
+    /** Computes orthonormal perp + cross basis vectors for a cone direction.
+     *
+     * @param dirX cone direction X component
+     * @param dirY cone direction Y component
+     * @param dirZ cone direction Z component
+     * @return array of {perpX, perpY, perpZ, crossX, crossY, crossZ}
+     */
+    private static float[] computeConeBasis(float dirX, float dirY, float dirZ) {
+        float perpX;
+        float perpY;
+        float perpZ;
+        if (Math.abs(dirY) < DIRECTION_THRESHOLD) {
+            perpX = -dirZ;
+            perpY = 0;
+            perpZ = dirX;
+        } else {
+            perpX = 1;
+            perpY = 0;
+            perpZ = 0;
+        }
+        float dot = perpX * dirX + perpY * dirY + perpZ * dirZ;
+        perpX -= dot * dirX;
+        perpY -= dot * dirY;
+        perpZ -= dot * dirZ;
+        float pLen = (float) Math.sqrt(perpX * perpX + perpY * perpY + perpZ * perpZ);
+        perpX /= pLen;
+        perpY /= pLen;
+        perpZ /= pLen;
+        float crossX = dirY * perpZ - dirZ * perpY;
+        float crossY = dirZ * perpX - dirX * perpZ;
+        float crossZ = dirX * perpY - dirY * perpX;
+        return new float[]{perpX, perpY, perpZ, crossX, crossY, crossZ};
+    }
+
+    /** Index of the perp-Y component in the cone basis array. */
+    private static final int BASIS_PERP_Y = 1;
+    /** Index of the perp-Z component in the cone basis array. */
+    private static final int BASIS_PERP_Z = 2;
+    /** Index of the cross-X component in the cone basis array. */
+    private static final int BASIS_CROSS_X = 3;
+    /** Index of the cross-Y component in the cone basis array. */
+    private static final int BASIS_CROSS_Y = 4;
+    /** Index of the cross-Z component in the cone basis array. */
+    private static final int BASIS_CROSS_Z = 5;
+
+    /** Emits triangular fan faces around the cone from base to tip.
+     *
+     * @param pose     the current pose matrix
+     * @param consumer the vertex consumer
+     * @param bx       cone base X
+     * @param by       cone base Y
+     * @param bz       cone base Z
+     * @param tipX     cone tip X
+     * @param tipY     cone tip Y
+     * @param tipZ     cone tip Z
+     * @param basis    orthonormal basis from {@link #computeConeBasis}
+     * @param color    packed ARGB color
+     */
+    private static void emitConeFaces(PoseStack.Pose pose, VertexConsumer consumer,
+            float bx, float by, float bz,
+            float tipX, float tipY, float tipZ,
+            float[] basis, int color) {
+        float perpX = basis[0], perpY = basis[BASIS_PERP_Y], perpZ = basis[BASIS_PERP_Z];
+        float crossX = basis[BASIS_CROSS_X], crossY = basis[BASIS_CROSS_Y], crossZ = basis[BASIS_CROSS_Z];
+        for (int i = 0; i < SPIKE_SIDES; i++) {
+            float a0 = TWO_PI * i / SPIKE_SIDES;
+            float a1 = TWO_PI * (i + 1) / SPIKE_SIDES;
+            float cos0 = (float) Math.cos(a0) * SPIKE_BASE_RADIUS;
+            float sin0 = (float) Math.sin(a0) * SPIKE_BASE_RADIUS;
+            float cos1 = (float) Math.cos(a1) * SPIKE_BASE_RADIUS;
+            float sin1 = (float) Math.sin(a1) * SPIKE_BASE_RADIUS;
+            consumer.addVertex(pose, bx + perpX * cos0 + crossX * sin0,
+                    by + perpY * cos0 + crossY * sin0,
+                    bz + perpZ * cos0 + crossZ * sin0).setColor(color)
+                    .setLight(LightCoordsUtil.FULL_BRIGHT);
+            consumer.addVertex(pose, bx + perpX * cos1 + crossX * sin1,
+                    by + perpY * cos1 + crossY * sin1,
+                    bz + perpZ * cos1 + crossZ * sin1).setColor(color)
+                    .setLight(LightCoordsUtil.FULL_BRIGHT);
+            consumer.addVertex(pose, tipX, tipY, tipZ).setColor(color)
+                    .setLight(LightCoordsUtil.FULL_BRIGHT);
+            consumer.addVertex(pose, tipX, tipY, tipZ).setColor(color)
+                    .setLight(LightCoordsUtil.FULL_BRIGHT);
+        }
+    }
+
     // ── Ghost outline (connected fill + perimeter wireframe) ────────
 
     /**
@@ -373,20 +568,12 @@ public class ChainMarkerBlockEntityRenderer
      */
     private static void submitGhostOutline(ChainMarkerRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
-        if (state.fuseRemaining <= 0 && !state.behaviorActive) { return; }
-        GooType type = state.gooType;
-        if (type != GooType.ROCK && type != GooType.BLAZE) { return; }
+        if (!shouldShowGhostOutline(state)) { return; }
 
-        List<int[]> allOffsets = ChainFootprint.computeRegionOffsets(
-                state.stackCount, state.flatMode, state.placedFace);
-        List<int[]> afterMined = excludeMinedLayers(allOffsets, state.placedFace, state.minedLayers);
-        List<int[]> offsets = excludeAirBlocks(afterMined, state.blockPos);
-        Set<Long> filled = new HashSet<>(offsets.size());
-        for (int[] o : offsets) {
-            filled.add(packPos(o[X], o[Y], o[Z]));
-        }
+        List<int[]> offsets = computeFilteredOffsets(state);
+        Set<Long> filled = packOffsets(offsets);
 
-        int edgeRgb = GooColors.edge(type) & RGB_MASK;
+        int edgeRgb = GooColors.edge(state.gooType) & RGB_MASK;
         int fillColor = (GHOST_FILL_ALPHA << ALPHA_SHIFT) | edgeRgb;
         int wireColor = (GHOST_WIRE_ALPHA << ALPHA_SHIFT) | edgeRgb;
 
@@ -398,15 +585,41 @@ public class ChainMarkerBlockEntityRenderer
                 filled, fillColor, state.placedFace, state.gameTime);
     }
 
-    /**
-     * Attenuates a color's alpha by the block's depth along the blast
-     * axis. Returns the color unchanged in flat mode (blastDir null).
+    /** Returns true if the ghost outline should render for this state.
      *
-     * @param color    the base ARGB color
-     * @param offset   the block offset {dx, dy, dz}
-     * @param blastDir the blast direction, or null for flat mode
-     * @return the depth-attenuated ARGB color
+     * @param state the render state snapshot
+     * @return true if the ghost outline should be drawn
      */
+    private static boolean shouldShowGhostOutline(ChainMarkerRenderState state) {
+        if (state.fuseRemaining <= 0 && !state.behaviorActive) { return false; }
+        GooType type = state.gooType;
+        return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST;
+    }
+
+    /** Computes ghost offsets with mined-layer and air-block filtering applied.
+     *
+     * @param state the render state snapshot
+     * @return filtered list of block offsets
+     */
+    private static List<int[]> computeFilteredOffsets(ChainMarkerRenderState state) {
+        List<int[]> allOffsets = computeGhostOffsets(state.gooType, state);
+        List<int[]> afterMined = excludeMinedLayers(allOffsets, state.placedFace, state.minedLayers);
+        return excludeAirBlocks(afterMined, state.blockPos);
+    }
+
+    /** Packs a list of offsets into a position set for neighbor lookups.
+     *
+     * @param offsets the block offsets to pack
+     * @return set of packed position keys
+     */
+    private static Set<Long> packOffsets(List<int[]> offsets) {
+        Set<Long> filled = new HashSet<>(offsets.size());
+        for (int[] o : offsets) {
+            filled.add(packPos(o[X], o[Y], o[Z]));
+        }
+        return filled;
+    }
+
     /**
      * Filters out offsets that correspond to air blocks in the world.
      * The ghost outline only highlights solid blocks that will actually
@@ -417,9 +630,9 @@ public class ChainMarkerBlockEntityRenderer
      * @return the filtered offset list with air blocks removed
      */
     private static List<int[]> excludeAirBlocks(List<int[]> offsets, BlockPos markerPos) {
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return offsets; }
-        List<int[]> result = new java.util.ArrayList<>(offsets.size());
+        List<int[]> result = new ArrayList<>(offsets.size());
         for (int[] o : offsets) {
             BlockPos worldPos = markerPos.offset(o[X], o[Y], o[Z]);
             if (!mc.level.getBlockState(worldPos).isAir()) {
@@ -427,6 +640,23 @@ public class ChainMarkerBlockEntityRenderer
             }
         }
         return result;
+    }
+
+    /**
+     * Computes the ghost outline offsets based on goo type. Frost uses
+     * a spheroid shape; rock/blaze use the tunnel footprint.
+     *
+     * @param type  the goo type
+     * @param state the render state
+     * @return the block offsets for the ghost outline
+     */
+    private static List<int[]> computeGhostOffsets(GooType type, ChainMarkerRenderState state) {
+        if (type == GooType.FROST && !state.flatMode) {
+            int radius = EffectMath.computeFreezeRadius(state.stackCount);
+            return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
+        }
+        return ChainFootprint.computeRegionOffsets(
+                state.stackCount, state.flatMode, state.placedFace);
     }
 
     /**
@@ -470,7 +700,7 @@ public class ChainMarkerBlockEntityRenderer
         int bx = blast.getStepX();
         int by = blast.getStepY();
         int bz = blast.getStepZ();
-        List<int[]> result = new java.util.ArrayList<>(offsets.size());
+        List<int[]> result = new ArrayList<>(offsets.size());
         for (int[] o : offsets) {
             int depth = o[X] * bx + o[Y] * by + o[Z] * bz;
             if (depth >= minedLayers) { result.add(o); }

@@ -176,10 +176,8 @@ public final class RockExecutor {
      */
     private static boolean tryMineBlock(ServerLevel level, BlockPos target,
                                         ItemStack tool, List<ItemStack> drops) {
-        if (!level.isInWorldBounds(target)) { return false; }
+        if (!canMineRockAt(level, target)) { return false; }
         BlockState state = level.getBlockState(target);
-        if (state.isAir()) { return false; }
-        if (!isRockBlock(level, state)) { return false; }
         BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(target) : null;
 
         mergeDrops(drops, Block.getDrops(state, level, target, blockEntity, null, tool));
@@ -188,6 +186,18 @@ public final class RockExecutor {
         level.levelEvent(BREAK_EFFECT_EVENT, target, Block.getId(state));
         level.removeBlock(target, false);
         return true;
+    }
+
+    /** Returns true if the block at target is in-bounds, non-air, and rock-compatible.
+     *
+     * @param level  the server level
+     * @param target the block position to check
+     * @return true if the block can be mined by rock
+     */
+    private static boolean canMineRockAt(ServerLevel level, BlockPos target) {
+        if (!level.isInWorldBounds(target)) { return false; }
+        BlockState state = level.getBlockState(target);
+        return !state.isAir() && isRockBlock(level, state);
     }
 
     /**
