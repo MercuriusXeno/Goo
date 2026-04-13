@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.player.Player;
+import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,8 +74,24 @@ public final class GloveThrowSender {
      *
      * @param pos the chain marker position
      */
+    /**
+     * Decrements the in-flight count for a chain marker when a blob
+     * arrives. Checks both the given pos and all adjacent positions
+     * since the flight payload carries the hit block pos but the
+     * in-flight map tracks the chain marker pos (which may be adjacent).
+     *
+     * @param pos the target position from the flight payload
+     */
     public static void onFlightArrived(BlockPos pos) {
-        IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null);
+        if (IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null) != null) {
+            return;
+        }
+        for (Direction dir : Direction.values()) {
+            BlockPos adj = pos.relative(dir);
+            if (IN_FLIGHT.computeIfPresent(adj, (k, v) -> v > 1 ? v - 1 : null) != null) {
+                return;
+            }
+        }
     }
 
     /** Clears all in-flight tracking (on disconnect or dimension change). */
@@ -100,12 +117,13 @@ public final class GloveThrowSender {
      * @return true if the throw should be blocked
      */
     private static boolean wouldExceedMaxStacks(TargetResult target) {
-        if (!(target instanceof TargetResult.ChainMarkerTarget cmt)) { return false; }
+        BlockPos pos = resolveChainMarkerPos(target);
+        if (pos == null) { return false; }
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return false; }
-        if (!(mc.level.getBlockEntity(cmt.pos()) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
         int current = be.getStackCount();
-        int pending = IN_FLIGHT.getOrDefault(cmt.pos(), 0);
+        int pending = IN_FLIGHT.getOrDefault(pos, 0);
         return current + pending >= be.getMaxStacks();
     }
 
@@ -114,9 +132,36 @@ public final class GloveThrowSender {
      * @param target the resolved aim target
      */
     private static void trackInFlight(TargetResult target) {
-        if (target instanceof TargetResult.ChainMarkerTarget cmt) {
-            IN_FLIGHT.merge(cmt.pos(), 1, Integer::sum);
+        BlockPos pos = resolveChainMarkerPos(target);
+        if (pos != null) {
+            IN_FLIGHT.merge(pos, 1, Integer::sum);
         }
+    }
+
+    /**
+     * Extracts the chain marker position from any target type. Returns
+     * the pos for ChainMarkerTarget directly, and for BlockTarget checks
+     * if the block at that position is a chain marker.
+     *
+     * @param target the resolved aim target
+     * @return the chain marker position, or null if not targeting a marker
+     */
+    private static @Nullable BlockPos resolveChainMarkerPos(TargetResult target) {
+        if (target instanceof TargetResult.ChainMarkerTarget cmt) {
+            return cmt.pos();
+        }
+        if (target instanceof TargetResult.BlockTarget bt) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) { return null; }
+            if (mc.level.getBlockEntity(bt.pos()) instanceof ChainMarkerBlockEntity) {
+                return bt.pos();
+            }
+            BlockPos adjacent = bt.pos().relative(bt.face());
+            if (mc.level.getBlockEntity(adjacent) instanceof ChainMarkerBlockEntity) {
+                return adjacent;
+            }
+        }
+        return null;
     }
 
     /** Resolves the player's current aim target at the current partial tick.

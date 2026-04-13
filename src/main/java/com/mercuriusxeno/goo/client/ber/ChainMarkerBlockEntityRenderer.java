@@ -97,6 +97,8 @@ public class ChainMarkerBlockEntityRenderer
     private static final int GHOST_FILL_ALPHA = 0x26;
     /** Alpha for the perimeter wireframe. */
     private static final int GHOST_WIRE_ALPHA = 0xC0;
+    /** Per-layer alpha decay factor for tunnel depth falloff. */
+    private static final float DEPTH_ALPHA_DECAY = 0.80f;
     /** Line width for the perimeter wireframe. */
     private static final float GHOST_LINE_WIDTH = 2.0f;
     /** Bit mask for 21-bit coordinate packing. */
@@ -377,7 +379,8 @@ public class ChainMarkerBlockEntityRenderer
 
         List<int[]> allOffsets = ChainFootprint.computeRegionOffsets(
                 state.stackCount, state.flatMode, state.placedFace);
-        List<int[]> offsets = excludeMinedLayers(allOffsets, state.placedFace, state.minedLayers);
+        List<int[]> afterMined = excludeMinedLayers(allOffsets, state.placedFace, state.minedLayers);
+        List<int[]> offsets = excludeAirBlocks(afterMined, state.blockPos);
         Set<Long> filled = new HashSet<>(offsets.size());
         for (int[] o : offsets) {
             filled.add(packPos(o[X], o[Y], o[Z]));
@@ -387,10 +390,67 @@ public class ChainMarkerBlockEntityRenderer
         int fillColor = (GHOST_FILL_ALPHA << ALPHA_SHIFT) | edgeRgb;
         int wireColor = (GHOST_WIRE_ALPHA << ALPHA_SHIFT) | edgeRgb;
 
-        submitGhostFill(poseStack, nodeCollector, offsets, filled, fillColor);
-        submitGhostWireframe(poseStack, nodeCollector, offsets, filled, wireColor);
+        Direction blastDir = state.flatMode ? null : state.placedFace.getOpposite();
+        int minedLayers = state.minedLayers;
+        submitGhostFill(poseStack, nodeCollector, offsets, filled, fillColor, blastDir, minedLayers);
+        submitGhostWireframe(poseStack, nodeCollector, offsets, filled, wireColor, blastDir, minedLayers);
         AuroraFadeWallRenderer.submit(poseStack, nodeCollector, offsets,
                 filled, fillColor, state.placedFace, state.gameTime);
+    }
+
+    /**
+     * Attenuates a color's alpha by the block's depth along the blast
+     * axis. Returns the color unchanged in flat mode (blastDir null).
+     *
+     * @param color    the base ARGB color
+     * @param offset   the block offset {dx, dy, dz}
+     * @param blastDir the blast direction, or null for flat mode
+     * @return the depth-attenuated ARGB color
+     */
+    /**
+     * Filters out offsets that correspond to air blocks in the world.
+     * The ghost outline only highlights solid blocks that will actually
+     * be affected by the chain effect.
+     *
+     * @param offsets   the block offsets to filter
+     * @param markerPos the chain marker's world position
+     * @return the filtered offset list with air blocks removed
+     */
+    private static List<int[]> excludeAirBlocks(List<int[]> offsets, BlockPos markerPos) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level == null) { return offsets; }
+        List<int[]> result = new java.util.ArrayList<>(offsets.size());
+        for (int[] o : offsets) {
+            BlockPos worldPos = markerPos.offset(o[X], o[Y], o[Z]);
+            if (!mc.level.getBlockState(worldPos).isAir()) {
+                result.add(o);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Attenuates a color's alpha by the block's effective depth along
+     * the blast axis. Mined layers shift the origin forward so the
+     * remaining front face is always at full alpha.
+     *
+     * @param color       the base ARGB color
+     * @param offset      the block offset {dx, dy, dz}
+     * @param blastDir    the blast direction, or null for flat mode
+     * @param minedLayers layers already mined (subtracted from depth)
+     * @return the depth-attenuated ARGB color
+     */
+    private static int attenuateByDepth(int color, int[] offset,
+            @Nullable Direction blastDir, int minedLayers) {
+        if (blastDir == null) { return color; }
+        int rawDepth = offset[X] * blastDir.getStepX()
+                + offset[Y] * blastDir.getStepY()
+                + offset[Z] * blastDir.getStepZ();
+        int effectiveDepth = rawDepth - minedLayers;
+        if (effectiveDepth <= 0) { return color; }
+        float factor = (float) Math.sqrt(Math.pow(DEPTH_ALPHA_DECAY, effectiveDepth));
+        int alpha = (int) ((color >>> ALPHA_SHIFT) * factor);
+        return (alpha << ALPHA_SHIFT) | (color & RGB_MASK);
     }
 
     /**
@@ -419,28 +479,33 @@ public class ChainMarkerBlockEntityRenderer
     }
 
     /**
-     * Emits translucent fill quads for exterior faces only.
+     * Emits translucent fill quads for exterior faces only. In tunnel
+     * mode, alpha decays with depth along the blast axis.
      *
      * @param poseStack     the pose stack
      * @param nodeCollector the render node collector
      * @param offsets       all 3D block offsets in the region
      * @param filled        packed position set for neighbor checks
      * @param color         the ARGB fill color
+     * @param blastDir      the blast direction for depth falloff, or null for flat mode
+     * @param minedLayers   layers already mined (shifts depth origin forward)
      */
     private static void submitGhostFill(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, int color) {
+            Set<Long> filled, int color, @Nullable Direction blastDir,
+            int minedLayers) {
         nodeCollector.submitCustomGeometry(poseStack,
                 GooRenderTypes.QUADS_NO_DEPTH,
                 (pose, c) -> {
                     FlatQuadContext ctx = new FlatQuadContext(pose, c);
                     for (int[] o : offsets) {
+                        int depthColor = attenuateByDepth(color, o, blastDir, minedLayers);
                         for (Direction dir : Direction.values()) {
                             int nx = o[X] + dir.getStepX();
                             int ny = o[Y] + dir.getStepY();
                             int nz = o[Z] + dir.getStepZ();
                             if (!filled.contains(packPos(nx, ny, nz))) {
-                                emitFaceQuad(ctx, o, dir, color);
+                                emitFaceQuad(ctx, o, dir, depthColor);
                             }
                         }
                     }
@@ -448,28 +513,33 @@ public class ChainMarkerBlockEntityRenderer
     }
 
     /**
-     * Emits wireframe edges only on the perimeter of the region.
+     * Emits wireframe edges only on the perimeter of the region. In
+     * tunnel mode, alpha decays with depth along the blast axis.
      *
      * @param poseStack     the pose stack
      * @param nodeCollector the render node collector
      * @param offsets       all 3D block offsets in the region
      * @param filled        packed position set for neighbor checks
      * @param color         the ARGB wire color
+     * @param blastDir      the blast direction for depth falloff, or null for flat mode
+     * @param minedLayers   layers already mined (shifts depth origin forward)
      */
     private static void submitGhostWireframe(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, int color) {
+            Set<Long> filled, int color, @Nullable Direction blastDir,
+            int minedLayers) {
         nodeCollector.submitCustomGeometry(poseStack,
                 GooRenderTypes.LINES_NO_DEPTH,
                 (pose, c) -> {
                     LineContext ctx = new LineContext(pose, c);
                     for (int[] o : offsets) {
+                        int depthColor = attenuateByDepth(color, o, blastDir, minedLayers);
                         for (Direction dir : Direction.values()) {
                             int nx = o[X] + dir.getStepX();
                             int ny = o[Y] + dir.getStepY();
                             int nz = o[Z] + dir.getStepZ();
                             if (filled.contains(packPos(nx, ny, nz))) { continue; }
-                            emitPerimeterEdges(ctx, o, dir, filled, color);
+                            emitPerimeterEdges(ctx, o, dir, filled, depthColor);
                         }
                     }
                 });

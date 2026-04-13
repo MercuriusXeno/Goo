@@ -92,7 +92,7 @@ public final class NetherBehavior implements ChainBehavior {
     /** Pull radius is this multiple of the blast radius. The well of
      * gravity extends well past the visible event horizon so distant
      * entities still feel something dragging them in. */
-    private static final int PULL_RADIUS_MULT = 2;
+    private static final int PULL_RADIUS_MULT = 3;
     /** Floor on squared distance-to-center before applying the pull, to
      * avoid divide-by-zero (and absurd impulse spikes) when an entity is
      * standing exactly on the marker. */

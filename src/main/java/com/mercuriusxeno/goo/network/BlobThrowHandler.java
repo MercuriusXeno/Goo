@@ -3,16 +3,19 @@ package com.mercuriusxeno.goo.network;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
+import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Server-side handler for blob throw requests. Validates the client's claim,
@@ -139,6 +142,7 @@ public final class BlobThrowHandler {
             Goo.LOGGER.warn(LOG_PARTIAL_DEPLETE, depleted, THROW_COST, gooType.getId());
         }
 
+        stallChainMarkerFuse(player, payload);
         int travelTicks = (int) ThrowArc.travelTicks(Math.sqrt(distSq));
         broadcastFlight(player, payload, travelTicks);
         BlobEffectScheduler.scheduleEffect(player, payload, gooType, travelTicks);
@@ -190,6 +194,44 @@ public final class BlobThrowHandler {
         if (!BlobEffectScheduler.hasPending()) { return; }
         int currentTick = event.getServer().getTickCount();
         BlobEffectScheduler.drainArrivedEffects(currentTick);
+    }
+
+    /**
+     * If the throw targets a chain marker (directly or at the adjacent
+     * position), resets its fuse so it doesn't detonate while blobs are
+     * in flight. The user's throw declaration is treated as intent to
+     * stack, keeping the fuse alive.
+     *
+     * @param player  the throwing player
+     * @param payload the throw payload data
+     */
+    private static void stallChainMarkerFuse(ServerPlayer player, BlobThrowPayload payload) {
+        if (payload.targetEntityId() >= 0) { return; }
+        BlockPos pos = payload.targetPos();
+        Direction face = directionFromOrdinal(payload.targetFace());
+        ServerLevel level = player.level();
+        ChainMarkerBlockEntity be = findChainMarker(level, pos, face);
+        if (be != null && be.getBehavior() == null) {
+            be.stallFuse();
+        }
+    }
+
+    /**
+     * Finds a chain marker BE at the given pos or the adjacent block.
+     *
+     * @param level the server level
+     * @param pos   the hit block position
+     * @param face  the hit face, or null
+     * @return the chain marker BE, or null
+     */
+    private static @Nullable ChainMarkerBlockEntity findChainMarker(
+            ServerLevel level, BlockPos pos, @Nullable Direction face) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) { return be; }
+        if (face != null) {
+            BlockPos adj = pos.relative(face);
+            if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity be) { return be; }
+        }
+        return null;
     }
 
     /**
