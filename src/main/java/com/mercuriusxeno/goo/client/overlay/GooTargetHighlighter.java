@@ -330,15 +330,24 @@ public final class GooTargetHighlighter {
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
         Camera camera = mc.gameRenderer.getMainCamera();
         if (target instanceof TargetResult.BlockTarget bt) {
-            if (isWaterSource(mc.level, bt.pos())) {
+            BlockPos markerPos = findAdjacentMarker(mc.level, bt.pos(), bt.face());
+            if (markerPos != null) {
+                if (canAcceptMoreBlobs(mc.level, markerPos)) {
+                    VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
+                            markerPos, selectedType);
+                }
+                renderChainMarkerBillboard(ps, buf, camera, mc, markerPos, selectedType);
+            } else if (isWaterSource(mc.level, bt.pos())) {
                 VoxelHighlightRenderer.renderFullCube(ps, buf, camera, bt.pos(), selectedType);
             } else {
                 VoxelHighlightRenderer.renderBlockFace(ps, buf, camera,
                         bt.pos(), bt.face(), selectedType);
             }
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
-            VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
-                    cmt.pos(), selectedType);
+            if (canAcceptMoreBlobs(mc.level, cmt.pos())) {
+                VoxelHighlightRenderer.renderBlockShape(ps, buf, camera,
+                        cmt.pos(), selectedType);
+            }
             renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
         }
     }
@@ -357,10 +366,51 @@ public final class GooTargetHighlighter {
                 && level.getFluidState(pos).getType() == net.minecraft.world.level.material.Fluids.WATER;
     }
 
+    /**
+     * Checks if a chain marker exists at the hit pos or the adjacent
+     * block (where the marker gets placed). Returns the marker's pos
+     * or null.
+     *
+     * @param level the client level
+     * @param pos   the hit block position
+     * @param face  the hit face
+     * @return the chain marker position, or null
+     */
+    private static @Nullable BlockPos findAdjacentMarker(Level level, BlockPos pos,
+            Direction face) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity) { return pos; }
+        BlockPos adj = pos.relative(face);
+        if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity) { return adj; }
+        return null;
+    }
+
+    /**
+     * Returns true if the chain marker at the given position can still
+     * accept more blobs (not at max stacks, no active fuse or behavior).
+     *
+     * @param level the client level
+     * @param pos   the chain marker position
+     * @return true if more blobs can be stacked
+     */
+    private static boolean canAcceptMoreBlobs(Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (be.getBehavior() != null) { return false; }
+        if (be.getStackCount() >= be.getMaxStacks()) { return false; }
+        return true;
+    }
+
     // ── Chain marker billboard ─────────────────────────────────────────
 
-    /** Vertical offset above the block center for the billboard origin. */
-    private static final float BILLBOARD_Y_OFFSET = 0.75f;
+    /** Gap between the top of the blob visual and the billboard bottom. */
+    private static final float BILLBOARD_GAP = 0.15f;
+    /** BER core base half-size in blocks (must match ChainMarkerBlockEntityRenderer). */
+    private static final float BER_CORE_BASE = 2f / 16f;
+    /** BER shell margin in blocks. */
+    private static final float BER_SHELL_MARGIN = 1f / 16f;
+    /** BER core growth per stack in blocks. */
+    private static final float BER_CORE_GROWTH = 1f / 32f;
+    /** Max pulse/target boost scale factor. */
+    private static final float BER_MAX_SCALE = 1.15f;
     /** Padding inside the nine-slice background. */
     private static final float BILLBOARD_PADDING = 4f;
     /** Multiplier for padding on both sides (left+right or top+bottom). */
@@ -392,12 +442,26 @@ public final class GooTargetHighlighter {
         float panelW = rowWidth + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
         float panelH = InWorldHud.ROW_HEIGHT + BILLBOARD_PADDING * PADDING_BOTH_SIDES;
 
+        float orbRadius = (BER_CORE_BASE + (be.getStackCount() - 1) * BER_CORE_GROWTH
+                + BER_SHELL_MARGIN) * BER_MAX_SCALE;
+        Direction face = be.getPlacedFace();
+        double orbCenterY = pos.getY() + FACE_CENTER_OFFSET
+                - face.getStepY() * FACE_CENTER_OFFSET;
         Vec3 cam = camera.position();
+        boolean lookingUp = cam.y < orbCenterY;
+        double billboardY = lookingUp
+                ? orbCenterY - orbRadius - BILLBOARD_GAP
+                : orbCenterY + orbRadius + BILLBOARD_GAP;
+        double orbCenterX = pos.getX() + FACE_CENTER_OFFSET
+                - face.getStepX() * FACE_CENTER_OFFSET;
+        double orbCenterZ = pos.getZ() + FACE_CENTER_OFFSET
+                - face.getStepZ() * FACE_CENTER_OFFSET;
+        double pullForward = orbRadius + BILLBOARD_GAP;
         ps.pushPose();
         ps.translate(
-                pos.getX() + FACE_CENTER_OFFSET - cam.x,
-                pos.getY() + FACE_CENTER_OFFSET + BILLBOARD_Y_OFFSET - cam.y,
-                pos.getZ() + FACE_CENTER_OFFSET - cam.z);
+                orbCenterX + face.getStepX() * pullForward - cam.x,
+                billboardY - cam.y,
+                orbCenterZ + face.getStepZ() * pullForward - cam.z);
         InWorldHud.applyBillboardRotation(ps, camera, 1f);
         ps.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
 

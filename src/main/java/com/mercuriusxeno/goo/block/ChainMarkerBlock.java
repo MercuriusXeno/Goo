@@ -218,16 +218,17 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      * @return the computed voxel shape
      */
     private static VoxelShape computeOrbShape(int stacks, Direction face, boolean flatMode) {
-        float totalPx = SHAPE_CORE_PX + SHAPE_SHELL_PX + (stacks - 1) * SHAPE_GROWTH_PX;
+        float coreHalf = SHAPE_CORE_PX + (stacks - 1) * SHAPE_GROWTH_PX;
+        float shellHalf = coreHalf + SHAPE_SHELL_PX;
 
         float hPerp;
         float hFace;
         if (flatMode) {
-            hPerp = totalPx * SHAPE_SPLAT_WIDE;
-            hFace = totalPx * SHAPE_SPLAT_THIN;
+            hPerp = shellHalf * SHAPE_SPLAT_WIDE;
+            hFace = shellHalf * SHAPE_SPLAT_THIN;
         } else {
-            hPerp = totalPx;
-            hFace = totalPx;
+            hPerp = shellHalf;
+            hFace = shellHalf;
         }
 
         float cx = SHAPE_CENTER_PX - face.getStepX() * SHAPE_CENTER_PX;

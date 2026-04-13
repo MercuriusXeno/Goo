@@ -121,7 +121,8 @@ public final class RockExecutor {
     public static void previewLayer(ServerLevel level, BlockPos origin,
                                     Direction placedFace, int stepIndex) {
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
-        spawnLayerSonicBoom(level, layerCenter, placedFace.getOpposite());
+        BlockPos particlePos = layerCenter.relative(placedFace);
+        spawnLayerSonicBoom(level, particlePos, placedFace.getOpposite());
     }
 
     /** Marker sits in the air block adjacent to the hit face; the first

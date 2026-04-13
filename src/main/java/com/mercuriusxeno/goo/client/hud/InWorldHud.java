@@ -350,6 +350,28 @@ public final class InWorldHud {
     }
 
     /**
+     * See-through variant of {@link #renderGooRow} that renders on top
+     * of world geometry. Used for chain marker billboards.
+     *
+     * @param poseStack the pose stack for rendering
+     * @param font the font renderer
+     * @param buffers the buffer source for rendering
+     * @param type the goo type
+     * @param amountText the formatted volume text
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
+    public static void renderGooRowSeeThrough(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, GooType type, String amountText,
+            float x, float y) {
+        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / HALF;
+        float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF;
+        renderIconSeeThrough(poseStack, buffers, type, x, iconY);
+        drawTextSeeThrough(font, buffers, poseStack, amountText,
+            x + ICON_SIZE + ICON_TEXT_GAP, textY, TEXT_COLOR);
+    }
+
+    /**
      * Renders every goo type in {@code contents} as a stack of rows starting
      * at {@code baseY + startRow * ROW_HEIGHT}. Centralizes the panel-painter
      * loop so canister and vat HUDs share one iteration path.
@@ -385,9 +407,39 @@ public final class InWorldHud {
      */
     public static void renderIcon(PoseStack poseStack, MultiBufferSource buffers,
             GooType type, float x, float y) {
+        emitIconQuad(poseStack, buffers, type, x, y, false);
+    }
+
+    /**
+     * Renders a goo type icon without depth testing (see-through).
+     *
+     * @param poseStack the pose stack for rendering
+     * @param buffers the buffer source for rendering
+     * @param type the goo type
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     */
+    public static void renderIconSeeThrough(PoseStack poseStack, MultiBufferSource buffers,
+            GooType type, float x, float y) {
+        emitIconQuad(poseStack, buffers, type, x, y, true);
+    }
+
+    /**
+     * Internal icon quad emitter with configurable depth test.
+     *
+     * @param poseStack  the pose stack
+     * @param buffers    the buffer source
+     * @param type       the goo type
+     * @param x          the X coordinate
+     * @param y          the Y coordinate
+     * @param seeThrough true to disable depth testing
+     */
+    private static void emitIconQuad(PoseStack poseStack, MultiBufferSource buffers,
+            GooType type, float x, float y, boolean seeThrough) {
         Identifier tex = Identifier.fromNamespaceAndPath(NAMESPACE_GOO,
             ICON_PATH_PREFIX + type.getId() + ICON_PATH_SUFFIX);
-        VertexConsumer vc = buffers.getBuffer(RenderTypes.text(tex));
+        VertexConsumer vc = buffers.getBuffer(
+            seeThrough ? RenderTypes.textSeeThrough(tex) : RenderTypes.text(tex));
         PoseStack.Pose pose = poseStack.last();
         float x2 = x + ICON_SIZE;
         float y2 = y + ICON_SIZE;

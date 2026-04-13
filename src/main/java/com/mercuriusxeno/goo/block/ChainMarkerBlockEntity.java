@@ -107,11 +107,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
         lastStackTick = level != null ? level.getGameTime() : 0;
-        if (stackCount >= maxStacks) {
-            fuseRemaining = 0;
-        } else {
-            fuseRemaining = profile.fuseTicks();
-        }
+        fuseRemaining = profile.fuseTicks();
         setChanged();
         syncToClient();
         return true;
@@ -133,6 +129,19 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.flatMode = flat;
         setChanged();
         syncToClient();
+    }
+
+    /**
+     * Resets the fuse timer to the profile's full duration. Called by the
+     * server when a throw is declared toward this marker, keeping the
+     * fuse alive while blobs are in flight.
+     */
+    public void stallFuse() {
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile != null) {
+            fuseRemaining = profile.fuseTicks();
+            setChanged();
+        }
     }
 
     // ── Flat mode toggle ───────────────────────────────────────────────────

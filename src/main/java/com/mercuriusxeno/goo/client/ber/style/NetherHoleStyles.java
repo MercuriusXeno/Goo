@@ -30,7 +30,7 @@ public final class NetherHoleStyles {
      * to switch implementations. Defaults to {@link #CUBE} on this
      * experiment branch so "just run the client" shows the cube; flip
      * to {@link #SPHERE} for an A/B comparison. */
-    public static final NetherHoleStyle ACTIVE = SPHERE;
+    public static final NetherHoleStyle ACTIVE = CUBE;
 
     /** Kill switch for the screen-space {@code NetherLensEffect}
      * post-process. When {@code false}, {@code applyPerFrame}
@@ -43,7 +43,7 @@ public final class NetherHoleStyles {
      * {@link com.mercuriusxeno.goo.client.lens.NetherLensEffect} are
      * intentionally left in place so toggling this flag is a clean
      * on/off. */
-    public static final boolean LENS_ENABLED = true;
+    public static final boolean LENS_ENABLED = false;
 
     private NetherHoleStyles() {}
 }
