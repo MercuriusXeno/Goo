@@ -64,6 +64,12 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** Spike animation progress (0 = idle, > 0 = extending/retracting). */
     public int spikeAnimTick;
 
+    /** True when a crystal shard cloud behavior is active. */
+    public boolean crystalActive;
+
+    /** Charge density [0-1] for crystal cloud visual scaling. */
+    public float crystalDensity;
+
     /** True when a nether black-hole behavior is active on this marker.
      * The BER uses this flag to branch between the orb visual (false) and
      * the shader sphere (true). */

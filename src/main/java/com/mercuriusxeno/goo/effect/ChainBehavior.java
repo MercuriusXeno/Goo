@@ -70,6 +70,27 @@ public interface ChainBehavior {
     boolean isActive();
 
     /**
+     * Returns true if this behavior accepts additional blobs after
+     * the fuse has expired. Metal and crystal support top-off to
+     * replenish charges; tunnelers do not.
+     *
+     * @return true if post-fuse stacking is allowed
+     */
+    default boolean allowsTopOff() {
+        return false;
+    }
+
+    /**
+     * Called after a successful top-off stack increment. Behaviors
+     * that maintain internal charge counts (crystal) use this to
+     * sync charges from the updated stack count.
+     *
+     * @param be the owning block entity with the updated stack count
+     */
+    default void onTopOff(ChainMarkerBlockEntity be) {
+    }
+
+    /**
      * Returns the number of depth layers already mined. Used by the
      * ghost outline renderer to shrink the preview as the effect
      * progresses. Behaviors that don't mine progressively return 0.

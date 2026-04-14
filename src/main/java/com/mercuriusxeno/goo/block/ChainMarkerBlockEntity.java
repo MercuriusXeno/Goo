@@ -103,14 +103,34 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * @return true if the stack count was incremented
      */
     public boolean tryStack() {
-        if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
+        if (behavior != null) {
+            if (!behavior.allowsTopOff()) { return false; }
+        } else {
+            if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
+        }
         ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
         lastStackTick = level != null ? level.getGameTime() : 0;
-        fuseRemaining = profile.fuseTicks();
+        if (behavior != null) {
+            behavior.onTopOff(this);
+        } else {
+            fuseRemaining = profile.fuseTicks();
+        }
         setChanged();
         syncToClient();
         return true;
+    }
+
+    /**
+     * Decrements the stack count by one. Used by behaviors that consume
+     * stacks as charges (metal, crystal). Syncs to client.
+     */
+    public void decrementStack() {
+        if (stackCount > 0) {
+            stackCount--;
+            setChanged();
+            syncToClient();
+        }
     }
 
     /**

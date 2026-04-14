@@ -10,6 +10,7 @@ import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
+import com.mercuriusxeno.goo.effect.CrystalBehavior;
 import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.effect.MetalBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -171,6 +172,7 @@ public class ChainMarkerBlockEntityRenderer
         extractCoreFields(be, state, partialTick);
         extractFuseAndTarget(be, state);
         extractMetalState(be, state);
+        extractCrystalState(be, state);
         NetherHoleStyles.ACTIVE.extract(be, state);
     }
 
@@ -227,14 +229,56 @@ public class ChainMarkerBlockEntityRenderer
             ChainMarkerRenderState state) {
         if (be.getBehavior() instanceof MetalBehavior metal) {
             state.metalActive = true;
-            state.spikeTargets = new ArrayList<>(metal.getActiveSpikes());
-            state.metalCharges = metal.getChargesRemaining();
+            state.metalCharges = be.getStackCount();
             state.spikeAnimTick = metal.getSpikeAnimTick();
+            state.spikeTargets = state.spikeAnimTick > 0
+                    ? findNearbyEntityPositions(be) : List.of();
         } else {
             state.metalActive = false;
             state.spikeTargets = List.of();
             state.metalCharges = 0;
             state.spikeAnimTick = 0;
+        }
+    }
+
+    /**
+     * Finds living entity positions within the spike radius on the
+     * client level for spike rendering targets.
+     *
+     * @param be the block entity
+     * @return list of entity world positions within range
+     */
+    private static List<Vec3> findNearbyEntityPositions(ChainMarkerBlockEntity be) {
+        if (be.getLevel() == null) { return List.of(); }
+        Vec3 center = Vec3.atCenterOf(be.getBlockPos());
+        double r = MetalBehavior.SPIKE_RADIUS;
+        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(
+                center.x - r, center.y - r, center.z - r,
+                center.x + r, center.y + r, center.z + r);
+        List<Vec3> targets = new ArrayList<>();
+        for (net.minecraft.world.entity.Entity entity : be.getLevel().getEntities(null, area)) {
+            if (entity instanceof net.minecraft.world.entity.LivingEntity
+                    && entity.position().distanceTo(center) <= r) {
+                targets.add(entity.position());
+            }
+        }
+        return targets;
+    }
+
+    /**
+     * Extracts crystal shard cloud state from the block entity.
+     *
+     * @param be    the block entity
+     * @param state the render state to populate
+     */
+    private static void extractCrystalState(ChainMarkerBlockEntity be,
+            ChainMarkerRenderState state) {
+        if (be.getBehavior() instanceof CrystalBehavior crystal) {
+            state.crystalActive = true;
+            state.crystalDensity = crystal.getDensity();
+        } else {
+            state.crystalActive = false;
+            state.crystalDensity = 0f;
         }
     }
 
@@ -593,7 +637,8 @@ public class ChainMarkerBlockEntityRenderer
     private static boolean shouldShowGhostOutline(ChainMarkerRenderState state) {
         if (state.fuseRemaining <= 0 && !state.behaviorActive) { return false; }
         GooType type = state.gooType;
-        return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST;
+        return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST
+                || type == GooType.CRYSTAL;
     }
 
     /** Computes ghost offsets with mined-layer and air-block filtering applied.
@@ -651,9 +696,15 @@ public class ChainMarkerBlockEntityRenderer
      * @return the block offsets for the ghost outline
      */
     private static List<int[]> computeGhostOffsets(GooType type, ChainMarkerRenderState state) {
-        if (type == GooType.FROST && !state.flatMode) {
-            int radius = EffectMath.computeFreezeRadius(state.stackCount);
-            return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
+        if (!state.flatMode) {
+            if (type == GooType.FROST) {
+                int radius = EffectMath.computeFreezeRadius(state.stackCount);
+                return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
+            }
+            if (type == GooType.CRYSTAL) {
+                int radius = (int) CrystalBehavior.CLOUD_RADIUS;
+                return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
+            }
         }
         return ChainFootprint.computeRegionOffsets(
                 state.stackCount, state.flatMode, state.placedFace);
