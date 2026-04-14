@@ -112,6 +112,19 @@ final class EffectBlockPlacement {
     }
 
     /**
+     * Crystal: chain marker shard cloud. Places a chain marker that
+     * becomes a DOT cloud on fuse expiry.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void crystalCloud(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeChainMarker(level, pos, targetFace, GooType.CRYSTAL);
+    }
+
+    /**
      * Metal: chain marker spike trap. Places a chain marker that becomes
      * a spike trap on fuse expiry.
      *

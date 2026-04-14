@@ -27,7 +27,7 @@ import java.util.Set;
 public final class MetalBehavior implements ChainBehavior {
 
     /** Detection and spike reach radius in blocks. */
-    public static final double SPIKE_RADIUS = 1.5;
+    public static final double SPIKE_RADIUS = 2.5;
     /** Damage per stab. */
     private static final float STAB_DAMAGE = 6f;
     /** Knockback strength on stab. */
@@ -35,13 +35,11 @@ public final class MetalBehavior implements ChainBehavior {
     /** Ticks a spike animation lasts (extend + retract). */
     public static final int SPIKE_ANIM_TICKS = 6;
 
-    private static final String TAG_CHARGES = "MetalCharges";
     private static final String TAG_FACE = "MetalFace";
     private static final String TAG_FLAT_MODE = "MetalFlatMode";
     private static final String TAG_TRACKED = "MetalTracked";
+    private static final String TAG_ANIM_TICK = "MetalAnimTick";
     private static final String DEFAULT_FACE = "up";
-
-    private int chargesRemaining;
     private Direction placedFace = Direction.UP;
     private boolean flatMode;
     /** Entity IDs currently inside the detection radius. */
@@ -53,21 +51,23 @@ public final class MetalBehavior implements ChainBehavior {
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        this.chargesRemaining = be.getStackCount();
         this.placedFace = be.getPlacedFace();
         this.flatMode = be.isFlatMode();
+        this.lastKnownStacks = be.getStackCount();
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         activeSpikes.clear();
+        lastKnownStacks = be.getStackCount();
         if (spikeAnimTick > 0) { spikeAnimTick--; }
-        if (flatMode || chargesRemaining <= 0) { return; }
+        if (flatMode || lastKnownStacks <= 0) { return; }
 
-        boolean stabbed = scanAndStab(level, pos);
+        boolean stabbed = scanAndStab(level, pos, be);
         if (stabbed) {
             spikeAnimTick = SPIKE_ANIM_TICKS;
             be.setChanged();
+            syncToClient(be);
         }
     }
 
@@ -75,9 +75,10 @@ public final class MetalBehavior implements ChainBehavior {
      *
      * @param level the server level
      * @param pos   the marker block position
+     * @param be    the owning block entity for stack management
      * @return true if any entity was stabbed this tick
      */
-    private boolean scanAndStab(ServerLevel level, BlockPos pos) {
+    private boolean scanAndStab(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         Vec3 center = Vec3.atCenterOf(pos);
         AABB area = new AABB(
                 center.x - SPIKE_RADIUS, center.y - SPIKE_RADIUS, center.z - SPIKE_RADIUS,
@@ -89,10 +90,10 @@ public final class MetalBehavior implements ChainBehavior {
             if (!isValidTarget(entity, center)) { continue; }
             currentInRange.add(entity.getId());
             if (!trackedEntities.contains(entity.getId())) {
-                stabEntity(level, entity, center);
+                stabEntity(level, entity, center, be);
                 activeSpikes.add(entity.position());
                 stabbed = true;
-                if (chargesRemaining <= 0) { break; }
+                if (be.getStackCount() <= 0) { break; }
             }
         }
         pruneTracked(currentInRange);
@@ -100,9 +101,17 @@ public final class MetalBehavior implements ChainBehavior {
         return stabbed;
     }
 
+    /** Tracks the last-known stack count for isActive on the server. */
+    private int lastKnownStacks;
+
     @Override
     public boolean isActive() {
-        return chargesRemaining > 0;
+        return lastKnownStacks > 0;
+    }
+
+    @Override
+    public boolean allowsTopOff() {
+        return true;
     }
 
     /**
@@ -124,15 +133,6 @@ public final class MetalBehavior implements ChainBehavior {
     }
 
     /**
-     * Returns the number of charges remaining.
-     *
-     * @return charges left
-     */
-    public int getChargesRemaining() {
-        return chargesRemaining;
-    }
-
-    /**
      * Returns true if the entity is a valid stab target: living, not
      * an item, within radius, and not a sneaking player.
      *
@@ -148,13 +148,15 @@ public final class MetalBehavior implements ChainBehavior {
     }
 
     /**
-     * Damages and knocks back a single entity.
+     * Damages and knocks back a single entity, decrementing the BE's stack count.
      *
      * @param level  the server level for damage source lookup
      * @param entity the entity to stab
      * @param center the spike trap center for knockback direction
+     * @param be     the owning block entity
      */
-    private void stabEntity(ServerLevel level, Entity entity, Vec3 center) {
+    private static void stabEntity(ServerLevel level, Entity entity, Vec3 center,
+            ChainMarkerBlockEntity be) {
         entity.hurtServer(level,
                 level.damageSources().source(DamageTypes.STALAGMITE),
                 STAB_DAMAGE);
@@ -162,7 +164,7 @@ public final class MetalBehavior implements ChainBehavior {
                 .normalize().scale(KNOCKBACK_STRENGTH);
         entity.setDeltaMovement(entity.getDeltaMovement().add(knockback));
         entity.hurtMarked = true;
-        chargesRemaining--;
+        be.decrementStack();
     }
 
     /**
@@ -174,19 +176,33 @@ public final class MetalBehavior implements ChainBehavior {
         trackedEntities.retainAll(currentInRange);
     }
 
+    /** Block update flags: notify neighbors + send to clients. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
+
+    /** Triggers a block update to sync state to clients.
+     *
+     * @param be the owning block entity
+     */
+    private static void syncToClient(ChainMarkerBlockEntity be) {
+        if (be.getLevel() != null && !be.getLevel().isClientSide()) {
+            be.getLevel().sendBlockUpdated(be.getBlockPos(), be.getBlockState(),
+                    be.getBlockState(), BLOCK_UPDATE_FLAGS);
+        }
+    }
+
     @Override
     public void saveAdditional(ValueOutput output) {
-        output.putInt(TAG_CHARGES, chargesRemaining);
         output.putString(TAG_FACE, placedFace.getName());
         output.putBoolean(TAG_FLAT_MODE, flatMode);
+        output.putInt(TAG_ANIM_TICK, spikeAnimTick);
         output.putIntArray(TAG_TRACKED, trackedEntities.stream()
                 .mapToInt(Integer::intValue).toArray());
     }
 
     @Override
     public void loadAdditional(ValueInput input) {
-        chargesRemaining = input.getIntOr(TAG_CHARGES, 0);
         flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
+        spikeAnimTick = input.getIntOr(TAG_ANIM_TICK, 0);
         String faceName = input.getStringOr(TAG_FACE, DEFAULT_FACE);
         Direction dir = Direction.byName(faceName);
         placedFace = dir != null ? dir : Direction.UP;

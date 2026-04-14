@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -403,8 +404,8 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      * @return true if the type supports flat mode
      */
     private static boolean supportsFlatMode(GooType type) {
-        return type == GooType.ROCK || type == GooType.BLAZE
-                || type == GooType.FROST || type == GooType.METAL;
+        ChainProfile profile = ChainProfile.forType(type);
+        return profile != null && profile.supportsFlatMode();
     }
 
 
@@ -473,6 +474,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
             case ROCK -> spawnRockParticles(stacks, cx, cy, cz, spread, level, random);
             case NETHER -> spawnNetherParticles(stacks, cx, cy, cz, spread, level, random);
             case METAL -> spawnMetalParticles(stacks, cx, cy, cz, spread, level, random);
+            case CRYSTAL -> spawnCrystalParticles(stacks, cx, cy, cz, spread, level, random);
             default -> {}
         }
     }
@@ -577,6 +579,27 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
             double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
             double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
             level.addParticle(ParticleTypes.CRIT, cx + ox, cy + oy, cz + oz, 0, 0, 0);
+        }
+    }
+
+    /**
+     * Emits enchantment sparkle particles for crystal chain markers.
+     * @param stacks the current stack count
+     * @param cx block center X coordinate
+     * @param cy block center Y coordinate
+     * @param cz block center Z coordinate
+     * @param spread the particle offset radius
+     * @param level the current level
+     * @param random the random source for particle offsets
+     */
+    private static void spawnCrystalParticles(int stacks, double cx, double cy, double cz,
+            double spread, Level level, RandomSource random) {
+        for (int i = 0; i < 1 + stacks; i++) {
+            double ox = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oy = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            double oz = (random.nextDouble() - BLOCK_CENTER) * spread * SPREAD_DIAMETER;
+            level.addParticle(ParticleTypes.ENCHANT, cx + ox, cy + oy, cz + oz,
+                    0, FLAME_RISE_SPEED, 0);
         }
     }
 }

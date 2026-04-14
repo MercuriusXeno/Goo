@@ -25,6 +25,8 @@ public final class ChainProfiles {
     private static final int FROST_MAX_STACKS = 4;
     private static final int METAL_FUSE_TICKS = 30;
     private static final int METAL_MAX_STACKS = 8;
+    private static final int CRYSTAL_FUSE_TICKS = 30;
+    private static final int CRYSTAL_MAX_STACKS = 8;
 
     private ChainProfiles() {}
 
@@ -35,6 +37,7 @@ public final class ChainProfiles {
         registerNether();
         registerFrost();
         registerMetal();
+        registerCrystal();
     }
 
     /** Registers the blaze chain profile. */
@@ -43,7 +46,7 @@ public final class ChainProfiles {
                 BLAZE_FUSE_TICKS,
                 BLAZE_MAX_STACKS,
                 ChainFootprint::tunnelDepth,
-                BlazeBehavior::new
+                BlazeBehavior::new, true
         ));
     }
 
@@ -53,7 +56,17 @@ public final class ChainProfiles {
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
                 ChainFootprint::tunnelDepth,
-                RockBehavior::new
+                RockBehavior::new, true
+        ));
+    }
+
+    /** Registers the crystal chain profile. */
+    private static void registerCrystal() {
+        ChainProfile.register(GooType.CRYSTAL, new ChainProfile(
+                CRYSTAL_FUSE_TICKS,
+                CRYSTAL_MAX_STACKS,
+                stacks -> 1,
+                CrystalBehavior::new, true
         ));
     }
 
@@ -63,7 +76,7 @@ public final class ChainProfiles {
                 FROST_FUSE_TICKS,
                 FROST_MAX_STACKS,
                 EffectMath::computeFreezeRadius,
-                FrostBehavior::new
+                FrostBehavior::new, true
         ));
     }
 
@@ -73,7 +86,7 @@ public final class ChainProfiles {
                 METAL_FUSE_TICKS,
                 METAL_MAX_STACKS,
                 stacks -> 1,
-                MetalBehavior::new
+                MetalBehavior::new, true
         ));
     }
 
@@ -83,7 +96,7 @@ public final class ChainProfiles {
                 NETHER_FUSE_TICKS,
                 NETHER_MAX_STACKS,
                 EffectMath::computeNetherRadius,
-                NetherBehavior::new
+                NetherBehavior::new, false
         ));
     }
 
@@ -95,16 +108,18 @@ public final class ChainProfiles {
      * produce a fresh {@link ChainBehavior} that owns the type-specific
      * post-fuse lifecycle.
      *
-     * @param fuseTicks       how long the fuse window lasts
-     * @param maxStacks       maximum stack count (additional blobs during fuse)
-     * @param rangeFormula    computes range/depth from stack count
-     * @param behaviorFactory factory that creates a fresh {@link ChainBehavior}
+     * @param fuseTicks        how long the fuse window lasts
+     * @param maxStacks        maximum stack count (additional blobs during fuse)
+     * @param rangeFormula     computes range/depth from stack count
+     * @param behaviorFactory  factory that creates a fresh {@link ChainBehavior}
+     * @param supportsFlatMode true if this effect supports flat/tunnel mode toggling
      */
     public record ChainProfile(
             int fuseTicks,
             int maxStacks,
             IntUnaryOperator rangeFormula,
-            Supplier<ChainBehavior> behaviorFactory
+            Supplier<ChainBehavior> behaviorFactory,
+            boolean supportsFlatMode
     ) {
         private static final Map<GooType, ChainProfile> PROFILES = new EnumMap<>(GooType.class);
 

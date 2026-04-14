@@ -126,6 +126,7 @@ public final class GloveThrowSender {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return false; }
         if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (be.getBehavior() != null) { return false; }
         int current = be.getStackCount();
         int pending = IN_FLIGHT.getOrDefault(pos, 0);
         return current + pending >= be.getMaxStacks();
