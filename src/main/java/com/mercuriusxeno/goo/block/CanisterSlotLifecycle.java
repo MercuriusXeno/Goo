@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooConstants;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.component.DataComponentMap;
@@ -41,15 +41,15 @@ final class CanisterSlotLifecycle {
     }
 
     /**
-     * Writes goo contents and metadata onto a canister stack if present and non-empty.
+     * Writes fluid content and metadata onto a canister stack if present and non-empty.
      *
-     * @param stack the canister item stack to populate
-     * @param goo   the goo contents, or null to skip
-     * @param meta  the canister metadata, or null to skip
+     * @param stack   the canister item stack to populate
+     * @param content the fluid content, or null to skip
+     * @param meta    the canister metadata, or null to skip
      */
-    static void applyGooAndMetadata(ItemStack stack, @Nullable GooContents goo, @Nullable CanisterMetadata meta) {
-        if (goo != null && !goo.isEmpty()) {
-            CanisterItem.setGooContents(stack, goo);
+    static void applyFluidAndMetadata(ItemStack stack, @Nullable CanisterFluidContent content, @Nullable CanisterMetadata meta) {
+        if (content != null && !content.isEmpty()) {
+            CanisterItem.setFluidContent(stack, content);
         }
         if (meta != null && meta.hasData()) {
             CanisterItem.setMetadata(stack, meta);
@@ -59,28 +59,28 @@ final class CanisterSlotLifecycle {
     /**
      * Builds a canister stack from pending placement data.
      *
-     * @param pendingGoo  the pending goo contents, or null
-     * @param pendingMeta the pending canister metadata, or null
+     * @param pendingContent the pending fluid content, or null
+     * @param pendingMeta    the pending canister metadata, or null
      * @return a new canister item stack with the pending data applied
      */
-    static ItemStack buildCanisterFromPending(@Nullable GooContents pendingGoo, @Nullable CanisterMetadata pendingMeta) {
+    static ItemStack buildCanisterFromPending(@Nullable CanisterFluidContent pendingContent, @Nullable CanisterMetadata pendingMeta) {
         ItemStack canisterStack = new ItemStack(GooItems.CANISTER.get());
-        applyGooAndMetadata(canisterStack, pendingGoo, pendingMeta);
+        applyFluidAndMetadata(canisterStack, pendingContent, pendingMeta);
         return canisterStack;
     }
 
     /**
-     * Builds a canister stack by reading goo data directly from a source ItemStack.
+     * Builds a canister stack by reading fluid data directly from a source ItemStack.
      * Bypasses pending fields so placement works before applyImplicitComponents runs.
      *
      * @param source the held canister ItemStack being placed
-     * @return a new canister stack with copied goo data
+     * @return a new canister stack with copied fluid data
      */
     static ItemStack buildCanisterFromStack(ItemStack source) {
         ItemStack canisterStack = new ItemStack(GooItems.CANISTER.get());
-        GooContents goo = CanisterItem.getGooContents(source);
+        CanisterFluidContent content = CanisterItem.getFluidContent(source);
         CanisterMetadata meta = CanisterItem.getMetadata(source);
-        applyGooAndMetadata(canisterStack, goo, meta);
+        applyFluidAndMetadata(canisterStack, content, meta);
         return canisterStack;
     }
 
@@ -127,9 +127,9 @@ final class CanisterSlotLifecycle {
      * @param slot    the canister item stack in the slot
      */
     static void exportSlotComponents(DataComponentMap.Builder builder, ItemStack slot) {
-        GooContents goo = CanisterItem.getGooContents(slot);
-        if (!goo.isEmpty()) {
-            builder.set(GooDataComponents.GOO_CONTENTS.get(), goo);
+        CanisterFluidContent content = CanisterItem.getFluidContent(slot);
+        if (!content.isEmpty()) {
+            builder.set(GooDataComponents.CANISTER_FLUID_CONTENT.get(), content);
         }
         CanisterMetadata meta = CanisterItem.getMetadata(slot);
         if (meta.hasData()) {

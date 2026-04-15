@@ -4,9 +4,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.item.BlobStacks;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooInteractionType;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.BlockPos;
@@ -42,7 +40,7 @@ final class TapInteractionHandler {
 
     // --- Dispatch ---
 
-    /** Routes canister-region interactions - only blob/bucket ops, no canister insert.
+    /** Routes canister-region interactions - only blob ops, no canister insert.
      *
      * @param interaction the classified interaction type
      * @param tap         the tap block entity
@@ -79,8 +77,6 @@ final class TapInteractionHandler {
         return switch (interaction) {
             case CANISTER_INSERT -> InteractionResult.TRY_WITH_EMPTY_HAND;
             case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
-            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
-            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
             default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
@@ -122,8 +118,6 @@ final class TapInteractionHandler {
         return switch (interaction) {
             case CANISTER_INSERT -> handleCanisterInsert(tap, stack, player);
             case BLOB_INSERT     -> handleBlobInsert(tap, stack, player);
-            case BUCKET_INSERT   -> handleBucketInsert(tap, stack, player, hand);
-            case BUCKET_EXTRACT  -> handleBucketExtract(tap, stack, player);
             default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
@@ -223,80 +217,6 @@ final class TapInteractionHandler {
         BlobStacks.deplete(stack, accepted, player);
         tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
-    }
-
-    /** Pours goo from a bucket of goo into the tap's canister.
-     *
-     * @param tap    the tap block entity
-     * @param stack  the item stack
-     * @param player the interacting player
-     * @param hand   the hand used
-     * @return the interaction result
-     */
-    static InteractionResult handleBucketInsert(
-            TapBlockEntity tap, ItemStack stack, Player player, InteractionHand hand) {
-        GooContents bucketGoo = BucketOfGooItem.getContents(stack);
-        if (bucketGoo.isEmpty() || !tap.canAcceptGoo()) { return InteractionResult.PASS; }
-
-        GooContents remaining = pourBucketEntries(tap, bucketGoo);
-        if (remaining == bucketGoo) { return InteractionResult.PASS; }
-
-        BucketOfGooItem.setOrRevert(stack, remaining, player, hand);
-        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
-    }
-
-    /** Pours each goo entry from a bucket into the tap, returning the leftover contents.
-     *
-     * @param tap       the tap block entity to pour into
-     * @param bucketGoo the bucket goo contents
-     * @return the remaining contents after pouring, or the original if nothing was accepted
-     */
-    private static GooContents pourBucketEntries(TapBlockEntity tap, GooContents bucketGoo) {
-        GooContents remaining = bucketGoo;
-        for (var entry : bucketGoo.getAll().entrySet()) {
-            long accepted = tap.insertGoo(entry.getKey(), entry.getValue());
-            if (accepted > 0) {
-                remaining = remaining.withRemoved(entry.getKey(), accepted);
-            }
-        }
-        return remaining;
-    }
-
-    /** Extracts goo from the tap's canister into an empty bucket.
-     *
-     * @param tap    the tap block entity
-     * @param stack  the item stack
-     * @param player the interacting player
-     * @return the interaction result
-     */
-    static InteractionResult handleBucketExtract(
-            TapBlockEntity tap, ItemStack stack, Player player) {
-        GooContents contents = tap.getGooContents();
-        GooType type = contents.largestType();
-        if (type == null) { return InteractionResult.PASS; }
-
-        long extracted = tap.extractGoo(type, contents.getVolume(type));
-        if (extracted <= 0) { return InteractionResult.PASS; }
-
-        giveFilled(tap, stack, player, type, extracted);
-        return InteractionResult.SUCCESS;
-    }
-
-    /** Shrinks the empty bucket, creates a filled bucket, and gives it to the player.
-     *
-     * @param tap       the tap block entity (for sound)
-     * @param stack     the empty bucket stack to shrink
-     * @param player    the receiving player
-     * @param type      the goo type to fill with
-     * @param extracted the volume extracted in microblobs
-     */
-    private static void giveFilled(
-            TapBlockEntity tap, ItemStack stack, Player player, GooType type, long extracted) {
-        ItemStack filledBucket = BucketOfGooItem.createWithGoo(type, extracted);
-        stack.shrink(1);
-        PlayerUtils.addOrDrop(player, filledBucket);
-        tap.getLevel().playSound(null, tap.getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
     }
 
     // --- Empty-hand helpers ---

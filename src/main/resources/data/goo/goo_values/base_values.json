@@ -498,7 +498,6 @@
             "goo:goo_gauntlet",
             "goo:exo_gauntlet",
             "goo:depleted_blaze_rod",
-            "goo:bucket_of_goo",
             "goo:partially_melted_item"
         ],
         "trial_chamber": [
@@ -842,7 +841,9 @@
     "dragon_head": {"ender":"$ultra", "vital":"$high", "aeon":"$high"},
     "dragon_egg": {"ender":"$ultra", "vital":"$high", "aeon":"$high"},
 
-    "gunpowder": {"blaze": "$medium", "vital": "$base"},
+    "gunpowder": {"unstable": "$medium", "blaze": "$base"},
+    "tnt": {"unstable": "$high", "rock": "$base"},
+    "fire_charge": {"unstable": "$medium", "blaze": "$medium"},
     "obsidian": {"rock": "$medium", "crystal":"$base"},
     "crying_obsidian": "obsidian + $magic",
     "stripped_bamboo_block": {"leaf": "6 bamboo.leaf", "nether": "3 bamboo.leaf"},

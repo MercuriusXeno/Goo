@@ -12,8 +12,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class ThrowArc {
 
-    /** Minecraft standard entity gravity in blocks/tick². */
-    public static final double GRAVITY = 0.08;
+    /** Gravity factor for arc peak calculation in blocks/tick². */
+    public static final double GRAVITY = 0.06;
 
     /** Flat boost added to arc peak height, in blocks. */
     public static final double ARC_FLAT_BOOST = 1.0;
@@ -67,7 +67,7 @@ public final class ThrowArc {
     }
 
     /**
-     * Computes the granny-arc boosted peak: 125% of gravity peak + 2 blocks.
+     * Computes the granny-arc boosted peak: 115% of gravity peak + 1 block.
      *
      * @param travelTicks total flight time in ticks
      * @return boosted peak height in blocks

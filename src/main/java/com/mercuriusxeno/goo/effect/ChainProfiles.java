@@ -27,6 +27,10 @@ public final class ChainProfiles {
     private static final int METAL_MAX_STACKS = 8;
     private static final int CRYSTAL_FUSE_TICKS = 30;
     private static final int CRYSTAL_MAX_STACKS = 8;
+    private static final int UNSTABLE_FUSE_TICKS = 20;
+    private static final int UNSTABLE_MAX_STACKS = 8;
+    private static final int GLOW_FUSE_TICKS = 30;
+    private static final int GLOW_MAX_STACKS = 4;
 
     private ChainProfiles() {}
 
@@ -38,6 +42,8 @@ public final class ChainProfiles {
         registerFrost();
         registerMetal();
         registerCrystal();
+        registerUnstable();
+        registerGlow();
     }
 
     /** Registers the blaze chain profile. */
@@ -70,6 +76,16 @@ public final class ChainProfiles {
         ));
     }
 
+    /** Registers the unstable chain profile. */
+    private static void registerUnstable() {
+        ChainProfile.register(GooType.UNSTABLE, new ChainProfile(
+                UNSTABLE_FUSE_TICKS,
+                UNSTABLE_MAX_STACKS,
+                stacks -> 1,
+                UnstableBehavior::new, false
+        ));
+    }
+
     /** Registers the frost chain profile. */
     private static void registerFrost() {
         ChainProfile.register(GooType.FROST, new ChainProfile(
@@ -87,6 +103,16 @@ public final class ChainProfiles {
                 METAL_MAX_STACKS,
                 stacks -> 1,
                 MetalBehavior::new, true
+        ));
+    }
+
+    /** Registers the glow chain profile. */
+    private static void registerGlow() {
+        ChainProfile.register(GooType.GLOW, new ChainProfile(
+                GLOW_FUSE_TICKS,
+                GLOW_MAX_STACKS,
+                stacks -> 1,
+                GlowBehavior::new, true
         ));
     }
 

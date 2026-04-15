@@ -13,9 +13,6 @@ public final class ContainerCapacity {
     /** Base vat capacity in microblobs (2^25 = 33,554,432 mB). */
     public static final long VAT_BASE = 1L << 25;
 
-    /** Hard cap for bucket goo volume in microblobs (1,000 mB = 1 blob = 1 NeoForge bucket). */
-    public static final long BUCKET_CAP = 1_000L;
-
     /** Hard cap for blob item volume in microblobs (64,000 mB = 64 blobs). */
     public static final long BLOB_CAP = 64_000L;
 

@@ -6,9 +6,7 @@ import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.CanisterSlotResolver;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooInteractionType;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
@@ -35,13 +33,6 @@ final class CanisterBlockHandlers {
 
     private CanisterBlockHandlers() {}
 
-    /** Result of a successful goo extraction from a canister slot.
-     *
-     * @param type   the goo type
-     * @param volume volume in microblobs
-     */
-    record ExtractedGoo(GooType type, long volume) {}
-
     /**
      * Dispatches a validated interaction to the appropriate handler method.
      *
@@ -49,7 +40,7 @@ final class CanisterBlockHandlers {
      * @param canister    the canister block entity
      * @param stack       the held item stack
      * @param player      the interacting player
-     * @param hand        the hand used
+     * @param hand        the hand used (required by Dispatcher interface)
      * @param hitResult   the ray trace hit result
      * @param pos         the block position
      * @param level       the current level
@@ -63,7 +54,7 @@ final class CanisterBlockHandlers {
         if (interaction == GooInteractionType.TUNER_PASS) {
             throw new IllegalStateException(errTunerPass);
         }
-        return dispatchNonTuner(interaction, canister, stack, player, hand, hitResult);
+        return dispatchNonTuner(interaction, canister, stack, player, hitResult);
     }
 
     /**
@@ -73,18 +64,15 @@ final class CanisterBlockHandlers {
      * @param canister    the canister block entity
      * @param stack       the held item stack
      * @param player      the interacting player
-     * @param hand        the hand used
      * @param hitResult   the ray trace hit result
      * @return the interaction result
      */
     private static InteractionResult dispatchNonTuner(
             GooInteractionType interaction, CanisterBlockEntity canister, ItemStack stack,
-            Player player, InteractionHand hand, BlockHitResult hitResult) {
+            Player player, BlockHitResult hitResult) {
         return switch (interaction) {
             case CANISTER_INSERT  -> handleCanisterInsert(canister, hitResult, stack, player);
             case BLOB_INSERT      -> handleBlobInsert(canister, hitResult, stack, player);
-            case BUCKET_INSERT    -> handleBucketInsert(canister, hitResult, stack, player, hand);
-            case BUCKET_EXTRACT   -> handleBucketExtract(canister, hitResult, stack, player);
             default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
@@ -261,118 +249,4 @@ final class CanisterBlockHandlers {
         return canister.insertGoo(slot, type, volume);
     }
 
-    /**
-     * Pours goo from a bucket of goo into matching canister slots.
-     *
-     * @param canister  the canister block entity
-     * @param hitResult the ray trace hit result
-     * @param stack     the bucket item stack
-     * @param player    the interacting player
-     * @param hand      the hand used
-     * @return SUCCESS if goo was inserted, PASS otherwise
-     */
-    static InteractionResult handleBucketInsert(
-            CanisterBlockEntity canister, BlockHitResult hitResult,
-            ItemStack stack, Player player, InteractionHand hand) {
-        var pos = canister.getBlockPos();
-        GooContents updatedContents = tryPourBucket(
-                canister, CanisterBlock.hitSlot(hitResult, pos), BucketOfGooItem.getContents(stack));
-        if (updatedContents == null) { return InteractionResult.PASS; }
-
-        BucketOfGooItem.setOrRevert(stack, updatedContents, player, hand);
-        canister.getLevel().playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Attempts to pour a bucket's goo contents into accepting canister slots.
-     *
-     * @param canister  the canister block entity
-     * @param hitSlot   the slot the player targeted, or -1
-     * @param bucketGoo the bucket's goo contents
-     * @return updated goo contents after pouring, or null if nothing was inserted
-     */
-    private static @Nullable GooContents tryPourBucket(
-            CanisterBlockEntity canister, int hitSlot, GooContents bucketGoo) {
-        if (bucketGoo.isEmpty()) { return null; }
-        GooContents remaining = pourAllEntries(canister, hitSlot, bucketGoo);
-        return remaining.equals(bucketGoo) ? null : remaining;
-    }
-
-    /**
-     * Attempts to pour each goo entry into the canister, returning whatever remains.
-     * @param canister the canister block entity to pour into
-     * @param hitSlot the slot the player targeted, or -1
-     * @param bucketGoo the bucket's goo contents to pour
-     * @return goo contents remaining after pouring
-     */
-    private static GooContents pourAllEntries(
-            CanisterBlockEntity canister, int hitSlot, GooContents bucketGoo) {
-        GooContents remaining = bucketGoo;
-        for (var entry : bucketGoo.getAll().entrySet()) {
-            long accepted = pourSingleEntry(canister, hitSlot, entry.getKey(), entry.getValue());
-            if (accepted > 0) {
-                remaining = remaining.withRemoved(entry.getKey(), accepted);
-            }
-        }
-        return remaining;
-    }
-
-    /**
-     * Pours a single goo type from the bucket into the best accepting slot.
-     * @param canister the canister block entity
-     * @param hitSlot  the slot targeted by the hit
-     * @param type     the goo type being poured
-     * @param volume   the amount of goo to pour (mB)
-     * @return the amount of goo actually inserted (mB)
-     */
-    private static long pourSingleEntry(
-            CanisterBlockEntity canister, int hitSlot, GooType type, long volume) {
-        int slot = GooBlockInteraction.findSlot(hitSlot, CanisterBlockEntity.MAX_SLOTS, canister::canAccept);
-        if (slot < 0) { return 0; }
-        return canister.insertGoo(slot, type, volume);
-    }
-
-    /**
-     * Extracts goo from the first non-empty slot into an empty bucket.
-     *
-     * @param canister  the canister block entity
-     * @param hitResult the ray trace hit result
-     * @param stack     the empty bucket stack
-     * @param player    the interacting player
-     * @return SUCCESS if goo was extracted, PASS otherwise
-     */
-    static InteractionResult handleBucketExtract(
-            CanisterBlockEntity canister, BlockHitResult hitResult,
-            ItemStack stack, Player player) {
-        var pos = canister.getBlockPos();
-        ExtractedGoo extracted = tryExtractGoo(canister, CanisterBlock.hitSlot(hitResult, pos));
-        if (extracted == null) { return InteractionResult.PASS; }
-
-        ItemStack filledBucket = BucketOfGooItem.createWithGoo(extracted.type(), extracted.volume());
-        stack.shrink(1);
-        PlayerUtils.addOrDrop(player, filledBucket);
-        canister.getLevel().playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Attempts to extract goo from the targeted or first filled canister slot.
-     *
-     * @param canister the canister block entity
-     * @param hitSlot  the slot the player targeted, or -1
-     * @return extracted goo type and volume, or null if nothing could be extracted
-     */
-    private static @Nullable ExtractedGoo tryExtractGoo(
-            CanisterBlockEntity canister, int hitSlot) {
-        int slot = GooBlockInteraction.findSlot(hitSlot, CanisterBlockEntity.MAX_SLOTS, i -> !canister.getSlotGooContents(i).isEmpty());
-        if (slot < 0) { return null; }
-
-        GooContents slotGoo = canister.getSlotGooContents(slot);
-        GooType type = slotGoo.largestType();
-        if (type == null) { return null; }
-        long extracted = canister.extractGoo(slot, type, slotGoo.getVolume(type));
-        if (extracted <= 0) { return null; }
-        return new ExtractedGoo(type, extracted);
-    }
 }

@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
+import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.MagickedIceBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
@@ -89,6 +90,19 @@ public class GooBlocks {
                     .noLootTable()
                     .noOcclusion()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
+
+    /** Glow crystal: permanent light source left by glow chain detonation. */
+    public static final DeferredBlock<GlowCrystalBlock> GLOW_CRYSTAL = BLOCKS.registerBlock(
+            "glow_crystal", GlowCrystalBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.GOLD)
+                    .noCollision()
+                    .instabreak()
+                    .noLootTable()
+                    .noOcclusion()
+                    .sound(SoundType.GLASS)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)
+                    .lightLevel(GlowCrystalBlock::lightLevel));
 
     /**
      * Magicked ice: a non-melting mod variant of vanilla ice, placed

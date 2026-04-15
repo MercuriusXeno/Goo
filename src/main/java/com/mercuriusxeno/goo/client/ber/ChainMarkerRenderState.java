@@ -55,14 +55,11 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** True when a metal spike trap behavior is active. */
     public boolean metalActive;
 
-    /** World-relative positions of entities being stabbed this frame. */
-    public java.util.List<net.minecraft.world.phys.Vec3> spikeTargets = java.util.List.of();
+    /** Per-entity spike animation snapshots: [entityId, animTick] pairs. */
+    public java.util.List<int[]> spikeAnims = java.util.List.of();
 
     /** Remaining spike charges for the metal trap. */
     public int metalCharges;
-
-    /** Spike animation progress (0 = idle, > 0 = extending/retracting). */
-    public int spikeAnimTick;
 
     /** True when a crystal shard cloud behavior is active. */
     public boolean crystalActive;

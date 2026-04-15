@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GooTypeTest {
 
-    /** Verifies that exactly 15 goo types are defined. */
+    /** Verifies that exactly 16 goo types are defined. */
     @Test
-    void fifteenTypesExist() {
-        assertEquals(15, GooType.values().length);
+    void sixteenTypesExist() {
+        assertEquals(16, GooType.values().length);
     }
 
     /** Verifies that all type IDs are unique. */

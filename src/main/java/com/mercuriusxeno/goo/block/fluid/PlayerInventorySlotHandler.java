@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block.fluid;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -57,8 +58,8 @@ public final class PlayerInventorySlotHandler implements ResourceHandler<FluidRe
     public FluidResource getResource(int index) {
         GooType type = typeForIndex(index);
         if (type == null) { return FluidResource.EMPTY; }
-        long volume = CanisterItem.getGooContents(getStack()).getVolume(type);
-        return volume > 0
+        CanisterFluidContent content = CanisterItem.getFluidContent(getStack());
+        return (content.getGooType() == type)
             ? FluidResource.of(GooFluids.SOURCES.get(type).get())
             : FluidResource.EMPTY;
     }
@@ -72,7 +73,8 @@ public final class PlayerInventorySlotHandler implements ResourceHandler<FluidRe
     public long getAmountAsLong(int index) {
         GooType type = typeForIndex(index);
         if (type == null) { return 0L; }
-        return CanisterItem.getGooContents(getStack()).getVolume(type);
+        CanisterFluidContent content = CanisterItem.getFluidContent(getStack());
+        return (content.getGooType() == type) ? content.amount() : 0L;
     }
 
     /** Returns the canister's total capacity based on its compression level.

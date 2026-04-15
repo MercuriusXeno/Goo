@@ -18,6 +18,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.jspecify.annotations.Nullable;
 import java.util.Collection;
 
 /**
@@ -69,6 +70,52 @@ public final class BlobFlightRenderer {
 
     /** Threshold for up-vector selection to avoid parallel cross products. */
     private static final double UP_THRESHOLD = 0.9;
+
+    // ── Glow beam constants ─────────────────────────────────────────────
+
+    /** Billboard half-width matches the blob core size. */
+    private static final float BEAM_HW = CORE_HW;
+    /** ARGB color for the beam center (white-hot). */
+    private static final int BEAM_CENTER_COLOR = 0xFFFFFFFF;
+    /** ARGB color for the beam edges at the head (saturated glowstone yellow). */
+    private static final int BEAM_EDGE_COLOR = 0xD0FFD700;
+    /** ARGB color for the beam tail (faded glowstone yellow). */
+    private static final int BEAM_TAIL_COLOR = 0x30FFD700;
+
+    // ── Metal spine dart constants ─────────────────────────────────────
+
+    /** Short-range threshold: metal spine starts fully formed below this. */
+    private static final float SHORT_RANGE_THRESHOLD = 1.5f;
+    /** Front dart cone length in blocks. */
+    private static final float DART_FRONT_LENGTH = 1.05f;
+    /** Front dart cone base radius (narrow, pointy). */
+    private static final float DART_FRONT_RADIUS = 0.07f;
+    /** Rear pyramid length in blocks (short, stubby). */
+    private static final float DART_REAR_LENGTH = 0.3f;
+    /** Rear pyramid base radius (wide, blunt). */
+    private static final float DART_REAR_RADIUS = 0.13f;
+    /** Number of triangular faces on dart cones. */
+    private static final int DART_SIDES = 3;
+    /** Two pi for dart angle computation. */
+    private static final float TWO_PI = (float) (2 * Math.PI);
+    /** Morph rate: spine is fully formed at 50% of flight time. */
+    private static final float MORPH_RATE = 2f;
+    /** Epsilon for near-zero length detection in beam/direction math. */
+    private static final double LENGTH_EPSILON = 1e-6;
+    /** Array offset for X component of the perpendicular basis vector. */
+    private static final int PERP_X = 0;
+    /** Array offset for Y component of the perpendicular basis vector. */
+    private static final int PERP_Y = 1;
+    /** Array offset for Z component of the perpendicular basis vector. */
+    private static final int PERP_Z = 2;
+    /** Array offset for X component of the cross basis vector. */
+    private static final int CROSS_X = 3;
+    /** Array offset for Y component of the cross basis vector. */
+    private static final int CROSS_Y = 4;
+    /** Array offset for Z component of the cross basis vector. */
+    private static final int CROSS_Z = 5;
+    /** UV midpoint factor for cone face texture coordinates. */
+    private static final float UV_MIDPOINT = 0.5f;
 
     private BlobFlightRenderer() {}
 
@@ -136,8 +183,17 @@ public final class BlobFlightRenderer {
         Vec3 pos = flight.getPosition(ctx.partialTick);
         Vec3 vel = flight.getVelocity(ctx.partialTick);
 
+        if (flight.gooType == GooType.GLOW) {
+            renderGlowBeam(ctx, flight);
+            return;
+        }
+
         translateToFlight(ctx, pos);
-        renderFlightLayers(ctx, flight.gooType, vel);
+        if (flight.gooType == GooType.METAL && flight.targetEntityId >= 0) {
+            renderMetalSpineLayers(ctx, flight, vel);
+        } else {
+            renderFlightLayers(ctx, flight.gooType, vel);
+        }
         ctx.poseStack.popPose();
 
         BlobTrailParticles.spawnTrailParticles(pos, vel, flight.gooType, flight);
@@ -370,6 +426,354 @@ public final class BlobFlightRenderer {
         GooRenderUtil.vertexColored(pose, c, light, color, tc.ex - tc.ax, tc.ey - tc.ay, tc.ez - tc.az, uv.u1(), uv.v1(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, -tc.ax, -tc.ay, -tc.az, uv.u1(), uv.v0(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color,  tc.ax,  tc.ay,  tc.az, uv.u0(), uv.v0(), nx, ny, nz);
+    }
+
+    // ── Glow beam flight rendering ──────────────────────────────────
+
+    /**
+     * Renders a glow flight as a camera-facing billboard beam with a
+     * white-hot center stripe tapering to glowstone yellow edges.
+     * Two-phase lifecycle: extend (head advances, tail pinned at origin)
+     * then collapse (tail chases head into the target).
+     *
+     * @param ctx    the per-frame render context
+     * @param flight the glow flight
+     */
+    private static void renderGlowBeam(RenderContext ctx,
+            BlobFlightManager.BlobFlight flight) {
+        Vec3 start = flight.start;
+        Vec3 end = flight.getEnd();
+        Vec3 dir = end.subtract(start);
+        double totalLen = dir.length();
+        if (totalLen < LENGTH_EPSILON) { return; }
+
+        float smoothTick = flight.ticksElapsed + ctx.partialTick;
+        Vec3 headPos = glowHeadPos(start, end, smoothTick, flight.travelTicks);
+        Vec3 tailPos = glowTailPos(start, end, smoothTick, flight.travelTicks);
+
+        Vec3 beamVec = headPos.subtract(tailPos);
+        double beamLen = beamVec.length();
+        if (beamLen < LENGTH_EPSILON) { return; }
+
+        emitGlowBillboard(ctx, tailPos, beamVec);
+        renderGlowHead(ctx, headPos);
+    }
+
+    /**
+     * Renders the glow blob at the beam's leading edge.
+     *
+     * @param ctx     the render context
+     * @param headPos world-space head position
+     */
+    private static void renderGlowHead(RenderContext ctx, Vec3 headPos) {
+        translateToFlight(ctx, headPos);
+        renderCore(ctx.poseStack, ctx.buffers, GooType.GLOW, ctx.gameTime);
+        ctx.poseStack.popPose();
+    }
+
+    /**
+     * Computes the head position along the beam path. Clamps at the
+     * target during the collapse phase.
+     *
+     * @param start      the captured origin
+     * @param end        the live target position
+     * @param smoothTick interpolated elapsed ticks
+     * @param travel     ticks for the extend phase
+     * @return world-space head position
+     */
+    private static Vec3 glowHeadPos(Vec3 start, Vec3 end,
+            float smoothTick, int travel) {
+        float headT = Math.min(1f, smoothTick / travel);
+        return start.add(end.subtract(start).scale(headT));
+    }
+
+    /**
+     * Computes the tail position. Pinned at origin during extend,
+     * then advances toward the target during collapse.
+     *
+     * @param start      the captured origin
+     * @param end        the live target position
+     * @param smoothTick interpolated elapsed ticks
+     * @param travel     ticks for the extend phase
+     * @return world-space tail position
+     */
+    private static Vec3 glowTailPos(Vec3 start, Vec3 end,
+            float smoothTick, int travel) {
+        if (smoothTick <= travel) { return start; }
+        float tailT = Math.min(1f, (smoothTick - travel) / travel);
+        return start.add(end.subtract(start).scale(tailT));
+    }
+
+    /**
+     * Emits a camera-facing billboard quad from tailPos along beamVec.
+     * Per-vertex colors: white-hot center, glowstone yellow edges,
+     * transparent fade at the tail end.
+     *
+     * @param ctx     render context
+     * @param tailPos world-space tail
+     * @param beamVec head minus tail
+     */
+    private static void emitGlowBillboard(RenderContext ctx, Vec3 tailPos,
+            Vec3 beamVec) {
+        Vec3 camPos = ctx.camera.position();
+        Vec3 lateral = computeGlowLateral(tailPos, beamVec, camPos);
+        if (lateral == null) { return; }
+
+        ctx.poseStack.pushPose();
+        ctx.poseStack.translate(
+                tailPos.x - camPos.x,
+                tailPos.y - camPos.y,
+                tailPos.z - camPos.z);
+
+        Vec3 normal = beamVec.cross(lateral).normalize();
+        GooRenderUtil.UvRect uv = spriteToUv(GooType.GLOW);
+        VertexConsumer c = ctx.buffers.getBuffer(
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
+        PoseStack.Pose pose = ctx.poseStack.last();
+        emitGlowHalves(pose, c, lateral, beamVec, normal, uv);
+        ctx.poseStack.popPose();
+    }
+
+    /**
+     * Computes the camera-perpendicular lateral offset for the billboard,
+     * scaled to {@link #BEAM_HW}. Returns null if the beam is edge-on.
+     *
+     * @param tailPos world-space tail position
+     * @param beamVec head minus tail vector
+     * @param camPos  camera world position
+     * @return the lateral offset, or null if degenerate
+     */
+    private static @Nullable Vec3 computeGlowLateral(Vec3 tailPos,
+            Vec3 beamVec, Vec3 camPos) {
+        Vec3 beamMid = tailPos.add(beamVec.scale(UV_MIDPOINT));
+        Vec3 toCamera = camPos.subtract(beamMid);
+        Vec3 lateral = beamVec.cross(toCamera);
+        double latLen = lateral.length();
+        if (latLen < LENGTH_EPSILON) { return null; }
+        return lateral.scale(BEAM_HW / latLen);
+    }
+
+    /**
+     * Emits both halves of the glow billboard (front and back faces).
+     *
+     * @param pose    the pose matrix
+     * @param c       the vertex consumer
+     * @param lateral the lateral offset vector
+     * @param fwd     the forward (tail-to-head) vector
+     * @param normal  the face normal
+     * @param uv      the fluid sprite UV rectangle
+     */
+    private static void emitGlowHalves(PoseStack.Pose pose, VertexConsumer c,
+            Vec3 lateral, Vec3 fwd, Vec3 normal, GooRenderUtil.UvRect uv) {
+        float lx = (float) lateral.x;
+        float ly = (float) lateral.y;
+        float lz = (float) lateral.z;
+        float fx = (float) fwd.x;
+        float fy = (float) fwd.y;
+        float fz = (float) fwd.z;
+        float nx = (float) normal.x;
+        float ny = (float) normal.y;
+        float nz = (float) normal.z;
+        emitGlowFace(pose, c, lx, ly, lz, fx, fy, fz, nx, ny, nz, uv);
+        emitGlowFace(pose, c, -lx, -ly, -lz, fx, fy, fz, -nx, -ny, -nz, uv);
+    }
+
+    /**
+     * Emits one face of the glow billboard. Four vertices: two at the
+     * tail (v=0) and two at the head (v=1). Lateral edges get the warm
+     * yellow edge color; center vertices get white-hot.
+     *
+     * @param pose the pose matrix
+     * @param c    the vertex consumer
+     * @param lx   lateral offset X (positive side)
+     * @param ly   lateral offset Y
+     * @param lz   lateral offset Z
+     * @param fx   forward vector X (tail to head)
+     * @param fy   forward vector Y
+     * @param fz   forward vector Z
+     * @param nx   face normal X
+     * @param ny   face normal Y
+     * @param nz   face normal Z
+     * @param uv   the fluid sprite UV rectangle
+     */
+    private static void emitGlowFace(PoseStack.Pose pose, VertexConsumer c,
+            float lx, float ly, float lz,
+            float fx, float fy, float fz,
+            float nx, float ny, float nz,
+            GooRenderUtil.UvRect uv) {
+        // tail-edge (transparent), tail-center (transparent),
+        // head-center (white-hot), head-edge (yellow)
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, BEAM_TAIL_COLOR,
+                lx, ly, lz, uv.u0(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, BEAM_TAIL_COLOR,
+                0, 0, 0, uv.u1(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, BEAM_CENTER_COLOR,
+                fx, fy, fz, uv.u1(), uv.v1(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, BEAM_EDGE_COLOR,
+                fx + lx, fy + ly, fz + lz, uv.u0(), uv.v1(), nx, ny, nz);
+    }
+
+    // ── Metal spine flight rendering ──────────────────────────────────
+
+    /**
+     * Renders a metal blob flight that morphs into a dart spine mid-flight.
+     * The blob shrinks as the spine grows, fully morphed by the midpoint.
+     * For distances under 1.5 blocks, the spine starts fully formed.
+     *
+     * @param ctx    the per-frame render context
+     * @param flight the metal flight
+     * @param vel    the velocity vector
+     */
+    private static void renderMetalSpineLayers(RenderContext ctx,
+            BlobFlightManager.BlobFlight flight, Vec3 vel) {
+        float progress = Math.min(1f,
+                (flight.ticksElapsed + ctx.partialTick) / flight.travelTicks);
+        float dist = (float) flight.start.distanceTo(flight.getEnd());
+        float morphFrac = dist < SHORT_RANGE_THRESHOLD
+                ? 1f : Math.min(1f, progress * MORPH_RATE);
+
+        GooType type = flight.gooType;
+
+        if (morphFrac < 1f) {
+            float blobScale = 1f - morphFrac;
+            ctx.poseStack.pushPose();
+            ctx.poseStack.scale(blobScale, blobScale, blobScale);
+            renderCore(ctx.poseStack, ctx.buffers, type, ctx.gameTime);
+            renderShell(ctx.poseStack, ctx.buffers, type);
+            ctx.poseStack.popPose();
+        }
+
+        if (morphFrac > 0f) {
+            emitMetalSpine(ctx.poseStack, ctx.buffers, type, vel, morphFrac);
+        }
+
+        renderTail(ctx.poseStack, ctx.buffers, type, vel, ctx.gameTime);
+    }
+
+    /**
+     * Emits the metal spine geometry: a long pointy front dart and a
+     * stubby rear pyramid, both oriented along the velocity vector.
+     * Uses the goo fluid texture for a metallic appearance.
+     *
+     * @param poseStack the pose stack
+     * @param buffers   the buffer source
+     * @param type      the goo type (for texture lookup)
+     * @param vel       the velocity direction
+     * @param morphFrac morph progress [0, 1]
+     */
+    private static void emitMetalSpine(PoseStack poseStack, MultiBufferSource buffers,
+            GooType type, Vec3 vel, float morphFrac) {
+        GooRenderUtil.UvRect uv = spriteToUv(type);
+        VertexConsumer c = buffers.getBuffer(
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
+        PoseStack.Pose pose = poseStack.last();
+
+        Vec3 dir = vel.normalize();
+        float dx = (float) dir.x;
+        float dy = (float) dir.y;
+        float dz = (float) dir.z;
+        float[] basis = buildDartBasis(dx, dy, dz);
+
+        emitDartCone(pose, c, dx, dy, dz,
+                DART_FRONT_LENGTH * morphFrac,
+                DART_FRONT_RADIUS * morphFrac,
+                basis, uv);
+        emitDartCone(pose, c, -dx, -dy, -dz,
+                DART_REAR_LENGTH * morphFrac,
+                DART_REAR_RADIUS * morphFrac,
+                basis, uv);
+    }
+
+    /**
+     * Emits a 3-sided cone from the origin along a direction, textured
+     * with the goo fluid sprite.
+     *
+     * @param pose       the pose matrix
+     * @param c          the vertex consumer
+     * @param dirX       cone direction X
+     * @param dirY       cone direction Y
+     * @param dirZ       cone direction Z
+     * @param length     cone length
+     * @param baseRadius cone base radius
+     * @param basis      orthonormal basis {perpX,Y,Z, crossX,Y,Z}
+     * @param uv         the fluid sprite UV rectangle
+     */
+    private static void emitDartCone(PoseStack.Pose pose, VertexConsumer c,
+            float dirX, float dirY, float dirZ,
+            float length, float baseRadius,
+            float[] basis, GooRenderUtil.UvRect uv) {
+        float tipX = dirX * length;
+        float tipY = dirY * length;
+        float tipZ = dirZ * length;
+
+        float perpX = basis[PERP_X], perpY = basis[PERP_Y], perpZ = basis[PERP_Z];
+        float crossX = basis[CROSS_X], crossY = basis[CROSS_Y], crossZ = basis[CROSS_Z];
+        float uMid = (uv.u0() + uv.u1()) * UV_MIDPOINT;
+
+        for (int i = 0; i < DART_SIDES; i++) {
+            float a0 = TWO_PI * i / DART_SIDES;
+            float a1 = TWO_PI * (i + 1) / DART_SIDES;
+            float cos0 = (float) Math.cos(a0) * baseRadius;
+            float sin0 = (float) Math.sin(a0) * baseRadius;
+            float cos1 = (float) Math.cos(a1) * baseRadius;
+            float sin1 = (float) Math.sin(a1) * baseRadius;
+
+            float midA = (a0 + a1) * UV_MIDPOINT;
+            float nx = perpX * (float) Math.cos(midA) + crossX * (float) Math.sin(midA);
+            float ny = perpY * (float) Math.cos(midA) + crossY * (float) Math.sin(midA);
+            float nz = perpZ * (float) Math.cos(midA) + crossZ * (float) Math.sin(midA);
+
+            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                    perpX * cos0 + crossX * sin0,
+                    perpY * cos0 + crossY * sin0,
+                    perpZ * cos0 + crossZ * sin0,
+                    uv.u0(), uv.v0(), nx, ny, nz);
+            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                    perpX * cos1 + crossX * sin1,
+                    perpY * cos1 + crossY * sin1,
+                    perpZ * cos1 + crossZ * sin1,
+                    uv.u1(), uv.v0(), nx, ny, nz);
+            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                    tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                    tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+        }
+    }
+
+    /**
+     * Builds orthonormal perpendicular + cross basis vectors for a
+     * direction, used by the dart cone emitter.
+     *
+     * @param dirX direction X
+     * @param dirY direction Y
+     * @param dirZ direction Z
+     * @return array of {perpX, perpY, perpZ, crossX, crossY, crossZ}
+     */
+    private static float[] buildDartBasis(float dirX, float dirY, float dirZ) {
+        float perpX;
+        float perpY;
+        float perpZ;
+        if (Math.abs(dirY) < UP_THRESHOLD) {
+            perpX = -dirZ;
+            perpY = 0;
+            perpZ = dirX;
+        } else {
+            perpX = 1;
+            perpY = 0;
+            perpZ = 0;
+        }
+        float dot = perpX * dirX + perpY * dirY + perpZ * dirZ;
+        perpX -= dot * dirX;
+        perpY -= dot * dirY;
+        perpZ -= dot * dirZ;
+        float pLen = (float) Math.sqrt(perpX * perpX + perpY * perpY + perpZ * perpZ);
+        perpX /= pLen;
+        perpY /= pLen;
+        perpZ /= pLen;
+        float crossX = dirY * perpZ - dirZ * perpY;
+        float crossY = dirZ * perpX - dirX * perpZ;
+        float crossZ = dirX * perpY - dirY * perpX;
+        return new float[]{perpX, perpY, perpZ, crossX, crossY, crossZ};
     }
 
 }

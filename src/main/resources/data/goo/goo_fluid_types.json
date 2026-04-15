@@ -174,12 +174,12 @@
     "frametime": 3,
     "shadowHue": 0.7,
     "palette": [
-      { "position": 0.0, "color": "#0A6008" },
-      { "position": 0.2, "color": "#18A812" },
-      { "position": 0.5, "color": "#38D428" },
-      { "position": 0.75, "color": "#60F040" },
-      { "position": 0.9, "color": "#8CFF5A" },
-      { "position": 1.0, "color": "#B4FF78" }
+      { "position": 0.0, "color": "#063D08" },
+      { "position": 0.2, "color": "#0E7A18" },
+      { "position": 0.5, "color": "#1CA830" },
+      { "position": 0.75, "color": "#38D040" },
+      { "position": 0.9, "color": "#5CE858" },
+      { "position": 1.0, "color": "#82F080" }
     ]
   },
   {
@@ -316,6 +316,30 @@
       { "position": 0.7, "color": "#88A8E0" },
       { "position": 0.9, "color": "#A8C4F0" },
       { "position": 1.0, "color": "#C8DAFA" }
+    ]
+  },
+  {
+    "id": "unstable",
+    "seed": 40976,
+    "genParams": {
+      "viscosity": 0.5,
+      "decayRate": 0.10,
+      "ignitionChance": 0.03,
+      "ignitionStrength": 2.5,
+      "potHeatRate": 0.06,
+      "potInfluence": 0.3,
+      "neighborhoodReach": 1
+    },
+    "frametime": 1,
+    "shadowHue": 0.3,
+    "palette": [
+      { "position": 0.0, "color": "#0A3300" },
+      { "position": 0.15, "color": "#1A6600" },
+      { "position": 0.35, "color": "#33CC00" },
+      { "position": 0.55, "color": "#39FF14" },
+      { "position": 0.75, "color": "#88FF33" },
+      { "position": 0.9, "color": "#CCFF44" },
+      { "position": 1.0, "color": "#EEFFAA" }
     ]
   },
   {

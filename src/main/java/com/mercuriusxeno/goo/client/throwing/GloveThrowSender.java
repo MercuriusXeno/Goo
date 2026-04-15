@@ -4,12 +4,14 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
+import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.network.BlobThrowPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +45,7 @@ public final class GloveThrowSender {
         if (!GloveUseTracker.isSelectedTypeAvailable()) { return; }
         if (ThrowFreezeState.isThrowBlocked()) { return; }
         TargetResult target = resolveAimTarget(player);
-        if (wouldExceedMaxStacks(target)) {
+        if (wouldExceedMaxStacks(target, gooType)) {
             ThrowFreezeState.armThrowBlock();
             return;
         }
@@ -70,15 +72,9 @@ public final class GloveThrowSender {
 
     /**
      * Decrements the in-flight count for a chain marker when a blob
-     * arrives. Called by BlobFlightManager on flight completion.
-     *
-     * @param pos the chain marker position
-     */
-    /**
-     * Decrements the in-flight count for a chain marker when a blob
      * arrives. Checks both the given pos and all adjacent positions
      * since the flight payload carries the hit block pos but the
-     * in-flight map tracks the chain marker pos (which may be adjacent).
+     * in-flight map tracks the canonical marker pos (which may be adjacent).
      *
      * @param pos the target position from the flight payload
      */
@@ -115,58 +111,96 @@ public final class GloveThrowSender {
 
     /**
      * Returns true if this throw would push a chain marker past max stacks,
-     * counting both current stacks and in-flight blobs.
+     * counting both current stacks and in-flight blobs. Works even before
+     * the marker exists on the client by predicting the placement position
+     * and looking up maxStacks from the ChainProfile.
      *
-     * @param target the resolved aim target
+     * @param target  the resolved aim target
+     * @param gooType the goo type being thrown
      * @return true if the throw should be blocked
      */
-    private static boolean wouldExceedMaxStacks(TargetResult target) {
-        BlockPos pos = resolveChainMarkerPos(target);
+    private static boolean wouldExceedMaxStacks(TargetResult target, GooType gooType) {
+        if (target instanceof TargetResult.GlowCrystalTarget gct && gooType == GooType.GLOW) {
+            return wouldExceedCrystalMax(gct);
+        }
+        BlockPos pos = resolveTrackingPos(target);
         if (pos == null) { return false; }
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return false; }
-        if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
-        if (be.getBehavior() != null) { return false; }
-        int current = be.getStackCount();
+
+        int current = 0;
+        int max;
+        if (mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) {
+            current = be.getStackCount();
+            max = be.getMaxStacks();
+        } else {
+            ChainProfile profile = ChainProfile.forType(gooType);
+            if (profile == null) { return false; }
+            max = profile.maxStacks();
+        }
         int pending = IN_FLIGHT.getOrDefault(pos, 0);
-        return current + pending >= be.getMaxStacks();
+        return current + pending >= max;
     }
 
-    /** Increments the in-flight count when a throw targets a chain marker.
+    /**
+     * Returns true if the crystal is at (or will reach) max size with in-flight blobs.
+     *
+     * @param gct the glow crystal target
+     * @return true if the crystal cannot accept another blob
+     */
+    private static boolean wouldExceedCrystalMax(TargetResult.GlowCrystalTarget gct) {
+        int current = gct.currentStacks();
+        if (current <= 0) { return false; }
+        ChainProfile profile = ChainProfile.forType(GooType.GLOW);
+        if (profile == null) { return false; }
+        int pending = IN_FLIGHT.getOrDefault(gct.pos(), 0);
+        return current + pending >= profile.maxStacks();
+    }
+
+    /** Increments the in-flight count for any throw that would place or
+     * stack on a chain marker. Tracks even before the marker exists so
+     * rapid throws during flight time are counted.
      *
      * @param target the resolved aim target
      */
     private static void trackInFlight(TargetResult target) {
-        BlockPos pos = resolveChainMarkerPos(target);
+        BlockPos pos = resolveTrackingPos(target);
         if (pos != null) {
             IN_FLIGHT.merge(pos, 1, Integer::sum);
         }
     }
 
     /**
-     * Extracts the chain marker position from any target type. Returns
-     * the pos for ChainMarkerTarget directly, and for BlockTarget checks
-     * if the block at that position is a chain marker.
+     * Resolves the canonical tracking position for in-flight counting.
+     * Returns the position where a chain marker IS or WOULD BE placed.
+     * Works before the marker exists so the first burst of throws can
+     * be counted against maxStacks during the flight window.
      *
      * @param target the resolved aim target
-     * @return the chain marker position, or null if not targeting a marker
+     * @return the canonical marker position, or null for entity/none targets
      */
-    private static @Nullable BlockPos resolveChainMarkerPos(TargetResult target) {
+    private static @Nullable BlockPos resolveTrackingPos(TargetResult target) {
         if (target instanceof TargetResult.ChainMarkerTarget cmt) {
             return cmt.pos();
         }
+        if (target instanceof TargetResult.GlowCrystalTarget gct) {
+            return gct.pos();
+        }
         if (target instanceof TargetResult.BlockTarget bt) {
-            return findMarkerAtOrAdjacent(bt);
+            return resolveBlockTrackingPos(bt);
         }
         return null;
     }
 
-    /** Checks the hit pos and its adjacent face for a chain marker block entity.
+    /** Resolves the tracking position for a block target. If a marker
+     * already exists at the hit pos or adjacent, returns its position.
+     * Otherwise predicts placement: replaceable blocks are displaced
+     * in-place, solid blocks place the marker on the adjacent face.
      *
-     * @param bt the block target to check
-     * @return the marker position, or null if none found
+     * @param bt the block target to resolve
+     * @return the canonical marker position, or null if level unavailable
      */
-    private static @Nullable BlockPos findMarkerAtOrAdjacent(TargetResult.BlockTarget bt) {
+    private static @Nullable BlockPos resolveBlockTrackingPos(TargetResult.BlockTarget bt) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return null; }
         if (mc.level.getBlockEntity(bt.pos()) instanceof ChainMarkerBlockEntity) {
@@ -176,7 +210,8 @@ public final class GloveThrowSender {
         if (mc.level.getBlockEntity(adjacent) instanceof ChainMarkerBlockEntity) {
             return adjacent;
         }
-        return null;
+        BlockState state = mc.level.getBlockState(bt.pos());
+        return state.canBeReplaced() ? bt.pos() : adjacent;
     }
 
     /** Resolves the player's current aim target at the current partial tick.
@@ -201,6 +236,7 @@ public final class GloveThrowSender {
             case TargetResult.EntityTarget et -> new BlobThrowPayload(gooType.getId(), et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
             case TargetResult.BlockTarget bt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
             case TargetResult.ChainMarkerTarget cmt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, cmt.pos(), resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal(), false);
+            case TargetResult.GlowCrystalTarget gct -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, gct.pos(), gct.face().ordinal(), false);
             case TargetResult.None ignored -> null;
         };
     }

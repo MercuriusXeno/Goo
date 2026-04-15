@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.simpleName;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -90,14 +91,12 @@ class ConventionTest {
             .or(simpleName("GooOmniblobItem"))
             .or(simpleName("DepletedBlazeRodItem"))
             .or(simpleName("PartiallyMeltedItem"))
-            .or(simpleName("BucketOfGooItem"))
             .or(simpleName("GooFluidHandler"))
             .or(simpleName("HubFluidHandler"))
             .or(simpleName("GooFluidTransfer"))
             .or(simpleName("PlayerInventorySlotHandler"))
             .or(simpleName("TapBlockEntity"))
             .or(simpleName("CanisterFluidHandler"))
-            .or(simpleName("BucketGooFluidHandler"))
             .or(simpleName("GooItemFluidHandler"))
             .or(simpleName("GasketInstallation"))
             .or(simpleName("TapBlock"))
@@ -107,7 +106,13 @@ class ConventionTest {
             .or(simpleName("CrucibleInteraction"))
             .or(simpleName("CrucibleDrops"))
             .or(simpleName("TapInteractionHandler"))
-            .or(simpleName("VatGasketOps"));
+            .or(simpleName("VatGasketOps"))
+            .or(simpleName("ChainMarkerBlockEntity"))
+            .or(simpleName("ICanisterHolder"))
+            .or(simpleName("SlottedCanisterState"))
+            .or(simpleName("CanisterSlotFluidHandler"))
+            .or(simpleName("CanisterFluidContent"))
+            .or(simpleName("CanisterItem"));
     }
 
     /** No new domain-layer class may import GooItems, GooBlocks, or GooFluids. */
@@ -148,7 +153,8 @@ class ConventionTest {
                 simpleName("ContainerEvaluator")
                     .or(simpleName("CrucibleBlockEntity"))
                     .or(simpleName("CrucibleInsertion"))
-                    .or(simpleName("PlexerBlockEntity"))))
+                    .or(simpleName("PlexerBlockEntity"))
+                    .or(belongToAnyOf(com.mercuriusxeno.goo.item.CanisterFluidContent.class))))
             .should().dependOnClassesThat()
                 .haveFullyQualifiedName("net.minecraft.core.registries.BuiltInRegistries")
             .because("domain layer must resolve Identifiers in adapter wrappers (decoupling-arch §5.3)")

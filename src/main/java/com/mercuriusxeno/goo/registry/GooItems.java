@@ -9,12 +9,10 @@ import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooOmniblobItem;
 import com.mercuriusxeno.goo.item.PartiallyMeltedItem;
 import com.mercuriusxeno.goo.item.VatBlockItem;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.gasket.ChoralGasketItem;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.EnumMap;
@@ -64,10 +62,6 @@ public class GooItems {
         props -> new GooGloveItem(props.stacksTo(1).fireResistant()));
     public static final DeferredItem<GooGloveItem> EXO_GAUNTLET = ITEMS.registerItem("exo_gauntlet",
         props -> new GooGloveItem(props.stacksTo(1).fireResistant()));
-
-    // --- Bucket of Goo ---
-    public static final DeferredItem<BucketOfGooItem> BUCKET_OF_GOO = ITEMS.registerItem("bucket_of_goo",
-        props -> new BucketOfGooItem(props.stacksTo(1).craftRemainder(Items.BUCKET)));
 
     // --- Partially Melted Item (crucible intermediate, not in creative tab) ---
     public static final DeferredItem<PartiallyMeltedItem> PARTIALLY_MELTED_ITEM = ITEMS.registerItem(

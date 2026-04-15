@@ -5,9 +5,7 @@ import com.mercuriusxeno.goo.ISidedProxy;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.item.BlobStacks;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooInteractionType;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
@@ -18,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Static interaction handlers extracted from HubBlock to keep the framework
@@ -91,8 +88,6 @@ final class HubBlockHandlers {
         return switch (interaction) {
             case CANISTER_INSERT  -> handleCanisterInsert(hub, hitResult, stack, player);
             case BLOB_INSERT      -> handleBlobInsert(hub, hitResult, stack, player);
-            case BUCKET_INSERT    -> handleBucketInsert(hub, hitResult, stack, player, hand);
-            case BUCKET_EXTRACT   -> handleBucketExtract(hub, hitResult, stack, player);
             default -> throw new IllegalStateException(ERR_UNHANDLED + interaction);
         };
     }
@@ -213,122 +208,4 @@ final class HubBlockHandlers {
         return hub.insertGoo(slot, type, volume);
     }
 
-    // --- Bucket handlers ---
-
-    /**
-     * Pours goo from a bucket of goo into matching hub canister slots.
-     *
-     * @param hub       the hub block entity
-     * @param hitResult the ray trace hit result
-     * @param stack     the item stack
-     * @param player    the interacting player
-     * @param hand      the hand used
-     * @return the interaction result
-     */
-    private static InteractionResult handleBucketInsert(
-            HubBlockEntity hub, BlockHitResult hitResult,
-            ItemStack stack, Player player, InteractionHand hand) {
-        GooContents bucketGoo = BucketOfGooItem.getContents(stack);
-        if (bucketGoo.isEmpty()) { return InteractionResult.PASS; }
-
-        GooContents remainder = pourBucketIntoHub(hub, hitResult, bucketGoo);
-        if (remainder == bucketGoo) { return InteractionResult.PASS; }
-
-        BucketOfGooItem.setOrRevert(stack, remainder, player, hand);
-        hub.getLevel().playSound(null, hub.getBlockPos(), SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Pours each goo type from the bucket into matching hub slots.
-     * Returns the updated contents after insertions, or the original if nothing was inserted.
-     *
-     * @param hub       the hub block entity
-     * @param hitResult the ray trace hit result for slot targeting
-     * @param bucketGoo the bucket's goo contents
-     * @return updated contents after pour, or the original instance if nothing was inserted
-     */
-    private static GooContents pourBucketIntoHub(HubBlockEntity hub, BlockHitResult hitResult, GooContents bucketGoo) {
-        int hitSlotIdx = HubBlock.hitSlot(hitResult, hub.getBlockPos());
-        GooContents result = bucketGoo;
-        for (var entry : bucketGoo.getAll().entrySet()) {
-            result = pourSingleType(hub, hitSlotIdx, entry.getKey(), entry.getValue(), result);
-        }
-        return result;
-    }
-
-    /**
-     * Attempts to pour a single goo type into the hub, updating the remaining contents.
-     *
-     * @param hub        the hub block entity
-     * @param hitSlotIdx the preferred slot from the hit result
-     * @param type       the goo type to pour
-     * @param volume     the volume available
-     * @param contents   the current remaining bucket contents
-     * @return updated contents with any accepted volume removed
-     */
-    private static GooContents pourSingleType(
-            HubBlockEntity hub, int hitSlotIdx, GooType type, long volume, GooContents contents) {
-        int slot = GooBlockInteraction.findSlot(
-                hitSlotIdx, HubBlockEntity.MAX_CANISTERS, hub::canAccept);
-        if (slot < 0) { return contents; }
-        long accepted = hub.insertGoo(slot, type, volume);
-        if (accepted <= 0) { return contents; }
-        return contents.withRemoved(type, accepted);
-    }
-
-    /**
-     * Extracts goo from the first non-empty hub slot into an empty bucket.
-     *
-     * @param hub       the hub block entity
-     * @param hitResult the ray trace hit result
-     * @param stack     the item stack
-     * @param player    the interacting player
-     * @return the interaction result
-     */
-    private static InteractionResult handleBucketExtract(
-            HubBlockEntity hub, BlockHitResult hitResult,
-            ItemStack stack, Player player) {
-        int slot = findNonEmptySlot(hub, hitResult);
-        if (slot < 0) { return InteractionResult.PASS; }
-
-        ItemStack filledBucket = extractLargestGooType(hub, slot);
-        if (filledBucket == null) { return InteractionResult.PASS; }
-
-        stack.shrink(1);
-        PlayerUtils.addOrDrop(player, filledBucket);
-        hub.getLevel().playSound(null, hub.getBlockPos(), SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Finds the first non-empty canister slot using hit-slot preference.
-     *
-     * @param hub       the hub block entity
-     * @param hitResult the ray trace hit result for slot targeting
-     * @return slot index, or -1 if no non-empty slot found
-     */
-    private static int findNonEmptySlot(HubBlockEntity hub, BlockHitResult hitResult) {
-        var pos = hub.getBlockPos();
-        return GooBlockInteraction.findSlot(HubBlock.hitSlot(hitResult, pos),
-                HubBlockEntity.MAX_CANISTERS,
-                i -> !hub.getSlotGooContents(i).isEmpty());
-    }
-
-    /**
-     * Extracts the largest goo type from a hub slot into a filled bucket.
-     *
-     * @param hub  the hub block entity
-     * @param slot the slot index to extract from
-     * @return a filled bucket item stack, or null if extraction failed
-     */
-    @Nullable
-    private static ItemStack extractLargestGooType(HubBlockEntity hub, int slot) {
-        GooContents slotGoo = hub.getSlotGooContents(slot);
-        GooType type = slotGoo.largestType();
-        if (type == null) { return null; }
-        long extracted = hub.extractGoo(slot, type, slotGoo.getVolume(type));
-        if (extracted <= 0) { return null; }
-        return BucketOfGooItem.createWithGoo(type, extracted);
-    }
 }

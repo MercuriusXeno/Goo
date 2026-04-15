@@ -3,19 +3,17 @@ package com.mercuriusxeno.goo.item;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.SlotAccess;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Static helpers for canister inventory click handling: blob/omniblob insert,
- * empty-cursor drain, bucket drain/fill, and gasket cleanup on placement.
+ * empty-cursor drain, and gasket cleanup on placement.
  * Extracted from CanisterItem to reduce method count.
  */
 final class CanisterInventoryHandler {
@@ -40,24 +38,7 @@ final class CanisterInventoryHandler {
         if (cursor.getItem() instanceof GooOmniblobItem) {
             return handleOmniblobInsert(canister, cursor, cursorAccess);
         }
-        return handlePrimaryBucketClick(canister, cursor, cursorAccess);
-    }
-
-    /**
-     * Dispatches primary-click bucket interactions (empty or partial).
-     *
-     * @param canister     the canister item stack
-     * @param cursor       the cursor item stack
-     * @param cursorAccess access to set the cursor contents
-     * @return true if the interaction was handled
-     */
-    private static boolean handlePrimaryBucketClick(
-            ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        if (cursor.is(Items.BUCKET)) {
-            return handleBucketDrain(canister, cursor, cursorAccess);
-        }
-        return cursor.getItem() instanceof BucketOfGooItem
-                && handlePartialBucketDrain(canister, cursor, cursorAccess);
+        return false;
     }
 
     // --- Blob/omniblob insert ---
@@ -135,59 +116,6 @@ final class CanisterInventoryHandler {
         return true;
     }
 
-    /**
-     * Drains up to BUCKET_CAP of the dominant goo type into an empty bucket on the cursor.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the empty bucket on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was extracted
-     */
-    private static boolean handleBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        GooType dominant = dominantType(canister);
-        if (dominant == null) { return false; }
-
-        long extracted = extractCapped(canister, dominant, ContainerCapacity.BUCKET_CAP);
-        if (extracted <= 0) { return false; }
-
-        cursorAccess.set(BucketOfGooItem.createWithGoo(dominant, extracted));
-        return true;
-    }
-
-    /**
-     * Drains goo into a partially-filled bucket, up to remaining bucket capacity.
-     *
-     * @param canister    the canister item stack
-     * @param cursor      the partially-filled bucket on the cursor
-     * @param cursorAccess access to set the cursor contents
-     * @return true if any goo was transferred
-     */
-    private static boolean handlePartialBucketDrain(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
-        long remainingCap = bucketRemainingCapacity(cursor);
-        if (remainingCap <= 0) { return false; }
-
-        GooType dominant = dominantType(canister);
-        if (dominant == null) { return false; }
-
-        long extracted = extractCapped(canister, dominant, remainingCap);
-        if (extracted <= 0) { return false; }
-
-        addToBucket(cursor, dominant, extracted);
-        return true;
-    }
-
-    /**
-     * Adds extracted goo to a partially-filled bucket item stack.
-     *
-     * @param cursor the bucket item stack
-     * @param type   the goo type to add
-     * @param amount the volume in microblobs to add
-     */
-    private static void addToBucket(ItemStack cursor, GooType type, long amount) {
-        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
-        BucketOfGooItem.setContents(cursor, bucketContents.withAdded(type, amount));
-    }
-
     // --- Shared helpers ---
 
     /**
@@ -197,9 +125,9 @@ final class CanisterInventoryHandler {
      * @return the dominant goo type, or null
      */
     private static @Nullable GooType dominantType(ItemStack canister) {
-        GooContents contents = CanisterItem.getGooContents(canister);
-        if (contents.isEmpty()) { return null; }
-        return contents.largestType();
+        CanisterFluidContent content = CanisterItem.getFluidContent(canister);
+        if (content.isEmpty()) { return null; }
+        return content.getGooType();
     }
 
     /**
@@ -211,19 +139,9 @@ final class CanisterInventoryHandler {
      * @return the amount actually extracted
      */
     private static long extractCapped(ItemStack canister, GooType type, long cap) {
-        long available = CanisterItem.getGooContents(canister).getVolume(type);
+        CanisterFluidContent content = CanisterItem.getFluidContent(canister);
+        long available = (content.getGooType() == type) ? content.amount() : 0;
         return CanisterItem.removeGoo(canister, type, Math.min(available, cap));
-    }
-
-    /**
-     * Returns the remaining bucket capacity for a partially-filled goo bucket.
-     *
-     * @param cursor the bucket item stack
-     * @return the remaining capacity in microblobs
-     */
-    private static long bucketRemainingCapacity(ItemStack cursor) {
-        GooContents bucketContents = BucketOfGooItem.getContents(cursor);
-        return ContainerCapacity.BUCKET_CAP - bucketContents.totalVolume();
     }
 
     // --- Gasket mutual exclusivity ---

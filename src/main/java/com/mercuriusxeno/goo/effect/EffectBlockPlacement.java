@@ -125,6 +125,32 @@ final class EffectBlockPlacement {
     }
 
     /**
+     * Unstable: chain marker explosion. Places a chain marker that
+     * explodes on fuse expiry.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void unstableExplosion(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeChainMarker(level, pos, targetFace, GooType.UNSTABLE);
+    }
+
+    /**
+     * Glow: chain marker light crystal. Places a chain marker that
+     * becomes a permanent glow crystal on fuse expiry.
+     *
+     * @param level      the current level
+     * @param pos        the target block position
+     * @param targetFace the face that was hit, or null
+     */
+    static void glowCrystal(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) { return; }
+        placeChainMarker(level, pos, targetFace, GooType.GLOW);
+    }
+
+    /**
      * Metal: chain marker spike trap. Places a chain marker that becomes
      * a spike trap on fuse expiry.
      *

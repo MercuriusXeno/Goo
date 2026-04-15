@@ -2,8 +2,6 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.BlobStacks;
-import com.mercuriusxeno.goo.item.GooContents;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.BlockPos;
@@ -19,16 +17,16 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Registers CauldronInteraction handlers for goo blobs and buckets.
+ * Registers CauldronInteraction handlers for goo blobs.
  * Pouring goo into an empty cauldron replaces it with a goo fluid block.
  */
 public final class GooCauldronInteractions {
 
-    /** Microblobs in one blob (matches BucketOfGooItem). */
-    private static final long MICROBLOBS_PER_BLOB = BucketOfGooItem.MICROBLOBS_PER_BLOB;
+    /** Microblobs in one blob. */
+    private static final long MICROBLOBS_PER_BLOB = BlobStacks.MB_PER_BLOB;
 
     /** Maximum blobs in a full fluid block. */
-    private static final int BLOBS_PER_BLOCK = BucketOfGooItem.BLOBS_PER_BLOCK;
+    private static final int BLOBS_PER_BLOCK = 8;
 
     private GooCauldronInteractions() {}
 
@@ -38,7 +36,6 @@ public final class GooCauldronInteractions {
             CauldronInteractions.EMPTY.put(GooItems.BLOBS.get(type).get(), GooCauldronInteractions::pourBlob);
             CauldronInteractions.EMPTY.put(GooItems.OMNIBLOBS.get(type).get(), GooCauldronInteractions::pourBlob);
         }
-        CauldronInteractions.EMPTY.put(GooItems.BUCKET_OF_GOO.get(), GooCauldronInteractions::pourBucket);
     }
 
     /** Pours a goo blob or omniblob into an empty cauldron, replacing it with a fluid block.
@@ -80,45 +77,6 @@ public final class GooCauldronInteractions {
         if (!player.isCreative()) {
             stack.consume(1, player);
         }
-    }
-
-    /** Pours a goo bucket into an empty cauldron, replacing it with a fluid block.
-     *
-     * @param state  the block state
-     * @param level  the current level
-     * @param pos    the block position
-     * @param player the interacting player
-     * @param hand   the hand used
-     * @param stack  the item stack
-     * @return the interaction result
-     */
-    private static InteractionResult pourBucket(
-            BlockState state, Level level, BlockPos pos,
-            Player player, InteractionHand hand, ItemStack stack) {
-        GooContents contents = BucketOfGooItem.getContents(stack);
-        if (!contents.isSingleType()) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
-        GooType type = contents.getSingleType();
-        long volume = contents.getVolume(type);
-        if (volume < MICROBLOBS_PER_BLOB) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
-        pourBucketServerSide(level, pos, type, volume, stack, player, hand);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Executes the server-side bucket pour: places goo fluid and empties the bucket.
-     * @param level the current level
-     * @param pos the cauldron block position
-     * @param type the goo type to place
-     * @param volume volume in microblobs
-     * @param stack the bucket item stack to empty
-     * @param player the interacting player
-     * @param hand the hand holding the bucket
-     */
-    private static void pourBucketServerSide(Level level, BlockPos pos, GooType type,
-            long volume, ItemStack stack, Player player, InteractionHand hand) {
-        if (level.isClientSide()) { return; }
-        placeGooFluid(level, pos, type, volume);
-        BucketOfGooItem.setOrRevert(stack, GooContents.EMPTY, player, hand);
     }
 
     /** Replaces the block at pos with a goo fluid block at the appropriate level.

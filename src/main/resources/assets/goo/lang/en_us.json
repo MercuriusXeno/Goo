@@ -37,6 +37,7 @@
   "block.goo.rock_goo": "Rock Goo",
   "block.goo.shroom_goo": "Shroom Goo",
   "block.goo.typhoon_goo": "Typhoon Goo",
+  "block.goo.unstable_goo": "Unstable Goo",
   "block.goo.vital_goo": "Vital Goo",
 
   "fluid_type.goo.aeon_goo": "Aeon Goo",
@@ -53,6 +54,7 @@
   "fluid_type.goo.rock_goo": "Rock Goo",
   "fluid_type.goo.shroom_goo": "Shroom Goo",
   "fluid_type.goo.typhoon_goo": "Typhoon Goo",
+  "fluid_type.goo.unstable_goo": "Unstable Goo",
   "fluid_type.goo.vital_goo": "Vital Goo",
 
   "block.goo.canister": "Canister",
@@ -77,6 +79,7 @@
   "goo.type.rock": "Rock",
   "goo.type.shroom": "Shroom",
   "goo.type.typhoon": "Typhoon",
+  "goo.type.unstable": "Unstable",
   "goo.type.vital": "Vital",
 
   "item.minecraft.potion.effect.aeon_goo": "Potion of Timecurve",
@@ -93,11 +96,8 @@
   "item.minecraft.potion.effect.rock_goo": "Potion of Stoneskin",
   "item.minecraft.potion.effect.shroom_goo": "Potion of Mycelial Network",
   "item.minecraft.potion.effect.typhoon_goo": "Potion of Air Control",
+  "item.minecraft.potion.effect.unstable_goo": "Potion of Instability",
   "item.minecraft.potion.effect.vital_goo": "Potion of Nourishment",
-
-  "item.goo.bucket_of_goo": "Bucket of Goo",
-  "item.goo.bucket_of_goo.typed": "Bucket of %s Goo",
-  "item.goo.bucket_of_goo.slurry": "Slurry",
 
   "item.goo.partially_melted_item": "Partially Melted Item",
   "item.goo.depleted_blaze_rod": "Depleted Blaze Rod",

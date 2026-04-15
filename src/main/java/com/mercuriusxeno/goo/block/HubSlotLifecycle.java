@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
-import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
 import com.mercuriusxeno.goo.item.CanisterItem;
@@ -122,7 +122,7 @@ final class HubSlotLifecycle {
      * @param slot the slot index
      * @return the new slot handler
      */
-    static GooFluidHandler createSlotHandler(HubBlockEntity be, int slot) {
+    static CanisterSlotFluidHandler createSlotHandler(HubBlockEntity be, int slot) {
         return ICanisterHolder.createSlotHandler(be, slot);
     }
 
@@ -160,7 +160,7 @@ final class HubSlotLifecycle {
     static void rebuildSlotPusher(HubBlockEntity be, int slot) {
         SlottedCanisterState state = be.containerState();
         disposeSlotPusher(be, slot);
-        GooFluidHandler handler = state.slots.handlers()[slot];
+        CanisterSlotFluidHandler handler = state.slots.handlers()[slot];
         if (handler == null) { return; }
         if (!hasBottomGasket(state, slot)) { return; }
         state.slots.pushers()[slot] = createSlotPusher(be, state, slot, handler);
@@ -188,7 +188,7 @@ final class HubSlotLifecycle {
      * @return the initialized pusher
      */
     private static GasketPusher createSlotPusher(
-            HubBlockEntity be, SlottedCanisterState state, int slot, GooFluidHandler handler) {
+            HubBlockEntity be, SlottedCanisterState state, int slot, CanisterSlotFluidHandler handler) {
         GasketPusher pusher = new GasketPusher(
             handler,
             () -> CanisterItem.getMetadata(state.canisters.get(slot)).bottomGasketId(),

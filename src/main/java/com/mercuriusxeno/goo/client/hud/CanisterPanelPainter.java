@@ -1,5 +1,7 @@
 package com.mercuriusxeno.goo.client.hud;
 
+import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
@@ -10,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import java.util.Map;
 
 /**
  * Measures and draws the canister HUD panel: label, upgrade level, and
@@ -162,9 +165,10 @@ final class CanisterPanelPainter {
         boolean hasLabel = label != null && !label.isEmpty();
         boolean hasUpgrade = data.compression() > 0;
         String upgradeText = hasUpgrade ? UPGRADE_PREFIX + data.compression() : EMPTY_UPGRADE;
-        float contentWidth = measureContentWidth(font, data.contents(), label, upgradeText,
+        GooContents goo = toGooContents(data.content());
+        float contentWidth = measureContentWidth(font, goo, label, upgradeText,
                 hasLabel, hasUpgrade);
-        int rowCount = countRows(data.contents().typeCount(), hasLabel, hasUpgrade);
+        int rowCount = countRows(goo.typeCount(), hasLabel, hasUpgrade);
         return buildMetrics(contentWidth, rowCount, label, upgradeText, hasLabel, hasUpgrade);
     }
 
@@ -238,7 +242,7 @@ final class CanisterPanelPainter {
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);
-        InWorldHud.renderGooRows(poseStack, font, buffers, data.contents(), contentX, baseY, row);
+        InWorldHud.renderGooRows(poseStack, font, buffers, toGooContents(data.content()), contentX, baseY, row);
     }
 
     /**
@@ -284,6 +288,18 @@ final class CanisterPanelPainter {
             + (InWorldHud.ROW_HEIGHT - font.lineHeight) / HALF_F;
         InWorldHud.drawText(font, buffers, poseStack, text, x, textY, color);
         return 1;
+    }
+
+    /**
+     * Converts single-fluid canister content to GooContents for HUD rendering.
+     * @param content the single-fluid canister content to convert
+     * @return GooContents wrapping the content, or EMPTY if none
+     */
+    private static GooContents toGooContents(CanisterFluidContent content) {
+        if (content.isEmpty()) { return GooContents.EMPTY; }
+        GooType type = content.getGooType();
+        if (type == null) { return GooContents.EMPTY; }
+        return new GooContents(Map.of(type, content.amount()));
     }
 
     /** Pre-computed panel dimensions and resolved header strings. */

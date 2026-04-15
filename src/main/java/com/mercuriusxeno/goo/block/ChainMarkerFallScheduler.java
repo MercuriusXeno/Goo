@@ -57,11 +57,9 @@ public final class ChainMarkerFallScheduler {
         broadcastFlight(level, oldPos, landingPos, gooType, travelTicks);
 
         int arrivalTick = level.getServer().getTickCount() + travelTicks;
-        synchronized (PENDING_FALLS) {
-            PENDING_FALLS.add(new PendingFall(
-                    arrivalTick, level, landingPos, markerBlock, gooType,
-                    stackCount, maxStacks, fuse, face, flatMode));
-        }
+        PENDING_FALLS.add(new PendingFall(
+                arrivalTick, level, landingPos, markerBlock, gooType,
+                stackCount, maxStacks, fuse, face, flatMode));
     }
 
     /**
@@ -71,14 +69,17 @@ public final class ChainMarkerFallScheduler {
      * @param currentTick the current server tick count
      */
     public static void drainArrivedFalls(int currentTick) {
-        synchronized (PENDING_FALLS) {
-            Iterator<PendingFall> it = PENDING_FALLS.iterator();
-            while (it.hasNext()) {
-                PendingFall pf = it.next();
-                if (currentTick < pf.arrivalTick) { continue; }
-                placeMarker(pf);
+        List<PendingFall> ready = new ArrayList<>();
+        Iterator<PendingFall> it = PENDING_FALLS.iterator();
+        while (it.hasNext()) {
+            PendingFall pf = it.next();
+            if (currentTick >= pf.arrivalTick) {
+                ready.add(pf);
                 it.remove();
             }
+        }
+        for (PendingFall pf : ready) {
+            placeMarker(pf);
         }
     }
 

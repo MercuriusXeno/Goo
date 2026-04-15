@@ -4,10 +4,10 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
 import com.mercuriusxeno.goo.client.ber.RenderContext;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -115,23 +115,23 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
         boolean hasTop = meta.topGasketId() != null;
         boolean hasBottom = meta.bottomGasketId() != null;
-        GooContents contents = CanisterItem.getGooContents(stack);
-        if (contents.isEmpty()) { return new GooData(null, 0f, hasTop, hasBottom); }
-        float fill = computeFillFraction(stack, contents);
-        return new GooData(contents.largestType(), fill, hasTop, hasBottom);
+        CanisterFluidContent content = CanisterItem.getFluidContent(stack);
+        if (content.isEmpty()) { return new GooData(null, 0f, hasTop, hasBottom); }
+        float fill = computeFillFraction(stack, content);
+        return new GooData(content.getGooType(), fill, hasTop, hasBottom);
     }
 
     /**
      * Computes the fill fraction [0,1] for the canister's current contents.
      *
-     * @param stack    the canister item stack
-     * @param contents the goo contents to measure
+     * @param stack   the canister item stack
+     * @param content the fluid content to compute fill from
      * @return fill fraction clamped to [0,1]
      */
-    private static float computeFillFraction(ItemStack stack, GooContents contents) {
+    private static float computeFillFraction(ItemStack stack, CanisterFluidContent content) {
         int compression = com.mercuriusxeno.goo.registry.GooEnchantments.getCompressionLevel(stack);
         long capacity = ContainerCapacity.canisterCapacity(compression);
-        return Math.min(1f, (float) contents.totalVolume() / capacity);
+        return Math.min(1f, (float) content.amount() / capacity);
     }
 
     /**

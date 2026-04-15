@@ -50,7 +50,7 @@ final class AimAssistResolver {
      * around the reticle are eligible even if the exact raytrace misses
      * their hitbox.
      */
-    private static final double AIM_ASSIST_DEGREES = 5.0;
+    private static final double AIM_ASSIST_DEGREES = 2.5;
 
     /** Cosine of the aim-assist angle - precomputed for dot-product checks. */
     private static final double AIM_ASSIST_COS = Math.cos(Math.toRadians(AIM_ASSIST_DEGREES));
@@ -60,7 +60,7 @@ final class AimAssistResolver {
      * stays selected until the reticle drifts beyond this wider cone,
      * preventing flicker when the cursor is near the edge.
      */
-    private static final double STICKY_DEGREES = 7.0;
+    private static final double STICKY_DEGREES = 3.0;
 
     /** Cosine of the sticky retention angle. */
     private static final double STICKY_COS = Math.cos(Math.toRadians(STICKY_DEGREES));

@@ -137,7 +137,11 @@ public final class GooSourceScanner {
      */
     private static void scanContainerStack(ItemStack stack, Map<GooType, Long> totals) {
         if (stack.getItem() instanceof CanisterItem) {
-            addAllEntries(totals, CanisterItem.getGooContents(stack).getAll());
+            CanisterFluidContent content = CanisterItem.getFluidContent(stack);
+            GooType type = content.getGooType();
+            if (type != null && content.amount() > 0) {
+                addToMap(totals, type, content.amount());
+            }
         } else if (stack.getItem() instanceof VatBlockItem) {
             addAllEntries(totals, VatBlockItem.getGooContents(stack).getAll());
         }
@@ -194,7 +198,8 @@ public final class GooSourceScanner {
      */
     private static long containerVolumeOfType(ItemStack stack, GooType type) {
         if (stack.getItem() instanceof CanisterItem) {
-            return CanisterItem.getGooContents(stack).getVolume(type);
+            CanisterFluidContent content = CanisterItem.getFluidContent(stack);
+            return (content.getGooType() == type) ? content.amount() : 0;
         }
         if (stack.getItem() instanceof VatBlockItem) {
             return VatBlockItem.getGooContents(stack).getVolume(type);

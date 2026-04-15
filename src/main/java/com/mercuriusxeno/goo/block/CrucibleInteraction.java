@@ -8,9 +8,6 @@ import com.mercuriusxeno.goo.item.DepletedBlazeRodItem;
 import com.mercuriusxeno.goo.item.GooBlobItem;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooOmniblobItem;
-import com.mercuriusxeno.goo.item.fluid.BucketOfGooItem;
-import com.mercuriusxeno.goo.registry.GooItems;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +16,7 @@ import java.util.Map;
 
 /**
  * Static helpers for crucible right-click interactions: fuel insertion,
- * bucket pour/fill, canister collection, blob insertion, fuel removal,
+ * canister collection, blob insertion, fuel removal,
  * and goo extraction. Keeps framework overrides in CrucibleBlock.
  */
 final class CrucibleInteraction {
@@ -33,19 +30,17 @@ final class CrucibleInteraction {
      */
     static boolean wouldHandleItem(ItemStack stack) {
         return isFuelItem(stack)
-            || stack.is(Items.BUCKET)
             || isGooCarrier(stack);
     }
 
     /**
-     * Returns true if the stack holds a goo carrier item (bucket, canister, blob, or omniblob).
+     * Returns true if the stack holds a goo carrier item (canister, blob, or omniblob).
      *
      * @param stack the item stack to test
      * @return true if the item is a goo carrier
      */
     static boolean isGooCarrier(ItemStack stack) {
-        return stack.getItem() instanceof BucketOfGooItem
-            || stack.getItem() instanceof CanisterItem
+        return stack.getItem() instanceof CanisterItem
             || stack.getItem() instanceof GooBlobItem
             || stack.getItem() instanceof GooOmniblobItem;
     }
@@ -75,65 +70,6 @@ final class CrucibleInteraction {
             stack.shrink(1);
         }
         return true;
-    }
-
-    /** Pours a filled goo bucket into the crucible reservoir, reverting to vanilla bucket.
-     *
-     * @param stack    the item stack
-     * @param crucible the crucible block entity
-     * @param player   the interacting player
-     * @param hand     the hand used
-     * @return true if the bucket was poured
-     */
-    static boolean tryPourBucket(ItemStack stack, CrucibleBlockEntity crucible,
-            Player player, InteractionHand hand) {
-        if (!(stack.getItem() instanceof BucketOfGooItem)) { return false; }
-        GooContents contents = BucketOfGooItem.getContents(stack);
-        if (contents.isEmpty()) { return false; }
-
-        CrucibleInsertion.insertGooContents(crucible, contents);
-        BucketOfGooItem.setOrRevert(stack, GooContents.EMPTY, player, hand);
-        return true;
-    }
-
-    /** Fills a vanilla bucket with the entire reservoir contents as slurry.
-     *
-     * @param stack    the item stack
-     * @param crucible the crucible block entity
-     * @param player   the interacting player
-     * @return true if the bucket was filled
-     */
-    static boolean tryFillBucket(ItemStack stack, CrucibleBlockEntity crucible, Player player) {
-        if (!stack.is(Items.BUCKET)) { return false; }
-        GooContents res = crucible.getReservoir();
-        if (res.isEmpty()) { return false; }
-
-        ItemStack filledBucket = createBucketFromReservoir(res);
-        crucible.drainReservoir();
-        replaceBucketInHand(stack, filledBucket, player);
-        return true;
-    }
-
-    /** Creates a bucket of goo item from the given reservoir contents.
-     *
-     * @param contents the goo contents
-     * @return the filled bucket item stack
-     */
-    static ItemStack createBucketFromReservoir(GooContents contents) {
-        ItemStack bucket = new ItemStack(GooItems.BUCKET_OF_GOO.get());
-        BucketOfGooItem.setContents(bucket, contents);
-        return bucket;
-    }
-
-    /** Replaces a single bucket in the player's hand with the filled result.
-     *
-     * @param bucket the empty bucket stack
-     * @param filled the filled bucket stack
-     * @param player the interacting player
-     */
-    static void replaceBucketInHand(ItemStack bucket, ItemStack filled, Player player) {
-        bucket.shrink(1);
-        PlayerUtils.addOrDrop(player, filled);
     }
 
     /** Collects matching goo type from the reservoir into a canister.

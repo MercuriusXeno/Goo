@@ -87,11 +87,9 @@ final class BlobEffectScheduler {
         ServerLevel level = player.level();
         int arrivalTick = level.getServer().getTickCount() + travelTicks;
         Direction face = BlobThrowHandler.directionFromOrdinal(payload.targetFace());
-        synchronized (PENDING_EFFECTS) {
-            PENDING_EFFECTS.add(new PendingEffect(
-                    arrivalTick, level, player, gooType,
-                    payload.targetEntityId(), payload.targetPos(), face));
-        }
+        PENDING_EFFECTS.add(new PendingEffect(
+                arrivalTick, level, player, gooType,
+                payload.targetEntityId(), payload.targetPos(), face));
     }
 
     /**
@@ -109,14 +107,17 @@ final class BlobEffectScheduler {
      * @param currentTick the current server tick
      */
     static void drainArrivedEffects(int currentTick) {
-        synchronized (PENDING_EFFECTS) {
-            Iterator<PendingEffect> it = PENDING_EFFECTS.iterator();
-            while (it.hasNext()) {
-                PendingEffect pe = it.next();
-                if (currentTick < pe.arrivalTick) { continue; }
-                applyEffect(pe);
+        List<PendingEffect> ready = new ArrayList<>();
+        Iterator<PendingEffect> it = PENDING_EFFECTS.iterator();
+        while (it.hasNext()) {
+            PendingEffect pe = it.next();
+            if (currentTick >= pe.arrivalTick) {
+                ready.add(pe);
                 it.remove();
             }
+        }
+        for (PendingEffect pe : ready) {
+            applyEffect(pe);
         }
     }
 
