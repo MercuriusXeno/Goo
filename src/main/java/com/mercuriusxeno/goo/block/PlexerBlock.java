@@ -122,7 +122,7 @@ public class PlexerBlock extends BaseEntityBlock {
     public BlockState getStateForPlacement(@NonNull BlockPlaceContext context) {
         BlockPos pos = context.getClickedPos();
         return defaultBlockState()
-            .setValue(FACING, context.getHorizontalDirection().getOpposite())
+            .setValue(FACING, context.getHorizontalDirection())
             .setValue(TRIGGERED, context.getLevel().hasNeighborSignal(pos));
     }
 
