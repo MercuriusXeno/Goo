@@ -9,6 +9,7 @@ import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.MagickedIceBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
+import com.mercuriusxeno.goo.block.ReactorBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.VatBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -57,6 +58,13 @@ public class GooBlocks {
 
     public static final DeferredBlock<PlexerBlock> PLEXER = BLOCKS.registerBlock("plexer",
             PlexerBlock::new, PLEXER_PROPERTY_SUPPLIER);
+
+    private static final Supplier<BlockBehaviour.Properties> REACTOR_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
+            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.COPPER);
+
+    /** Reactor: consumes goo from corner canisters, produces output into front hollow. */
+    public static final DeferredBlock<ReactorBlock> REACTOR = BLOCKS.registerBlock("reactor",
+            ReactorBlock::new, REACTOR_PROPERTY_SUPPLIER);
 
     private static final Supplier<BlockBehaviour.Properties> VAT_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
             .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHER_BRICKS)

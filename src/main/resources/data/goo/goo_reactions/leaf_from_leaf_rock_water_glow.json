@@ -1,0 +1,12 @@
+{
+  "inputs": [
+    {"fluid": "goo:leaf_goo", "amount": 1},
+    {"fluid": "goo:rock_goo", "amount": 1},
+    {"fluid": "minecraft:water", "amount": 1},
+    {"fluid": "goo:glow_goo", "amount": 1}
+  ],
+  "outputs": [
+    {"fluid": "goo:leaf_goo", "amount": 4}
+  ],
+  "rate": 1
+}

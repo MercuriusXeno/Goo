@@ -30,6 +30,7 @@ public class GooCreativeTabs {
                 output.accept(GooItems.CANISTER.get());
                 output.accept(GooItems.HUB.get());
                 output.accept(GooItems.PLEXER.get());
+                output.accept(GooItems.REACTOR.get());
                 output.accept(GooItems.VAT.get());
                 output.accept(GooItems.TAP.get());
                 // Intermediates

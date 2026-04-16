@@ -40,6 +40,7 @@ public class GooItems {
     public static final DeferredItem<BlockItem> CRUCIBLE = ITEMS.registerSimpleBlockItem("crucible", GooBlocks.CRUCIBLE);
     public static final DeferredItem<BlockItem> HUB = ITEMS.registerSimpleBlockItem("hub", GooBlocks.HUB);
     public static final DeferredItem<BlockItem> PLEXER = ITEMS.registerSimpleBlockItem("plexer", GooBlocks.PLEXER);
+    public static final DeferredItem<BlockItem> REACTOR = ITEMS.registerSimpleBlockItem("reactor", GooBlocks.REACTOR);
     public static final DeferredItem<VatBlockItem> VAT = ITEMS.registerItem("vat",
         props -> new VatBlockItem(GooBlocks.VAT.get(), props.useBlockDescriptionPrefix()));
     public static final DeferredItem<BlockItem> TAP = ITEMS.registerSimpleBlockItem("tap", GooBlocks.TAP);

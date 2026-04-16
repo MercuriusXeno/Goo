@@ -1,0 +1,10 @@
+{
+  "inputs": [
+    {"fluid": "goo:unstable_goo", "amount": 1},
+    {"fluid": "goo:vital_goo", "amount": 1}
+  ],
+  "outputs": [
+    {"fluid": "goo:leaf_goo", "amount": 2}
+  ],
+  "rate": 1
+}

@@ -1,0 +1,10 @@
+{
+  "inputs": [
+    {"fluid": "goo:blaze_goo", "amount": 1},
+    {"fluid": "goo:shroom_goo", "amount": 1}
+  ],
+  "outputs": [
+    {"fluid": "goo:hex_goo", "amount": 2}
+  ],
+  "rate": 1
+}
