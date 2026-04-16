@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": "minecraft:cauldron",
+    "N": "minecraft:netherite_scrap",
+    "R": "minecraft:comparator",
+    "S": "minecraft:cut_copper_slab"
+  },
+  "pattern": [
+    "SRS",
+    "NCN",
+    "SSS"
+  ],
+  "result": {
+    "count": 1,
+    "id": "goo:reactor"
+  }
+}

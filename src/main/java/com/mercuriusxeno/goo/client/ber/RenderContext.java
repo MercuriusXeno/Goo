@@ -26,7 +26,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
     /** Gasket bottom V end: 8px / 16px. */
     private static final float GC_BOTTOM_V = 0.5f;
 
-    // ── Single vertex ──────────────────────────────────────────────────
 
     /**
      * Emits a single vertex with explicit color.
@@ -68,7 +67,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
         vertexColored(OPAQUE_WHITE, x, y, z, u, v, nx, ny, nz);
     }
 
-    // ── Direction-dispatched face emission (white) ─────────────────────
 
     /**
      * Emits a white quad face of a cuboid for the given direction.
@@ -99,7 +97,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
         emitBox(OPAQUE_WHITE, box, uv);
     }
 
-    // ── Direction-dispatched face emission (colored) ───────────────────
 
     /**
      * Emits a colored quad face of a cuboid for the given direction.
@@ -147,7 +144,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
         }
     }
 
-    // ── Liquid surfaces (colored, upward/downward normal) ──────────────
 
     /**
      * Emits an upward-facing liquid surface quad with explicit color.
@@ -179,7 +175,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
         vertexColored(color, box.x0(), y, box.z0(), uv.u0(), uv.v0(), 0f, NORMAL_NEG, 0f);
     }
 
-    // ── Gasket box ─────────────────────────────────────────────────────
 
     /**
      * Emits a complete gasket box (top cap, bottom cap, 4 side faces)
@@ -215,7 +210,6 @@ public record RenderContext(PoseStack.Pose pose, VertexConsumer c, int light) {
         vertex(box.x0(), y0, box.z0(), 0, GC_UV, 0f, NORMAL_NEG, 0f);
     }
 
-    // ── Internal face emitters by axis ─────────────────────────────────
 
     /** Y-axis face with winding based on normal sign. */
     private void emitFaceY(int color, CuboidBounds box, GooRenderUtil.UvRect uv, float ny) {

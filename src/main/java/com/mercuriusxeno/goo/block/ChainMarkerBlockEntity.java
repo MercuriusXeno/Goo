@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
+import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -74,7 +75,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         super(GooBlockEntities.CHAIN_MARKER.get(), pos, state);
     }
 
-    // ── Initialization ────────────────────────────────────────────────────
 
     /**
      * Configures this marker from a chain profile. Call immediately after
@@ -94,7 +94,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    // ── Stacking ──────────────────────────────────────────────────────────
 
     /**
      * Attempts to increment the stack count. Returns true if successful.
@@ -103,11 +102,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * @return true if the stack count was incremented
      */
     public boolean tryStack() {
-        if (behavior != null) {
-            if (!behavior.allowsTopOff()) { return false; }
-        } else {
-            if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
-        }
+        if (behavior != null && !behavior.allowsTopOff()) { return false; }
+        if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
         ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
         lastStackTick = level != null ? level.getGameTime() : 0;
@@ -164,7 +160,16 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    // ── Flat mode toggle ───────────────────────────────────────────────────
+
+    /**
+     * Forces immediate detonation by zeroing the fuse. The next tick
+     * will fire the behavior. Used by unstable goo on punch.
+     */
+    public void instantDetonate() {
+        fuseRemaining = 0;
+        setChanged();
+        syncToClient();
+    }
 
     /**
      * Toggles between tunnel and flat mining mode. Resets the fuse
@@ -172,9 +177,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     public void toggleFlatMode() {
         flatMode = !flatMode;
-        ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile != null) {
-            fuseRemaining = profile.fuseTicks();
+        if (behavior == null) {
+            ChainProfile profile = ChainProfile.forType(gooType);
+            if (profile != null) {
+                fuseRemaining = profile.fuseTicks();
+            }
         }
         setChanged();
         syncToClient();
@@ -198,7 +205,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return lastStackTick;
     }
 
-    // ── Tick ──────────────────────────────────────────────────────────────
 
     /** Server tick: either a post-fuse behavior is active (delegate) or
      * the fuse is still counting down (or rock progressive mining is
@@ -266,14 +272,15 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         behavior = profile.behaviorFactory().get();
         behavior.onFuseExpired(level, pos, this);
         if (!behavior.isActive()) {
-            level.removeBlock(pos, false);
+            if (level.getBlockState(pos).is(GooBlocks.CHAIN_MARKER.get())) {
+                level.removeBlock(pos, false);
+            }
             return;
         }
         setChanged();
         syncToClient();
     }
 
-    // ── Accessors ─────────────────────────────────────────────────────────
 
     /** Returns the goo type driving this chain effect.
      *
@@ -326,7 +333,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return behavior;
     }
 
-    // ── Persistence ───────────────────────────────────────────────────────
 
     /** Restores chain state from persistent storage.
      *
@@ -399,7 +405,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    // ── Client sync ───────────────────────────────────────────────────────
 
     /** Returns the sync packet sent when block entity data changes.
      *

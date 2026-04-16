@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.command.GooCommand;
+import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
 import com.mercuriusxeno.goo.network.GooValueSync;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -25,6 +26,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -115,6 +117,16 @@ public class Goo {
      */
     private static void commonSetup(FMLCommonSetupEvent event) {
         com.mercuriusxeno.goo.effect.ChainProfiles.registerAll();
+    }
+
+    /**
+     * Registers the reaction datapack reload listener.
+     *
+     * @param event the reload listener registration event
+     */
+    @SubscribeEvent
+    public void onAddReloadListeners(AddServerReloadListenersEvent event) {
+        event.addListener(GooReactionLoader.LISTENER_ID, new GooReactionLoader());
     }
 
     /**

@@ -4,7 +4,7 @@ import net.minecraft.util.StringRepresentable;
 import org.jspecify.annotations.NonNull;
 
 /**
- * The 15 types of goo that make up everything in the world.
+ * The 16 types of goo that make up everything in the world.
  */
 public enum GooType implements StringRepresentable {
     AEON("aeon", 0xDAA520),
@@ -21,6 +21,7 @@ public enum GooType implements StringRepresentable {
     ROCK("rock", 0xC2A868),
     SHROOM("shroom", 0x8E44AD),
     TYPHOON("typhoon", 0xD5F5E3),
+    UNSTABLE("unstable", 0x39FF14),
     VITAL("vital", 0xE74C3C);
 
     /** Translation key prefix for goo type display names. */

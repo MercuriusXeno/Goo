@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -169,13 +169,13 @@ public class HubBlockEntityRenderer
      * @param slot the slot index
      */
     private static void extractSlotFluid(HubBlockEntity be, HubRenderState state, int slot) {
-        GooContents contents = be.getSlotGooContents(slot);
-        if (contents.isEmpty()) {
+        CanisterFluidContent content = be.getSlotFluidContent(slot);
+        if (content.isEmpty()) {
             state.slotType[slot] = null;
             state.slotFill[slot] = 0f;
             return;
         }
-        populateFilledSlot(be, state, slot, contents);
+        populateFilledSlot(be, state, slot, content);
     }
 
     /**
@@ -183,13 +183,13 @@ public class HubBlockEntityRenderer
      * @param be the block entity instance
      * @param state the render state snapshot
      * @param slot the slot index
-     * @param contents the non-empty goo contents for this slot
+     * @param content the non-empty fluid content for this slot
      */
     private static void populateFilledSlot(HubBlockEntity be, HubRenderState state,
-            int slot, GooContents contents) {
+            int slot, CanisterFluidContent content) {
         long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
-        state.slotType[slot] = contents.largestType();
-        state.slotFill[slot] = Math.min(1f, (float) contents.totalVolume() / capacity);
+        state.slotType[slot] = content.getGooType();
+        state.slotFill[slot] = Math.min(1f, (float) content.amount() / capacity);
     }
 
     /**

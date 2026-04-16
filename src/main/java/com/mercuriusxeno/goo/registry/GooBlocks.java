@@ -5,9 +5,11 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
+import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.MagickedIceBlock;
 import com.mercuriusxeno.goo.block.PlexerBlock;
+import com.mercuriusxeno.goo.block.ReactorBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.VatBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -52,10 +54,17 @@ public class GooBlocks {
             HubBlock::new, HUB_PROPERTY_SUPPLIER);
 
     private static final Supplier<BlockBehaviour.Properties> PLEXER_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
-            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.COPPER);
+            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK);
 
     public static final DeferredBlock<PlexerBlock> PLEXER = BLOCKS.registerBlock("plexer",
             PlexerBlock::new, PLEXER_PROPERTY_SUPPLIER);
+
+    private static final Supplier<BlockBehaviour.Properties> REACTOR_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
+            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK);
+
+    /** Reactor: consumes goo from corner canisters, produces output into front hollow. */
+    public static final DeferredBlock<ReactorBlock> REACTOR = BLOCKS.registerBlock("reactor",
+            ReactorBlock::new, REACTOR_PROPERTY_SUPPLIER);
 
     private static final Supplier<BlockBehaviour.Properties> VAT_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
             .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHER_BRICKS)
@@ -89,6 +98,19 @@ public class GooBlocks {
                     .noLootTable()
                     .noOcclusion()
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY));
+
+    /** Glow crystal: permanent light source left by glow chain detonation. */
+    public static final DeferredBlock<GlowCrystalBlock> GLOW_CRYSTAL = BLOCKS.registerBlock(
+            "glow_crystal", GlowCrystalBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.GOLD)
+                    .noCollision()
+                    .instabreak()
+                    .noLootTable()
+                    .noOcclusion()
+                    .sound(SoundType.GLASS)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)
+                    .lightLevel(GlowCrystalBlock::lightLevel));
 
     /**
      * Magicked ice: a non-melting mod variant of vanilla ice, placed

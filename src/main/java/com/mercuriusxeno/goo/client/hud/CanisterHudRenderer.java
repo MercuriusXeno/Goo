@@ -3,8 +3,8 @@ package com.mercuriusxeno.goo.client.hud;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.ICanisterHolder;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
@@ -75,7 +75,7 @@ public final class CanisterHudRenderer {
      */
     private static void renderIfValid(PoseStack poseStack) {
         SlotData data = lookupSlotData(trackedPos, trackedSlot);
-        if (data == null || (data.contents.isEmpty() && data.compression <= 0)) {
+        if (data == null || (data.content.isEmpty() && data.compression <= 0)) {
             clearState();
             return;
         }
@@ -216,7 +216,7 @@ public final class CanisterHudRenderer {
         ItemStack canister = tap.getCanister();
         if (canister.isEmpty()) { return null; }
         int compression = GooEnchantments.getCompressionLevel(canister);
-        return new SlotData(tap.getGooContents(), null, compression);
+        return new SlotData(tap.getFluidContent(), null, compression);
     }
 
     /**
@@ -232,7 +232,7 @@ public final class CanisterHudRenderer {
         CanisterMetadata meta = holder.getSlotMetadata(slot);
         ItemStack canister = holder.getCanister(slot);
         int compression = GooEnchantments.getCompressionLevel(canister);
-        return new SlotData(holder.getSlotGooContents(slot), meta.label(), compression);
+        return new SlotData(holder.getSlotFluidContent(slot), meta.label(), compression);
     }
 
     /** Targeted canister slot with XZ center offset, Y lift, hit face, and block-above state. */
@@ -240,7 +240,7 @@ public final class CanisterHudRenderer {
             double lift, Direction hitFace, boolean hasBlockAbove) {
     }
 
-    /** Goo contents, label, and compression level for a targeted slot. */
-    record SlotData(GooContents contents, @Nullable String label, int compression) {
+    /** Fluid content, label, and compression level for a targeted slot. */
+    record SlotData(CanisterFluidContent content, @Nullable String label, int compression) {
     }
 }

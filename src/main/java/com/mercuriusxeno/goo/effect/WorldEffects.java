@@ -48,6 +48,6 @@ public final class WorldEffects {
             entry(GooType.SHROOM, new ShroomEffect()), entry(GooType.TYPHOON, new TyphoonEffect()),
             entry(GooType.GLOW, new GlowEffect()),     entry(GooType.PULSE, new PulseEffect()),
             entry(GooType.NETHER, new NetherEffect()), entry(GooType.ENDER, new EnderEffect()),
-            entry(GooType.AEON, new AeonEffect())));
+            entry(GooType.AEON, new AeonEffect()),   entry(GooType.UNSTABLE, new UnstableEffect())));
     }
 }

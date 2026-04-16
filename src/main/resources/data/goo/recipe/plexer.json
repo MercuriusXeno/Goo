@@ -4,10 +4,11 @@
   "key": {
     "C": "minecraft:crafter",
     "N": "minecraft:netherite_scrap",
+    "R": "minecraft:comparator",
     "S": "minecraft:cut_copper_slab"
   },
   "pattern": [
-    "SSS",
+    "SRS",
     "NC ",
     "SSS"
   ],

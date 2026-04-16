@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
-import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
 import com.mercuriusxeno.goo.item.CanisterItem;
@@ -150,7 +150,7 @@ final class CanisterSlotHandlers {
      * @param slot the slot index
      * @return a new fluid handler for the slot
      */
-    static GooFluidHandler createSlotHandler(CanisterBlockEntity be, int slot) {
+    static CanisterSlotFluidHandler createSlotHandler(CanisterBlockEntity be, int slot) {
         return ICanisterHolder.createSlotHandler(be, slot);
     }
 

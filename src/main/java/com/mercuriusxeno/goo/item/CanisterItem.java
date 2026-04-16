@@ -6,6 +6,7 @@ import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.InteractionCooldown;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
+import com.mercuriusxeno.goo.registry.GooFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -20,12 +21,13 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Canister item: multi-type goo storage with rune ink upgrades.
- * Capacity scales with matrices via ContainerCapacity.
+ * Canister item: single-type fluid storage accepting any registered fluid.
+ * Capacity scales with Compression enchantment via ContainerCapacity.
  *
  * <p>Overrides placement to support multi-canister blocks: clicking an
  * existing canister block inserts into the targeted slot rather than
@@ -252,14 +254,14 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     // --- Static contents helpers ---
 
     /**
-     * Returns the goo contents from the stack, or EMPTY if none.
+     * Returns the fluid content from the stack, or EMPTY if none.
      *
      * @param stack the item stack
-     * @return the goo contents, never null
+     * @return the fluid content, never null
      */
-    public static GooContents getGooContents(ItemStack stack) {
-        GooContents contents = stack.get(GooDataComponents.GOO_CONTENTS.get());
-        return contents != null ? contents : GooContents.EMPTY;
+    public static CanisterFluidContent getFluidContent(ItemStack stack) {
+        CanisterFluidContent content = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        return content != null ? content : CanisterFluidContent.EMPTY;
     }
 
     /**
@@ -276,16 +278,16 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     }
 
     /**
-     * Sets the goo contents on the stack. Removes component if empty.
+     * Sets the fluid content on the stack. Removes component if empty.
      *
-     * @param stack    the item stack
-     * @param contents the goo contents to set
+     * @param stack   the item stack
+     * @param content the fluid content to set
      */
-    public static void setGooContents(ItemStack stack, GooContents contents) {
-        if (contents.isEmpty()) {
-            stack.remove(GooDataComponents.GOO_CONTENTS.get());
+    public static void setFluidContent(ItemStack stack, CanisterFluidContent content) {
+        if (content.isEmpty()) {
+            stack.remove(GooDataComponents.CANISTER_FLUID_CONTENT.get());
         } else {
-            stack.set(GooDataComponents.GOO_CONTENTS.get(), contents);
+            stack.set(GooDataComponents.CANISTER_FLUID_CONTENT.get(), content);
         }
     }
 
@@ -304,8 +306,26 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     }
 
     /**
-     * Try to add goo to the canister. Returns the amount actually added.
-     * Multi-type: accepts any goo type, enforces capacity via ContainerCapacity.
+     * Try to add fluid to the canister. Only accepts if empty or same fluid.
+     * Returns the amount actually added.
+     *
+     * @param stack  the canister item stack
+     * @param fluid  the fluid to add
+     * @param amount the volume in microblobs to add
+     * @return the amount actually accepted
+     */
+    public static long addFluid(ItemStack stack, Fluid fluid, long amount) {
+        long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
+        CanisterFluidContent current = getFluidContent(stack);
+        long accepted = current.cappedAddAmount(fluid, amount, capacity);
+        if (accepted > 0) {
+            setFluidContent(stack, current.withCappedAdd(fluid, amount, capacity));
+        }
+        return accepted;
+    }
+
+    /**
+     * Convenience: add goo by type. Resolves GooType to its source fluid.
      *
      * @param stack  the canister item stack
      * @param type   the goo type to add
@@ -313,13 +333,28 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return the amount actually accepted
      */
     public static long addGoo(ItemStack stack, GooType type, long amount) {
-        long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
-        return GooContentsOps.addGoo(stack, type, amount, capacity);
+        return addFluid(stack, GooFluids.SOURCES.get(type).get(), amount);
     }
 
     /**
-     * Try to remove goo of a specific type from the canister.
-     * Returns the amount actually removed.
+     * Try to remove fluid from the canister. Only extracts if the canister
+     * holds the specified fluid. Returns the amount actually removed.
+     *
+     * @param stack  the canister item stack
+     * @param fluid  the fluid to remove
+     * @param amount the volume in microblobs to remove
+     * @return the amount actually removed
+     */
+    public static long removeFluid(ItemStack stack, Fluid fluid, long amount) {
+        CanisterFluidContent current = getFluidContent(stack);
+        if (current.isEmpty() || current.fluid() != fluid) { return 0; }
+        long removed = Math.min(amount, current.amount());
+        setFluidContent(stack, current.withRemoved(removed));
+        return removed;
+    }
+
+    /**
+     * Convenience: remove goo by type. Resolves GooType to its source fluid.
      *
      * @param stack  the canister item stack
      * @param type   the goo type to remove
@@ -327,14 +362,14 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @return the amount actually removed
      */
     public static long removeGoo(ItemStack stack, GooType type, long amount) {
-        return GooContentsOps.removeGoo(stack, type, amount);
+        return removeFluid(stack, GooFluids.SOURCES.get(type).get(), amount);
     }
 
     // --- Inventory click interactions ---
 
     /**
      * Handles cursor-on-canister inventory clicks: blob/omniblob insert,
-     * empty-cursor drain, and bucket drain/fill.
+     * empty-cursor drain.
      *
      * @param canister    the canister item stack in the slot
      * @param cursor      the item stack on the cursor

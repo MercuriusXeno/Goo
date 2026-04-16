@@ -38,7 +38,6 @@ public final class ChainFootprint {
 
     private ChainFootprint() {}
 
-    // ── Block counts ────────────────────────────────────────────────
 
     /**
      * Total blocks affected at the given stack count.
@@ -67,7 +66,6 @@ public final class ChainFootprint {
         return Math.min(stacks - DEPTH_OFFSET, MAX_DEPTH);
     }
 
-    // ── 2D footprint offsets ────────────────────────────────────────
 
     /**
      * Returns the 2D offsets for one tunnel-mode layer at the given
@@ -99,7 +97,6 @@ public final class ChainFootprint {
         return euclideanCircle(totalBlocks(stacks));
     }
 
-    // ── Euclidean circle ────────────────────────────────────────────
 
     /**
      * Builds the roundest possible flat region by filling positions
@@ -189,7 +186,6 @@ public final class ChainFootprint {
         return pos[0] * pos[0] + pos[1] * pos[1];
     }
 
-    // ── Shape builders ──────────────────────────────────────────────
 
     private static List<int[]> singleBlock() {
         return List.of(new int[]{0, 0});
@@ -215,7 +211,6 @@ public final class ChainFootprint {
         return grid;
     }
 
-    // ── 3D region offsets ─────────────────────────────────────────────
 
     /**
      * Returns all 3D block offsets in the effect region, relative to
@@ -298,7 +293,6 @@ public final class ChainFootprint {
         return result;
     }
 
-    // ── Bounds ───────────────────────────────────────────────────────
 
     /**
      * Computes the AABB of all affected blocks relative to the marker

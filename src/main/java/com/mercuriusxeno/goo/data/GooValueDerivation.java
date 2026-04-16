@@ -171,7 +171,6 @@ final class GooValueDerivation {
         return base != null ? base : derived;
     }
 
-    // ── Private: derivation pipeline ────────────────────────────────────
 
     /**
      * Executes the full derivation pipeline: multi-pass derive, conflict/cycle/loss detection.

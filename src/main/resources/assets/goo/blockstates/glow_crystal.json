@@ -1,0 +1,57 @@
+{
+  "variants": {
+    "facing=up,shape=bump,size=tiny":       {"model": "goo:block/glow_bump_tiny"},
+    "facing=up,shape=bump,size=small":      {"model": "goo:block/glow_bump_small"},
+    "facing=up,shape=bump,size=medium":     {"model": "goo:block/glow_bump_medium"},
+    "facing=up,shape=bump,size=large":      {"model": "goo:block/glow_bump_large"},
+    "facing=up,shape=flat,size=tiny":       {"model": "goo:block/glow_flat_tiny"},
+    "facing=up,shape=flat,size=small":      {"model": "goo:block/glow_flat_small"},
+    "facing=up,shape=flat,size=medium":     {"model": "goo:block/glow_flat_medium"},
+    "facing=up,shape=flat,size=large":      {"model": "goo:block/glow_flat_large"},
+
+    "facing=down,shape=bump,size=tiny":     {"model": "goo:block/glow_bump_tiny", "x": 180},
+    "facing=down,shape=bump,size=small":    {"model": "goo:block/glow_bump_small", "x": 180},
+    "facing=down,shape=bump,size=medium":   {"model": "goo:block/glow_bump_medium", "x": 180},
+    "facing=down,shape=bump,size=large":    {"model": "goo:block/glow_bump_large", "x": 180},
+    "facing=down,shape=flat,size=tiny":     {"model": "goo:block/glow_flat_tiny", "x": 180},
+    "facing=down,shape=flat,size=small":    {"model": "goo:block/glow_flat_small", "x": 180},
+    "facing=down,shape=flat,size=medium":   {"model": "goo:block/glow_flat_medium", "x": 180},
+    "facing=down,shape=flat,size=large":    {"model": "goo:block/glow_flat_large", "x": 180},
+
+    "facing=north,shape=bump,size=tiny":    {"model": "goo:block/glow_bump_tiny", "x": 90, "y": 180},
+    "facing=north,shape=bump,size=small":   {"model": "goo:block/glow_bump_small", "x": 90, "y": 180},
+    "facing=north,shape=bump,size=medium":  {"model": "goo:block/glow_bump_medium", "x": 90, "y": 180},
+    "facing=north,shape=bump,size=large":   {"model": "goo:block/glow_bump_large", "x": 90, "y": 180},
+    "facing=north,shape=flat,size=tiny":    {"model": "goo:block/glow_flat_tiny", "x": 90, "y": 180},
+    "facing=north,shape=flat,size=small":   {"model": "goo:block/glow_flat_small", "x": 90, "y": 180},
+    "facing=north,shape=flat,size=medium":  {"model": "goo:block/glow_flat_medium", "x": 90, "y": 180},
+    "facing=north,shape=flat,size=large":   {"model": "goo:block/glow_flat_large", "x": 90, "y": 180},
+
+    "facing=south,shape=bump,size=tiny":    {"model": "goo:block/glow_bump_tiny", "x": 90},
+    "facing=south,shape=bump,size=small":   {"model": "goo:block/glow_bump_small", "x": 90},
+    "facing=south,shape=bump,size=medium":  {"model": "goo:block/glow_bump_medium", "x": 90},
+    "facing=south,shape=bump,size=large":   {"model": "goo:block/glow_bump_large", "x": 90},
+    "facing=south,shape=flat,size=tiny":    {"model": "goo:block/glow_flat_tiny", "x": 90},
+    "facing=south,shape=flat,size=small":   {"model": "goo:block/glow_flat_small", "x": 90},
+    "facing=south,shape=flat,size=medium":  {"model": "goo:block/glow_flat_medium", "x": 90},
+    "facing=south,shape=flat,size=large":   {"model": "goo:block/glow_flat_large", "x": 90},
+
+    "facing=west,shape=bump,size=tiny":     {"model": "goo:block/glow_bump_tiny", "x": 90, "y": 90},
+    "facing=west,shape=bump,size=small":    {"model": "goo:block/glow_bump_small", "x": 90, "y": 90},
+    "facing=west,shape=bump,size=medium":   {"model": "goo:block/glow_bump_medium", "x": 90, "y": 90},
+    "facing=west,shape=bump,size=large":    {"model": "goo:block/glow_bump_large", "x": 90, "y": 90},
+    "facing=west,shape=flat,size=tiny":     {"model": "goo:block/glow_flat_tiny", "x": 90, "y": 90},
+    "facing=west,shape=flat,size=small":    {"model": "goo:block/glow_flat_small", "x": 90, "y": 90},
+    "facing=west,shape=flat,size=medium":   {"model": "goo:block/glow_flat_medium", "x": 90, "y": 90},
+    "facing=west,shape=flat,size=large":    {"model": "goo:block/glow_flat_large", "x": 90, "y": 90},
+
+    "facing=east,shape=bump,size=tiny":     {"model": "goo:block/glow_bump_tiny", "x": 90, "y": 270},
+    "facing=east,shape=bump,size=small":    {"model": "goo:block/glow_bump_small", "x": 90, "y": 270},
+    "facing=east,shape=bump,size=medium":   {"model": "goo:block/glow_bump_medium", "x": 90, "y": 270},
+    "facing=east,shape=bump,size=large":    {"model": "goo:block/glow_bump_large", "x": 90, "y": 270},
+    "facing=east,shape=flat,size=tiny":     {"model": "goo:block/glow_flat_tiny", "x": 90, "y": 270},
+    "facing=east,shape=flat,size=small":    {"model": "goo:block/glow_flat_small", "x": 90, "y": 270},
+    "facing=east,shape=flat,size=medium":   {"model": "goo:block/glow_flat_medium", "x": 90, "y": 270},
+    "facing=east,shape=flat,size=large":    {"model": "goo:block/glow_flat_large", "x": 90, "y": 270}
+  }
+}

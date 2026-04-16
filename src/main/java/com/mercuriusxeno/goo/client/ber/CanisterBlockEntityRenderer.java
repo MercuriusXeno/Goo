@@ -3,10 +3,10 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.client.model.CanisterBodyModels;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.QuadInstance;
@@ -126,12 +126,12 @@ public class CanisterBlockEntityRenderer
      */
     private static void extractSlotFluid(CanisterBlockEntity be,
             CanisterRenderState state, int slot) {
-        GooContents contents = be.getSlotGooContents(slot);
-        if (contents.isEmpty()) {
+        CanisterFluidContent content = be.getSlotFluidContent(slot);
+        if (content.isEmpty()) {
             state.slotType[slot] = null;
             state.slotFill[slot] = 0f;
         } else {
-            populateFilledSlot(be, state, slot, contents);
+            populateFilledSlot(be, state, slot, content);
         }
     }
 
@@ -140,13 +140,13 @@ public class CanisterBlockEntityRenderer
      * @param be the block entity instance
      * @param state the render state snapshot
      * @param slot the slot index
-     * @param contents the non-empty goo contents for this slot
+     * @param content the non-empty fluid content for this slot
      */
     private static void populateFilledSlot(CanisterBlockEntity be,
-            CanisterRenderState state, int slot, GooContents contents) {
+            CanisterRenderState state, int slot, CanisterFluidContent content) {
         long cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
-        state.slotType[slot] = contents.largestType();
-        state.slotFill[slot] = logFill(contents.totalVolume(), cap);
+        state.slotType[slot] = content.getGooType();
+        state.slotFill[slot] = logFill(content.amount(), cap);
     }
 
     /**

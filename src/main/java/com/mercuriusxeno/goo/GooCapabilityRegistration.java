@@ -3,11 +3,10 @@ package com.mercuriusxeno.goo;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
 import com.mercuriusxeno.goo.block.ICanisterHolder;
-import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.fluid.PlayerInventorySlotHandler;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.fluid.BucketGooFluidHandler;
 import com.mercuriusxeno.goo.item.fluid.CanisterFluidHandler;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -47,23 +46,12 @@ final class GooCapabilityRegistration {
     }
 
     /**
-     * Registers item-level fluid handlers for buckets and canisters.
+     * Registers item-level fluid handlers for canisters.
      *
      * @param event the capability registration event
      */
     static void registerItemFluidCapabilities(RegisterCapabilitiesEvent event) {
-        registerBucketFluidCapability(event);
         registerCanisterFluidCapability(event);
-    }
-
-    /**
-     * Registers fluid handler for goo buckets.
-     *
-     * @param event the capability registration event
-     */
-    private static void registerBucketFluidCapability(RegisterCapabilitiesEvent event) {
-        event.registerItem(Capabilities.Fluid.ITEM,
-            (stack, ctx) -> new BucketGooFluidHandler(ctx), GooItems.BUCKET_OF_GOO.get());
     }
 
     /**
@@ -222,7 +210,7 @@ final class GooCapabilityRegistration {
      * @return the slot's fluid handler if found, or null
      */
     @Nullable
-    private static GooFluidHandler findSlotForGasket(
+    private static CanisterSlotFluidHandler findSlotForGasket(
             ICanisterHolder container, int slotCount, UUID gasketId) {
         for (int i = 0; i < slotCount; i++) {
             if (container.getCanister(i).isEmpty()) { continue; }

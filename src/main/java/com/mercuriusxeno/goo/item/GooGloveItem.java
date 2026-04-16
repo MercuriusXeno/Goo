@@ -1,7 +1,12 @@
 package com.mercuriusxeno.goo.item;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.PlayerUtils;
+import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -9,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -24,6 +30,10 @@ public class GooGloveItem extends Item {
     public static final int RADIAL_THRESHOLD_TICKS = 6;
     /** Maximum use duration in ticks (same as bow: 1 hour at 20 tps). */
     private static final int MAX_USE_DURATION = 72_000;
+    /** Recollect pickup sound volume. */
+    private static final float PICKUP_VOLUME = 0.5f;
+    /** Recollect pickup sound pitch. */
+    private static final float PICKUP_PITCH = 1.2f;
 
     /**
      * Creates a goo glove item with the given properties.
@@ -32,6 +42,48 @@ public class GooGloveItem extends Item {
      */
     public GooGloveItem(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * Shift+right-click on a chain marker recollects blobs. Returns the
+     * stacked blobs to the player's inventory and removes the marker.
+     *
+     * @param context the use-on-block context
+     * @return SUCCESS if recollected, PASS otherwise
+     */
+    @Override
+    public @NonNull InteractionResult useOn(@NonNull UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) { return InteractionResult.PASS; }
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return InteractionResult.PASS;
+        }
+        if (!level.isClientSide()) {
+            recollectBlobs(level, pos, be, player);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Gives the marker's stacked blobs back to the player and removes the block.
+     * @param level the world the marker exists in
+     * @param pos the marker block position
+     * @param be the chain marker block entity holding blob data
+     * @param player the player receiving the recollected blobs
+     */
+    private static void recollectBlobs(Level level, BlockPos pos,
+            ChainMarkerBlockEntity be, Player player) {
+        GooType type = be.getGooType();
+        int stacks = be.getStackCount();
+        if (stacks > 0) {
+            ItemStack blobs = BlobStacks.createBlobStack(type, stacks);
+            PlayerUtils.addOrDrop(player, blobs);
+        }
+        level.removeBlock(pos, false);
+        level.playSound(null, pos, SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS,
+                PICKUP_VOLUME, PICKUP_PITCH);
     }
 
     /**

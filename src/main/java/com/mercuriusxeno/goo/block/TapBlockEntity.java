@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.block;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
-import com.mercuriusxeno.goo.item.GooContents;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -105,11 +105,11 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
     // --- Goo pass-through (delegates to ICanisterHolder slot 0) ---
 
     /**
-     * Returns the goo contents of the inserted canister, or EMPTY.
-     * @return the goo contents of the inserted canister, or EMPTY
+     * Returns the fluid content of the inserted canister, or EMPTY.
+     * @return the fluid content of the inserted canister, or EMPTY
      */
-    public GooContents getGooContents() {
-        return getSlotGooContents(SLOT);
+    public CanisterFluidContent getFluidContent() {
+        return getSlotFluidContent(SLOT);
     }
 
     /**

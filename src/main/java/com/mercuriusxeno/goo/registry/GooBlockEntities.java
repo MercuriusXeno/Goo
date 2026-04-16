@@ -6,6 +6,7 @@ import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
 import com.mercuriusxeno.goo.block.PlexerBlockEntity;
+import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
 import net.minecraft.core.registries.Registries;
@@ -28,6 +29,10 @@ public class GooBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PlexerBlockEntity>> PLEXER =
         BLOCK_ENTITIES.register("plexer",
             () -> new BlockEntityType<>(PlexerBlockEntity::new, GooBlocks.PLEXER.get()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ReactorBlockEntity>> REACTOR =
+        BLOCK_ENTITIES.register("reactor",
+            () -> new BlockEntityType<>(ReactorBlockEntity::new, GooBlocks.REACTOR.get()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<VatBlockEntity>> VAT =
         BLOCK_ENTITIES.register("vat",

@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 
 /**
  * Unified immutable data component for multi-type goo volume storage.
- * Replaces both BucketContents and CanisterContents for all goo containers:
- * buckets, canisters, vats, crucible reservoirs, and partially melted items.
+ * Unified data component for all goo containers:
+ * canisters, vats, crucible reservoirs, and partially melted items.
  *
  * <p>Each entry maps a GooType to a volume in microblobs (mB).
  * Mutation methods return new instances; this record is never modified in place.</p>

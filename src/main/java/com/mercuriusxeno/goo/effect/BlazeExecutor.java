@@ -151,7 +151,6 @@ public final class BlazeExecutor {
         }
     }
 
-    // ── Layer center resolution ──────────────────────────────────────
 
     /** First layer (stepIndex 0) lands on the hit block itself, one step
      * into the wall from the marker's air block.
@@ -165,7 +164,6 @@ public final class BlazeExecutor {
         return origin.relative(placedFace.getOpposite(), stepIndex + 1);
     }
 
-    // ── Block mining ─────────────────────────────────────────────────
 
     /** Creates a diamond pickaxe with fortune 3 for loot context.
      *
@@ -297,7 +295,6 @@ public final class BlazeExecutor {
         }
     }
 
-    // ── Perpendicular offset ─────────────────────────────────────────
 
     /**
      * Offsets a position in the two axes perpendicular to the blast axis.
@@ -318,7 +315,6 @@ public final class BlazeExecutor {
         };
     }
 
-    // ── Entity damage (skips items) ──────────────────────────────────
 
     /**
      * Damages living entities within the layer's footprint AABB.
@@ -374,7 +370,6 @@ public final class BlazeExecutor {
         return max;
     }
 
-    // ── Particles ────────────────────────────────────────────────────
 
     /**
      * Spawns flame, lava, and ember particles at the layer center,
@@ -405,7 +400,6 @@ public final class BlazeExecutor {
                 spreadX, spreadY, spreadZ, EMBER_PARTICLE_SPEED);
     }
 
-    // ── Sound ────────────────────────────────────────────────────────
 
     /**
      * Plays a localized explosion sound for this layer. Pitch dips

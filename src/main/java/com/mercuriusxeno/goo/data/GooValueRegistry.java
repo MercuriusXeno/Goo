@@ -138,7 +138,6 @@ public class GooValueRegistry implements IGooValueLookup {
             Map<Identifier, RecipeInput> derivationSources
     ) {}
 
-    // ── Public entry points ────────────────────────────────────────────
 
     /**
      * Sets the path for the effective value cache file.
@@ -318,7 +317,6 @@ public class GooValueRegistry implements IGooValueLookup {
         return ScaffoldGenerator.generateScaffold(roots, lastRecipes, bare);
     }
 
-    // ── Public accessors ────────────────────────────────────────────────
 
     /** {@inheritDoc} */
     @Override
@@ -401,7 +399,6 @@ public class GooValueRegistry implements IGooValueLookup {
         );
     }
 
-    // ── Package-private (derivation, used by tests) ────────────────────
 
     /**
      * Derives goo values from MC-free recipe inputs using the LCD rule.

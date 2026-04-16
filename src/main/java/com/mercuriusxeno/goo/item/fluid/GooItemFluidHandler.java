@@ -10,7 +10,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
 /**
- * Shared base for goo item fluid handlers (buckets, canisters, etc.) that
+ * Shared base for goo item fluid handlers (canisters, etc.) that
  * expose {@link GooContents} as a 15-tank fluid ResourceHandler. Each tank
  * index maps to a {@link GooType} ordinal with shared capacity across all
  * tanks.
@@ -32,7 +32,7 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
 
     /**
      * Returns the total capacity of this container in microblobs.
-     * Bucket returns a constant; canister derives it from enchantments.
+     * Canister derives capacity from enchantments.
      *
      * @param item the item resource to read capacity from
      * @return total capacity in microblobs

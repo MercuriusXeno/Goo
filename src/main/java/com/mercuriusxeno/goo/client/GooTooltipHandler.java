@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.tooltip.GooValueTooltipComponent;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.item.BlobStacks;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooBlobItem;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -73,11 +74,15 @@ public final class GooTooltipHandler {
     private static void handleItemTooltip(List<Either<FormattedText, TooltipComponent>> elements, ItemStack stack) {
         GooContents gooContents = stack.get(GooDataComponents.GOO_CONTENTS.get());
         boolean hasGooContents = gooContents != null && !gooContents.isEmpty();
+        CanisterFluidContent canisterContent = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        boolean hasCanisterContent = canisterContent != null && !canisterContent.isEmpty();
         if (hasGooContents) {
             appendGooContentsComponents(elements, gooContents);
+        } else if (hasCanisterContent) {
+            appendCanisterFluidComponent(elements, canisterContent);
         }
         appendUpgradeComponents(elements, stack);
-        if (!hasGooContents) {
+        if (!hasGooContents && !hasCanisterContent) {
             appendBaseValueTooltip(elements, stack);
         }
     }
@@ -137,7 +142,7 @@ public final class GooTooltipHandler {
     }
 
     /**
-     * Inserts icon tooltip lines for each goo type in GooContents (PMI, bucket, canister).
+     * Inserts icon tooltip lines for each goo type in GooContents (PMI, canister).
      *
      * @param elements the tooltip element list
      * @param contents the goo contents to measure
@@ -148,6 +153,21 @@ public final class GooTooltipHandler {
         for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
             elements.add(Either.right(
                     new GooValueTooltipComponent(entry.getKey(), entry.getValue())));
+        }
+    }
+
+    /** Appends a single-fluid tooltip line for canister items.
+     *
+     * @param elements the tooltip element list
+     * @param content  the canister fluid content
+     */
+    private static void appendCanisterFluidComponent(
+            List<Either<FormattedText, TooltipComponent>> elements, CanisterFluidContent content) {
+        GooType gooType = content.getGooType();
+        if (gooType != null) {
+            elements.add(Either.left(Component.empty()));
+            elements.add(Either.right(
+                    new GooValueTooltipComponent(gooType, content.amount())));
         }
     }
 

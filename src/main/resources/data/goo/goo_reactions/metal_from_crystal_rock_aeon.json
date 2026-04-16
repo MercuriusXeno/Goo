@@ -1,0 +1,11 @@
+{
+  "inputs": [
+    {"fluid": "goo:crystal_goo", "amount": 1},
+    {"fluid": "goo:rock_goo", "amount": 1},
+    {"fluid": "goo:aeon_goo", "amount": 1}
+  ],
+  "outputs": [
+    {"fluid": "goo:metal_goo", "amount": 3}
+  ],
+  "rate": 1
+}

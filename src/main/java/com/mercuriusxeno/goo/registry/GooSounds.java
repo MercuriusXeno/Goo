@@ -23,5 +23,11 @@ public final class GooSounds {
             () -> SoundEvent.createVariableRangeEvent(
                 Identifier.fromNamespaceAndPath(Goo.MODID, "effects.black_hole")));
 
+    /** Glow blob throw: laser beam fire sound. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> GLOW_THROW =
+        SOUND_EVENTS.register("effects.glow_throw",
+            () -> SoundEvent.createVariableRangeEvent(
+                Identifier.fromNamespaceAndPath(Goo.MODID, "effects.glow_throw")));
+
     private GooSounds() {}
 }

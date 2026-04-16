@@ -54,7 +54,8 @@ public class GooFluidTypes {
             Map.entry(GooType.NETHER, VISCOSITY_HEX_NETHER),
             Map.entry(GooType.BLAZE, VISCOSITY_BLAZE_FROST),
             Map.entry(GooType.FROST, VISCOSITY_BLAZE_FROST),
-            Map.entry(GooType.TYPHOON, VISCOSITY_TYPHOON)));
+            Map.entry(GooType.TYPHOON, VISCOSITY_TYPHOON),
+            Map.entry(GooType.UNSTABLE, VISCOSITY_TYPHOON)));
 
     static {
         for (GooType type : GooType.values()) {
@@ -87,7 +88,7 @@ public class GooFluidTypes {
         return switch (type) {
             case METAL -> DENSITY_METAL;
             case ROCK -> DENSITY_ROCK;
-            case NETHER, BLAZE -> DENSITY_NETHER_BLAZE;
+            case NETHER, BLAZE, UNSTABLE -> DENSITY_NETHER_BLAZE;
             case CRYSTAL, ENDER -> DENSITY_CRYSTAL_ENDER;
             default -> DENSITY_DEFAULT;
         };
@@ -111,7 +112,7 @@ public class GooFluidTypes {
      */
     private static int temperature(GooType type) {
         return switch (type) {
-            case BLAZE -> TEMP_BLAZE;
+            case BLAZE, UNSTABLE -> TEMP_BLAZE;
             case NETHER -> TEMP_NETHER;
             case FROST -> TEMP_FROST;
             case GLOW -> TEMP_GLOW;

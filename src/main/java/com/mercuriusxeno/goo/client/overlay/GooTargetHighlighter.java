@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.hud.InWorldHud;
 import com.mercuriusxeno.goo.client.hud.PanelRectangle;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -276,13 +278,36 @@ public final class GooTargetHighlighter {
      * @return granny-arc or block-face target result
      */
     private static TargetResult classifyBlockHit(Level level, BlockHitResult hit) {
+        BlockPos pos = hit.getBlockPos();
         Direction face = hit.getDirection();
+        if (level.getBlockState(pos).getBlock() instanceof GlowCrystalBlock) {
+            return TargetResult.glowCrystal(pos, face);
+        }
+        BlockPos adj = pos.relative(face);
+        if (isGlowCrystalOnFace(level, adj, face)) {
+            return TargetResult.glowCrystal(adj, face);
+        }
         if (face.getAxis() != Direction.Axis.Y
                 && isUpperEdge(level, hit)
-                && level.getBlockState(hit.getBlockPos().above()).isAir()) {
-            return TargetResult.grannyArc(hit.getBlockPos());
+                && level.getBlockState(pos.above()).isAir()) {
+            return TargetResult.grannyArc(pos);
         }
-        return TargetResult.block(hit.getBlockPos(), face);
+        return TargetResult.block(pos, face);
+    }
+
+    /**
+     * Returns true if the block at {@code pos} is a glow crystal whose
+     * facing matches the given face (i.e. it is attached to that face).
+     *
+     * @param level the current level
+     * @param pos   the candidate crystal position
+     * @param face  the face direction to match
+     * @return true if a matching glow crystal exists
+     */
+    private static boolean isGlowCrystalOnFace(Level level, BlockPos pos, Direction face) {
+        BlockState state = level.getBlockState(pos);
+        return state.getBlock() instanceof GlowCrystalBlock
+                && state.getValue(GlowCrystalBlock.FACING) == face;
     }
 
     /**
@@ -347,6 +372,8 @@ public final class GooTargetHighlighter {
             renderBlockTargetHighlight(bt, mc, ps, buf, camera, selectedType);
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
             renderChainMarkerHighlight(cmt, mc, ps, buf, camera, selectedType);
+        } else if (target instanceof TargetResult.GlowCrystalTarget gct) {
+            VoxelHighlightRenderer.renderBlockShape(ps, buf, camera, gct.pos(), selectedType);
         }
     }
 
@@ -391,7 +418,6 @@ public final class GooTargetHighlighter {
         renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
     }
 
-    // ── Water source detection ──────────────────────────────────────────
 
     /**
      * Returns true if the block at the given position is a water source.
@@ -436,7 +462,6 @@ public final class GooTargetHighlighter {
         return be.getBehavior() == null && be.getStackCount() < be.getMaxStacks();
     }
 
-    // ── Chain marker billboard ─────────────────────────────────────────
 
     /** Gap between the top of the blob visual and the billboard bottom. */
     private static final float BILLBOARD_GAP = 0.15f;
@@ -598,8 +623,10 @@ public final class GooTargetHighlighter {
         Vec3 end = target.resolveEndpoint();
         if (end == null) { return; }
         boolean grannyArc = target instanceof TargetResult.BlockTarget bt && bt.grannyArc();
+        boolean straightLine = selectedType == GooType.GLOW;
         ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
-                player, end, GooColors.highlight(selectedType), partialTick, grannyArc);
+                player, end, GooColors.highlight(selectedType), partialTick,
+                grannyArc, straightLine);
     }
 
     // --- Hand position ---

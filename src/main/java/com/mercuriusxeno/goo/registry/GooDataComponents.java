@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.gasket.GasketPairing;
@@ -24,6 +25,14 @@ public class GooDataComponents {
             () -> DataComponentType.<GooContents>builder()
                 .persistent(GooContents.CODEC)
                 .networkSynchronized(GooContents.STREAM_CODEC)
+                .build());
+
+    /** Single-fluid storage for canister items. Accepts any registered fluid. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<CanisterFluidContent>>
+        CANISTER_FLUID_CONTENT = DATA_COMPONENTS.register("canister_fluid_content",
+            () -> DataComponentType.<CanisterFluidContent>builder()
+                .persistent(CanisterFluidContent.CODEC)
+                .networkSynchronized(CanisterFluidContent.STREAM_CODEC)
                 .build());
 
     /** Canister-specific metadata: matrices, gasket IDs, label. */

@@ -37,8 +37,20 @@ public final class GooMobEffects {
     private static final double CRYSTAL_AOE_RADIUS = 3.0;
     /** Frost cold-snap damage. */
     private static final float FROST_SNAP_DAMAGE = 4.0f;
-    /** Glow smite damage to undead. */
-    private static final float GLOW_SMITE_DAMAGE = 12.0f;
+    /** Glow laser base magic damage. */
+    private static final float GLOW_LASER_DAMAGE = 4.0f;
+    /** Glow laser undead damage multiplier. */
+    private static final float GLOW_UNDEAD_MULTIPLIER = 2.0f;
+    /** Glow laser undead ignite duration in seconds. */
+    private static final int GLOW_IGNITE_SECONDS = 1;
+    /** Glow crit particle count on laser hit. */
+    private static final int GLOW_CRIT_COUNT = 10;
+    /** Glow crit particle spread. */
+    private static final double GLOW_CRIT_SPREAD = 0.5;
+    /** Glow crit particle speed. */
+    private static final double GLOW_CRIT_SPEED = 0.1;
+    /** Unstable mob-hit explosion power (single blob). */
+    private static final float UNSTABLE_MOB_POWER = 2.0f;
 
     // ── Particle parameters ──
     /** Vertical offset for crystal damage indicator particles. */
@@ -91,6 +103,8 @@ public final class GooMobEffects {
     private static final float NETHER_HEALTH_DIVISOR = 2.0f;
     /** Aeon stasis glowing duration. */
     private static final int AEON_GLOW_DURATION = 60;
+    /** Body-height fraction for particle spawn at entity midpoint. */
+    private static final double ENTITY_MID_HEIGHT = 0.5;
 
     // ── Hex charm parameters ──
     /** Hex charm base duration numerator. */
@@ -132,12 +146,13 @@ public final class GooMobEffects {
         Map.entry(GooType.BLAZE, ctx -> blazeIgnite(ctx.level(), ctx.target())),
         Map.entry(GooType.FROST, ctx -> frostSnap(ctx.target())),
         Map.entry(GooType.TYPHOON, ctx -> typhoonLevitate(ctx.target())),
-        Map.entry(GooType.GLOW, ctx -> glowSmite(ctx.target())),
+        Map.entry(GooType.GLOW, ctx -> glowLaser(ctx.level(), ctx.target())),
         Map.entry(GooType.HEX, ctx -> hexCharm(ctx.target(), ctx.thrower())),
         Map.entry(GooType.PULSE, ctx -> pulseShortCircuit(ctx.target())),
         Map.entry(GooType.NETHER, ctx -> netherWither(ctx.target())),
         Map.entry(GooType.ENDER, ctx -> enderTeleport(ctx.level(), ctx.target())),
-        Map.entry(GooType.AEON, ctx -> aeonTimeStop(ctx.target()))));
+        Map.entry(GooType.AEON, ctx -> aeonTimeStop(ctx.target())),
+        Map.entry(GooType.UNSTABLE, ctx -> unstableExplode(ctx.level(), ctx.target()))));
 
     /** Dispatch context: all parameters an effect handler might need. */
     private record EffectContext(Level level, LivingEntity target, @Nullable Entity thrower) {}
@@ -320,17 +335,29 @@ public final class GooMobEffects {
     }
 
     /**
-     * Deals heavy damage to undead and applies glowing to survivors.
+     * Glow laser: deals magic damage (2x to undead), crit particles,
+     * sets undead on fire, and applies glowing to survivors.
      *
-     * @param target the entity to smite
+     * @param level  the current level
+     * @param target the entity hit by the beam
      */
-    private static void glowSmite(LivingEntity target) {
-        if (target.isInvertedHealAndHarm()) {
-            // Undead  - solar damage
-            target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), GLOW_SMITE_DAMAGE);
+    private static void glowLaser(Level level, LivingEntity target) {
+        boolean undead = target.isInvertedHealAndHarm();
+        float damage = undead ? GLOW_LASER_DAMAGE * GLOW_UNDEAD_MULTIPLIER : GLOW_LASER_DAMAGE;
+        target.hurtServer((ServerLevel) target.level(), target.damageSources().magic(), damage);
+        if (undead) {
+            target.igniteForSeconds(GLOW_IGNITE_SECONDS);
+        }
+        if (level instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.CRIT,
+                    target.getX(), target.getY(ENTITY_MID_HEIGHT), target.getZ(),
+                    GLOW_CRIT_COUNT, GLOW_CRIT_SPREAD, GLOW_CRIT_SPREAD,
+                    GLOW_CRIT_SPREAD, GLOW_CRIT_SPEED);
         }
         if (target.isAlive()) {
-            target.addEffect(new MobEffectInstance(net.minecraft.world.effect.MobEffects.GLOWING, GLOW_EFFECT_DURATION, 0));
+            target.addEffect(new MobEffectInstance(
+                    net.minecraft.world.effect.MobEffects.GLOWING,
+                    GLOW_EFFECT_DURATION, 0));
         }
     }
 
@@ -392,6 +419,17 @@ public final class GooMobEffects {
         target.teleportTo(pos.x + offsetX, pos.y, pos.z + offsetZ);
         level.playSound(null, target.getX(), target.getY(), target.getZ(),
             SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, ENDER_SOUND_VOLUME, ENDER_SOUND_PITCH);
+    }
+
+    /**
+     * Detonates a vanilla explosion at the target's position on blob impact.
+     *
+     * @param level  the current level
+     * @param target the entity that was hit
+     */
+    private static void unstableExplode(Level level, LivingEntity target) {
+        level.explode(null, target.getX(), target.getY(), target.getZ(),
+                UNSTABLE_MOB_POWER, Level.ExplosionInteraction.TNT);
     }
 
     /**

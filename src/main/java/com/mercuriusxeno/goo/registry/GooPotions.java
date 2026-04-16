@@ -78,7 +78,9 @@ public class GooPotions {
         Map.entry(GooType.ENDER, (String n) -> new Potion(n,
                 new MobEffectInstance(MobEffects.INVISIBILITY, DURATION_MEDIUM, 0))),
         Map.entry(GooType.AEON, (String n) -> new Potion(n,
-                new MobEffectInstance(MobEffects.SLOWNESS, DURATION_LONG, 0)))));
+                new MobEffectInstance(MobEffects.SLOWNESS, DURATION_LONG, 0))),
+        Map.entry(GooType.UNSTABLE, (String n) -> new Potion(n,
+                new MobEffectInstance(MobEffects.INSTANT_DAMAGE, 1, AMPLIFIER_II)))));
 
     /**
      * Creates a potion with mob effects themed to the given goo type.

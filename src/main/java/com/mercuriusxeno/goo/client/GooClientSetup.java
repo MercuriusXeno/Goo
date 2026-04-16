@@ -9,6 +9,7 @@ import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.CrucibleBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.HubBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.PlexerBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.ReactorBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.TapBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.ber.VatBlockEntityRenderer;
 import com.mercuriusxeno.goo.client.machine.FuelRemainingProperty;
@@ -129,6 +130,8 @@ public final class GooClientSetup {
             VatBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.PLEXER.get(),
             PlexerBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(GooBlockEntities.REACTOR.get(),
+            ReactorBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.TAP.get(),
             TapBlockEntityRenderer::new);
     }

@@ -76,7 +76,6 @@ final class GooValueLoader {
         }
     }
 
-    // ── Classpath loading ──────────────────────────────────────────────
 
     /**
      * Reads and parses the embedded base_values.json classpath resource.
@@ -113,7 +112,6 @@ final class GooValueLoader {
         }
     }
 
-    // ── Datapack loading ───────────────────────────────────────────────
 
     /**
      * Parses each resource in the stack into a JsonObject, skipping failures.
@@ -163,7 +161,6 @@ final class GooValueLoader {
         if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_PACKS, state.baseValues.size(), layers.size()); }
     }
 
-    // ── Item values / groups / pseudo-tags ──────────────────────────────
 
     /**
      * Parses _groups first (pseudo-tags), then item entries. Resolves #name against pseudo-tags.
@@ -194,7 +191,6 @@ final class GooValueLoader {
         assignItemValue(Identifier.parse(key), value, state);
     }
 
-    // ── Item assignment ────────────────────────────────────────────────
 
     /**
      * Assigns a value or denial to a single item.
@@ -244,7 +240,6 @@ final class GooValueLoader {
     }
 
 
-    // ── Registry state management ──────────────────────────────────────
 
     /**
      * Clears all mutable registry state before a fresh load.

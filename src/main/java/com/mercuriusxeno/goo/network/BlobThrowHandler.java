@@ -28,6 +28,8 @@ public final class BlobThrowHandler {
     public static final long THROW_COST = 1000;
     /** Maximum throw range in blocks. */
     public static final double MAX_RANGE = 64.0;
+    /** Glow beam travel speed in blocks per tick. */
+    private static final double GLOW_BLOCKS_PER_TICK = 2.5;
     private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
 
     /** Block center offset (half-block). */
@@ -143,7 +145,10 @@ public final class BlobThrowHandler {
         }
 
         stallChainMarkerFuse(player, payload);
-        int travelTicks = (int) ThrowArc.travelTicks(Math.sqrt(distSq));
+        double distance = Math.sqrt(distSq);
+        int travelTicks = gooType == GooType.GLOW
+                ? Math.max(1, (int) Math.ceil(distance / GLOW_BLOCKS_PER_TICK))
+                : (int) ThrowArc.travelTicks(distance);
         broadcastFlight(player, payload, travelTicks);
         BlobEffectScheduler.scheduleEffect(player, payload, gooType, travelTicks);
 

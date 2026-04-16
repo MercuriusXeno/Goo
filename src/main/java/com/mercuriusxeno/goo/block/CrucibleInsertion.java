@@ -87,21 +87,6 @@ final class CrucibleInsertion {
     }
 
     /**
-     * Merges bucket contents directly into the reservoir, bypassing the melting
-     * pipeline. No fuel required.
-     *
-     * @param be             the crucible block entity
-     * @param bucketContents the bucket goo contents
-     */
-    static void insertGooContents(CrucibleBlockEntity be, GooContents bucketContents) {
-        if (bucketContents.isEmpty()) { return; }
-        for (var entry : bucketContents.getAll().entrySet()) {
-            be.reservoir.insertGoo(entry.getKey(), (int) Math.min(entry.getValue(), Integer.MAX_VALUE), false);
-        }
-        be.syncToClients();
-    }
-
-    /**
      * Inserts goo directly into the reservoir. Bypasses melting pipeline.
      *
      * @param be     the crucible block entity

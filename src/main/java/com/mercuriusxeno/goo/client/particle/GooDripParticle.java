@@ -150,7 +150,6 @@ public class GooDripParticle extends SingleQuadParticle {
         return OPAQUE_BLACK | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
     }
 
-    // ── Fall particle ──────────────────────────────────────────────────
     /**
      * The main drip - falls under gravity, spawns a land splat on ground contact.
      * This is what the blob flight trail spawns directly.
@@ -180,7 +179,6 @@ public class GooDripParticle extends SingleQuadParticle {
         }
     }
 
-    // ── Land particle ──────────────────────────────────────────────────
     /**
      * Ground splat that lies flat and spreads out while fading.
      * Overrides the billboard orientation so the quad faces upward,
@@ -240,7 +238,6 @@ public class GooDripParticle extends SingleQuadParticle {
         }
     }
 
-    // ── Providers ──────────────────────────────────────────────────────
 
     /** Provider for the falling drip - used by BlobFlightRenderer trail. */
     public static class Provider implements ParticleProvider<ColorParticleOption> {

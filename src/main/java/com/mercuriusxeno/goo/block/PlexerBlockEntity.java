@@ -6,8 +6,8 @@ import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.data.IGooValueLookup;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -238,8 +238,8 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
     private long getAvailableGoo(List<SlotRef> slots, GooType type) {
         long total = 0;
         for (SlotRef ref : slots) {
-            GooContents contents = CanisterItem.getGooContents(ref.entity.getCanister(ref.slot));
-            total += contents.getVolume(type);
+            CanisterFluidContent content = CanisterItem.getFluidContent(ref.entity.getCanister(ref.slot));
+            total += (content.getGooType() == type) ? content.amount() : 0;
         }
         return total;
     }

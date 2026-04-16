@@ -12,6 +12,7 @@
   "pulse":   { "wheel": "CC0000", "bright": "F42828", "highlight": "DB0F0F", "edge": "EA1E1E" },
   "rock":    { "wheel": "C2A868", "bright": "EAD090", "highlight": "D1B777", "edge": "E0C686" },
   "shroom":  { "wheel": "8E44AD", "bright": "B66CD5", "highlight": "9D53BC", "edge": "AC62CB" },
-  "typhoon": { "wheel": "D5F5E3", "bright": "FDFFFF", "highlight": "E4FFF2", "edge": "F3FFFF" },
-  "vital":   { "wheel": "E74C3C", "bright": "FF7464", "highlight": "F65B4B", "edge": "FF6A5A" }
+  "typhoon":  { "wheel": "D5F5E3", "bright": "FDFFFF", "highlight": "E4FFF2", "edge": "F3FFFF" },
+  "unstable": { "wheel": "39FF14", "bright": "88FF44", "highlight": "55FF22", "edge": "6EFF33" },
+  "vital":    { "wheel": "E74C3C", "bright": "FF7464", "highlight": "F65B4B", "edge": "FF6A5A" }
 }

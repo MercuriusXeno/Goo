@@ -1,23 +1,25 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
+import com.mercuriusxeno.goo.registry.GooFluids;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Common interface for block entities that hold canister slots with metadata
- * and support goo insert/extract operations. Both {@link CanisterBlockEntity}
+ * and support fluid insert/extract operations. Both {@link CanisterBlockEntity}
  * and {@link HubBlockEntity} store canister item stacks in numbered slots.
  * This interface lets callers operate on either type without type-branching.
  *
  * <p>All slot operations delegate to the {@link SlottedCanisterState} returned
- * by {@link #containerState()}. Defaults handle goo read/write, metadata,
+ * by {@link #containerState()}. Defaults handle fluid read/write, metadata,
  * and capacity checks; implementors only need to supply the component.</p>
  */
 @SuppressWarnings("PMD.ImplicitFunctionalInterface") // not a lambda target; sole abstract is a composed-state accessor
@@ -52,14 +54,14 @@ public interface ICanisterHolder {
     }
 
     /**
-     * Returns the goo contents of the canister in the given slot, or
-     * {@link GooContents#EMPTY} if the slot is empty.
+     * Returns the fluid content of the canister in the given slot, or
+     * {@link CanisterFluidContent#EMPTY} if the slot is empty.
      *
      * @param slot the slot index
-     * @return the slot goo contents
+     * @return the slot fluid content
      */
-    default GooContents getSlotGooContents(int slot) {
-        return containerState().getSlotGooContents(slot);
+    default CanisterFluidContent getSlotFluidContent(int slot) {
+        return containerState().getSlotFluidContent(slot);
     }
 
     /**
@@ -89,7 +91,7 @@ public interface ICanisterHolder {
     }
 
     /**
-     * Returns true if the given slot can accept more goo (has remaining capacity).
+     * Returns true if the given slot can accept more fluid (has remaining capacity).
      *
      * @param slot the slot index to check
      * @return true if the slot has a canister with space remaining
@@ -99,34 +101,58 @@ public interface ICanisterHolder {
     }
 
     /**
-     * Inserts goo into the canister at the given slot, capping at capacity.
+     * Inserts fluid into the canister at the given slot, capping at capacity.
      *
-     * @param slot         the slot index to insert into
-     * @param incomingType the goo type to insert
-     * @param volume       volume in microblobs to insert
+     * @param slot   the slot index to insert into
+     * @param fluid  the fluid to insert
+     * @param volume volume in microblobs to insert
      * @return the amount actually inserted
      */
-    default long insertGoo(int slot, GooType incomingType, long volume) {
-        return containerState().insertGoo(slot, incomingType, volume);
+    default long insertFluid(int slot, Fluid fluid, long volume) {
+        return containerState().insertFluid(slot, fluid, volume);
     }
 
     /**
-     * Extracts goo of a specific type from the canister at the given slot.
+     * Convenience: insert goo by type.
+     *
+     * @param slot         the slot index
+     * @param incomingType the goo type to insert
+     * @param volume       volume in microblobs
+     * @return the amount actually inserted
+     */
+    default long insertGoo(int slot, GooType incomingType, long volume) {
+        return insertFluid(slot, GooFluids.SOURCES.get(incomingType).get(), volume);
+    }
+
+    /**
+     * Extracts fluid from the canister at the given slot.
      *
      * @param slot      the slot index to extract from
-     * @param type      the goo type to extract
+     * @param fluid     the fluid to extract
      * @param requested volume in microblobs to extract
      * @return the amount actually extracted
      */
+    default long extractFluid(int slot, Fluid fluid, long requested) {
+        return containerState().extractFluid(slot, fluid, requested);
+    }
+
+    /**
+     * Convenience: extract goo by type.
+     *
+     * @param slot      the slot index
+     * @param type      the goo type to extract
+     * @param requested volume in microblobs
+     * @return the amount actually extracted
+     */
     default long extractGoo(int slot, GooType type, long requested) {
-        return containerState().extractGoo(slot, type, requested);
+        return extractFluid(slot, GooFluids.SOURCES.get(type).get(), requested);
     }
 
     // --- Shared slot lifecycle utilities ---
 
     /**
      * Creates a live fluid handler for the given slot, loaded from the canister
-     * ItemStack's goo contents. The handler's onChange callback syncs back to the
+     * ItemStack's fluid content. The handler's onChange callback syncs back to the
      * item stack via {@link #syncSlotToItemStack}.
      *
      * @param be   the block entity that holds canister slots
@@ -134,13 +160,13 @@ public interface ICanisterHolder {
      * @param <T>  block entity type implementing ICanisterHolder
      * @return a new fluid handler for the slot
      */
-    static <T extends BlockEntity & ICanisterHolder> GooFluidHandler createSlotHandler(T be, int slot) {
+    static <T extends BlockEntity & ICanisterHolder> CanisterSlotFluidHandler createSlotHandler(T be, int slot) {
         ItemStack stack = be.containerState().canisters.get(slot);
         int capacity = (int) ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
-        GooFluidHandler handler = new GooFluidHandler(capacity,
+        CanisterSlotFluidHandler handler = new CanisterSlotFluidHandler(capacity,
             () -> syncSlotToItemStack(be, slot),
             () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0L);
-        handler.loadFrom(CanisterItem.getGooContents(stack));
+        handler.loadFrom(CanisterItem.getFluidContent(stack));
         return handler;
     }
 
@@ -156,7 +182,7 @@ public interface ICanisterHolder {
         SlottedCanisterState state = be.containerState();
         ItemStack stack = state.canisters.get(slot);
         if (stack.isEmpty() || state.slots.handlers()[slot] == null) { return; }
-        CanisterItem.setGooContents(stack, state.slots.handlers()[slot].toGooContents());
+        CanisterItem.setFluidContent(stack, state.slots.handlers()[slot].toFluidContent());
         snapshotSlotStream(be, slot);
         BlockEntitySync.markDirtyAndSync(be);
     }
@@ -171,10 +197,10 @@ public interface ICanisterHolder {
      */
     static <T extends BlockEntity & ICanisterHolder> void snapshotSlotStream(T be, int slot) {
         SlottedCanisterState state = be.containerState();
-        GooFluidHandler h = state.slots.handlers()[slot];
+        CanisterSlotFluidHandler h = state.slots.handlers()[slot];
         if (h == null) { return; }
         long tick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
-        state.slots.streamType()[slot] = h.getStreamType(tick);
+        state.slots.streamType()[slot] = h.getStreamGooType(tick);
         state.slots.streamRate()[slot] = h.getStreamRate(tick);
         state.slots.streamTick()[slot] = tick;
     }

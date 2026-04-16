@@ -22,7 +22,6 @@ final class ScaffoldGraph {
 
     private ScaffoldGraph() {}
 
-    // ── Graph construction ──────────────────────────────────────────────
 
     /**
      * Builds the forward/reverse dependency graphs and collects all recipe items.
@@ -114,7 +113,6 @@ final class ScaffoldGraph {
         return reverse;
     }
 
-    // ── Value propagation ───────────────────────────────────────────────
 
     /**
      * Simulates value propagation through recipes (forward only).
@@ -172,7 +170,6 @@ final class ScaffoldGraph {
         return allInputsValued && valued.add(output);
     }
 
-    // ── Downstream traversal & chain tracing ────────────────────────────
 
     /**
      * Computes all downstream items reachable from a root via the reverse graph.

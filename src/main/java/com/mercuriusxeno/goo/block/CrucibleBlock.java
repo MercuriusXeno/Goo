@@ -186,7 +186,7 @@ public class CrucibleBlock extends BaseEntityBlock {
         return createTickerHelper(type, GooBlockEntities.CRUCIBLE.get(), CrucibleBlockEntity::serverTick);
     }
 
-    /** Dispatches held-item interactions: fuel, bucket, canister, or blob insertion.
+    /** Dispatches held-item interactions: fuel, canister, or blob insertion.
      *
      * @param stack     the item stack
      * @param state     the block state
@@ -238,7 +238,7 @@ public class CrucibleBlock extends BaseEntityBlock {
     }
 
     /**
-     * Tries fuel insertion, bucket pour, and bucket fill in priority order.
+     * Tries fuel insertion in priority order.
      *
      * @param stack    the held item stack
      * @param crucible the crucible block entity
@@ -248,9 +248,7 @@ public class CrucibleBlock extends BaseEntityBlock {
      */
     private static boolean tryAnyFluidInteraction(
             ItemStack stack, CrucibleBlockEntity crucible, Player player, InteractionHand hand) {
-        return CrucibleInteraction.tryInsertFuel(stack, crucible, player)
-            || CrucibleInteraction.tryPourBucket(stack, crucible, player, hand)
-            || CrucibleInteraction.tryFillBucket(stack, crucible, player);
+        return CrucibleInteraction.tryInsertFuel(stack, crucible, player);
     }
 
     /** Handles empty-hand interactions: shift = gasket/fuel removal, bare = goo extraction.

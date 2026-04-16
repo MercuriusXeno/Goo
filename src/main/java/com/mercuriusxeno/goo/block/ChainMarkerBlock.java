@@ -158,6 +158,9 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
             return SELECTION_SHAPE;
         }
+        if (be.getGooType() == GooType.GLOW) {
+            return computeGlowShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
+        }
         return computeOrbShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
     }
 
@@ -175,7 +178,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     protected float getDestroyProgress(@NonNull BlockState state, @NonNull Player player,
             @NonNull BlockGetter level, @NonNull BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be
-                && be.getBehavior() == null) {
+                && isProtectedFromBreaking(be)) {
             return 0.0f;
         }
         return super.getDestroyProgress(state, player, level, pos);
@@ -199,10 +202,14 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
             return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
         }
-        if (be.getBehavior() != null) {
+        if (be.getBehavior() != null && !be.getBehavior().allowsTopOff()) {
             return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
         }
-        tryToggleFlatMode(level, pos, be);
+        if (be.getGooType() == GooType.UNSTABLE && !level.isClientSide()) {
+            be.instantDetonate();
+        } else {
+            tryToggleFlatMode(level, pos, be);
+        }
         return false;
     }
 
@@ -216,7 +223,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!canToggleFlatMode(level, pos)) { return; }
         if (level.isClientSide()) { return; }
         be.toggleFlatMode();
-        level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON,
+        level.playSound(null, pos, SoundEvents.SLIME_SQUISH,
                 SoundSource.BLOCKS, 1.0f,
                 be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
     }
@@ -253,6 +260,21 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         float hz = face.getAxis() == Direction.Axis.Z ? hFace : hPerp;
 
         return box(cx - hx, cy - hy, cz - hz, cx + hx, cy + hy, cz + hz);
+    }
+
+    /**
+     * Computes a voxel shape that exactly matches the glow crystal
+     * that will replace this chain marker on fuse expiry.
+     *
+     * @param stacks   the current stack count
+     * @param face     the placed face direction
+     * @param flatMode true for flat, false for bump
+     * @return the crystal-matched voxel shape
+     */
+    private static VoxelShape computeGlowShape(int stacks, Direction face, boolean flatMode) {
+        GlowCrystalBlock.CrystalSize cs = GlowCrystalBlock.CrystalSize.fromStacks(stacks);
+        double depth = flatMode ? GlowCrystalBlock.FLAT_DEPTH : GlowCrystalBlock.BUMP_DEPTH;
+        return GlowCrystalBlock.shapeFor(face, cs.min, cs.max, depth);
     }
 
     /** Returns the codec for serialization.
@@ -394,8 +416,20 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      */
     private static boolean canToggleFlatMode(Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
-        if (be.getBehavior() != null) { return false; }
+        if (be.getBehavior() != null && !be.getBehavior().allowsTopOff()) { return false; }
         return supportsFlatMode(be.getGooType());
+    }
+
+    /** Returns true if this marker should be unbreakable (punch toggles
+     * flat mode instead). Protects fuse-phase markers and post-fuse
+     * markers whose behavior supports top-off (metal, crystal).
+     *
+     * @param be the chain marker block entity
+     * @return true if breaking should be prevented
+     */
+    private static boolean isProtectedFromBreaking(ChainMarkerBlockEntity be) {
+        if (be.getBehavior() == null) { return true; }
+        return be.getBehavior().allowsTopOff();
     }
 
     /** Goo types that support flat/tunnel mode toggling.

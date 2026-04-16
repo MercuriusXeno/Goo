@@ -1,19 +1,21 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
+import com.mercuriusxeno.goo.registry.GooFluids;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.function.Function;
 
 /**
- * Behavioral component that owns the mutable slot arrays and goo operations
+ * Behavioral component that owns the mutable slot arrays and fluid operations
  * shared by {@link CanisterBlockEntity} and {@link HubBlockEntity}. Each BE
  * holds one instance and delegates {@link ICanisterHolder} methods here,
  * keeping framework overrides and gasket coordination on the BE itself.
@@ -53,13 +55,13 @@ public class SlottedCanisterState {
 
     /** Per-slot arrays for fluid handlers, gasket pushers, and stream visualization state. */
     record CanisterSlotArrays(
-            @Nullable GooFluidHandler[] handlers,
+            @Nullable CanisterSlotFluidHandler[] handlers,
             @Nullable IGasketPusher[] pushers,
             @Nullable GooType[] streamType,
             int[] streamRate,
             long[] streamTick) {
         CanisterSlotArrays(int size) {
-            this(new GooFluidHandler[size], new IGasketPusher[size],
+            this(new CanisterSlotFluidHandler[size], new IGasketPusher[size],
                  new GooType[size], new int[size], new long[size]);
         }
     }
@@ -87,19 +89,32 @@ public class SlottedCanisterState {
     public void onSlotChanged() { syncCallback.run(); }
 
     /**
-     * Returns the goo contents for a slot via its handler, falling back to
-     * the item stack if no handler is wired.
+     * Returns the fluid content for a slot via its handler, falling back to EMPTY.
      *
      * @param slot the slot index
-     * @return the goo contents, or EMPTY
+     * @return the fluid content, or EMPTY
      */
-    public GooContents getSlotGooContents(int slot) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
-        return h != null ? h.toGooContents() : GooContents.EMPTY;
+    public CanisterFluidContent getSlotFluidContent(int slot) {
+        CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
+        return h != null ? h.toFluidContent() : CanisterFluidContent.EMPTY;
     }
 
     /**
-     * Inserts goo into the canister at the given slot via its handler.
+     * Inserts fluid into the canister at the given slot via its handler.
+     *
+     * @param slot   the slot index
+     * @param fluid  the fluid to insert
+     * @param volume volume in microblobs
+     * @return the amount actually inserted
+     */
+    public long insertFluid(int slot, Fluid fluid, long volume) {
+        CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
+        if (h == null) { return 0L; }
+        return h.insertFluid(fluid, (int) Math.min(volume, Integer.MAX_VALUE), false);
+    }
+
+    /**
+     * Convenience: insert goo by type.
      *
      * @param slot         the slot index
      * @param incomingType the goo type to insert
@@ -107,13 +122,25 @@ public class SlottedCanisterState {
      * @return the amount actually inserted
      */
     public long insertGoo(int slot, GooType incomingType, long volume) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
-        if (h == null) { return 0L; }
-        return h.insertGoo(incomingType, (int) Math.min(volume, Integer.MAX_VALUE), false);
+        return insertFluid(slot, GooFluids.SOURCES.get(incomingType).get(), volume);
     }
 
     /**
-     * Extracts goo of a specific type from the canister at the given slot.
+     * Extracts fluid from the canister at the given slot.
+     *
+     * @param slot      the slot index
+     * @param fluid     the fluid to extract
+     * @param requested volume in microblobs
+     * @return the amount actually extracted
+     */
+    public long extractFluid(int slot, Fluid fluid, long requested) {
+        CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
+        if (h == null) { return 0L; }
+        return h.extractFluid(fluid, (int) Math.min(requested, Integer.MAX_VALUE), false);
+    }
+
+    /**
+     * Convenience: extract goo by type.
      *
      * @param slot      the slot index
      * @param type      the goo type to extract
@@ -121,20 +148,18 @@ public class SlottedCanisterState {
      * @return the amount actually extracted
      */
     public long extractGoo(int slot, GooType type, long requested) {
-        GooFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
-        if (h == null) { return 0L; }
-        return h.extractGoo(type, (int) Math.min(requested, Integer.MAX_VALUE), false);
+        return extractFluid(slot, GooFluids.SOURCES.get(type).get(), requested);
     }
 
     /**
-     * Returns true if the given slot can accept more goo (has remaining capacity).
+     * Returns true if the given slot can accept more fluid (has remaining capacity).
      *
      * @param slot the slot index
      * @return true if the slot has space
      */
     public boolean canAccept(int slot) {
         if (slot < 0 || slot >= maxSlots || canisters.get(slot).isEmpty()) { return false; }
-        GooFluidHandler h = slots.handlers()[slot];
+        CanisterSlotFluidHandler h = slots.handlers()[slot];
         if (h == null) { return false; }
         int compression = GooEnchantments.getCompressionLevel(canisters.get(slot));
         return h.totalVolume() < ContainerCapacity.canisterCapacity(compression);
@@ -160,7 +185,7 @@ public class SlottedCanisterState {
      * @param slot the slot index
      * @return the handler, or null
      */
-    public @Nullable GooFluidHandler getSlotFluidHandler(int slot) {
+    public @Nullable CanisterSlotFluidHandler getSlotFluidHandler(int slot) {
         return (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
     }
 
@@ -208,32 +233,52 @@ public class SlottedCanisterState {
     // --- Routing ---
 
     /**
-     * Routes goo across all slots with remaining capacity.
-     * Used by Hub's intake to distribute incoming goo.
+     * Routes fluid across all slots: first tries matching slots, then empty slots.
+     * Used by Hub's intake to distribute incoming fluid.
+     *
+     * @param fluid  the fluid to route
+     * @param amount volume in microblobs
+     * @return the amount routed
+     */
+    public long routeFluid(Fluid fluid, long amount) {
+        long routed = distributeAcrossSlots(fluid, amount);
+        if (routed > 0) { syncCallback.run(); }
+        return routed;
+    }
+
+    /**
+     * Convenience: route goo by type.
      *
      * @param type   the goo type
      * @param amount volume in microblobs
      * @return the amount routed
      */
     public long routeGoo(GooType type, long amount) {
-        long routed = distributeAcrossSlots(type, amount);
-        if (routed > 0) { syncCallback.run(); }
-        return routed;
+        return routeFluid(GooFluids.SOURCES.get(type).get(), amount);
     }
 
     /**
-     * Distributes goo across slots with remaining capacity, returning the total accepted.
-     * @param type the goo type to distribute
-     * @param amount the total volume in microblobs to distribute
+     * Distributes fluid across slots: matching first, then empty.
+     *
+     * @param fluid  the fluid to distribute
+     * @param amount the total volume to distribute
      * @return the total volume accepted across all slots
      */
-    private long distributeAcrossSlots(GooType type, long amount) {
+    private long distributeAcrossSlots(Fluid fluid, long amount) {
         long remaining = amount;
+        // First pass: slots already holding this fluid
         for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            GooFluidHandler handler = slots.handlers()[i];
-            if (handler == null) { continue; }
+            CanisterSlotFluidHandler handler = slots.handlers()[i];
+            if (handler == null || handler.isEmpty() || handler.getFluid() != fluid) { continue; }
             int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
-            remaining -= handler.insertGoo(type, toInsert, false);
+            remaining -= handler.insertFluid(fluid, toInsert, false);
+        }
+        // Second pass: empty slots
+        for (int i = 0; i < maxSlots && remaining > 0; i++) {
+            CanisterSlotFluidHandler handler = slots.handlers()[i];
+            if (handler == null || !handler.isEmpty()) { continue; }
+            int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
+            remaining -= handler.insertFluid(fluid, toInsert, false);
         }
         return amount - remaining;
     }

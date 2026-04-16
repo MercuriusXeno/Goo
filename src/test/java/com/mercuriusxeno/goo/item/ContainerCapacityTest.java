@@ -22,11 +22,6 @@ class ContainerCapacityTest {
     }
 
     @Test
-    void bucketCapIs1000() {
-        assertEquals(1_000L, ContainerCapacity.BUCKET_CAP);
-    }
-
-    @Test
     void blobCapIs64000() {
         assertEquals(64_000L, ContainerCapacity.BLOB_CAP);
     }

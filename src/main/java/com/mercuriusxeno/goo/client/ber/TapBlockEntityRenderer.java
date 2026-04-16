@@ -4,9 +4,9 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -132,24 +132,24 @@ public class TapBlockEntityRenderer
      */
     private static void extractCanisterContents(ItemStack canister, TapRenderState state) {
         state.matrices = GooEnchantments.getCompressionLevel(canister);
-        GooContents contents = CanisterItem.getGooContents(canister);
-        if (contents.isEmpty()) {
+        CanisterFluidContent content = CanisterItem.getFluidContent(canister);
+        if (content.isEmpty()) {
             clearContents(state);
         } else {
-            extractNonEmptyContents(contents, state);
+            extractNonEmptyContents(content, state);
         }
     }
 
     /**
      * Populates goo type and fill ratio from non-empty canister contents.
      *
-     * @param contents the goo contents
-     * @param state the render state to populate
+     * @param content the non-empty canister fluid content
+     * @param state   the render state to populate
      */
-    private static void extractNonEmptyContents(GooContents contents, TapRenderState state) {
+    private static void extractNonEmptyContents(CanisterFluidContent content, TapRenderState state) {
         long capacity = ContainerCapacity.canisterCapacity(state.matrices);
-        state.gooType = contents.largestType();
-        state.fill = Math.min(1f, (float) contents.totalVolume() / capacity);
+        state.gooType = content.getGooType();
+        state.fill = Math.min(1f, (float) content.amount() / capacity);
     }
 
     /**

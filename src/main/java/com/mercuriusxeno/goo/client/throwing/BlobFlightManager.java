@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
+import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.network.BlobFlightPayload;
 import net.minecraft.client.Minecraft;
@@ -63,12 +64,41 @@ public final class BlobFlightManager {
         while (it.hasNext()) {
             BlobFlight flight = it.next().getValue();
             flight.ticksElapsed++;
-            if (flight.ticksElapsed >= flight.travelTicks) {
-                if (flight.targetEntityId < 0) {
-                    GloveThrowSender.onFlightArrived(flight.targetBlockPos);
-                }
+            if (flight.gooType == GooType.GLOW) {
+                tickGlowFlight(it, flight);
+            } else if (flight.ticksElapsed >= flight.travelTicks) {
+                fireArrival(flight);
                 it.remove();
             }
+        }
+    }
+
+    /**
+     * Glow flights have two phases: extend (head travels) then collapse
+     * (tail chases). Effect fires when head arrives; flight removed when
+     * tail is consumed.
+     *
+     * @param it     the iterator for safe removal
+     * @param flight the glow flight
+     */
+    private static void tickGlowFlight(
+            Iterator<Map.Entry<Integer, BlobFlight>> it, BlobFlight flight) {
+        if (flight.ticksElapsed == flight.travelTicks) {
+            fireArrival(flight);
+        }
+        if (flight.ticksElapsed >= flight.travelTicks + flight.travelTicks) {
+            it.remove();
+        }
+    }
+
+    /**
+     * Fires the arrival callback for block-target flights.
+     *
+     * @param flight the arriving flight
+     */
+    private static void fireArrival(BlobFlight flight) {
+        if (flight.targetEntityId < 0) {
+            GloveThrowSender.onFlightArrived(flight.targetBlockPos);
         }
     }
 
@@ -96,6 +126,13 @@ public final class BlobFlightManager {
      */
     private static Vec3 resolveBlockTargetPos(BlobFlightPayload payload) {
         BlockPos pos = payload.targetPos();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null
+                && mc.level.getBlockState(pos).getBlock() instanceof GlowCrystalBlock) {
+            Direction face = (payload.targetFace() >= 0 && payload.targetFace() < Direction.values().length)
+                    ? Direction.values()[payload.targetFace()] : Direction.UP;
+            return TargetResult.glowCrystal(pos, face).resolveEndpoint();
+        }
         Direction face = (payload.targetFace() >= 0 && payload.targetFace() < Direction.values().length)
                 ? Direction.values()[payload.targetFace()] : Direction.UP;
         return TargetResult.block(pos, face).resolveEndpoint();
@@ -161,6 +198,7 @@ public final class BlobFlightManager {
          * @return the peak height in blocks above the start-end line
          */
         private double peak() {
+            if (gooType == GooType.GLOW) { return 0; }
             return grannyArc
                     ? ThrowArc.grannyPeak(travelTicks)
                     : ThrowArc.basePeak(travelTicks);

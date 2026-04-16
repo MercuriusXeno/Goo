@@ -26,7 +26,7 @@ final class ArcRenderer {
     /** Scroll speed in world units per second - dashes flow toward the target. */
     private static final float SCROLL_SPEED = 1.5f;
     /** Core alpha for the arc dashes. */
-    private static final int ARC_ALPHA = 120;
+    private static final int ARC_ALPHA = 80;
     /** Distance between polyline sample points on the arc. */
     private static final float SAMPLE_SPACING = 0.05f;
     /** Number of bloom passes for the glow effect (core + outer halos). */
@@ -66,13 +66,14 @@ final class ArcRenderer {
      * @param rgb          the RGB color for tinting
      * @param partialTick  the partial tick for animation
      * @param grannyArc    if true, uses the boosted granny-arc peak height
+     * @param straightLine if true, peak is zero (straight line, no arc)
      */
     static void renderTargetArc(
             PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
             Camera camera, Player player, Vec3 end,
-            int rgb, float partialTick, boolean grannyArc) {
+            int rgb, float partialTick, boolean grannyArc, boolean straightLine) {
         Vec3 start = GooTargetHighlighter.getGloveHandPosition(player, camera);
-        Vec3[] points = sampleArcPoints(start, end, grannyArc);
+        Vec3[] points = sampleArcPoints(start, end, grannyArc, straightLine);
         float dashOffset = computeDashOffset(partialTick);
         Minecraft mc = Minecraft.getInstance();
         emitDashedGlow(poseStack, bufferSource, camera, points,
@@ -85,13 +86,15 @@ final class ArcRenderer {
      *
      * @param start     arc origin (hand position)
      * @param end       arc destination (target center)
-     * @param grannyArc true for boosted granny-arc peak height
+     * @param grannyArc    true for boosted granny-arc peak height
+     * @param straightLine true for zero peak (straight line)
      * @return sampled polyline points
      */
-    private static Vec3[] sampleArcPoints(Vec3 start, Vec3 end, boolean grannyArc) {
+    private static Vec3[] sampleArcPoints(Vec3 start, Vec3 end,
+            boolean grannyArc, boolean straightLine) {
         double distance = start.distanceTo(end);
         double travelTicks = ThrowArc.travelTicks(distance);
-        double peak = computeArcPeak(travelTicks, grannyArc);
+        double peak = straightLine ? 0 : computeArcPeak(travelTicks, grannyArc);
         int segments = Mth.clamp(
                 (int) (distance / SAMPLE_SPACING),
                 MIN_ARC_SEGMENTS, MAX_ARC_SEGMENTS);
