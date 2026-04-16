@@ -20,26 +20,26 @@ import org.jspecify.annotations.Nullable;
  * @param fluid  the stored fluid, or {@link Fluids#EMPTY} if none
  * @param amount the volume in microblobs (mB), 0 if empty
  */
-public record CanisterFluidContent(Fluid fluid, long amount) {
+public record CanisterFluidContent(Fluid fluid, int amount) {
 
     /** Empty canister with no fluid. */
     public static final CanisterFluidContent EMPTY = new CanisterFluidContent(Fluids.EMPTY, 0);
 
-    /** Persistent codec: fluid as registry name string, amount as long. */
+    /** Persistent codec: fluid as registry name string, amount as int. */
     public static final Codec<CanisterFluidContent> CODEC = RecordCodecBuilder.create(instance ->
         instance.group(
             BuiltInRegistries.FLUID.byNameCodec().fieldOf("fluid").forGetter(CanisterFluidContent::fluid),
-            Codec.LONG.fieldOf("amount").forGetter(CanisterFluidContent::amount)
+            Codec.INT.fieldOf("amount").forGetter(CanisterFluidContent::amount)
         ).apply(instance, CanisterFluidContent::new)
     );
 
-    /** Network codec: fluid as registry int ID, amount as VAR_LONG. */
+    /** Network codec: fluid as registry int ID, amount as VAR_INT. */
     public static final StreamCodec<ByteBuf, CanisterFluidContent> STREAM_CODEC =
         new StreamCodec<>() {
             @Override
             public CanisterFluidContent decode(ByteBuf buf) {
                 int fluidId = ByteBufCodecs.VAR_INT.decode(buf);
-                long vol = ByteBufCodecs.VAR_LONG.decode(buf);
+                int vol = ByteBufCodecs.VAR_INT.decode(buf);
                 Fluid f = BuiltInRegistries.FLUID.byId(fluidId);
                 return new CanisterFluidContent(f, vol);
             }
@@ -47,7 +47,7 @@ public record CanisterFluidContent(Fluid fluid, long amount) {
             @Override
             public void encode(ByteBuf buf, CanisterFluidContent value) {
                 ByteBufCodecs.VAR_INT.encode(buf, BuiltInRegistries.FLUID.getId(value.fluid));
-                ByteBufCodecs.VAR_LONG.encode(buf, value.amount);
+                ByteBufCodecs.VAR_INT.encode(buf, value.amount);
             }
         };
 
@@ -86,7 +86,7 @@ public record CanisterFluidContent(Fluid fluid, long amount) {
      * @param addAmount the volume to add in microblobs
      * @return new content with the addition, or this if incompatible
      */
-    public CanisterFluidContent withAdded(Fluid addFluid, long addAmount) {
+    public CanisterFluidContent withAdded(Fluid addFluid, int addAmount) {
         if (addAmount <= 0) { return this; }
         if (isEmpty()) { return new CanisterFluidContent(addFluid, addAmount); }
         if (fluid != addFluid) { return this; }
@@ -99,9 +99,9 @@ public record CanisterFluidContent(Fluid fluid, long amount) {
      * @param removeAmount the volume to remove in microblobs
      * @return new content with the removal applied
      */
-    public CanisterFluidContent withRemoved(long removeAmount) {
+    public CanisterFluidContent withRemoved(int removeAmount) {
         if (removeAmount <= 0 || isEmpty()) { return this; }
-        long remaining = amount - removeAmount;
+        int remaining = amount - removeAmount;
         return remaining > 0 ? new CanisterFluidContent(fluid, remaining) : EMPTY;
     }
 
@@ -113,13 +113,13 @@ public record CanisterFluidContent(Fluid fluid, long amount) {
      * @param capacity the total capacity of the container
      * @return new content with the capped addition
      */
-    public CanisterFluidContent withCappedAdd(Fluid addFluid, long addAmount, long capacity) {
+    public CanisterFluidContent withCappedAdd(Fluid addFluid, int addAmount, int capacity) {
         if (addAmount <= 0) { return this; }
         if (!isEmpty() && fluid != addFluid) { return this; }
-        long currentAmount = isEmpty() ? 0 : amount;
-        long space = capacity - currentAmount;
+        int currentAmount = isEmpty() ? 0 : amount;
+        int space = capacity - currentAmount;
         if (space <= 0) { return this; }
-        long accepted = Math.min(addAmount, space);
+        int accepted = Math.min(addAmount, space);
         Fluid target = isEmpty() ? addFluid : fluid;
         return new CanisterFluidContent(target, currentAmount + accepted);
     }
@@ -132,11 +132,11 @@ public record CanisterFluidContent(Fluid fluid, long amount) {
      * @param capacity the total capacity of the container
      * @return the amount that would be accepted
      */
-    public long cappedAddAmount(Fluid addFluid, long addAmount, long capacity) {
+    public int cappedAddAmount(Fluid addFluid, int addAmount, int capacity) {
         if (addAmount <= 0) { return 0; }
         if (!isEmpty() && fluid != addFluid) { return 0; }
-        long currentAmount = isEmpty() ? 0 : amount;
-        long space = capacity - currentAmount;
+        int currentAmount = isEmpty() ? 0 : amount;
+        int space = capacity - currentAmount;
         if (space <= 0) { return 0; }
         return Math.min(addAmount, space);
     }

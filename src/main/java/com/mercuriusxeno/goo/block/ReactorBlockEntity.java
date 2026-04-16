@@ -209,8 +209,8 @@ public class ReactorBlockEntity extends BlockEntity
      * @param fluid   the fluid to sum
      * @return total mB available
      */
-    private long getAvailableFluid(CanisterBlockEntity inputBe, Fluid fluid) {
-        long total = 0;
+    private int getAvailableFluid(CanisterBlockEntity inputBe, Fluid fluid) {
+        int total = 0;
         for (int slot : INPUT_SLOTS) {
             ItemStack stack = inputBe.getCanister(slot);
             if (stack.isEmpty()) { continue; }
@@ -229,10 +229,10 @@ public class ReactorBlockEntity extends BlockEntity
      */
     private int computeBatches(CanisterBlockEntity inputBe,
             GooReaction reaction) {
-        long minBatches = Long.MAX_VALUE;
+        int minBatches = Integer.MAX_VALUE;
         for (GooReaction.FluidEntry entry : reaction.inputs()) {
-            long available = getAvailableFluid(inputBe, entry.fluid());
-            long possible = available / entry.amount();
+            int available = getAvailableFluid(inputBe, entry.fluid());
+            int possible = available / entry.amount();
             minBatches = Math.min(minBatches, possible);
         }
         if (minBatches <= 0) { return 0; }
@@ -261,15 +261,15 @@ public class ReactorBlockEntity extends BlockEntity
      * @param amount  total mB to drain
      */
     private void consumeFluid(CanisterBlockEntity inputBe,
-            Fluid fluid, long amount) {
-        long remaining = amount;
+            Fluid fluid, int amount) {
+        int remaining = amount;
         for (int slot : INPUT_SLOTS) {
             if (remaining <= 0) { break; }
             ItemStack stack = inputBe.getCanister(slot);
             if (stack.isEmpty()) { continue; }
             CanisterFluidContent content = CanisterItem.getFluidContent(stack);
             if (content.fluid() != fluid) { continue; }
-            long drain = Math.min(remaining, content.amount());
+            int drain = Math.min(remaining, content.amount());
             CanisterItem.setFluidContent(stack,
                     new CanisterFluidContent(fluid, content.amount() - drain));
             remaining -= drain;
@@ -288,7 +288,7 @@ public class ReactorBlockEntity extends BlockEntity
         ItemStack outStack = getOutputCanister();
         if (outStack.isEmpty()) { return; }
         for (GooReaction.FluidEntry entry : outputs) {
-            long amount = entry.amount() * batches * rate;
+            int amount = entry.amount() * batches * rate;
             CanisterItem.addFluid(outStack, entry.fluid(), amount);
         }
     }

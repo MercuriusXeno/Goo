@@ -175,8 +175,8 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
      *
      * @return the pool volume
      */
-    public long getPoolVolume() {
-        return meltingItem.isEmpty() ? 0L : PartiallyMeltedItem.getContents(meltingItem).totalVolume();
+    public int getPoolVolume() {
+        return meltingItem.isEmpty() ? 0 : PartiallyMeltedItem.getContents(meltingItem).totalVolume();
     }
 
     /** Returns the fuel rod's remaining fraction (0.0 = depleted, 1.0 = fresh).

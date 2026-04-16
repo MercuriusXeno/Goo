@@ -60,11 +60,11 @@ public class GooDataComponents {
                 .build());
 
     /** Volume of goo in a blob item, measured in microblobs (mB). */
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Long>> BLOB_VOLUME =
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> BLOB_VOLUME =
         DATA_COMPONENTS.register("blob_volume",
-            () -> DataComponentType.<Long>builder()
-                .persistent(Codec.LONG)
-                .networkSynchronized(ByteBufCodecs.VAR_LONG)
+            () -> DataComponentType.<Integer>builder()
+                .persistent(Codec.INT)
+                .networkSynchronized(ByteBufCodecs.VAR_INT)
                 .build());
 
     /** Canisters stored inside a hub block item. */

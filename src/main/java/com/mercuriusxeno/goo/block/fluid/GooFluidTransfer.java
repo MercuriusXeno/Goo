@@ -23,7 +23,7 @@ public final class GooFluidTransfer {
      * @param volume  volume in microblobs
      * @return the amount actually inserted
      */
-    public static long insert(ResourceHandler<FluidResource> handler, GooType type, long volume) {
+    public static int insert(ResourceHandler<FluidResource> handler, GooType type, int volume) {
         int index = type.ordinal();
         FluidResource resource = FluidResource.of(GooFluids.SOURCES.get(type).get());
         int amount = (int) Math.min(volume, Integer.MAX_VALUE);

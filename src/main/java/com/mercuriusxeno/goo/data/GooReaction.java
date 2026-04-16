@@ -31,13 +31,13 @@ public record GooReaction(
      * @param fluid  the fluid
      * @param amount mB consumed or produced per batch
      */
-    public record FluidEntry(Fluid fluid, long amount) {
+    public record FluidEntry(Fluid fluid, int amount) {
 
         /** Codec for a single fluid entry. */
         public static final Codec<FluidEntry> CODEC = RecordCodecBuilder.create(inst -> inst.group(
                 BuiltInRegistries.FLUID.byNameCodec()
                         .fieldOf("fluid").forGetter(FluidEntry::fluid),
-                Codec.LONG.fieldOf("amount").forGetter(FluidEntry::amount)
+                Codec.INT.fieldOf("amount").forGetter(FluidEntry::amount)
         ).apply(inst, FluidEntry::new));
     }
 

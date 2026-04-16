@@ -29,10 +29,10 @@ public final class CrucibleMath {
      * @param matrices  the matrix upgrade count
      * @return the long value
      */
-    static long extractionRate(long remaining, int matrices) {
-        if (remaining <= 0) { return 1L; }
+    static int extractionRate(int remaining, int matrices) {
+        if (remaining <= 0) { return 1; }
         double exponent = computeExponent(matrices);
-        return Math.max(1L, (long) Math.floor(Math.pow(remaining, exponent)));
+        return Math.max(1,     (int) Math.floor(Math.pow(remaining, exponent)));
     }
 
     /** Computes the effective exponent from matrix count, clamped to [0, 5].
@@ -67,10 +67,10 @@ public final class CrucibleMath {
      * @param rate     the extraction rate in mB/tick
      * @return the computed drain shares
      */
-    static Map<GooType, Long> computeDrainShares(GooContents contents, long rate) {
-        Map<GooType, Long> shares = new EnumMap<>(GooType.class);
-        long totalVolume = contents.totalVolume();
-        long allocated = allocateProportional(shares, contents, rate, totalVolume);
+    static Map<GooType, Integer> computeDrainShares(GooContents contents, int rate) {
+        Map<GooType, Integer> shares = new EnumMap<>(GooType.class);
+        int totalVolume = contents.totalVolume();
+        int allocated = allocateProportional(shares, contents, rate, totalVolume);
         distributeRemainder(shares, contents, rate, allocated);
         return shares;
     }
@@ -83,12 +83,12 @@ public final class CrucibleMath {
      * @param totalVolume the total goo volume
      * @return the sum of all allocated shares
      */
-    private static long allocateProportional(Map<GooType, Long> shares,
-            GooContents contents, long rate, long totalVolume) {
-        long allocated = 0;
-        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
-            long available = entry.getValue();
-            long share = Math.min(Math.max(1L, rate * available / totalVolume), available);
+    private static int allocateProportional(Map<GooType, Integer> shares,
+            GooContents contents, int rate, int totalVolume) {
+        int allocated = 0;
+        for (Map.Entry<GooType, Integer> entry : contents.getAll().entrySet()) {
+            int available = entry.getValue();
+            int share = Math.min(Math.max(1, rate * available / totalVolume), available);
             shares.put(entry.getKey(), share);
             allocated += share;
         }
@@ -104,14 +104,14 @@ public final class CrucibleMath {
      * @param rate      the extraction rate in mB/tick
      * @param allocated the total allocated so far
      */
-    private static void distributeRemainder(Map<GooType, Long> shares,
-            GooContents contents, long rate, long allocated) {
-        long remainder = rate - allocated;
+    private static void distributeRemainder(Map<GooType, Integer> shares,
+            GooContents contents, int rate, int allocated) {
+        int remainder = rate - allocated;
         if (remainder <= 0) { return; }
         GooType largest = contents.largestType();
         if (largest == null) { return; }
-        long available = contents.getVolume(largest);
-        long current = shares.getOrDefault(largest, 0L);
+        int available = contents.getVolume(largest);
+        int current = shares.getOrDefault(largest, 0);
         shares.put(largest, Math.min(current + remainder, available));
     }
 }

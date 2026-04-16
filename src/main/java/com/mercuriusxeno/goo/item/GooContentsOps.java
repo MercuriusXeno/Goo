@@ -25,10 +25,10 @@ public final class GooContentsOps {
      * @param capacity maximum total volume the stack may hold, in microblobs
      * @return the amount actually accepted (0 if full or non-positive input)
      */
-    public static long addGoo(ItemStack stack, GooType type, long amount, long capacity) {
+    public static int addGoo(ItemStack stack, GooType type, int amount, int capacity) {
         if (amount <= 0) { return 0; }
         GooContents contents = getContents(stack);
-        long accepted = contents.cappedAddAmount(amount, capacity);
+        int accepted = contents.cappedAddAmount(amount, capacity);
         if (accepted <= 0) { return 0; }
         setContents(stack, contents.withAdded(type, accepted));
         return accepted;
@@ -43,11 +43,11 @@ public final class GooContentsOps {
      * @param amount desired volume to remove, in microblobs
      * @return the amount actually removed
      */
-    public static long removeGoo(ItemStack stack, GooType type, long amount) {
+    public static int removeGoo(ItemStack stack, GooType type, int amount) {
         GooContents contents = getContents(stack);
         if (contents.isEmpty()) { return 0; }
-        long available = contents.getVolume(type);
-        long toRemove = Math.min(amount, available);
+        int available = contents.getVolume(type);
+        int toRemove = Math.min(amount, available);
         if (toRemove <= 0) { return 0; }
         setContents(stack, contents.withRemoved(type, toRemove));
         return toRemove;

@@ -39,7 +39,7 @@ public class CrucibleBlockEntityRenderer
      * Volume at which the logarithmic curve reaches ~1.0 (full basin).
      * Tunable: higher values make the curve more gradual.
      */
-    static final long LIQUID_LOG_CAP = 64_000L;
+    static final int LIQUID_LOG_CAP = 64_000;
 
     // -- Color constants --
 
@@ -118,7 +118,7 @@ public class CrucibleBlockEntityRenderer
      */
     private static void submitLiquidLevel(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CrucibleRenderState state) {
-        long totalGoo = state.poolVolume + state.reservoirVolume;
+        int totalGoo = state.poolVolume + state.reservoirVolume;
         if (totalGoo <= 0 || state.dominantType == null) { return; }
 
         float fillFraction = computeLogFill(totalGoo, LIQUID_LOG_CAP);
@@ -228,7 +228,7 @@ public class CrucibleBlockEntityRenderer
      * @param cap the log curve saturation cap
      * @return the computed logFill
      */
-    static float computeLogFill(long volume, long cap) {
+    static float computeLogFill(int volume, int cap) {
         if (volume <= 0) { return 0f; }
         if (volume >= cap) { return 1f; }
         return (float) (Math.log(1.0 + volume) / Math.log(1.0 + cap));

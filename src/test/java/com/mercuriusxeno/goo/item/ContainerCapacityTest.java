@@ -13,49 +13,49 @@ class ContainerCapacityTest {
 
     @Test
     void canisterBaseIs1048576() {
-        assertEquals(1_048_576L, ContainerCapacity.CANISTER_BASE);
+        assertEquals(1_048_576, ContainerCapacity.CANISTER_BASE);
     }
 
     @Test
     void vatBaseIs33554432() {
-        assertEquals(33_554_432L, ContainerCapacity.VAT_BASE);
+        assertEquals(33_554_432, ContainerCapacity.VAT_BASE);
     }
 
     @Test
     void blobCapIs64000() {
-        assertEquals(64_000L, ContainerCapacity.BLOB_CAP);
+        assertEquals(64_000, ContainerCapacity.BLOB_CAP);
     }
 
     // -- canister capacity at each matrix level --
 
     @Test
     void canisterCapacity_0matrices() {
-        assertEquals(1_048_576L, ContainerCapacity.canisterCapacity(0));
+        assertEquals(1_048_576, ContainerCapacity.canisterCapacity(0));
     }
 
     @Test
     void canisterCapacity_1matrix() {
-        assertEquals(2_097_152L, ContainerCapacity.canisterCapacity(1));
+        assertEquals(2_097_152, ContainerCapacity.canisterCapacity(1));
     }
 
     @Test
     void canisterCapacity_2matrices() {
-        assertEquals(4_194_304L, ContainerCapacity.canisterCapacity(2));
+        assertEquals(4_194_304, ContainerCapacity.canisterCapacity(2));
     }
 
     @Test
     void canisterCapacity_3matrices() {
-        assertEquals(8_388_608L, ContainerCapacity.canisterCapacity(3));
+        assertEquals(8_388_608, ContainerCapacity.canisterCapacity(3));
     }
 
     @Test
     void canisterCapacity_4matrices() {
-        assertEquals(16_777_216L, ContainerCapacity.canisterCapacity(4));
+        assertEquals(16_777_216, ContainerCapacity.canisterCapacity(4));
     }
 
     @Test
     void canisterCapacity_5matrices() {
-        assertEquals(33_554_432L, ContainerCapacity.canisterCapacity(5));
+        assertEquals(33_554_432, ContainerCapacity.canisterCapacity(5));
     }
 
     @Test
@@ -68,17 +68,17 @@ class ContainerCapacityTest {
 
     @Test
     void vatCapacity_0compression() {
-        assertEquals(33_554_432L, ContainerCapacity.vatCapacity(0)); // 2^25
+        assertEquals(33_554_432, ContainerCapacity.vatCapacity(0)); // 2^25
     }
 
     @Test
     void vatCapacity_1compression() {
-        assertEquals(67_108_864L, ContainerCapacity.vatCapacity(1)); // 2^26
+        assertEquals(67_108_864, ContainerCapacity.vatCapacity(1)); // 2^26
     }
 
     @Test
     void vatCapacity_5compression() {
-        assertEquals(1_073_741_824L, ContainerCapacity.vatCapacity(5)); // 2^30
+        assertEquals(1_073_741_824, ContainerCapacity.vatCapacity(5)); // 2^30
     }
 
     @Test

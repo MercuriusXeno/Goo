@@ -28,7 +28,7 @@ public final class OmniblobAbsorb {
      * @param volume stored volume in microblobs
      * @param age    current age of the candidate in ticks
      */
-    public record Candidate(int id, long volume, int age) {}
+    public record Candidate(int id, int volume, int age) {}
 
     /**
      * Result of an absorb pass.
@@ -37,7 +37,7 @@ public final class OmniblobAbsorb {
      * @param age        new age for the absorber (min across participants)
      * @param discardIds ids of absorbed candidates in iteration order
      */
-    public record Result(long volume, int age, List<Integer> discardIds) {}
+    public record Result(int volume, int age, List<Integer> discardIds) {}
 
     /**
      * Computes the post-merge volume, new age, and discard list.
@@ -51,9 +51,9 @@ public final class OmniblobAbsorb {
      * @param candidates nearby same-type omniblob entities
      * @return the combined volume, new age, and list of candidate ids to discard
      */
-    public static Result compute(int selfId, long selfVolume, int selfAge,
+    public static Result compute(int selfId, int selfVolume, int selfAge,
             List<Candidate> candidates) {
-        long total = selfVolume;
+        int total = selfVolume;
         int minAge = selfAge;
         List<Integer> discard = new ArrayList<>();
         for (Candidate c : candidates) {

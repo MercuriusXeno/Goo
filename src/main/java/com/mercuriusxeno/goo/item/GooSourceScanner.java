@@ -32,8 +32,8 @@ public final class GooSourceScanner {
      * @param player the player whose inventory to scan
      * @return map of goo type to total available mB
      */
-    public static Map<GooType, Long> aggregateAvailable(Player player) {
-        Map<GooType, Long> totals = new EnumMap<>(GooType.class);
+    public static Map<GooType, Integer> aggregateAvailable(Player player) {
+        Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
         Inventory inv = player.getInventory();
 
         for (int i = MAIN_START; i < MAIN_END; i++) {
@@ -54,10 +54,10 @@ public final class GooSourceScanner {
      * @param amount the amount in mB to deplete
      * @return actual mB depleted
      */
-    public static long deplete(Player player, GooType type, long amount) {
+    public static int deplete(Player player, GooType type, int amount) {
         if (amount <= 0) { return 0; }
 
-        long remaining = depleteAllPasses(player.getInventory(), type, amount);
+        int remaining = depleteAllPasses(player.getInventory(), type, amount);
         return amount - remaining;
     }
 
@@ -69,8 +69,8 @@ public final class GooSourceScanner {
      * @param remaining the amount still to deplete
      * @return the amount remaining after all passes
      */
-    private static long depleteAllPasses(Inventory inv, GooType type, long remaining) {
-        long left = depletePass(inv, type, remaining, GooBlobItem.class);
+    private static int depleteAllPasses(Inventory inv, GooType type, int remaining) {
+        int left = depletePass(inv, type, remaining, GooBlobItem.class);
         if (left > 0) { left = depletePass(inv, type, left, GooOmniblobItem.class); }
         if (left > 0) { left = depletePass(inv, type, left, CanisterItem.class); }
         if (left > 0) { left = depletePass(inv, type, left, VatBlockItem.class); }
@@ -86,7 +86,7 @@ public final class GooSourceScanner {
      * @param amount minimum mB required
      * @return true if sufficient goo is available
      */
-    public static boolean hasEnough(Player player, GooType type, long amount) {
+    public static boolean hasEnough(Player player, GooType type, int amount) {
         return amount <= 0 || scanForThreshold(player.getInventory(), type, amount) >= amount;
     }
 
@@ -98,8 +98,8 @@ public final class GooSourceScanner {
      * @param threshold minimum mB to find before stopping
      * @return total mB found (may be less than threshold if insufficient)
      */
-    private static long scanForThreshold(Inventory inv, GooType type, long threshold) {
-        long found = 0;
+    private static int scanForThreshold(Inventory inv, GooType type, int threshold) {
+        int found = 0;
         for (int i = MAIN_START; i < MAIN_END && found < threshold; i++) {
             found += volumeOfType(inv.getItem(i), type);
         }
@@ -117,7 +117,7 @@ public final class GooSourceScanner {
      * @param stack  the item stack to scan
      * @param totals the running totals map
      */
-    private static void scanStack(ItemStack stack, Map<GooType, Long> totals) {
+    private static void scanStack(ItemStack stack, Map<GooType, Integer> totals) {
         if (stack.isEmpty()) { return; }
 
         if (stack.getItem() instanceof GooBlobItem blob) {
@@ -135,7 +135,7 @@ public final class GooSourceScanner {
      * @param stack  the item stack to scan
      * @param totals the running totals map
      */
-    private static void scanContainerStack(ItemStack stack, Map<GooType, Long> totals) {
+    private static void scanContainerStack(ItemStack stack, Map<GooType, Integer> totals) {
         if (stack.getItem() instanceof CanisterItem) {
             CanisterFluidContent content = CanisterItem.getFluidContent(stack);
             GooType type = content.getGooType();
@@ -153,8 +153,8 @@ public final class GooSourceScanner {
      * @param totals  the running totals map
      * @param entries the entries to merge
      */
-    private static void addAllEntries(Map<GooType, Long> totals, Map<GooType, Long> entries) {
-        for (Map.Entry<GooType, Long> e : entries.entrySet()) {
+    private static void addAllEntries(Map<GooType, Integer> totals, Map<GooType, Integer> entries) {
+        for (Map.Entry<GooType, Integer> e : entries.entrySet()) {
             addToMap(totals, e.getKey(), e.getValue());
         }
     }
@@ -166,9 +166,9 @@ public final class GooSourceScanner {
      * @param type  the goo type to look for
      * @return volume in microblobs
      */
-    private static long volumeOfType(ItemStack stack, GooType type) {
+    private static int volumeOfType(ItemStack stack, GooType type) {
         if (stack.isEmpty()) { return 0; }
-        long loose = looseGooVolume(stack, type);
+        int loose = looseGooVolume(stack, type);
         return loose > 0 ? loose : containerVolumeOfType(stack, type);
     }
 
@@ -179,7 +179,7 @@ public final class GooSourceScanner {
      * @param type  the goo type to match
      * @return volume in microblobs, or 0 if not a matching loose goo
      */
-    private static long looseGooVolume(ItemStack stack, GooType type) {
+    private static int looseGooVolume(ItemStack stack, GooType type) {
         if (stack.getItem() instanceof GooBlobItem blob && blob.getGooType() == type) {
             return stack.getCount() * BlobStacks.MB_PER_BLOB;
         }
@@ -196,7 +196,7 @@ public final class GooSourceScanner {
      * @param type  the goo type to look for
      * @return volume in microblobs, or 0 if not a container
      */
-    private static long containerVolumeOfType(ItemStack stack, GooType type) {
+    private static int containerVolumeOfType(ItemStack stack, GooType type) {
         if (stack.getItem() instanceof CanisterItem) {
             CanisterFluidContent content = CanisterItem.getFluidContent(stack);
             return (content.getGooType() == type) ? content.amount() : 0;
@@ -219,8 +219,8 @@ public final class GooSourceScanner {
      * @param sourceClass the item class to target in this pass
      * @return the remaining amount after this pass
      */
-    private static long depletePass(Inventory inv, GooType type, long remaining, Class<?> sourceClass) {
-        long left = remaining;
+    private static int depletePass(Inventory inv, GooType type, int remaining, Class<?> sourceClass) {
+        int left = remaining;
         for (int i = MAIN_START; i < MAIN_END && left > 0; i++) {
             left = depleteStack(inv.getItem(i), type, left, sourceClass);
         }
@@ -239,7 +239,7 @@ public final class GooSourceScanner {
      * @param sourceClass the item class to match
      * @return the remaining amount after depletion
      */
-    private static long depleteStack(ItemStack stack, GooType type, long remaining, Class<?> sourceClass) {
+    private static int depleteStack(ItemStack stack, GooType type, int remaining, Class<?> sourceClass) {
         if (stack.isEmpty()) { return remaining; }
 
         if (sourceClass == GooBlobItem.class) {
@@ -259,7 +259,7 @@ public final class GooSourceScanner {
      * @param remaining the amount still to deplete
      * @return the remaining amount after depletion
      */
-    private static long depleteBlobStack(ItemStack stack, GooType type, long remaining) {
+    private static int depleteBlobStack(ItemStack stack, GooType type, int remaining) {
         if (!(stack.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) {
             return remaining;
         }
@@ -276,12 +276,12 @@ public final class GooSourceScanner {
      * @param remaining the amount still to deplete
      * @return the remaining amount after depletion
      */
-    private static long depleteOmniblobStack(ItemStack stack, GooType type, long remaining) {
+    private static int depleteOmniblobStack(ItemStack stack, GooType type, int remaining) {
         if (!(stack.getItem() instanceof GooOmniblobItem omni) || omni.getGooType() != type) {
             return remaining;
         }
-        long volume = GooOmniblobItem.getVolume(stack);
-        long take = Math.min(remaining, volume);
+        int volume = GooOmniblobItem.getVolume(stack);
+        int take = Math.min(remaining, volume);
         reduceOmniblobVolume(stack, volume - take);
         return remaining - take;
     }
@@ -292,7 +292,7 @@ public final class GooSourceScanner {
      * @param stack      the omniblob item stack
      * @param newVolume  the volume to set (destroyed if <= 0)
      */
-    private static void reduceOmniblobVolume(ItemStack stack, long newVolume) {
+    private static void reduceOmniblobVolume(ItemStack stack, int newVolume) {
         if (newVolume <= 0) {
             stack.setCount(0);
         } else {
@@ -309,7 +309,7 @@ public final class GooSourceScanner {
      * @param sourceClass the item class to match
      * @return the remaining amount after depletion
      */
-    private static long depleteContainerStack(ItemStack stack, GooType type, long remaining, Class<?> sourceClass) {
+    private static int depleteContainerStack(ItemStack stack, GooType type, int remaining, Class<?> sourceClass) {
         if (sourceClass == CanisterItem.class && stack.getItem() instanceof CanisterItem) {
             return remaining - CanisterItem.removeGoo(stack, type, remaining);
         }
@@ -328,8 +328,8 @@ public final class GooSourceScanner {
      * @param type   the goo type
      * @param amount the amount to add
      */
-    private static void addToMap(Map<GooType, Long> map, GooType type, long amount) {
-        map.merge(type, amount, Long::sum);
+    private static void addToMap(Map<GooType, Integer> map, GooType type, int amount) {
+        map.merge(type, amount, Integer::sum);
     }
 
     /**
@@ -339,7 +339,7 @@ public final class GooSourceScanner {
      * @param b the divisor
      * @return the ceiling of a/b
      */
-    private static long ceilDiv(long a, long b) {
+    private static int ceilDiv(int a, int b) {
         return (a + b - 1) / b;
     }
 }

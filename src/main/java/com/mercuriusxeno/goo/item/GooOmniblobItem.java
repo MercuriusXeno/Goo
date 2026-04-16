@@ -32,7 +32,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     /** Separator between type name and tier in display name. */
     private static final String NAME_SEPARATOR = " ";
     /** Divisor for splitting omniblob volume in half. */
-    private static final long HALF_DIVISOR = 2;
+    private static final int HALF_DIVISOR = 2;
     /** Same-type neighbors within this radius gravitate toward each other. */
     private static final double GRAVITATE_RADIUS = 3.0;
     /** Near-collision radius: once the anchor is this close to a neighbor, it absorbs. */
@@ -116,9 +116,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param stack the omniblob item stack
      * @return volume in microblobs, or 0 if unset
      */
-    public static long getVolume(ItemStack stack) {
-        Long vol = stack.get(GooDataComponents.BLOB_VOLUME.get());
-        return vol != null ? vol : 0L;
+    public static int getVolume(ItemStack stack) {
+        Integer vol = stack.get(GooDataComponents.BLOB_VOLUME.get());
+        return vol != null ? vol : 0;
     }
 
     /**
@@ -127,7 +127,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param stack  the omniblob item stack
      * @param volume volume in microblobs
      */
-    public static void setVolume(ItemStack stack, long volume) {
+    public static void setVolume(ItemStack stack, int volume) {
         stack.set(GooDataComponents.BLOB_VOLUME.get(), volume);
     }
 
@@ -138,7 +138,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param volume volume in microblobs
      * @return a new omniblob item stack
      */
-    public static ItemStack createWithVolume(GooType type, long volume) {
+    public static ItemStack createWithVolume(GooType type, int volume) {
         ItemStack stack = new ItemStack(GooItems.OMNIBLOBS.get(type).get());
         setVolume(stack, volume);
         return stack;
@@ -152,7 +152,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     @Override
     public @NonNull Component getName(@NonNull ItemStack stack) {
-        long volume = getVolume(stack);
+        int volume = getVolume(stack);
         String tierName = BlobTiers.computeTierName(volume);
         String typeName = gooType.getId().substring(0, 1).toUpperCase(Locale.ROOT)
             + gooType.getId().substring(1);
@@ -451,7 +451,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private boolean handleAbsorbFromSlot(ItemStack omniblob, ItemStack target, Slot slot,
             ClickAction action, Player player) {
         if (action == ClickAction.PRIMARY) {
-            long total = getVolume(omniblob) + target.getCount() * BlobStacks.MB_PER_BLOB;
+            int total = getVolume(omniblob) + target.getCount() * BlobStacks.MB_PER_BLOB;
             slot.set(BlobStacks.createForOutput(gooType, total));
             player.containerMenu.setCarried(ItemStack.EMPTY);
             return true;
@@ -468,10 +468,10 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return true if a blob was placed, false if insufficient volume
      */
     private boolean placeSingleBlobInSlot(ItemStack omniblob, Slot slot, Player player) {
-        long volume = getVolume(omniblob);
+        int volume = getVolume(omniblob);
         if (volume < BlobStacks.MB_PER_BLOB) { return false; }
 
-        long remaining = volume - BlobStacks.MB_PER_BLOB;
+        int remaining = volume - BlobStacks.MB_PER_BLOB;
         slot.set(BlobStacks.createBlobStack(gooType, 1));
         applyCursorRemainder(omniblob, remaining, player);
         return true;
@@ -484,7 +484,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param remaining volume remaining after extraction
      * @param player    the interacting player
      */
-    private void applyCursorRemainder(ItemStack omniblob, long remaining, Player player) {
+    private void applyCursorRemainder(ItemStack omniblob, int remaining, Player player) {
         if (remaining <= 0) {
             omniblob.shrink(1);
         } else if (BlobStacks.isCleanBlobStack(remaining)) {
@@ -503,11 +503,11 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return true if a blob was fed, false if insufficient volume
      */
     private boolean feedOneBlobToStack(ItemStack omniblob, ItemStack target, Player player) {
-        long volume = getVolume(omniblob);
+        int volume = getVolume(omniblob);
         if (volume < BlobStacks.MB_PER_BLOB) { return false; }
 
         target.grow(1);
-        long remaining = volume - BlobStacks.MB_PER_BLOB;
+        int remaining = volume - BlobStacks.MB_PER_BLOB;
         applyCursorRemainder(omniblob, remaining, player);
         return true;
     }
@@ -569,7 +569,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return true if the extraction was performed
      */
     private boolean handleEmptyCursorExtract(ItemStack omniblob, Slot slot, SlotAccess cursorAccess) {
-        long volume = getVolume(omniblob);
+        int volume = getVolume(omniblob);
         if (volume <= 0) { return false; }
         if (BlobStacks.wholeBlobs(volume) <= 0) {
             cursorAccess.set(omniblob.copy());
@@ -588,9 +588,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param cursorAccess access to set the cursor contents
      * @return true always (split performed)
      */
-    private boolean splitVolumeInHalf(ItemStack omniblob, long volume, Slot slot, SlotAccess cursorAccess) {
-        long half = volume / HALF_DIVISOR;
-        long other = volume - half;
+    private boolean splitVolumeInHalf(ItemStack omniblob, int volume, Slot slot, SlotAccess cursorAccess) {
+        int half = volume / HALF_DIVISOR;
+        int other = volume - half;
 
         cursorAccess.set(BlobStacks.createForOutput(gooType, half));
         applySlotRemainder(omniblob, other, slot);
@@ -604,7 +604,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param remaining volume remaining after split
      * @param slot      the inventory slot
      */
-    private void applySlotRemainder(ItemStack omniblob, long remaining, Slot slot) {
+    private void applySlotRemainder(ItemStack omniblob, int remaining, Slot slot) {
         if (remaining <= 0) {
             omniblob.shrink(1);
         } else if (BlobStacks.isCleanBlobStack(remaining)) {
@@ -625,8 +625,8 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private boolean handleOmniblobCombine(ItemStack slotOmniblob, ItemStack cursorOmniblob,
             SlotAccess cursorAccess) {
-        long cursorVol = getVolume(cursorOmniblob);
-        long slotVol = getVolume(slotOmniblob);
+        int cursorVol = getVolume(cursorOmniblob);
+        int slotVol = getVolume(slotOmniblob);
         setVolume(slotOmniblob, slotVol + cursorVol);
         cursorAccess.set(ItemStack.EMPTY);
         return true;

@@ -29,8 +29,8 @@ public final class OmniblobQuickCraft {
      * @param slotCount   number of slots being distributed to
      * @return volume per slot in microblobs
      */
-    public static long charitablePerSlot(long totalVolume, int slotCount) {
-        if (slotCount <= 0) { return 0L; }
+    public static int charitablePerSlot(int totalVolume, int slotCount) {
+        if (slotCount <= 0) { return 0; }
         return totalVolume / slotCount;
     }
 
@@ -40,7 +40,7 @@ public final class OmniblobQuickCraft {
      *
      * @return 1,000 mB
      */
-    public static long greedyPerSlot() {
+    public static int greedyPerSlot() {
         return BlobStacks.MB_PER_BLOB;
     }
 }

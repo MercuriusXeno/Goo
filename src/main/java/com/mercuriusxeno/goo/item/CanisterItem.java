@@ -314,10 +314,10 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @param amount the volume in microblobs to add
      * @return the amount actually accepted
      */
-    public static long addFluid(ItemStack stack, Fluid fluid, long amount) {
-        long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
+    public static int addFluid(ItemStack stack, Fluid fluid, int amount) {
+        int capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
         CanisterFluidContent current = getFluidContent(stack);
-        long accepted = current.cappedAddAmount(fluid, amount, capacity);
+        int accepted = current.cappedAddAmount(fluid, amount, capacity);
         if (accepted > 0) {
             setFluidContent(stack, current.withCappedAdd(fluid, amount, capacity));
         }
@@ -332,7 +332,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @param amount the volume in microblobs to add
      * @return the amount actually accepted
      */
-    public static long addGoo(ItemStack stack, GooType type, long amount) {
+    public static int addGoo(ItemStack stack, GooType type, int amount) {
         return addFluid(stack, GooFluids.SOURCES.get(type).get(), amount);
     }
 
@@ -345,10 +345,10 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @param amount the volume in microblobs to remove
      * @return the amount actually removed
      */
-    public static long removeFluid(ItemStack stack, Fluid fluid, long amount) {
+    public static int removeFluid(ItemStack stack, Fluid fluid, int amount) {
         CanisterFluidContent current = getFluidContent(stack);
         if (current.isEmpty() || current.fluid() != fluid) { return 0; }
-        long removed = Math.min(amount, current.amount());
+        int removed = Math.min(amount, current.amount());
         setFluidContent(stack, current.withRemoved(removed));
         return removed;
     }
@@ -361,7 +361,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
      * @param amount the volume in microblobs to remove
      * @return the amount actually removed
      */
-    public static long removeGoo(ItemStack stack, GooType type, long amount) {
+    public static int removeGoo(ItemStack stack, GooType type, int amount) {
         return removeFluid(stack, GooFluids.SOURCES.get(type).get(), amount);
     }
 

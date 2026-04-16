@@ -147,7 +147,7 @@ public class TapBlockEntityRenderer
      * @param state   the render state to populate
      */
     private static void extractNonEmptyContents(CanisterFluidContent content, TapRenderState state) {
-        long capacity = ContainerCapacity.canisterCapacity(state.matrices);
+        int capacity = ContainerCapacity.canisterCapacity(state.matrices);
         state.gooType = content.getGooType();
         state.fill = Math.min(1f, (float) content.amount() / capacity);
     }

@@ -60,7 +60,7 @@ public class BlobVolumeDecorator implements IItemDecorator {
      * @return true if decorations were rendered, false if the omniblob is empty
      */
     private boolean renderOmniblob(GuiGraphicsExtractor graphics, Font font, ItemStack stack, GooOmniblobItem omniblob, int xOffset, int yOffset) {
-        long volume = GooOmniblobItem.getVolume(stack);
+        int volume = GooOmniblobItem.getVolume(stack);
         if (volume <= 0) { return false; }
         renderTypeIcon(graphics, omniblob.getGooType(), xOffset, yOffset);
         renderVolumeLabel(graphics, font, volume, xOffset, yOffset);
@@ -94,7 +94,7 @@ public class BlobVolumeDecorator implements IItemDecorator {
      * @param yOffset the vertical slot position
      */
     private void renderVolumeLabel(GuiGraphicsExtractor graphics, Font font,
-            long volume, int xOffset, int yOffset) {
+            int volume, int xOffset, int yOffset) {
         String label = GooTooltipHandler.formatFluidDisplayCompact(volume);
         int textWidth = font.width(label);
 

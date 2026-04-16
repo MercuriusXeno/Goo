@@ -84,7 +84,7 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
         GooContents contents = VatBlockItem.getGooContents(stack);
         if (contents.isEmpty()) { return null; }
         int compression = GooEnchantments.getCompressionLevel(stack);
-        long capacity = ContainerCapacity.vatCapacity(compression);
+        int capacity = ContainerCapacity.vatCapacity(compression);
         float fill = Math.min(1f, (float) contents.totalVolume() / capacity);
         return new VatData(contents.largestType(), fill);
     }

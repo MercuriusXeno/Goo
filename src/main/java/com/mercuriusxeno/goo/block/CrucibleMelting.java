@@ -157,7 +157,7 @@ final class CrucibleMelting {
      * @param pos         the block position
      */
     private static void spawnBubblesIfGooPresent(CrucibleBlockEntity be, ServerLevel serverLevel, BlockPos pos) {
-        long totalGoo = be.reservoir.totalVolume() + be.getPoolVolume();
+        int totalGoo = be.reservoir.totalVolume() + be.getPoolVolume();
         if (totalGoo <= 0) { return; }
         GooType dominant = resolveDominantType(be);
         if (dominant == null) { return; }
@@ -206,11 +206,11 @@ final class CrucibleMelting {
      */
     private static void drainFromPool(CrucibleBlockEntity be) {
         GooContents pmiContents = PartiallyMeltedItem.getContents(be.meltingItem);
-        long totalRemaining = pmiContents.totalVolume();
+        int totalRemaining = pmiContents.totalVolume();
         if (totalRemaining <= 0) { return; }
 
-        long rate = CrucibleMath.extractionRate(totalRemaining, 0);
-        Map<GooType, Long> shares = CrucibleMath.computeDrainShares(pmiContents, rate);
+        int rate = CrucibleMath.extractionRate(totalRemaining, 0);
+        Map<GooType, Integer> shares = CrucibleMath.computeDrainShares(pmiContents, rate);
         applyDrainShares(be, shares);
     }
 
@@ -219,9 +219,9 @@ final class CrucibleMelting {
      * @param be     the crucible block entity
      * @param shares the per-type drain amounts
      */
-    private static void applyDrainShares(CrucibleBlockEntity be, Map<GooType, Long> shares) {
-        for (Map.Entry<GooType, Long> entry : shares.entrySet()) {
-            long drained = PartiallyMeltedItem.drain(
+    private static void applyDrainShares(CrucibleBlockEntity be, Map<GooType, Integer> shares) {
+        for (Map.Entry<GooType, Integer> entry : shares.entrySet()) {
+            int drained = PartiallyMeltedItem.drain(
                 be.meltingItem, entry.getKey(), entry.getValue());
             be.reservoir.insertGoo(entry.getKey(), (int) drained, false);
         }

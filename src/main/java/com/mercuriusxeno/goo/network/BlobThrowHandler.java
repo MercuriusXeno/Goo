@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 public final class BlobThrowHandler {
 
     /** Cost of one throw in microblobs (1 blob = 1,000 mB). */
-    public static final long THROW_COST = 1000;
+    public static final int THROW_COST = 1000;
     /** Maximum throw range in blocks. */
     public static final double MAX_RANGE = 64.0;
     /** Glow beam travel speed in blocks per tick. */
@@ -139,7 +139,7 @@ public final class BlobThrowHandler {
      */
     private static void depleteAndThrow(ServerPlayer player, BlobThrowPayload payload,
             GooType gooType, double distSq) {
-        long depleted = GooSourceScanner.deplete(player, gooType, THROW_COST);
+        int depleted = GooSourceScanner.deplete(player, gooType, THROW_COST);
         if (depleted < THROW_COST && Goo.LOGGER.isWarnEnabled()) {
             Goo.LOGGER.warn(LOG_PARTIAL_DEPLETE, depleted, THROW_COST, gooType.getId());
         }

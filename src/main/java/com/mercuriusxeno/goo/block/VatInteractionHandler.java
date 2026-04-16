@@ -196,10 +196,10 @@ final class VatInteractionHandler {
             VatBlockEntity vat, ItemStack stack, Player player) {
         GooType blobType = BlobStacks.gooTypeOf(stack);
         if (blobType == null) { return InteractionResult.PASS; }
-        long volume = BlobStacks.volumeOf(stack);
+        int volume = BlobStacks.volumeOf(stack);
         if (volume <= 0 || !vat.canAccept()) { return InteractionResult.PASS; }
 
-        long accepted = vat.insertGoo(blobType, volume);
+        int accepted = vat.insertGoo(blobType, volume);
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
@@ -215,8 +215,8 @@ final class VatInteractionHandler {
     static InteractionResult handleBlobExtract(VatBlockEntity vat, Player player) {
         GooType dominant = VatFluidInteraction.extractableDominant(vat);
         if (dominant == null) { return InteractionResult.PASS; }
-        long extractAmount = Math.min(vat.getContents().getVolume(dominant), BlobStacks.MAX_BLOB_STACK_VOLUME);
-        long extracted = vat.extractGoo(dominant, extractAmount);
+        int extractAmount = Math.min(vat.getContents().getVolume(dominant), BlobStacks.MAX_BLOB_STACK_VOLUME);
+        int extracted = vat.extractGoo(dominant, extractAmount);
         if (extracted <= 0) { return InteractionResult.PASS; }
 
         ItemStack output = BlobStacks.createForOutput(dominant, extracted);

@@ -31,14 +31,14 @@ public final class GasketPushMath {
      * @param remaining volume in mB still in the source
      * @return mB to transfer this tick (min 1 if remaining > 0, 0 if empty)
      */
-    public static long taperRate(long remaining) {
-        if (remaining <= 0) { return 0L; }
-        return Math.max(1L, (long) Math.ceil(Math.pow(remaining, TAPER_EXPONENT)));
+    public static int taperRate(int remaining) {
+        if (remaining <= 0) { return 0; }
+        return Math.max(1,     (int) Math.ceil(Math.pow(remaining, TAPER_EXPONENT)));
     }
 
     /**
      * Tapered variant of {@link #computePush}: caps each type's offer at
-     * {@link #taperRate(long)} before passing to the acceptor. Use this for
+     * {@link #taperRate    (int)} before passing to the acceptor. Use this for
      * per-tick gasket pushes so transfer drains gradually instead of instantly.
      *
      * @param reservoir the current reservoir contents
@@ -46,7 +46,7 @@ public final class GasketPushMath {
      * @return push result with accepted and remaining contents
      */
     public static PushResult computeTaperedPush(GooContents reservoir,
-            BiFunction<GooType, Long, Long> acceptor) {
+            BiFunction<GooType, Integer, Integer> acceptor) {
         return computePush(reservoir,
                 (type, vol) -> acceptor.apply(type, Math.min(taperRate(vol), vol)));
     }
@@ -60,7 +60,7 @@ public final class GasketPushMath {
      * @param acceptor  function (type, volume) -> amount accepted
      * @return push result with accepted and remaining contents
      */
-    public static PushResult computePush(GooContents reservoir, BiFunction<GooType, Long, Long> acceptor) {
+    public static PushResult computePush(GooContents reservoir, BiFunction<GooType, Integer, Integer> acceptor) {
         if (reservoir.isEmpty()) { return new PushResult(GooContents.EMPTY, GooContents.EMPTY); }
         return distributeEntries(reservoir, acceptor);
     }
@@ -71,11 +71,11 @@ public final class GasketPushMath {
      * @param acceptor function (type, volume) -> amount accepted per entry
      * @return push result splitting volume into accepted and remaining
      */
-    private static PushResult distributeEntries(GooContents reservoir, BiFunction<GooType, Long, Long> acceptor) {
+    private static PushResult distributeEntries(GooContents reservoir, BiFunction<GooType, Integer, Integer> acceptor) {
         GooContents accepted = GooContents.EMPTY;
         GooContents remaining = GooContents.EMPTY;
         for (var entry : reservoir.getAll().entrySet()) {
-            long took = clampedTake(acceptor, entry.getKey(), entry.getValue());
+            int took = clampedTake(acceptor, entry.getKey(), entry.getValue());
             accepted = addIfPositive(accepted, entry.getKey(), took);
             remaining = addIfPositive(remaining, entry.getKey(), entry.getValue() - took);
         }
@@ -89,8 +89,8 @@ public final class GasketPushMath {
      * @param volume   the offered volume
      * @return the clamped accepted amount
      */
-    private static long clampedTake(BiFunction<GooType, Long, Long> acceptor,
-                                     GooType type, long volume) {
+    private static int clampedTake(BiFunction<GooType, Integer, Integer> acceptor,
+                                    GooType type, int volume) {
         return Math.max(0, Math.min(acceptor.apply(type, volume), volume));
     }
 
@@ -101,7 +101,7 @@ public final class GasketPushMath {
      * @param amount   the amount to add
      * @return the updated contents
      */
-    private static GooContents addIfPositive(GooContents contents, GooType type, long amount) {
+    private static GooContents addIfPositive(GooContents contents, GooType type, int amount) {
         return amount > 0 ? contents.withAdded(type, amount) : contents;
     }
 }

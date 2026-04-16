@@ -48,7 +48,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      * @param onChange  called when contents change
      */
     public CanisterSlotFluidHandler(int capacity, Runnable onChange) {
-        this(capacity, onChange, () -> 0L);
+        this(capacity, onChange, () -> 0);
     }
 
     /**
@@ -94,7 +94,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
     @Override
     protected void onContentsChanged(int index, FluidStack previousContents) {
         if (suppressCallbacks) { return; }
-        long delta = getAmountAsLong(0) - previousContents.getAmount();
+        int delta = (int) getAmountAsLong(0) - previousContents.getAmount();
         if (delta > 0) {
             trackInsertion(delta);
         }
@@ -105,7 +105,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      * Records an insertion event for stream rendering.
      * @param delta the amount of fluid inserted this tick in mB
      */
-    private void trackInsertion(long delta) {
+    private void trackInsertion(int delta) {
         long now = tickSupplier.getAsLong();
         if (now != streamTick) {
             streamRate = 0;
@@ -197,7 +197,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
     public CanisterFluidContent toFluidContent() {
         FluidResource res = getResource(0);
         if (res.isEmpty()) { return CanisterFluidContent.EMPTY; }
-        return new CanisterFluidContent(res.getFluid(), getAmountAsLong(0));
+        return new CanisterFluidContent(res.getFluid(), (int) getAmountAsLong(0));
     }
 
     /**
@@ -245,8 +245,8 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      *
      * @return volume in mB
      */
-    public long getAmount() {
-        return getAmountAsLong(0);
+    public int getAmount() {
+        return (int) getAmountAsLong(0);
     }
 
     /**
@@ -254,7 +254,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      * @return true if the tank holds no fluid
      */
     public boolean isEmpty() {
-        return getAmountAsLong(0) == 0;
+        return (int) getAmountAsLong(0) == 0;
     }
 
     /**
@@ -262,8 +262,8 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      *
      * @return volume in mB
      */
-    public long totalVolume() {
-        return getAmountAsLong(0);
+    public int totalVolume() {
+        return (int) getAmountAsLong(0);
     }
 
     /**

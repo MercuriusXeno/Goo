@@ -42,7 +42,7 @@ class GasketPusherTest {
     }
 
     private static TestGooSource filledSource() {
-        return new TestGooSource(new GooContents(Map.of(GooType.ROCK, 500L)));
+        return new TestGooSource(new GooContents(Map.of(GooType.ROCK, 500)));
     }
 
     private static GasketPartner blockPartner() {
@@ -170,7 +170,7 @@ class GasketPusherTest {
         @Test
         void toGooContentsReturnsCurrentState() {
             TestGooSource source = filledSource();
-            assertEquals(500L, source.toGooContents().getVolume(GooType.ROCK));
+            assertEquals(500, source.toGooContents().getVolume(GooType.ROCK));
         }
     }
 }

@@ -235,8 +235,8 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
      * @param type  the goo type
      * @return the update packet
      */
-    private long getAvailableGoo(List<SlotRef> slots, GooType type) {
-        long total = 0;
+    private int getAvailableGoo(List<SlotRef> slots, GooType type) {
+        int total = 0;
         for (SlotRef ref : slots) {
             CanisterFluidContent content = CanisterItem.getFluidContent(ref.entity.getCanister(ref.slot));
             total += (content.getGooType() == type) ? content.amount() : 0;
@@ -250,13 +250,13 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
      * @param type   the goo type
      * @param amount volume in microblobs
      */
-    private void consumeGoo(List<SlotRef> slots, GooType type, long amount) {
-        long remaining = amount;
+    private void consumeGoo(List<SlotRef> slots, GooType type, int amount) {
+        int remaining = amount;
         for (SlotRef ref : slots) {
             if (remaining <= 0) { break; }
             ItemStack stack = ref.entity.getCanister(ref.slot);
             if (stack.isEmpty()) { continue; }
-            long removed = CanisterItem.removeGoo(stack, type, remaining);
+            int removed = CanisterItem.removeGoo(stack, type, remaining);
             remaining -= removed;
         }
     }

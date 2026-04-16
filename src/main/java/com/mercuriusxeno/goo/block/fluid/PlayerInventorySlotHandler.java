@@ -72,7 +72,7 @@ public final class PlayerInventorySlotHandler implements ResourceHandler<FluidRe
     @Override
     public long getAmountAsLong(int index) {
         GooType type = typeForIndex(index);
-        if (type == null) { return 0L; }
+        if (type == null) { return 0; }
         CanisterFluidContent content = CanisterItem.getFluidContent(getStack());
         return (content.getGooType() == type) ? content.amount() : 0L;
     }

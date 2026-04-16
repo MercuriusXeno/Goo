@@ -88,7 +88,7 @@ final class CrucibleAbsorption {
     private static void absorbBlob(ItemEntity entity, ItemStack stack,
             CrucibleBlockEntity crucible) {
         GooType type = BlobStacks.gooTypeOf(stack);
-        long volume = BlobStacks.volumeOf(stack);
+        int volume = BlobStacks.volumeOf(stack);
         if (type == null || volume <= 0) { return; }
         crucible.insertGoo(type, volume);
         entity.discard();

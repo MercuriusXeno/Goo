@@ -53,7 +53,7 @@ public final class GooRadialScreen extends Screen {
     private static final String DESELECT_ID = "";
 
     /** Available mB per goo type, snapshot taken on open. */
-    private final Map<GooType, Long> available;
+    private final Map<GooType, Integer> available;
 
     /** Pre-computed ARGB color per wedge, updated each frame. */
     private final int[] wedgeColors = new int[WEDGE_COUNT];
@@ -66,7 +66,7 @@ public final class GooRadialScreen extends Screen {
      *
      * @param available map of goo types to available volumes in microblobs
      */
-    private GooRadialScreen(Map<GooType, Long> available) {
+    private GooRadialScreen(Map<GooType, Integer> available) {
         super(Component.empty());
         this.available = available;
     }
@@ -80,7 +80,7 @@ public final class GooRadialScreen extends Screen {
         Player player = mc.player;
         if (player == null) { return; }
 
-        Map<GooType, Long> snapshot = GooSourceScanner.aggregateAvailable(player);
+        Map<GooType, Integer> snapshot = GooSourceScanner.aggregateAvailable(player);
         mc.setScreen(new GooRadialScreen(snapshot));
     }
 
@@ -158,7 +158,7 @@ public final class GooRadialScreen extends Screen {
      * @param type the goo type to select
      */
     private void trySelectType(GooType type) {
-        if (available.getOrDefault(type, 0L) <= 0) { return; }
+        if (available.getOrDefault(type, 0) <= 0) { return; }
         ItemStack glove = findGloveStack();
         if (glove == null) { return; }
         GooGloveItem.setSelectedType(glove, type);

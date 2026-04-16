@@ -37,7 +37,7 @@ public abstract class OmniblobQuickCraftMixin {
     /** Quickcraft phase: distribute volume across collected slots. */
     private static final int PHASE_DISTRIBUTE = 2;
     /** Sentinel return value indicating the slot holds an incompatible goo type. */
-    private static final long INCOMPATIBLE_SLOT = -1;
+    private static final int INCOMPATIBLE_SLOT = -1;
 
     @Shadow
     private int quickcraftType;
@@ -210,10 +210,10 @@ public abstract class OmniblobQuickCraftMixin {
 
         ItemStack carried = getCarried();
         GooType gooType = BlobStacks.gooTypeOf(carried);
-        long totalVolume = BlobStacks.volumeOf(carried);
+        int totalVolume = BlobStacks.volumeOf(carried);
 
-        long perSlot = computePerSlotVolume(totalVolume, quickcraftSlots.size());
-        long distributed = distributeToSlots(gooType, perSlot, totalVolume);
+        int perSlot = computePerSlotVolume(totalVolume, quickcraftSlots.size());
+        int distributed = distributeToSlots(gooType, perSlot, totalVolume);
         setCarriedRemainder(gooType, totalVolume - distributed);
         broadcastChanges();
         resetQuickCraft();
@@ -227,7 +227,7 @@ public abstract class OmniblobQuickCraftMixin {
      * @param slotCount   the number of collected slots
      * @return the volume to place per slot
      */
-    private long computePerSlotVolume(long totalVolume, int slotCount) {
+    private int computePerSlotVolume(int totalVolume, int slotCount) {
         if (quickcraftType == AbstractContainerMenu.QUICKCRAFT_TYPE_GREEDY) {
             return OmniblobQuickCraft.greedyPerSlot();
         }
@@ -243,12 +243,12 @@ public abstract class OmniblobQuickCraftMixin {
      * @param totalVolume the total available volume
      * @return total volume actually distributed
      */
-    private long distributeToSlots(GooType gooType, long perSlot, long totalVolume) {
-        long distributed = 0L;
+    private int distributeToSlots(GooType gooType, int perSlot, int totalVolume) {
+        int distributed = 0;
         for (Slot slot : quickcraftSlots) {
             if (!canDistributeMore(perSlot, distributed, totalVolume)) { break; }
             if (!isSlotEligible(slot)) { continue; }
-            long placed = placeIntoSlot(slot, gooType, perSlot);
+            int placed = placeIntoSlot(slot, gooType, perSlot);
             if (placed > 0) { distributed += placed; }
         }
         return distributed;
@@ -262,7 +262,7 @@ public abstract class OmniblobQuickCraftMixin {
      * @param totalVolume the total volume available
      * @return true if another slot can receive its share
      */
-    private static boolean canDistributeMore(long perSlot, long distributed, long totalVolume) {
+    private static boolean canDistributeMore(int perSlot, int distributed, int totalVolume) {
         return perSlot > 0 && distributed + perSlot <= totalVolume;
     }
 
@@ -283,9 +283,9 @@ public abstract class OmniblobQuickCraftMixin {
      * @param perSlot the volume in microblobs to place in this slot
      * @return the volume actually placed, or INCOMPATIBLE_SLOT if the slot has an incompatible item
      */
-    private long placeIntoSlot(Slot slot, GooType gooType, long perSlot) {
+    private int placeIntoSlot(Slot slot, GooType gooType, int perSlot) {
         ItemStack existing = slot.getItem();
-        long mergedVolume = perSlot;
+        int mergedVolume = perSlot;
         if (!existing.isEmpty()) {
             GooType existingType = BlobStacks.gooTypeOf(existing);
             if (existingType != gooType) { return INCOMPATIBLE_SLOT; }
@@ -302,7 +302,7 @@ public abstract class OmniblobQuickCraftMixin {
      * @param gooType   the goo type being distributed
      * @param remainder the remaining volume after distribution
      */
-    private void setCarriedRemainder(GooType gooType, long remainder) {
+    private void setCarriedRemainder(GooType gooType, int remainder) {
         if (remainder <= 0) {
             setCarried(ItemStack.EMPTY);
         } else {

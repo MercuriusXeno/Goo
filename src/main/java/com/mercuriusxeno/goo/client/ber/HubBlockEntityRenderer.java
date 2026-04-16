@@ -187,7 +187,7 @@ public class HubBlockEntityRenderer
      */
     private static void populateFilledSlot(HubBlockEntity be, HubRenderState state,
             int slot, CanisterFluidContent content) {
-        long capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
+        int capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
         state.slotType[slot] = content.getGooType();
         state.slotFill[slot] = Math.min(1f, (float) content.amount() / capacity);
     }

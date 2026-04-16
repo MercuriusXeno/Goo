@@ -95,8 +95,8 @@ final class CrucibleInteraction {
      * @return true if any goo was transferred
      */
     private static boolean transferDominantGoo(ItemStack canister, CrucibleBlockEntity crucible,
-            GooType type, long available) {
-        long added = CanisterItem.addGoo(canister, type, available);
+            GooType type, int available) {
+        int added = CanisterItem.addGoo(canister, type, available);
         if (added <= 0) { return false; }
         crucible.extractGoo(type, added);
         return true;
@@ -112,7 +112,7 @@ final class CrucibleInteraction {
     static boolean tryInsertBlob(ItemStack stack, CrucibleBlockEntity crucible, Player player) {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return false; }
-        long volume = BlobStacks.volumeOf(stack);
+        int volume = BlobStacks.volumeOf(stack);
         return volume > 0 && consumeBlobIntoCrucible(stack, crucible, player, type, volume);
     }
 
@@ -126,7 +126,7 @@ final class CrucibleInteraction {
      * @return always true (insertion always succeeds)
      */
     private static boolean consumeBlobIntoCrucible(ItemStack stack, CrucibleBlockEntity crucible,
-            Player player, GooType type, long volume) {
+            Player player, GooType type, int volume) {
         crucible.insertGoo(type, volume);
         if (!player.isCreative()) { stack.shrink(1); }
         return true;
@@ -155,7 +155,7 @@ final class CrucibleInteraction {
         GooContents res = crucible.getReservoir();
         if (res.isEmpty()) { return InteractionResult.PASS; }
 
-        for (Map.Entry<GooType, Long> entry : res.getAll().entrySet()) {
+        for (Map.Entry<GooType, Integer> entry : res.getAll().entrySet()) {
             BlobStacks.mergeIntoInventory(player, entry.getKey(), entry.getValue());
         }
         crucible.drainReservoir();

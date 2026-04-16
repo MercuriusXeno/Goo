@@ -388,7 +388,7 @@ public final class InWorldHud {
             MultiBufferSource buffers, GooContents contents,
             float x, float baseY, int startRow) {
         int row = startRow;
-        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
+        for (Map.Entry<GooType, Integer> entry : contents.getAll().entrySet()) {
             float rowY = baseY + row * ROW_HEIGHT;
             String amountText = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
             renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, x, rowY);
@@ -458,7 +458,7 @@ public final class InWorldHud {
      */
     public static float computeMaxRowWidth(Font font, GooContents contents) {
         float max = 0;
-        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
+        for (Map.Entry<GooType, Integer> entry : contents.getAll().entrySet()) {
             String text = GooTooltipHandler.formatFluidDisplayCompact(entry.getValue());
             float w = ICON_SIZE + ICON_TEXT_GAP + font.width(text);
             if (w > max) { max = w; }

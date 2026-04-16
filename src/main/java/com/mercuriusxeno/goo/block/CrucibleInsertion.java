@@ -94,10 +94,10 @@ final class CrucibleInsertion {
      * @param volume volume in microblobs
      * @return the amount actually inserted
      */
-    static long insertGoo(CrucibleBlockEntity be, GooType type, long volume) {
+    static int insertGoo(CrucibleBlockEntity be, GooType type, int volume) {
         if (volume <= 0) { return 0; }
         int clamped = (int) Math.min(volume, Integer.MAX_VALUE);
-        long inserted = be.reservoir.insertGoo(type, clamped, false);
+        int inserted = be.reservoir.insertGoo(type, clamped, false);
         be.syncToClients();
         return inserted;
     }

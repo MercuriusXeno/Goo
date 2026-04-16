@@ -104,8 +104,8 @@ public class VatBlockItem extends BlockItem {
      * @param amount the volume in microblobs to add
      * @return the amount actually accepted
      */
-    public static long addGoo(ItemStack stack, GooType type, long amount) {
-        long capacity = ContainerCapacity.vatCapacity(GooEnchantments.getCompressionLevel(stack));
+    public static int addGoo(ItemStack stack, GooType type, int amount) {
+        int capacity = ContainerCapacity.vatCapacity(GooEnchantments.getCompressionLevel(stack));
         return GooContentsOps.addGoo(stack, type, amount, capacity);
     }
 
@@ -117,7 +117,7 @@ public class VatBlockItem extends BlockItem {
      * @param amount the volume in microblobs to remove
      * @return the amount actually removed
      */
-    public static long removeGoo(ItemStack stack, GooType type, long amount) {
+    public static int removeGoo(ItemStack stack, GooType type, int amount) {
         return GooContentsOps.removeGoo(stack, type, amount);
     }
 
@@ -133,8 +133,8 @@ public class VatBlockItem extends BlockItem {
      */
     private static boolean handleBlobInsert(ItemStack vat, ItemStack cursor, SlotAccess cursorAccess) {
         GooType type = ((GooBlobItem) cursor.getItem()).getGooType();
-        long volume = BlobStacks.volumeOf(cursor);
-        long accepted = addGoo(vat, type, volume);
+        int volume = BlobStacks.volumeOf(cursor);
+        int accepted = addGoo(vat, type, volume);
         if (accepted <= 0) { return false; }
         int blobsUsed = (int) (accepted / BlobStacks.MB_PER_BLOB);
         cursor.shrink(blobsUsed);
@@ -152,8 +152,8 @@ public class VatBlockItem extends BlockItem {
      */
     private static boolean handleOmniblobInsert(ItemStack vat, ItemStack cursor, SlotAccess cursorAccess) {
         GooType type = ((GooOmniblobItem) cursor.getItem()).getGooType();
-        long volume = GooOmniblobItem.getVolume(cursor);
-        long accepted = addGoo(vat, type, volume);
+        int volume = GooOmniblobItem.getVolume(cursor);
+        int accepted = addGoo(vat, type, volume);
         if (accepted <= 0) { return false; }
         updateOmniblobRemainder(cursor, cursorAccess, volume - accepted);
         return true;
@@ -165,7 +165,7 @@ public class VatBlockItem extends BlockItem {
      * @param cursorAccess access to set the cursor contents
      * @param remaining    the remaining volume after transfer
      */
-    private static void updateOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, long remaining) {
+    private static void updateOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, int remaining) {
         if (remaining <= 0) {
             cursorAccess.set(ItemStack.EMPTY);
         } else {
@@ -197,8 +197,8 @@ public class VatBlockItem extends BlockItem {
      */
     private static boolean extractDominantAsBlobs(ItemStack vat, SlotAccess cursorAccess,
             GooContents contents, GooType dominant) {
-        long toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BLOB_CAP);
-        long extracted = removeGoo(vat, dominant, toExtract);
+        int toExtract = Math.min(contents.getVolume(dominant), ContainerCapacity.BLOB_CAP);
+        int extracted = removeGoo(vat, dominant, toExtract);
         if (extracted <= 0) { return false; }
         cursorAccess.set(BlobStacks.createForOutput(dominant, extracted));
         return true;

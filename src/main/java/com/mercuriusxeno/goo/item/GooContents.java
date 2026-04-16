@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  *
  * @param contents the map of goo types to volumes in microblobs
  */
-public record GooContents(Map<GooType, Long> contents) implements TooltipProvider {
+public record GooContents(Map<GooType, Integer> contents) implements TooltipProvider {
 
     /** Empty container with no goo. */
     public static final GooContents EMPTY = new GooContents(Map.of());
@@ -38,7 +38,7 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
         instance.group(
             Codec.unboundedMap(
                 StringRepresentable.fromValues(GooType::values),
-                Codec.LONG
+                Codec.INT
             ).fieldOf("contents").forGetter(GooContents::contents)
         ).apply(instance, GooContents::new)
     );
@@ -55,9 +55,9 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
             @Override
             public void encode(ByteBuf buf, GooContents value) {
                 ByteBufCodecs.VAR_INT.encode(buf, value.contents.size());
-                for (Map.Entry<GooType, Long> entry : value.contents.entrySet()) {
+                for (Map.Entry<GooType, Integer> entry : value.contents.entrySet()) {
                     ByteBufCodecs.VAR_INT.encode(buf, entry.getKey().ordinal());
-                    ByteBufCodecs.VAR_LONG.encode(buf, entry.getValue());
+                    ByteBufCodecs.VAR_INT.encode(buf, entry.getValue());
                 }
             }
         };
@@ -68,11 +68,11 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param count the number of entries to read
      * @return the decoded map
      */
-    private static Map<GooType, Long> readEntries(ByteBuf buf, int count) {
-        Map<GooType, Long> map = new EnumMap<>(GooType.class);
+    private static Map<GooType, Integer> readEntries(ByteBuf buf, int count) {
+        Map<GooType, Integer> map = new EnumMap<>(GooType.class);
         for (int i = 0; i < count; i++) {
             int ordinal = ByteBufCodecs.VAR_INT.decode(buf);
-            long volume = ByteBufCodecs.VAR_LONG.decode(buf);
+            int volume = ByteBufCodecs.VAR_INT.decode(buf);
             if (ordinal >= 0 && ordinal < GooType.values().length) { map.put(GooType.values()[ordinal], volume); }
         }
         return map;
@@ -88,9 +88,9 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param input the raw contents map
      * @return filtered, unmodifiable map (or Map.of() if empty)
      */
-    private static Map<GooType, Long> filterPositive(Map<GooType, Long> input) {
+    private static Map<GooType, Integer> filterPositive(Map<GooType, Integer> input) {
         if (input.isEmpty()) { return Map.of(); }
-        Map<GooType, Long> filtered = new EnumMap<>(GooType.class);
+        Map<GooType, Integer> filtered = new EnumMap<>(GooType.class);
         input.forEach((type, vol) -> { if (vol > 0) { filtered.put(type, vol); } });
         return filtered.isEmpty() ? Map.of() : Collections.unmodifiableMap(filtered);
     }
@@ -109,9 +109,9 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      *
      * @return total volume in microblobs
      */
-    public long totalVolume() {
-        long total = 0;
-        for (long v : contents.values()) {
+    public int totalVolume() {
+        int total = 0;
+        for (int v : contents.values()) {
             total += v;
         }
         return total;
@@ -154,7 +154,7 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
     @Nullable
     public GooType largestType() {
         GooType largest = null;
-        long highest = 0;
+        int highest = 0;
         for (var e : contents.entrySet()) {
             if (beatsCurrentLeader(e.getValue(), e.getKey(), highest, largest)) {
                 highest = e.getValue();
@@ -172,8 +172,8 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param leader    the current leader type
      * @return true if the candidate should replace the leader
      */
-    private static boolean beatsCurrentLeader(long vol, GooType candidate,
-                                               long highest, GooType leader) {
+    private static boolean beatsCurrentLeader(int vol, GooType candidate,
+                                               int highest, GooType leader) {
         return vol > highest || (vol == highest && winsOrdinalTie(candidate, leader));
     }
 
@@ -194,8 +194,8 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param type the goo type to query
      * @return volume in microblobs
      */
-    public long getVolume(GooType type) {
-        return contents.getOrDefault(type, 0L);
+    public int getVolume(GooType type) {
+        return contents.getOrDefault(type, 0);
     }
 
     /**
@@ -203,7 +203,7 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      *
      * @return map of goo type to volume in microblobs
      */
-    public Map<GooType, Long> getAll() {
+    public Map<GooType, Integer> getAll() {
         return contents;
     }
 
@@ -214,11 +214,11 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param amount the volume to add in microblobs
      * @return new contents with the addition applied
      */
-    public GooContents withAdded(GooType type, long amount) {
+    public GooContents withAdded(GooType type, int amount) {
         if (amount <= 0) { return this; }
-        Map<GooType, Long> newMap = new EnumMap<>(GooType.class);
+        Map<GooType, Integer> newMap = new EnumMap<>(GooType.class);
         newMap.putAll(contents);
-        newMap.merge(type, amount, Long::sum);
+        newMap.merge(type, amount, Integer::sum);
         return new GooContents(newMap);
     }
 
@@ -233,7 +233,7 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
         if (other.isEmpty()) { return this; }
         if (this.isEmpty()) { return other; }
         GooContents result = this;
-        for (Map.Entry<GooType, Long> entry : other.contents.entrySet()) {
+        for (Map.Entry<GooType, Integer> entry : other.contents.entrySet()) {
             result = result.withAdded(entry.getKey(), entry.getValue());
         }
         return result;
@@ -246,7 +246,7 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param amount the volume to remove in microblobs
      * @return new contents with the removal applied
      */
-    public GooContents withRemoved(GooType type, long amount) {
+    public GooContents withRemoved(GooType type, int amount) {
         if (amount <= 0 || !contents.containsKey(type)) { return this; }
         return new GooContents(removeFromMap(type, amount));
     }
@@ -257,10 +257,10 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param amount the volume to subtract
      * @return the new map (may have the type removed entirely if depleted)
      */
-    private Map<GooType, Long> removeFromMap(GooType type, long amount) {
-        Map<GooType, Long> newMap = new EnumMap<>(GooType.class);
+    private Map<GooType, Integer> removeFromMap(GooType type, int amount) {
+        Map<GooType, Integer> newMap = new EnumMap<>(GooType.class);
         newMap.putAll(contents);
-        long remaining = newMap.getOrDefault(type, 0L) - amount;
+        int remaining = newMap.getOrDefault(type, 0) - amount;
         if (remaining <= 0) { newMap.remove(type); }
         else { newMap.put(type, remaining); }
         return newMap;
@@ -276,11 +276,11 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param capacity the total capacity of the container
      * @return new contents with the capped addition
      */
-    public GooContents withCappedAdd(GooType type, long amount, long capacity) {
+    public GooContents withCappedAdd(GooType type, int amount, int capacity) {
         if (amount <= 0) { return this; }
-        long space = capacity - totalVolume();
+        int space = capacity - totalVolume();
         if (space <= 0) { return this; }
-        long accepted = Math.min(amount, space);
+        int accepted = Math.min(amount, space);
         return withAdded(type, accepted);
     }
 
@@ -292,9 +292,9 @@ public record GooContents(Map<GooType, Long> contents) implements TooltipProvide
      * @param capacity the total capacity of the container
      * @return the amount that would be accepted (0 if full)
      */
-    public long cappedAddAmount(long amount, long capacity) {
+    public int cappedAddAmount(int amount, int capacity) {
         if (amount <= 0) { return 0; }
-        long space = capacity - totalVolume();
+        int space = capacity - totalVolume();
         if (space <= 0) { return 0; }
         return Math.min(amount, space);
     }

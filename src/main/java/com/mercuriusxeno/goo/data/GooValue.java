@@ -188,7 +188,7 @@ public class GooValue {
     }
 
     /**
-     * Converts this GooValue to a GooContents, widening int amounts to long.
+     * Converts this GooValue to a GooContents, using int amounts.
      * Used when creating a PartiallyMeltedItem from an item's goo value.
      *
      * @return a GooContents with the same type amounts widened to long
@@ -199,15 +199,15 @@ public class GooValue {
 
     /**
      * Converts this GooValue to a GooContents scaled by item count.
-     * Each type's amount is multiplied by count before widening to long.
+     * Each type's amount is multiplied by count before using int.
      *
      * @param count number of items to scale by
      * @return a GooContents with scaled amounts widened to long
      */
     public GooContents toGooContents(int count) {
         if (isEmpty() || count <= 0) { return GooContents.EMPTY; }
-        Map<GooType, Long> longMap = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> longMap.put(type, (long) amount * count));
+        Map<GooType, Integer> longMap = new EnumMap<>(GooType.class);
+        values.forEach((type, amount) -> longMap.put(type,     (int) amount * count));
         return new GooContents(longMap);
     }
 

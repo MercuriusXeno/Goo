@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class GooCauldronInteractions {
 
     /** Microblobs in one blob. */
-    private static final long MICROBLOBS_PER_BLOB = BlobStacks.MB_PER_BLOB;
+    private static final int MICROBLOBS_PER_BLOB = BlobStacks.MB_PER_BLOB;
 
     /** Maximum blobs in a full fluid block. */
     private static final int BLOBS_PER_BLOCK = 8;
@@ -53,7 +53,7 @@ public final class GooCauldronInteractions {
             Player player, InteractionHand hand, ItemStack stack) {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
-        long volume = BlobStacks.volumeOf(stack);
+        int volume = BlobStacks.volumeOf(stack);
         if (volume <= 0) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
 
         if (!level.isClientSide()) {
@@ -72,7 +72,7 @@ public final class GooCauldronInteractions {
      * @param player the interacting player (creative skips consumption)
      */
     private static void pourBlobServerSide(Level level, BlockPos pos, GooType type,
-            long volume, ItemStack stack, Player player) {
+            int volume, ItemStack stack, Player player) {
         placeGooFluid(level, pos, type, volume);
         if (!player.isCreative()) {
             stack.consume(1, player);
@@ -86,7 +86,7 @@ public final class GooCauldronInteractions {
      * @param type   the goo type
      * @param volume volume in microblobs
      */
-    private static void placeGooFluid(Level level, BlockPos pos, GooType type, long volume) {
+    private static void placeGooFluid(Level level, BlockPos pos, GooType type, int volume) {
         int blobs = (int) Math.min(volume / MICROBLOBS_PER_BLOB, BLOBS_PER_BLOCK);
         if (blobs <= 0) { return; }
         int fluidLevel = BLOBS_PER_BLOCK - blobs;
