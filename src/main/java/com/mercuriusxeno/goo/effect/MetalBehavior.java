@@ -73,7 +73,6 @@ public final class MetalBehavior implements ChainBehavior {
     /** Array offset for Z target coordinate in anim data. */
     private static final int ANIM_OFFSET_TZ = 4;
 
-    // ── Animation timing (13 ticks total) ────────────────────────────
     //
     // Ticks 0-3:  WINDUP  - blob contracts 30%, no spike visible
     // Ticks 4-5:  EMERGE  - blob returns to size, spike extends to full
@@ -92,7 +91,6 @@ public final class MetalBehavior implements ChainBehavior {
     /** Blob contraction scale during windup (0 = no change, positive = smaller). */
     public static final float WINDUP_CONTRACT = 0.30f;
 
-    // ── Persistence tags ──────────────────────────────────────────────
 
     private static final String TAG_FACE = "MetalFace";
     private static final String TAG_FLAT_MODE = "MetalFlatMode";
@@ -266,7 +264,6 @@ public final class MetalBehavior implements ChainBehavior {
         return !spikeAnims.isEmpty();
     }
 
-    // ── Extension curve ───────────────────────────────────────────────
 
     /**
      * Computes the spike extension fraction for rendering.
@@ -320,7 +317,6 @@ public final class MetalBehavior implements ChainBehavior {
         return 1f;
     }
 
-    // ── Targeting ─────────────────────────────────────────────────────
 
     /**
      * Returns true if the entity is a valid impale target: living, not
@@ -337,7 +333,6 @@ public final class MetalBehavior implements ChainBehavior {
         return entity.position().distanceTo(center) <= SPIKE_RADIUS;
     }
 
-    // ── Client sync ───────────────────────────────────────────────────
 
     /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
@@ -353,7 +348,6 @@ public final class MetalBehavior implements ChainBehavior {
         }
     }
 
-    // ── Persistence ───────────────────────────────────────────────────
 
     @Override
     public void saveAdditional(ValueOutput output) {

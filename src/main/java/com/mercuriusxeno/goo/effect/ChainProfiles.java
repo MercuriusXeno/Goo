@@ -126,7 +126,6 @@ public final class ChainProfiles {
         ));
     }
 
-    // ── Profile definition ────────────────────────────────────────────────
 
     /**
      * Defines the behavior of a chain effect for a specific goo type.

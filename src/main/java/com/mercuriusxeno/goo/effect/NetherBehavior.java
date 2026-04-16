@@ -49,7 +49,6 @@ public final class NetherBehavior implements ChainBehavior {
      * the BE removes itself. */
     public enum Phase { EXPAND, HOLD, CONTRACT, POPPING, DONE }
 
-    // ── Phase timings ────────────────────────────────────────────────
 
     /** Ticks the sphere takes to grow from 0 to full size (.75 s). */
     public static final int EXPAND_DURATION = 15;
@@ -61,7 +60,6 @@ public final class NetherBehavior implements ChainBehavior {
      * window so entities inside get a clean fade-out. */
     private static final int BLINDNESS_EXTRA_TICKS = 10;
 
-    // ── Particle + sound constants ───────────────────────────────────
 
     /** Base soul particle count per implosion tick. */
     private static final int IMPLODE_PARTICLE_BASE = 1;
@@ -78,7 +76,6 @@ public final class NetherBehavior implements ChainBehavior {
     /** Pitch for the black-hole sound at EXPAND entry. */
     private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
 
-    // ── Damage / pull / darkness constants ───────────────────────────
 
     /** Fraction of current HP shaved off any living entity caught inside
      * the blast at the EXPAND -> HOLD transition. Binary in/out: no
@@ -108,7 +105,6 @@ public final class NetherBehavior implements ChainBehavior {
     /** Vanilla DARKNESS amplifier in the outer warning band. */
     private static final int OUTER_DARK_AMPLIFIER = 1;
 
-    // ── Persistence tags (behavior owns its own tag namespace) ───────
 
     private static final String TAG_PHASE = "NetherPhase";
     private static final String TAG_EXPAND_REMAINING = "ExpandRemaining";
@@ -121,7 +117,6 @@ public final class NetherBehavior implements ChainBehavior {
     private static final String TAG_ACCUMULATOR = "Accumulator";
     private static final String TAG_STACK_SNAPSHOT = "StackSnapshot";
 
-    // ── State ────────────────────────────────────────────────────────
 
     /** Lifecycle phase. See {@link Phase}. */
     private Phase phase = Phase.EXPAND;
@@ -267,7 +262,6 @@ public final class NetherBehavior implements ChainBehavior {
             cx, cy, cz, count, spread, spread, spread, IMPLODE_PARTICLE_SPEED);
     }
 
-    // ── Sphere-walk helpers ──────────────────────────────────────────
 
     /** Shared AABB + squared-distance filter used by blind/damage/pull/darkness.
      *
@@ -333,7 +327,6 @@ public final class NetherBehavior implements ChainBehavior {
             entity.addEffect(new MobEffectInstance(MobEffects.DARKNESS, duration, amplifier, false, false)));
     }
 
-    // ── Render-state accessors (queried by ChainMarkerBER) ───────────
 
     /** The current internal phase. Used by the BER to branch rendering.
      *
@@ -433,7 +426,6 @@ public final class NetherBehavior implements ChainBehavior {
         return 1f - inv * inv * inv;
     }
 
-    // ── Persistence ──────────────────────────────────────────────────
 
     @Override
     public void saveAdditional(ValueOutput output) {

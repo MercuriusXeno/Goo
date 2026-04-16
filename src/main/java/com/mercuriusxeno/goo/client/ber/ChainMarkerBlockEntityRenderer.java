@@ -138,7 +138,7 @@ public class ChainMarkerBlockEntityRenderer
     /** Threshold for choosing perpendicular basis vector. */
     private static final float DIRECTION_THRESHOLD = 0.9f;
     /** Divisor for converting crystal extent to half-size in block units. */
-    private static final float CRYSTAL_HALF_DIVISOR = 32f;
+    private static final float CRYSTAL_HALF_DIVISOR = 2f;
     /** Array offset for the X target coordinate in spike anim snapshots. */
     private static final int SNAP_TX = 2;
     /** Array offset for the Y target coordinate in spike anim snapshots. */
@@ -288,7 +288,8 @@ public class ChainMarkerBlockEntityRenderer
     private static void submitFuseOrb(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector) {
         float coreHalf = computeCoreHalf(state);
-        float shellHalf = coreHalf + SHELL_MARGIN;
+        float shellHalf = state.gooType == GooType.GLOW
+                ? coreHalf : coreHalf + SHELL_MARGIN;
         float implosion = state.behaviorActive
                 ? 1f : computeImplosionScale(state.fuseRemaining, state.partialTick);
         float pulse = computePulseScale(state);
@@ -300,12 +301,10 @@ public class ChainMarkerBlockEntityRenderer
 
         poseStack.pushPose();
         translateToFace(poseStack, state);
-        if (state.flatMode) {
-            if (state.gooType == GooType.GLOW) {
-                applyGlowFlatScale(poseStack, state, modifier);
-            } else {
-                applySplatScale(poseStack, state.placedFace, modifier);
-            }
+        if (state.gooType == GooType.GLOW) {
+            applyGlowScale(poseStack, state, coreHalf);
+        } else if (state.flatMode) {
+            applySplatScale(poseStack, state.placedFace, modifier);
         } else {
             poseStack.scale(modifier, modifier, modifier);
         }
@@ -330,19 +329,16 @@ public class ChainMarkerBlockEntityRenderer
     }
 
     /**
-     * Lerps glow orb size from standard blob dimensions to the target
-     * crystal bump/flat size as the fuse progresses.
+     * Returns the crystal's lateral half-extent so the glow orb matches
+     * the crystal voxel shape from the moment it lands.
      *
      * @param state the chain marker render state
-     * @return the interpolated core half-size
+     * @return the crystal half-size in block units
      */
     private static float computeGlowCoreHalf(ChainMarkerRenderState state) {
-        float blobHalf = CORE_BASE + (state.stackCount - 1) * CORE_GROWTH;
         GlowCrystalBlock.CrystalSize cs =
                 GlowCrystalBlock.CrystalSize.fromStacks(state.stackCount);
-        float crystalHalf = (cs.max - cs.min) / CRYSTAL_HALF_DIVISOR;
-        float progress = fuseProgress(state);
-        return blobHalf + (crystalHalf - blobHalf) * progress;
+        return (float) ((cs.max - cs.min) / CRYSTAL_HALF_DIVISOR);
     }
 
     /**
@@ -381,9 +377,10 @@ public class ChainMarkerBlockEntityRenderer
      * @return the packed ARGB shell color
      */
     private static int computeShellColor(ChainMarkerRenderState state) {
-        int gooColor = state.gooType.getColor();
         int baseShellAlpha = state.targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
-        return (baseShellAlpha << ALPHA_SHIFT) | (gooColor & RGB_MASK);
+        int rgb = state.gooType == GooType.GLOW
+                ? RGB_MASK : state.gooType.getColor();
+        return (baseShellAlpha << ALPHA_SHIFT) | (rgb & RGB_MASK);
     }
 
     /**
@@ -450,26 +447,24 @@ public class ChainMarkerBlockEntityRenderer
         poseStack.scale(sx, sy, sz);
     }
 
-    /** Glow flat mode: target depth scale along the placed face axis. */
-    private static final float GLOW_FLAT_DEPTH = 0.15f;
 
     /**
-     * Glow flat: animates from uniform blob shape to flattened crystal
-     * shape over the fuse duration.
+     * Scales the glow orb so the face axis depth matches the crystal
+     * model exactly (2px for bump, 0.01 for flat).
      *
      * @param poseStack the pose stack to scale
-     * @param state     the render state (for fuse progress)
-     * @param modifier  combined implosion/pulse/target scale
+     * @param state     the render state
+     * @param coreHalf  the lateral half-size (used to compute depth ratio)
      */
-    private static void applyGlowFlatScale(PoseStack poseStack,
-            ChainMarkerRenderState state, float modifier) {
-        float progress = fuseProgress(state);
-        float depthScale = 1f + (GLOW_FLAT_DEPTH - 1f) * progress;
-        float thin = depthScale * modifier;
+    private static void applyGlowScale(PoseStack poseStack,
+            ChainMarkerRenderState state, float coreHalf) {
+        float visibleDepth = (float) (state.flatMode
+                ? GlowCrystalBlock.FLAT_DEPTH : GlowCrystalBlock.BUMP_DEPTH);
+        float depthScale = visibleDepth / coreHalf;
         Direction face = state.placedFace;
-        float sx = face.getAxis() == Direction.Axis.X ? thin : modifier;
-        float sy = face.getAxis() == Direction.Axis.Y ? thin : modifier;
-        float sz = face.getAxis() == Direction.Axis.Z ? thin : modifier;
+        float sx = face.getAxis() == Direction.Axis.X ? depthScale : 1f;
+        float sy = face.getAxis() == Direction.Axis.Y ? depthScale : 1f;
+        float sz = face.getAxis() == Direction.Axis.Z ? depthScale : 1f;
         poseStack.scale(sx, sy, sz);
     }
 
@@ -509,7 +504,6 @@ public class ChainMarkerBlockEntityRenderer
         return 1f - t * (1f - IMPLOSION_MIN);
     }
 
-    // ── Metal spike rendering ──────────────────────────────────────────
 
     /**
      * Renders goo-textured cone spikes from the orb center toward each
@@ -684,7 +678,6 @@ public class ChainMarkerBlockEntityRenderer
         }
     }
 
-    // ── Ghost outline (connected fill + perimeter wireframe) ────────
 
     /**
      * Renders the effect region as connected translucent fill with

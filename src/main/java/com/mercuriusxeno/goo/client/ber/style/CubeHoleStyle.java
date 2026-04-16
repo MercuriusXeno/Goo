@@ -119,7 +119,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * -1f is flagged). */
     private static final float UNIT = 1f;
 
-    // ── Static cube face definitions ────────────────────────────────
 
     /** Unit cube vertex positions for all six faces in QUADS order,
      * CCW winding when viewed from outside the cube. Each face spans
@@ -144,7 +143,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     /** Total vertex count for one full cube emit. */
     private static final int CUBE_VERTEX_COUNT = CUBE_FACES * CUBE_VERTICES_PER_FACE;
 
-    // ── Precomputed disc angular samples ────────────────────────────
 
     private static final float[] DISK_ANGULAR_SAMPLES = buildDiskAngularSamples();
 
@@ -223,7 +221,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
             (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
     }
 
-    // ── Cube mesh emit ───────────────────────────────────────────────
 
     /**
      * Emits the pre-generated unit cube mesh with each vertex scaled to
@@ -311,7 +308,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
             | (PROGRESS_BYTE_MAX << BLUE_CHANNEL_SHIFT);
     }
 
-    // ── Cube mesh builders ───────────────────────────────────────────
 
     /** Builds the unit cube vertex position table as stride-3 floats.
      * Six faces, 4 CCW vertices each when viewed from outside, all
@@ -392,7 +388,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
         return out;
     }
 
-    // ── Disc emit (duplicated from NetherBlackHoleRender) ───────────
 
     /**
      * Emits the flat accretion-disc annulus. Byte-for-byte duplicate
@@ -486,7 +481,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
         return out;
     }
 
-    // ── Utilities ────────────────────────────────────────────────────
 
     /** Derives a deterministic [0, 1) animation phase from the BE's
      * level game time, cycling every {@link #ANIMATION_CYCLE_TICKS}

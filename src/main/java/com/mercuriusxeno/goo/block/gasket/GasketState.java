@@ -107,7 +107,6 @@ public abstract sealed class GasketState
      */
     public abstract void load(ValueInput input);
 
-    // ── Factory methods ────────────────────────────────────────────────
 
     /**
      * Creates a state that supports no machine-level gaskets.

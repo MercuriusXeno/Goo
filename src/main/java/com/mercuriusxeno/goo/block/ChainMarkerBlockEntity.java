@@ -75,7 +75,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         super(GooBlockEntities.CHAIN_MARKER.get(), pos, state);
     }
 
-    // ── Initialization ────────────────────────────────────────────────────
 
     /**
      * Configures this marker from a chain profile. Call immediately after
@@ -95,7 +94,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    // ── Stacking ──────────────────────────────────────────────────────────
 
     /**
      * Attempts to increment the stack count. Returns true if successful.
@@ -162,7 +160,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    // ── Flat mode toggle ───────────────────────────────────────────────────
 
     /**
      * Forces immediate detonation by zeroing the fuse. The next tick
@@ -208,7 +205,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return lastStackTick;
     }
 
-    // ── Tick ──────────────────────────────────────────────────────────────
 
     /** Server tick: either a post-fuse behavior is active (delegate) or
      * the fuse is still counting down (or rock progressive mining is
@@ -285,7 +281,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    // ── Accessors ─────────────────────────────────────────────────────────
 
     /** Returns the goo type driving this chain effect.
      *
@@ -338,7 +333,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         return behavior;
     }
 
-    // ── Persistence ───────────────────────────────────────────────────────
 
     /** Restores chain state from persistent storage.
      *
@@ -411,7 +405,6 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         }
     }
 
-    // ── Client sync ───────────────────────────────────────────────────────
 
     /** Returns the sync packet sent when block entity data changes.
      *

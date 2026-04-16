@@ -50,7 +50,7 @@ final class AimAssistResolver {
      * around the reticle are eligible even if the exact raytrace misses
      * their hitbox.
      */
-    private static final double AIM_ASSIST_DEGREES = 2.5;
+    private static final double AIM_ASSIST_DEGREES = 4.0;
 
     /** Cosine of the aim-assist angle - precomputed for dot-product checks. */
     private static final double AIM_ASSIST_COS = Math.cos(Math.toRadians(AIM_ASSIST_DEGREES));
@@ -60,7 +60,7 @@ final class AimAssistResolver {
      * stays selected until the reticle drifts beyond this wider cone,
      * preventing flicker when the cursor is near the edge.
      */
-    private static final double STICKY_DEGREES = 3.0;
+    private static final double STICKY_DEGREES = 5.0;
 
     /** Cosine of the sticky retention angle. */
     private static final double STICKY_COS = Math.cos(Math.toRadians(STICKY_DEGREES));
@@ -125,7 +125,6 @@ final class AimAssistResolver {
         return (sticky != null) ? sticky : bestCone;
     }
 
-    // ── Candidate gathering ────────────────────────────────────────────
 
     /**
      * Gathers living, pickable entities within the aim-assist cone's bounding volume.
@@ -207,7 +206,6 @@ final class AimAssistResolver {
                 .inflate(coneRadius + 1.0);
     }
 
-    // ── Pass 1: exact raytrace ─────────────────────────────────────────
 
     /**
      * Finds the nearest exact-AABB raytrace hit across both entities and
@@ -286,7 +284,6 @@ final class AimAssistResolver {
         return Double.MAX_VALUE;
     }
 
-    // ── Pass 2: cone scan ──────────────────────────────────────────────
 
     /**
      * Scans both entity and chain marker candidates and returns whichever
@@ -371,7 +368,6 @@ final class AimAssistResolver {
         return NO_CONE_ANGLE;
     }
 
-    // ── Sticky retention ───────────────────────────────────────────────
 
     /**
      * Sticky retention across both hit kinds. If the previous frame's hit
@@ -513,7 +509,6 @@ final class AimAssistResolver {
                 && hasLineOfSightToBox(level, player, from, new AABB(pos), pos);
     }
 
-    // ── Line-of-sight ──────────────────────────────────────────────────
 
     /**
      * Checks whether the player has line-of-sight to an entity by casting rays

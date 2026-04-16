@@ -71,7 +71,6 @@ public final class BlobFlightRenderer {
     /** Threshold for up-vector selection to avoid parallel cross products. */
     private static final double UP_THRESHOLD = 0.9;
 
-    // ── Glow beam constants ─────────────────────────────────────────────
 
     /** Billboard half-width matches the blob core size. */
     private static final float BEAM_HW = CORE_HW;
@@ -82,24 +81,23 @@ public final class BlobFlightRenderer {
     /** ARGB color for the beam tail (faded glowstone yellow). */
     private static final int BEAM_TAIL_COLOR = 0x30FFD700;
 
-    // ── Metal spine dart constants ─────────────────────────────────────
 
     /** Short-range threshold: metal spine starts fully formed below this. */
     private static final float SHORT_RANGE_THRESHOLD = 1.5f;
-    /** Front dart cone length in blocks. */
-    private static final float DART_FRONT_LENGTH = 1.05f;
-    /** Front dart cone base radius (narrow, pointy). */
-    private static final float DART_FRONT_RADIUS = 0.07f;
-    /** Rear pyramid length in blocks (short, stubby). */
-    private static final float DART_REAR_LENGTH = 0.3f;
-    /** Rear pyramid base radius (wide, blunt). */
-    private static final float DART_REAR_RADIUS = 0.13f;
+    /** Front spear cone length in blocks. */
+    private static final float DART_FRONT_LENGTH = 2.5f;
+    /** Front spear cone base radius (narrow, needlelike). */
+    private static final float DART_FRONT_RADIUS = 0.05f;
+    /** Rear spear butt length in blocks. */
+    private static final float DART_REAR_LENGTH = 0.5f;
+    /** Rear spear butt base radius. */
+    private static final float DART_REAR_RADIUS = 0.09f;
     /** Number of triangular faces on dart cones. */
     private static final int DART_SIDES = 3;
     /** Two pi for dart angle computation. */
     private static final float TWO_PI = (float) (2 * Math.PI);
-    /** Morph rate: spine is fully formed at 50% of flight time. */
-    private static final float MORPH_RATE = 2f;
+    /** Morph rate: spine is fully formed at 40% of flight time. */
+    private static final float MORPH_RATE = 2.5f;
     /** Epsilon for near-zero length detection in beam/direction math. */
     private static final double LENGTH_EPSILON = 1e-6;
     /** Array offset for X component of the perpendicular basis vector. */
@@ -428,7 +426,6 @@ public final class BlobFlightRenderer {
         GooRenderUtil.vertexColored(pose, c, light, color,  tc.ax,  tc.ay,  tc.az, uv.u0(), uv.v0(), nx, ny, nz);
     }
 
-    // ── Glow beam flight rendering ──────────────────────────────────
 
     /**
      * Renders a glow flight as a camera-facing billboard beam with a
@@ -613,7 +610,6 @@ public final class BlobFlightRenderer {
                 fx + lx, fy + ly, fz + lz, uv.u0(), uv.v1(), nx, ny, nz);
     }
 
-    // ── Metal spine flight rendering ──────────────────────────────────
 
     /**
      * Renders a metal blob flight that morphs into a dart spine mid-flight.

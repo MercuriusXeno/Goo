@@ -158,6 +158,9 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
             return SELECTION_SHAPE;
         }
+        if (be.getGooType() == GooType.GLOW) {
+            return computeGlowShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
+        }
         return computeOrbShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
     }
 
@@ -220,7 +223,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!canToggleFlatMode(level, pos)) { return; }
         if (level.isClientSide()) { return; }
         be.toggleFlatMode();
-        level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON,
+        level.playSound(null, pos, SoundEvents.SLIME_SQUISH,
                 SoundSource.BLOCKS, 1.0f,
                 be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
     }
@@ -257,6 +260,21 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         float hz = face.getAxis() == Direction.Axis.Z ? hFace : hPerp;
 
         return box(cx - hx, cy - hy, cz - hz, cx + hx, cy + hy, cz + hz);
+    }
+
+    /**
+     * Computes a voxel shape that exactly matches the glow crystal
+     * that will replace this chain marker on fuse expiry.
+     *
+     * @param stacks   the current stack count
+     * @param face     the placed face direction
+     * @param flatMode true for flat, false for bump
+     * @return the crystal-matched voxel shape
+     */
+    private static VoxelShape computeGlowShape(int stacks, Direction face, boolean flatMode) {
+        GlowCrystalBlock.CrystalSize cs = GlowCrystalBlock.CrystalSize.fromStacks(stacks);
+        double depth = flatMode ? GlowCrystalBlock.FLAT_DEPTH : GlowCrystalBlock.BUMP_DEPTH;
+        return GlowCrystalBlock.shapeFor(face, cs.min, cs.max, depth);
     }
 
     /** Returns the codec for serialization.

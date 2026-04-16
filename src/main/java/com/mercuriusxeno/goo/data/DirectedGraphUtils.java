@@ -60,7 +60,6 @@ final class DirectedGraphUtils {
         return bfsFrom(reverse, seeds);
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────
 
     /**
      * Performs one DFS step of Tarjan's algorithm from the given node.

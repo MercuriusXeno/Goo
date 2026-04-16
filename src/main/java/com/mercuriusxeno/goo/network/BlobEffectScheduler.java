@@ -4,10 +4,12 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.effect.GooMobEffects;
 import com.mercuriusxeno.goo.effect.WorldEffects;
+import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -58,20 +60,25 @@ final class BlobEffectScheduler {
      */
     static void scheduleEffect(ServerPlayer player, BlobThrowPayload payload,
             GooType gooType, int travelTicks) {
-        playThrowSound(player);
+        playThrowSound(player, gooType);
         enqueueArrival(player, payload, gooType, travelTicks);
     }
 
     /**
-     * Plays the throw sound at the player's position.
+     * Plays the throw sound at the player's position. Glow uses a
+     * custom laser sound; all other types use the snowball throw.
      *
-     * @param player the throwing player
+     * @param player  the throwing player
+     * @param gooType the goo type being thrown
      */
-    static void playThrowSound(ServerPlayer player) {
+    static void playThrowSound(ServerPlayer player, GooType gooType) {
         ServerLevel level = player.level();
+        SoundEvent sound = gooType == GooType.GLOW
+                ? GooSounds.GLOW_THROW.get()
+                : SoundEvents.SNOWBALL_THROW;
         float pitch = THROW_PITCH_BASE / (level.getRandom().nextFloat() * THROW_PITCH_RANGE + THROW_PITCH_OFFSET);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, THROW_SOUND_VOLUME, pitch);
+                sound, SoundSource.PLAYERS, THROW_SOUND_VOLUME, pitch);
     }
 
     /**

@@ -66,7 +66,6 @@ public final class GooConversion {
             List<Assignment> assignments
     ) { }
 
-    // ── Parsing delegates ────────────────────────────────────────────────
 
     /**
      * Parses a formula string like "metal / 4 -> aeon / 2".
@@ -112,7 +111,6 @@ public final class GooConversion {
         return ConversionFormulaParser.parseBlock(entries, constants, treeConstants);
     }
 
-    // ── Application delegates ────────────────────────────────────────────
 
     /**
      * Applies a conversion formula N times to a GooValue. All applications use the

@@ -163,7 +163,6 @@ final class EffectBlockPlacement {
         placeChainMarker(level, pos, targetFace, GooType.METAL);
     }
 
-    // ── Chain marker placement ─────────────────────────────────────────
 
     /**
      * Computes and applies the placement decision for a chain marker at the
@@ -275,7 +274,6 @@ final class EffectBlockPlacement {
         }
     }
 
-    // ── Shared helpers ─────────────────────────────────────────────────
 
     /**
      * Resolves the candidate position for a decision (index 0 = hit, 1 = adjacent).

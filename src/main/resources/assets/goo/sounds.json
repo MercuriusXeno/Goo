@@ -7,5 +7,14 @@
         "stream": false
       }
     ]
+  },
+  "effects.glow_throw": {
+    "category": "players",
+    "sounds": [
+      {
+        "name": "goo:effects/glow_throw",
+        "stream": false
+      }
+    ]
   }
 }

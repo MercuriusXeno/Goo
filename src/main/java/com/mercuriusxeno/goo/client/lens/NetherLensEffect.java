@@ -619,7 +619,6 @@ public final class NetherLensEffect {
         }
     }
 
-    // ── Per-frame helpers ───────────────────────────────────────────
 
     /** Computes {@code tan(fov/2)} from the player's current FOV
      * setting. Ignores transient modifiers (bow-pull zoom, speed,
@@ -675,7 +674,6 @@ public final class NetherLensEffect {
         return (float) -(left.x() * dx + left.y() * dy + left.z() * dz);
     }
 
-    // ── Post-chain plumbing ─────────────────────────────────────────
 
     /** Disables the post effect if we currently own the slot. Leaves
      * any other post effect (e.g. creeper cam) alone.

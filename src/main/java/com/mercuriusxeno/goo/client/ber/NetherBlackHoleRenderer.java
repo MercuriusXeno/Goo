@@ -230,7 +230,6 @@ public final class NetherBlackHoleRenderer {
             (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
     }
 
-    // ── Mesh emit helpers ──────────────────────────────────────────────
 
     /**
      * Emits the pre-generated unit sphere mesh with each vertex scaled to
@@ -322,7 +321,6 @@ public final class NetherBlackHoleRenderer {
             .setNormal(pose, 0f, 1f, 0f);
     }
 
-    // ── Color packing ──────────────────────────────────────────────────
 
     /**
      * Packs per-frame state for the sphere and corona shaders into the
@@ -362,7 +360,6 @@ public final class NetherBlackHoleRenderer {
             | (animByte << BLUE_CHANNEL_SHIFT);
     }
 
-    // ── Mesh builders ──────────────────────────────────────────────────
 
     /**
      * Builds a UV sphere mesh as a list of {@link Vector3f} unit vectors.
@@ -429,7 +426,6 @@ public final class NetherBlackHoleRenderer {
         return out;
     }
 
-    // ── Utilities ──────────────────────────────────────────────────────
 
     /** Derives a deterministic [0, 1) animation phase from the BE's level
      * game time, cycling every {@link #ANIMATION_CYCLE_TICKS} ticks.

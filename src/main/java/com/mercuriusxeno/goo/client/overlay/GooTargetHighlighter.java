@@ -418,7 +418,6 @@ public final class GooTargetHighlighter {
         renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
     }
 
-    // ── Water source detection ──────────────────────────────────────────
 
     /**
      * Returns true if the block at the given position is a water source.
@@ -463,7 +462,6 @@ public final class GooTargetHighlighter {
         return be.getBehavior() == null && be.getStackCount() < be.getMaxStacks();
     }
 
-    // ── Chain marker billboard ─────────────────────────────────────────
 
     /** Gap between the top of the blob visual and the billboard bottom. */
     private static final float BILLBOARD_GAP = 0.15f;

@@ -63,7 +63,6 @@ public class GlowCrystalBlock extends Block {
         builder.add(FACING, SHAPE, SIZE);
     }
 
-    // ── Light level ───────────────────────────────────────────────────
 
     /**
      * Returns the light level for a given blockstate.
@@ -75,7 +74,6 @@ public class GlowCrystalBlock extends Block {
         return state.getValue(SIZE).lightLevel;
     }
 
-    // ── Shapes ────────────────────────────────────────────────────────
 
     @Override
     protected @NonNull VoxelShape getShape(@NonNull BlockState state,
@@ -94,7 +92,6 @@ public class GlowCrystalBlock extends Block {
         return Shapes.empty();
     }
 
-    // ── Placement ─────────────────────────────────────────────────────
 
     @Override
     public @Nullable BlockState getStateForPlacement(@NonNull BlockPlaceContext ctx) {
@@ -120,7 +117,6 @@ public class GlowCrystalBlock extends Block {
         }
     }
 
-    // ── Drops ─────────────────────────────────────────────────────────
 
     @Override
     protected @NonNull List<ItemStack> getDrops(@NonNull BlockState state,
@@ -129,7 +125,6 @@ public class GlowCrystalBlock extends Block {
         return List.of(BlobStacks.createBlobStack(GooType.GLOW, count));
     }
 
-    // ── Enums ─────────────────────────────────────────────────────────
 
     /** Crystal shape: bump has 2px depth, flat has none. */
     public enum CrystalShape implements StringRepresentable {
@@ -145,20 +140,20 @@ public class GlowCrystalBlock extends Block {
 
     /** Crystal size determines light level and lateral extent. */
     public enum CrystalSize implements StringRepresentable {
-        TINY("tiny", 6, 5, 11),
-        SMALL("small", 9, 4, 12),
-        MEDIUM("medium", 12, 3, 13),
-        LARGE("large", 15, 2, 14);
+        TINY("tiny", 6, 5.0 / 16, 11.0 / 16),
+        SMALL("small", 9, 4.0 / 16, 12.0 / 16),
+        MEDIUM("medium", 12, 3.0 / 16, 13.0 / 16),
+        LARGE("large", 15, 2.0 / 16, 14.0 / 16);
 
         private final String name;
         /** Light emission level. */
         public final int lightLevel;
-        /** Model min coordinate on the lateral axes (in 16ths). */
-        public final int min;
-        /** Model max coordinate on the lateral axes (in 16ths). */
-        public final int max;
+        /** Model min coordinate on the lateral axes (block fraction). */
+        public final double min;
+        /** Model max coordinate on the lateral axes (block fraction). */
+        public final double max;
 
-        CrystalSize(String name, int lightLevel, int min, int max) {
+        CrystalSize(String name, int lightLevel, double min, double max) {
             this.name = name;
             this.lightLevel = lightLevel;
             this.min = min;
@@ -180,13 +175,11 @@ public class GlowCrystalBlock extends Block {
         }
     }
 
-    // ── Shape table construction ──────────────────────────────────────
 
-    /** Bump model depth in 16ths. */
-    private static final int BUMP_DEPTH = 2;
-    /** Full block extent in 16ths (Minecraft's voxel subdivision). */
-    private static final int BLOCK_EXTENT = 16;
-
+    /** Bump depth in block fractions (2/16). */
+    public static final double BUMP_DEPTH = 2.0 / 16;
+    /** Flat depth in block fractions (matches 0.01 model). */
+    public static final double FLAT_DEPTH = 0.01;
 
     /**
      * Builds the full facing x shape x size to VoxelShape lookup table.
@@ -200,7 +193,8 @@ public class GlowCrystalBlock extends Block {
             for (CrystalShape shape : CrystalShape.values()) {
                 Map<CrystalSize, VoxelShape> bySize = new EnumMap<>(CrystalSize.class);
                 for (CrystalSize size : CrystalSize.values()) {
-                    bySize.put(size, computeShape(facing, shape, size));
+                    double depth = shape == CrystalShape.BUMP ? BUMP_DEPTH : FLAT_DEPTH;
+                    bySize.put(size, shapeFor(facing, size.min, size.max, depth));
                 }
                 byShape.put(shape, bySize);
             }
@@ -210,38 +204,22 @@ public class GlowCrystalBlock extends Block {
     }
 
     /**
-     * Computes a single voxel shape for the given combination.
-     * The base shape (floor-placed, facing UP) is rotated for other faces.
+     * Builds a voxel shape anchored to the given face.
      *
      * @param facing the surface direction
-     * @param shape  bump or flat
-     * @param size   crystal size tier
-     * @return the computed voxel shape
+     * @param min    lateral min (block fraction)
+     * @param max    lateral max (block fraction)
+     * @param depth  depth from the face (block fraction)
+     * @return the voxel shape
      */
-    private static VoxelShape computeShape(Direction facing, CrystalShape shape, CrystalSize size) {
-        int depth = shape == CrystalShape.BUMP ? BUMP_DEPTH : 1;
-        int min = size.min;
-        int max = size.max;
-        return rotateFloorShape(facing, min, max, depth);
-    }
-
-    /**
-     * Rotates a floor-anchored box (y: 0..depth, xz: min..max) to the given face.
-     *
-     * @param facing the surface direction
-     * @param min    lateral min coordinate in 16ths
-     * @param max    lateral max coordinate in 16ths
-     * @param depth  depth in 16ths from the anchored face
-     * @return the rotated voxel shape
-     */
-    private static VoxelShape rotateFloorShape(Direction facing, int min, int max, int depth) {
+    static VoxelShape shapeFor(Direction facing, double min, double max, double depth) {
         return switch (facing) {
-            case UP    -> Block.box(min, 0, min, max, depth, max);
-            case DOWN  -> Block.box(min, BLOCK_EXTENT - depth, min, max, BLOCK_EXTENT, max);
-            case NORTH -> Block.box(min, min, 0, max, max, depth);
-            case SOUTH -> Block.box(min, min, BLOCK_EXTENT - depth, max, max, BLOCK_EXTENT);
-            case WEST  -> Block.box(0, min, min, depth, max, max);
-            case EAST  -> Block.box(BLOCK_EXTENT - depth, min, min, BLOCK_EXTENT, max, max);
+            case UP    -> Shapes.box(min, 0, min, max, depth, max);
+            case DOWN  -> Shapes.box(min, 1 - depth, min, max, 1, max);
+            case NORTH -> Shapes.box(min, min, 0, max, max, depth);
+            case SOUTH -> Shapes.box(min, min, 1 - depth, max, max, 1);
+            case WEST  -> Shapes.box(0, min, min, depth, max, max);
+            case EAST  -> Shapes.box(1 - depth, min, min, 1, max, max);
         };
     }
 }

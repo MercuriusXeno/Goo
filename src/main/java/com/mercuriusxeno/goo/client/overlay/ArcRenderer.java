@@ -26,7 +26,7 @@ final class ArcRenderer {
     /** Scroll speed in world units per second - dashes flow toward the target. */
     private static final float SCROLL_SPEED = 1.5f;
     /** Core alpha for the arc dashes. */
-    private static final int ARC_ALPHA = 120;
+    private static final int ARC_ALPHA = 80;
     /** Distance between polyline sample points on the arc. */
     private static final float SAMPLE_SPACING = 0.05f;
     /** Number of bloom passes for the glow effect (core + outer halos). */

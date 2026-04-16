@@ -121,7 +121,6 @@ final class GooValueExpression {
         return result.toGooValue();
     }
 
-    // ── Recursive descent evaluator ──────────────────────────────────────
 
     /**
      * Additive level: + and - on GooValues.

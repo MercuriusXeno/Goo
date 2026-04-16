@@ -23,7 +23,6 @@ final class ConversionFormulaParser {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // ── String constants ─────────────────────────────────────────────────
     private static final String INVALID_FORMULA = "Invalid conversion formula: ";
     private static final String INVALID_REF = "Invalid conversion reference: ";
     private static final String DENIED = "denied";
@@ -43,7 +42,6 @@ final class ConversionFormulaParser {
     private static final String LOG_UNEXPECTED_TOKEN = "Unexpected token in conversion assignment: {}";
     private static final String LOG_UNKNOWN_REF = "Unknown conversion reference: @{}";
 
-    // ── Regex capture group indices ──────────────────────────────────────
     private static final int GROUP_SOURCE_TYPE = 1;
     private static final int GROUP_SOURCE_DIVISOR = 2;
     private static final int GROUP_TARGET_TYPE = 3;
@@ -58,7 +56,6 @@ final class ConversionFormulaParser {
     private static final Pattern FORMULA_PATTERN = Pattern.compile(
             "\\s*(\\w+)\\s*/\\s*(\\d+)\\s*->\\s*(?:(\\w+)\\s*([*/])\\s*(\\d+)|0)\\s*");
 
-    // ── Stack reference pattern: "N @name" or "@name" ───────────────────
     private static final Pattern STACK_PATTERN = Pattern.compile(
             "\\s*(?:(\\d+)\\s+)?@(\\w+)\\s*");
 
@@ -129,7 +126,6 @@ final class ConversionFormulaParser {
         return new Stack(m.group(GROUP_STACK_NAME), multiplier);
     }
 
-    // ── Block parsing ────────────────────────────────────────────────────
 
     /**
      * Parses a _conversions block with constant resolution for additive modifiers.
@@ -304,7 +300,6 @@ final class ConversionFormulaParser {
         return null;
     }
 
-    // ── Assignment parsing ───────────────────────────────────────────────
 
     /**
      * Parses an assignment value: optional #source for parallel copy,

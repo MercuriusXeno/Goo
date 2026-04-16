@@ -19,7 +19,6 @@ final class ConversionApplicator {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // ── String constants ─────────────────────────────────────────────────
     private static final String SLASH_SEP = " / ";
     private static final String LOSSY_PREFIX = "Lossy conversion division: ";
     private static final String IN_CTX = " in ";

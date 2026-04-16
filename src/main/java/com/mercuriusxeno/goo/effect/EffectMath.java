@@ -90,7 +90,6 @@ public final class EffectMath {
         return BASE_PULSE_INTERVAL >> (clamped - 1);
     }
 
-    // ── Rock majority predicate ─────────────────────────────────────────────
 
     /**
      * Returns true if rock + crystal make up strictly more than half of
@@ -110,7 +109,6 @@ public final class EffectMath {
         return rockTotal * MAJORITY_MULTIPLIER > value.totalBlobs();
     }
 
-    // ── Chain effect range formulas ───────────────────────────────────────
 
     /**
      * Frost freeze radius. Formula: 2 + n.
