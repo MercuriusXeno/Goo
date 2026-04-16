@@ -215,8 +215,8 @@ public abstract class OmniblobQuickCraftScreenMixin {
      */
     private void renderOmniblobSlotPreview(GuiGraphicsExtractor graphics, Slot slot, ItemStack carried) {
         GooType type = BlobStacks.gooTypeOf(carried);
-        long totalVolume = BlobStacks.volumeOf(carried);
-        long perSlot = computeClientPerSlot(totalVolume);
+        int totalVolume = BlobStacks.volumeOf(carried);
+        int perSlot = computeClientPerSlot(totalVolume);
         ItemStack existing = slot.getItem();
         if (!existing.isEmpty() && type == BlobStacks.gooTypeOf(existing)) {
             perSlot += BlobStacks.volumeOf(existing);
@@ -238,10 +238,10 @@ public abstract class OmniblobQuickCraftScreenMixin {
         ItemStack carried = menu.getCarried();
         if (!isQuickCrafting || !OmniblobQuickCraft.isOmniblobQuickCraft(carried)) { return; }
 
-        long totalVolume = BlobStacks.volumeOf(carried);
-        long perSlot = computeClientPerSlot(totalVolume);
-        long totalDistributed = perSlot * quickCraftSlots.size();
-        long remainder = totalVolume - Math.min(totalDistributed, totalVolume);
+        int totalVolume = BlobStacks.volumeOf(carried);
+        int perSlot = computeClientPerSlot(totalVolume);
+        int totalDistributed = perSlot * quickCraftSlots.size();
+        int remainder = totalVolume - Math.min(totalDistributed, totalVolume);
 
         quickCraftingRemainder = remainder > 0 ? carried.getCount() : 0;
         ci.cancel();
@@ -254,12 +254,12 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @param totalVolume the total volume being distributed
      * @return the volume per slot
      */
-    private long computeClientPerSlot(long totalVolume) {
+    private int computeClientPerSlot(int totalVolume) {
         if (quickCraftingType == AbstractContainerMenu.QUICKCRAFT_TYPE_GREEDY) {
             return OmniblobQuickCraft.greedyPerSlot();
         }
         int slotCount = quickCraftSlots.size();
-        if (slotCount <= 0) { return 0L; }
+        if (slotCount <= 0) { return 0; }
         return OmniblobQuickCraft.charitablePerSlot(totalVolume, slotCount);
     }
 }

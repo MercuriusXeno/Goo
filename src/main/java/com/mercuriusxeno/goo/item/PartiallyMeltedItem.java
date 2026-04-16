@@ -88,10 +88,10 @@ public class PartiallyMeltedItem extends Item {
      * @param amount the requested volume in microblobs
      * @return the volume actually drained
      */
-    public static long drain(ItemStack stack, GooType type, long amount) {
+    public static int drain(ItemStack stack, GooType type, int amount) {
         GooContents contents = getContents(stack);
-        long available = contents.getVolume(type);
-        long drained = Math.min(available, amount);
+        int available = contents.getVolume(type);
+        int drained = Math.min(available, amount);
         if (drained > 0) {
             setContents(stack, contents.withRemoved(type, drained));
         }

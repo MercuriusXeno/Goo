@@ -42,7 +42,7 @@ public final class NetherExecutor {
      * @return the accumulated totals, ready to be dropped at POPPING
      */
     public static GooContents walkAndDestroy(ServerLevel level, BlockPos pos, int range) {
-        Map<GooType, Long> totals = new EnumMap<>(GooType.class);
+        Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
         EffectMath.forEachInSphere(pos, range, target -> {
             if (target.equals(pos)) { return; }
             accumulateAndRemove(level, target, totals);
@@ -60,7 +60,7 @@ public final class NetherExecutor {
      * @param totals per-type accumulator to merge into
      */
     private static void accumulateAndRemove(ServerLevel level, BlockPos target,
-                                            Map<GooType, Long> totals) {
+                                            Map<GooType, Integer> totals) {
         BlockState state = level.getBlockState(target);
         if (state.isAir()) { return; }
         tryAccumulateValuedBlock(level, target, state, totals);
@@ -78,7 +78,7 @@ public final class NetherExecutor {
      * @param totals per-type accumulator
      */
     private static void tryAccumulateValuedBlock(ServerLevel level, BlockPos target,
-                                                 BlockState state, Map<GooType, Long> totals) {
+                                                 BlockState state, Map<GooType, Integer> totals) {
         Item item = state.getBlock().asItem();
         if (item == Items.AIR) { return; }
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
@@ -90,17 +90,17 @@ public final class NetherExecutor {
 
     /**
      * Pure helper: merges a {@link GooValue}'s per-type amounts into a
-     * shared totals map, widening {@code int} mB to {@code long} as it goes.
+     * shared totals map, using int} as it goes.
      * Extracted so unit tests can verify accumulation without spinning up
      * a server level.
      *
      * @param totals the accumulator to merge into
      * @param value  the goo value to add
      */
-    public static void mergeValue(Map<GooType, Long> totals, GooValue value) {
+    public static void mergeValue(Map<GooType, Integer> totals, GooValue value) {
         for (Map.Entry<GooType, Integer> entry : value.getAll().entrySet()) {
             int amount = entry.getValue();
-            totals.merge(entry.getKey(), (long) amount, Long::sum);
+            totals.merge(entry.getKey(),     (int) amount, Integer::sum);
         }
     }
 }

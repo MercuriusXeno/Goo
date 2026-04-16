@@ -81,10 +81,10 @@ final class GooRadialRenderer {
     private static final String ZERO_LABEL = "0";
 
     /** Threshold below which volume is displayed in raw mB. */
-    private static final long KILO_THRESHOLD = 1_000;
+    private static final int KILO_THRESHOLD = 1_000;
 
     /** Threshold below which volume is displayed in k (thousands). */
-    private static final long MEGA_THRESHOLD = 1_000_000;
+    private static final int MEGA_THRESHOLD = 1_000_000;
 
     /** Divisor for kilo-scale volume formatting. */
     private static final double KILO_DIVISOR = 1_000.0;
@@ -130,10 +130,10 @@ final class GooRadialRenderer {
      * @param available    map of goo types to available volumes in microblobs
      * @param hoveredIndex the currently hovered wedge index, or -1 for none
      */
-    static void computeWedgeColors(int[] wedgeColors, Map<GooType, Long> available, int hoveredIndex) {
+    static void computeWedgeColors(int[] wedgeColors, Map<GooType, Integer> available, int hoveredIndex) {
         GooType[] types = GooType.values();
         for (int i = 0; i < GooRadialScreen.WEDGE_COUNT; i++) {
-            long qty = available.getOrDefault(types[i], 0L);
+            int qty = available.getOrDefault(types[i], 0);
             boolean hovered = i == hoveredIndex;
             boolean disabled = qty <= 0;
             int baseRgb = hovered ? GooColors.bright(types[i]) : GooColors.wheel(types[i]);
@@ -285,7 +285,7 @@ final class GooRadialRenderer {
      * @param font         the font for rendering text labels
      */
     static void renderLabels(GuiGraphicsExtractor graphics, int centerX, int centerY,
-                             int hoveredIndex, Map<GooType, Long> available, Font font) {
+                             int hoveredIndex, Map<GooType, Integer> available, Font font) {
         renderWedgeIcons(graphics, centerX, centerY);
         if (hoveredIndex >= 0 && hoveredIndex < GooRadialScreen.WEDGE_COUNT) {
             renderHoveredInfo(graphics, font, centerX, centerY, hoveredIndex, available);
@@ -337,9 +337,9 @@ final class GooRadialRenderer {
      * @param available map of goo types to available volumes in microblobs
      */
     private static void renderHoveredInfo(GuiGraphicsExtractor graphics, Font font,
-            int centerX, int centerY, int hoveredIndex, Map<GooType, Long> available) {
+            int centerX, int centerY, int hoveredIndex, Map<GooType, Integer> available) {
         GooType hovered = GooType.values()[hoveredIndex];
-        long qty = available.getOrDefault(hovered, 0L);
+        int qty = available.getOrDefault(hovered, 0);
         int textColor = qty <= 0 ? DISABLED_TEXT_COLOR : COLOR_WHITE;
         Component name = Component.translatable(hovered.getTranslationKey());
         graphics.centeredText(font, name, centerX, centerY - font.lineHeight - 1, textColor);
@@ -353,7 +353,7 @@ final class GooRadialRenderer {
      * @param mB the quantity in microblobs
      * @return the human-readable formatted string
      */
-    static String formatQuantity(long mB) {
+    static String formatQuantity(int mB) {
         if (mB <= 0) { return ZERO_LABEL; }
         if (mB < KILO_THRESHOLD) { return mB + MB_SUFFIX; }
         if (mB < MEGA_THRESHOLD) {

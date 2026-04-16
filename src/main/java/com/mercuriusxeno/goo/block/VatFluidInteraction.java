@@ -66,7 +66,7 @@ final class VatFluidInteraction {
         if (!vat.canAccept()) { return InteractionResult.PASS; }
         GooType type = content.getGooType();
         if (type == null) { return InteractionResult.PASS; }
-        long accepted = vat.insertGoo(type, content.amount());
+        int accepted = vat.insertGoo(type, content.amount());
         if (accepted <= 0) { return InteractionResult.PASS; }
         CanisterItem.removeGoo(stack, type, accepted);
         return InteractionResult.SUCCESS;
@@ -81,7 +81,7 @@ final class VatFluidInteraction {
     private static InteractionResult handleCanisterDrain(VatBlockEntity vat, ItemStack stack) {
         GooType dominant = extractableDominant(vat);
         if (dominant == null) { return InteractionResult.PASS; }
-        long extracted = drainDominantForCanister(vat, stack, dominant);
+        int extracted = drainDominantForCanister(vat, stack, dominant);
         if (extracted <= 0) { return InteractionResult.PASS; }
         CanisterItem.addGoo(stack, dominant, extracted);
         return InteractionResult.SUCCESS;
@@ -95,11 +95,11 @@ final class VatFluidInteraction {
      * @param dominant the goo type to extract
      * @return the volume actually extracted in microblobs
      */
-    private static long drainDominantForCanister(
+    private static int drainDominantForCanister(
             VatBlockEntity vat, ItemStack stack, GooType dominant) {
-        long space = canisterRemainingSpace(stack);
+        int space = canisterRemainingSpace(stack);
         if (space <= 0) { return 0; }
-        long available = vat.getContents().getVolume(dominant);
+        int available = vat.getContents().getVolume(dominant);
         return vat.extractGoo(dominant, Math.min(available, space));
     }
 
@@ -123,8 +123,8 @@ final class VatFluidInteraction {
      * @param stack the canister item stack
      * @return remaining capacity in microblobs
      */
-    private static long canisterRemainingSpace(ItemStack stack) {
-        long capacity = ContainerCapacity.canisterCapacity(
+    private static int canisterRemainingSpace(ItemStack stack) {
+        int capacity = ContainerCapacity.canisterCapacity(
             GooEnchantments.getCompressionLevel(stack));
         return capacity - CanisterItem.getFluidContent(stack).amount();
     }

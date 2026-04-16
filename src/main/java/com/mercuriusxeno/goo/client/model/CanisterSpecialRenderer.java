@@ -130,7 +130,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      */
     private static float computeFillFraction(ItemStack stack, CanisterFluidContent content) {
         int compression = com.mercuriusxeno.goo.registry.GooEnchantments.getCompressionLevel(stack);
-        long capacity = ContainerCapacity.canisterCapacity(compression);
+        int capacity = ContainerCapacity.canisterCapacity(compression);
         return Math.min(1f, (float) content.amount() / capacity);
     }
 

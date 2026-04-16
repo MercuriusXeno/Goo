@@ -26,13 +26,13 @@ public class BlobSizeProperty implements RangeSelectItemModelProperty {
         MapCodec.unit(new BlobSizeProperty());
 
     /** Volume threshold for the small blob model (Blob = 1,000 mB). */
-    private static final long BLOB_THRESHOLD = 1_000L;
+    private static final int BLOB_THRESHOLD = 1_000;
 
     /** Volume threshold for the base blob model (Kiloblob = 1,000,000 mB). */
-    private static final long KILOBLOB_THRESHOLD = 1_000_000L;
+    private static final int KILOBLOB_THRESHOLD = 1_000_000;
 
     /** Volume threshold for the large blob model (Megablob = 1,000,000,000 mB). */
-    private static final long MEGABLOB_THRESHOLD = 1_000_000_000L;
+    private static final int MEGABLOB_THRESHOLD = 1_000_000_000;
     /** Model variant value for megablob tier. */
     private static final float SIZE_MEGABLOB = 3.0f;
     /** Model variant value for kiloblob tier. */
@@ -53,7 +53,7 @@ public class BlobSizeProperty implements RangeSelectItemModelProperty {
      * @param volume the omniblob volume in microblobs
      * @return the model variant float
      */
-    private float omniblobSize(long volume) {
+    private float omniblobSize(int volume) {
         if (volume >= MEGABLOB_THRESHOLD) { return SIZE_MEGABLOB; }
         if (volume >= KILOBLOB_THRESHOLD) { return SIZE_KILOBLOB; }
         return volume >= BLOB_THRESHOLD ? 1.0f : 0.0f;

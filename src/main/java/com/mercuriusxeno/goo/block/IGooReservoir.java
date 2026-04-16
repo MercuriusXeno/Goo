@@ -36,7 +36,7 @@ public interface IGooReservoir {
      * @param volume volume in microblobs
      * @return the amount actually inserted
      */
-    default long insertGoo(GooType type, long volume) {
+    default int insertGoo(GooType type, int volume) {
         return reservoirHandler().insertGoo(type, (int) Math.min(volume, Integer.MAX_VALUE), false);
     }
 
@@ -47,7 +47,7 @@ public interface IGooReservoir {
      * @param amount maximum volume to extract in microblobs
      * @return the amount actually extracted
      */
-    default long extractGoo(GooType type, long amount) {
+    default int extractGoo(GooType type, int amount) {
         return reservoirHandler().extractGoo(type, (int) Math.min(amount, Integer.MAX_VALUE), false);
     }
 }

@@ -118,7 +118,7 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
      * @param volume volume in microblobs to insert
      * @return the amount actually accepted (mB)
      */
-    public long insertGoo(GooType type, long volume) {
+    public int insertGoo(GooType type, int volume) {
         return insertGoo(SLOT, type, volume);
     }
 
@@ -128,7 +128,7 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
      * @param requested the desired volume in microblobs
      * @return the amount actually extracted (mB)
      */
-    public long extractGoo(GooType type, long requested) {
+    public int extractGoo(GooType type, int requested) {
         return extractGoo(SLOT, type, requested);
     }
 

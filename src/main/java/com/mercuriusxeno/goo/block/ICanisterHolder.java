@@ -108,7 +108,7 @@ public interface ICanisterHolder {
      * @param volume volume in microblobs to insert
      * @return the amount actually inserted
      */
-    default long insertFluid(int slot, Fluid fluid, long volume) {
+    default int insertFluid(int slot, Fluid fluid, int volume) {
         return containerState().insertFluid(slot, fluid, volume);
     }
 
@@ -120,7 +120,7 @@ public interface ICanisterHolder {
      * @param volume       volume in microblobs
      * @return the amount actually inserted
      */
-    default long insertGoo(int slot, GooType incomingType, long volume) {
+    default int insertGoo(int slot, GooType incomingType, int volume) {
         return insertFluid(slot, GooFluids.SOURCES.get(incomingType).get(), volume);
     }
 
@@ -132,7 +132,7 @@ public interface ICanisterHolder {
      * @param requested volume in microblobs to extract
      * @return the amount actually extracted
      */
-    default long extractFluid(int slot, Fluid fluid, long requested) {
+    default int extractFluid(int slot, Fluid fluid, int requested) {
         return containerState().extractFluid(slot, fluid, requested);
     }
 
@@ -144,7 +144,7 @@ public interface ICanisterHolder {
      * @param requested volume in microblobs
      * @return the amount actually extracted
      */
-    default long extractGoo(int slot, GooType type, long requested) {
+    default int extractGoo(int slot, GooType type, int requested) {
         return extractFluid(slot, GooFluids.SOURCES.get(type).get(), requested);
     }
 
@@ -165,7 +165,7 @@ public interface ICanisterHolder {
         int capacity = (int) ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
         CanisterSlotFluidHandler handler = new CanisterSlotFluidHandler(capacity,
             () -> syncSlotToItemStack(be, slot),
-            () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0L);
+            () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0);
         handler.loadFrom(CanisterItem.getFluidContent(stack));
         return handler;
     }

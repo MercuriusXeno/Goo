@@ -53,7 +53,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @param onChange  called when contents change (e.g. markDirtyAndSync)
      */
     public GooFluidHandler(int capacity, Runnable onChange) {
-        this(capacity, onChange, () -> 0L);
+        this(capacity, onChange, () -> 0);
     }
 
     /**
@@ -112,7 +112,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
     @Override
     protected void onContentsChanged(int index, FluidStack previousContents) {
         if (suppressCallbacks) { return; }
-        long delta = getAmountAsLong(index) - previousContents.getAmount();
+        int delta = (int) getAmountAsLong(index) - previousContents.getAmount();
         if (delta > 0) {
             trackInsertion(index, delta);
         }
@@ -124,7 +124,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @param index the tank index that received goo
      * @param delta the volume inserted in mB
      */
-    private void trackInsertion(int index, long delta) {
+    private void trackInsertion(int index, int delta) {
         long now = tickSupplier.getAsLong();
         if (now != streamTick) {
             streamRate = 0;
@@ -167,7 +167,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      */
     @Override
     public GooContents toGooContents() {
-        Map<GooType, Long> map = collectNonEmptyTanks();
+        Map<GooType, Integer> map = collectNonEmptyTanks();
         return map.isEmpty() ? GooContents.EMPTY : new GooContents(map);
     }
 
@@ -175,11 +175,11 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @return the non-empty tank volumes keyed by goo type
      */
-    private Map<GooType, Long> collectNonEmptyTanks() {
+    private Map<GooType, Integer> collectNonEmptyTanks() {
         GooType[] types = GooType.values();
-        Map<GooType, Long> map = new EnumMap<>(GooType.class);
+        Map<GooType, Integer> map = new EnumMap<>(GooType.class);
         for (int i = 0; i < types.length; i++) {
-            long amount = getAmountAsLong(i);
+            int amount = (int) getAmountAsLong(i);
             if (amount > 0) { map.put(types[i], amount); }
         }
         return map;
@@ -219,7 +219,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @param type   the goo type
      * @param volume the volume to set
      */
-    private void applyTank(int index, GooType type, long volume) {
+    private void applyTank(int index, GooType type, int volume) {
         if (volume > 0) {
             Fluid fluid = GooFluids.SOURCES.get(type).get();
             set(index, FluidResource.of(fluid), (int) Math.min(volume, Integer.MAX_VALUE));
@@ -232,10 +232,10 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @return the long value
      */
-    public long totalVolume() {
-        long total = 0;
+    public int totalVolume() {
+        int total = 0;
         for (int i = 0; i < size(); i++) {
-            total += getAmountAsLong(i);
+            total += (int) getAmountAsLong(i);
         }
         return total;
     }
@@ -304,8 +304,8 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      * @param type the goo type to query
      * @return volume in mB, or 0 if absent
      */
-    public long getVolume(GooType type) {
-        return getAmountAsLong(type.ordinal());
+    public int getVolume(GooType type) {
+        return (int) getAmountAsLong(type.ordinal());
     }
 
     /**

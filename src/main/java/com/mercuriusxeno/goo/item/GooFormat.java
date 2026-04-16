@@ -7,25 +7,17 @@ package com.mercuriusxeno.goo.item;
 public final class GooFormat {
 
     /** Volume threshold: sub-blob microblobs (<1,000). */
-    private static final long THRESHOLD_MICROBLOB = 1_000L;
+    private static final int THRESHOLD_MICROBLOB = 1_000;
     /** Volume threshold: blob tier (<1 million mB). */
-    private static final long THRESHOLD_BLOB = 1_000_000L;
+    private static final int THRESHOLD_BLOB = 1_000_000;
     /** Volume threshold: kiloblob tier (<1 billion mB). */
-    private static final long THRESHOLD_KILO = 1_000_000_000L;
-    /** Volume threshold: megablob tier (<1 trillion mB). */
-    private static final long THRESHOLD_MEGA = 1_000_000_000_000L;
-    /** Volume threshold: gigablob tier (<1 quadrillion mB). */
-    private static final long THRESHOLD_GIGA = 1_000_000_000_000_000L;
+    private static final int THRESHOLD_KILO = 1_000_000_000;
     /** Divisor for blob tier. */
-    private static final long DIVISOR_BLOB = 1_000L;
+    private static final int DIVISOR_BLOB = 1_000;
     /** Divisor for kiloblob tier. */
-    private static final long DIVISOR_KILO = 1_000_000L;
+    private static final int DIVISOR_KILO = 1_000_000;
     /** Divisor for megablob tier. */
-    private static final long DIVISOR_MEGA = 1_000_000_000L;
-    /** Divisor for gigablob tier. */
-    private static final long DIVISOR_GIGA = 1_000_000_000_000L;
-    /** Divisor for terrablob tier. */
-    private static final long DIVISOR_TERRA = 1_000_000_000_000_000L;
+    private static final int DIVISOR_MEGA = 1_000_000_000;
     /** Number of significant digits in standard display format. */
     private static final int DISPLAY_SIG_DIGITS = 4;
     /** Number of significant digits in compact display format. */
@@ -40,10 +32,6 @@ public final class GooFormat {
     private static final String SUFFIX_KILO = "K";
     /** Suffix for megablob tier. */
     private static final String SUFFIX_MEGA = "M";
-    /** Suffix for gigablob tier. */
-    private static final String SUFFIX_GIGA = "G";
-    /** Suffix for terrablob tier. */
-    private static final String SUFFIX_TERRA = "T";
     /** Decimal point separator. */
     private static final String DOT = ".";
     /** Space separator between value and suffix. */
@@ -53,13 +41,11 @@ public final class GooFormat {
     private static final FormatTier[] TIERS = {
         new FormatTier(THRESHOLD_BLOB, DIVISOR_BLOB, SUFFIX_BLOB),
         new FormatTier(THRESHOLD_KILO, DIVISOR_KILO, SUFFIX_KILO),
-        new FormatTier(THRESHOLD_MEGA, DIVISOR_MEGA, SUFFIX_MEGA),
-        new FormatTier(THRESHOLD_GIGA, DIVISOR_GIGA, SUFFIX_GIGA),
-        new FormatTier(Long.MAX_VALUE, DIVISOR_TERRA, SUFFIX_TERRA),
+        new FormatTier(Integer.MAX_VALUE, DIVISOR_MEGA, SUFFIX_MEGA),
     };
 
     /** Volume tier: threshold, divisor, and suffix for a formatting bracket. */
-    private record FormatTier(long threshold, long divisor, String suffix) {}
+    private record FormatTier(int threshold, int divisor, String suffix) {}
 
     private GooFormat() {}
 
@@ -70,7 +56,7 @@ public final class GooFormat {
      * @param microblobs the volume in microblobs
      * @return the formatted display string
      */
-    public static String formatFluidDisplay(long microblobs) {
+    public static String formatFluidDisplay(int microblobs) {
         if (microblobs < THRESHOLD_MICROBLOB) { return formatMicroblobs(microblobs); }
         FormatTier tier = findTier(microblobs);
         return formatWithDecimal(microblobs, tier.divisor, tier.suffix);
@@ -81,7 +67,7 @@ public final class GooFormat {
      * @param microblobs the volume in microblobs
      * @return the matching tier
      */
-    private static FormatTier findTier(long microblobs) {
+    private static FormatTier findTier(int microblobs) {
         for (FormatTier tier : TIERS) {
             if (microblobs < tier.threshold) { return tier; }
         }
@@ -94,7 +80,7 @@ public final class GooFormat {
      * @param microblobs the volume in microblobs
      * @return the compact formatted string
      */
-    public static String formatFluidDisplayCompact(long microblobs) {
+    public static String formatFluidDisplayCompact(int microblobs) {
         if (microblobs < THRESHOLD_MICROBLOB) {
             return formatMicroblobs(microblobs);
         }
@@ -107,7 +93,7 @@ public final class GooFormat {
      * @param microblobs the sub-blob volume (0-999)
      * @return the decimal fraction string
      */
-    static String formatMicroblobs(long microblobs) {
+    static String formatMicroblobs(int microblobs) {
         return DOT + String.format(MICROBLOB_FORMAT, microblobs);
     }
 
@@ -119,9 +105,9 @@ public final class GooFormat {
      * @param suffix  the unit suffix (e.g. "K", "M")
      * @return the formatted string
      */
-    static String formatWithDecimal(long value, long divisor, String suffix) {
-        long whole = value / divisor;
-        long remainder = value % divisor;
+    static String formatWithDecimal(int value, int divisor, String suffix) {
+        int whole = value / divisor;
+        int remainder = value % divisor;
         int decimalDigits = DISPLAY_SIG_DIGITS - Long.toString(whole).length();
         String sep = suffix.isEmpty() ? SUFFIX_BLOB : SEP_SPACE;
         if (decimalDigits <= 0 || remainder == 0) { return whole + sep + suffix; }
@@ -136,7 +122,7 @@ public final class GooFormat {
      * @param digits    the number of decimal digits
      * @return the formatted fraction string
      */
-    static String formatFraction(long remainder, long divisor, int digits) {
+    static String formatFraction(int remainder, int divisor, int digits) {
         String raw = Long.toString(scaleRemainder(remainder, divisor, digits));
         return padAndTrimZeros(raw, digits);
     }
@@ -148,8 +134,8 @@ public final class GooFormat {
      * @param digits    the number of decimal digits
      * @return the scaled integer representing the decimal fraction
      */
-    private static long scaleRemainder(long remainder, long divisor, int digits) {
-        long scaled = remainder;
+    private static int scaleRemainder(int remainder, int divisor, int digits) {
+        int scaled = remainder;
         for (int i = 0; i < digits; i++) { scaled *= DECIMAL_BASE; }
         return scaled / divisor;
     }
@@ -175,7 +161,7 @@ public final class GooFormat {
      * @param microblobs the volume in microblobs
      * @return the compact formatted string
      */
-    private static String formatCompactWithSigDigits(long microblobs) {
+    private static String formatCompactWithSigDigits(int microblobs) {
         FormatTier tier = findTier(microblobs);
         return compactSigDigits(microblobs, tier.divisor, tier.suffix);
     }
@@ -188,9 +174,9 @@ public final class GooFormat {
      * @param suffix  the unit suffix
      * @return the compact formatted string
      */
-    private static String compactSigDigits(long value, long divisor, String suffix) {
-        long whole = value / divisor;
-        long remainder = value % divisor;
+    private static String compactSigDigits(int value, int divisor, String suffix) {
+        int whole = value / divisor;
+        int remainder = value % divisor;
         int wholeDigits = Long.toString(whole).length();
         int decimalDigits = COMPACT_SIG_DIGITS - wholeDigits;
 

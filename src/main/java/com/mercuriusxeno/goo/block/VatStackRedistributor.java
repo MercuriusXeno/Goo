@@ -68,7 +68,7 @@ public final class VatStackRedistributor {
      * @param stack the vat stack, bottom-to-top
      */
     private static void doRedistribute(List<VatBlockEntity> stack) {
-        Map<GooType, Long> pool = mergePool(stack);
+        Map<GooType, Integer> pool = mergePool(stack);
         for (VatBlockEntity vat : stack) {
             applySlice(vat, pool);
         }
@@ -79,11 +79,11 @@ public final class VatStackRedistributor {
      * @param stack the vat stack to merge
      * @return the merged goo pool
      */
-    private static Map<GooType, Long> mergePool(List<VatBlockEntity> stack) {
-        Map<GooType, Long> pool = new EnumMap<>(GooType.class);
+    private static Map<GooType, Integer> mergePool(List<VatBlockEntity> stack) {
+        Map<GooType, Integer> pool = new EnumMap<>(GooType.class);
         for (VatBlockEntity vat : stack) {
-            for (Map.Entry<GooType, Long> e : vat.getContents().contents().entrySet()) {
-                pool.merge(e.getKey(), e.getValue(), Long::sum);
+            for (Map.Entry<GooType, Integer> e : vat.getContents().contents().entrySet()) {
+                pool.merge(e.getKey(), e.getValue(), Integer::sum);
             }
         }
         return pool;
@@ -94,7 +94,7 @@ public final class VatStackRedistributor {
      * @param vat  the target vat
      * @param pool the mutable goo pool to take from
      */
-    private static void applySlice(VatBlockEntity vat, Map<GooType, Long> pool) {
+    private static void applySlice(VatBlockEntity vat, Map<GooType, Integer> pool) {
         GooContents slice = takeSlice(pool, vat.getCapacity());
         if (!slice.equals(vat.getContents())) {
             vat.getFluidHandler().loadFrom(slice);
@@ -110,10 +110,10 @@ public final class VatStackRedistributor {
      * @param capacity the capacity in mB
      * @return the goo contents
      */
-    private static GooContents takeSlice(Map<GooType, Long> pool, long capacity) {
+    private static GooContents takeSlice(Map<GooType, Integer> pool, int capacity) {
         if (pool.isEmpty() || capacity <= 0) { return GooContents.EMPTY; }
-        Map<GooType, Long> slice = new EnumMap<>(GooType.class);
-        long remaining = capacity;
+        Map<GooType, Integer> slice = new EnumMap<>(GooType.class);
+        int remaining = capacity;
         var it = pool.entrySet().iterator();
         while (it.hasNext() && remaining > 0) {
             remaining -= takeEntry(it, it.next(), remaining, slice);
@@ -129,9 +129,9 @@ public final class VatStackRedistributor {
      * @param slice     the slice being built
      * @return the amount of mB taken
      */
-    private static long takeEntry(Iterator<Map.Entry<GooType, Long>> it,
-            Map.Entry<GooType, Long> entry, long remaining, Map<GooType, Long> slice) {
-        long take = Math.min(entry.getValue(), remaining);
+    private static int takeEntry(Iterator<Map.Entry<GooType, Integer>> it,
+            Map.Entry<GooType, Integer> entry, int remaining, Map<GooType, Integer> slice) {
+        int take = Math.min(entry.getValue(), remaining);
         slice.put(entry.getKey(), take);
         if (take >= entry.getValue()) {
             it.remove();

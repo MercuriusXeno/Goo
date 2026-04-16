@@ -224,7 +224,7 @@ final class CanisterBlockHandlers {
         var pos = canister.getBlockPos();
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.PASS; }
-        long accepted = tryInsertBlobGoo(canister, CanisterBlock.hitSlot(hitResult, pos), type, BlobStacks.volumeOf(stack));
+        int accepted = tryInsertBlobGoo(canister, CanisterBlock.hitSlot(hitResult, pos), type, BlobStacks.volumeOf(stack));
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
@@ -241,9 +241,9 @@ final class CanisterBlockHandlers {
      * @param volume   the volume in microblobs to insert
      * @return accepted volume in microblobs, or 0 if nothing was inserted
      */
-    private static long tryInsertBlobGoo(
+    private static int tryInsertBlobGoo(
             CanisterBlockEntity canister, int hitSlot,
-            GooType type, long volume) {
+            GooType type, int volume) {
         int slot = GooBlockInteraction.findSlot(hitSlot, CanisterBlockEntity.MAX_SLOTS, canister::canAccept);
         if (slot < 0) { return 0; }
         return canister.insertGoo(slot, type, volume);

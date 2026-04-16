@@ -16,7 +16,7 @@ import net.minecraft.util.RandomSource;
 public final class CrucibleParticleHelper {
 
     /** Volume at which the logarithmic fill curve reaches 1.0 (matches BER). */
-    private static final long LIQUID_LOG_CAP = 64_000L;
+    private static final int LIQUID_LOG_CAP = 64_000;
     /** Basin floor Y in block-relative coords (goocible rim interior). */
     private static final float LIQUID_MIN_Y = 13f / 16f;
     /** Basin rim Y (just below top) in block-relative coords. */
@@ -354,7 +354,7 @@ public final class CrucibleParticleHelper {
      * @param totalGoo the total goo
      * @return the result
      */
-    public static float computeSurfaceY(long totalGoo) {
+    public static float computeSurfaceY(int totalGoo) {
         if (totalGoo <= 0) { return LIQUID_MIN_Y; }
         float fill = (float) (Math.log(1.0 + totalGoo) / Math.log(1.0 + LIQUID_LOG_CAP));
         fill = Math.min(1f, fill);

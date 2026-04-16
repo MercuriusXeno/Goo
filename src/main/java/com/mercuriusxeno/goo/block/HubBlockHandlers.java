@@ -181,9 +181,9 @@ final class HubBlockHandlers {
             ItemStack stack, Player player) {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null) { return InteractionResult.PASS; }
-        long volume = BlobStacks.volumeOf(stack);
+        int volume = BlobStacks.volumeOf(stack);
 
-        long accepted = insertBlobGoo(hub, hitResult, type, volume);
+        int accepted = insertBlobGoo(hub, hitResult, type, volume);
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);
@@ -200,7 +200,7 @@ final class HubBlockHandlers {
      * @param volume    the volume of goo in microblobs
      * @return the volume accepted, or 0 if no slot accepted
      */
-    private static long insertBlobGoo(HubBlockEntity hub, BlockHitResult hitResult, GooType type, long volume) {
+    private static int insertBlobGoo(HubBlockEntity hub, BlockHitResult hitResult, GooType type, int volume) {
         var pos = hub.getBlockPos();
         int slot = GooBlockInteraction.findSlot(
                 HubBlock.hitSlot(hitResult, pos), HubBlockEntity.MAX_CANISTERS, hub::canAccept);

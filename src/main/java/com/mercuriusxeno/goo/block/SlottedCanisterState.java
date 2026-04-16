@@ -107,9 +107,9 @@ public class SlottedCanisterState {
      * @param volume volume in microblobs
      * @return the amount actually inserted
      */
-    public long insertFluid(int slot, Fluid fluid, long volume) {
+    public int insertFluid(int slot, Fluid fluid, int volume) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
-        if (h == null) { return 0L; }
+        if (h == null) { return 0; }
         return h.insertFluid(fluid, (int) Math.min(volume, Integer.MAX_VALUE), false);
     }
 
@@ -121,7 +121,7 @@ public class SlottedCanisterState {
      * @param volume       volume in microblobs
      * @return the amount actually inserted
      */
-    public long insertGoo(int slot, GooType incomingType, long volume) {
+    public int insertGoo(int slot, GooType incomingType, int volume) {
         return insertFluid(slot, GooFluids.SOURCES.get(incomingType).get(), volume);
     }
 
@@ -133,9 +133,9 @@ public class SlottedCanisterState {
      * @param requested volume in microblobs
      * @return the amount actually extracted
      */
-    public long extractFluid(int slot, Fluid fluid, long requested) {
+    public int extractFluid(int slot, Fluid fluid, int requested) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
-        if (h == null) { return 0L; }
+        if (h == null) { return 0; }
         return h.extractFluid(fluid, (int) Math.min(requested, Integer.MAX_VALUE), false);
     }
 
@@ -147,7 +147,7 @@ public class SlottedCanisterState {
      * @param requested volume in microblobs
      * @return the amount actually extracted
      */
-    public long extractGoo(int slot, GooType type, long requested) {
+    public int extractGoo(int slot, GooType type, int requested) {
         return extractFluid(slot, GooFluids.SOURCES.get(type).get(), requested);
     }
 
@@ -240,8 +240,8 @@ public class SlottedCanisterState {
      * @param amount volume in microblobs
      * @return the amount routed
      */
-    public long routeFluid(Fluid fluid, long amount) {
-        long routed = distributeAcrossSlots(fluid, amount);
+    public int routeFluid(Fluid fluid, int amount) {
+        int routed = distributeAcrossSlots(fluid, amount);
         if (routed > 0) { syncCallback.run(); }
         return routed;
     }
@@ -253,7 +253,7 @@ public class SlottedCanisterState {
      * @param amount volume in microblobs
      * @return the amount routed
      */
-    public long routeGoo(GooType type, long amount) {
+    public int routeGoo(GooType type, int amount) {
         return routeFluid(GooFluids.SOURCES.get(type).get(), amount);
     }
 
@@ -264,8 +264,8 @@ public class SlottedCanisterState {
      * @param amount the total volume to distribute
      * @return the total volume accepted across all slots
      */
-    private long distributeAcrossSlots(Fluid fluid, long amount) {
-        long remaining = amount;
+    private int distributeAcrossSlots(Fluid fluid, int amount) {
+        int remaining = amount;
         // First pass: slots already holding this fluid
         for (int i = 0; i < maxSlots && remaining > 0; i++) {
             CanisterSlotFluidHandler handler = slots.handlers()[i];

@@ -199,7 +199,7 @@ public final class GooBubbleParticle extends SingleQuadParticle {
         if (age >= DANCE_END) { return false; }
         BlockEntity be = this.level.getBlockEntity(sourcePos);
         if (!(be instanceof CrucibleBlockEntity crucible)) { return true; }
-        long total = crucible.getReservoir().totalVolume()
+        int total = crucible.getReservoir().totalVolume()
                 + crucible.getPoolVolume();
         if (total <= 0) { return true; }
         float surfaceY = CrucibleParticleHelper.computeSurfaceY(total);

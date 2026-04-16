@@ -27,7 +27,7 @@ import java.util.Locale;
 public class GooBlobItem extends Item implements IGooItemInteraction {
 
     /** Volume of one blob in microblobs. */
-    public static final long VOLUME_PER_BLOB = BlobStacks.MB_PER_BLOB;
+    public static final int VOLUME_PER_BLOB = BlobStacks.MB_PER_BLOB;
     /** Suffix appended to the type name for display. */
     private static final String NAME_SUFFIX = " Blob";
 
@@ -79,7 +79,7 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
     public void inventoryTick(@NonNull ItemStack stack, @NonNull ServerLevel level, @NonNull Entity entity,
                               EquipmentSlot slot) {
         if (!(entity instanceof Player player)) { return; }
-        Long oldVolume = stack.get(GooDataComponents.BLOB_VOLUME.get());
+        Integer oldVolume = stack.get(GooDataComponents.BLOB_VOLUME.get());
         if (oldVolume == null) { return; }
 
         migrateOldBlob(stack, oldVolume, player);
@@ -92,16 +92,16 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
      * @param oldVolume the legacy volume in microblobs
      * @param player    the player holding the stack
      */
-    private void migrateOldBlob(ItemStack stack, long oldVolume, Player player) {
+    private void migrateOldBlob(ItemStack stack, int oldVolume, Player player) {
         stack.remove(GooDataComponents.BLOB_VOLUME.get());
 
-        long wholeBlobs = BlobStacks.wholeBlobs(oldVolume);
-        long remainder = BlobStacks.remainder(oldVolume);
+        int wholeBlobs = BlobStacks.wholeBlobs(oldVolume);
+        int remainder = BlobStacks.remainder(oldVolume);
 
         int newCount = (int) Math.min(wholeBlobs, BlobStacks.MAX_STACK);
         stack.setCount(newCount);
 
-        long overflowVolume = computeOverflow(wholeBlobs, remainder);
+        int overflowVolume = computeOverflow(wholeBlobs, remainder);
         distributeOverflow(player, overflowVolume, stack, newCount);
     }
 
@@ -111,7 +111,7 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
      * @param remainder the sub-blob leftover in microblobs
      * @return the overflow volume in microblobs (excess blobs beyond 64 plus remainder)
      */
-    private long computeOverflow(long wholeBlobs, long remainder) {
+    private int computeOverflow(int wholeBlobs, int remainder) {
         return (wholeBlobs > BlobStacks.MAX_STACK)
             ? (wholeBlobs - BlobStacks.MAX_STACK) * BlobStacks.MB_PER_BLOB + remainder
             : remainder;
@@ -124,7 +124,7 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
      * @param stack the original blob stack being migrated
      * @param newCount the stack count after capping at max blob stack size
      */
-    private void distributeOverflow(Player player, long overflowVolume, ItemStack stack, int newCount) {
+    private void distributeOverflow(Player player, int overflowVolume, ItemStack stack, int newCount) {
         if (overflowVolume > 0) {
             ItemStack omniblob = GooOmniblobItem.createWithVolume(gooType, overflowVolume);
             PlayerUtils.addOrDrop(player, omniblob);
@@ -157,7 +157,7 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
         int totalCount = thisStack.getCount() + cursor.getCount();
         if (totalCount <= thisStack.getMaxStackSize()) { return false; }
 
-        long totalVolume = totalCount * BlobStacks.MB_PER_BLOB;
+        int totalVolume = totalCount * BlobStacks.MB_PER_BLOB;
         ItemStack omniblob = GooOmniblobItem.createWithVolume(gooType, totalVolume);
         thisStack.setCount(0);
         slot.set(omniblob);

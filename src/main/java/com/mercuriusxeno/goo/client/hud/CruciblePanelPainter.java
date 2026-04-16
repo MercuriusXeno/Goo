@@ -231,7 +231,7 @@ final class CruciblePanelPainter {
      * @param totalVol the total volume in mB
      * @return the formatted string
      */
-    private static String formatRow(long reservoirVol, long totalVol) {
+    private static String formatRow(int reservoirVol, int totalVol) {
         return GooTooltipHandler.formatFluidDisplayCompact(reservoirVol)
             + VOLUME_SEPARATOR
             + GooTooltipHandler.formatFluidDisplayCompact(totalVol);
@@ -244,8 +244,8 @@ final class CruciblePanelPainter {
      * @param type the goo type
      * @return the result
      */
-    private static long volumeOf(GooContents contents, GooType type) {
-        return contents.getAll().getOrDefault(type, 0L);
+    private static int volumeOf(GooContents contents, GooType type) {
+        return contents.getAll().getOrDefault(type, 0);
     }
 
     /**
@@ -285,7 +285,7 @@ final class CruciblePanelPainter {
      */
     private static void renderTypeRow(PoseStack poseStack, Font font,
             MultiBufferSource buffers, GooType type,
-            long reservoirVol, long totalVol, float x, float y) {
+            int reservoirVol, int totalVol, float x, float y) {
         float iconY = y + (ROW_HEIGHT - CrucibleFuelDisplay.ICON_SIZE) / HALF_F;
         float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF_F;
         CrucibleFuelDisplay.renderTexturedQuad(poseStack, buffers,
@@ -306,7 +306,7 @@ final class CruciblePanelPainter {
      * @param y the Y coordinate
      */
     private static void renderFractionText(Font font, MultiBufferSource buffers,
-            PoseStack poseStack, long reservoirVol, long totalVol,
+            PoseStack poseStack, int reservoirVol, int totalVol,
             float x, float y) {
         String resText = GooTooltipHandler.formatFluidDisplayCompact(reservoirVol);
         String totText = GooTooltipHandler.formatFluidDisplayCompact(totalVol);

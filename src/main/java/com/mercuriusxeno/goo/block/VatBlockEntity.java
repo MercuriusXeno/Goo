@@ -47,7 +47,7 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooRe
     // Package-private fields accessed by VatSerialization, VatStackRedistributor.
     final GooFluidHandler fluidHandler = new GooFluidHandler(
         (int) ContainerCapacity.vatCapacity(0), this::onFluidChanged,
-        () -> level != null ? level.getGameTime() : 0L);
+        () -> level != null ? level.getGameTime() : 0);
     int compressionLevel;
     @Nullable String label;
     @Nullable IGasketRegistryAccess gasketRegistryAccess;
@@ -104,7 +104,7 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooRe
      *
      * @return the capacity
      */
-    public long getCapacity() { return ContainerCapacity.vatCapacity(compressionLevel); }
+    public int getCapacity() { return ContainerCapacity.vatCapacity(compressionLevel); }
 
     /** Returns the current goo contents.
      *

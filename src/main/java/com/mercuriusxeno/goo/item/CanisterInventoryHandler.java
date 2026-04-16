@@ -53,8 +53,8 @@ final class CanisterInventoryHandler {
      */
     private static boolean handleBlobInsert(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
         GooType type = ((GooBlobItem) cursor.getItem()).getGooType();
-        long volume = BlobStacks.volumeOf(cursor);
-        long accepted = CanisterItem.addGoo(canister, type, volume);
+        int volume = BlobStacks.volumeOf(cursor);
+        int accepted = CanisterItem.addGoo(canister, type, volume);
         if (accepted <= 0) { return false; }
 
         int blobsUsed = (int) (accepted / BlobStacks.MB_PER_BLOB);
@@ -73,8 +73,8 @@ final class CanisterInventoryHandler {
      */
     private static boolean handleOmniblobInsert(ItemStack canister, ItemStack cursor, SlotAccess cursorAccess) {
         GooType type = ((GooOmniblobItem) cursor.getItem()).getGooType();
-        long volume = GooOmniblobItem.getVolume(cursor);
-        long accepted = CanisterItem.addGoo(canister, type, volume);
+        int volume = GooOmniblobItem.getVolume(cursor);
+        int accepted = CanisterItem.addGoo(canister, type, volume);
         if (accepted <= 0) { return false; }
 
         applyOmniblobRemainder(cursor, cursorAccess, volume - accepted);
@@ -88,7 +88,7 @@ final class CanisterInventoryHandler {
      * @param cursorAccess access to set the cursor contents
      * @param remaining    the remaining volume after transfer
      */
-    private static void applyOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, long remaining) {
+    private static void applyOmniblobRemainder(ItemStack cursor, SlotAccess cursorAccess, int remaining) {
         if (remaining <= 0) {
             cursorAccess.set(ItemStack.EMPTY);
         } else {
@@ -109,7 +109,7 @@ final class CanisterInventoryHandler {
         GooType dominant = dominantType(canister);
         if (dominant == null) { return false; }
 
-        long extracted = extractCapped(canister, dominant, ContainerCapacity.BLOB_CAP);
+        int extracted = extractCapped(canister, dominant, ContainerCapacity.BLOB_CAP);
         if (extracted <= 0) { return false; }
 
         cursorAccess.set(BlobStacks.createForOutput(dominant, extracted));
@@ -138,9 +138,9 @@ final class CanisterInventoryHandler {
      * @param cap      the maximum volume to extract
      * @return the amount actually extracted
      */
-    private static long extractCapped(ItemStack canister, GooType type, long cap) {
+    private static int extractCapped(ItemStack canister, GooType type, int cap) {
         CanisterFluidContent content = CanisterItem.getFluidContent(canister);
-        long available = (content.getGooType() == type) ? content.amount() : 0;
+        int available = (content.getGooType() == type) ? content.amount() : 0;
         return CanisterItem.removeGoo(canister, type, Math.min(available, cap));
     }
 

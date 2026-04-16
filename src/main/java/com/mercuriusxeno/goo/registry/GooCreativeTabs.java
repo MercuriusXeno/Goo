@@ -44,8 +44,8 @@ public class GooCreativeTabs {
                 // Per-type: one blob + 1K-blob and 1M-blob omniblobs
                 for (GooType type : GooType.values()) {
                     output.accept(BlobStacks.createBlobStack(type, 1));
-                    output.accept(GooOmniblobItem.createWithVolume(type, 1_000_000L));
-                    output.accept(GooOmniblobItem.createWithVolume(type, 1_000_000_000L));
+                    output.accept(GooOmniblobItem.createWithVolume(type, 1_000_000));
+                    output.accept(GooOmniblobItem.createWithVolume(type, 1_000_000_000));
                 }
             })
             .build()

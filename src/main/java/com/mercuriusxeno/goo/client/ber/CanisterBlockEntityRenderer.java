@@ -144,7 +144,7 @@ public class CanisterBlockEntityRenderer
      */
     private static void populateFilledSlot(CanisterBlockEntity be,
             CanisterRenderState state, int slot, CanisterFluidContent content) {
-        long cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
+        int cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
         state.slotType[slot] = content.getGooType();
         state.slotFill[slot] = logFill(content.amount(), cap);
     }
@@ -157,7 +157,7 @@ public class CanisterBlockEntityRenderer
      * @param capacity the maximum capacity
      * @return the result
      */
-    private static float logFill(long amount, long capacity) {
+    private static float logFill(int amount, int capacity) {
         if (amount <= 0 || capacity <= 0) { return 0f; }
         return Math.min(1f, (float) amount / capacity);
     }

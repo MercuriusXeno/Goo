@@ -37,7 +37,7 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
      * @param item the item resource to read capacity from
      * @return total capacity in microblobs
      */
-    protected abstract long getContainerCapacity(ItemResource item);
+    protected abstract int getContainerCapacity(ItemResource item);
 
     /**
      * Returns the FluidResource for the goo type at this tank index.
@@ -52,7 +52,7 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
         GooType type = typeForIndex(index);
         if (type == null) { return FluidResource.EMPTY; }
         GooContents contents = readContents(item);
-        long volume = contents.getVolume(type);
+        int volume = contents.getVolume(type);
         return volume > 0
             ? FluidResource.of(GooFluids.SOURCES.get(type).get())
             : FluidResource.EMPTY;
@@ -69,7 +69,7 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
     protected int getAmountFrom(ItemResource item, int index) {
         GooType type = typeForIndex(index);
         if (type == null) { return 0; }
-        return clampToInt(readContents(item).getVolume(type));
+        return readContents(item).getVolume(type);
     }
 
     /**
@@ -103,14 +103,14 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
     @Override
     protected int getCapacity(int index, FluidResource resource) {
         ItemResource item = itemAccess.getResource();
-        long totalCapacity = getContainerCapacity(item);
-        long otherVolume = 0;
+        int totalCapacity = getContainerCapacity(item);
+        int otherVolume = 0;
         GooContents contents = readContents(item);
         GooType[] types = GooType.values();
         for (int i = 0; i < types.length; i++) {
             if (i != index) { otherVolume += contents.getVolume(types[i]); }
         }
-        return clampToInt(totalCapacity - otherVolume);
+        return totalCapacity - otherVolume;
     }
 
     /**
@@ -178,12 +178,12 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
     }
 
     /**
-     * Safely narrows a long to int, clamping at Integer.MAX_VALUE.
+     * Identity function, kept for API compatibility.
      *
      * @param value the long value to clamp
      * @return the value as int, capped at Integer.MAX_VALUE
      */
-    protected static int clampToInt(long value) {
+    protected static int clampToInt(int value) {
         return (int) Math.min(value, Integer.MAX_VALUE);
     }
 }

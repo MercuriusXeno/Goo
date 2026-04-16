@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CrucibleLogFillTest {
 
-    private static final long CAP = CrucibleBlockEntityRenderer.LIQUID_LOG_CAP;
+    private static final int CAP = CrucibleBlockEntityRenderer.LIQUID_LOG_CAP;
 
     /** Zero volume gives zero fill. */
     @Test
@@ -31,7 +31,7 @@ class CrucibleLogFillTest {
     /** Small volume produces a front-loaded fill (more than linear). */
     @Test
     void smallVolumeFrontLoaded() {
-        float fill = CrucibleBlockEntityRenderer.computeLogFill(1_000L, CAP);
+        float fill = CrucibleBlockEntityRenderer.computeLogFill(1_000, CAP);
         float linearFill = 1_000f / (float) CAP;
         assertTrue(fill > linearFill,
             "Logarithmic fill should exceed linear for small volumes");
@@ -48,7 +48,7 @@ class CrucibleLogFillTest {
     @Test
     void fillIncreasesMonotonically() {
         float prev = 0f;
-        for (long v = 100; v <= CAP; v += 1000) {
+        for (int v = 100; v <= CAP; v += 1000) {
             float fill = CrucibleBlockEntityRenderer.computeLogFill(v, CAP);
             assertTrue(fill > prev, "Fill should increase with volume at v=" + v);
             prev = fill;

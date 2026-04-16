@@ -5,10 +5,10 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
 
 /**
  * Data model carrying a single goo type and its amount for tooltip rendering.
- * One component per goo line in the tooltip. Amount is in microblobs (long).
+ * One component per goo line in the tooltip. Amount is in microblobs     (int).
  *
  * @param type   the goo type for this tooltip line
  * @param amount the volume in microblobs
  */
-public record GooValueTooltipComponent(GooType type, long amount) implements TooltipComponent {
+public record GooValueTooltipComponent(GooType type, int amount) implements TooltipComponent {
 }

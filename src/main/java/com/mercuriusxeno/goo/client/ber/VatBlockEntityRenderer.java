@@ -252,8 +252,8 @@ public class VatBlockEntityRenderer
 
     /** Mutable accumulator for stack walk data, converted to StackData when complete. */
     private static final class StackAccumulator {
-        long totalVolume;
-        long totalCapacity;
+        int totalVolume;
+        int totalCapacity;
         GooContents merged = GooContents.EMPTY;
         int stackSize;
         int selfIndex = NO_INDEX;
@@ -267,7 +267,7 @@ public class VatBlockEntityRenderer
     }
 
     /** Aggregated data from walking a vat stack. */
-    private record StackData(long totalVolume, long totalCapacity, GooContents merged,
+    private record StackData(int totalVolume, int totalCapacity, GooContents merged,
             int stackSize, int selfIndex, @Nullable GooType topStreamType, int topStreamRate) {}
 
     // --- Geometry submission ---

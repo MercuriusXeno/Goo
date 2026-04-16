@@ -120,7 +120,7 @@ public class CanisterFluidHandler extends ItemAccessResourceHandler<FluidResourc
      * @param item the item resource to read enchantments from
      * @return the canister capacity in mB based on compression level
      */
-    private static long readCapacity(ItemResource item) {
+    private static int readCapacity(ItemResource item) {
         ItemEnchantments enchants = item.getComponents().getOrDefault(
             DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
         int compression = findCompressionLevel(enchants);

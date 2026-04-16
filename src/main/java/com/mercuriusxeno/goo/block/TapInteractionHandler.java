@@ -210,8 +210,8 @@ final class TapInteractionHandler {
         GooType type = BlobStacks.gooTypeOf(stack);
         if (type == null || !tap.canAcceptGoo()) { return InteractionResult.PASS; }
 
-        long volume = BlobStacks.volumeOf(stack);
-        long accepted = tap.insertGoo(type, volume);
+        int volume = BlobStacks.volumeOf(stack);
+        int accepted = tap.insertGoo(type, volume);
         if (accepted <= 0) { return InteractionResult.PASS; }
 
         BlobStacks.deplete(stack, accepted, player);

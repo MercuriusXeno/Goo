@@ -119,7 +119,7 @@ public final class GooTooltipHandler {
      */
     private static void appendBlobComponent(
             List<Either<FormattedText, TooltipComponent>> elements,
-            GooType type, long volume) {
+            GooType type, int volume) {
         if (volume <= 0) { return; }
         elements.add(Either.left(Component.empty()));
         elements.add(Either.right(
@@ -150,7 +150,7 @@ public final class GooTooltipHandler {
     private static void appendGooContentsComponents(
             List<Either<FormattedText, TooltipComponent>> elements, GooContents contents) {
         elements.add(Either.left(Component.empty()));
-        for (Map.Entry<GooType, Long> entry : contents.getAll().entrySet()) {
+        for (Map.Entry<GooType, Integer> entry : contents.getAll().entrySet()) {
             elements.add(Either.right(
                     new GooValueTooltipComponent(entry.getKey(), entry.getValue())));
         }
@@ -200,22 +200,22 @@ public final class GooTooltipHandler {
 
 
     /**
-     * Delegates to {@link GooFormat#formatFluidDisplay(long)}.
+     * Delegates to {@link GooFormat#formatFluidDisplay    (int)}.
      *
      * @param microblobs the volume in microblobs
      * @return the formatted string
      */
-    public static String formatFluidDisplay(long microblobs) {
+    public static String formatFluidDisplay(int microblobs) {
         return GooFormat.formatFluidDisplay(microblobs);
     }
 
     /**
-     * Delegates to {@link GooFormat#formatFluidDisplayCompact(long)}.
+     * Delegates to {@link GooFormat#formatFluidDisplayCompact    (int)}.
      *
      * @param microblobs the volume in microblobs
      * @return the formatted string
      */
-    public static String formatFluidDisplayCompact(long microblobs) {
+    public static String formatFluidDisplayCompact(int microblobs) {
         return GooFormat.formatFluidDisplayCompact(microblobs);
     }
 }
