@@ -2,9 +2,12 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 
@@ -21,6 +24,8 @@ final class CanisterEntitySerializer {
     static final String TAG_STREAMS = "Streams";
     /** NBT key for stream goo type ordinal. */
     private static final String TAG_TYPE = "type";
+    /** NBT key for stream fluid registry name (vanilla fluids). */
+    private static final String TAG_FLUID = "fluid";
     /** NBT key for stream transfer rate. */
     private static final String TAG_RATE = "rate";
     /** NBT key for stream start tick. */
@@ -33,54 +38,50 @@ final class CanisterEntitySerializer {
     /**
      * Serializes per-slot stream state to a ValueOutput.
      *
-     * @param output         the value output to write to
-     * @param slotStreamType per-slot stream goo types (nullable elements)
-     * @param slotStreamRate per-slot stream rates
-     * @param slotStreamTick per-slot stream ticks
-     * @param maxSlots       number of slots
+     * @param output          the value output to write to
+     * @param slotStreamType  per-slot stream goo types (nullable elements)
+     * @param slotStreamFluid per-slot stream vanilla fluids (nullable elements)
+     * @param slotStreamRate  per-slot stream rates
+     * @param slotStreamTick  per-slot stream ticks
+     * @param maxSlots        number of slots
      */
     static void saveStreamState(
             ValueOutput output, @Nullable GooType[] slotStreamType,
+            @Nullable Fluid[] slotStreamFluid,
             int[] slotStreamRate, long[] slotStreamTick, int maxSlots) {
-        CompoundTag tag = buildStreamTag(slotStreamType, slotStreamRate, slotStreamTick, maxSlots);
+        CompoundTag tag = buildStreamTag(slotStreamType, slotStreamFluid,
+                slotStreamRate, slotStreamTick, maxSlots);
         if (!tag.isEmpty()) {
             output.store(TAG_STREAMS, CompoundTag.CODEC, tag);
         }
     }
 
-    /**
-     * Collects non-null slot streams into a compound tag keyed by slot index.
-     *
-     * @param slotStreamType per-slot stream goo types (nullable elements)
-     * @param slotStreamRate per-slot stream rates
-     * @param slotStreamTick per-slot stream ticks
-     * @param maxSlots       number of slots
-     * @return the compound tag with stream data
-     */
     private static CompoundTag buildStreamTag(
-            @Nullable GooType[] slotStreamType, int[] slotStreamRate,
-            long[] slotStreamTick, int maxSlots) {
+            @Nullable GooType[] slotStreamType, @Nullable Fluid[] slotStreamFluid,
+            int[] slotStreamRate, long[] slotStreamTick, int maxSlots) {
         CompoundTag tag = new CompoundTag();
         for (int i = 0; i < maxSlots; i++) {
             if (slotStreamType[i] != null) {
                 tag.put(String.valueOf(i), serializeSlotStream(
-                        slotStreamType[i], slotStreamRate[i], slotStreamTick[i]));
+                        slotStreamType[i], null, slotStreamRate[i], slotStreamTick[i]));
+            } else if (slotStreamFluid[i] != null) {
+                tag.put(String.valueOf(i), serializeSlotStream(
+                        null, slotStreamFluid[i], slotStreamRate[i], slotStreamTick[i]));
             }
         }
         return tag;
     }
 
-    /**
-     * Serializes a single slot's stream type, rate, and tick into a CompoundTag.
-     *
-     * @param type the goo type
-     * @param rate the transfer rate
-     * @param tick the game tick
-     * @return the serialized stream tag
-     */
-    private static CompoundTag serializeSlotStream(GooType type, int rate, long tick) {
+    private static CompoundTag serializeSlotStream(
+            @Nullable GooType type, @Nullable Fluid fluid, int rate, long tick) {
         CompoundTag slotTag = new CompoundTag();
-        slotTag.putInt(TAG_TYPE, type.ordinal());
+        if (type != null) {
+            slotTag.putInt(TAG_TYPE, type.ordinal());
+        } else if (fluid != null) {
+            FluidStack marker = new FluidStack(fluid, 1);
+            slotTag.put(TAG_FLUID, FluidStack.CODEC.encodeStart(
+                    NbtOps.INSTANCE, marker).getOrThrow());
+        }
         slotTag.putInt(TAG_RATE, rate);
         slotTag.putLong(TAG_TICK, tick);
         return slotTag;
@@ -89,57 +90,52 @@ final class CanisterEntitySerializer {
     /**
      * Restores per-slot stream state from a ValueInput.
      *
-     * @param input          the value input to read from
-     * @param slotStreamType per-slot stream goo types (nullable elements, written in-place)
-     * @param slotStreamRate per-slot stream rates (written in-place)
-     * @param slotStreamTick per-slot stream ticks (written in-place)
-     * @param maxSlots       number of slots
+     * @param input           the value input to read from
+     * @param slotStreamType  per-slot stream goo types (nullable elements, written in-place)
+     * @param slotStreamFluid per-slot stream vanilla fluids (nullable elements, written in-place)
+     * @param slotStreamRate  per-slot stream rates (written in-place)
+     * @param slotStreamTick  per-slot stream ticks (written in-place)
+     * @param maxSlots        number of slots
      */
     static void loadStreamState(
             ValueInput input, @Nullable GooType[] slotStreamType,
+            @Nullable Fluid[] slotStreamFluid,
             int[] slotStreamRate, long[] slotStreamTick, int maxSlots) {
         input.read(TAG_STREAMS, CompoundTag.CODEC).ifPresentOrElse(
-            tag -> deserializeAllSlotStreams(tag, slotStreamType, slotStreamRate, slotStreamTick, maxSlots),
+            tag -> deserializeAllSlotStreams(tag, slotStreamType, slotStreamFluid,
+                    slotStreamRate, slotStreamTick, maxSlots),
             () -> clearAllSlotStreams(slotStreamType, slotStreamRate, slotStreamTick, maxSlots));
     }
 
-    /**
-     * Deserializes stream state for all slots from a compound tag.
-     *
-     * @param tag            the compound tag containing per-slot stream data
-     * @param slotStreamType per-slot stream goo types (written in-place)
-     * @param slotStreamRate per-slot stream rates (written in-place)
-     * @param slotStreamTick per-slot stream ticks (written in-place)
-     * @param maxSlots       number of slots
-     */
     private static void deserializeAllSlotStreams(
             CompoundTag tag, @Nullable GooType[] slotStreamType,
+            @Nullable Fluid[] slotStreamFluid,
             int[] slotStreamRate, long[] slotStreamTick, int maxSlots) {
         for (int i = 0; i < maxSlots; i++) {
             String key = String.valueOf(i);
             if (tag.contains(key)) {
-                deserializeSlotStream(i, tag.getCompoundOrEmpty(key), slotStreamType, slotStreamRate, slotStreamTick);
+                deserializeSlotStream(i, tag.getCompoundOrEmpty(key),
+                        slotStreamType, slotStreamFluid, slotStreamRate, slotStreamTick);
             } else {
                 clearSlotStream(i, slotStreamType, slotStreamRate, slotStreamTick);
+                if (slotStreamFluid != null) { slotStreamFluid[i] = null; }
             }
         }
     }
 
-    /**
-     * Restores a single slot's stream type, rate, and tick from NBT.
-     *
-     * @param slot           the slot index
-     * @param slotTag        the compound tag for this slot
-     * @param slotStreamType per-slot stream goo types (written in-place)
-     * @param slotStreamRate per-slot stream rates (written in-place)
-     * @param slotStreamTick per-slot stream ticks (written in-place)
-     */
     private static void deserializeSlotStream(
             int slot, CompoundTag slotTag, @Nullable GooType[] slotStreamType,
+            @Nullable Fluid[] slotStreamFluid,
             int[] slotStreamRate, long[] slotStreamTick) {
         GooType[] types = GooType.values();
         int ordinal = slotTag.getIntOr(TAG_TYPE, INVALID_ORDINAL);
         slotStreamType[slot] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
+        if (slotStreamFluid != null && slotTag.contains(TAG_FLUID)) {
+            FluidStack fs = FluidStack.CODEC.parse(
+                    NbtOps.INSTANCE, slotTag.getCompoundOrEmpty(TAG_FLUID))
+                    .result().orElse(FluidStack.EMPTY);
+            slotStreamFluid[slot] = fs.isEmpty() ? null : fs.getFluid();
+        }
         slotStreamRate[slot] = slotTag.getIntOr(TAG_RATE, 0);
         slotStreamTick[slot] = slotTag.getLongOr(TAG_TICK, 0);
     }
@@ -174,6 +170,16 @@ final class CanisterEntitySerializer {
         slotStreamType[slot] = null;
         slotStreamRate[slot] = 0;
         slotStreamTick[slot] = 0;
+    }
+
+    /** Clears stream fluid for a slot.
+     *
+     * @param slot         the slot index
+     * @param streamFluid  per-slot stream fluids (written in-place)
+     */
+    static void clearSlotStreamFluid(int slot,
+            @Nullable Fluid[] streamFluid) {
+        if (streamFluid != null) { streamFluid[slot] = null; }
     }
 
     /**

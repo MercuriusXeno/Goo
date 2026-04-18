@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
+import com.mercuriusxeno.goo.block.ChoralGasketBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.block.HubBlock;
@@ -86,6 +87,14 @@ public class GooBlocks {
 
     public static final DeferredBlock<CanisterBlock> CANISTER = BLOCKS.registerBlock("canister",
             CanisterBlock::new, CANISTER_PROPERTY_SUPPLIER);
+
+    private static final Supplier<BlockBehaviour.Properties> CHORAL_GASKET_PROPERTY_SUPPLIER =
+            () -> BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE).strength(0.5F).sound(SoundType.AMETHYST)
+                    .noOcclusion().noCollision();
+
+    public static final DeferredBlock<ChoralGasketBlock> CHORAL_GASKET_BLOCK = BLOCKS.registerBlock(
+            "choral_gasket", ChoralGasketBlock::new, CHORAL_GASKET_PROPERTY_SUPPLIER);
 
     // --- Effect blocks ---
 

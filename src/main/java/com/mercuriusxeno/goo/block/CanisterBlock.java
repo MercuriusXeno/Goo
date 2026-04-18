@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -104,6 +105,12 @@ public class CanisterBlock extends BaseEntityBlock {
      */
     public CanisterBlock(Properties properties) {
         super(properties);
+    }
+
+    /** Canisters are never replaceable by fluids despite having partial shapes. */
+    @Override
+    protected boolean canBeReplaced(BlockState state, Fluid fluid) {
+        return false;
     }
 
     /**
@@ -248,7 +255,8 @@ public class CanisterBlock extends BaseEntityBlock {
     // --- Interactions ---
 
     /**
-     * Classifies the held item and dispatches to the appropriate canister interaction handler.
+     * Fluid containers (buckets) interact with the targeted slot's fluid.
+     * Otherwise classifies the held item and dispatches to the appropriate handler.
      *
      * @param stack     the held item stack
      * @param state     the block state
@@ -263,6 +271,9 @@ public class CanisterBlock extends BaseEntityBlock {
     protected @NonNull InteractionResult useItemOn(
             @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+        InteractionResult fluidResult = CanisterBlockHandlers.tryFluidInteraction(
+                level, pos, player, hand, hitResult);
+        if (fluidResult != null) { return fluidResult; }
         return GooBlockInteraction.handleItemInteraction(
                 stack, level, pos, player, hand, hitResult,
                 CanisterBlockEntity.class, t -> t == null,
@@ -271,42 +282,21 @@ public class CanisterBlock extends BaseEntityBlock {
     }
 
     /**
-     * Empty-hand interaction: sneak removes per-slot gasket, otherwise removes canister.
+     * Empty-hand right-click does nothing on canister blocks.
+     * Canisters are removed by punching (left-click).
      *
      * @param state     the block state
      * @param level     the current level
      * @param pos       the block position
      * @param player    the interacting player
      * @param hitResult the ray trace hit result
-     * @return the interaction result
+     * @return PASS always
      */
     @Override
     protected @NonNull InteractionResult useWithoutItem(
             @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull BlockHitResult hitResult) {
-
-        int slot = hitSlot(hitResult, pos);
-        if (slot < 0) { return InteractionResult.PASS; }
-        InteractionResult earlyOut = GooBlockInteraction.validateEmptyHand(level, pos, player);
-        if (earlyOut != null) { return earlyOut; }
-        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity canister)) { return InteractionResult.PASS; }
-        return dispatchEmptyHand(canister, slot, player, hitResult);
-    }
-
-    /**
-     * Routes empty-hand interaction to gasket removal (sneak) or canister removal (normal).
-     * @param canister the canister block entity
-     * @param slot the targeted slot index
-     * @param player the interacting player
-     * @param hitResult the ray trace hit result
-     * @return SUCCESS if handled, PASS otherwise
-     */
-    private InteractionResult dispatchEmptyHand(
-            CanisterBlockEntity canister, int slot, Player player, BlockHitResult hitResult) {
-        if (player.isShiftKeyDown()) {
-            return CanisterBlockHandlers.handleSlotGasketRemove(canister, slot, hitResult);
-        }
-        return CanisterBlockHandlers.handleCanisterRemove(canister, slot, player);
+        return InteractionResult.PASS;
     }
 
 }

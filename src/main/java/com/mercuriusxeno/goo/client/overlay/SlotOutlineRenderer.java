@@ -5,9 +5,10 @@ import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.block.ReactorBlock;
+import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
-import com.mercuriusxeno.goo.client.machine.CanisterPunchListener;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterSlotResolver;
 import net.minecraft.client.Minecraft;
@@ -56,6 +57,8 @@ public final class SlotOutlineRenderer {
             addCanisterRenderer(event);
         } else if (block instanceof TapBlock) {
             addTapRenderer(event);
+        } else if (block instanceof ReactorBlock) {
+            addReactorRenderer(event);
         }
     }
 
@@ -128,7 +131,7 @@ public final class SlotOutlineRenderer {
     // --- Canister ---
 
     /**
-     * Adds a custom renderer for the canister block: targeted slot + preview + punch progress.
+     * Adds a custom renderer for the canister block: targeted slot + preview.
      *
      * @param event the event instance
      */
@@ -137,10 +140,7 @@ public final class SlotOutlineRenderer {
         BlockPos pos = event.getBlockPos();
         VoxelShape outlineShape = computeCanisterOutline(hit, pos, event);
         AABB preview = computeCanisterPreview(hit, pos, event);
-        AABB punchBounds = computePunchProgressBounds(pos);
-        float punchProgress = punchBounds != null ? CanisterPunchListener.getProgress() : 0f;
-        event.addCustomRenderer(slotRendererWithPunch(
-                outlineShape, preview, punchBounds, punchProgress));
+        event.addCustomRenderer(slotRenderer(outlineShape, preview));
     }
 
     /**
@@ -155,7 +155,7 @@ public final class SlotOutlineRenderer {
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
         int slot = CanisterBlock.hitSlot(hit, pos);
         if (slot < 0) {
-            return CanisterBlock.slotShape(DEFAULT_CANISTER_SLOT);
+            return event.getBlockState().getShape(event.getLevel(), pos);
         }
         return CanisterBlock.slotShape(slot);
     }
@@ -176,22 +176,10 @@ public final class SlotOutlineRenderer {
         if (!isPlayerHoldingCanister()) { return null; }
         if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) { return null; }
 
-        int slot = CanisterSlotResolver.resolveInsertionSlot(
+        int slot = CanisterSlotResolver.resolveAndConstrain(
                 hit.getLocation(), pos, hit.getDirection(), be);
         if (slot < 0) { return null; }
         return CanisterBlock.slotShape(slot).bounds();
-    }
-
-    /**
-     * Returns the AABB of the slot being punch-held, or null if no punch is active on this block.
-     *
-     * @param pos the block position
-     * @return the computed punchProgressBounds
-     */
-    private static @Nullable AABB computePunchProgressBounds(BlockPos pos) {
-        if (!CanisterPunchListener.isActive()) { return null; }
-        if (!pos.equals(CanisterPunchListener.getActivePos())) { return null; }
-        return CanisterBlock.slotShape(CanisterPunchListener.getActiveSlot()).bounds();
     }
 
     // --- Tap ---
@@ -231,6 +219,39 @@ public final class SlotOutlineRenderer {
     // --- Rendering ---
 
     /**
+     * Adds a custom renderer for the reactor: standard outline + output
+     * canister slot wireframe preview when holding a canister.
+     *
+     * @param event the event instance
+     */
+    private static void addReactorRenderer(ExtractBlockOutlineRenderStateEvent event) {
+        BlockPos pos = event.getBlockPos();
+        VoxelShape outlineShape = event.getBlockState().getShape(event.getLevel(), pos);
+        AABB preview = computeReactorPreview(pos, event);
+        event.addCustomRenderer(slotRenderer(outlineShape, preview));
+    }
+
+    /**
+     * Returns the output canister slot bounds as a placement preview
+     * when the player holds a canister and the slot is empty.
+     *
+     * @param pos   the block position
+     * @param event the event instance
+     * @return the preview bounds, or null
+     */
+    private static @Nullable AABB computeReactorPreview(
+            BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        if (!isPlayerHoldingCanister()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
+            return null;
+        }
+        if (!reactor.getOutputCanister().isEmpty()) { return null; }
+        net.minecraft.core.Direction facing =
+                event.getBlockState().getValue(ReactorBlock.FACING);
+        return ReactorBlock.outputSlotShape(facing).bounds();
+    }
+
+    /**
      * Returns true if the local player is holding a canister item in their main hand.
      *
      * @return true if playerHoldingCanister
@@ -255,21 +276,4 @@ public final class SlotOutlineRenderer {
                         levelRenderState, shape, preview);
     }
 
-    /**
-     * Creates a custom outline renderer with slot outline, placement preview,
-     * and an optional red wireframe for punch-hold progress.
-     *
-     * @param shape the voxel shape to render
-     * @param preview the placement preview bounds, or null
-     * @param punchBounds the punchBounds
-     * @param punchProgress the punchProgress
-     * @return the custom outline renderer with punch progress
-     */
-    private static CustomBlockOutlineRenderer slotRendererWithPunch(
-            VoxelShape shape, @Nullable AABB preview,
-            @Nullable AABB punchBounds, float punchProgress) {
-        return (renderState, bufferSource, poseStack, translucent, levelRenderState) ->
-                SlotOutlineDrawing.renderOutlineWithPunch(renderState, bufferSource, poseStack,
-                        translucent, levelRenderState, shape, preview, punchBounds, punchProgress);
-    }
 }

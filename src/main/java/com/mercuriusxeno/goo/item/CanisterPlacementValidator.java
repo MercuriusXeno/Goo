@@ -17,7 +17,7 @@ import java.util.Set;
  * Validates canister placement positions and slot constraints.
  * Checks support blocks below and queries ICanisterAttachable for allowed slots.
  */
-final class CanisterPlacementValidator {
+public final class CanisterPlacementValidator {
 
     private CanisterPlacementValidator() {}
 
@@ -64,7 +64,7 @@ final class CanisterPlacementValidator {
      * @param slot         the slot index to check
      * @return true if the slot is allowed
      */
-    static boolean isSlotAllowed(Level level, BlockPos canisterPos, int slot) {
+    public static boolean isSlotAllowed(Level level, BlockPos canisterPos, int slot) {
         Set<Integer> allowed = getAllowedSlots(level, canisterPos);
         return allowed == null || allowed.contains(slot);
     }

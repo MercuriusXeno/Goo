@@ -1,52 +1,95 @@
 package com.mercuriusxeno.goo.client.ber;
 
+import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ReactorBlock;
 import com.mercuriusxeno.goo.block.ReactorBlockEntity;
+import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
+import com.mercuriusxeno.goo.item.CanisterItem;
+import com.mercuriusxeno.goo.item.ContainerCapacity;
+import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Renders the output canister floating in the reactor's front hollow.
- * The canister is rendered as a scaled-down item model facing outward.
+ * Renders the output canister in the reactor's front hollow using the
+ * same body + gaskets + fluid pattern as the tap BER.
  */
 public class ReactorBlockEntityRenderer
         implements BlockEntityRenderer<ReactorBlockEntity, ReactorRenderState> {
 
-    /** Block center on X/Z axes. */
+    /** Block atlas texture path for fluid sprite lookups. */
+    private static final Identifier BLOCK_ATLAS_TEXTURE =
+            Identifier.withDefaultNamespace("textures/atlas/blocks.png");
+
+    /** Canister body side texture. */
+    private static final Identifier CANISTER_SIDE =
+            Identifier.fromNamespaceAndPath("goo", "textures/block/canister_side.png");
+
+    /** Copper endcap texture. */
+    private static final Identifier COPPER_GASKET =
+            Identifier.fromNamespaceAndPath("goo", "textures/block/gasket.png");
+
+    /** Block center for rotation pivot. */
     private static final float BLOCK_CENTER = 0.5f;
 
-    /** Hollow center Y: midpoint of [1, 15] in model space. */
-    private static final float HOLLOW_Y = 8f / 16f;
+    /** Canister half-width: 2px. */
+    private static final float HW = 2f / 16f;
 
-    /** Z offset from block center into the hollow (center of z=0..6). */
-    private static final float HOLLOW_Z_OFFSET = 5f / 16f;
+    /** Hollow center in model space (south-facing). */
+    private static final float HOLLOW_CX = 8f / 16f;
+    /** Hollow center Z in model space: center of [0..6]. */
+    private static final float HOLLOW_CZ = 3f / 16f;
 
-    /** Canister scale in the hollow. */
-    private static final float CANISTER_SCALE = 0.375f;
+    /** Bottom of canister in hollow (1px from block bottom). */
+    private static final float GASKET_BOT = 1f / 16f;
+    /** Top of lower gasket / bottom of body. */
+    private static final float BODY_BOT = 2f / 16f;
+    /** Top of body / bottom of upper gasket. */
+    private static final float BODY_TOP = 14f / 16f;
+    /** Top of upper gasket. */
+    private static final float GASKET_TOP = 15f / 16f;
 
-    private final ItemModelResolver itemModelResolver;
-    private final ItemStackRenderState itemRenderState = new ItemStackRenderState();
+    /** Fluid inset from canister walls. */
+    private static final float FLUID_INSET = 0.5f / 16f;
+
+    /** Shared fluid geometry for the reactor canister slot. */
+    private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
+            new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
+
+    /** Body side U range: 4px / 16px. */
+    private static final float BODY_U1 = 0.25f;
+    /** Body side V range: 12px / 16px. */
+    private static final float BODY_V1 = 0.75f;
+
+    /** Gasket side U start. */
+    private static final float GS_U0 = 0.25f;
+    /** Gasket side U end. */
+    private static final float GS_U1 = 0.5f;
+    /** Gasket side V end. */
+    private static final float GS_V1 = 0.0625f;
 
     /**
-     * Stores the item model resolver for rendering the output canister.
+     * Creates a reactor BER.
      *
      * @param context the renderer provider context
      */
     public ReactorBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
-        this.itemModelResolver = context.itemModelResolver();
     }
 
     @Override
@@ -55,12 +98,12 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Snapshots the output canister and facing from the block entity.
+     * Snapshots the output canister state from the block entity.
      *
-     * @param be            the block entity instance
+     * @param be            the block entity
      * @param state         the render state to populate
      * @param partialTick   the partial tick
-     * @param cameraPos     the camera world position
+     * @param cameraPos     the camera position
      * @param breakProgress the crumbling overlay, or null
      */
     @Override
@@ -69,11 +112,51 @@ public class ReactorBlockEntityRenderer
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         state.facing = be.getBlockState().getValue(ReactorBlock.FACING);
-        state.outputCanister = be.getOutputCanister();
+        state.lightCoords = sampleHollowLight(be);
+        state.hasCanister = !be.getOutputCanister().isEmpty();
+        if (state.hasCanister) {
+            extractContents(be.getOutputCanister(), state);
+        } else {
+            state.gooType = null;
+            state.fill = 0f;
+        }
     }
 
     /**
-     * Submits the output canister model in the hollow if one is present.
+     * Reads compression level and goo fill from the canister stack.
+     *
+     * @param canister the canister item stack
+     * @param state    the render state to populate
+     */
+    private static void extractContents(ItemStack canister, ReactorRenderState state) {
+        state.matrices = GooEnchantments.getCompressionLevel(canister);
+        CanisterFluidContent content = CanisterItem.getFluidContent(canister);
+        if (content.isEmpty()) {
+            state.gooType = null;
+            state.fill = 0f;
+        } else {
+            int cap = ContainerCapacity.canisterCapacity(state.matrices);
+            state.gooType = content.getGooType();
+            state.fill = Math.min(1f, (float) content.amount() / cap);
+        }
+    }
+
+    /**
+     * Samples light from the block in front of the hollow opening so
+     * the canister is lit by the environment, not the reactor interior.
+     *
+     * @param be the reactor block entity
+     * @return packed light coordinates
+     */
+    private static int sampleHollowLight(ReactorBlockEntity be) {
+        if (be.getLevel() == null) { return 0; }
+        Direction facing = be.getBlockState().getValue(ReactorBlock.FACING);
+        BlockPos frontPos = be.getBlockPos().relative(facing);
+        return LevelRenderer.getLightCoords(be.getLevel(), frontPos);
+    }
+
+    /**
+     * Submits canister geometry if a canister is present in the hollow.
      *
      * @param state         the render state
      * @param poseStack     the pose stack
@@ -83,38 +166,104 @@ public class ReactorBlockEntityRenderer
     @Override
     public void submit(ReactorRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (state.outputCanister.isEmpty()) { return; }
-        if (!resolveItemModel(state)) { return; }
+        if (!state.hasCanister) { return; }
         poseStack.pushPose();
-        translateToHollow(poseStack, state.facing);
-        poseStack.scale(CANISTER_SCALE, CANISTER_SCALE, CANISTER_SCALE);
-        itemRenderState.submit(poseStack, nodeCollector,
-                state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+        rotateToFacing(poseStack, state.facing);
+        submitBody(poseStack, nodeCollector, state);
+        submitGaskets(poseStack, nodeCollector, state);
+        if (state.gooType != null && state.fill > 0f) {
+            submitFluid(poseStack, nodeCollector, state);
+        }
         poseStack.popPose();
     }
 
     /**
-     * Resolves the output canister item into the reusable render state.
+     * Rotates the pose stack so the south-facing model coordinates
+     * align with the block's actual facing direction.
      *
-     * @param state the render state
-     * @return true if a model was resolved
+     * @param poseStack the pose stack
+     * @param facing    the block facing
      */
-    private boolean resolveItemModel(ReactorRenderState state) {
-        itemModelResolver.updateForTopItem(
-                itemRenderState, state.outputCanister,
-                ItemDisplayContext.FIXED, null, null, 0);
-        return !itemRenderState.isEmpty();
+    private static void rotateToFacing(PoseStack poseStack, Direction facing) {
+        poseStack.translate(BLOCK_CENTER, 0, BLOCK_CENTER);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
+        poseStack.translate(-BLOCK_CENTER, 0, -BLOCK_CENTER);
     }
 
     /**
-     * Translates to the hollow center by rotating around the block center.
+     * Renders the 4 side faces of the canister body.
      *
-     * @param poseStack the pose stack
-     * @param facing    the block facing direction
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     * @param state         the render state
      */
-    private static void translateToHollow(PoseStack poseStack, Direction facing) {
-        poseStack.translate(BLOCK_CENTER, HOLLOW_Y, BLOCK_CENTER);
-        poseStack.mulPose(Axis.YP.rotationDegrees(facing.toYRot()));
-        poseStack.translate(0f, 0f, HOLLOW_Z_OFFSET);
+    private static void submitBody(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, ReactorRenderState state) {
+        int light = state.lightCoords;
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entityCutout(CANISTER_SIDE),
+                (pose, c) -> {
+                    RenderContext ctx = new RenderContext(pose, c, light);
+                    CuboidBounds box = canisterBounds(BODY_BOT, BODY_TOP);
+                    ctx.emitSides(box, new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1));
+                });
+    }
+
+    /**
+     * Renders copper endcaps at top and bottom.
+     *
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     * @param state         the render state
+     */
+    private static void submitGaskets(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, ReactorRenderState state) {
+        int light = state.lightCoords;
+        CuboidBounds base = canisterBounds(0, 0);
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entitySolid(COPPER_GASKET),
+                (pose, c) -> {
+                    RenderContext ctx = new RenderContext(pose, c, light);
+                    ctx.gasketBox(base.withY(BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+                    ctx.gasketBox(base.withY(GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+                });
+    }
+
+    /**
+     * Renders the fluid surface inside the canister.
+     *
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     * @param state         the render state
+     */
+    private static void submitFluid(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, ReactorRenderState state) {
+        int light = state.lightCoords;
+        GooType type = state.gooType;
+        float fill = state.fill;
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
+                (pose, c) -> {
+                    RenderContext ctx = new RenderContext(pose, c, light);
+                    CuboidBounds b = SlotFluidGeometry.computeBounds(
+                            FLUID_GEOM, HOLLOW_CX, HOLLOW_CZ, fill);
+                    TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
+                    SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
+                    SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
+                });
+    }
+
+    /**
+     * Builds a canister-sized cuboid centered in the hollow.
+     *
+     * @param yMin the bottom Y coordinate
+     * @param yMax the top Y coordinate
+     * @return the cuboid bounds
+     */
+    private static CuboidBounds canisterBounds(float yMin, float yMax) {
+        return new CuboidBounds(
+                HOLLOW_CX - HW, HOLLOW_CX + HW,
+                HOLLOW_CZ - HW, HOLLOW_CZ + HW,
+                yMin, yMax);
     }
 }

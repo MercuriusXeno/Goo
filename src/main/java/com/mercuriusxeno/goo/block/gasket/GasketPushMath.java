@@ -2,6 +2,8 @@ package com.mercuriusxeno.goo.block.gasket;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.GooContents;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import java.util.function.BiFunction;
 
 /**
@@ -10,8 +12,11 @@ import java.util.function.BiFunction;
  */
 public final class GasketPushMath {
 
-    /** Exponent for the tapering transfer rate formula. */
-    private static final double TAPER_EXPONENT = 0.6;
+    /** Exponent for goo (viscous). */
+    public static final double GOO_EXPONENT = 0.6;
+
+    /** Exponent for vanilla fluids like water (less viscous, faster). */
+    public static final double WATER_EXPONENT = 0.75;
 
     private GasketPushMath() {}
 
@@ -25,15 +30,36 @@ public final class GasketPushMath {
     public record PushResult(GooContents accepted, GooContents remaining) {}
 
     /**
-     * Computes the per-tick transfer rate for a given remaining volume.
-     * Uses {@code ceil(remaining^0.6)} so the rate tapers as the source drains.
+     * Computes the per-tick transfer rate for goo fluids (exponent 0.6).
      *
      * @param remaining volume in mB still in the source
      * @return mB to transfer this tick (min 1 if remaining > 0, 0 if empty)
      */
     public static int taperRate(int remaining) {
+        return taperRate(remaining, GOO_EXPONENT);
+    }
+
+    /**
+     * Computes the per-tick transfer rate with a given exponent.
+     * Formula: {@code ceil(remaining^exponent)}.
+     *
+     * @param remaining volume in mB still in the source
+     * @param exponent  the power-law exponent
+     * @return mB to transfer this tick (min 1 if remaining > 0, 0 if empty)
+     */
+    public static int taperRate(int remaining, double exponent) {
         if (remaining <= 0) { return 0; }
-        return Math.max(1,     (int) Math.ceil(Math.pow(remaining, TAPER_EXPONENT)));
+        return Math.max(1, (int) Math.ceil(Math.pow(remaining, exponent)));
+    }
+
+    /**
+     * Returns the taper exponent for a fluid. Water gets 0.75, everything else 0.6.
+     *
+     * @param fluid the fluid
+     * @return the exponent
+     */
+    public static double exponentFor(Fluid fluid) {
+        return fluid.isSame(Fluids.WATER) ? WATER_EXPONENT : GOO_EXPONENT;
     }
 
     /**

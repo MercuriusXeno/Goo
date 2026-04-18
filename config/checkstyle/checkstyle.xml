@@ -54,6 +54,22 @@
                 value="String literal in method body - extract to a named constant"/>
         </module>
 
+        <!-- FQN: use imports instead of fully-qualified class references -->
+        <module name="MatchXpath">
+            <property name="severity" value="error"/>
+            <property name="query"
+                value="//DOT[./IDENT[@text='net']]/DOT[./IDENT[@text='minecraft']]"/>
+            <message key="matchxpath.match"
+                value="Fully-qualified net.minecraft reference - use an import"/>
+        </module>
+        <module name="MatchXpath">
+            <property name="severity" value="error"/>
+            <property name="query"
+                value="//DOT[./IDENT[@text='com']]/DOT[./IDENT[@text='mercuriusxeno']]"/>
+            <message key="matchxpath.match"
+                value="Fully-qualified com.mercuriusxeno reference - use an import"/>
+        </module>
+
         <!-- MISSING_DOCS: classes need javadoc -->
         <module name="JavadocType">
             <property name="severity" value="error"/>

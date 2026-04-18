@@ -12,7 +12,9 @@ import com.mercuriusxeno.goo.item.VatBlockItem;
 import com.mercuriusxeno.goo.item.gasket.ChoralGasketItem;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.EnumMap;
@@ -27,12 +29,18 @@ public class GooItems {
     // --- Omniblob items (one per goo type, unstackable, uncapped volume) ---
     public static final Map<GooType, DeferredItem<GooOmniblobItem>> OMNIBLOBS = new EnumMap<>(GooType.class);
 
+    // --- Bucket items (one per goo type, holds 1000 mB) ---
+    public static final Map<GooType, DeferredItem<BucketItem>> BUCKETS = new EnumMap<>(GooType.class);
+
     static {
         for (GooType type : GooType.values()) {
             BLOBS.put(type, ITEMS.registerItem(type.getId() + "_blob",
                 props -> new GooBlobItem(type, props)));
             OMNIBLOBS.put(type, ITEMS.registerItem(type.getId() + "_omniblob",
                 props -> new GooOmniblobItem(type, props.stacksTo(1))));
+            BUCKETS.put(type, ITEMS.registerItem(type.getId() + "_goo_bucket",
+                props -> new BucketItem(GooFluids.SOURCES.get(type).get(),
+                    props.craftRemainder(Items.BUCKET).stacksTo(1))));
         }
     }
 

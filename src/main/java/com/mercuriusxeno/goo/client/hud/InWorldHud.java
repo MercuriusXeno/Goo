@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import java.util.Map;
@@ -394,6 +396,76 @@ public final class InWorldHud {
             renderGooRow(poseStack, font, buffers, entry.getKey(), amountText, x, rowY);
             row++;
         }
+    }
+
+    /**
+     * Renders a vanilla fluid row: tinted fluid icon + formatted mB amount.
+     *
+     * @param poseStack the pose stack
+     * @param font      the font renderer
+     * @param buffers   the buffer source
+     * @param fluid     the vanilla fluid
+     * @param amount    the volume in mB
+     * @param x         the left X coordinate
+     * @param y         the Y coordinate for this row
+     */
+    public static void renderFluidRow(PoseStack poseStack, Font font,
+            MultiBufferSource buffers, Fluid fluid, int amount,
+            float x, float y) {
+        float iconY = y + (ROW_HEIGHT - ICON_SIZE) / HALF;
+        float textY = y + (ROW_HEIGHT - font.lineHeight) / HALF;
+        renderFluidIconSeeThrough(poseStack, buffers, fluid, x, iconY);
+        String amountText = GooTooltipHandler.formatFluidDisplayCompact(amount);
+        drawTextSeeThrough(font, buffers, poseStack, amountText,
+                x + ICON_SIZE + ICON_TEXT_GAP, textY, TEXT_COLOR);
+    }
+
+    /**
+     * Computes the row width for a vanilla fluid entry.
+     *
+     * @param font   the font renderer
+     * @param amount the volume in mB
+     * @return the row width in scaled pixels
+     */
+    public static float computeFluidRowWidth(Font font, int amount) {
+        String text = GooTooltipHandler.formatFluidDisplayCompact(amount);
+        return ICON_SIZE + ICON_TEXT_GAP + font.width(text);
+    }
+
+    /** Water tint for HUD icon (plains blue). */
+    private static final int WATER_TINT = 0xFF3F76E4;
+
+    /** Opaque white tint for non-water fluids. */
+    private static final int OPAQUE_WHITE_TINT = 0xFFFFFFFF;
+
+    /** Water bucket item texture for HUD icon. */
+    private static final Identifier WATER_BUCKET_ICON =
+            Identifier.withDefaultNamespace("textures/item/water_bucket.png");
+
+    /** Lava bucket item texture for HUD icon. */
+    private static final Identifier LAVA_BUCKET_ICON =
+            Identifier.withDefaultNamespace("textures/item/lava_bucket.png");
+
+    /**
+     * Renders a vanilla fluid bucket icon without depth testing.
+     *
+     * @param poseStack the pose stack
+     * @param buffers   the buffer source
+     * @param fluid     the vanilla fluid
+     * @param x         the X coordinate
+     * @param y         the Y coordinate
+     */
+    private static void renderFluidIconSeeThrough(PoseStack poseStack,
+            MultiBufferSource buffers, Fluid fluid, float x, float y) {
+        Identifier tex = fluid.isSame(Fluids.WATER) ? WATER_BUCKET_ICON : LAVA_BUCKET_ICON;
+        VertexConsumer vc = buffers.getBuffer(RenderTypes.textSeeThrough(tex));
+        PoseStack.Pose pose = poseStack.last();
+        float x2 = x + ICON_SIZE;
+        float y2 = y + ICON_SIZE;
+        iconVertex(vc, pose, x, y, CONTENT_Z, 0f, 0f);
+        iconVertex(vc, pose, x, y2, CONTENT_Z, 0f, 1f);
+        iconVertex(vc, pose, x2, y2, CONTENT_Z, 1f, 1f);
+        iconVertex(vc, pose, x2, y, CONTENT_Z, 1f, 0f);
     }
 
     /**

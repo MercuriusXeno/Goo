@@ -117,6 +117,8 @@ public class Goo {
      */
     private static void commonSetup(FMLCommonSetupEvent event) {
         com.mercuriusxeno.goo.effect.ChainProfiles.registerAll();
+        com.mercuriusxeno.goo.item.gasket.ChoralGasketItem.setGasketBlockSupplier(
+                GooBlocks.CHORAL_GASKET_BLOCK::get);
     }
 
     /**

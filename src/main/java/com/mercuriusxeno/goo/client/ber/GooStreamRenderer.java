@@ -2,8 +2,13 @@ package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.data.AtlasIds;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Renders a pulsing fluid stream cuboid from a gasket entry point
@@ -27,6 +32,15 @@ public final class GooStreamRenderer {
 
     /** Semi-transparent ARGB for the stream. */
     private static final int STREAM_COLOR = 0xB0FFFFFF;
+
+    /** Semi-transparent blue tint for water streams. */
+    private static final int WATER_STREAM_COLOR = 0xB03F76E4;
+
+    /** Vanilla water still sprite ID. */
+    private static final Identifier WATER_STILL = Identifier.withDefaultNamespace("block/water_still");
+
+    /** Vanilla lava still sprite ID. */
+    private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
 
     /** Half divisor for stream width calculation. */
     private static final float WIDTH_HALF = 2f;
@@ -76,6 +90,50 @@ public final class GooStreamRenderer {
      * @param height the stream height in block coords
      * @return a UV rect scaled to the stream dimensions
      */
+    /**
+     * Renders a pulsing vanilla fluid stream from yTop down to yBottom.
+     *
+     * @param ctx           the render context
+     * @param cx            stream center X in block coords
+     * @param cz            stream center Z in block coords
+     * @param yTop          top of stream
+     * @param yBottom       bottom of stream
+     * @param fluid         the vanilla fluid
+     * @param rate          transfer rate in mB/tick
+     * @param animationTime game time + partial tick for sin wave
+     */
+    public static void renderStream(RenderContext ctx,
+            float cx, float cz, float yTop, float yBottom,
+            Fluid fluid, float rate, float animationTime) {
+        if (yTop <= yBottom) { return; }
+
+        float hw = computeHalfWidth(rate, animationTime);
+        CuboidBounds box = new CuboidBounds(cx - hw, cx + hw, cz - hw, cz + hw, yBottom, yTop);
+        TextureAtlasSprite sprite = lookupVanillaSprite(fluid);
+        int color = isWater(fluid) ? WATER_STREAM_COLOR : STREAM_COLOR;
+        GooRenderUtil.UvRect uv = computeSpriteUv(sprite, hw, yTop - yBottom);
+        ctx.emitSides(color, box, uv);
+    }
+
+    private static boolean isWater(Fluid fluid) {
+        return fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER;
+    }
+
+    private static TextureAtlasSprite lookupVanillaSprite(Fluid fluid) {
+        Identifier id = isWater(fluid) ? WATER_STILL : LAVA_STILL;
+        return Minecraft.getInstance().getAtlasManager()
+                .getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(id);
+    }
+
+    private static GooRenderUtil.UvRect computeSpriteUv(
+            TextureAtlasSprite sprite, float hw, float height) {
+        float su0 = sprite.getU0();
+        float sv0 = sprite.getV0();
+        float sideU1 = su0 + (sprite.getU1() - su0) * (hw * WIDTH_HALF);
+        float sideV1 = sv0 + (sprite.getV1() - sv0) * height;
+        return new GooRenderUtil.UvRect(su0, sv0, sideU1, sideV1);
+    }
+
     private static GooRenderUtil.UvRect computeStreamUv(GooType type, float hw, float height) {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         float su0 = sprite.getU0();

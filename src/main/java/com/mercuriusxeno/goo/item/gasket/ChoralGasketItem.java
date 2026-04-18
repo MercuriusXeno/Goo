@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.item.gasket;
 
+import com.mercuriusxeno.goo.block.ChoralGasketBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlock;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
 import com.mercuriusxeno.goo.block.ICanisterHolder;
@@ -14,11 +15,16 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import java.util.UUID;
+import java.util.function.Supplier;
 import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 
 /**
@@ -47,6 +53,9 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
     private static final String MSG_INTAKE_INSTALLED = "Intake gasket installed";
     /** Feedback: no canister in this slot. */
     private static final String MSG_NO_CANISTER = "No canister in this slot";
+
+    /** Supplier for the world-placeable gasket block, wired during registration. */
+    private static @Nullable Supplier<Block> gasketBlockSupplier;
     /** Feedback label for top face. */
     private static final String FACE_TOP = "top";
     /** Feedback label for bottom face. */
@@ -65,6 +74,15 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
      */
     public ChoralGasketItem(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * Wires the world-placeable gasket block supplier. Called from registration.
+     *
+     * @param supplier the block supplier
+     */
+    public static void setGasketBlockSupplier(Supplier<Block> supplier) {
+        gasketBlockSupplier = supplier;
     }
 
     /**
@@ -127,7 +145,48 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         if (be instanceof ICanisterHolder container && be instanceof IGasketHolder holder) {
             return dispatchSlotted(context, container, holder);
         }
-        return InteractionResult.PASS;
+        return tryPlaceInWorld(context);
+    }
+
+    /**
+     * Places a choral gasket block in the world when right-clicking a non-machine surface.
+     *
+     * @param context the use-on context
+     * @return SUCCESS if placed, PASS otherwise
+     */
+    private InteractionResult tryPlaceInWorld(UseOnContext context) {
+        if (gasketBlockSupplier == null) { return InteractionResult.PASS; }
+        Level level = context.getLevel();
+        BlockPos placePos = context.getClickedPos().relative(context.getClickedFace());
+        BlockState existing = level.getBlockState(placePos);
+        if (!existing.canBeReplaced() && !existing.isAir()
+                && !(existing.getFluidState().is(Fluids.WATER)
+                     && existing.getBlock() instanceof LiquidBlock)) {
+            return InteractionResult.PASS;
+        }
+        var gasketBlock = gasketBlockSupplier.get();
+        BlockState gasketState = gasketBlock.defaultBlockState()
+                .setValue(ChoralGasketBlock.FACING,
+                        context.getHorizontalDirection().getOpposite())
+                .setValue(ChoralGasketBlock.WATERLOGGED,
+                        existing.getFluidState().is(Fluids.WATER));
+        if (!gasketState.canSurvive(level, placePos)) { return InteractionResult.PASS; }
+        level.setBlock(placePos, gasketState, Block.UPDATE_ALL);
+        initGasketBlockEntity(level, placePos);
+        context.getItemInHand().shrink(1);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Initializes the gasket block entity's transmitter UUID after placement.
+     *
+     * @param level the level
+     * @param pos   the placement position
+     */
+    private void initGasketBlockEntity(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof IGasketHolder holder) {
+            holder.gasketState().ensureId(GasketRole.TRANSMITTER, () -> {});
+        }
     }
 
     /**

@@ -65,6 +65,7 @@ final class PlexerInteractionHelper {
      * @return SUCCESS interaction result
      */
     static InteractionResult applyTargetItem(PlexerBlockEntity plexer, Player player, ItemStack stack) {
+        if (!plexer.isValidTarget(stack)) { return InteractionResult.PASS; }
         plexer.setTargetItem(stack.copy());
         player.sendOverlayMessage(
             Component.literal(TARGET_PREFIX + stack.getHoverName().getString()));

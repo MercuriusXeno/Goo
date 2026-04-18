@@ -58,11 +58,13 @@ public class SlottedCanisterState {
             @Nullable CanisterSlotFluidHandler[] handlers,
             @Nullable IGasketPusher[] pushers,
             @Nullable GooType[] streamType,
+            @Nullable Fluid[] streamFluid,
             int[] streamRate,
             long[] streamTick) {
         CanisterSlotArrays(int size) {
             this(new CanisterSlotFluidHandler[size], new IGasketPusher[size],
-                 new GooType[size], new int[size], new long[size]);
+                 new GooType[size], new Fluid[size],
+                 new int[size], new long[size]);
         }
     }
 
@@ -199,6 +201,18 @@ public class SlottedCanisterState {
     public @Nullable GooType getSlotStreamType(int slot, long currentTick) {
         if (slot < 0 || slot >= maxSlots) { return null; }
         return (currentTick - slots.streamTick()[slot] <= 1) ? slots.streamType()[slot] : null;
+    }
+
+    /**
+     * Returns the raw stream fluid for a slot, or null if no active stream.
+     *
+     * @param slot        the slot index
+     * @param currentTick the current game tick
+     * @return the stream fluid, or null
+     */
+    public @Nullable Fluid getSlotStreamFluid(int slot, long currentTick) {
+        if (slot < 0 || slot >= maxSlots) { return null; }
+        return (currentTick - slots.streamTick()[slot] <= 1) ? slots.streamFluid()[slot] : null;
     }
 
     /**
