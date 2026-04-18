@@ -24,6 +24,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -93,22 +94,27 @@ public final class CanisterPlacementOverlay {
         if (!isHoldingCanister(mc)) { return null; }
         BlockHitResult bhr = getValidBlockHit(mc);
         if (bhr == null) { return null; }
-        Block hitBlock = mc.level.getBlockState(bhr.getBlockPos()).getBlock();
-        if (isGooMachineBlock(hitBlock)) { return null; }
-        boolean sneaking = mc.player != null && mc.player.isSecondaryUseActive();
-        if (!sneaking && hitBlock instanceof PlexerBlock
-                && PlexerInteractionHelper.isCutawayClick(
-                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
-            return null;
-        }
-        if (!sneaking && hitBlock instanceof ReactorBlock
-                && ReactorBlock.isHollowClick(
-                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
-            return null;
-        }
+        BlockState hitState = mc.level.getBlockState(bhr.getBlockPos());
+        if (isGooMachineBlock(hitState.getBlock())) { return null; }
+        if (isMachineInteraction(mc, hitState, bhr)) { return null; }
 
         BlockPos placePos = bhr.getBlockPos().relative(bhr.getDirection());
         return resolveTarget(mc, bhr, placePos);
+    }
+
+    /**
+     * Returns true if a non-sneaking player clicked a machine's interactive region.
+     * @param mc TODO PARAM DESCRIPTION
+     * @param hitState TODO PARAM DESCRIPTION
+     * @param bhr TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean isMachineInteraction(Minecraft mc, BlockState hitState, BlockHitResult bhr) {
+        if (mc.player != null && mc.player.isSecondaryUseActive()) { return false; }
+        Block block = hitState.getBlock();
+        BlockPos pos = bhr.getBlockPos();
+        return (block instanceof PlexerBlock && PlexerInteractionHelper.isCutawayClick(hitState, pos, bhr))
+                || (block instanceof ReactorBlock && ReactorBlock.isHollowClick(hitState, pos, bhr));
     }
 
     /**

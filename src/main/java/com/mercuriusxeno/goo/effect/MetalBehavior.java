@@ -147,13 +147,35 @@ public final class MetalBehavior implements ChainBehavior {
         while (it.hasNext()) {
             SpikeAnim anim = it.next().getValue();
             anim.tick++;
-            if (anim.tick == STRIKE_TICK && !anim.damageDealt) {
-                dealDamage(level, anim);
-            }
-            if (anim.tick >= TOTAL_ANIM_TICKS) {
-                it.remove();
-            }
+            tickSingleAnim(level, it, anim);
         }
+        tryDissipate(level, pos);
+    }
+
+    /**
+     * Deals damage at strike tick and removes completed animations.
+     *
+     * @param level the server level
+     * @param it    the iterator for safe removal
+     * @param anim  the spike animation to advance
+     */
+    private void tickSingleAnim(ServerLevel level,
+            Iterator<Map.Entry<Integer, SpikeAnim>> it, SpikeAnim anim) {
+        if (anim.tick == STRIKE_TICK && !anim.damageDealt) {
+            dealDamage(level, anim);
+        }
+        if (anim.tick >= TOTAL_ANIM_TICKS) {
+            it.remove();
+        }
+    }
+
+    /**
+     * Spawns dissipate smoke once all anims are done and no stacks remain.
+     *
+     * @param level the server level
+     * @param pos   the marker block position
+     */
+    private void tryDissipate(ServerLevel level, BlockPos pos) {
         if (!dissipated && spikeAnims.isEmpty() && lastKnownStacks <= 0) {
             dissipated = true;
             spawnDissipateSmoke(level, pos);
@@ -215,17 +237,27 @@ public final class MetalBehavior implements ChainBehavior {
 
         for (Entity entity : level.getEntities(null, area)) {
             if (!isValidTarget(entity, center)) { continue; }
-            int id = entity.getId();
-            if (!spikeAnims.containsKey(id) && spikeCooldown <= 0) {
-                if (be.getStackCount() <= 0) { break; }
-                be.decrementStack();
-                lastKnownStacks = be.getStackCount();
-                Vec3 captured = entity.getBoundingBox().getCenter();
-                spikeAnims.put(id, new SpikeAnim(id,
-                        captured.x, captured.y, captured.z));
-                spikeCooldown = SPIKE_COOLDOWN;
-            }
+            if (!tryStartSpike(entity, be)) { break; }
         }
+    }
+
+    /**
+     * Starts a spike animation on the entity if not already animated and off cooldown.
+     *
+     * @param entity the target entity
+     * @param be     the owning block entity for charge management
+     * @return true if scanning should continue, false if charges exhausted
+     */
+    private boolean tryStartSpike(Entity entity, ChainMarkerBlockEntity be) {
+        int id = entity.getId();
+        if (spikeAnims.containsKey(id) || spikeCooldown > 0) { return true; }
+        if (be.getStackCount() <= 0) { return false; }
+        be.decrementStack();
+        lastKnownStacks = be.getStackCount();
+        Vec3 captured = entity.getBoundingBox().getCenter();
+        spikeAnims.put(id, new SpikeAnim(id, captured.x, captured.y, captured.z));
+        spikeCooldown = SPIKE_COOLDOWN;
+        return true;
     }
 
     @Override

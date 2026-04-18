@@ -212,13 +212,52 @@ public class GlowCrystalBlock extends Block {
      * @return the voxel shape
      */
     static VoxelShape shapeFor(Direction facing, double min, double max, double depth) {
-        return switch (facing) {
-            case UP    -> Shapes.box(min, 0, min, max, depth, max);
-            case DOWN  -> Shapes.box(min, 1 - depth, min, max, 1, max);
-            case NORTH -> Shapes.box(min, min, 0, max, max, depth);
-            case SOUTH -> Shapes.box(min, min, 1 - depth, max, max, 1);
-            case WEST  -> Shapes.box(0, min, min, depth, max, max);
-            case EAST  -> Shapes.box(1 - depth, min, min, 1, max, max);
+        return switch (facing.getAxis()) {
+            case Y -> shapeAlongY(facing, min, max, depth);
+            case Z -> shapeAlongZ(facing, min, max, depth);
+            case X -> shapeAlongX(facing, min, max, depth);
         };
+    }
+
+    /**
+     * Builds a shape anchored to the up or down face.
+     * @param facing TODO PARAM DESCRIPTION
+     * @param min TODO PARAM DESCRIPTION
+     * @param max TODO PARAM DESCRIPTION
+     * @param depth TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static VoxelShape shapeAlongY(Direction facing, double min, double max, double depth) {
+        return facing == Direction.UP
+                ? Shapes.box(min, 0, min, max, depth, max)
+                : Shapes.box(min, 1 - depth, min, max, 1, max);
+    }
+
+    /**
+     * Builds a shape anchored to the north or south face.
+     * @param facing TODO PARAM DESCRIPTION
+     * @param min TODO PARAM DESCRIPTION
+     * @param max TODO PARAM DESCRIPTION
+     * @param depth TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static VoxelShape shapeAlongZ(Direction facing, double min, double max, double depth) {
+        return facing == Direction.NORTH
+                ? Shapes.box(min, min, 0, max, max, depth)
+                : Shapes.box(min, min, 1 - depth, max, max, 1);
+    }
+
+    /**
+     * Builds a shape anchored to the west or east face.
+     * @param facing TODO PARAM DESCRIPTION
+     * @param min TODO PARAM DESCRIPTION
+     * @param max TODO PARAM DESCRIPTION
+     * @param depth TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static VoxelShape shapeAlongX(Direction facing, double min, double max, double depth) {
+        return facing == Direction.WEST
+                ? Shapes.box(0, min, min, depth, max, max)
+                : Shapes.box(1 - depth, min, min, 1, max, max);
     }
 }

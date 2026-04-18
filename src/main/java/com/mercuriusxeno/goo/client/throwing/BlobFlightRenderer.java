@@ -701,43 +701,59 @@ public final class BlobFlightRenderer {
         float tipX = dirX * length;
         float tipY = dirY * length;
         float tipZ = dirZ * length;
-
-        float perpX = basis[PERP_X];
-        float perpY = basis[PERP_Y];
-        float perpZ = basis[PERP_Z];
-        float crossX = basis[CROSS_X];
-        float crossY = basis[CROSS_Y];
-        float crossZ = basis[CROSS_Z];
         float uMid = (uv.u0() + uv.u1()) * UV_MIDPOINT;
 
         for (int i = 0; i < DART_SIDES; i++) {
-            float a0 = TWO_PI * i / DART_SIDES;
-            float a1 = TWO_PI * (i + 1) / DART_SIDES;
-            float cos0 = (float) Math.cos(a0) * baseRadius;
-            float sin0 = (float) Math.sin(a0) * baseRadius;
-            float cos1 = (float) Math.cos(a1) * baseRadius;
-            float sin1 = (float) Math.sin(a1) * baseRadius;
-
-            float midA = (a0 + a1) * UV_MIDPOINT;
-            float nx = perpX * (float) Math.cos(midA) + crossX * (float) Math.sin(midA);
-            float ny = perpY * (float) Math.cos(midA) + crossY * (float) Math.sin(midA);
-            float nz = perpZ * (float) Math.cos(midA) + crossZ * (float) Math.sin(midA);
-
-            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                    perpX * cos0 + crossX * sin0,
-                    perpY * cos0 + crossY * sin0,
-                    perpZ * cos0 + crossZ * sin0,
-                    uv.u0(), uv.v0(), nx, ny, nz);
-            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                    perpX * cos1 + crossX * sin1,
-                    perpY * cos1 + crossY * sin1,
-                    perpZ * cos1 + crossZ * sin1,
-                    uv.u1(), uv.v0(), nx, ny, nz);
-            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                    tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
-            GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                    tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+            emitDartSegment(pose, c, basis, uv, baseRadius, uMid,
+                    tipX, tipY, tipZ, dirX, dirY, dirZ, i);
         }
+    }
+
+    /**
+     * Emits one triangular segment of the dart cone.
+     * @param pose TODO PARAM DESCRIPTION
+     * @param c TODO PARAM DESCRIPTION
+     * @param basis TODO PARAM DESCRIPTION
+     * @param uv TODO PARAM DESCRIPTION
+     * @param baseRadius TODO PARAM DESCRIPTION
+     * @param uMid TODO PARAM DESCRIPTION
+     * @param tipX TODO PARAM DESCRIPTION
+     * @param tipY TODO PARAM DESCRIPTION
+     * @param tipZ TODO PARAM DESCRIPTION
+     * @param dirX TODO PARAM DESCRIPTION
+     * @param dirY TODO PARAM DESCRIPTION
+     * @param dirZ TODO PARAM DESCRIPTION
+     * @param i TODO PARAM DESCRIPTION
+     */
+    private static void emitDartSegment(PoseStack.Pose pose, VertexConsumer c,
+            float[] basis, GooRenderUtil.UvRect uv, float baseRadius, float uMid,
+            float tipX, float tipY, float tipZ, float dirX, float dirY, float dirZ, int i) {
+        float a0 = TWO_PI * i / DART_SIDES;
+        float a1 = TWO_PI * (i + 1) / DART_SIDES;
+        float cos0 = (float) Math.cos(a0) * baseRadius;
+        float sin0 = (float) Math.sin(a0) * baseRadius;
+        float cos1 = (float) Math.cos(a1) * baseRadius;
+        float sin1 = (float) Math.sin(a1) * baseRadius;
+
+        float midA = (a0 + a1) * UV_MIDPOINT;
+        float nx = basis[PERP_X] * (float) Math.cos(midA) + basis[CROSS_X] * (float) Math.sin(midA);
+        float ny = basis[PERP_Y] * (float) Math.cos(midA) + basis[CROSS_Y] * (float) Math.sin(midA);
+        float nz = basis[PERP_Z] * (float) Math.cos(midA) + basis[CROSS_Z] * (float) Math.sin(midA);
+
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                basis[PERP_X] * cos0 + basis[CROSS_X] * sin0,
+                basis[PERP_Y] * cos0 + basis[CROSS_Y] * sin0,
+                basis[PERP_Z] * cos0 + basis[CROSS_Z] * sin0,
+                uv.u0(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                basis[PERP_X] * cos1 + basis[CROSS_X] * sin1,
+                basis[PERP_Y] * cos1 + basis[CROSS_Y] * sin1,
+                basis[PERP_Z] * cos1 + basis[CROSS_Z] * sin1,
+                uv.u1(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+        GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
+                tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
     }
 
     /**
@@ -750,30 +766,46 @@ public final class BlobFlightRenderer {
      * @return array of {perpX, perpY, perpZ, crossX, crossY, crossZ}
      */
     private static float[] buildDartBasis(float dirX, float dirY, float dirZ) {
-        float perpX;
-        float perpY;
-        float perpZ;
+        float[] perp = initialPerp(dirX, dirY, dirZ);
+        orthonormalize(perp, dirX, dirY, dirZ);
+        float crossX = dirY * perp[PERP_Z] - dirZ * perp[PERP_Y];
+        float crossY = dirZ * perp[PERP_X] - dirX * perp[PERP_Z];
+        float crossZ = dirX * perp[PERP_Y] - dirY * perp[PERP_X];
+        return new float[]{perp[PERP_X], perp[PERP_Y], perp[PERP_Z], crossX, crossY, crossZ};
+    }
+
+    /**
+     * Picks a seed perpendicular vector that avoids near-parallel alignment with dir.
+     * @param dirX TODO PARAM DESCRIPTION
+     * @param dirY TODO PARAM DESCRIPTION
+     * @param dirZ TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static float[] initialPerp(float dirX, float dirY, float dirZ) {
         if (Math.abs(dirY) < UP_THRESHOLD) {
-            perpX = -dirZ;
-            perpY = 0;
-            perpZ = dirX;
-        } else {
-            perpX = 1;
-            perpY = 0;
-            perpZ = 0;
+            return new float[]{-dirZ, 0, dirX};
         }
-        float dot = perpX * dirX + perpY * dirY + perpZ * dirZ;
-        perpX -= dot * dirX;
-        perpY -= dot * dirY;
-        perpZ -= dot * dirZ;
-        float pLen = (float) Math.sqrt(perpX * perpX + perpY * perpY + perpZ * perpZ);
-        perpX /= pLen;
-        perpY /= pLen;
-        perpZ /= pLen;
-        float crossX = dirY * perpZ - dirZ * perpY;
-        float crossY = dirZ * perpX - dirX * perpZ;
-        float crossZ = dirX * perpY - dirY * perpX;
-        return new float[]{perpX, perpY, perpZ, crossX, crossY, crossZ};
+        return new float[]{1, 0, 0};
+    }
+
+    /**
+     * Gram-Schmidt orthonormalizes perp against dir in-place.
+     * @param perp TODO PARAM DESCRIPTION
+     * @param dirX TODO PARAM DESCRIPTION
+     * @param dirY TODO PARAM DESCRIPTION
+     * @param dirZ TODO PARAM DESCRIPTION
+     */
+    private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
+        float dot = perp[PERP_X] * dirX + perp[PERP_Y] * dirY + perp[PERP_Z] * dirZ;
+        perp[PERP_X] -= dot * dirX;
+        perp[PERP_Y] -= dot * dirY;
+        perp[PERP_Z] -= dot * dirZ;
+        float len = (float) Math.sqrt(
+                perp[PERP_X] * perp[PERP_X] + perp[PERP_Y] * perp[PERP_Y]
+                + perp[PERP_Z] * perp[PERP_Z]);
+        perp[PERP_X] /= len;
+        perp[PERP_Y] /= len;
+        perp[PERP_Z] /= len;
     }
 
 }

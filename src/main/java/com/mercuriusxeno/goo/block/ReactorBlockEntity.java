@@ -182,28 +182,31 @@ public class ReactorBlockEntity extends BlockEntity
             clearCrafting(level, pos, bState);
             return;
         }
+        if (!tryExecuteReaction(inputBe, level, pos, bState)) {
+            clearCrafting(level, pos, bState);
+        }
+    }
 
+    /**
+     * Attempts to resolve and execute a reaction batch; returns false if any step fails.
+     * @param inputBe TODO PARAM DESCRIPTION
+     * @param level TODO PARAM DESCRIPTION
+     * @param pos TODO PARAM DESCRIPTION
+     * @param bState TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private boolean tryExecuteReaction(
+            CanisterBlockEntity inputBe, Level level, BlockPos pos, BlockState bState) {
         GooReaction reaction = resolveReaction(inputBe);
-        if (reaction == null) {
-            clearCrafting(level, pos, bState);
-            return;
-        }
-
-        if (!outputCanAcceptProducts(reaction)) {
-            clearCrafting(level, pos, bState);
-            return;
-        }
-
+        if (reaction == null) { return false; }
+        if (!outputCanAcceptProducts(reaction)) { return false; }
         int batches = computeBatches(inputBe, reaction);
-        if (batches <= 0) {
-            clearCrafting(level, pos, bState);
-            return;
-        }
-
+        if (batches <= 0) { return false; }
         consumeInputs(inputBe, reaction.inputs(), batches);
         produceOutputs(reaction.outputs(), batches, reaction.rate());
         setChanged();
         setCrafting(level, pos, bState);
+        return true;
     }
 
     /**

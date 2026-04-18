@@ -104,17 +104,21 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     public boolean tryStack() {
         if (behavior != null && !behavior.allowsTopOff()) { return false; }
         if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
-        ChainProfile profile = ChainProfile.forType(gooType);
         stackCount++;
         lastStackTick = level != null ? level.getGameTime() : 0;
-        if (behavior != null) {
-            behavior.onTopOff(this);
-        } else {
-            fuseRemaining = profile.fuseTicks();
-        }
+        applyStackEffect();
         setChanged();
         syncToClient();
         return true;
+    }
+
+    /** Delegates the fuse reset to the behavior if active, otherwise sets fuse from profile. */
+    private void applyStackEffect() {
+        if (behavior != null) {
+            behavior.onTopOff(this);
+        } else {
+            fuseRemaining = ChainProfile.forType(gooType).fuseTicks();
+        }
     }
 
     /**

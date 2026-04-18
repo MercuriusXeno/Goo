@@ -361,29 +361,31 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      */
     private static float[] buildCubeFaceNormals() {
         final float n = -UNIT;
-        float[] out = new float[CUBE_VERTEX_COUNT * CUBE_POS_STRIDE];
         float[][] normals = {
-            { UNIT,   0f,   0f },
-            {    n,   0f,   0f },
-            {   0f, UNIT,   0f },
-            {   0f,    n,   0f },
-            {   0f,   0f, UNIT },
-            {   0f,   0f,    n },
+            {UNIT, 0f, 0f}, {n, 0f, 0f}, {0f, UNIT, 0f},
+            {0f, n, 0f}, {0f, 0f, UNIT}, {0f, 0f, n},
         };
-        int idx = 0;
+        float[] out = new float[CUBE_VERTEX_COUNT * CUBE_POS_STRIDE];
         for (int face = 0; face < CUBE_FACES; face++) {
-            float fnx = normals[face][0];
-            float fny = normals[face][1];
-            float fnz = normals[face][CUBE_Z];
-            for (int v = 0; v < CUBE_VERTICES_PER_FACE; v++) {
-                int base = idx + v * CUBE_POS_STRIDE;
-                out[base] = fnx;
-                out[base + CUBE_Y] = fny;
-                out[base + CUBE_Z] = fnz;
-            }
-            idx += CUBE_VERTICES_PER_FACE * CUBE_POS_STRIDE;
+            fillFaceNormals(out, face, normals[face]);
         }
         return out;
+    }
+
+    /**
+     * Fills 4 vertices of a face with the same normal vector.
+     * @param out TODO PARAM DESCRIPTION
+     * @param face TODO PARAM DESCRIPTION
+     * @param normal TODO PARAM DESCRIPTION
+     */
+    private static void fillFaceNormals(float[] out, int face, float[] normal) {
+        int base = face * CUBE_VERTICES_PER_FACE * CUBE_POS_STRIDE;
+        for (int v = 0; v < CUBE_VERTICES_PER_FACE; v++) {
+            int off = base + v * CUBE_POS_STRIDE;
+            out[off] = normal[0];
+            out[off + CUBE_Y] = normal[CUBE_Y];
+            out[off + CUBE_Z] = normal[CUBE_Z];
+        }
     }
 
 

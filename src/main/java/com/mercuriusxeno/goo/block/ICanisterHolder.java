@@ -200,6 +200,18 @@ public interface ICanisterHolder {
         CanisterSlotFluidHandler h = state.slots.handlers()[slot];
         if (h == null) { return; }
         long tick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
+        writeStreamSnapshot(state, slot, h, tick);
+    }
+
+    /**
+     * Reads stream state from the handler and writes it to the snapshot arrays if active.
+     * @param state TODO PARAM DESCRIPTION
+     * @param slot TODO PARAM DESCRIPTION
+     * @param h TODO PARAM DESCRIPTION
+     * @param tick TODO PARAM DESCRIPTION
+     */
+    private static void writeStreamSnapshot(
+            SlottedCanisterState state, int slot, CanisterSlotFluidHandler h, long tick) {
         GooType gooType = h.getStreamGooType(tick);
         Fluid fluid = h.getStreamFluid(tick);
         int rate = h.getStreamRate(tick);

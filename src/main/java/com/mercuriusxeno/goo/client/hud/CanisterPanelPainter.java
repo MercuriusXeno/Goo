@@ -166,13 +166,46 @@ final class CanisterPanelPainter {
         boolean hasUpgrade = data.compression() > 0;
         String upgradeText = hasUpgrade ? UPGRADE_PREFIX + data.compression() : EMPTY_UPGRADE;
         GooContents goo = toGooContents(data.content());
-        int fluidRows = goo.isEmpty() && !data.content().isEmpty() ? 1 : goo.typeCount();
-        float contentWidth = goo.isEmpty() && !data.content().isEmpty()
-                ? maxWidth(font, InWorldHud.computeFluidRowWidth(font, data.content().amount()),
-                        label, upgradeText, hasLabel, hasUpgrade)
-                : measureContentWidth(font, goo, label, upgradeText, hasLabel, hasUpgrade);
+        boolean singleFluidRow = isSingleFluidRow(goo, data.content());
+        int fluidRows = singleFluidRow ? 1 : goo.typeCount();
+        float contentWidth = measurePanelContentWidth(
+                font, goo, data.content(), singleFluidRow,
+                label, upgradeText, hasLabel, hasUpgrade);
         int rowCount = countRows(fluidRows, hasLabel, hasUpgrade);
         return buildMetrics(contentWidth, rowCount, label, upgradeText, hasLabel, hasUpgrade);
+    }
+
+    /**
+     * True when goo decomposition is empty but the canister has raw fluid (single untyped row).
+     * @param goo TODO PARAM DESCRIPTION
+     * @param content TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean isSingleFluidRow(GooContents goo, CanisterFluidContent content) {
+        return goo.isEmpty() && !content.isEmpty();
+    }
+
+    /**
+     * Delegates to the correct width measurement based on single-fluid vs multi-type layout.
+     * @param font TODO PARAM DESCRIPTION
+     * @param goo TODO PARAM DESCRIPTION
+     * @param content TODO PARAM DESCRIPTION
+     * @param singleFluidRow TODO PARAM DESCRIPTION
+     * @param label TODO PARAM DESCRIPTION
+     * @param upgradeText TODO PARAM DESCRIPTION
+     * @param hasLabel TODO PARAM DESCRIPTION
+     * @param hasUpgrade TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static float measurePanelContentWidth(Font font, GooContents goo,
+            CanisterFluidContent content, boolean singleFluidRow,
+            @Nullable String label, String upgradeText,
+            boolean hasLabel, boolean hasUpgrade) {
+        if (singleFluidRow) {
+            return maxWidth(font, InWorldHud.computeFluidRowWidth(font, content.amount()),
+                    label, upgradeText, hasLabel, hasUpgrade);
+        }
+        return measureContentWidth(font, goo, label, upgradeText, hasLabel, hasUpgrade);
     }
 
     private static float maxWidth(Font font, float rowWidth,

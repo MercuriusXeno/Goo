@@ -280,21 +280,30 @@ public class SlottedCanisterState {
      */
     private int distributeAcrossSlots(Fluid fluid, int amount) {
         int remaining = amount;
-        // First pass: slots already holding this fluid
-        for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            CanisterSlotFluidHandler handler = slots.handlers()[i];
-            if (handler == null || handler.isEmpty() || handler.getFluid() != fluid) { continue; }
-            int toInsert = Math.min(remaining, Integer.MAX_VALUE);
-            remaining -= handler.insertFluid(fluid, toInsert, false);
-        }
-        // Second pass: empty slots
-        for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            CanisterSlotFluidHandler handler = slots.handlers()[i];
-            if (handler == null || !handler.isEmpty()) { continue; }
-            int toInsert = Math.min(remaining, Integer.MAX_VALUE);
-            remaining -= handler.insertFluid(fluid, toInsert, false);
-        }
+        remaining = distributePass(fluid, remaining, true);
+        remaining = distributePass(fluid, remaining, false);
         return amount - remaining;
+    }
+
+    /**
+     * Single distribution pass: inserts into matching slots (existing=true) or empty slots.
+     * @param fluid TODO PARAM DESCRIPTION
+     * @param remaining TODO PARAM DESCRIPTION
+     * @param existing TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private int distributePass(Fluid fluid, int remaining, boolean existing) {
+        int left = remaining;
+        for (int i = 0; i < maxSlots && left > 0; i++) {
+            CanisterSlotFluidHandler handler = slots.handlers()[i];
+            if (handler == null) { continue; }
+            boolean eligible = existing
+                    ? (!handler.isEmpty() && handler.getFluid() == fluid)
+                    : handler.isEmpty();
+            if (!eligible) { continue; }
+            left -= handler.insertFluid(fluid, left, false);
+        }
+        return left;
     }
 
     // --- Pusher tick ---

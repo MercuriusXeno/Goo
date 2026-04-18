@@ -306,12 +306,25 @@ public final class GooTargetHighlighter {
         if (isGlowCrystalOnFace(level, adj, face)) {
             return TargetResult.glowCrystal(adj, face);
         }
-        if (face.getAxis() != Direction.Axis.Y
-                && isUpperEdge(level, hit)
-                && level.getBlockState(pos.above()).isAir()) {
+        if (isGrannyArcCandidate(level, hit, pos, face)) {
             return TargetResult.grannyArc(pos);
         }
         return TargetResult.block(pos, face);
+    }
+
+    /**
+     * True when the hit qualifies for a granny-arc: side face, upper edge, air above.
+     * @param level TODO PARAM DESCRIPTION
+     * @param hit TODO PARAM DESCRIPTION
+     * @param pos TODO PARAM DESCRIPTION
+     * @param face TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean isGrannyArcCandidate(Level level, BlockHitResult hit,
+            BlockPos pos, Direction face) {
+        return face.getAxis() != Direction.Axis.Y
+                && isUpperEdge(level, hit)
+                && level.getBlockState(pos.above()).isAir();
     }
 
     /**

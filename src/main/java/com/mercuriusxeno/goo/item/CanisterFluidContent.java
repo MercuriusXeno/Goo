@@ -114,13 +114,10 @@ public record CanisterFluidContent(Fluid fluid, int amount) {
      * @return new content with the capped addition
      */
     public CanisterFluidContent withCappedAdd(Fluid addFluid, int addAmount, int capacity) {
-        if (addAmount <= 0) { return this; }
-        if (!isEmpty() && fluid != addFluid) { return this; }
-        int currentAmount = isEmpty() ? 0 : amount;
-        int space = capacity - currentAmount;
-        if (space <= 0) { return this; }
-        int accepted = Math.min(addAmount, space);
+        int accepted = cappedAddAmount(addFluid, addAmount, capacity);
+        if (accepted <= 0) { return this; }
         Fluid target = isEmpty() ? addFluid : fluid;
+        int currentAmount = isEmpty() ? 0 : amount;
         return new CanisterFluidContent(target, currentAmount + accepted);
     }
 
@@ -134,10 +131,15 @@ public record CanisterFluidContent(Fluid fluid, int amount) {
      */
     public int cappedAddAmount(Fluid addFluid, int addAmount, int capacity) {
         if (addAmount <= 0) { return 0; }
-        if (!isEmpty() && fluid != addFluid) { return 0; }
+        if (!canAccept(addFluid)) { return 0; }
         int currentAmount = isEmpty() ? 0 : amount;
         int space = capacity - currentAmount;
         if (space <= 0) { return 0; }
         return Math.min(addAmount, space);
+    }
+
+    /** Returns true if this content is empty or already holds the given fluid. */
+    private boolean canAccept(Fluid candidate) {
+        return isEmpty() || fluid == candidate;
     }
 }

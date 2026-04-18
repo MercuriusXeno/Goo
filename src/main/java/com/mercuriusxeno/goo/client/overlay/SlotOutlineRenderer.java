@@ -173,14 +173,22 @@ public final class SlotOutlineRenderer {
      */
     private static @Nullable AABB computeCanisterPickup(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        var player = Minecraft.getInstance().player;
-        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!isPlayerStandingIdle()) { return null; }
         if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
             return null;
         }
         int slot = CanisterBlock.hitSlot(hit, pos);
         if (slot < 0 || be.getCanister(slot).isEmpty()) { return null; }
         return CanisterBlock.slotShape(slot).bounds();
+    }
+
+    /**
+     * True when the local player exists and is not sneaking (secondary use).
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean isPlayerStandingIdle() {
+        var player = Minecraft.getInstance().player;
+        return player != null && !player.isSecondaryUseActive();
     }
 
     /**
@@ -199,18 +207,28 @@ public final class SlotOutlineRenderer {
         if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
             return null;
         }
-        var player = Minecraft.getInstance().player;
-        int hitSlot = CanisterBlock.hitSlot(hit, pos);
-        boolean aimingAtOccupied = hitSlot >= 0 && !be.getCanister(hitSlot).isEmpty();
-
-        if (aimingAtOccupied && (player == null || !player.isSecondaryUseActive())) {
-            return null;
-        }
+        if (isOccupiedSlotWithoutSneak(hit, pos, be)) { return null; }
 
         int slot = CanisterSlotResolver.resolveAndConstrain(
                 hit.getLocation(), pos, hit.getDirection(), be);
         if (slot < 0) { return null; }
         return CanisterBlock.slotShape(slot).bounds();
+    }
+
+    /**
+     * True when the aimed slot is occupied and the player is not sneaking to override.
+     * @param hit TODO PARAM DESCRIPTION
+     * @param pos TODO PARAM DESCRIPTION
+     * @param be TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean isOccupiedSlotWithoutSneak(BlockHitResult hit, BlockPos pos,
+            CanisterBlockEntity be) {
+        int hitSlot = CanisterBlock.hitSlot(hit, pos);
+        boolean aimingAtOccupied = hitSlot >= 0 && !be.getCanister(hitSlot).isEmpty();
+        if (!aimingAtOccupied) { return false; }
+        var player = Minecraft.getInstance().player;
+        return player == null || !player.isSecondaryUseActive();
     }
 
     // --- Tap ---
@@ -295,8 +313,7 @@ public final class SlotOutlineRenderer {
      */
     private static @Nullable AABB computeReactorPickup(
             BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        var player = Minecraft.getInstance().player;
-        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!isPlayerStandingIdle()) { return null; }
         if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return null;
         }

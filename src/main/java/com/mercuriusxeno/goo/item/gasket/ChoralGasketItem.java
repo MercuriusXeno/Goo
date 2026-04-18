@@ -159,11 +159,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         Level level = context.getLevel();
         BlockPos placePos = context.getClickedPos().relative(context.getClickedFace());
         BlockState existing = level.getBlockState(placePos);
-        if (!existing.canBeReplaced() && !existing.isAir()
-                && !(existing.getFluidState().is(Fluids.WATER)
-                     && existing.getBlock() instanceof LiquidBlock)) {
-            return InteractionResult.PASS;
-        }
+        if (!canPlaceGasketAt(existing)) { return InteractionResult.PASS; }
         var gasketBlock = gasketBlockSupplier.get();
         BlockState gasketState = gasketBlock.defaultBlockState()
                 .setValue(ChoralGasketBlock.WATERLOGGED,
@@ -173,6 +169,17 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         initGasketBlockEntity(level, placePos);
         context.getItemInHand().shrink(1);
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Returns true if the existing blockstate allows gasket placement (air, replaceable, or water).
+     * @param existing TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static boolean canPlaceGasketAt(BlockState existing) {
+        if (existing.canBeReplaced() || existing.isAir()) { return true; }
+        return existing.getFluidState().is(Fluids.WATER)
+                && existing.getBlock() instanceof LiquidBlock;
     }
 
     /**

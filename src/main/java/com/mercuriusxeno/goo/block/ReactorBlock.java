@@ -181,7 +181,21 @@ public class ReactorBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return InteractionResult.PASS;
         }
-        // Slot empty: insert. Slot occupied + not sneaking: pick up.
+        return handleCanisterInteraction(reactor, stack, player, level, pos);
+    }
+
+    /**
+     * Routes canister clicks to insert or remove based on slot occupancy.
+     * @param reactor TODO PARAM DESCRIPTION
+     * @param stack TODO PARAM DESCRIPTION
+     * @param player TODO PARAM DESCRIPTION
+     * @param level TODO PARAM DESCRIPTION
+     * @param pos TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static InteractionResult handleCanisterInteraction(
+            ReactorBlockEntity reactor, ItemStack stack, Player player,
+            Level level, BlockPos pos) {
         if (reactor.getOutputCanister().isEmpty()) {
             return insertReactorCanister(reactor, stack, player, level, pos);
         }

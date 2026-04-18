@@ -118,6 +118,12 @@ public class ReactorBlockEntityRenderer
 
     /** Deceleration in degrees/tick/tick when not crafting. */
     private static final float WHEEL_DECEL = 0.3f;
+    /** Number of vertices per wheel quad. */
+    private static final int WHEEL_CORNERS = 4;
+    /** Stride between consecutive (y,z) pairs in the corner array. */
+    private static final int WHEEL_YZ_STRIDE = 2;
+    /** First two vertices use V1, last two use V0. */
+    private static final int WHEEL_UV_SPLIT = 2;
 
     /** Speed threshold below which the wheel snaps to rest at the nearest 90. */
     private static final float IDLE_SNAP_SPEED = 0.8f;
@@ -334,32 +340,48 @@ public class ReactorBlockEntityRenderer
         float rad = (float) Math.toRadians(angle);
         float cos = (float) Math.cos(rad);
         float sin = (float) Math.sin(rad);
+        float[] yz = computeWheelCorners(cos, sin);
+        float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
 
-        float y0 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
-        float z0 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
-        float y1 = WHEEL_CENTER + (WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
-        float z1 = WHEEL_CENTER + (WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
-        float y2 = WHEEL_CENTER + (WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
-        float z2 = WHEEL_CENTER + (WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
-        float y3 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
-        float z3 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
+        for (int v = 0; v < WHEEL_CORNERS; v++) {
+            float u = (v == 0 || v == WHEEL_CORNERS - 1) ? u0 : u1;
+            float wv = (v < WHEEL_UV_SPLIT) ? WHEEL_V1 : WHEEL_V0;
+            emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
+        }
+    }
 
-        ctx.c().addVertex(ctx.pose(), x, y0, z0)
+    /**
+     * Rotates the 4 wheel corners by cos/sin and returns {y0,z0,y1,z1,y2,z2,y3,z3}.
+     * @param cos TODO PARAM DESCRIPTION
+     * @param sin TODO PARAM DESCRIPTION
+     * @return TODO RETURN DESCRIPTION
+     */
+    private static float[] computeWheelCorners(float cos, float sin) {
+        float r = WHEEL_RADIUS;
+        return new float[] {
+            WHEEL_CENTER + (-r * cos + r * sin), WHEEL_CENTER + (-r * sin - r * cos),
+            WHEEL_CENTER + (r * cos + r * sin),  WHEEL_CENTER + (r * sin - r * cos),
+            WHEEL_CENTER + (r * cos - r * sin),  WHEEL_CENTER + (r * sin + r * cos),
+            WHEEL_CENTER + (-r * cos - r * sin), WHEEL_CENTER + (-r * sin + r * cos),
+        };
+    }
+
+    /**
+     * Emits a single wheel quad vertex with standard lighting and overlay.
+     * @param ctx TODO PARAM DESCRIPTION
+     * @param x TODO PARAM DESCRIPTION
+     * @param y TODO PARAM DESCRIPTION
+     * @param z TODO PARAM DESCRIPTION
+     * @param u TODO PARAM DESCRIPTION
+     * @param v TODO PARAM DESCRIPTION
+     * @param nx TODO PARAM DESCRIPTION
+     */
+    private static void emitWheelVertex(RenderContext ctx, float x,
+            float y, float z, float u, float v, float nx) {
+        ctx.c().addVertex(ctx.pose(), x, y, z)
                 .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u0, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y1, z1)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u1, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y2, z2)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u1, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y3, z3)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u0, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
+                .setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(nx, 0f, 0f);
     }
 
     /**
