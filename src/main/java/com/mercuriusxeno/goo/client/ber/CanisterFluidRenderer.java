@@ -18,7 +18,7 @@ import net.minecraft.world.level.material.Fluids;
  * Fluid surface and gasket endcap rendering helpers for {@link CanisterBlockEntityRenderer}.
  * Extracted to keep the parent BER under the PMD method-count threshold.
  */
-final class CanisterFluidRenderer {
+public final class CanisterFluidRenderer {
 
     /** Block atlas texture path for fluid sprite lookups. */
     private static final Identifier BLOCK_ATLAS_TEXTURE =
@@ -302,6 +302,16 @@ final class CanisterFluidRenderer {
      * @param fluid the fluid to check
      * @return true if water
      */
+    /**
+     * Returns the tint color for a vanilla fluid. Water uses blue, lava is white.
+     *
+     * @param fluid the vanilla fluid
+     * @return the ARGB tint color
+     */
+    public static int getVanillaFluidTint(Fluid fluid) {
+        return isWater(fluid) ? WATER_TINT : GooRenderUtil.OPAQUE_WHITE;
+    }
+
     private static boolean isWater(Fluid fluid) {
         return fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER;
     }
@@ -312,7 +322,7 @@ final class CanisterFluidRenderer {
      * @param fluid the fluid
      * @return the still texture sprite
      */
-    private static TextureAtlasSprite lookupVanillaFluidSprite(Fluid fluid) {
+    public static TextureAtlasSprite lookupVanillaFluidSprite(Fluid fluid) {
         Identifier spriteId = fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER
                 ? WATER_STILL : LAVA_STILL;
         return Minecraft.getInstance().getAtlasManager()

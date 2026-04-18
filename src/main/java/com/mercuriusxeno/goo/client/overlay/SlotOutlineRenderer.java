@@ -131,7 +131,8 @@ public final class SlotOutlineRenderer {
     // --- Canister ---
 
     /**
-     * Adds a custom renderer for the canister block: targeted slot + preview.
+     * Adds a custom renderer for the canister block: targeted slot outline,
+     * red pickup highlight, and/or green placement preview.
      *
      * @param event the event instance
      */
@@ -139,8 +140,9 @@ public final class SlotOutlineRenderer {
         BlockHitResult hit = event.getHitResult();
         BlockPos pos = event.getBlockPos();
         VoxelShape outlineShape = computeCanisterOutline(hit, pos, event);
+        AABB pickup = computeCanisterPickup(hit, pos, event);
         AABB preview = computeCanisterPreview(hit, pos, event);
-        event.addCustomRenderer(slotRenderer(outlineShape, preview));
+        event.addCustomRenderer(slotRendererWithPickup(outlineShape, preview, pickup));
     }
 
     /**
@@ -161,20 +163,49 @@ public final class SlotOutlineRenderer {
     }
 
     /**
-     * Computes the placement preview bounds when directly hitting an occupied
-     * canister slot. Uses face-offset resolution to find the adjacent empty slot.
-     * Pass-through previews (ray through empty space) are handled by
-     * {@link CanisterPlacementOverlay}.
+     * Red wireframe on the canister the player would pick up. Shown when
+     * not sneaking and aiming at an occupied slot.
      *
      * @param hit the block hit result
      * @param pos the block position
      * @param event the event instance
-     * @return the computed canisterPreview
+     * @return the pickup highlight bounds, or null
+     */
+    private static @Nullable AABB computeCanisterPickup(
+            BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return null;
+        }
+        int slot = CanisterBlock.hitSlot(hit, pos);
+        if (slot < 0 || be.getCanister(slot).isEmpty()) { return null; }
+        return CanisterBlock.slotShape(slot).bounds();
+    }
+
+    /**
+     * Green placement preview. Shown when holding a canister and:
+     * - sneaking + aiming at occupied slot (resolves to adjacent empty), or
+     * - aiming at an empty slot (regardless of sneak).
+     *
+     * @param hit the block hit result
+     * @param pos the block position
+     * @param event the event instance
+     * @return the placement preview bounds, or null
      */
     private static @Nullable AABB computeCanisterPreview(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
         if (!isPlayerHoldingCanister()) { return null; }
-        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return null;
+        }
+        var player = Minecraft.getInstance().player;
+        int hitSlot = CanisterBlock.hitSlot(hit, pos);
+        boolean aimingAtOccupied = hitSlot >= 0 && !be.getCanister(hitSlot).isEmpty();
+
+        if (aimingAtOccupied && (player == null || !player.isSecondaryUseActive())) {
+            return null;
+        }
 
         int slot = CanisterSlotResolver.resolveAndConstrain(
                 hit.getLocation(), pos, hit.getDirection(), be);
@@ -219,8 +250,8 @@ public final class SlotOutlineRenderer {
     // --- Rendering ---
 
     /**
-     * Adds a custom renderer for the reactor: standard outline + output
-     * canister slot wireframe preview when holding a canister.
+     * Adds a custom renderer for the reactor: standard outline, red pickup
+     * highlight when output canister is present, green preview when empty.
      *
      * @param event the event instance
      */
@@ -228,12 +259,12 @@ public final class SlotOutlineRenderer {
         BlockPos pos = event.getBlockPos();
         VoxelShape outlineShape = event.getBlockState().getShape(event.getLevel(), pos);
         AABB preview = computeReactorPreview(pos, event);
-        event.addCustomRenderer(slotRenderer(outlineShape, preview));
+        AABB pickup = computeReactorPickup(pos, event);
+        event.addCustomRenderer(slotRendererWithPickup(outlineShape, preview, pickup));
     }
 
     /**
-     * Returns the output canister slot bounds as a placement preview
-     * when the player holds a canister and the slot is empty.
+     * Green preview when holding a canister and the output slot is empty.
      *
      * @param pos   the block position
      * @param event the event instance
@@ -246,6 +277,33 @@ public final class SlotOutlineRenderer {
             return null;
         }
         if (!reactor.getOutputCanister().isEmpty()) { return null; }
+        if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
+            return null;
+        }
+        net.minecraft.core.Direction facing =
+                event.getBlockState().getValue(ReactorBlock.FACING);
+        return ReactorBlock.outputSlotShape(facing).bounds();
+    }
+
+    /**
+     * Red pickup highlight when the output canister is present and the
+     * player is aiming at the hollow, not sneaking.
+     *
+     * @param pos   the block position
+     * @param event the event instance
+     * @return the pickup bounds, or null
+     */
+    private static @Nullable AABB computeReactorPickup(
+            BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
+            return null;
+        }
+        if (reactor.getOutputCanister().isEmpty()) { return null; }
+        if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
+            return null;
+        }
         net.minecraft.core.Direction facing =
                 event.getBlockState().getValue(ReactorBlock.FACING);
         return ReactorBlock.outputSlotShape(facing).bounds();
@@ -271,9 +329,22 @@ public final class SlotOutlineRenderer {
      */
     private static CustomBlockOutlineRenderer slotRenderer(
             VoxelShape shape, @Nullable AABB preview) {
+        return slotRendererWithPickup(shape, preview, null);
+    }
+
+    /**
+     * Creates a custom outline renderer with optional green preview and red pickup highlight.
+     *
+     * @param shape   the voxel shape to render
+     * @param preview the placement preview bounds (green), or null
+     * @param pickup  the pickup highlight bounds (red), or null
+     * @return the custom outline renderer
+     */
+    private static CustomBlockOutlineRenderer slotRendererWithPickup(
+            VoxelShape shape, @Nullable AABB preview, @Nullable AABB pickup) {
         return (renderState, bufferSource, poseStack, translucent, levelRenderState) ->
                 SlotOutlineDrawing.renderOutline(renderState, bufferSource, poseStack, translucent,
-                        levelRenderState, shape, preview);
+                        levelRenderState, shape, preview, pickup);
     }
 
 }

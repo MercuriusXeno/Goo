@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -252,28 +253,52 @@ public class CanisterBlock extends BaseEntityBlock {
         return slot >= 0 && slot < SLOT_COUNT;
     }
 
+    // --- Block lifecycle ---
+
+    /** Drops all canisters as item entities when the block is broken. */
+    @Override
+    public @NonNull BlockState playerWillDestroy(
+            @NonNull Level level, @NonNull BlockPos pos,
+            @NonNull BlockState state, @NonNull Player player) {
+        if (!level.isClientSide()
+                && level.getBlockEntity(pos) instanceof CanisterBlockEntity be) {
+            for (int i = 0; i < SLOT_COUNT; i++) {
+                ItemStack stack = be.containerState().getCanister(i);
+                if (!stack.isEmpty()) {
+                    popResource(level, pos, stack);
+                }
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
     // --- Interactions ---
 
     /**
-     * Fluid containers (buckets) interact with the targeted slot's fluid.
-     * Otherwise classifies the held item and dispatches to the appropriate handler.
-     *
-     * @param stack     the held item stack
-     * @param state     the block state
-     * @param level     the current level
-     * @param pos       the block position
-     * @param player    the interacting player
-     * @param hand      the hand used
-     * @param hitResult the ray trace hit result
-     * @return the interaction result
+     * Shift+canister inserts into grid. Holding a canister without shift
+     * picks up the targeted canister. Buckets do fluid transfer, blobs
+     * insert goo.
      */
     @Override
     protected @NonNull InteractionResult useItemOn(
             @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+        // Shift+canister: insert canister item into grid
+        if (player.isSecondaryUseActive() && stack.getItem() instanceof CanisterItem) {
+            return handleCanisterGridInsert(level, pos, player, hitResult, stack);
+        }
+
+        // Holding a canister: pick up the targeted canister
+        if (stack.getItem() instanceof CanisterItem) {
+            return CanisterBlockHandlers.handleCanisterPickup(level, pos, player, hitResult);
+        }
+
+        // Fluid container interaction (buckets)
         InteractionResult fluidResult = CanisterBlockHandlers.tryFluidInteraction(
                 level, pos, player, hand, hitResult);
         if (fluidResult != null) { return fluidResult; }
+
+        // Blob/goo insertion via standard dispatch
         return GooBlockInteraction.handleItemInteraction(
                 stack, level, pos, player, hand, hitResult,
                 CanisterBlockEntity.class, t -> t == null,
@@ -282,21 +307,31 @@ public class CanisterBlock extends BaseEntityBlock {
     }
 
     /**
-     * Empty-hand right-click does nothing on canister blocks.
-     * Canisters are removed by punching (left-click).
+     * Inserts a held canister item into the grid via shift+right-click.
      *
-     * @param state     the block state
      * @param level     the current level
      * @param pos       the block position
      * @param player    the interacting player
      * @param hitResult the ray trace hit result
-     * @return PASS always
+     * @param stack     the canister item stack
+     * @return the interaction result
      */
+    private static InteractionResult handleCanisterGridInsert(
+            Level level, BlockPos pos, Player player,
+            BlockHitResult hitResult, ItemStack stack) {
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return InteractionResult.PASS;
+        }
+        return CanisterBlockHandlers.handleCanisterInsert(be, hitResult, stack, player);
+    }
+
+    /** Empty-hand right-click picks up the targeted canister. */
     @Override
     protected @NonNull InteractionResult useWithoutItem(
             @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        return InteractionResult.PASS;
+        return CanisterBlockHandlers.handleCanisterPickup(level, pos, player, hitResult);
     }
 
 }

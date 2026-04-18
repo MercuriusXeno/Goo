@@ -82,7 +82,7 @@ public class GooBlocks {
             TapBlock::new, TAP_PROPERTY_SUPPLIER);
 
     private static final Supplier<BlockBehaviour.Properties> CANISTER_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
-            .mapColor(MapColor.METAL).strength(-1.0F, 3_600_000.0F).sound(SoundType.METAL)
+            .mapColor(MapColor.METAL).instabreak().sound(SoundType.METAL)
             .noOcclusion();
 
     public static final DeferredBlock<CanisterBlock> CANISTER = BLOCKS.registerBlock("canister",
@@ -90,7 +90,7 @@ public class GooBlocks {
 
     private static final Supplier<BlockBehaviour.Properties> CHORAL_GASKET_PROPERTY_SUPPLIER =
             () -> BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.COLOR_PURPLE).strength(0.5F).sound(SoundType.AMETHYST)
+                    .mapColor(MapColor.COLOR_PURPLE).instabreak().sound(SoundType.AMETHYST)
                     .noOcclusion().noCollision();
 
     public static final DeferredBlock<ChoralGasketBlock> CHORAL_GASKET_BLOCK = BLOCKS.registerBlock(

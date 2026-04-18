@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,8 +28,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Renders the output canister in the reactor's front hollow using the
- * same body + gaskets + fluid pattern as the tap BER.
+ * Renders the output canister in the reactor's front hollow and the
+ * spinning mixing wheels on the east/west faces.
  */
 public class ReactorBlockEntityRenderer
         implements BlockEntityRenderer<ReactorBlockEntity, ReactorRenderState> {
@@ -36,6 +37,10 @@ public class ReactorBlockEntityRenderer
     /** Block atlas texture path for fluid sprite lookups. */
     private static final Identifier BLOCK_ATLAS_TEXTURE =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
+
+    /** Reactor body texture for wheel sprite lookup. */
+    private static final Identifier REACTOR_BODY_TEXTURE =
+            Identifier.fromNamespaceAndPath("goo", "textures/block/reactor_body.png");
 
     /** Canister body side texture. */
     private static final Identifier CANISTER_SIDE =
@@ -84,6 +89,51 @@ public class ReactorBlockEntityRenderer
     /** Gasket side V end. */
     private static final float GS_V1 = 0.0625f;
 
+    /** Wheel center Y and Z in block space (center of 3-13 range). */
+    private static final float WHEEL_CENTER = 8f / 16f;
+
+    /** Wheel radius: 5px (spans 3 to 13). */
+    private static final float WHEEL_RADIUS = 5f / 16f;
+
+    /** West wheel X position (flush with block face). */
+    private static final float WHEEL_WEST_X = 0f;
+
+    /** East wheel X position (flush with block face). */
+    private static final float WHEEL_EAST_X = 1f;
+
+    /** Texture size for reactor_body.png. */
+    private static final float TEX_SIZE = 64f;
+
+    /** Wheel UV coords: origin u51,v35, 10x10 pixels in a 64x64 texture. */
+    private static final float WHEEL_U0 = 51f / TEX_SIZE;
+    private static final float WHEEL_V0 = 35f / TEX_SIZE;
+    private static final float WHEEL_U1 = 61f / TEX_SIZE;
+    private static final float WHEEL_V1 = 45f / TEX_SIZE;
+
+    /** Max wheel speed in degrees per tick at full crafting. */
+    private static final float MAX_WHEEL_SPEED = 12f;
+
+    /** Acceleration in degrees/tick/tick when crafting. */
+    private static final float WHEEL_ACCEL = 0.5f;
+
+    /** Deceleration in degrees/tick/tick when not crafting. */
+    private static final float WHEEL_DECEL = 0.3f;
+
+    /** Speed threshold below which the wheel snaps to rest at the nearest 90. */
+    private static final float IDLE_SNAP_SPEED = 0.8f;
+
+    /** Slow idle speed for coasting to aligned position. */
+    private static final float IDLE_COAST_SPEED = 0.4f;
+
+    /** Alignment tolerance in degrees. */
+    private static final float SNAP_TOLERANCE = 0.5f;
+
+    /** Normal sign for the west-facing wheel quad. */
+    private static final float NORMAL_WEST = -1f;
+
+    /** 90-degree symmetry period. */
+    private static final float SYMMETRY_PERIOD = 90f;
+
     /**
      * Creates a reactor BER.
      *
@@ -98,7 +148,7 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Snapshots the output canister state from the block entity.
+     * Snapshots the output canister state and drives wheel animation.
      *
      * @param be            the block entity
      * @param state         the render state to populate
@@ -113,12 +163,66 @@ public class ReactorBlockEntityRenderer
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         state.facing = be.getBlockState().getValue(ReactorBlock.FACING);
         state.lightCoords = sampleHollowLight(be);
+        state.crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
+        extractCanister(be, state);
+        tickWheelAnimation(be, partialTick);
+        state.wheelAngle = be.wheelAngle + be.wheelSpeed * partialTick;
+    }
+
+    /**
+     * Reads canister contents into the render state.
+     *
+     * @param be    the block entity
+     * @param state the render state
+     */
+    private static void extractCanister(ReactorBlockEntity be, ReactorRenderState state) {
         state.hasCanister = !be.getOutputCanister().isEmpty();
         if (state.hasCanister) {
             extractContents(be.getOutputCanister(), state);
         } else {
             state.gooType = null;
             state.fill = 0f;
+        }
+    }
+
+    /**
+     * Advances the wheel speed and angle on the block entity. Runs once
+     * per frame before partial-tick interpolation.
+     *
+     * @param be          the block entity holding persistent wheel state
+     * @param partialTick the partial tick (used to derive dt)
+     */
+    private static void tickWheelAnimation(ReactorBlockEntity be, float partialTick) {
+        boolean crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
+        if (crafting) {
+            be.wheelSpeed = Math.min(MAX_WHEEL_SPEED, be.wheelSpeed + WHEEL_ACCEL);
+        } else {
+            decelerateWheel(be);
+        }
+        be.wheelAngle = (be.wheelAngle + be.wheelSpeed) % SYMMETRY_PERIOD;
+    }
+
+    /**
+     * Decelerates the wheel. Below the idle threshold, coasts slowly
+     * toward the nearest 90-degree-aligned rest position, then stops.
+     *
+     * @param be the block entity
+     */
+    private static void decelerateWheel(ReactorBlockEntity be) {
+        if (be.wheelSpeed <= 0f) {
+            be.wheelSpeed = 0f;
+            return;
+        }
+        if (be.wheelSpeed > IDLE_SNAP_SPEED) {
+            be.wheelSpeed = Math.max(0f, be.wheelSpeed - WHEEL_DECEL);
+            return;
+        }
+        float remainder = be.wheelAngle % SYMMETRY_PERIOD;
+        if (remainder < SNAP_TOLERANCE || remainder > SYMMETRY_PERIOD - SNAP_TOLERANCE) {
+            be.wheelAngle = 0f;
+            be.wheelSpeed = 0f;
+        } else {
+            be.wheelSpeed = IDLE_COAST_SPEED;
         }
     }
 
@@ -142,8 +246,7 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Samples light from the block in front of the hollow opening so
-     * the canister is lit by the environment, not the reactor interior.
+     * Samples light from the block in front of the hollow opening.
      *
      * @param be the reactor block entity
      * @return packed light coordinates
@@ -156,7 +259,7 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Submits canister geometry if a canister is present in the hollow.
+     * Submits canister geometry and spinning wheels.
      *
      * @param state         the render state
      * @param poseStack     the pose stack
@@ -166,6 +269,7 @@ public class ReactorBlockEntityRenderer
     @Override
     public void submit(ReactorRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
+        submitWheels(state, poseStack, nodeCollector);
         if (!state.hasCanister) { return; }
         poseStack.pushPose();
         rotateToFacing(poseStack, state.facing);
@@ -175,6 +279,87 @@ public class ReactorBlockEntityRenderer
             submitFluid(poseStack, nodeCollector, state);
         }
         poseStack.popPose();
+    }
+
+    /**
+     * Renders both wheels with rotation around the X axis. The wheels
+     * are always on the east/west faces regardless of block facing.
+     *
+     * @param state         the render state
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     */
+    private static void submitWheels(ReactorRenderState state,
+            PoseStack poseStack, SubmitNodeCollector nodeCollector) {
+        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, true);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, false);
+    }
+
+    /**
+     * Renders a single wheel as a flat quad rotated around the X axis.
+     *
+     * @param state         the render state
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     * @param x             the X position of the wheel face
+     * @param flipU         true to flip U coords for the west-facing wheel
+     */
+    private static void submitWheel(ReactorRenderState state,
+            PoseStack poseStack, SubmitNodeCollector nodeCollector,
+            float x, boolean flipU) {
+        int light = state.lightCoords;
+        float angle = state.wheelAngle;
+        float u0 = flipU ? WHEEL_U1 : WHEEL_U0;
+        float u1 = flipU ? WHEEL_U0 : WHEEL_U1;
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entityCutout(REACTOR_BODY_TEXTURE),
+                (pose, c) -> {
+                    RenderContext ctx = new RenderContext(pose, c, light);
+                    emitRotatedWheel(ctx, x, angle, u0, u1);
+                });
+    }
+
+    /**
+     * Emits a wheel quad rotated around its center on the X axis.
+     * The quad vertices are computed from the rotation angle.
+     *
+     * @param ctx   the render context
+     * @param x     the X position
+     * @param angle the rotation angle in degrees
+     * @param u0    the left U coordinate
+     * @param u1    the right U coordinate
+     */
+    private static void emitRotatedWheel(RenderContext ctx, float x,
+            float angle, float u0, float u1) {
+        float rad = (float) Math.toRadians(angle);
+        float cos = (float) Math.cos(rad);
+        float sin = (float) Math.sin(rad);
+
+        float y0 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
+        float z0 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
+        float y1 = WHEEL_CENTER + (WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
+        float z1 = WHEEL_CENTER + (WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
+        float y2 = WHEEL_CENTER + (WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
+        float z2 = WHEEL_CENTER + (WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
+        float y3 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
+        float z3 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
+
+        ctx.c().addVertex(ctx.pose(), x, y0, z0)
+                .setColor(GooRenderUtil.OPAQUE_WHITE)
+                .setUv(u0, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
+        ctx.c().addVertex(ctx.pose(), x, y1, z1)
+                .setColor(GooRenderUtil.OPAQUE_WHITE)
+                .setUv(u1, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
+        ctx.c().addVertex(ctx.pose(), x, y2, z2)
+                .setColor(GooRenderUtil.OPAQUE_WHITE)
+                .setUv(u1, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
+        ctx.c().addVertex(ctx.pose(), x, y3, z3)
+                .setColor(GooRenderUtil.OPAQUE_WHITE)
+                .setUv(u0, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
     }
 
     /**

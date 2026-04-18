@@ -7,7 +7,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Render state snapshot for the reactor BER. Captures the output
- * canister presence, fluid type, fill ratio, and block facing.
+ * canister presence, fluid type, fill ratio, block facing, and
+ * wheel animation state.
  */
 public class ReactorRenderState extends BlockEntityRenderState {
 
@@ -25,4 +26,10 @@ public class ReactorRenderState extends BlockEntityRenderState {
 
     /** Fill ratio [0, 1] of the output canister. */
     public float fill;
+
+    /** Whether the reactor is actively crafting (wheels should be at max speed). */
+    public boolean crafting;
+
+    /** Current wheel rotation angle in degrees. */
+    public float wheelAngle;
 }

@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.client.ber.CanisterFluidRenderer;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
 import com.mercuriusxeno.goo.client.ber.RenderContext;
@@ -16,10 +17,12 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
@@ -92,16 +95,18 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     }
 
     /**
-     * Extracted render data from the canister item stack. Null fields
-     * indicate an empty canister (no fluid to render).
+     * Extracted render data from the canister item stack. For goo fluids,
+     * gooType is set. For vanilla fluids (water/lava), vanillaFluid is set.
      *
-     * @param gooType     the dominant goo type, or null if empty
-     * @param fill        the fill fraction [0, 1]
-     * @param hasTopGasket whether a choral gasket is installed on top
+     * @param gooType        the goo type, or null for vanilla/empty
+     * @param vanillaFluid   the vanilla fluid, or null for goo/empty
+     * @param fill           the fill fraction [0, 1]
+     * @param hasTopGasket   whether a choral gasket is installed on top
      * @param hasBottomGasket whether a choral gasket is installed on bottom
      */
-    public record GooData(@Nullable GooType gooType, float fill,
-            boolean hasTopGasket, boolean hasBottomGasket) {
+    public record GooData(@Nullable GooType gooType,
+            @Nullable Fluid vanillaFluid,
+            float fill, boolean hasTopGasket, boolean hasBottomGasket) {
     }
 
     /**
@@ -116,9 +121,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
         boolean hasTop = meta.topGasketId() != null;
         boolean hasBottom = meta.bottomGasketId() != null;
         CanisterFluidContent content = CanisterItem.getFluidContent(stack);
-        if (content.isEmpty()) { return new GooData(null, 0f, hasTop, hasBottom); }
+        if (content.isEmpty()) { return new GooData(null, null, 0f, hasTop, hasBottom); }
         float fill = computeFillFraction(stack, content);
-        return new GooData(content.getGooType(), fill, hasTop, hasBottom);
+        GooType gooType = content.getGooType();
+        Fluid vanillaFluid =
+                gooType == null ? content.fluid() : null;
+        return new GooData(gooType, vanillaFluid, fill, hasTop, hasBottom);
     }
 
     /**
@@ -169,8 +177,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     private static void submitFluidIfPresent(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, int packedLight,
             @Nullable GooData data) {
-        if (data != null && data.gooType() != null && data.fill() > 0f) {
+        if (data == null || data.fill() <= 0f) { return; }
+        if (data.gooType() != null) {
             submitFluid(poseStack, nodeCollector, packedLight, data.gooType(), data.fill());
+        } else if (data.vanillaFluid() != null) {
+            submitVanillaFluid(poseStack, nodeCollector, packedLight,
+                    data.vanillaFluid(), data.fill());
         }
     }
 
@@ -278,7 +290,7 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
             SubmitNodeCollector nodeCollector, int packedLight,
             Identifier texture, boolean top, boolean bottom) {
         nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entitySolid(texture),
+            RenderTypes.entityTranslucent(texture),
             (pose, c) -> emitEndcapQuads(new RenderContext(pose, c, packedLight), top, bottom));
     }
 
@@ -321,6 +333,34 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
             RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> FluidFaceEmitter.emitFluidFaces(
                 new RenderContext(pose, c, packedLight), b, type));
+    }
+
+    /**
+     * Submits vanilla fluid (water/lava) surface geometry inside the canister body.
+     * Uses the same geometry as goo fluid but with vanilla fluid textures and tint.
+     *
+     * @param poseStack     the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight   the packed light value
+     * @param fluid         the vanilla fluid
+     * @param fill          the fill fraction in [0, 1]
+     */
+    private static void submitVanillaFluid(PoseStack poseStack,
+            SubmitNodeCollector nodeCollector, int packedLight,
+            Fluid fluid, float fill) {
+        CuboidBounds b = new CuboidBounds(
+            CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
+            CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
+            BODY_BOT, BODY_BOT + fill * (BODY_TOP - BODY_BOT));
+        nodeCollector.submitCustomGeometry(poseStack,
+            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
+            (pose, c) -> {
+                TextureAtlasSprite sprite =
+                        CanisterFluidRenderer.lookupVanillaFluidSprite(fluid);
+                int tint = CanisterFluidRenderer.getVanillaFluidTint(fluid);
+                RenderContext ctx = new RenderContext(pose, c, packedLight);
+                FluidFaceEmitter.emitFluidFaces(ctx, b, sprite, tint);
+            });
     }
 
     /**

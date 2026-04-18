@@ -1,6 +1,8 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
+import com.mercuriusxeno.goo.item.CanisterMetadata;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -16,35 +18,32 @@ import net.minecraft.world.phys.BlockHitResult;
  * Cutaway hit-testing, target-item management, and item ejection for the plexer.
  * All methods are stateless helpers called from PlexerBlock.
  */
-final class PlexerInteractionHelper {
+public final class PlexerInteractionHelper {
 
     /** Overlay prefix for target-set feedback. */
     private static final String TARGET_PREFIX = "Target: ";
     /** Overlay message when target is cleared. */
     private static final String TARGET_CLEARED = "Target cleared";
 
-    // -- Eject point (model space, south-facing) --
-    /** Cutaway center X in block-relative coords. */
-    private static final double EJECT_CENTER_X = 8.0 / 16.0;
-    /** Cutaway center Y in block-relative coords. */
-    private static final double EJECT_CENTER_Y = 10.5 / 16.0;
-    /** Cutaway opening Z in block-relative coords. */
-    private static final double EJECT_CENTER_Z = 15.0 / 16.0;
+    /** Eject Y - near the bottom of the block where the hatch is. */
+    private static final double EJECT_Y = 2.0 / 16.0;
+    /** Block center for XZ positioning. */
+    private static final double BLOCK_CENTER = 0.5;
     /** Ejected item outward speed. */
-    private static final double EJECT_SPEED = 0.15;
+    private static final double EJECT_SPEED = 0.2;
     /** Ejected item upward velocity. */
-    private static final double EJECT_LIFT = 0.05;
+    private static final double EJECT_LIFT = 0.1;
 
-    /** Cutaway volume in model space (south-facing): x in [5,11], y in [8,13], z in [12,16]. */
+    /** Cutaway volume in model space (south-facing): x in [5,11], y in [8,13], z in [0,4]. */
     private static final double CUTAWAY_MIN_X = 5.0 / 16.0;
     private static final double CUTAWAY_MAX_X = 11.0 / 16.0;
     private static final double CUTAWAY_MIN_Y = 8.0 / 16.0;
     private static final double CUTAWAY_MAX_Y = 13.0 / 16.0;
-    private static final double CUTAWAY_MIN_Z = 12.0 / 16.0;
+    private static final double CUTAWAY_MAX_Z = 4.0 / 16.0;
 
     private PlexerInteractionHelper() { }
 
-    /** Returns true if the item interaction should pass through (canister or non-cutaway click).
+    /** Returns true if the interaction missed the cutaway and should pass through.
      *
      * @param stack     the held item
      * @param state     the block state
@@ -54,7 +53,7 @@ final class PlexerInteractionHelper {
      */
     static boolean shouldPassItemInteraction(ItemStack stack, BlockState state,
             BlockPos pos, BlockHitResult hitResult) {
-        return stack.getItem() instanceof CanisterItem || !isCutawayClick(state, pos, hitResult);
+        return !isCutawayClick(state, pos, hitResult);
     }
 
     /** Sets the plexer's target item and sends an overlay message to the player.
@@ -66,10 +65,25 @@ final class PlexerInteractionHelper {
      */
     static InteractionResult applyTargetItem(PlexerBlockEntity plexer, Player player, ItemStack stack) {
         if (!plexer.isValidTarget(stack)) { return InteractionResult.PASS; }
-        plexer.setTargetItem(stack.copy());
+        plexer.setTargetItem(cleanCopy(stack));
         player.sendOverlayMessage(
             Component.literal(TARGET_PREFIX + stack.getHoverName().getString()));
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Creates a single-count copy of the item with no fluid or metadata components.
+     *
+     * @param stack the source item stack
+     * @return a cleaned single-count copy
+     */
+    private static ItemStack cleanCopy(ItemStack stack) {
+        ItemStack clean = new ItemStack(stack.getItem(), 1);
+        if (stack.getItem() instanceof CanisterItem) {
+            CanisterItem.setFluidContent(clean, CanisterFluidContent.EMPTY);
+            CanisterItem.setMetadata(clean, CanisterMetadata.EMPTY);
+        }
+        return clean;
     }
 
     /** Clears the plexer's target item and sends an overlay message to the player.
@@ -94,7 +108,7 @@ final class PlexerInteractionHelper {
      * @param hit   the ray trace hit result
      * @return true if cutaway click
      */
-    static boolean isCutawayClick(BlockState state, BlockPos pos, BlockHitResult hit) {
+    public static boolean isCutawayClick(BlockState state, BlockPos pos, BlockHitResult hit) {
         Direction facing = state.getValue(PlexerBlock.FACING);
         double hitX = hit.getLocation().x - pos.getX();
         double hitY = hit.getLocation().y - pos.getY();
@@ -115,8 +129,8 @@ final class PlexerInteractionHelper {
         return switch (facing) {
             case SOUTH -> hitX;
             case NORTH -> 1.0 - hitX;
-            case EAST  -> hitZ;
-            case WEST  -> 1.0 - hitZ;
+            case EAST  -> 1.0 - hitZ;
+            case WEST  -> hitZ;
             default    -> hitX;
         };
     }
@@ -132,8 +146,8 @@ final class PlexerInteractionHelper {
         return switch (facing) {
             case SOUTH -> hitZ;
             case NORTH -> 1.0 - hitZ;
-            case EAST  -> 1.0 - hitX;
-            case WEST  -> hitX;
+            case EAST  -> hitX;
+            case WEST  -> 1.0 - hitX;
             default    -> hitZ;
         };
     }
@@ -146,7 +160,7 @@ final class PlexerInteractionHelper {
      * @return true if in cutaway
      */
     static boolean isInCutaway(double modelX, double modelY, double modelZ) {
-        return isInCutawayXY(modelX, modelY) && modelZ >= CUTAWAY_MIN_Z;
+        return isInCutawayXY(modelX, modelY) && modelZ <= CUTAWAY_MAX_Z;
     }
 
     /**
@@ -161,49 +175,23 @@ final class PlexerInteractionHelper {
             && modelY >= CUTAWAY_MIN_Y && modelY <= CUTAWAY_MAX_Y;
     }
 
-    /** Spawns an ItemEntity at the cutaway opening with velocity in the facing direction.
+    /** Spawns an ItemEntity at the hatch on the block face opposite to facing.
+     * The item spawns just outside the block surface to avoid voxel clipping.
      *
      * @param level the current level
      * @param pos   the block position
      * @param state the block state
      * @param stack the item stack
      */
-    static void ejectFromCutaway(ServerLevel level, BlockPos pos, BlockState state, ItemStack stack) {
-        Direction facing = state.getValue(PlexerBlock.FACING);
-        ItemEntity entity = new ItemEntity(level,
-            pos.getX() + ejectWorldX(facing), pos.getY() + EJECT_CENTER_Y,
-            pos.getZ() + ejectWorldZ(facing), stack);
+    static void ejectFromHatch(ServerLevel level, BlockPos pos, BlockState state, ItemStack stack) {
+        Direction hatchDir = state.getValue(PlexerBlock.FACING).getOpposite();
+        double x = pos.getX() + BLOCK_CENTER + hatchDir.getStepX();
+        double y = pos.getY() + EJECT_Y;
+        double z = pos.getZ() + BLOCK_CENTER + hatchDir.getStepZ();
+        ItemEntity entity = new ItemEntity(level, x, y, z, stack);
         entity.setDeltaMovement(
-            facing.getStepX() * EJECT_SPEED, EJECT_LIFT, facing.getStepZ() * EJECT_SPEED);
+            hatchDir.getStepX() * EJECT_SPEED, EJECT_LIFT, hatchDir.getStepZ() * EJECT_SPEED);
         entity.setDefaultPickUpDelay();
         level.addFreshEntity(entity);
-    }
-
-    /** Converts model-space eject X to world-space X for the given facing.
-     *
-     * @param facing the horizontal facing direction
-     * @return the world-space X coordinate
-     */
-    static double ejectWorldX(Direction facing) {
-        return switch (facing) {
-            case SOUTH -> EJECT_CENTER_X;
-            case NORTH -> 1.0 - EJECT_CENTER_X;
-            case EAST  -> 1.0 - EJECT_CENTER_Z;
-            default    -> EJECT_CENTER_Z;
-        };
-    }
-
-    /** Converts model-space eject Z to world-space Z for the given facing.
-     *
-     * @param facing the horizontal facing direction
-     * @return the world-space Z coordinate
-     */
-    static double ejectWorldZ(Direction facing) {
-        return switch (facing) {
-            case SOUTH -> EJECT_CENTER_Z;
-            case NORTH -> 1.0 - EJECT_CENTER_Z;
-            case EAST  -> EJECT_CENTER_X;
-            default    -> 1.0 - EJECT_CENTER_X;
-        };
     }
 }

@@ -182,9 +182,51 @@ public class ReactorBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return InteractionResult.PASS;
         }
+        // Slot empty: insert. Slot occupied + not sneaking: pick up.
+        if (reactor.getOutputCanister().isEmpty()) {
+            return insertReactorCanister(reactor, stack, player, level, pos);
+        }
+        if (!player.isSecondaryUseActive()) {
+            return removeReactorCanister(reactor, player, level, pos);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Inserts a canister into the reactor output slot.
+     *
+     * @param reactor the reactor block entity
+     * @param stack   the item stack to insert
+     * @param player  the interacting player
+     * @param level   the current level
+     * @param pos     the block position
+     * @return SUCCESS if inserted, PASS if the slot rejected the item
+     */
+    private static InteractionResult insertReactorCanister(
+            ReactorBlockEntity reactor, ItemStack stack, Player player,
+            Level level, BlockPos pos) {
         if (!reactor.insertOutputCanister(stack)) { return InteractionResult.PASS; }
         stack.consume(1, player);
         level.playSound(null, pos, SoundEvents.DECORATED_POT_INSERT,
+                SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Removes the output canister and gives it to the player.
+     *
+     * @param reactor the reactor block entity
+     * @param player  the interacting player
+     * @param level   the current level
+     * @param pos     the block position
+     * @return SUCCESS if removed, PASS if the slot was empty
+     */
+    private static InteractionResult removeReactorCanister(
+            ReactorBlockEntity reactor, Player player, Level level, BlockPos pos) {
+        ItemStack removed = reactor.removeOutputCanister();
+        if (removed.isEmpty()) { return InteractionResult.PASS; }
+        PlayerUtils.addOrDrop(player, removed);
+        level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT,
                 SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
@@ -246,7 +288,7 @@ public class ReactorBlock extends BaseEntityBlock {
      * @param hit   the ray trace hit result
      * @return true if the hit is on the output slot
      */
-    private static boolean hitOutputSlot(BlockState state, BlockPos pos, BlockHitResult hit) {
+    public static boolean hitOutputSlot(BlockState state, BlockPos pos, BlockHitResult hit) {
         Direction facing = state.getValue(FACING);
         VoxelShape slot = OUTPUT_SLOT_SHAPES.getOrDefault(facing,
                 OUTPUT_SLOT_SHAPES.get(Direction.SOUTH));
@@ -273,7 +315,7 @@ public class ReactorBlock extends BaseEntityBlock {
      * @param hit   the ray trace hit result
      * @return true if the click is in the hollow
      */
-    private static boolean isHollowClick(BlockState state, BlockPos pos, BlockHitResult hit) {
+    public static boolean isHollowClick(BlockState state, BlockPos pos, BlockHitResult hit) {
         Direction facing = state.getValue(FACING);
         double hitX = hit.getLocation().x - pos.getX();
         double hitY = hit.getLocation().y - pos.getY();

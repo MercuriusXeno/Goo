@@ -1,12 +1,6 @@
 {
   "variants": {
-    "facing=north,waterlogged=false": { "model": "goo:block/choral_gasket" },
-    "facing=south,waterlogged=false": { "model": "goo:block/choral_gasket", "y": 180 },
-    "facing=west,waterlogged=false":  { "model": "goo:block/choral_gasket", "y": 270 },
-    "facing=east,waterlogged=false":  { "model": "goo:block/choral_gasket", "y": 90 },
-    "facing=north,waterlogged=true":  { "model": "goo:block/choral_gasket" },
-    "facing=south,waterlogged=true":  { "model": "goo:block/choral_gasket", "y": 180 },
-    "facing=west,waterlogged=true":   { "model": "goo:block/choral_gasket", "y": 270 },
-    "facing=east,waterlogged=true":   { "model": "goo:block/choral_gasket", "y": 90 }
+    "waterlogged=false": { "model": "goo:block/choral_gasket" },
+    "waterlogged=true":  { "model": "goo:block/choral_gasket" }
   }
 }

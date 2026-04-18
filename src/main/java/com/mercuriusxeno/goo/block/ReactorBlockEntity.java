@@ -56,6 +56,12 @@ public class ReactorBlockEntity extends BlockEntity
     /** NBT key for the output canister. */
     private static final String TAG_OUTPUT_CANISTER = "OutputCanister";
 
+    /** Client-side wheel rotation angle in degrees. Not serialized. */
+    public float wheelAngle;
+
+    /** Client-side wheel rotation speed in degrees per tick. Not serialized. */
+    public float wheelSpeed;
+
     /** Slotted state for the single output canister. */
     private final SlottedCanisterState state = new SlottedCanisterState(
             OUTPUT_SLOT_COUNT,
@@ -125,7 +131,12 @@ public class ReactorBlockEntity extends BlockEntity
     public @NonNull ItemStack removeOutputCanister() {
         ItemStack current = getOutputCanister();
         if (current.isEmpty()) { return ItemStack.EMPTY; }
-        ICanisterHolder.syncSlotToItemStack(this, OUTPUT_SLOT);
+        // Write handler state to the item stack so the returned item has
+        // accurate fluid data, but don't sync yet - we clear and sync once.
+        CanisterSlotFluidHandler handler = state.slots.handlers()[OUTPUT_SLOT];
+        if (handler != null) {
+            CanisterItem.setFluidContent(current, handler.toFluidContent());
+        }
         state.slots.handlers()[OUTPUT_SLOT] = null;
         state.canisters.set(OUTPUT_SLOT, ItemStack.EMPTY);
         markDirtyAndSync();
@@ -167,13 +178,18 @@ public class ReactorBlockEntity extends BlockEntity
      */
     private void tickReaction(Level level, BlockPos pos, BlockState bState) {
         CanisterBlockEntity inputBe = getInputCanisterBe(level, pos);
-        if (inputBe == null) {
+        if (inputBe == null || !hasOutputCanister()) {
             clearCrafting(level, pos, bState);
             return;
         }
 
         GooReaction reaction = resolveReaction(inputBe);
         if (reaction == null) {
+            clearCrafting(level, pos, bState);
+            return;
+        }
+
+        if (!outputCanAcceptProducts(reaction)) {
             clearCrafting(level, pos, bState);
             return;
         }
@@ -188,6 +204,32 @@ public class ReactorBlockEntity extends BlockEntity
         produceOutputs(reaction.outputs(), batches, reaction.rate());
         setChanged();
         setCrafting(level, pos, bState);
+    }
+
+    /**
+     * Returns true if the output slot has a canister to receive products.
+     *
+     * @return true if an output canister is present
+     */
+    private boolean hasOutputCanister() {
+        return !getOutputCanister().isEmpty();
+    }
+
+    /**
+     * Returns true if the output canister can accept all products of the
+     * reaction. The canister must be empty or already contain the same
+     * fluid as every output entry.
+     *
+     * @param reaction the matched reaction
+     * @return true if the output canister is compatible
+     */
+    private boolean outputCanAcceptProducts(GooReaction reaction) {
+        CanisterFluidContent content = CanisterItem.getFluidContent(getOutputCanister());
+        if (content.isEmpty()) { return true; }
+        for (GooReaction.FluidEntry entry : reaction.outputs()) {
+            if (content.fluid() != entry.fluid()) { return false; }
+        }
+        return true;
     }
 
     /**
@@ -359,7 +401,13 @@ public class ReactorBlockEntity extends BlockEntity
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
-        ICanisterHolder.syncSlotToItemStack(this, OUTPUT_SLOT);
+        // Write handler state to item stack without triggering a sync
+        // (we're already inside serialization).
+        CanisterSlotFluidHandler handler = state.slots.handlers()[OUTPUT_SLOT];
+        if (handler != null) {
+            CanisterItem.setFluidContent(state.canisters.get(OUTPUT_SLOT),
+                    handler.toFluidContent());
+        }
         output.store(TAG_OUTPUT_CANISTER, ItemStack.CODEC, getOutputCanister());
     }
 

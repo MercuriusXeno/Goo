@@ -5,6 +5,8 @@ import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.HubBlock;
+import com.mercuriusxeno.goo.block.PlexerBlock;
+import com.mercuriusxeno.goo.block.PlexerInteractionHelper;
 import com.mercuriusxeno.goo.block.ReactorBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
@@ -93,7 +95,17 @@ public final class CanisterPlacementOverlay {
         if (bhr == null) { return null; }
         Block hitBlock = mc.level.getBlockState(bhr.getBlockPos()).getBlock();
         if (isGooMachineBlock(hitBlock)) { return null; }
-        if (hitBlock instanceof ReactorBlock && bhr.getDirection() != Direction.UP) { return null; }
+        boolean sneaking = mc.player != null && mc.player.isSecondaryUseActive();
+        if (!sneaking && hitBlock instanceof PlexerBlock
+                && PlexerInteractionHelper.isCutawayClick(
+                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
+            return null;
+        }
+        if (!sneaking && hitBlock instanceof ReactorBlock
+                && ReactorBlock.isHollowClick(
+                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
+            return null;
+        }
 
         BlockPos placePos = bhr.getBlockPos().relative(bhr.getDirection());
         return resolveTarget(mc, bhr, placePos);

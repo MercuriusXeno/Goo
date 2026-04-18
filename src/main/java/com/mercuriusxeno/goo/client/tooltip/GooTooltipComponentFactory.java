@@ -22,5 +22,7 @@ public final class GooTooltipComponentFactory {
     @SubscribeEvent
     public static void onRegisterTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(GooValueTooltipComponent.class, GooValueClientTooltipComponent::new);
+        event.register(VanillaFluidTooltipComponent.class, VanillaFluidClientTooltipComponent::new);
+        event.register(ContainerValueTooltipComponent.class, ContainerValueClientTooltipComponent::new);
     }
 }

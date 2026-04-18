@@ -50,7 +50,6 @@ public final class GooNetworking {
      */
     private static void registerServerPayloads(PayloadRegistrar r) {
         r.playToServer(CanisterRenamePayload.TYPE, CanisterRenamePayload.STREAM_CODEC, CanisterRenameHandler::handle);
-        r.playToServer(CanisterPunchPayload.TYPE, CanisterPunchPayload.STREAM_CODEC, CanisterPunchHandler::handle);
         r.playToServer(CanisterUnlinkPayload.TYPE, CanisterUnlinkPayload.STREAM_CODEC, CanisterUnlinkHandler::handle);
         r.playToServer(BlobThrowPayload.TYPE, BlobThrowPayload.STREAM_CODEC, BlobThrowHandler::handle);
         r.playToServer(GloveSelectPayload.TYPE, GloveSelectPayload.STREAM_CODEC, GloveSelectHandler::handle);

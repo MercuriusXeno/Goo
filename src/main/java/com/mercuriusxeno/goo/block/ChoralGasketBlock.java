@@ -18,7 +18,6 @@ import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -28,7 +27,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -46,9 +44,6 @@ public class ChoralGasketBlock extends BaseEntityBlock implements SimpleWaterlog
 
     public static final MapCodec<ChoralGasketBlock> CODEC = simpleCodec(ChoralGasketBlock::new);
 
-    /** Horizontal facing for the gasket. */
-    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
-
     /** Whether the block is waterlogged. */
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
@@ -63,7 +58,6 @@ public class ChoralGasketBlock extends BaseEntityBlock implements SimpleWaterlog
     public ChoralGasketBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
                 .setValue(WATERLOGGED, false));
     }
 
@@ -84,7 +78,7 @@ public class ChoralGasketBlock extends BaseEntityBlock implements SimpleWaterlog
     @Override
     protected void createBlockStateDefinition(
             StateDefinition.@NonNull Builder<Block, BlockState> builder) {
-        builder.add(FACING, WATERLOGGED);
+        builder.add(WATERLOGGED);
     }
 
     @Override
@@ -93,7 +87,6 @@ public class ChoralGasketBlock extends BaseEntityBlock implements SimpleWaterlog
         FluidState fluid = context.getLevel().getFluidState(placePos);
         boolean waterlogged = fluid.is(Fluids.WATER);
         return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
                 .setValue(WATERLOGGED, waterlogged);
     }
 

@@ -27,6 +27,9 @@ final class SlotOutlineDrawing {
     /** Translucent green color for placement preview wireframe. */
     private static final int PREVIEW_COLOR = ARGB.color(180, 100, 255, 100);
 
+    /** Translucent red color for pickup highlight wireframe. */
+    private static final int PICKUP_COLOR = ARGB.color(180, 255, 80, 80);
+
     /** Opaque black outline color for high-contrast secondary outline. */
     private static final int HC_SECONDARY_COLOR = -16_777_216;
 
@@ -59,29 +62,37 @@ final class SlotOutlineDrawing {
             MultiBufferSource.BufferSource bufferSource, PoseStack poseStack,
             boolean translucent, LevelRenderState levelRenderState,
             VoxelShape shape, @Nullable AABB preview) {
-        if (renderState.isTranslucent() != translucent) { return true; }
-        renderOutlineContent(renderState, bufferSource, poseStack, levelRenderState, shape, preview);
-        return true;
+        return renderOutline(renderState, bufferSource, poseStack, translucent,
+                levelRenderState, shape, preview, null);
     }
 
     /**
-     * Draws selection outline and optional preview, then flushes the buffer.
+     * Renders outline with optional green preview and red pickup highlight.
      *
-     * @param renderState the block outline render state
-     * @param bufferSource the buffer source for rendering
-     * @param poseStack the pose stack for rendering
+     * @param renderState      the block outline render state
+     * @param bufferSource     the buffer source for rendering
+     * @param poseStack        the pose stack for rendering
+     * @param translucent      whether the current pass is translucent
      * @param levelRenderState the level render state
-     * @param shape the voxel shape to render
-     * @param preview the placement preview bounds, or null
+     * @param shape            the voxel shape to render
+     * @param preview          the placement preview bounds, or null
+     * @param pickup           the pickup highlight bounds, or null
+     * @return true to suppress vanilla outline rendering
      */
-    private static void renderOutlineContent(BlockOutlineRenderState renderState,
+    static boolean renderOutline(BlockOutlineRenderState renderState,
             MultiBufferSource.BufferSource bufferSource, PoseStack poseStack,
-            LevelRenderState levelRenderState, VoxelShape shape, @Nullable AABB preview) {
+            boolean translucent, LevelRenderState levelRenderState,
+            VoxelShape shape, @Nullable AABB preview, @Nullable AABB pickup) {
+        if (renderState.isTranslucent() != translucent) { return true; }
         Vec3 camPos = levelRenderState.cameraRenderState.pos;
         BlockPos pos = renderState.pos();
         renderSelectionOutline(renderState, bufferSource, poseStack, shape, pos, camPos);
         renderOptionalPreview(poseStack, bufferSource, preview, pos, camPos);
+        if (pickup != null) {
+            renderCameraRelativeWireframe(poseStack, bufferSource, pickup, pos, camPos, PICKUP_COLOR);
+        }
         bufferSource.endLastBatch();
+        return true;
     }
 
     /**

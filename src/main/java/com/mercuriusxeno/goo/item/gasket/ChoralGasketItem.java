@@ -166,8 +166,6 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
         }
         var gasketBlock = gasketBlockSupplier.get();
         BlockState gasketState = gasketBlock.defaultBlockState()
-                .setValue(ChoralGasketBlock.FACING,
-                        context.getHorizontalDirection().getOpposite())
                 .setValue(ChoralGasketBlock.WATERLOGGED,
                         existing.getFluidState().is(Fluids.WATER));
         if (!gasketState.canSurvive(level, placePos)) { return InteractionResult.PASS; }

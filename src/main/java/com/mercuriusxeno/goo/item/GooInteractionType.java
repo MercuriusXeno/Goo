@@ -27,7 +27,7 @@ public enum GooInteractionType {
      * @return true if cooldown applies
      */
     public boolean requiresCooldown() {
-        return this == CANISTER_INSERT;
+        return false;
     }
 
     /**

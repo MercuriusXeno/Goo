@@ -16,16 +16,23 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.storage.LevelResource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -109,6 +116,37 @@ public final class GooCommand {
     /** Scaffold mode label: missing. */
     private static final String MODE_MISSING = "missing";
 
+    /** Orphan scan: prefix for per-orphan report line. */
+    private static final String MSG_ORPHAN_PREFIX = "Orphan: ";
+    /** Orphan scan: detail fragment separating type from position. */
+    private static final String MSG_ORPHAN_AT = " at ";
+    /** Orphan scan: label for the block type at the position. */
+    private static final String MSG_ORPHAN_BLOCK = " (block: ";
+    /** Orphan scan: message when no orphans are found. */
+    private static final String MSG_NO_ORPHANS = "No orphaned block entities in chunk ";
+    /** Orphan scan: verb when the fix flag is set and orphans are removed. */
+    private static final String MSG_ORPHAN_REMOVED = "Removed";
+    /** Orphan scan: verb when the fix flag is not set and orphans are reported. */
+    private static final String MSG_ORPHAN_FOUND = "Found";
+    /** Orphan scan: middle fragment in the summary message. */
+    private static final String MSG_ORPHAN_IN_CHUNK = " orphan(s) in chunk ";
+    /** Orphan scan: suffix appended when fix is false. */
+    private static final String MSG_ORPHAN_FIX_HINT = " (use /goo orphans fix to remove)";
+    /** Orphan scan: space separator in summary. */
+    private static final String MSG_SPACE = " ";
+    /** Orphan scan: empty string for no-suffix case. */
+    private static final String MSG_EMPTY = "";
+    /** Subcommand name for orphan scanning. */
+    private static final String CMD_ORPHANS = "orphans";
+    /** Subcommand name for orphan fix mode. */
+    private static final String CMD_FIX = "fix";
+
+    /** Bit-shift used to convert a world coordinate to chunk coordinate. */
+    private static final int CHUNK_COORD_SHIFT = 4;
+
+    /** Block-update flags passed to sendBlockUpdated: notify clients and neighbors. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
+
     /** Datapack directory name. */
     private static final String PACK_DIR = "goo_overrides";
     /** Base values file path within datapack. */
@@ -148,7 +186,10 @@ public final class GooCommand {
             .then(opSubcommand(CMD_REGEN, GooCommand::regen))
             .then(opSubcommand(CMD_AUDIT, GooAuditReport::run))
             .then(scaffoldSubcommand())
-            .then(opSubcommand(CMD_INIT, GooCommand::init)));
+            .then(opSubcommand(CMD_INIT, GooCommand::init))
+            .then(Commands.literal(CMD_ORPHANS).requires(GooCommand::requiresOp)
+                .executes(ctx -> scanOrphans(ctx, false))
+                .then(Commands.literal(CMD_FIX).executes(ctx -> scanOrphans(ctx, true)))));
     }
 
     /** Builds the /goo lookup subcommand with item argument and suggestions.
@@ -455,6 +496,93 @@ public final class GooCommand {
             CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         return SharedSuggestionProvider.suggestResource(
             BuiltInRegistries.ITEM.keySet(), builder);
+    }
+
+    /**
+     * Scans the chunk the player is standing in for orphaned block entities
+     * (block entities at positions where the block doesn't expect one).
+     * Reports and removes any found.
+     *
+     * @param ctx the command context
+     * @param fix true to remove orphans, false to only report them
+     * @return 1 on success
+     */
+    private static int scanOrphans(CommandContext<CommandSourceStack> ctx, boolean fix) {
+        ServerLevel level = ctx.getSource().getLevel();
+        BlockPos playerPos = BlockPos.containing(ctx.getSource().getPosition());
+        ChunkPos cp = new ChunkPos(
+                playerPos.getX() >> CHUNK_COORD_SHIFT, playerPos.getZ() >> CHUNK_COORD_SHIFT);
+        LevelChunk chunk = level.getChunk(cp.x(), cp.z());
+        int total = removeOrReportOrphans(ctx, level, chunk, fix);
+        sendOrphanSummary(ctx, cp, total, fix);
+        return 1;
+    }
+
+    /**
+     * Iterates block entities in the chunk, reporting each orphan and optionally removing it.
+     *
+     * @param ctx   the command context for sending per-orphan messages
+     * @param level the server level
+     * @param chunk the chunk to scan
+     * @param fix   true to remove orphans
+     * @return the number of orphans found
+     */
+    private static int removeOrReportOrphans(CommandContext<CommandSourceStack> ctx,
+            ServerLevel level, LevelChunk chunk, boolean fix) {
+        int count = 0;
+        for (BlockEntity be : new ArrayList<>(chunk.getBlockEntities().values())) {
+            BlockPos bePos = be.getBlockPos();
+            BlockState state = level.getBlockState(bePos);
+            if (!state.hasBlockEntity()) {
+                reportOrphan(ctx, be, bePos, state);
+                if (fix) {
+                    chunk.removeBlockEntity(bePos);
+                    level.sendBlockUpdated(bePos, state, state, BLOCK_UPDATE_FLAGS);
+                }
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Sends a red chat message describing one orphaned block entity.
+     *
+     * @param ctx   the command context
+     * @param be    the orphaned block entity
+     * @param bePos the block entity position
+     * @param state the block state at that position
+     */
+    private static void reportOrphan(CommandContext<CommandSourceStack> ctx,
+            BlockEntity be, BlockPos bePos, BlockState state) {
+        String type = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType()).toString();
+        ctx.getSource().sendSuccess(() -> Component.literal(
+                MSG_ORPHAN_PREFIX + type + MSG_ORPHAN_AT + bePos
+                + MSG_ORPHAN_BLOCK + state.getBlock().getName().getString() + MSG_CLOSE_PAREN)
+                .withStyle(ChatFormatting.RED), false);
+    }
+
+    /**
+     * Sends the summary line after scanning: green if none found, yellow if any found.
+     *
+     * @param ctx   the command context
+     * @param cp    the chunk position
+     * @param total the number of orphans found
+     * @param fix   true if the scan was run in fix mode
+     */
+    private static void sendOrphanSummary(CommandContext<CommandSourceStack> ctx,
+            ChunkPos cp, int total, boolean fix) {
+        if (total == 0) {
+            ctx.getSource().sendSuccess(() ->
+                    Component.literal(MSG_NO_ORPHANS + cp)
+                            .withStyle(ChatFormatting.GREEN), false);
+        } else {
+            String verb = fix ? MSG_ORPHAN_REMOVED : MSG_ORPHAN_FOUND;
+            ctx.getSource().sendSuccess(() ->
+                    Component.literal(verb + MSG_SPACE + total + MSG_ORPHAN_IN_CHUNK + cp
+                            + (fix ? MSG_EMPTY : MSG_ORPHAN_FIX_HINT))
+                            .withStyle(ChatFormatting.YELLOW), true);
+        }
     }
 
 }

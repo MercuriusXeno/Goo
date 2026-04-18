@@ -2,8 +2,10 @@ package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.ICanisterHolder;
+import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
+import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -202,6 +204,10 @@ public final class CanisterHudRenderer {
         if (be instanceof TapBlockEntity tap && slot == CanisterTargetResolver.TAP_SLOT) {
             return lookupTapSlotData(tap);
         }
+        if (be instanceof ReactorBlockEntity reactor
+                && slot == CanisterTargetResolver.REACTOR_SLOT) {
+            return lookupReactorSlotData(reactor);
+        }
         if (be instanceof ICanisterHolder holder) { return lookupContainerSlotData(holder, slot); }
         return null;
     }
@@ -217,6 +223,20 @@ public final class CanisterHudRenderer {
         if (canister.isEmpty()) { return null; }
         int compression = GooEnchantments.getCompressionLevel(canister);
         return new SlotData(tap.getFluidContent(), null, compression);
+    }
+
+    /**
+     * Extracts slot data from a reactor's output canister.
+     *
+     * @param reactor the reactor block entity
+     * @return the slot data, or null if no output canister
+     */
+    private static @Nullable SlotData lookupReactorSlotData(ReactorBlockEntity reactor) {
+        ItemStack canister = reactor.getOutputCanister();
+        if (canister.isEmpty()) { return null; }
+        CanisterFluidContent content = CanisterItem.getFluidContent(canister);
+        int compression = GooEnchantments.getCompressionLevel(canister);
+        return new SlotData(content, null, compression);
     }
 
     /**

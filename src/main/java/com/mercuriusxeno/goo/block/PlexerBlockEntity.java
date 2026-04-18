@@ -146,7 +146,7 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
      */
     public void setTargetItem(ItemStack stack) {
         this.targetItem = stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1);
-        setChanged();
+        BlockEntitySync.markDirtyAndSync(this);
     }
 
     // --- Reconstitution (reads from external CanisterBlock above) ---

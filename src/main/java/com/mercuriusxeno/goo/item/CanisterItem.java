@@ -3,7 +3,6 @@ package com.mercuriusxeno.goo.item;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.InteractionCooldown;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -141,7 +140,7 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     private InteractionResult tryInsertCanister(
             UseOnContext context, Level level, BlockPos pos, Direction entryFace) {
         if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-        if (!canInteract(context, level)) { return interactionGuardResult(context); }
+        if (context.getPlayer() == null) { return InteractionResult.PASS; }
 
         var be = canisterEntityAt(level, pos);
         if (be == null) { return InteractionResult.PASS; }
@@ -163,30 +162,6 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
     }
 
     /**
-     * Returns true if the player exists and is not on interaction cooldown.
-     *
-     * @param context the use-on context
-     * @param level   the current level
-     * @return true if the player can interact
-     */
-    private static boolean canInteract(UseOnContext context, Level level) {
-        Player player = context.getPlayer();
-        return player != null && !InteractionCooldown.isOnCooldown(player.getUUID(), level.getGameTime());
-    }
-
-    /**
-     * Returns the correct guard result when canInteract fails.
-     *
-     * @param context the use-on context
-     * @return PASS if no player, SUCCESS if on cooldown
-     */
-    private static InteractionResult interactionGuardResult(UseOnContext context) {
-        Player player = context.getPlayer();
-        if (player == null) { return InteractionResult.PASS; }
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
      * Commits the canister insertion into a resolved slot.
      *
      * @param context the use-on context
@@ -202,7 +177,6 @@ public class CanisterItem extends BlockItem implements IGooItemInteraction {
         boolean creative = player != null && player.isCreative();
         if (!be.insertCanister(slot, stack, creative)) { return InteractionResult.PASS; }
         stack.shrink(1);
-        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
         return InteractionResult.SUCCESS;
     }
 
