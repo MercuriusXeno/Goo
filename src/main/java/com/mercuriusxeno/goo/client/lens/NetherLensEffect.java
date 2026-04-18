@@ -236,7 +236,8 @@ public final class NetherLensEffect {
      * @param mc the client instance
      */
     public static void applyPerFrame(Minecraft mc) {
-        int frame = ++markFrameStamp;
+        markFrameStamp++;
+        int frame = markFrameStamp;
         GameRenderer gameRenderer = mc.gameRenderer;
         // Dev kill switch: when the lens is globally disabled via the
         // NetherHoleStyles flag, clear any currently-active post
@@ -501,8 +502,11 @@ public final class NetherLensEffect {
         for (int i = 0; i < CUBE_CORNERS; i++) {
             while (k >= MONOTONE_MIN_CHAIN && crossAt(
                     HULL_CHAIN_SCRATCH[k - MONOTONE_MIN_CHAIN],
-                    HULL_CHAIN_SCRATCH[k - 1], HULL_SORT_IDX[i]) <= 0f) { k--; }
-            HULL_CHAIN_SCRATCH[k++] = HULL_SORT_IDX[i];
+                    HULL_CHAIN_SCRATCH[k - 1], HULL_SORT_IDX[i]) <= 0f) {
+                k--;
+            }
+            HULL_CHAIN_SCRATCH[k] = HULL_SORT_IDX[i];
+            k++;
         }
         return k;
     }
@@ -514,14 +518,18 @@ public final class NetherLensEffect {
      * @return the updated chain length
      */
     private static int buildUpperHull(int k, int lowerEnd) {
+        int pos = k;
         int upperStart = CUBE_CORNERS - MONOTONE_MIN_CHAIN;
         for (int i = upperStart; i >= 0; i--) {
-            while (k >= lowerEnd && crossAt(
-                    HULL_CHAIN_SCRATCH[k - MONOTONE_MIN_CHAIN],
-                    HULL_CHAIN_SCRATCH[k - 1], HULL_SORT_IDX[i]) <= 0f) { k--; }
-            HULL_CHAIN_SCRATCH[k++] = HULL_SORT_IDX[i];
+            while (pos >= lowerEnd && crossAt(
+                    HULL_CHAIN_SCRATCH[pos - MONOTONE_MIN_CHAIN],
+                    HULL_CHAIN_SCRATCH[pos - 1], HULL_SORT_IDX[i]) <= 0f) {
+                pos--;
+            }
+            HULL_CHAIN_SCRATCH[pos] = HULL_SORT_IDX[i];
+            pos++;
         }
-        return k;
+        return pos;
     }
 
     /** Insertion-sorts {@code idx[0..n)} by {@code (x, y)} on the
@@ -551,8 +559,10 @@ public final class NetherLensEffect {
         float vy = CUBE_CORNERS_UV[v * POINT_STRIDE + POINT_Y];
         int j = end;
         while (j > 0 && !isBeforeInXy(idx[j - 1], vx, vy)) {
-            idx[j] = idx[j - 1];
             j--;
+        }
+        if (j < end) {
+            System.arraycopy(idx, j, idx, j + 1, end - j);
         }
         return j;
     }

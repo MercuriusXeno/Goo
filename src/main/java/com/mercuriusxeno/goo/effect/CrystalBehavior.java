@@ -134,8 +134,8 @@ public final class CrystalBehavior implements ChainBehavior {
         if (entity instanceof ItemEntity) { return false; }
         if (!(entity instanceof LivingEntity)) { return false; }
         if (entity instanceof Player player && player.isShiftKeyDown()) { return false; }
-        if (entity.position().distanceTo(center) > CLOUD_RADIUS) { return false; }
-        return entity.getDeltaMovement().lengthSqr() > MOVE_THRESHOLD_SQ;
+        return entity.position().distanceTo(center) <= CLOUD_RADIUS
+                && entity.getDeltaMovement().lengthSqr() > MOVE_THRESHOLD_SQ;
     }
 
     /**

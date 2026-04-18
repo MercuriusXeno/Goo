@@ -66,6 +66,8 @@ public final class MetalBehavior implements ChainBehavior {
     private static final float DISSIPATE_PITCH = 1.2f;
     /** Body-height fraction for particle spawn at entity midpoint. */
     private static final double ENTITY_MID_HEIGHT = 0.5;
+    /** Block update flags: notify neighbors + send to clients. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
     /** Array offset for X target coordinate in anim data. */
     private static final int ANIM_OFFSET_TX = 2;
     /** Array offset for Y target coordinate in anim data. */
@@ -282,8 +284,7 @@ public final class MetalBehavior implements ChainBehavior {
         float t = animTick + partialTick;
         if (t < EMERGE_TICK) { return 0f; }
         if (t < STRIKE_TICK) {
-            float frac = (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
-            return frac;
+            return (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
         }
         if (t < RETRACT_TICK) { return 1f; }
         if (t < TOTAL_ANIM_TICKS) {
@@ -333,10 +334,6 @@ public final class MetalBehavior implements ChainBehavior {
         return entity.position().distanceTo(center) <= SPIKE_RADIUS;
     }
 
-
-    /** Block update flags: notify neighbors + send to clients. */
-    private static final int BLOCK_UPDATE_FLAGS = 3;
-
     /** Triggers a block update to sync state to clients.
      *
      * @param be the owning block entity
@@ -356,11 +353,12 @@ public final class MetalBehavior implements ChainBehavior {
         int[] animData = new int[spikeAnims.size() * ANIM_STRIDE];
         int idx = 0;
         for (SpikeAnim anim : spikeAnims.values()) {
-            animData[idx++] = anim.entityId;
-            animData[idx++] = anim.tick;
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetX);
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetY);
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetZ);
+            animData[idx] = anim.entityId;
+            animData[idx + 1] = anim.tick;
+            animData[idx + ANIM_OFFSET_TX] = Float.floatToRawIntBits((float) anim.targetX);
+            animData[idx + ANIM_OFFSET_TY] = Float.floatToRawIntBits((float) anim.targetY);
+            animData[idx + ANIM_OFFSET_TZ] = Float.floatToRawIntBits((float) anim.targetZ);
+            idx += ANIM_STRIDE;
         }
         output.putIntArray(TAG_SPIKE_ANIMS, animData);
     }

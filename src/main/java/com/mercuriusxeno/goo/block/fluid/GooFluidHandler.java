@@ -131,7 +131,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
             streamTick = now;
         }
         streamType = GooType.values()[index];
-        streamRate += (int) delta;
+        streamRate += delta;
     }
 
     // --- Stream getters (queried by BER extractRenderState) ---
@@ -222,7 +222,7 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
     private void applyTank(int index, GooType type, int volume) {
         if (volume > 0) {
             Fluid fluid = GooFluids.SOURCES.get(type).get();
-            set(index, FluidResource.of(fluid), (int) Math.min(volume, Integer.MAX_VALUE));
+            set(index, FluidResource.of(fluid), Math.min(volume, Integer.MAX_VALUE));
         } else {
             set(index, FluidResource.EMPTY, 0);
         }

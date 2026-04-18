@@ -176,7 +176,9 @@ public final class GooColors {
         try {
             return Integer.parseInt(hex, HEX_RADIX);
         } catch (NumberFormatException e) {
-            Goo.LOGGER.warn(LOG_INVALID_COLOR, hex, type.getId());
+            if (Goo.LOGGER.isWarnEnabled()) {
+                Goo.LOGGER.warn(LOG_INVALID_COLOR, hex, type.getId());
+            }
             return fallback;
         }
     }

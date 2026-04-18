@@ -59,7 +59,6 @@ public class ReactorBlock extends BaseEntityBlock {
     private static final double HOLLOW_MAX_X = 11.0 / 16.0;
     private static final double HOLLOW_MIN_Y = 1.0 / 16.0;
     private static final double HOLLOW_MAX_Y = 15.0 / 16.0;
-    private static final double HOLLOW_MAX_Z = 6.0 / 16.0;
 
     /** Output canister slot shape (south-facing): 4x14x4 centered in hollow. */
     private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 15, 5);
@@ -301,7 +300,7 @@ public class ReactorBlock extends BaseEntityBlock {
      * @return shapes with canister keyed by direction
      */
     private static Map<Direction, VoxelShape> buildShapesWithCanister() {
-        EnumMap<Direction, VoxelShape> map = new EnumMap<>(Direction.class);
+        Map<Direction, VoxelShape> map = new EnumMap<>(Direction.class);
         SHAPES.forEach((dir, shape) ->
                 map.put(dir, Shapes.or(shape, OUTPUT_SLOT_SHAPES.get(dir))));
         return Map.copyOf(map);
@@ -321,7 +320,6 @@ public class ReactorBlock extends BaseEntityBlock {
         double hitY = hit.getLocation().y - pos.getY();
         double hitZ = hit.getLocation().z - pos.getZ();
         double modelX = PlexerInteractionHelper.toModelX(facing, hitX, hitZ);
-        double modelZ = PlexerInteractionHelper.toModelZ(facing, hitX, hitZ);
         return isInHollowXY(modelX, hitY);
     }
 

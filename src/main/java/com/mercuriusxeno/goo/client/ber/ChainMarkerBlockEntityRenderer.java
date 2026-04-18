@@ -87,6 +87,17 @@ public class ChainMarkerBlockEntityRenderer
     /** Extra scale bump when targeted. */
     private static final float TARGET_SCALE_BOOST = 1.15f;
 
+    /** Index of the perp-Y component in the cone basis array. */
+    private static final int BASIS_PERP_Y = 1;
+    /** Index of the perp-Z component in the cone basis array. */
+    private static final int BASIS_PERP_Z = 2;
+    /** Index of the cross-X component in the cone basis array. */
+    private static final int BASIS_CROSS_X = 3;
+    /** Index of the cross-Y component in the cone basis array. */
+    private static final int BASIS_CROSS_Y = 4;
+    /** Index of the cross-Z component in the cone basis array. */
+    private static final int BASIS_CROSS_Z = 5;
+
     /** Ticks before detonation where implosion starts. */
     private static final int IMPLOSION_TICKS = 6;
 
@@ -611,17 +622,6 @@ public class ChainMarkerBlockEntityRenderer
         return new float[]{perpX, perpY, perpZ, crossX, crossY, crossZ};
     }
 
-    /** Index of the perp-Y component in the cone basis array. */
-    private static final int BASIS_PERP_Y = 1;
-    /** Index of the perp-Z component in the cone basis array. */
-    private static final int BASIS_PERP_Z = 2;
-    /** Index of the cross-X component in the cone basis array. */
-    private static final int BASIS_CROSS_X = 3;
-    /** Index of the cross-Y component in the cone basis array. */
-    private static final int BASIS_CROSS_Y = 4;
-    /** Index of the cross-Z component in the cone basis array. */
-    private static final int BASIS_CROSS_Z = 5;
-
     /** Emits textured triangular fan faces around the cone from base to tip.
      * Each triangle maps the goo fluid sprite across the face for a
      * goo-colored/textured appearance.
@@ -645,8 +645,12 @@ public class ChainMarkerBlockEntityRenderer
             float tipX, float tipY, float tipZ,
             float dirX, float dirY, float dirZ,
             float[] basis, int color, GooRenderUtil.UvRect uv) {
-        float perpX = basis[0], perpY = basis[BASIS_PERP_Y], perpZ = basis[BASIS_PERP_Z];
-        float crossX = basis[BASIS_CROSS_X], crossY = basis[BASIS_CROSS_Y], crossZ = basis[BASIS_CROSS_Z];
+        float perpX = basis[0];
+        float perpY = basis[BASIS_PERP_Y];
+        float perpZ = basis[BASIS_PERP_Z];
+        float crossX = basis[BASIS_CROSS_X];
+        float crossY = basis[BASIS_CROSS_Y];
+        float crossZ = basis[BASIS_CROSS_Z];
         float uMid = (uv.u0() + uv.u1()) * HALF;
         for (int i = 0; i < SPIKE_SIDES; i++) {
             float a0 = TWO_PI * i / SPIKE_SIDES;
@@ -737,7 +741,7 @@ public class ChainMarkerBlockEntityRenderer
      * @return set of packed position keys
      */
     private static Set<Long> packOffsets(List<int[]> offsets) {
-        Set<Long> filled = new HashSet<>(offsets.size());
+        Set<Long> filled = HashSet.newHashSet(offsets.size());
         for (int[] o : offsets) {
             filled.add(packPos(o[X], o[Y], o[Z]));
         }

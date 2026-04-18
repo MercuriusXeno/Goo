@@ -255,12 +255,14 @@ final class CanisterPanelPainter {
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);
         GooContents goo = toGooContents(data.content());
-        if (!goo.isEmpty()) {
+        if (goo.isEmpty()) {
+            if (!data.content().isEmpty()) {
+                InWorldHud.renderFluidRow(poseStack, font, buffers,
+                        data.content().fluid(), data.content().amount(), contentX,
+                        baseY + row * InWorldHud.ROW_HEIGHT);
+            }
+        } else {
             InWorldHud.renderGooRows(poseStack, font, buffers, goo, contentX, baseY, row);
-        } else if (!data.content().isEmpty()) {
-            InWorldHud.renderFluidRow(poseStack, font, buffers,
-                    data.content().fluid(), data.content().amount(), contentX,
-                    baseY + row * InWorldHud.ROW_HEIGHT);
         }
     }
 

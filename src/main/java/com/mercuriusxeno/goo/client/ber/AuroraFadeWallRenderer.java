@@ -556,7 +556,7 @@ public final class AuroraFadeWallRenderer {
                 bestPerColumn.put(columnKey, o);
             }
         }
-        Set<Long> result = new HashSet<>(bestPerColumn.size());
+        Set<Long> result = HashSet.newHashSet(bestPerColumn.size());
         for (int[] o : bestPerColumn.values()) {
             result.add(ChainMarkerBlockEntityRenderer.packPos(
                     o[X], o[Y], o[Z]));

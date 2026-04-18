@@ -100,7 +100,7 @@ public final class NetherExecutor {
     public static void mergeValue(Map<GooType, Integer> totals, GooValue value) {
         for (Map.Entry<GooType, Integer> entry : value.getAll().entrySet()) {
             int amount = entry.getValue();
-            totals.merge(entry.getKey(),     (int) amount, Integer::sum);
+            totals.merge(entry.getKey(),     amount, Integer::sum);
         }
     }
 }

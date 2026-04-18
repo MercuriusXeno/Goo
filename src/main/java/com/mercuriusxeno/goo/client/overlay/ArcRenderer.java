@@ -272,11 +272,11 @@ final class ArcRenderer {
     private static float dashAlpha(float midArcLen, float dashOffset, float perspScale) {
         float scaledCycle = DASH_CYCLE * perspScale;
         float scaledOn = DASH_ON * perspScale;
-        float scaledFade = DASH_FADE * perspScale;
         float phase = (midArcLen - dashOffset * perspScale) % scaledCycle;
         if (phase < 0) { phase += scaledCycle; }
         if (phase >= scaledOn) { return 0f; }
         float edgeDist = Math.min(phase, scaledOn - phase);
+        float scaledFade = DASH_FADE * perspScale;
         return Math.min(edgeDist / scaledFade, 1f);
     }
 }

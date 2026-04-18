@@ -45,6 +45,11 @@ public class GlowCrystalBlock extends Block {
     private static final Map<Direction, Map<CrystalShape, Map<CrystalSize, VoxelShape>>> SHAPES =
             buildShapeTable();
 
+    /** Bump depth in block fractions (2/16). */
+    public static final double BUMP_DEPTH = 2.0 / 16;
+    /** Flat depth in block fractions (matches 0.01 model). */
+    public static final double FLAT_DEPTH = 0.01;
+
     /**
      * Creates a glow crystal block.
      *
@@ -174,12 +179,6 @@ public class GlowCrystalBlock extends Block {
             return values()[idx];
         }
     }
-
-
-    /** Bump depth in block fractions (2/16). */
-    public static final double BUMP_DEPTH = 2.0 / 16;
-    /** Flat depth in block fractions (matches 0.01 model). */
-    public static final double FLAT_DEPTH = 0.01;
 
     /**
      * Builds the full facing x shape x size to VoxelShape lookup table.

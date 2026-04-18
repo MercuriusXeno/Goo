@@ -162,7 +162,7 @@ public interface ICanisterHolder {
      */
     static <T extends BlockEntity & ICanisterHolder> CanisterSlotFluidHandler createSlotHandler(T be, int slot) {
         ItemStack stack = be.containerState().canisters.get(slot);
-        int capacity = (int) ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
+        int capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
         CanisterSlotFluidHandler handler = new CanisterSlotFluidHandler(capacity,
             () -> syncSlotToItemStack(be, slot),
             () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0);

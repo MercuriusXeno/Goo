@@ -92,6 +92,25 @@ public final class GooTargetHighlighter {
     /** Partial tick captured at the opaque-stage handler. */
     private static float cachedArcPartialTick;
 
+    /** Gap between the top of the blob visual and the billboard bottom. */
+    private static final float BILLBOARD_GAP = 0.15f;
+    /** BER core base half-size in blocks (must match ChainMarkerBlockEntityRenderer). */
+    private static final float BER_CORE_BASE = 2f / 16f;
+    /** BER shell margin in blocks. */
+    private static final float BER_SHELL_MARGIN = 1f / 16f;
+    /** BER core growth per stack in blocks. */
+    private static final float BER_CORE_GROWTH = 1f / 32f;
+    /** Max pulse/target boost scale factor. */
+    private static final float BER_MAX_SCALE = 1.15f;
+    /** Padding inside the nine-slice background. */
+    private static final float BILLBOARD_PADDING = 4f;
+    /** Multiplier for padding on both sides (left+right or top+bottom). */
+    private static final int PADDING_BOTH_SIDES = 2;
+    /** Divisor to halve a dimension for centering. */
+    private static final float HALF_DIVISOR = 2f;
+    /** Separator between stack count and max stacks in the billboard. */
+    private static final String STACK_SEPARATOR = " / ";
+
     private GooTargetHighlighter() {}
 
     /**
@@ -461,26 +480,6 @@ public final class GooTargetHighlighter {
         if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
         return be.getBehavior() == null && be.getStackCount() < be.getMaxStacks();
     }
-
-
-    /** Gap between the top of the blob visual and the billboard bottom. */
-    private static final float BILLBOARD_GAP = 0.15f;
-    /** BER core base half-size in blocks (must match ChainMarkerBlockEntityRenderer). */
-    private static final float BER_CORE_BASE = 2f / 16f;
-    /** BER shell margin in blocks. */
-    private static final float BER_SHELL_MARGIN = 1f / 16f;
-    /** BER core growth per stack in blocks. */
-    private static final float BER_CORE_GROWTH = 1f / 32f;
-    /** Max pulse/target boost scale factor. */
-    private static final float BER_MAX_SCALE = 1.15f;
-    /** Padding inside the nine-slice background. */
-    private static final float BILLBOARD_PADDING = 4f;
-    /** Multiplier for padding on both sides (left+right or top+bottom). */
-    private static final int PADDING_BOTH_SIDES = 2;
-    /** Divisor to halve a dimension for centering. */
-    private static final float HALF_DIVISOR = 2f;
-    /** Separator between stack count and max stacks in the billboard. */
-    private static final String STACK_SEPARATOR = " / ";
 
     /**
      * Renders a floating billboard above a targeted chain marker showing

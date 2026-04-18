@@ -37,7 +37,7 @@ public interface IGooReservoir {
      * @return the amount actually inserted
      */
     default int insertGoo(GooType type, int volume) {
-        return reservoirHandler().insertGoo(type, (int) Math.min(volume, Integer.MAX_VALUE), false);
+        return reservoirHandler().insertGoo(type, Math.min(volume, Integer.MAX_VALUE), false);
     }
 
     /**
@@ -48,6 +48,6 @@ public interface IGooReservoir {
      * @return the amount actually extracted
      */
     default int extractGoo(GooType type, int amount) {
-        return reservoirHandler().extractGoo(type, (int) Math.min(amount, Integer.MAX_VALUE), false);
+        return reservoirHandler().extractGoo(type, Math.min(amount, Integer.MAX_VALUE), false);
     }
 }

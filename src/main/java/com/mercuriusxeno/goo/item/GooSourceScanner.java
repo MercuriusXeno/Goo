@@ -263,7 +263,7 @@ public final class GooSourceScanner {
         if (!(stack.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) {
             return remaining;
         }
-        int blobsNeeded = (int) Math.min(ceilDiv(remaining, BlobStacks.MB_PER_BLOB), stack.getCount());
+        int blobsNeeded = Math.min(ceilDiv(remaining, BlobStacks.MB_PER_BLOB), stack.getCount());
         stack.shrink(blobsNeeded);
         return remaining - blobsNeeded * BlobStacks.MB_PER_BLOB;
     }

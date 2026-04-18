@@ -112,6 +112,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     /** Offset of the Z component inside a stride-3 position or normal
      * triple. Named so array accesses like {@code data[p + CUBE_Z]}
      * don't trip checkstyle's magic-number rule. */
+    private static final int CUBE_Y = 1;
     private static final int CUBE_Z = 2;
     /** Unit magnitude for cube half-extent literals. Used through its
      * negation as {@code -UNIT} in the cube vertex tables so the
@@ -340,18 +341,13 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * @return stride-2 UV table
      */
     private static float[] buildCubeFaceUvs() {
+        // Each face has 4 vertices x 2 UV components = 8 floats.
+        // Quad winding (u, v): (0,0) -> (1,0) -> (1,1) -> (0,1).
+        float[] tile = {0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f};
+        int step = CUBE_VERTICES_PER_FACE * CUBE_UV_STRIDE;
         float[] out = new float[CUBE_VERTEX_COUNT * CUBE_UV_STRIDE];
-        int idx = 0;
         for (int face = 0; face < CUBE_FACES; face++) {
-            // Quad winding (u, v): (0,0) → (1,0) → (1,1) → (0,1).
-            out[idx++] = 0f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
-            out[idx++] = 1f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
+            System.arraycopy(tile, 0, out, face * step, step);
         }
         return out;
     }
@@ -380,10 +376,12 @@ public final class CubeHoleStyle implements NetherHoleStyle {
             float fny = normals[face][1];
             float fnz = normals[face][CUBE_Z];
             for (int v = 0; v < CUBE_VERTICES_PER_FACE; v++) {
-                out[idx++] = fnx;
-                out[idx++] = fny;
-                out[idx++] = fnz;
+                int base = idx + v * CUBE_POS_STRIDE;
+                out[base] = fnx;
+                out[base + CUBE_Y] = fny;
+                out[base + CUBE_Z] = fnz;
             }
+            idx += CUBE_VERTICES_PER_FACE * CUBE_POS_STRIDE;
         }
         return out;
     }

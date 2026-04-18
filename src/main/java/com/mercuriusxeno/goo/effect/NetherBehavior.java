@@ -75,6 +75,10 @@ public final class NetherBehavior implements ChainBehavior {
     private static final float BLACK_HOLE_SOUND_VOLUME = 6.0f;
     /** Pitch for the black-hole sound at EXPAND entry. */
     private static final float BLACK_HOLE_SOUND_PITCH = 1.0f;
+    /** Disc-expansion value at the EXPAND to HOLD transition. Low enough
+     * that the disc is still tight around the sphere when the sphere
+     * finishes forming, then the ring sweeps outward across HOLD. */
+    private static final float DISK_EXPAND_PEAK = 0.25f;
 
 
     /** Fraction of current HP shaved off any living entity caught inside
@@ -395,11 +399,6 @@ public final class NetherBehavior implements ChainBehavior {
             default -> 0f;
         };
     }
-
-    /** Disc-expansion value at the EXPAND → HOLD transition. Low enough
-     * that the disc is still tight around the sphere when the sphere
-     * finishes forming, then the ring sweeps outward across HOLD. */
-    private static final float DISK_EXPAND_PEAK = 0.25f;
 
     private float expandProgress() {
         if (initialExpandTicks <= 0) { return 0f; }

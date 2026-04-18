@@ -112,7 +112,7 @@ public class SlottedCanisterState {
     public int insertFluid(int slot, Fluid fluid, int volume) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0; }
-        return h.insertFluid(fluid, (int) Math.min(volume, Integer.MAX_VALUE), false);
+        return h.insertFluid(fluid, Math.min(volume, Integer.MAX_VALUE), false);
     }
 
     /**
@@ -138,7 +138,7 @@ public class SlottedCanisterState {
     public int extractFluid(int slot, Fluid fluid, int requested) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0; }
-        return h.extractFluid(fluid, (int) Math.min(requested, Integer.MAX_VALUE), false);
+        return h.extractFluid(fluid, Math.min(requested, Integer.MAX_VALUE), false);
     }
 
     /**
@@ -284,14 +284,14 @@ public class SlottedCanisterState {
         for (int i = 0; i < maxSlots && remaining > 0; i++) {
             CanisterSlotFluidHandler handler = slots.handlers()[i];
             if (handler == null || handler.isEmpty() || handler.getFluid() != fluid) { continue; }
-            int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
+            int toInsert = Math.min(remaining, Integer.MAX_VALUE);
             remaining -= handler.insertFluid(fluid, toInsert, false);
         }
         // Second pass: empty slots
         for (int i = 0; i < maxSlots && remaining > 0; i++) {
             CanisterSlotFluidHandler handler = slots.handlers()[i];
             if (handler == null || !handler.isEmpty()) { continue; }
-            int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
+            int toInsert = Math.min(remaining, Integer.MAX_VALUE);
             remaining -= handler.insertFluid(fluid, toInsert, false);
         }
         return amount - remaining;

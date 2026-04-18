@@ -106,7 +106,7 @@ public class HubFluidHandler implements ResourceHandler<FluidResource> {
             TransactionContext transaction) {
         if (amount <= 0 || resource.isEmpty()) { return 0; }
         Fluid fluid = resource.getFluid();
-        return (int) Math.min(
+        return Math.min(
             hub.containerState().routeFluid(fluid, amount),
             Integer.MAX_VALUE);
     }
@@ -152,7 +152,7 @@ public class HubFluidHandler implements ResourceHandler<FluidResource> {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS && remaining > 0; i++) {
             ItemStack stack = hub.getCanister(i);
             if (stack.isEmpty()) { continue; }
-            remaining -= (int) CanisterItem.removeFluid(stack, fluid, remaining);
+            remaining -= CanisterItem.removeFluid(stack, fluid, remaining);
         }
         return remaining;
     }

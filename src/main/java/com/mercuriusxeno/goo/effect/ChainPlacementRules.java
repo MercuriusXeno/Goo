@@ -21,6 +21,8 @@ package com.mercuriusxeno.goo.effect;
  */
 public final class ChainPlacementRules {
 
+    private static final Decision NONE_DECISION = new Decision(Action.NONE, -1);
+
     /** How an effect block reacts when a candidate position contains water. */
     public enum WaterHandling {
         /** Block implements SimpleWaterloggedBlock: place waterlogged at the candidate. */
@@ -75,8 +77,6 @@ public final class ChainPlacementRules {
             boolean hasWater,
             boolean hasLava,
             boolean aboveIsPlaceable) {}
-
-    private static final Decision NONE_DECISION = new Decision(Action.NONE, -1);
 
     private ChainPlacementRules() {}
 

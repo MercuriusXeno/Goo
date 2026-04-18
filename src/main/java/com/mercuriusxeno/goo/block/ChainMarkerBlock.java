@@ -428,8 +428,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      * @return true if breaking should be prevented
      */
     private static boolean isProtectedFromBreaking(ChainMarkerBlockEntity be) {
-        if (be.getBehavior() == null) { return true; }
-        return be.getBehavior().allowsTopOff();
+        return be.getBehavior() == null || be.getBehavior().allowsTopOff();
     }
 
     /** Goo types that support flat/tunnel mode toggling.

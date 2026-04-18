@@ -13,6 +13,16 @@ import net.minecraft.core.Direction;
  */
 public record FlatQuadContext(PoseStack.Pose pose, VertexConsumer c) {
 
+    /** Lookup table indexed by Direction.ordinal() for face dispatch. */
+    private static final FaceEmitter[] FACE_EMITTERS = {
+        FlatQuadContext::faceDown,   // DOWN = 0
+        FlatQuadContext::faceUp,     // UP = 1
+        FlatQuadContext::faceNorth,  // NORTH = 2
+        FlatQuadContext::faceSouth,  // SOUTH = 3
+        FlatQuadContext::faceWest,   // WEST = 4
+        FlatQuadContext::faceEast    // EAST = 5
+    };
+
     /** Functional interface for per-face quad emission. */
     @FunctionalInterface
     private interface FaceEmitter {
@@ -24,16 +34,6 @@ public record FlatQuadContext(PoseStack.Pose pose, VertexConsumer c) {
          */
         void emit(FlatQuadContext ctx, int color, CuboidBounds box);
     }
-
-    /** Lookup table indexed by Direction.ordinal() for face dispatch. */
-    private static final FaceEmitter[] FACE_EMITTERS = {
-        FlatQuadContext::faceDown,   // DOWN = 0
-        FlatQuadContext::faceUp,     // UP = 1
-        FlatQuadContext::faceNorth,  // NORTH = 2
-        FlatQuadContext::faceSouth,  // SOUTH = 3
-        FlatQuadContext::faceWest,   // WEST = 4
-        FlatQuadContext::faceEast    // EAST = 5
-    };
 
     /**
      * Emits a single flat-colored vertex.

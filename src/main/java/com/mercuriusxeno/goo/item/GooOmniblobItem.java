@@ -488,7 +488,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         if (remaining <= 0) {
             omniblob.shrink(1);
         } else if (BlobStacks.isCleanBlobStack(remaining)) {
-            player.containerMenu.setCarried(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
+            player.containerMenu.setCarried(BlobStacks.createBlobStack(gooType, (remaining / BlobStacks.MB_PER_BLOB)));
         } else {
             setVolume(omniblob, remaining);
         }
@@ -608,7 +608,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         if (remaining <= 0) {
             omniblob.shrink(1);
         } else if (BlobStacks.isCleanBlobStack(remaining)) {
-            slot.set(BlobStacks.createBlobStack(gooType, (int) (remaining / BlobStacks.MB_PER_BLOB)));
+            slot.set(BlobStacks.createBlobStack(gooType, (remaining / BlobStacks.MB_PER_BLOB)));
         } else {
             setVolume(omniblob, remaining);
         }

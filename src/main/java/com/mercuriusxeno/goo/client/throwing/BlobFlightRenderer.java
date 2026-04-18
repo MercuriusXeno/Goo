@@ -702,8 +702,12 @@ public final class BlobFlightRenderer {
         float tipY = dirY * length;
         float tipZ = dirZ * length;
 
-        float perpX = basis[PERP_X], perpY = basis[PERP_Y], perpZ = basis[PERP_Z];
-        float crossX = basis[CROSS_X], crossY = basis[CROSS_Y], crossZ = basis[CROSS_Z];
+        float perpX = basis[PERP_X];
+        float perpY = basis[PERP_Y];
+        float perpZ = basis[PERP_Z];
+        float crossX = basis[CROSS_X];
+        float crossY = basis[CROSS_Y];
+        float crossZ = basis[CROSS_Z];
         float uMid = (uv.u0() + uv.u1()) * UV_MIDPOINT;
 
         for (int i = 0; i < DART_SIDES; i++) {

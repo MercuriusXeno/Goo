@@ -87,7 +87,7 @@ public final class GooCauldronInteractions {
      * @param volume volume in microblobs
      */
     private static void placeGooFluid(Level level, BlockPos pos, GooType type, int volume) {
-        int blobs = (int) Math.min(volume / MICROBLOBS_PER_BLOB, BLOBS_PER_BLOCK);
+        int blobs = Math.min(volume / MICROBLOBS_PER_BLOB, BLOBS_PER_BLOCK);
         if (blobs <= 0) { return; }
         int fluidLevel = BLOBS_PER_BLOCK - blobs;
         BlockState fluidState = GooBlocks.FLUID_BLOCKS.get(type).get()
