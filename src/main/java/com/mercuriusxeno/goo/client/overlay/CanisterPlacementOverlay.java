@@ -5,10 +5,14 @@ import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.HubBlock;
+import com.mercuriusxeno.goo.block.PlexerBlock;
+import com.mercuriusxeno.goo.block.PlexerInteractionHelper;
+import com.mercuriusxeno.goo.block.ReactorBlock;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mercuriusxeno.goo.item.CanisterItem;
+import com.mercuriusxeno.goo.item.CanisterPlacementValidator;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -89,7 +93,19 @@ public final class CanisterPlacementOverlay {
         if (!isHoldingCanister(mc)) { return null; }
         BlockHitResult bhr = getValidBlockHit(mc);
         if (bhr == null) { return null; }
-        if (isGooMachineBlock(mc.level.getBlockState(bhr.getBlockPos()).getBlock())) { return null; }
+        Block hitBlock = mc.level.getBlockState(bhr.getBlockPos()).getBlock();
+        if (isGooMachineBlock(hitBlock)) { return null; }
+        boolean sneaking = mc.player != null && mc.player.isSecondaryUseActive();
+        if (!sneaking && hitBlock instanceof PlexerBlock
+                && PlexerInteractionHelper.isCutawayClick(
+                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
+            return null;
+        }
+        if (!sneaking && hitBlock instanceof ReactorBlock
+                && ReactorBlock.isHollowClick(
+                        mc.level.getBlockState(bhr.getBlockPos()), bhr.getBlockPos(), bhr)) {
+            return null;
+        }
 
         BlockPos placePos = bhr.getBlockPos().relative(bhr.getDirection());
         return resolveTarget(mc, bhr, placePos);
@@ -143,6 +159,7 @@ public final class CanisterPlacementOverlay {
         }
         if (!mc.level.getBlockState(placePos).canBeReplaced()) { return null; }
         int slot = slotFromHitLocation(bhr, placePos);
+        if (!CanisterPlacementValidator.isSlotAllowed(mc.level, placePos, slot)) { return null; }
         return new PlacementTarget(placePos, slot);
     }
 
@@ -163,6 +180,7 @@ public final class CanisterPlacementOverlay {
         float pz = (float) ((loc.z - canisterPos.getZ()) * PIXELS_PER_BLOCK);
         int slot = CanisterSlotLayout.nearestSlot(px, pz);
         if (slot < 0 || !be.getCanister(slot).isEmpty()) { return null; }
+        if (!CanisterPlacementValidator.isSlotAllowed(mc.level, canisterPos, slot)) { return null; }
         return new PlacementTarget(canisterPos, slot);
     }
 

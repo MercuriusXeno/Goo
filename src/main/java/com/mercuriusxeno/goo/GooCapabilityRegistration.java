@@ -74,6 +74,8 @@ final class GooCapabilityRegistration {
             (be, side) -> isVatFluidSide(side) ? be.getFluidHandler() : null);
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, GooBlockEntities.HUB.get(),
             (be, side) -> isHubFluidSide(side) ? be.getFluidHandler() : null);
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, GooBlockEntities.CHORAL_GASKET.get(),
+            (be, side) -> be.getWaterSource());
     }
 
     /**
@@ -105,6 +107,7 @@ final class GooCapabilityRegistration {
         registerCanisterGasketBlock(event);
         registerHubGasketBlock(event);
         registerSimpleGasketBlocks(event);
+        registerChoralGasketBlock(event);
     }
 
     /**
@@ -188,6 +191,18 @@ final class GooCapabilityRegistration {
     private static void registerPlexerGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
             GooBlockEntities.PLEXER.get(), (be, gasketId) -> null);
+    }
+
+    /**
+     * Registers GASKET_BLOCK for the world-placed choral gasket block.
+     *
+     * @param event the capability registration event
+     */
+    private static void registerChoralGasketBlock(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
+            GooBlockEntities.CHORAL_GASKET.get(), (be, gasketId) ->
+                gasketId.equals(be.getGasketId(GasketRole.TRANSMITTER))
+                    ? be.getWaterSource() : null);
     }
 
     /**

@@ -1,11 +1,8 @@
 package com.mercuriusxeno.goo.block.gasket;
 
-import com.mercuriusxeno.goo.block.IGooSource;
-import com.mercuriusxeno.goo.block.fluid.GooFluidTransfer;
 import com.mercuriusxeno.goo.data.GasketLocation;
 import com.mercuriusxeno.goo.data.GasketRegistry;
 import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
-import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.registry.GooCapabilities;
 import com.mercuriusxeno.goo.registry.GooTickets;
@@ -17,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -30,7 +28,7 @@ public class GasketPusher implements IGasketPusher {
     /** Release the forced chunk ticket after this many ticks with no transfer. */
     static final int IDLE_THRESHOLD = 200;
 
-    private final IGooSource reservoir;
+    private final ResourceHandler<FluidResource> source;
     private final Supplier<@Nullable UUID> gasketId;
     private final Supplier<@Nullable GasketPartner> partner;
     private final Supplier<@Nullable Level> level;
@@ -45,7 +43,7 @@ public class GasketPusher implements IGasketPusher {
     /**
      * Creates a gasket pusher wired to the host entity's state.
      *
-     * @param reservoir      the goo source to push from
+     * @param source         the fluid handler to push from (any fluid, not just goo)
      * @param gasketId       supplier for the host's gasket UUID
      * @param partner        supplier for the host's gasket partner
      * @param level          supplier for the host's level (null before setLevel)
@@ -53,14 +51,14 @@ public class GasketPusher implements IGasketPusher {
      * @param sync           callback to sync the host to clients after a push
      * @param registryAccess decoupled access to the gasket registry (avoids direct GasketRegistry.get calls)
      */
-    public GasketPusher(IGooSource reservoir,
+    public GasketPusher(ResourceHandler<FluidResource> source,
                         Supplier<@Nullable UUID> gasketId,
                         Supplier<@Nullable GasketPartner> partner,
                         Supplier<@Nullable Level> level,
                         Supplier<BlockPos> ownerPos,
                         Runnable sync,
                         IGasketRegistryAccess registryAccess) {
-        this.reservoir = reservoir;
+        this.source = source;
         this.gasketId = gasketId;
         this.partner = partner;
         this.level = level;
@@ -140,8 +138,22 @@ public class GasketPusher implements IGasketPusher {
      */
     private boolean hasPushableTarget() {
         GasketPartner p = partner.get();
-        if (reservoir.isEmpty() || p == null) { return false; }
+        if (isSourceEmpty() || p == null) { return false; }
         return p.isEntityTarget() || endpointCache != null;
+    }
+
+    /**
+     * Returns true if the source handler has no fluid in any slot.
+     *
+     * @return true if all slots are empty
+     */
+    private boolean isSourceEmpty() {
+        for (int i = 0; i < source.size(); i++) {
+            if (!source.getResource(i).isEmpty() && source.getAmountAsLong(i) > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Returns true when the cache can be built (server-side with a partner).
@@ -167,7 +179,7 @@ public class GasketPusher implements IGasketPusher {
     /** Dispatches to block or entity push path based on partner type. */
     private void pushToDestinations() {
         GasketPartner p = partner.get();
-        if (reservoir.isEmpty() || p == null) { return; }
+        if (isSourceEmpty() || p == null) { return; }
         if (p.isEntityTarget()) {
             pushToEntityTarget(p);
         } else {
@@ -213,19 +225,51 @@ public class GasketPusher implements IGasketPusher {
     }
 
     /**
-     * Transfers goo from the reservoir to the given fluid handler via
-     * {@link GasketPushMath#computePush}. Syncs to clients if anything moved.
+     * Transfers fluid from the source handler to the target handler.
+     * Iterates all source slots, computes a tapered offer for each,
+     * and transfers via a single transaction per slot.
      *
-     * @param handler the fluid handler
+     * @param target the destination fluid handler
      */
-    private void pushViaHandler(ResourceHandler<FluidResource> handler) {
-        GooContents before = reservoir.toGooContents();
-        GasketPushMath.PushResult result = GasketPushMath.computeTaperedPush(
-            before, (type, volume) -> GooFluidTransfer.insert(handler, type, volume));
-        if (!result.remaining().equals(before)) {
-            reservoir.loadFrom(result.remaining());
+    private void pushViaHandler(ResourceHandler<FluidResource> target) {
+        boolean moved = false;
+        for (int i = 0; i < source.size(); i++) {
+            FluidResource resource = source.getResource(i);
+            if (resource.isEmpty()) { continue; }
+            int amount = (int) source.getAmountAsLong(i);
+            double exponent = GasketPushMath.exponentFor(resource.getFluid());
+            int offer = GasketPushMath.taperRate(amount, exponent);
+            if (offer <= 0) { continue; }
+            moved |= transferSlot(target, i, resource, offer);
+        }
+        if (moved) {
             idleTicks = 0;
             sync.run();
+        }
+    }
+
+    /**
+     * Transfers up to {@code offer} mB of the given resource from one source
+     * slot to the target handler in a single transaction.
+     *
+     * @param target   the destination handler
+     * @param slot     the source slot index
+     * @param resource the fluid resource to transfer
+     * @param offer    the maximum amount to transfer
+     * @return true if any fluid was transferred
+     */
+    private boolean transferSlot(ResourceHandler<FluidResource> target,
+            int slot, FluidResource resource, int offer) {
+        try (var tx = Transaction.openRoot()) {
+            int extracted = source.extract(slot, resource, offer, tx);
+            if (extracted <= 0) { return false; }
+            int inserted = target.insert(resource, extracted, tx);
+            if (inserted <= 0) { return false; }
+            if (inserted < extracted) {
+                source.insert(slot, resource, extracted - inserted, tx);
+            }
+            tx.commit();
+            return true;
         }
     }
 

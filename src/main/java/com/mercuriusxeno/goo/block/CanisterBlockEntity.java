@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GasketRegistry;
 import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
+import com.mercuriusxeno.goo.item.CanisterPlacementValidator;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -89,6 +90,9 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
      * @return true if inserted
      */
     public boolean insertCanister(int slot, ItemStack canisterStack, boolean stripGaskets) {
+        if (level != null && !CanisterPlacementValidator.isSlotAllowed(level, worldPosition, slot)) {
+            return false;
+        }
         return CanisterSlotHandlers.insertCanister(this, slot, canisterStack, stripGaskets);
     }
 
@@ -148,6 +152,10 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
     @Override
     public GasketState gasketState() { return gasketState; }
 
+    /** Slot-level gaskets always support both transmitter and receiver roles. */
+    @Override
+    public boolean supportsRole(GasketRole role) { return true; }
+
     /** {@inheritDoc} */
     @Override
     public int resolveSlot(BlockHitResult hit) {
@@ -186,7 +194,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         super.saveAdditional(output);
         CanisterEntitySerializer.saveCanisterList(output, state.canisters);
         if (ownerUuid != null) { output.store(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC, ownerUuid); }
-        CanisterEntitySerializer.saveStreamState(output, state.slots.streamType(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
+        CanisterEntitySerializer.saveStreamState(output, state.slots.streamType(), state.slots.streamFluid(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
     }
 
     /** {@inheritDoc} */
@@ -195,7 +203,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         super.loadAdditional(input);
         CanisterEntitySerializer.loadCanisterList(input, state.canisters, MAX_SLOTS);
         input.read(TAG_OWNER_UUID, UUIDUtil.STRING_CODEC).ifPresent(u -> ownerUuid = u);
-        CanisterEntitySerializer.loadStreamState(input, state.slots.streamType(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
+        CanisterEntitySerializer.loadStreamState(input, state.slots.streamType(), state.slots.streamFluid(), state.slots.streamRate(), state.slots.streamTick(), MAX_SLOTS);
         CanisterSlotHandlers.rebuildAllSlotHandlers(this);
         state.invalidateShape();
     }

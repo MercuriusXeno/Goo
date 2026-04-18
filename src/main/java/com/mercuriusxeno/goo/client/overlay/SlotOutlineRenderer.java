@@ -5,9 +5,10 @@ import com.mercuriusxeno.goo.block.CanisterBlock;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.block.ReactorBlock;
+import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
-import com.mercuriusxeno.goo.client.machine.CanisterPunchListener;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterSlotResolver;
 import net.minecraft.client.Minecraft;
@@ -56,6 +57,8 @@ public final class SlotOutlineRenderer {
             addCanisterRenderer(event);
         } else if (block instanceof TapBlock) {
             addTapRenderer(event);
+        } else if (block instanceof ReactorBlock) {
+            addReactorRenderer(event);
         }
     }
 
@@ -128,7 +131,8 @@ public final class SlotOutlineRenderer {
     // --- Canister ---
 
     /**
-     * Adds a custom renderer for the canister block: targeted slot + preview + punch progress.
+     * Adds a custom renderer for the canister block: targeted slot outline,
+     * red pickup highlight, and/or green placement preview.
      *
      * @param event the event instance
      */
@@ -136,11 +140,9 @@ public final class SlotOutlineRenderer {
         BlockHitResult hit = event.getHitResult();
         BlockPos pos = event.getBlockPos();
         VoxelShape outlineShape = computeCanisterOutline(hit, pos, event);
+        AABB pickup = computeCanisterPickup(hit, pos, event);
         AABB preview = computeCanisterPreview(hit, pos, event);
-        AABB punchBounds = computePunchProgressBounds(pos);
-        float punchProgress = punchBounds != null ? CanisterPunchListener.getProgress() : 0f;
-        event.addCustomRenderer(slotRendererWithPunch(
-                outlineShape, preview, punchBounds, punchProgress));
+        event.addCustomRenderer(slotRendererWithPickup(outlineShape, preview, pickup));
     }
 
     /**
@@ -155,43 +157,60 @@ public final class SlotOutlineRenderer {
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
         int slot = CanisterBlock.hitSlot(hit, pos);
         if (slot < 0) {
-            return CanisterBlock.slotShape(DEFAULT_CANISTER_SLOT);
+            return event.getBlockState().getShape(event.getLevel(), pos);
         }
         return CanisterBlock.slotShape(slot);
     }
 
     /**
-     * Computes the placement preview bounds when directly hitting an occupied
-     * canister slot. Uses face-offset resolution to find the adjacent empty slot.
-     * Pass-through previews (ray through empty space) are handled by
-     * {@link CanisterPlacementOverlay}.
+     * Red wireframe on the canister the player would pick up. Shown when
+     * not sneaking and aiming at an occupied slot.
      *
      * @param hit the block hit result
      * @param pos the block position
      * @param event the event instance
-     * @return the computed canisterPreview
+     * @return the pickup highlight bounds, or null
      */
-    private static @Nullable AABB computeCanisterPreview(
+    private static @Nullable AABB computeCanisterPickup(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerHoldingCanister()) { return null; }
-        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) { return null; }
-
-        int slot = CanisterSlotResolver.resolveInsertionSlot(
-                hit.getLocation(), pos, hit.getDirection(), be);
-        if (slot < 0) { return null; }
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return null;
+        }
+        int slot = CanisterBlock.hitSlot(hit, pos);
+        if (slot < 0 || be.getCanister(slot).isEmpty()) { return null; }
         return CanisterBlock.slotShape(slot).bounds();
     }
 
     /**
-     * Returns the AABB of the slot being punch-held, or null if no punch is active on this block.
+     * Green placement preview. Shown when holding a canister and:
+     * - sneaking + aiming at occupied slot (resolves to adjacent empty), or
+     * - aiming at an empty slot (regardless of sneak).
      *
+     * @param hit the block hit result
      * @param pos the block position
-     * @return the computed punchProgressBounds
+     * @param event the event instance
+     * @return the placement preview bounds, or null
      */
-    private static @Nullable AABB computePunchProgressBounds(BlockPos pos) {
-        if (!CanisterPunchListener.isActive()) { return null; }
-        if (!pos.equals(CanisterPunchListener.getActivePos())) { return null; }
-        return CanisterBlock.slotShape(CanisterPunchListener.getActiveSlot()).bounds();
+    private static @Nullable AABB computeCanisterPreview(
+            BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        if (!isPlayerHoldingCanister()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return null;
+        }
+        var player = Minecraft.getInstance().player;
+        int hitSlot = CanisterBlock.hitSlot(hit, pos);
+        boolean aimingAtOccupied = hitSlot >= 0 && !be.getCanister(hitSlot).isEmpty();
+
+        if (aimingAtOccupied && (player == null || !player.isSecondaryUseActive())) {
+            return null;
+        }
+
+        int slot = CanisterSlotResolver.resolveAndConstrain(
+                hit.getLocation(), pos, hit.getDirection(), be);
+        if (slot < 0) { return null; }
+        return CanisterBlock.slotShape(slot).bounds();
     }
 
     // --- Tap ---
@@ -231,6 +250,66 @@ public final class SlotOutlineRenderer {
     // --- Rendering ---
 
     /**
+     * Adds a custom renderer for the reactor: standard outline, red pickup
+     * highlight when output canister is present, green preview when empty.
+     *
+     * @param event the event instance
+     */
+    private static void addReactorRenderer(ExtractBlockOutlineRenderStateEvent event) {
+        BlockPos pos = event.getBlockPos();
+        VoxelShape outlineShape = event.getBlockState().getShape(event.getLevel(), pos);
+        AABB preview = computeReactorPreview(pos, event);
+        AABB pickup = computeReactorPickup(pos, event);
+        event.addCustomRenderer(slotRendererWithPickup(outlineShape, preview, pickup));
+    }
+
+    /**
+     * Green preview when holding a canister and the output slot is empty.
+     *
+     * @param pos   the block position
+     * @param event the event instance
+     * @return the preview bounds, or null
+     */
+    private static @Nullable AABB computeReactorPreview(
+            BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        if (!isPlayerHoldingCanister()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
+            return null;
+        }
+        if (!reactor.getOutputCanister().isEmpty()) { return null; }
+        if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
+            return null;
+        }
+        net.minecraft.core.Direction facing =
+                event.getBlockState().getValue(ReactorBlock.FACING);
+        return ReactorBlock.outputSlotShape(facing).bounds();
+    }
+
+    /**
+     * Red pickup highlight when the output canister is present and the
+     * player is aiming at the hollow, not sneaking.
+     *
+     * @param pos   the block position
+     * @param event the event instance
+     * @return the pickup bounds, or null
+     */
+    private static @Nullable AABB computeReactorPickup(
+            BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.isSecondaryUseActive()) { return null; }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
+            return null;
+        }
+        if (reactor.getOutputCanister().isEmpty()) { return null; }
+        if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
+            return null;
+        }
+        net.minecraft.core.Direction facing =
+                event.getBlockState().getValue(ReactorBlock.FACING);
+        return ReactorBlock.outputSlotShape(facing).bounds();
+    }
+
+    /**
      * Returns true if the local player is holding a canister item in their main hand.
      *
      * @return true if playerHoldingCanister
@@ -250,26 +329,22 @@ public final class SlotOutlineRenderer {
      */
     private static CustomBlockOutlineRenderer slotRenderer(
             VoxelShape shape, @Nullable AABB preview) {
-        return (renderState, bufferSource, poseStack, translucent, levelRenderState) ->
-                SlotOutlineDrawing.renderOutline(renderState, bufferSource, poseStack, translucent,
-                        levelRenderState, shape, preview);
+        return slotRendererWithPickup(shape, preview, null);
     }
 
     /**
-     * Creates a custom outline renderer with slot outline, placement preview,
-     * and an optional red wireframe for punch-hold progress.
+     * Creates a custom outline renderer with optional green preview and red pickup highlight.
      *
-     * @param shape the voxel shape to render
-     * @param preview the placement preview bounds, or null
-     * @param punchBounds the punchBounds
-     * @param punchProgress the punchProgress
-     * @return the custom outline renderer with punch progress
+     * @param shape   the voxel shape to render
+     * @param preview the placement preview bounds (green), or null
+     * @param pickup  the pickup highlight bounds (red), or null
+     * @return the custom outline renderer
      */
-    private static CustomBlockOutlineRenderer slotRendererWithPunch(
-            VoxelShape shape, @Nullable AABB preview,
-            @Nullable AABB punchBounds, float punchProgress) {
+    private static CustomBlockOutlineRenderer slotRendererWithPickup(
+            VoxelShape shape, @Nullable AABB preview, @Nullable AABB pickup) {
         return (renderState, bufferSource, poseStack, translucent, levelRenderState) ->
-                SlotOutlineDrawing.renderOutlineWithPunch(renderState, bufferSource, poseStack,
-                        translucent, levelRenderState, shape, preview, punchBounds, punchProgress);
+                SlotOutlineDrawing.renderOutline(renderState, bufferSource, poseStack, translucent,
+                        levelRenderState, shape, preview, pickup);
     }
+
 }

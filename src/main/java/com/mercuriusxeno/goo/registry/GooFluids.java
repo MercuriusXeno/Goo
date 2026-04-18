@@ -87,6 +87,7 @@ public final class GooFluids {
                 GooFluidTypes.TYPES.get(type),
                 SOURCES.get(type),
                 FLOWING.get(type)
-        );
+        ).bucket(GooItems.BUCKETS.get(type))
+         .block(GooBlocks.FLUID_BLOCKS.get(type));
     }
 }

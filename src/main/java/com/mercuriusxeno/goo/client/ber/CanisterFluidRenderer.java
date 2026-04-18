@@ -5,16 +5,20 @@ import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Fluid surface and gasket endcap rendering helpers for {@link CanisterBlockEntityRenderer}.
  * Extracted to keep the parent BER under the PMD method-count threshold.
  */
-final class CanisterFluidRenderer {
+public final class CanisterFluidRenderer {
 
     /** Block atlas texture path for fluid sprite lookups. */
     private static final Identifier BLOCK_ATLAS_TEXTURE =
@@ -27,6 +31,15 @@ final class CanisterFluidRenderer {
     /** Choral gasket texture (upgraded canister caps). */
     private static final Identifier CHORAL_GASKET =
         Identifier.fromNamespaceAndPath("goo", "textures/block/choral_gasket.png");
+
+    /** Default water tint color (plains biome blue). */
+    private static final int WATER_TINT = 0xFF3F76E4;
+
+    /** Vanilla water still sprite ID in the block atlas. */
+    private static final Identifier WATER_STILL = Identifier.withDefaultNamespace("block/water_still");
+
+    /** Vanilla lava still sprite ID in the block atlas. */
+    private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
 
     /** Canister half-width: 2px. */
     private static final float HW = 2f / 16f;
@@ -220,8 +233,11 @@ final class CanisterFluidRenderer {
      */
     private static void renderAllFluids(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) {
+            if (state.slotFill[i] <= 0f) { continue; }
+            if (state.slotType[i] != null) {
                 renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
+            } else if (state.slotFluid[i] != Fluids.EMPTY) {
+                renderVanillaFluidSurface(ctx, i, state.slotFluid[i], state.slotFill[i]);
             }
         }
     }
@@ -234,7 +250,11 @@ final class CanisterFluidRenderer {
      */
     private static boolean hasAnyFluid(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) { return true; }
+            if (state.slotFill[i] > 0f
+                    && (state.slotType[i] != null
+                        || state.slotFluid[i] != Fluids.EMPTY)) {
+                return true;
+            }
         }
         return false;
     }
@@ -256,5 +276,56 @@ final class CanisterFluidRenderer {
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
         SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
+    }
+
+    /**
+     * Renders a vanilla (non-goo) fluid surface using the fluid's still texture.
+     *
+     * @param ctx   the render context
+     * @param slot  the slot index
+     * @param fluid the vanilla fluid
+     * @param fill  the fill fraction in [0, 1]
+     */
+    private static void renderVanillaFluidSurface(RenderContext ctx, int slot, Fluid fluid, float fill) {
+        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
+        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
+        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
+        TextureAtlasSprite sprite = lookupVanillaFluidSprite(fluid);
+        int tint = isWater(fluid) ? WATER_TINT : GooRenderUtil.OPAQUE_WHITE;
+        SlotFluidGeometry.renderFluidTop(ctx, b, sprite, tint);
+        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM, tint);
+    }
+
+    /**
+     * Returns true if the fluid is water or flowing water.
+     *
+     * @param fluid the fluid to check
+     * @return true if water
+     */
+    /**
+     * Returns the tint color for a vanilla fluid. Water uses blue, lava is white.
+     *
+     * @param fluid the vanilla fluid
+     * @return the ARGB tint color
+     */
+    public static int getVanillaFluidTint(Fluid fluid) {
+        return isWater(fluid) ? WATER_TINT : GooRenderUtil.OPAQUE_WHITE;
+    }
+
+    private static boolean isWater(Fluid fluid) {
+        return fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER;
+    }
+
+    /**
+     * Looks up the still texture sprite for a vanilla fluid from the block atlas.
+     *
+     * @param fluid the fluid
+     * @return the still texture sprite
+     */
+    public static TextureAtlasSprite lookupVanillaFluidSprite(Fluid fluid) {
+        Identifier spriteId = fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER
+                ? WATER_STILL : LAVA_STILL;
+        return Minecraft.getInstance().getAtlasManager()
+                .getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(spriteId);
     }
 }

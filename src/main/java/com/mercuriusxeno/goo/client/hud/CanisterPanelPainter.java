@@ -166,10 +166,22 @@ final class CanisterPanelPainter {
         boolean hasUpgrade = data.compression() > 0;
         String upgradeText = hasUpgrade ? UPGRADE_PREFIX + data.compression() : EMPTY_UPGRADE;
         GooContents goo = toGooContents(data.content());
-        float contentWidth = measureContentWidth(font, goo, label, upgradeText,
-                hasLabel, hasUpgrade);
-        int rowCount = countRows(goo.typeCount(), hasLabel, hasUpgrade);
+        int fluidRows = goo.isEmpty() && !data.content().isEmpty() ? 1 : goo.typeCount();
+        float contentWidth = goo.isEmpty() && !data.content().isEmpty()
+                ? maxWidth(font, InWorldHud.computeFluidRowWidth(font, data.content().amount()),
+                        label, upgradeText, hasLabel, hasUpgrade)
+                : measureContentWidth(font, goo, label, upgradeText, hasLabel, hasUpgrade);
+        int rowCount = countRows(fluidRows, hasLabel, hasUpgrade);
         return buildMetrics(contentWidth, rowCount, label, upgradeText, hasLabel, hasUpgrade);
+    }
+
+    private static float maxWidth(Font font, float rowWidth,
+            @Nullable String label, String upgradeText,
+            boolean hasLabel, boolean hasUpgrade) {
+        float max = rowWidth;
+        if (hasLabel) { max = Math.max(max, font.width(label)); }
+        if (hasUpgrade) { max = Math.max(max, font.width(upgradeText)); }
+        return max;
     }
 
     /**
@@ -242,7 +254,14 @@ final class CanisterPanelPainter {
         float contentX = -halfW + InWorldHud.BORDER;
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);
-        InWorldHud.renderGooRows(poseStack, font, buffers, toGooContents(data.content()), contentX, baseY, row);
+        GooContents goo = toGooContents(data.content());
+        if (!goo.isEmpty()) {
+            InWorldHud.renderGooRows(poseStack, font, buffers, goo, contentX, baseY, row);
+        } else if (!data.content().isEmpty()) {
+            InWorldHud.renderFluidRow(poseStack, font, buffers,
+                    data.content().fluid(), data.content().amount(), contentX,
+                    baseY + row * InWorldHud.ROW_HEIGHT);
+        }
     }
 
     /**

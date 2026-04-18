@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.data.GooReaction;
 import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
@@ -21,9 +22,12 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.shapes.Shapes;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Reactor block entity: reads fluid from 4 corner canisters on top,
@@ -32,10 +36,13 @@ import java.util.List;
  * via power-law: ceil(minBatches ^ 0.35).
  */
 public class ReactorBlockEntity extends BlockEntity
-        implements ICanisterHolder {
+        implements ICanisterHolder, ICanisterAttachable {
 
     /** Corner slot indices in the canister block's 3x3 grid. */
     private static final int[] INPUT_SLOTS = {0, 2, 6, 8};
+
+    /** Only corner slots are valid for reactor input canisters. */
+    private static final Set<Integer> CORNER_SLOTS = Set.of(0, 2, 6, 8);
 
     /** The output hollow holds one canister. */
     private static final int OUTPUT_SLOT_COUNT = 1;
@@ -48,6 +55,12 @@ public class ReactorBlockEntity extends BlockEntity
 
     /** NBT key for the output canister. */
     private static final String TAG_OUTPUT_CANISTER = "OutputCanister";
+
+    /** Client-side wheel rotation angle in degrees. Not serialized. */
+    public float wheelAngle;
+
+    /** Client-side wheel rotation speed in degrees per tick. Not serialized. */
+    public float wheelSpeed;
 
     /** Slotted state for the single output canister. */
     private final SlottedCanisterState state = new SlottedCanisterState(
@@ -69,6 +82,24 @@ public class ReactorBlockEntity extends BlockEntity
     @Override
     public SlottedCanisterState containerState() { return state; }
 
+    @Override
+    public int maxTopAttachments() { return CORNER_SLOTS.size(); }
+
+    @Override
+    public int currentTopAttachments() {
+        if (level == null) { return 0; }
+        BlockPos above = worldPosition.above();
+        if (!(level.getBlockEntity(above) instanceof CanisterBlockEntity cbe)) { return 0; }
+        int count = 0;
+        for (int slot : INPUT_SLOTS) {
+            if (!cbe.getCanister(slot).isEmpty()) { count++; }
+        }
+        return count;
+    }
+
+    @Override
+    public Set<Integer> allowedSlots() { return CORNER_SLOTS; }
+
     /**
      * Returns the output canister (may be EMPTY).
      *
@@ -87,6 +118,7 @@ public class ReactorBlockEntity extends BlockEntity
     public boolean insertOutputCanister(ItemStack stack) {
         if (!getOutputCanister().isEmpty()) { return false; }
         state.canisters.set(OUTPUT_SLOT, stack.copyWithCount(1));
+        state.slots.handlers()[OUTPUT_SLOT] = ICanisterHolder.createSlotHandler(this, OUTPUT_SLOT);
         markDirtyAndSync();
         return true;
     }
@@ -99,6 +131,13 @@ public class ReactorBlockEntity extends BlockEntity
     public @NonNull ItemStack removeOutputCanister() {
         ItemStack current = getOutputCanister();
         if (current.isEmpty()) { return ItemStack.EMPTY; }
+        // Write handler state to the item stack so the returned item has
+        // accurate fluid data, but don't sync yet - we clear and sync once.
+        CanisterSlotFluidHandler handler = state.slots.handlers()[OUTPUT_SLOT];
+        if (handler != null) {
+            CanisterItem.setFluidContent(current, handler.toFluidContent());
+        }
+        state.slots.handlers()[OUTPUT_SLOT] = null;
         state.canisters.set(OUTPUT_SLOT, ItemStack.EMPTY);
         markDirtyAndSync();
         return current;
@@ -123,7 +162,10 @@ public class ReactorBlockEntity extends BlockEntity
      */
     public static void serverTick(Level level, BlockPos pos,
             BlockState state, ReactorBlockEntity be) {
-        if (state.getValue(ReactorBlock.TRIGGERED)) { return; }
+        if (state.getValue(ReactorBlock.TRIGGERED)) {
+            be.clearCrafting(level, pos, state);
+            return;
+        }
         be.tickReaction(level, pos, state);
     }
 
@@ -136,13 +178,18 @@ public class ReactorBlockEntity extends BlockEntity
      */
     private void tickReaction(Level level, BlockPos pos, BlockState bState) {
         CanisterBlockEntity inputBe = getInputCanisterBe(level, pos);
-        if (inputBe == null) {
+        if (inputBe == null || !hasOutputCanister()) {
             clearCrafting(level, pos, bState);
             return;
         }
 
         GooReaction reaction = resolveReaction(inputBe);
         if (reaction == null) {
+            clearCrafting(level, pos, bState);
+            return;
+        }
+
+        if (!outputCanAcceptProducts(reaction)) {
             clearCrafting(level, pos, bState);
             return;
         }
@@ -157,6 +204,32 @@ public class ReactorBlockEntity extends BlockEntity
         produceOutputs(reaction.outputs(), batches, reaction.rate());
         setChanged();
         setCrafting(level, pos, bState);
+    }
+
+    /**
+     * Returns true if the output slot has a canister to receive products.
+     *
+     * @return true if an output canister is present
+     */
+    private boolean hasOutputCanister() {
+        return !getOutputCanister().isEmpty();
+    }
+
+    /**
+     * Returns true if the output canister can accept all products of the
+     * reaction. The canister must be empty or already contain the same
+     * fluid as every output entry.
+     *
+     * @param reaction the matched reaction
+     * @return true if the output canister is compatible
+     */
+    private boolean outputCanAcceptProducts(GooReaction reaction) {
+        CanisterFluidContent content = CanisterItem.getFluidContent(getOutputCanister());
+        if (content.isEmpty()) { return true; }
+        for (GooReaction.FluidEntry entry : reaction.outputs()) {
+            if (content.fluid() != entry.fluid()) { return false; }
+        }
+        return true;
     }
 
     /**
@@ -254,7 +327,7 @@ public class ReactorBlockEntity extends BlockEntity
     }
 
     /**
-     * Drains a fluid across corner input slots.
+     * Drains a fluid across corner input slots via their fluid handlers.
      *
      * @param inputBe the input canister BE
      * @param fluid   the fluid to drain
@@ -263,16 +336,17 @@ public class ReactorBlockEntity extends BlockEntity
     private void consumeFluid(CanisterBlockEntity inputBe,
             Fluid fluid, int amount) {
         int remaining = amount;
+        FluidResource resource = FluidResource.of(fluid);
         for (int slot : INPUT_SLOTS) {
             if (remaining <= 0) { break; }
-            ItemStack stack = inputBe.getCanister(slot);
-            if (stack.isEmpty()) { continue; }
-            CanisterFluidContent content = CanisterItem.getFluidContent(stack);
-            if (content.fluid() != fluid) { continue; }
-            int drain = Math.min(remaining, content.amount());
-            CanisterItem.setFluidContent(stack,
-                    new CanisterFluidContent(fluid, content.amount() - drain));
-            remaining -= drain;
+            CanisterSlotFluidHandler handler =
+                    inputBe.containerState().getSlotFluidHandler(slot);
+            if (handler == null) { continue; }
+            try (var tx = Transaction.openRoot()) {
+                int extracted = handler.extract(0, resource, remaining, tx);
+                tx.commit();
+                remaining -= extracted;
+            }
         }
     }
 
@@ -285,11 +359,14 @@ public class ReactorBlockEntity extends BlockEntity
      */
     private void produceOutputs(List<GooReaction.FluidEntry> outputs,
             int batches, int rate) {
-        ItemStack outStack = getOutputCanister();
-        if (outStack.isEmpty()) { return; }
+        CanisterSlotFluidHandler handler = state.getSlotFluidHandler(OUTPUT_SLOT);
+        if (handler == null) { return; }
         for (GooReaction.FluidEntry entry : outputs) {
             int amount = entry.amount() * batches * rate;
-            CanisterItem.addFluid(outStack, entry.fluid(), amount);
+            try (var tx = Transaction.openRoot()) {
+                handler.insert(0, FluidResource.of(entry.fluid()), amount, tx);
+                tx.commit();
+            }
         }
     }
 
@@ -324,10 +401,14 @@ public class ReactorBlockEntity extends BlockEntity
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
-        ItemStack canister = getOutputCanister();
-        if (!canister.isEmpty()) {
-            output.store(TAG_OUTPUT_CANISTER, ItemStack.CODEC, canister);
+        // Write handler state to item stack without triggering a sync
+        // (we're already inside serialization).
+        CanisterSlotFluidHandler handler = state.slots.handlers()[OUTPUT_SLOT];
+        if (handler != null) {
+            CanisterItem.setFluidContent(state.canisters.get(OUTPUT_SLOT),
+                    handler.toFluidContent());
         }
+        output.store(TAG_OUTPUT_CANISTER, ItemStack.CODEC, getOutputCanister());
     }
 
     @Override
@@ -336,6 +417,13 @@ public class ReactorBlockEntity extends BlockEntity
         state.canisters.set(OUTPUT_SLOT,
                 input.read(TAG_OUTPUT_CANISTER, ItemStack.CODEC)
                         .orElse(ItemStack.EMPTY));
+        rebuildOutputHandler();
+    }
+
+    /** Rebuilds the output slot handler from the current item stack. */
+    private void rebuildOutputHandler() {
+        state.slots.handlers()[OUTPUT_SLOT] = getOutputCanister().isEmpty()
+                ? null : ICanisterHolder.createSlotHandler(this, OUTPUT_SLOT);
     }
 
     @Override

@@ -58,17 +58,17 @@ public class PlexerBlock extends BaseEntityBlock {
     /** How long the crafting visual persists after a successful reconstitution. */
     private static final int CRAFTING_DISPLAY_TICKS = 6;
 
-    // -- Shape pieces (south-facing) --
+    // -- Shape pieces (south-facing, cutaway on north face z=[0,4]) --
     /** Top slab of the plexer. */
     private static final VoxelShape SOUTH_TOP = box(0, 13, 0, 16, 16, 16);
     /** Base slab of the plexer. */
     private static final VoxelShape SOUTH_BASE = box(0, 0, 0, 16, 8, 16);
-    /** Middle backwall of the plexer. */
-    private static final VoxelShape SOUTH_MIDDLE = box(0, 8, 0, 16, 13, 12);
+    /** Middle backwall of the plexer (behind the cutaway). */
+    private static final VoxelShape SOUTH_MIDDLE = box(0, 8, 4, 16, 13, 16);
     /** West cheek of the plexer cutaway. */
-    private static final VoxelShape SOUTH_CHEEK_WEST = box(0, 8, 12, 5, 13, 16);
+    private static final VoxelShape SOUTH_CHEEK_WEST = box(0, 8, 0, 5, 13, 4);
     /** East cheek of the plexer cutaway. */
-    private static final VoxelShape SOUTH_CHEEK_EAST = box(11, 8, 12, 16, 13, 16);
+    private static final VoxelShape SOUTH_CHEEK_EAST = box(11, 8, 0, 16, 13, 4);
     /** Composite south-facing shape. */
     private static final VoxelShape SOUTH_SHAPE = Shapes.or(
         SOUTH_TOP, SOUTH_BASE, SOUTH_MIDDLE, SOUTH_CHEEK_WEST, SOUTH_CHEEK_EAST);
@@ -253,7 +253,7 @@ public class PlexerBlock extends BaseEntityBlock {
             BlockPos pos, BlockState state) {
         ItemStack result = plexer.tryReconstitute();
         if (!result.isEmpty()) {
-            PlexerInteractionHelper.ejectFromCutaway(level, pos, state, result);
+            PlexerInteractionHelper.ejectFromHatch(level, pos, state, result);
             level.setBlock(pos, state.setValue(CRAFTING, true), UPDATE_CLIENTS);
             level.scheduleTick(pos, this, CRAFTING_DISPLAY_TICKS);
         }

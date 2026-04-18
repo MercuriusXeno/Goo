@@ -117,13 +117,36 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
      */
     public ItemStack getTargetItem() { return targetItem; }
 
+    /**
+     * Returns true if the given hit result lands in the cutaway region.
+     *
+     * @param hit the block hit result
+     * @return true if the hit is in the cutaway
+     */
+    public boolean isCutawayHit(net.minecraft.world.phys.BlockHitResult hit) {
+        return PlexerInteractionHelper.isCutawayClick(getBlockState(), getBlockPos(), hit);
+    }
+
+    /**
+     * Returns true if the item has a non-empty, non-restricted goo value.
+     *
+     * @param stack the item to check
+     * @return true if valid for reconstitution targeting
+     */
+    public boolean isValidTarget(ItemStack stack) {
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        GooValue value = Goo.GOO_VALUES.lookup(itemId);
+        if (value == null || value.isEmpty()) { return false; }
+        return !Goo.GOO_VALUES.isRestricted(itemId);
+    }
+
     /** Sets the target item for reconstitution (single-count copy, or EMPTY to clear).
      *
      * @param stack the item stack
      */
     public void setTargetItem(ItemStack stack) {
         this.targetItem = stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1);
-        setChanged();
+        BlockEntitySync.markDirtyAndSync(this);
     }
 
     // --- Reconstitution (reads from external CanisterBlock above) ---

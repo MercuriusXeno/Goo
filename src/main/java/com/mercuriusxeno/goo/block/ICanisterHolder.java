@@ -200,8 +200,13 @@ public interface ICanisterHolder {
         CanisterSlotFluidHandler h = state.slots.handlers()[slot];
         if (h == null) { return; }
         long tick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
-        state.slots.streamType()[slot] = h.getStreamGooType(tick);
-        state.slots.streamRate()[slot] = h.getStreamRate(tick);
+        GooType gooType = h.getStreamGooType(tick);
+        Fluid fluid = h.getStreamFluid(tick);
+        int rate = h.getStreamRate(tick);
+        if (gooType == null && fluid == null && rate <= 0) { return; }
+        state.slots.streamType()[slot] = gooType;
+        state.slots.streamFluid()[slot] = fluid;
+        state.slots.streamRate()[slot] = rate;
         state.slots.streamTick()[slot] = tick;
     }
 }

@@ -15,10 +15,12 @@ import org.jspecify.annotations.NonNull;
  */
 public class GooValueClientTooltipComponent implements ClientTooltipComponent {
 
-    private static final int ICON_SIZE = 11;
+    private static final int ICON_SIZE = 8;
     private static final int ICON_GAP = 2;
-    private static final int LINE_HEIGHT = 15;
-    private static final int ICON_Y_OFFSET = -2;
+    private static final int LINE_HEIGHT = 11;
+    private static final int ICON_Y_OFFSET = -1;
+    /** Scale factor for text to match smaller icons. */
+    private static final float TEXT_SCALE = 0.8f;
     /** Separator between amount and type name in tooltip text. */
     private static final String AMOUNT_TYPE_SEPARATOR = " ";
     /** Fully opaque white in ARGB for tooltip text rendering. */
@@ -70,7 +72,7 @@ public class GooValueClientTooltipComponent implements ClientTooltipComponent {
      */
     @Override
     public int getWidth(Font font) {
-        return ICON_SIZE + ICON_GAP + font.width(displayText);
+        return ICON_SIZE + ICON_GAP + Math.round(font.width(displayText) * TEXT_SCALE);
     }
 
     /**
@@ -111,7 +113,11 @@ public class GooValueClientTooltipComponent implements ClientTooltipComponent {
      * @param guiGraphics the GUI graphics extractor for drawing
      */
     private void renderText(Font font, int x, int y, GuiGraphicsExtractor guiGraphics) {
-        guiGraphics.text(font, displayText,
-                x + ICON_SIZE + ICON_GAP, y, TEXT_COLOR);
+        guiGraphics.pose().pushMatrix();
+        float textX = x + ICON_SIZE + ICON_GAP;
+        guiGraphics.pose().translate(textX, y);
+        guiGraphics.pose().scale(TEXT_SCALE, TEXT_SCALE);
+        guiGraphics.text(font, displayText, 0, 0, TEXT_COLOR);
+        guiGraphics.pose().popMatrix();
     }
 }

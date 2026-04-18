@@ -27,6 +27,9 @@ final class SlotOutlineDrawing {
     /** Translucent green color for placement preview wireframe. */
     private static final int PREVIEW_COLOR = ARGB.color(180, 100, 255, 100);
 
+    /** Translucent red color for pickup highlight wireframe. */
+    private static final int PICKUP_COLOR = ARGB.color(180, 255, 80, 80);
+
     /** Opaque black outline color for high-contrast secondary outline. */
     private static final int HC_SECONDARY_COLOR = -16_777_216;
 
@@ -38,18 +41,6 @@ final class SlotOutlineDrawing {
 
     /** Black alpha for standard outline. */
     private static final int OUTLINE_BLACK_ALPHA = 102;
-
-    /** Base alpha for punch wireframe (faint). */
-    private static final int PUNCH_ALPHA_BASE = 80;
-
-    /** Alpha range added to base at full punch progress. */
-    private static final int PUNCH_ALPHA_RANGE = 175;
-
-    /** Punch wireframe red channel. */
-    private static final int PUNCH_RED = 255;
-
-    /** Punch wireframe green and blue channel. */
-    private static final int PUNCH_GB = 50;
 
     private SlotOutlineDrawing() { }
 
@@ -71,29 +62,37 @@ final class SlotOutlineDrawing {
             MultiBufferSource.BufferSource bufferSource, PoseStack poseStack,
             boolean translucent, LevelRenderState levelRenderState,
             VoxelShape shape, @Nullable AABB preview) {
-        if (renderState.isTranslucent() != translucent) { return true; }
-        renderOutlineContent(renderState, bufferSource, poseStack, levelRenderState, shape, preview);
-        return true;
+        return renderOutline(renderState, bufferSource, poseStack, translucent,
+                levelRenderState, shape, preview, null);
     }
 
     /**
-     * Draws selection outline and optional preview, then flushes the buffer.
+     * Renders outline with optional green preview and red pickup highlight.
      *
-     * @param renderState the block outline render state
-     * @param bufferSource the buffer source for rendering
-     * @param poseStack the pose stack for rendering
+     * @param renderState      the block outline render state
+     * @param bufferSource     the buffer source for rendering
+     * @param poseStack        the pose stack for rendering
+     * @param translucent      whether the current pass is translucent
      * @param levelRenderState the level render state
-     * @param shape the voxel shape to render
-     * @param preview the placement preview bounds, or null
+     * @param shape            the voxel shape to render
+     * @param preview          the placement preview bounds, or null
+     * @param pickup           the pickup highlight bounds, or null
+     * @return true to suppress vanilla outline rendering
      */
-    private static void renderOutlineContent(BlockOutlineRenderState renderState,
+    static boolean renderOutline(BlockOutlineRenderState renderState,
             MultiBufferSource.BufferSource bufferSource, PoseStack poseStack,
-            LevelRenderState levelRenderState, VoxelShape shape, @Nullable AABB preview) {
+            boolean translucent, LevelRenderState levelRenderState,
+            VoxelShape shape, @Nullable AABB preview, @Nullable AABB pickup) {
+        if (renderState.isTranslucent() != translucent) { return true; }
         Vec3 camPos = levelRenderState.cameraRenderState.pos;
         BlockPos pos = renderState.pos();
         renderSelectionOutline(renderState, bufferSource, poseStack, shape, pos, camPos);
         renderOptionalPreview(poseStack, bufferSource, preview, pos, camPos);
+        if (pickup != null) {
+            renderCameraRelativeWireframe(poseStack, bufferSource, pickup, pos, camPos, PICKUP_COLOR);
+        }
         bufferSource.endLastBatch();
+        return true;
     }
 
     /**
@@ -136,23 +135,6 @@ final class SlotOutlineDrawing {
     }
 
     /**
-     * Renders a red wireframe on the targeted slot that intensifies with punch progress.
-     * Alpha transitions from faint (80) to vivid (255) as progress goes from 0 to 1.
-     *
-     * @param poseStack the pose stack for rendering
-     * @param bufferSource the buffer source for rendering
-     * @param bounds the axis-aligned bounding box
-     * @param pos the block position
-     * @param camPos the camera world position
-     * @param progress the punch hold progress [0, 1]
-     */
-    static void renderPunchProgress(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
-            AABB bounds, BlockPos pos, Vec3 camPos, float progress) {
-        int color = punchColor(progress);
-        renderCameraRelativeWireframe(poseStack, bufferSource, bounds, pos, camPos, color);
-    }
-
-    /**
      * Renders a wireframe cuboid offset to camera-relative coordinates.
      *
      * @param poseStack the pose stack for rendering
@@ -172,17 +154,6 @@ final class SlotOutlineDrawing {
             (float) offset.minX, (float) offset.maxX,
             (float) offset.minZ, (float) offset.maxZ,
             (float) offset.minY, (float) offset.maxY), color, lineWidth);
-    }
-
-    /**
-     * Computes punch wireframe ARGB color from hold progress.
-     *
-     * @param progress the punch hold progress [0, 1]
-     * @return the packed ARGB color
-     */
-    static int punchColor(float progress) {
-        int alpha = (int) (PUNCH_ALPHA_BASE + PUNCH_ALPHA_RANGE * progress);
-        return ARGB.color(alpha, PUNCH_RED, PUNCH_GB, PUNCH_GB);
     }
 
     /**
@@ -218,47 +189,4 @@ final class SlotOutlineDrawing {
                 pos.getX() - camPos.x, pos.getY() - camPos.y, pos.getZ() - camPos.z, color, lineWidth);
     }
 
-    /**
-     * Renders a slot outline with optional punch progress overlay.
-     *
-     * @param renderState the block outline render state
-     * @param bufferSource the buffer source for rendering
-     * @param poseStack the pose stack for rendering
-     * @param translucent whether the current pass is translucent
-     * @param levelRenderState the level render state
-     * @param shape the voxel shape to render
-     * @param preview the placement preview bounds, or null
-     * @param punchBounds the punch target bounds, or null
-     * @param punchProgress the punch hold progress [0, 1]
-     * @return true to suppress vanilla outline rendering
-     */
-    static boolean renderOutlineWithPunch(BlockOutlineRenderState renderState,
-            MultiBufferSource.BufferSource bufferSource, PoseStack poseStack,
-            boolean translucent, LevelRenderState levelRenderState,
-            VoxelShape shape, @Nullable AABB preview,
-            @Nullable AABB punchBounds, float punchProgress) {
-        renderOutline(renderState, bufferSource, poseStack, translucent, levelRenderState, shape, preview);
-        submitPunchOverlay(poseStack, bufferSource, levelRenderState, renderState.pos(), punchBounds, punchProgress);
-        return true;
-    }
-
-    /**
-     * Renders punch progress wireframe if active.
-     *
-     * @param poseStack the pose stack for rendering
-     * @param bufferSource the buffer source for rendering
-     * @param levelRenderState the level render state
-     * @param pos the block position
-     * @param punchBounds the punch target bounds, or null
-     * @param punchProgress the punch hold progress [0, 1]
-     */
-    private static void submitPunchOverlay(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource,
-            LevelRenderState levelRenderState, BlockPos pos,
-            @Nullable AABB punchBounds, float punchProgress) {
-        if (punchBounds != null && punchProgress > 0f) {
-            Vec3 camPos = levelRenderState.cameraRenderState.pos;
-            renderPunchProgress(poseStack, bufferSource, punchBounds, pos, camPos, punchProgress);
-            bufferSource.endLastBatch();
-        }
-    }
 }

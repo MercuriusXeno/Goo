@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
+import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
 import org.jspecify.annotations.Nullable;
 import java.util.UUID;
 
@@ -32,6 +34,101 @@ final class CanisterBlockHandlers {
     private static final String ERR_UNHANDLED = "Unhandled interaction: ";
 
     private CanisterBlockHandlers() {}
+
+    /**
+     * Picks up the targeted canister, removing it from the grid and giving
+     * it to the player. Removes the block if no canisters remain.
+     *
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hitResult the ray trace hit result
+     * @return SUCCESS if a canister was picked up, PASS otherwise
+     */
+    static InteractionResult handleCanisterPickup(
+            Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        int slot = CanisterBlock.hitSlot(hitResult, pos);
+        if (slot < 0) { return InteractionResult.PASS; }
+        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
+            return InteractionResult.PASS;
+        }
+        if (be.getCanister(slot).isEmpty()) { return InteractionResult.PASS; }
+        return pickupFromSlot(level, pos, player, be, slot);
+    }
+
+    /**
+     * Extracts a canister from the slot and gives it to the player.
+     * If this was the last canister, removes the block in one step
+     * (no intermediate sync) to avoid client desync from out-of-order
+     * block entity data and block state packets.
+     *
+     * @param level  the current level
+     * @param pos    the block position
+     * @param player the interacting player
+     * @param be     the canister block entity
+     * @param slot   the slot to pick up from
+     * @return SUCCESS
+     */
+    private static InteractionResult pickupFromSlot(
+            Level level, BlockPos pos, Player player, CanisterBlockEntity be, int slot) {
+        boolean lastCanister = countOccupied(be) == 1;
+        if (lastCanister) {
+            // Take the stack directly and remove the block in one step.
+            // Avoids markDirtyAndSync sending a stale block entity packet
+            // that can arrive after the block state change to air, corrupting
+            // the client's chunk data at this position.
+            ItemStack taken = be.containerState().getCanister(slot).copy();
+            PlayerUtils.addOrDrop(player, taken);
+            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.removeBlock(pos, false);
+        } else {
+            ItemStack removed = be.removeCanister(slot);
+            PlayerUtils.addOrDrop(player, removed);
+            level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Counts occupied slots in the canister block entity.
+     *
+     * @param be the canister block entity
+     * @return the number of non-empty slots
+     */
+    private static int countOccupied(CanisterBlockEntity be) {
+        int count = 0;
+        for (int i = 0; i < CanisterBlock.SLOT_COUNT; i++) {
+            if (!be.getCanister(i).isEmpty()) { count++; }
+        }
+        return count;
+    }
+
+    /**
+     * Attempts fluid container interaction (bucket fill/drain) on the targeted slot.
+     * Canisters accept any fluid. Returns SUCCESS if fluid was transferred, null
+     * if the item is not a fluid container or the targeted slot has no handler.
+     *
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hand      the hand holding the fluid container
+     * @param hitResult the ray trace hit result
+     * @return SUCCESS if fluid transferred, null if not applicable
+     */
+    static @Nullable InteractionResult tryFluidInteraction(
+            Level level, BlockPos pos, Player player, InteractionHand hand,
+            BlockHitResult hitResult) {
+        if (!(level.getBlockEntity(pos) instanceof CanisterBlockEntity canister)) { return null; }
+        int slot = CanisterBlock.hitSlot(hitResult, pos);
+        if (slot < 0) { return null; }
+        CanisterSlotFluidHandler handler = canister.containerState().getSlotFluidHandler(slot);
+        if (handler == null) { return null; }
+        if (FluidUtil.interactWithFluidHandler(player, hand, pos, handler)) {
+            return InteractionResult.SUCCESS;
+        }
+        return null;
+    }
 
     /**
      * Dispatches a validated interaction to the appropriate handler method.
@@ -145,7 +242,8 @@ final class CanisterBlockHandlers {
             return InteractionResult.PASS;
         }
         stack.consume(1, player);
-        InteractionCooldown.markInteraction(player.getUUID(), canister.getLevel().getGameTime());
+        canister.getLevel().playSound(null, canister.getBlockPos(),
+                SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
 
@@ -161,52 +259,9 @@ final class CanisterBlockHandlers {
     private static boolean tryInsertCanister(
             CanisterBlockEntity canister, BlockHitResult hitResult,
             ItemStack stack, boolean stripGaskets) {
-        int slot = CanisterSlotResolver.resolveInsertionSlot(
+        int slot = CanisterSlotResolver.resolveAndConstrain(
                 hitResult.getLocation(), canister.getBlockPos(), hitResult.getDirection(), canister);
         return slot >= 0 && canister.insertCanister(slot, stack, stripGaskets);
-    }
-
-    /**
-     * Removes a canister from the targeted slot, dropping the block if it was the last.
-     *
-     * @param canister the canister block entity
-     * @param slot     the targeted slot index
-     * @param player   the interacting player
-     * @return SUCCESS if removed, PASS otherwise
-     */
-    static InteractionResult handleCanisterRemove(
-            CanisterBlockEntity canister, int slot, Player player) {
-        ItemStack removed = canister.removeCanister(slot);
-        if (removed.isEmpty()) { return InteractionResult.PASS; }
-        PlayerUtils.addOrDrop(player, removed);
-        onCanisterRemoved(canister, player);
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * Plays feedback, marks cooldown, and removes the block if all slots are empty.
-     * @param canister the canister block entity that lost a slot
-     * @param player the player who removed the canister
-     */
-    private static void onCanisterRemoved(CanisterBlockEntity canister, Player player) {
-        var level = canister.getLevel();
-        var pos = canister.getBlockPos();
-        level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT, SoundSource.BLOCKS, 1.0F, 1.0F);
-        InteractionCooldown.markInteraction(player.getUUID(), level.getGameTime());
-        removeBlockIfEmpty(level, canister, pos);
-    }
-
-    /**
-     * Removes the canister block from the world if no canisters remain in any slot.
-     *
-     * @param level    the current level
-     * @param canister the canister block entity
-     * @param pos      the block position
-     */
-    private static void removeBlockIfEmpty(Level level, CanisterBlockEntity canister, BlockPos pos) {
-        if (!canister.containerState().hasAnyCanister()) {
-            level.removeBlock(pos, false);
-        }
     }
 
     /**

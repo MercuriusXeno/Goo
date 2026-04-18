@@ -148,6 +148,8 @@ final class HubBlockHandlers {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         stack.consume(1, player);
+        hub.getLevel().playSound(null, hub.getBlockPos(),
+                SoundEvents.DECORATED_POT_INSERT, SoundSource.BLOCKS, 1.0f, 1.0f);
         InteractionCooldown.markInteraction(player.getUUID(), hub.getLevel().getGameTime());
         return InteractionResult.SUCCESS;
     }

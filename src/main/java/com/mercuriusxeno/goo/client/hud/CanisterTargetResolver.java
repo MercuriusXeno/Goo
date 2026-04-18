@@ -5,6 +5,8 @@ import com.mercuriusxeno.goo.block.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.HubBlock;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.block.ReactorBlock;
+import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlock;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import net.minecraft.client.Minecraft;
@@ -12,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -75,6 +78,12 @@ final class CanisterTargetResolver {
     /** Block center offset for hub frame targets. */
     private static final double BLOCK_CENTER = 0.5;
 
+    /** Sentinel slot value for reactor output canister. */
+    static final int REACTOR_SLOT = -3;
+
+    /** Reactor hollow center Y (midpoint of 1-15 pixel range). */
+    private static final double REACTOR_MID_Y = 8.0 / 16.0;
+
     private CanisterTargetResolver() {}
 
     /**
@@ -106,6 +115,9 @@ final class CanisterTargetResolver {
         if (be instanceof CanisterBlockEntity) { return getCanisterTarget(mc, hit, pos); }
         if (be instanceof HubBlockEntity) { return getHubTarget(mc, hit, pos); }
         if (be instanceof TapBlockEntity tap) { return getTapTarget(mc, pos, tap); }
+        if (be instanceof ReactorBlockEntity reactor) {
+            return getReactorTarget(mc, hit, pos, reactor);
+        }
         return null;
     }
 
@@ -324,6 +336,27 @@ final class CanisterTargetResolver {
         double cx = TAP_SLOT_CENTERS[idx][0];
         double cz = TAP_SLOT_CENTERS[idx][1];
         return new CanisterHudRenderer.Target(pos, TAP_SLOT, cx, cz, TAP_CANISTER_TOP, Direction.UP, false);
+    }
+
+    /**
+     * Resolves a reactor hit into an output canister target.
+     *
+     * @param mc      the Minecraft instance
+     * @param hit     the block hit result
+     * @param pos     the block position
+     * @param reactor the reactor block entity
+     * @return the target, or null if no output canister
+     */
+    private static CanisterHudRenderer.@Nullable Target getReactorTarget(Minecraft mc,
+            BlockHitResult hit, BlockPos pos, ReactorBlockEntity reactor) {
+        if (reactor.getOutputCanister().isEmpty()) { return null; }
+        BlockState state = mc.level.getBlockState(pos);
+        if (!ReactorBlock.isHollowClick(state, pos, hit)) { return null; }
+        Direction facing = state.getValue(ReactorBlock.FACING);
+        double cx = BLOCK_CENTER + facing.getStepX() * FACE_OFFSET;
+        double cz = BLOCK_CENTER + facing.getStepZ() * FACE_OFFSET;
+        return new CanisterHudRenderer.Target(pos, REACTOR_SLOT, cx, cz,
+                REACTOR_MID_Y, facing, false);
     }
 
     /**

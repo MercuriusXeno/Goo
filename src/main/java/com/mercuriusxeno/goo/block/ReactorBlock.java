@@ -33,6 +33,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
@@ -53,17 +54,35 @@ public class ReactorBlock extends BaseEntityBlock {
     /** Whether the reactor is actively processing a reaction. */
     public static final BooleanProperty CRAFTING = BlockStateProperties.CRAFTING;
 
-    /** South-facing composite shape (hollow from z=0 to z=6, x=5-11, y=1-15). */
-    private static final VoxelShape SOUTH_SHAPE = Shapes.or(
-            box(0, 0, 0, 16, 16, 16),
-            Shapes.empty());
+    /** Hollow volume in model space (south-facing): x in [5,11], y in [1,15], z in [0,6]. */
+    private static final double HOLLOW_MIN_X = 5.0 / 16.0;
+    private static final double HOLLOW_MAX_X = 11.0 / 16.0;
+    private static final double HOLLOW_MIN_Y = 1.0 / 16.0;
+    private static final double HOLLOW_MAX_Y = 15.0 / 16.0;
+    private static final double HOLLOW_MAX_Z = 6.0 / 16.0;
 
-    /** VoxelShapes per facing. Full cube for now since the model handles the visual hollow. */
-    private static final Map<Direction, VoxelShape> SHAPES = Map.of(
-            Direction.NORTH, box(0, 0, 0, 16, 16, 16),
-            Direction.SOUTH, box(0, 0, 0, 16, 16, 16),
-            Direction.EAST, box(0, 0, 0, 16, 16, 16),
-            Direction.WEST, box(0, 0, 0, 16, 16, 16));
+    /** Output canister slot shape (south-facing): 4x14x4 centered in hollow. */
+    private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 15, 5);
+    /** Output slot shapes per facing. */
+    private static final Map<Direction, VoxelShape> OUTPUT_SLOT_SHAPES =
+            PlexerShapeHelper.buildShapes(SOUTH_OUTPUT_SLOT);
+
+    /** South-facing shape pieces: full cube with hollow subtracted via composite. */
+    private static final VoxelShape SOUTH_BACK = box(0, 0, 6, 16, 16, 16);
+    private static final VoxelShape SOUTH_BOTTOM = box(0, 0, 0, 16, 1, 6);
+    private static final VoxelShape SOUTH_TOP = box(0, 15, 0, 16, 16, 6);
+    private static final VoxelShape SOUTH_LEFT = box(0, 1, 0, 5, 15, 6);
+    private static final VoxelShape SOUTH_RIGHT = box(11, 1, 0, 16, 15, 6);
+    private static final VoxelShape SOUTH_SHAPE = Shapes.or(
+            SOUTH_BACK, SOUTH_BOTTOM, SOUTH_TOP, SOUTH_LEFT, SOUTH_RIGHT);
+
+    /** VoxelShapes per facing, rotated from the south-facing base shape. */
+    private static final Map<Direction, VoxelShape> SHAPES =
+            PlexerShapeHelper.buildShapes(SOUTH_SHAPE);
+
+    /** VoxelShapes per facing with output canister slot included. */
+    private static final Map<Direction, VoxelShape> SHAPES_WITH_CANISTER =
+            buildShapesWithCanister();
 
     /**
      * Creates a reactor block.
@@ -82,7 +101,21 @@ public class ReactorBlock extends BaseEntityBlock {
     protected @NonNull VoxelShape getShape(@NonNull BlockState state,
             @NonNull BlockGetter level, @NonNull BlockPos pos,
             @NonNull CollisionContext context) {
-        return SHAPES.getOrDefault(state.getValue(FACING), SHAPES.get(Direction.SOUTH));
+        Direction facing = state.getValue(FACING);
+        boolean hasCanister = level.getBlockEntity(pos) instanceof ReactorBlockEntity reactor
+                && !reactor.getOutputCanister().isEmpty();
+        Map<Direction, VoxelShape> map = hasCanister ? SHAPES_WITH_CANISTER : SHAPES;
+        return map.getOrDefault(facing, map.get(Direction.SOUTH));
+    }
+
+    /**
+     * Returns the output canister slot shape for the given facing.
+     *
+     * @param facing the block facing direction
+     * @return the output slot voxel shape
+     */
+    public static VoxelShape outputSlotShape(Direction facing) {
+        return OUTPUT_SLOT_SHAPES.getOrDefault(facing, OUTPUT_SLOT_SHAPES.get(Direction.SOUTH));
     }
 
     @Override
@@ -143,14 +176,57 @@ public class ReactorBlock extends BaseEntityBlock {
             @NonNull ItemStack stack, @NonNull BlockState state,
             Level level, @NonNull BlockPos pos, @NonNull Player player,
             @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+        if (!(stack.getItem() instanceof CanisterItem)) { return InteractionResult.TRY_WITH_EMPTY_HAND; }
+        if (!isHollowClick(state, pos, hitResult)) { return InteractionResult.PASS; }
         if (level.isClientSide()) { return InteractionResult.SUCCESS; }
-        if (!(stack.getItem() instanceof CanisterItem)) { return InteractionResult.PASS; }
         if (!(level.getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return InteractionResult.PASS;
         }
+        // Slot empty: insert. Slot occupied + not sneaking: pick up.
+        if (reactor.getOutputCanister().isEmpty()) {
+            return insertReactorCanister(reactor, stack, player, level, pos);
+        }
+        if (!player.isSecondaryUseActive()) {
+            return removeReactorCanister(reactor, player, level, pos);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Inserts a canister into the reactor output slot.
+     *
+     * @param reactor the reactor block entity
+     * @param stack   the item stack to insert
+     * @param player  the interacting player
+     * @param level   the current level
+     * @param pos     the block position
+     * @return SUCCESS if inserted, PASS if the slot rejected the item
+     */
+    private static InteractionResult insertReactorCanister(
+            ReactorBlockEntity reactor, ItemStack stack, Player player,
+            Level level, BlockPos pos) {
         if (!reactor.insertOutputCanister(stack)) { return InteractionResult.PASS; }
         stack.consume(1, player);
         level.playSound(null, pos, SoundEvents.DECORATED_POT_INSERT,
+                SoundSource.BLOCKS, 1.0f, 1.0f);
+        return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Removes the output canister and gives it to the player.
+     *
+     * @param reactor the reactor block entity
+     * @param player  the interacting player
+     * @param level   the current level
+     * @param pos     the block position
+     * @return SUCCESS if removed, PASS if the slot was empty
+     */
+    private static InteractionResult removeReactorCanister(
+            ReactorBlockEntity reactor, Player player, Level level, BlockPos pos) {
+        ItemStack removed = reactor.removeOutputCanister();
+        if (removed.isEmpty()) { return InteractionResult.PASS; }
+        PlayerUtils.addOrDrop(player, removed);
+        level.playSound(null, pos, SoundEvents.DECORATED_POT_HIT,
                 SoundSource.BLOCKS, 1.0f, 1.0f);
         return InteractionResult.SUCCESS;
     }
@@ -169,7 +245,9 @@ public class ReactorBlock extends BaseEntityBlock {
     protected @NonNull InteractionResult useWithoutItem(
             @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull BlockHitResult hitResult) {
-        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        InteractionResult earlyOut = GooBlockInteraction.validateEmptyHand(level, pos, player);
+        if (earlyOut != null) { return earlyOut; }
+        if (!hitOutputSlot(state, pos, hitResult)) { return InteractionResult.PASS; }
         if (!(level.getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return InteractionResult.PASS;
         }
@@ -200,6 +278,63 @@ public class ReactorBlock extends BaseEntityBlock {
             if (!canister.isEmpty()) { popResource(level, pos, canister); }
         }
         return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * Returns true if the hit lands within the output canister slot shape.
+     *
+     * @param state the block state
+     * @param pos   the block position
+     * @param hit   the ray trace hit result
+     * @return true if the hit is on the output slot
+     */
+    public static boolean hitOutputSlot(BlockState state, BlockPos pos, BlockHitResult hit) {
+        Direction facing = state.getValue(FACING);
+        VoxelShape slot = OUTPUT_SLOT_SHAPES.getOrDefault(facing,
+                OUTPUT_SLOT_SHAPES.get(Direction.SOUTH));
+        return ShapeHitCheck.hitInsideShape(hit, pos, slot);
+    }
+
+    /**
+     * Builds composite shapes with the output canister slot included.
+     *
+     * @return shapes with canister keyed by direction
+     */
+    private static Map<Direction, VoxelShape> buildShapesWithCanister() {
+        EnumMap<Direction, VoxelShape> map = new EnumMap<>(Direction.class);
+        SHAPES.forEach((dir, shape) ->
+                map.put(dir, Shapes.or(shape, OUTPUT_SLOT_SHAPES.get(dir))));
+        return Map.copyOf(map);
+    }
+
+    /**
+     * Returns true if the hit lands within the reactor's front hollow region.
+     *
+     * @param state the block state
+     * @param pos   the block position
+     * @param hit   the ray trace hit result
+     * @return true if the click is in the hollow
+     */
+    public static boolean isHollowClick(BlockState state, BlockPos pos, BlockHitResult hit) {
+        Direction facing = state.getValue(FACING);
+        double hitX = hit.getLocation().x - pos.getX();
+        double hitY = hit.getLocation().y - pos.getY();
+        double hitZ = hit.getLocation().z - pos.getZ();
+        double modelX = PlexerInteractionHelper.toModelX(facing, hitX, hitZ);
+        double modelZ = PlexerInteractionHelper.toModelZ(facing, hitX, hitZ);
+        return isInHollowXY(modelX, hitY);
+    }
+
+    /**
+     * Returns true if model-space X and Y are within the hollow bounds.
+     *
+     * @param modelX model-space X coordinate
+     * @param hitY   block-local Y coordinate
+     * @return true if within hollow X/Y bounds
+     */
+    private static boolean isInHollowXY(double modelX, double hitY) {
+        return modelX >= HOLLOW_MIN_X && modelX <= HOLLOW_MAX_X
+                && hitY >= HOLLOW_MIN_Y && hitY <= HOLLOW_MAX_Y;
     }
 
     @Override

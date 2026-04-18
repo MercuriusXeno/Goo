@@ -33,9 +33,6 @@ public final class GooReactionLoader
     private static final String LOG_LOADED = "Loaded {} goo reactions";
     private static final String LOG_CONFLICT_IDENTICAL =
             "Reaction conflict: {} and {} have identical input type sets";
-    private static final String LOG_CONFLICT_OVERLAP =
-            "Reaction overlap (ambiguous): {} and {} share input types but neither is a subset";
-
     /** Sorted reactions, most inputs first. Immutable after load. */
     private static List<GooReaction> reactions = List.of();
 
@@ -112,9 +109,6 @@ public final class GooReactionLoader
             return;
         }
         if (isSubset(sa, sb) || isSubset(sb, sa)) { return; }
-        if (!Collections.disjoint(sa, sb)) {
-            Goo.LOGGER.warn(LOG_CONFLICT_OVERLAP, a.id(), b.id());
-        }
     }
 
     /**

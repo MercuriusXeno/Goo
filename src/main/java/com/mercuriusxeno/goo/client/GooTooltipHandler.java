@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.tooltip.GooValueTooltipComponent;
+import com.mercuriusxeno.goo.client.tooltip.VanillaFluidTooltipComponent;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
@@ -12,16 +13,23 @@ import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.GooFormat;
 import com.mercuriusxeno.goo.item.GooOmniblobItem;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
+import com.mercuriusxeno.goo.registry.GooFluids;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import org.lwjgl.glfw.GLFW;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +39,17 @@ import java.util.Map;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GooTooltipHandler {
+
+    /** One vanilla bucket in millibuckets / microblobs. */
+    private static final int BUCKET_VOLUME = 1000;
+
+    /** Hint shown when shift is not held and the item has goo data. */
+    private static final Component SHIFT_HINT =
+            Component.literal("Hold [Shift] for goo values").withStyle(ChatFormatting.DARK_GRAY);
+
+    /** "+" separator between contents and container value rows. */
+    private static final Component PLUS_SEPARATOR =
+            Component.literal("+").withStyle(ChatFormatting.WHITE);
 
     private GooTooltipHandler() {}
 
@@ -44,8 +63,35 @@ public final class GooTooltipHandler {
     public static void onGatherComponents(RenderTooltipEvent.GatherComponents event) {
         ItemStack stack = event.getItemStack();
         if (stack.isEmpty()) { return; }
+        long window = Minecraft.getInstance().getWindow().handle();
+        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) != GLFW.GLFW_PRESS
+                && GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) != GLFW.GLFW_PRESS) {
+            if (hasGooData(stack)) {
+                event.getTooltipElements().add(Either.left(SHIFT_HINT));
+            }
+            return;
+        }
         if (handleBlobTooltip(event.getTooltipElements(), stack)) { return; }
+        if (handleContainerTooltip(event.getTooltipElements(), stack)) { return; }
         handleItemTooltip(event.getTooltipElements(), stack);
+    }
+
+    /**
+     * Returns true if the item has any goo-relevant data worth showing.
+     *
+     * @param stack the item stack
+     * @return true if goo tooltip would be non-empty
+     */
+    private static boolean hasGooData(ItemStack stack) {
+        if (stack.getItem() instanceof GooBlobItem) { return true; }
+        if (stack.getItem() instanceof GooOmniblobItem) { return true; }
+        if (getGooContentType(stack) != null) { return true; }
+        GooContents contents = stack.get(GooDataComponents.GOO_CONTENTS.get());
+        if (contents != null && !contents.isEmpty()) { return true; }
+        CanisterFluidContent canister = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        if (canister != null && !canister.isEmpty()) { return true; }
+        GooValue value = lookupValue(stack);
+        return value != null && !value.isEmpty();
     }
 
     /** Handles blob and omniblob items, returning true if a blob tooltip was appended.
@@ -64,6 +110,80 @@ public final class GooTooltipHandler {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Handles fluid containers (goo buckets, canisters with goo fluid):
+     * single column with contents rows, a "+" separator, and container
+     * value rows. Shows contents alone if the container has no goo value.
+     *
+     * @param elements the tooltip element list
+     * @param stack    the item stack
+     * @return true if a container tooltip was appended
+     */
+    private static boolean handleContainerTooltip(
+            List<Either<FormattedText, TooltipComponent>> elements, ItemStack stack) {
+        GooType contentType = getGooContentType(stack);
+        int contentAmount = getGooContentAmount(stack);
+        if (contentType == null || contentAmount <= 0) { return false; }
+
+        elements.add(Either.left(Component.empty()));
+        elements.add(Either.right(new GooValueTooltipComponent(contentType, contentAmount)));
+
+        GooValue containerValue = lookupContainerValue(stack);
+        if (containerValue != null && !containerValue.isEmpty()) {
+            elements.add(Either.left(PLUS_SEPARATOR));
+            for (Map.Entry<GooType, Integer> e : containerValue.getAll().entrySet()) {
+                elements.add(Either.right(
+                        new GooValueTooltipComponent(e.getKey(), e.getValue())));
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns the goo type of the fluid contents, or null.
+     *
+     * @param stack the item stack
+     * @return the goo type, or null
+     */
+    private static @org.jspecify.annotations.Nullable GooType getGooContentType(ItemStack stack) {
+        if (stack.getItem() instanceof BucketItem bucket) {
+            return GooFluids.getTypeFromFluid(bucket.content);
+        }
+        CanisterFluidContent content = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        if (content != null && !content.isEmpty()) {
+            return content.getGooType();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the fluid amount in microblobs, or 0.
+     *
+     * @param stack the item stack
+     * @return the amount
+     */
+    private static int getGooContentAmount(ItemStack stack) {
+        if (stack.getItem() instanceof BucketItem) { return BUCKET_VOLUME; }
+        CanisterFluidContent content = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        if (content != null && !content.isEmpty()) { return content.amount(); }
+        return 0;
+    }
+
+    /**
+     * Looks up the goo value of the container itself (not its contents).
+     *
+     * @param stack the item stack
+     * @return the container's decomposition value, or null
+     */
+    private static GooValue lookupContainerValue(ItemStack stack) {
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        GooValue value = Goo.GOO_VALUES.lookup(itemId);
+        if ((value == null || value.isEmpty()) && stack.getItem() instanceof BucketItem) {
+            return Goo.GOO_VALUES.lookup(BuiltInRegistries.ITEM.getKey(Items.BUCKET));
+        }
+        return value;
     }
 
     /** Handles non-blob items: goo contents, upgrades, and base registry values.
@@ -157,6 +277,7 @@ public final class GooTooltipHandler {
     }
 
     /** Appends a single-fluid tooltip line for canister items.
+     * Handles both goo fluids (icon + amount) and vanilla fluids (text label + amount).
      *
      * @param elements the tooltip element list
      * @param content  the canister fluid content
@@ -168,7 +289,21 @@ public final class GooTooltipHandler {
             elements.add(Either.left(Component.empty()));
             elements.add(Either.right(
                     new GooValueTooltipComponent(gooType, content.amount())));
+        } else {
+            appendVanillaFluidTooltip(elements, content);
         }
+    }
+
+    /** Appends a bucket icon + mB amount tooltip for vanilla fluids.
+     *
+     * @param elements the tooltip element list
+     * @param content  the canister fluid content holding a vanilla fluid
+     */
+    private static void appendVanillaFluidTooltip(
+            List<Either<FormattedText, TooltipComponent>> elements, CanisterFluidContent content) {
+        elements.add(Either.left(Component.empty()));
+        elements.add(Either.right(
+                new VanillaFluidTooltipComponent(content.fluid(), content.amount())));
     }
 
     /**

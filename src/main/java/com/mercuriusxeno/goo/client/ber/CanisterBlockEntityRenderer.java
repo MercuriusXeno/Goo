@@ -23,6 +23,7 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -114,6 +115,9 @@ public class CanisterBlockEntityRenderer
     private static void extractSlotStream(CanisterBlockEntity be,
             CanisterRenderState state, int slot, long gameTick) {
         state.streamType[slot] = be.containerState().getSlotStreamType(slot, gameTick);
+        state.streamFluid[slot] = state.streamType[slot] == null
+                ? be.containerState().getSlotStreamFluid(slot, gameTick)
+                : Fluids.EMPTY;
         state.streamRate[slot] = be.containerState().getSlotStreamRate(slot, gameTick);
     }
 
@@ -129,6 +133,7 @@ public class CanisterBlockEntityRenderer
         CanisterFluidContent content = be.getSlotFluidContent(slot);
         if (content.isEmpty()) {
             state.slotType[slot] = null;
+            state.slotFluid[slot] = Fluids.EMPTY;
             state.slotFill[slot] = 0f;
         } else {
             populateFilledSlot(be, state, slot, content);
@@ -136,7 +141,9 @@ public class CanisterBlockEntityRenderer
     }
 
     /**
-     * Populates render state for a slot with goo contents.
+     * Populates render state for a slot with fluid contents.
+     * For goo fluids, sets slotType. For vanilla fluids, sets slotFluid.
+     *
      * @param be the block entity instance
      * @param state the render state snapshot
      * @param slot the slot index
@@ -146,6 +153,8 @@ public class CanisterBlockEntityRenderer
             CanisterRenderState state, int slot, CanisterFluidContent content) {
         int cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
         state.slotType[slot] = content.getGooType();
+        state.slotFluid[slot] = content.getGooType() == null
+                ? content.fluid() : Fluids.EMPTY;
         state.slotFill[slot] = logFill(content.amount(), cap);
     }
 
@@ -288,8 +297,12 @@ public class CanisterBlockEntityRenderer
      */
     private static void renderAllStreams(RenderContext ctx, float anim, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.streamType[i] == null) { continue; }
-            renderSlotStream(ctx, anim, state, i);
+            if (state.streamType[i] != null) {
+                renderSlotStream(ctx, anim, state, i);
+            } else if (state.streamFluid[i] != null
+                    && state.streamFluid[i] != Fluids.EMPTY) {
+                renderVanillaSlotStream(ctx, anim, state, i);
+            }
         }
     }
 
@@ -315,9 +328,29 @@ public class CanisterBlockEntityRenderer
      * @param state the block state
      * @return true if anyStream is present
      */
+    /**
+     * Renders a vanilla (non-goo) fluid stream for a slot.
+     *
+     * @param ctx the render context
+     * @param anim the animation tick fraction
+     * @param state the render state snapshot
+     * @param slot the slot index
+     */
+    private static void renderVanillaSlotStream(
+            RenderContext ctx, float anim, CanisterRenderState state, int slot) {
+        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
+        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
+        float yBottom = STREAM_Y_BOT + state.slotFill[slot] * (STREAM_Y_TOP - STREAM_Y_BOT);
+        GooStreamRenderer.renderStream(ctx,
+                cx, cz, STREAM_Y_TOP, yBottom,
+                state.streamFluid[slot], state.streamRate[slot], anim);
+    }
+
     private static boolean hasAnyStream(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
             if (state.streamType[i] != null) { return true; }
+            if (state.streamFluid[i] != null
+                    && state.streamFluid[i] != Fluids.EMPTY) { return true; }
         }
         return false;
     }

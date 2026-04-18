@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "waterlogged=false": { "model": "goo:block/choral_gasket" },
+    "waterlogged=true":  { "model": "goo:block/choral_gasket" }
+  }
+}
