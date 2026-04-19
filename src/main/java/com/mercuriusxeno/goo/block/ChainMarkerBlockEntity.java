@@ -1,6 +1,9 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.ability.AbilityRegistry;
+import com.mercuriusxeno.goo.ability.DataDrivenChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;
@@ -45,6 +48,9 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String DEFAULT_FACE = "up";
     private static final String TAG_FLAT_MODE = "FlatMode";
     private static final String TAG_LAST_STACK_TICK = "LastStackTick";
+    private static final String TAG_ABILITY_ID = "AbilityId";
+    /** Empty ability id sentinel for legacy ChainProfile path. */
+    private static final String NO_ABILITY = "";
 
     /** How often to sync fuse to client (every N ticks). */
     private static final int SYNC_INTERVAL = 5;
@@ -65,6 +71,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * implicitly when the BE removes itself. */
     @Nullable
     private ChainBehavior behavior;
+    /** Ability id for data-driven behaviors; empty for legacy ChainProfile path. */
+    private String abilityId = "";
 
     /** Creates a chain marker block entity at the given position.
      *
@@ -90,6 +98,26 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.stackCount = 1;
         this.maxStacks = profile.maxStacks();
         this.fuseRemaining = profile.fuseTicks();
+        this.abilityId = NO_ABILITY;
+        setChanged();
+        syncToClient();
+    }
+
+    /**
+     * Configures this marker from a data-driven ability definition.
+     *
+     * @param type      the goo type
+     * @param face      the placed face
+     * @param ability   the ability definition
+     */
+    public void initChainFromAbility(GooType type, Direction face, AbilityDefinition ability) {
+        AbilityDefinition.ChainConfig chain = ability.chain();
+        this.gooType = type;
+        this.placedFace = face;
+        this.stackCount = 1;
+        this.maxStacks = chain.maxStacks();
+        this.fuseRemaining = chain.fuseTicks();
+        this.abilityId = ability.id().toString();
         setChanged();
         syncToClient();
     }
@@ -241,6 +269,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * @param pos   the block position
      */
     private void tickFuse(ServerLevel level, BlockPos pos) {
+        if (fuseRemaining < 0) { return; }
         fuseRemaining--;
         if (!EffectMath.isFuseLive(fuseRemaining)) {
             detonate(level, pos);
@@ -268,12 +297,11 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * @param pos   the block position
      */
     private void detonate(ServerLevel level, BlockPos pos) {
-        ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile == null) {
+        behavior = createBehavior();
+        if (behavior == null) {
             level.removeBlock(pos, false);
             return;
         }
-        behavior = profile.behaviorFactory().get();
         behavior.onFuseExpired(level, pos, this);
         if (!behavior.isActive()) {
             if (level.getBlockState(pos).is(GooBlocks.CHAIN_MARKER.get())) {
@@ -285,6 +313,38 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
+
+    /** Creates the post-fuse behavior: ability-driven if abilityId is set, otherwise ChainProfile.
+     *
+     * @return the new behavior, or null if neither path resolves
+     */
+    private @Nullable ChainBehavior createBehavior() {
+        ChainBehavior fromAbility = createFromAbility();
+        if (fromAbility != null) { return fromAbility; }
+        return createFromProfile();
+    }
+
+    /** Attempts to create a behavior from the ability registry.
+     *
+     * @return the data-driven behavior, or null if no ability is set
+     */
+    private @Nullable ChainBehavior createFromAbility() {
+        if (abilityId.isEmpty()) { return null; }
+        net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(abilityId);
+        if (id == null) { return null; }
+        AbilityDefinition def = AbilityRegistry.getAbility(id);
+        return def != null ? new DataDrivenChainBehavior(def) : null;
+    }
+
+    /** Attempts to create a behavior from the legacy ChainProfile.
+     *
+     * @return the legacy behavior, or null if no profile exists
+     */
+    private @Nullable ChainBehavior createFromProfile() {
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile == null || profile.behaviorFactory() == null) { return null; }
+        return profile.behaviorFactory().get();
+    }
 
     /** Returns the goo type driving this chain effect.
      *
@@ -363,6 +423,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
         flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         lastStackTick = input.getLongOr(TAG_LAST_STACK_TICK, 0);
+        abilityId = input.getStringOr(TAG_ABILITY_ID, NO_ABILITY);
     }
 
     /** If the fuse has already expired, re-creates the behavior instance
@@ -373,9 +434,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     private void reconstituteBehaviorIfNeeded(ValueInput input) {
         if (fuseRemaining > 0) { return; }
-        ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile == null || profile.behaviorFactory() == null) { return; }
-        behavior = profile.behaviorFactory().get();
+        behavior = createBehavior();
+        if (behavior == null) { return; }
         behavior.loadAdditional(input);
     }
 
@@ -404,6 +464,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putString(TAG_PLACED_FACE, placedFace.getName());
         output.putBoolean(TAG_FLAT_MODE, flatMode);
         output.putLong(TAG_LAST_STACK_TICK, lastStackTick);
+        output.putString(TAG_ABILITY_ID, abilityId);
         if (behavior != null) {
             behavior.saveAdditional(output);
         }

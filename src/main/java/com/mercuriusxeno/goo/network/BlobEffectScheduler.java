@@ -165,7 +165,24 @@ final class BlobEffectScheduler {
     static void applyBlockEffect(PendingEffect pe) {
         BlockPos pos = pe.targetPos;
         playImpactSound(pe.level, pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER);
-        WorldEffects.apply(pe.level, pe.targetPos, pe.gooType, pe.targetFace);
+        if (!pe.abilityId.isEmpty()) {
+            applyAbilityBlockEffect(pe);
+        } else {
+            WorldEffects.apply(pe.level, pe.targetPos, pe.gooType, pe.targetFace);
+        }
+    }
+
+    /** Places or stacks a chain marker using a data-driven ability definition.
+     *
+     * @param pe the pending effect with ability id set
+     */
+    static void applyAbilityBlockEffect(PendingEffect pe) {
+        net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(pe.abilityId);
+        if (id == null) { return; }
+        com.mercuriusxeno.goo.ability.AbilityDefinition def = com.mercuriusxeno.goo.ability.AbilityRegistry.getAbility(id);
+        if (def == null) { return; }
+        com.mercuriusxeno.goo.effect.EffectBlockPlacement.placeOrStackAbility(
+                pe.level, pe.targetPos, pe.gooType, pe.targetFace, def);
     }
 
     /**
