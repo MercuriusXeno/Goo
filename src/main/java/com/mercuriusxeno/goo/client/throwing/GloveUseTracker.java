@@ -2,6 +2,8 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.AbilityRegistry;
+import com.mercuriusxeno.goo.client.radial.AbilityRadialScreen;
 import com.mercuriusxeno.goo.client.radial.GooRadialScreen;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
@@ -83,11 +85,28 @@ public final class GloveUseTracker {
             holdTicks++;
             if (holdTicks >= GooGloveItem.RADIAL_THRESHOLD_TICKS) {
                 player.releaseUsingItem();
-                GooRadialScreen.open();
+                openAppropriateRadial(player);
                 holdTicks = 0;
             }
         } else {
             holdTicks = 0;
+        }
+    }
+
+    /** Opens the type radial (shift+hold) or ability radial (hold).
+     *
+     * @param player the local player holding the glove
+     */
+    private static void openAppropriateRadial(LocalPlayer player) {
+        if (player.isShiftKeyDown()) {
+            GooRadialScreen.open();
+            return;
+        }
+        GooType selected = GooGloveItem.getSelectedType(player.getUseItem());
+        if (selected != null && AbilityRegistry.hasAbilities(selected)) {
+            AbilityRadialScreen.open(selected);
+        } else {
+            GooRadialScreen.open();
         }
     }
 

@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.network;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -34,22 +35,26 @@ public final class GloveSelectHandler {
         if (!(context.player() instanceof ServerPlayer player)) { return; }
         ItemStack glove = findGlove(player);
         if (glove == null) { return; }
-        resolveAndSetType(glove, payload.gooTypeId());
+        resolveAndApply(glove, payload);
     }
 
-    /** Sets the glove's selected type: null for empty ID, or the resolved GooType.
+    /** Resolves the selection and applies it to the glove.
      *
-     * @param glove     the glove item stack
-     * @param gooTypeId the goo type ID string (empty to clear)
+     * @param glove   the glove item stack
+     * @param payload the selection payload
      */
-    private static void resolveAndSetType(ItemStack glove, String gooTypeId) {
-        if (gooTypeId.isEmpty()) {
-            GooGloveItem.setSelectedType(glove, null);
+    private static void resolveAndApply(ItemStack glove, GloveSelectPayload payload) {
+        if (payload.gooTypeId().isEmpty()) {
+            GooGloveItem.setSelection(glove, GloveSelection.EMPTY);
             return;
         }
-        GooType type = GooType.fromId(gooTypeId);
-        if (type != null) {
-            GooGloveItem.setSelectedType(glove, type);
+        GooType type = GooType.fromId(payload.gooTypeId());
+        if (type == null) { return; }
+        if (payload.abilityId().isEmpty()) {
+            GooGloveItem.setSelection(glove, GloveSelection.ofType(type));
+        } else {
+            GloveSelection selection = new GloveSelection(payload.gooTypeId(), payload.abilityId());
+            GooGloveItem.setSelection(glove, selection);
         }
     }
 

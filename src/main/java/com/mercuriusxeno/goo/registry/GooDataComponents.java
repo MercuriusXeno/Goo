@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -81,6 +82,14 @@ public class GooDataComponents {
             () -> DataComponentType.<String>builder()
                 .persistent(Codec.STRING)
                 .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                .build());
+
+    /** Selected goo type + ability persisted on glove items. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<GloveSelection>> SELECTED_ABILITY =
+        DATA_COMPONENTS.register("selected_ability",
+            () -> DataComponentType.<GloveSelection>builder()
+                .persistent(GloveSelection.CODEC)
+                .networkSynchronized(GloveSelection.STREAM_CODEC)
                 .build());
 
     /** Choral tuner state: owner UUID and in-progress gasket selection. */

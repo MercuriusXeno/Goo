@@ -12,8 +12,14 @@ import org.jspecify.annotations.NonNull;
  * glove so the data component persists on the server (and survives reload).
  *
  * @param gooTypeId the selected goo type id, or empty string to clear
+ * @param abilityId the selected ability id string, or empty for type-only
  */
-public record GloveSelectPayload(String gooTypeId) implements CustomPacketPayload {
+public record GloveSelectPayload(String gooTypeId, String abilityId) implements CustomPacketPayload {
+
+    /** Backward-compat constructor for type-only selection. */
+    public GloveSelectPayload(String gooTypeId) {
+        this(gooTypeId, "");
+    }
 
     public static final Type<GloveSelectPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "glove_select"));
@@ -34,6 +40,7 @@ public record GloveSelectPayload(String gooTypeId) implements CustomPacketPayloa
      */
     private static void encode(FriendlyByteBuf buf, GloveSelectPayload payload) {
         buf.writeUtf(payload.gooTypeId);
+        buf.writeUtf(payload.abilityId);
     }
 
     /**
@@ -43,6 +50,6 @@ public record GloveSelectPayload(String gooTypeId) implements CustomPacketPayloa
      * @return the decoded payload
      */
     private static GloveSelectPayload decode(FriendlyByteBuf buf) {
-        return new GloveSelectPayload(buf.readUtf());
+        return new GloveSelectPayload(buf.readUtf(), buf.readUtf());
     }
 }
