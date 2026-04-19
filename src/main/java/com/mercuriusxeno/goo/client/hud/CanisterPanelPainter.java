@@ -166,13 +166,46 @@ final class CanisterPanelPainter {
         boolean hasUpgrade = data.compression() > 0;
         String upgradeText = hasUpgrade ? UPGRADE_PREFIX + data.compression() : EMPTY_UPGRADE;
         GooContents goo = toGooContents(data.content());
-        int fluidRows = goo.isEmpty() && !data.content().isEmpty() ? 1 : goo.typeCount();
-        float contentWidth = goo.isEmpty() && !data.content().isEmpty()
-                ? maxWidth(font, InWorldHud.computeFluidRowWidth(font, data.content().amount()),
-                        label, upgradeText, hasLabel, hasUpgrade)
-                : measureContentWidth(font, goo, label, upgradeText, hasLabel, hasUpgrade);
+        boolean singleFluidRow = isSingleFluidRow(goo, data.content());
+        int fluidRows = singleFluidRow ? 1 : goo.typeCount();
+        float contentWidth = measurePanelContentWidth(
+                font, goo, data.content(), singleFluidRow,
+                label, upgradeText, hasLabel, hasUpgrade);
         int rowCount = countRows(fluidRows, hasLabel, hasUpgrade);
         return buildMetrics(contentWidth, rowCount, label, upgradeText, hasLabel, hasUpgrade);
+    }
+
+    /**
+     * True when goo decomposition is empty but the canister has raw fluid (single untyped row).
+     * @param goo the decomposed goo contents
+     * @param content the raw canister fluid content
+     * @return true if goo is empty but fluid is present
+     */
+    private static boolean isSingleFluidRow(GooContents goo, CanisterFluidContent content) {
+        return goo.isEmpty() && !content.isEmpty();
+    }
+
+    /**
+     * Delegates to the correct width measurement based on single-fluid vs multi-type layout.
+     * @param font the font renderer for width measurement
+     * @param goo the decomposed goo contents
+     * @param content the raw canister fluid content
+     * @param singleFluidRow true if rendering a single untyped row
+     * @param label the canister label text, or null
+     * @param upgradeText the formatted upgrade level string
+     * @param hasLabel whether a label row is present
+     * @param hasUpgrade whether an upgrade row is present
+     * @return the widest content row width in pixels
+     */
+    private static float measurePanelContentWidth(Font font, GooContents goo,
+            CanisterFluidContent content, boolean singleFluidRow,
+            @Nullable String label, String upgradeText,
+            boolean hasLabel, boolean hasUpgrade) {
+        if (singleFluidRow) {
+            return maxWidth(font, InWorldHud.computeFluidRowWidth(font, content.amount()),
+                    label, upgradeText, hasLabel, hasUpgrade);
+        }
+        return measureContentWidth(font, goo, label, upgradeText, hasLabel, hasUpgrade);
     }
 
     private static float maxWidth(Font font, float rowWidth,
@@ -255,12 +288,14 @@ final class CanisterPanelPainter {
         float baseY = -metrics.height + InWorldHud.BORDER;
         int row = drawHeaders(font, buffers, poseStack, metrics, contentX, baseY);
         GooContents goo = toGooContents(data.content());
-        if (!goo.isEmpty()) {
+        if (goo.isEmpty()) {
+            if (!data.content().isEmpty()) {
+                InWorldHud.renderFluidRow(poseStack, font, buffers,
+                        data.content().fluid(), data.content().amount(), contentX,
+                        baseY + row * InWorldHud.ROW_HEIGHT);
+            }
+        } else {
             InWorldHud.renderGooRows(poseStack, font, buffers, goo, contentX, baseY, row);
-        } else if (!data.content().isEmpty()) {
-            InWorldHud.renderFluidRow(poseStack, font, buffers,
-                    data.content().fluid(), data.content().amount(), contentX,
-                    baseY + row * InWorldHud.ROW_HEIGHT);
         }
     }
 

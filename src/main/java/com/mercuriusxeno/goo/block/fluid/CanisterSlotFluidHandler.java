@@ -113,7 +113,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
         }
         FluidResource res = getResource(0);
         streamFluid = res.isEmpty() ? null : res.getFluid();
-        streamRate += (int) delta;
+        streamRate += delta;
     }
 
     // --- Stream getters ---
@@ -180,7 +180,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
                 var entry = contents.getAll().entrySet().iterator().next();
                 Fluid fluid = GooFluids.SOURCES.get(entry.getKey()).get();
                 set(0, FluidResource.of(fluid),
-                    (int) Math.min(entry.getValue(), Integer.MAX_VALUE));
+                    Math.min(entry.getValue(), Integer.MAX_VALUE));
             }
         } finally {
             suppressCallbacks = false;
@@ -212,7 +212,7 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
                 set(0, FluidResource.EMPTY, 0);
             } else {
                 set(0, FluidResource.of(content.fluid()),
-                    (int) Math.min(content.amount(), Integer.MAX_VALUE));
+                    Math.min(content.amount(), Integer.MAX_VALUE));
             }
         } finally {
             suppressCallbacks = false;
@@ -253,8 +253,9 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      * Returns true if the tank is empty.
      * @return true if the tank holds no fluid
      */
+    @Override
     public boolean isEmpty() {
-        return (int) getAmountAsLong(0) == 0;
+        return getAmountAsLong(0) == 0;
     }
 
     /**

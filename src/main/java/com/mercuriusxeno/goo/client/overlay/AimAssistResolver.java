@@ -30,18 +30,6 @@ import java.util.Optional;
  */
 final class AimAssistResolver {
 
-    /**
-     * Sealed aim-hit kind produced by the resolver. Packs either a living
-     * entity or a chain marker block position so the caller can dispatch
-     * render and throw-payload paths differently.
-     */
-    sealed interface AimHit {
-        /** An entity hit (living, pickable, within cone + LOS). */
-        record EntityHit(Entity entity) implements AimHit {}
-        /** A chain marker block hit, behaving like an entity for targeting. */
-        record ChainMarkerHit(BlockPos pos) implements AimHit {}
-    }
-
     /** Maximum range for blob throwing in blocks. */
     private static final double MAX_RANGE = GooTargetHighlighter.MAX_RANGE;
 
@@ -82,6 +70,18 @@ final class AimAssistResolver {
     private static final int AXIS_NORTH = 2;
     /** Axis sample index: south face center. */
     private static final int AXIS_SOUTH = 3;
+
+    /**
+     * Sealed aim-hit kind produced by the resolver. Packs either a living
+     * entity or a chain marker block position so the caller can dispatch
+     * render and throw-payload paths differently.
+     */
+    sealed interface AimHit {
+        /** An entity hit (living, pickable, within cone + LOS). */
+        record EntityHit(Entity entity) implements AimHit {}
+        /** A chain marker block hit, behaving like an entity for targeting. */
+        record ChainMarkerHit(BlockPos pos) implements AimHit {}
+    }
 
     private AimAssistResolver() {}
 
@@ -563,8 +563,8 @@ final class AimAssistResolver {
             @Nullable BlockPos selfBlock) {
         BlockHitResult hit = level.clip(new ClipContext(
                 from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-        if (hit.getType() == HitResult.Type.MISS) { return true; }
-        return selfBlock != null && hit.getBlockPos().equals(selfBlock);
+        return hit.getType() == HitResult.Type.MISS
+                || (selfBlock != null && selfBlock.equals(hit.getBlockPos()));
     }
 
     /**

@@ -73,7 +73,7 @@ public final class BlobStacks {
     public static ItemStack createForOutput(GooType type, int volumeMb) {
         if (volumeMb <= 0) { return ItemStack.EMPTY; }
         if (isCleanBlobStack(volumeMb)) {
-            return createBlobStack(type, (int) (volumeMb / MB_PER_BLOB));
+            return createBlobStack(type, (volumeMb / MB_PER_BLOB));
         }
         return GooOmniblobItem.createWithVolume(type, volumeMb);
     }
@@ -145,7 +145,7 @@ public final class BlobStacks {
      * @param accepted the accepted volume in microblobs
      */
     private static void depleteBlob(ItemStack stack, int accepted) {
-        int blobsUsed = (int) (accepted / MB_PER_BLOB);
+        int blobsUsed = (accepted / MB_PER_BLOB);
         stack.shrink(blobsUsed);
     }
 
@@ -259,7 +259,7 @@ public final class BlobStacks {
         if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) { return remaining; }
         int room = MAX_STACK - slot.getCount();
         if (room <= 0) { return remaining; }
-        int add = (int) Math.min(room, remaining / MB_PER_BLOB);
+        int add = Math.min(room, remaining / MB_PER_BLOB);
         slot.grow(add);
         return remaining - add * MB_PER_BLOB;
     }
@@ -290,7 +290,7 @@ public final class BlobStacks {
         int whole = wholeBlobs(volume);
         if (whole <= 0) { return 0; }
         if (shiftHeld) {
-            return (int) Math.min(whole, MAX_STACK);
+            return Math.min(whole, MAX_STACK);
         }
         return 1;
     }

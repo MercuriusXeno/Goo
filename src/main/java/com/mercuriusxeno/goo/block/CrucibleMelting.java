@@ -223,7 +223,7 @@ final class CrucibleMelting {
         for (Map.Entry<GooType, Integer> entry : shares.entrySet()) {
             int drained = PartiallyMeltedItem.drain(
                 be.meltingItem, entry.getKey(), entry.getValue());
-            be.reservoir.insertGoo(entry.getKey(), (int) drained, false);
+            be.reservoir.insertGoo(entry.getKey(), drained, false);
         }
     }
 

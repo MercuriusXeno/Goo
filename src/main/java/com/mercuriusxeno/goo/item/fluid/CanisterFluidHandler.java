@@ -53,7 +53,7 @@ public class CanisterFluidHandler extends ItemAccessResourceHandler<FluidResourc
      */
     @Override
     protected int getAmountFrom(ItemResource item, int index) {
-        return (int) Math.min(readContent(item).amount(), Integer.MAX_VALUE);
+        return Math.min(readContent(item).amount(), Integer.MAX_VALUE);
     }
 
     /**
@@ -85,7 +85,7 @@ public class CanisterFluidHandler extends ItemAccessResourceHandler<FluidResourc
      */
     @Override
     protected int getCapacity(int index, FluidResource resource) {
-        return (int) Math.min(readCapacity(itemAccess.getResource()), Integer.MAX_VALUE);
+        return Math.min(readCapacity(itemAccess.getResource()), Integer.MAX_VALUE);
     }
 
     /**

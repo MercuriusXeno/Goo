@@ -26,7 +26,7 @@ public final class GooFluidTransfer {
     public static int insert(ResourceHandler<FluidResource> handler, GooType type, int volume) {
         int index = type.ordinal();
         FluidResource resource = FluidResource.of(GooFluids.SOURCES.get(type).get());
-        int amount = (int) Math.min(volume, Integer.MAX_VALUE);
+        int amount = Math.min(volume, Integer.MAX_VALUE);
         try (Transaction tx = Transaction.openRoot()) {
             int inserted = handler.insert(index, resource, amount, tx);
             tx.commit();

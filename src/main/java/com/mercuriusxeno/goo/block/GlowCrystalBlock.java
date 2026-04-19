@@ -45,6 +45,11 @@ public class GlowCrystalBlock extends Block {
     private static final Map<Direction, Map<CrystalShape, Map<CrystalSize, VoxelShape>>> SHAPES =
             buildShapeTable();
 
+    /** Bump depth in block fractions (2/16). */
+    public static final double BUMP_DEPTH = 2.0 / 16;
+    /** Flat depth in block fractions (matches 0.01 model). */
+    public static final double FLAT_DEPTH = 0.01;
+
     /**
      * Creates a glow crystal block.
      *
@@ -175,12 +180,6 @@ public class GlowCrystalBlock extends Block {
         }
     }
 
-
-    /** Bump depth in block fractions (2/16). */
-    public static final double BUMP_DEPTH = 2.0 / 16;
-    /** Flat depth in block fractions (matches 0.01 model). */
-    public static final double FLAT_DEPTH = 0.01;
-
     /**
      * Builds the full facing x shape x size to VoxelShape lookup table.
      *
@@ -213,13 +212,52 @@ public class GlowCrystalBlock extends Block {
      * @return the voxel shape
      */
     static VoxelShape shapeFor(Direction facing, double min, double max, double depth) {
-        return switch (facing) {
-            case UP    -> Shapes.box(min, 0, min, max, depth, max);
-            case DOWN  -> Shapes.box(min, 1 - depth, min, max, 1, max);
-            case NORTH -> Shapes.box(min, min, 0, max, max, depth);
-            case SOUTH -> Shapes.box(min, min, 1 - depth, max, max, 1);
-            case WEST  -> Shapes.box(0, min, min, depth, max, max);
-            case EAST  -> Shapes.box(1 - depth, min, min, 1, max, max);
+        return switch (facing.getAxis()) {
+            case Y -> shapeAlongY(facing, min, max, depth);
+            case Z -> shapeAlongZ(facing, min, max, depth);
+            case X -> shapeAlongX(facing, min, max, depth);
         };
+    }
+
+    /**
+     * Builds a shape anchored to the up or down face.
+     * @param facing vertical surface direction (UP or DOWN)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the Y-axis-anchored voxel shape
+     */
+    private static VoxelShape shapeAlongY(Direction facing, double min, double max, double depth) {
+        return facing == Direction.UP
+                ? Shapes.box(min, 0, min, max, depth, max)
+                : Shapes.box(min, 1 - depth, min, max, 1, max);
+    }
+
+    /**
+     * Builds a shape anchored to the north or south face.
+     * @param facing horizontal Z-axis direction (NORTH or SOUTH)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the Z-axis-anchored voxel shape
+     */
+    private static VoxelShape shapeAlongZ(Direction facing, double min, double max, double depth) {
+        return facing == Direction.NORTH
+                ? Shapes.box(min, min, 0, max, max, depth)
+                : Shapes.box(min, min, 1 - depth, max, max, 1);
+    }
+
+    /**
+     * Builds a shape anchored to the west or east face.
+     * @param facing horizontal X-axis direction (WEST or EAST)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the X-axis-anchored voxel shape
+     */
+    private static VoxelShape shapeAlongX(Direction facing, double min, double max, double depth) {
+        return facing == Direction.WEST
+                ? Shapes.box(0, min, min, depth, max, max)
+                : Shapes.box(1 - depth, min, min, 1, max, max);
     }
 }

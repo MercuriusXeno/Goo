@@ -63,10 +63,8 @@ public class VatBlockItem extends BlockItem {
         if (cursor.getItem() instanceof GooBlobItem) {
             return handleBlobInsert(vat, cursor, cursorAccess);
         }
-        if (cursor.getItem() instanceof GooOmniblobItem) {
-            return handleOmniblobInsert(vat, cursor, cursorAccess);
-        }
-        return false;
+        return cursor.getItem() instanceof GooOmniblobItem
+                && handleOmniblobInsert(vat, cursor, cursorAccess);
     }
 
     // --- Goo contents helpers (vat-specific capacity) ---
@@ -136,7 +134,7 @@ public class VatBlockItem extends BlockItem {
         int volume = BlobStacks.volumeOf(cursor);
         int accepted = addGoo(vat, type, volume);
         if (accepted <= 0) { return false; }
-        int blobsUsed = (int) (accepted / BlobStacks.MB_PER_BLOB);
+        int blobsUsed = (accepted / BlobStacks.MB_PER_BLOB);
         cursor.shrink(blobsUsed);
         if (cursor.isEmpty()) { cursorAccess.set(ItemStack.EMPTY); }
         return true;

@@ -104,11 +104,9 @@ public final class GooReactionLoader
     private static void checkPair(GooReaction a, GooReaction b) {
         Set<Fluid> sa = a.inputTypeSet();
         Set<Fluid> sb = b.inputTypeSet();
-        if (sa.equals(sb)) {
+        if (sa.equals(sb) && Goo.LOGGER.isErrorEnabled()) {
             Goo.LOGGER.error(LOG_CONFLICT_IDENTICAL, a.id(), b.id());
-            return;
         }
-        if (isSubset(sa, sb) || isSubset(sb, sa)) { return; }
     }
 
     /**

@@ -37,6 +37,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * Short-lived fuse block placed by chain world effects (Blaze, Frost,
@@ -89,6 +91,25 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     private static final double SOUL_DRIFT_SPEED = -0.01;
     /** Smoke particle spawn chance denominator (1 in N) for nether. */
     private static final int NETHER_SMOKE_CHANCE = 4;
+
+    /** Maps goo types to their particle emitter; types without particles are absent. */
+    private static final Map<GooType, ParticleEmitter> PARTICLE_EMITTERS;
+    static {
+        Map<GooType, ParticleEmitter> m = new EnumMap<>(GooType.class);
+        m.put(GooType.BLAZE, ChainMarkerBlock::spawnBlazeParticles);
+        m.put(GooType.ROCK, ChainMarkerBlock::spawnRockParticles);
+        m.put(GooType.NETHER, ChainMarkerBlock::spawnNetherParticles);
+        m.put(GooType.METAL, ChainMarkerBlock::spawnMetalParticles);
+        m.put(GooType.CRYSTAL, ChainMarkerBlock::spawnCrystalParticles);
+        PARTICLE_EMITTERS = Map.copyOf(m);
+    }
+
+    /** Functional interface for type-specific particle emitters. */
+    @FunctionalInterface
+    private interface ParticleEmitter {
+        void emit(int stacks, double cx, double cy, double cz,
+                double spread, Level level, RandomSource random);
+    }
 
     /** Creates a chain marker block with the given properties.
      *
@@ -199,18 +220,27 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
             Player player, ItemStack toolStack, boolean canHarvest, FluidState fluidState) {
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+        if (shouldDeferToSuper(level, pos)) {
             return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
         }
-        if (be.getBehavior() != null && !be.getBehavior().allowsTopOff()) {
-            return super.onDestroyedByPlayer(state, level, pos, player, toolStack, canHarvest, fluidState);
-        }
+        ChainMarkerBlockEntity be = (ChainMarkerBlockEntity) level.getBlockEntity(pos);
         if (be.getGooType() == GooType.UNSTABLE && !level.isClientSide()) {
             be.instantDetonate();
         } else {
             tryToggleFlatMode(level, pos, be);
         }
         return false;
+    }
+
+    /**
+     * Checks whether the destroy action should fall through to default block removal.
+     * @param level the current level
+     * @param pos the block position
+     * @return true if the block should be removed normally
+     */
+    private static boolean shouldDeferToSuper(Level level, BlockPos pos) {
+        return !(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)
+                || (be.getBehavior() != null && !be.getBehavior().allowsTopOff());
     }
 
     /** Toggles flat mode on the marker if the goo type supports it.
@@ -428,8 +458,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      * @return true if breaking should be prevented
      */
     private static boolean isProtectedFromBreaking(ChainMarkerBlockEntity be) {
-        if (be.getBehavior() == null) { return true; }
-        return be.getBehavior().allowsTopOff();
+        return be.getBehavior() == null || be.getBehavior().allowsTopOff();
     }
 
     /** Goo types that support flat/tunnel mode toggling.
@@ -502,15 +531,10 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      */
     private static void dispatchParticles(GooType type, int stacks,
             double cx, double cy, double cz, Level level, RandomSource random) {
+        ParticleEmitter emitter = PARTICLE_EMITTERS.get(type);
+        if (emitter == null) { return; }
         double spread = BASE_SPREAD + SPREAD_PER_STACK * stacks;
-        switch (type) {
-            case BLAZE -> spawnBlazeParticles(stacks, cx, cy, cz, spread, level, random);
-            case ROCK -> spawnRockParticles(stacks, cx, cy, cz, spread, level, random);
-            case NETHER -> spawnNetherParticles(stacks, cx, cy, cz, spread, level, random);
-            case METAL -> spawnMetalParticles(stacks, cx, cy, cz, spread, level, random);
-            case CRYSTAL -> spawnCrystalParticles(stacks, cx, cy, cz, spread, level, random);
-            default -> {}
-        }
+        emitter.emit(stacks, cx, cy, cz, spread, level, random);
     }
 
     /**

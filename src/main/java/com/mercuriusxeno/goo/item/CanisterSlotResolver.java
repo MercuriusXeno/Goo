@@ -57,20 +57,45 @@ public final class CanisterSlotResolver {
         int slot = CanisterSlotLayout.placementSlot(face, px, pz);
         Level level = be.getLevel();
 
-        if (slot >= 0 && be.getCanister(slot).isEmpty()
-                && CanisterPlacementValidator.isSlotAllowed(level, pos, slot)) {
-            return slot;
-        }
-
-        if (slot >= 0) {
-            int adjacent = CanisterSlotLayout.adjacentByCursorLean(slot, px, pz);
-            if (be.getCanister(adjacent).isEmpty()
-                    && CanisterPlacementValidator.isSlotAllowed(level, pos, adjacent)) {
-                return adjacent;
-            }
-        }
+        int resolved = resolveDirectOrAdjacent(be, level, pos, slot, px, pz);
+        if (resolved != NO_SLOT) { return resolved; }
 
         return findFirstAllowedEmpty(be, level, pos);
+    }
+
+    /**
+     * Tries the direct-hit slot, then the adjacent lean slot.
+     *
+     * @param be    the canister block entity
+     * @param level the current level
+     * @param pos   the canister block position
+     * @param slot  the direct-hit slot index
+     * @param px    pixel X coordinate on the block face
+     * @param pz    pixel Z coordinate on the block face
+     * @return the resolved slot index, or NO_SLOT if neither is available
+     */
+    private static int resolveDirectOrAdjacent(CanisterBlockEntity be, Level level,
+            BlockPos pos, int slot, float px, float pz) {
+        if (slot < 0) { return NO_SLOT; }
+        if (isEmptyAndAllowed(be, level, pos, slot)) { return slot; }
+        int adjacent = CanisterSlotLayout.adjacentByCursorLean(slot, px, pz);
+        if (isEmptyAndAllowed(be, level, pos, adjacent)) { return adjacent; }
+        return NO_SLOT;
+    }
+
+    /**
+     * Returns true if the slot is empty and passes placement constraints.
+     *
+     * @param be    the canister block entity
+     * @param level the current level
+     * @param pos   the canister block position
+     * @param slot  the slot index to check
+     * @return true if the slot is empty and allowed
+     */
+    private static boolean isEmptyAndAllowed(CanisterBlockEntity be, Level level,
+            BlockPos pos, int slot) {
+        return be.getCanister(slot).isEmpty()
+                && CanisterPlacementValidator.isSlotAllowed(level, pos, slot);
     }
 
     /**

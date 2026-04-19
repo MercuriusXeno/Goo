@@ -112,6 +112,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     /** Offset of the Z component inside a stride-3 position or normal
      * triple. Named so array accesses like {@code data[p + CUBE_Z]}
      * don't trip checkstyle's magic-number rule. */
+    private static final int CUBE_Y = 1;
     private static final int CUBE_Z = 2;
     /** Unit magnitude for cube half-extent literals. Used through its
      * negation as {@code -UNIT} in the cube vertex tables so the
@@ -340,18 +341,13 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * @return stride-2 UV table
      */
     private static float[] buildCubeFaceUvs() {
+        // Each face has 4 vertices x 2 UV components = 8 floats.
+        // Quad winding (u, v): (0,0) -> (1,0) -> (1,1) -> (0,1).
+        float[] tile = {0f, 0f, 1f, 0f, 1f, 1f, 0f, 1f};
+        int step = CUBE_VERTICES_PER_FACE * CUBE_UV_STRIDE;
         float[] out = new float[CUBE_VERTEX_COUNT * CUBE_UV_STRIDE];
-        int idx = 0;
         for (int face = 0; face < CUBE_FACES; face++) {
-            // Quad winding (u, v): (0,0) → (1,0) → (1,1) → (0,1).
-            out[idx++] = 0f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
-            out[idx++] = 1f;
-            out[idx++] = 0f;
-            out[idx++] = 1f;
+            System.arraycopy(tile, 0, out, face * step, step);
         }
         return out;
     }
@@ -365,27 +361,31 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      */
     private static float[] buildCubeFaceNormals() {
         final float n = -UNIT;
-        float[] out = new float[CUBE_VERTEX_COUNT * CUBE_POS_STRIDE];
         float[][] normals = {
-            { UNIT,   0f,   0f },
-            {    n,   0f,   0f },
-            {   0f, UNIT,   0f },
-            {   0f,    n,   0f },
-            {   0f,   0f, UNIT },
-            {   0f,   0f,    n },
+            {UNIT, 0f, 0f}, {n, 0f, 0f}, {0f, UNIT, 0f},
+            {0f, n, 0f}, {0f, 0f, UNIT}, {0f, 0f, n},
         };
-        int idx = 0;
+        float[] out = new float[CUBE_VERTEX_COUNT * CUBE_POS_STRIDE];
         for (int face = 0; face < CUBE_FACES; face++) {
-            float fnx = normals[face][0];
-            float fny = normals[face][1];
-            float fnz = normals[face][CUBE_Z];
-            for (int v = 0; v < CUBE_VERTICES_PER_FACE; v++) {
-                out[idx++] = fnx;
-                out[idx++] = fny;
-                out[idx++] = fnz;
-            }
+            fillFaceNormals(out, face, normals[face]);
         }
         return out;
+    }
+
+    /**
+     * Fills 4 vertices of a face with the same normal vector.
+     * @param out the stride-3 normal output array
+     * @param face the face index (0-5)
+     * @param normal the xyz unit normal for this face
+     */
+    private static void fillFaceNormals(float[] out, int face, float[] normal) {
+        int base = face * CUBE_VERTICES_PER_FACE * CUBE_POS_STRIDE;
+        for (int v = 0; v < CUBE_VERTICES_PER_FACE; v++) {
+            int off = base + v * CUBE_POS_STRIDE;
+            out[off] = normal[0];
+            out[off + CUBE_Y] = normal[CUBE_Y];
+            out[off + CUBE_Z] = normal[CUBE_Z];
+        }
     }
 
 

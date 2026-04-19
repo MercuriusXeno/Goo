@@ -126,16 +126,24 @@ public final class BlobFlightManager {
      */
     private static Vec3 resolveBlockTargetPos(BlobFlightPayload payload) {
         BlockPos pos = payload.targetPos();
+        Direction face = decodeFace(payload.targetFace());
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null
                 && mc.level.getBlockState(pos).getBlock() instanceof GlowCrystalBlock) {
-            Direction face = (payload.targetFace() >= 0 && payload.targetFace() < Direction.values().length)
-                    ? Direction.values()[payload.targetFace()] : Direction.UP;
             return TargetResult.glowCrystal(pos, face).resolveEndpoint();
         }
-        Direction face = (payload.targetFace() >= 0 && payload.targetFace() < Direction.values().length)
-                ? Direction.values()[payload.targetFace()] : Direction.UP;
         return TargetResult.block(pos, face).resolveEndpoint();
+    }
+
+    /**
+     * Decodes a face ordinal from the payload into a Direction, defaulting to UP.
+     *
+     * @param faceOrdinal the ordinal index from the network payload
+     * @return the decoded direction, or UP if out of range
+     */
+    private static Direction decodeFace(int faceOrdinal) {
+        return (faceOrdinal >= 0 && faceOrdinal < Direction.values().length)
+                ? Direction.values()[faceOrdinal] : Direction.UP;
     }
 
     /**

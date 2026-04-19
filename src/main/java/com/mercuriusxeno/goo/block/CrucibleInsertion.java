@@ -96,7 +96,7 @@ final class CrucibleInsertion {
      */
     static int insertGoo(CrucibleBlockEntity be, GooType type, int volume) {
         if (volume <= 0) { return 0; }
-        int clamped = (int) Math.min(volume, Integer.MAX_VALUE);
+        int clamped = Math.min(volume, Integer.MAX_VALUE);
         int inserted = be.reservoir.insertGoo(type, clamped, false);
         be.syncToClients();
         return inserted;

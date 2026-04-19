@@ -184,6 +184,6 @@ public abstract class GooItemFluidHandler extends ItemAccessResourceHandler<Flui
      * @return the value as int, capped at Integer.MAX_VALUE
      */
     protected static int clampToInt(int value) {
-        return (int) Math.min(value, Integer.MAX_VALUE);
+        return Math.min(value, Integer.MAX_VALUE);
     }
 }

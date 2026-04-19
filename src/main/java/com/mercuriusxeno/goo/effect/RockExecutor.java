@@ -209,17 +209,28 @@ public final class RockExecutor {
      */
     private static void mergeDrops(List<ItemStack> accumulator, List<ItemStack> newDrops) {
         for (ItemStack drop : newDrops) {
-            boolean merged = false;
-            for (ItemStack existing : accumulator) {
-                if (ItemStack.isSameItemSameComponents(existing, drop)
-                        && existing.getCount() + drop.getCount() <= existing.getMaxStackSize()) {
-                    existing.grow(drop.getCount());
-                    merged = true;
-                    break;
-                }
+            if (!tryMergeInto(accumulator, drop)) {
+                accumulator.add(drop.copy());
             }
-            if (!merged) { accumulator.add(drop.copy()); }
         }
+    }
+
+    /**
+     * Tries to stack the drop into an existing accumulator entry.
+     *
+     * @param accumulator the running drop list
+     * @param drop        the new drop to merge
+     * @return true if the drop was merged into an existing stack
+     */
+    private static boolean tryMergeInto(List<ItemStack> accumulator, ItemStack drop) {
+        for (ItemStack existing : accumulator) {
+            if (ItemStack.isSameItemSameComponents(existing, drop)
+                    && existing.getCount() + drop.getCount() <= existing.getMaxStackSize()) {
+                existing.grow(drop.getCount());
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

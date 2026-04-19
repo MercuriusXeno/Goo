@@ -25,6 +25,16 @@ public record GooReaction(
         int rate
 ) {
 
+    /** Placeholder id used during codec parsing; replaced by filename in the loader. */
+    private static final Identifier PLACEHOLDER_ID = Identifier.withDefaultNamespace("unknown");
+
+    /** Codec for the reaction JSON. The id is not in the JSON; it comes from the filename. */
+    public static final Codec<GooReaction> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+            FluidEntry.CODEC.listOf().fieldOf("inputs").forGetter(GooReaction::inputs),
+            FluidEntry.CODEC.listOf().fieldOf("outputs").forGetter(GooReaction::outputs),
+            Codec.INT.fieldOf("rate").forGetter(GooReaction::rate)
+    ).apply(inst, (inputs, outputs, rate) -> new GooReaction(PLACEHOLDER_ID, inputs, outputs, rate)));
+
     /**
      * A fluid + amount pair used in recipe inputs and outputs.
      *
@@ -40,16 +50,6 @@ public record GooReaction(
                 Codec.INT.fieldOf("amount").forGetter(FluidEntry::amount)
         ).apply(inst, FluidEntry::new));
     }
-
-    /** Placeholder id used during codec parsing; replaced by filename in the loader. */
-    private static final Identifier PLACEHOLDER_ID = Identifier.withDefaultNamespace("unknown");
-
-    /** Codec for the reaction JSON. The id is not in the JSON; it comes from the filename. */
-    public static final Codec<GooReaction> CODEC = RecordCodecBuilder.create(inst -> inst.group(
-            FluidEntry.CODEC.listOf().fieldOf("inputs").forGetter(GooReaction::inputs),
-            FluidEntry.CODEC.listOf().fieldOf("outputs").forGetter(GooReaction::outputs),
-            Codec.INT.fieldOf("rate").forGetter(GooReaction::rate)
-    ).apply(inst, (inputs, outputs, rate) -> new GooReaction(PLACEHOLDER_ID, inputs, outputs, rate)));
 
     /**
      * Returns the set of input fluid types (ignoring amounts).

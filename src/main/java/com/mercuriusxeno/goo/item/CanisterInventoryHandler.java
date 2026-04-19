@@ -35,10 +35,8 @@ final class CanisterInventoryHandler {
         if (cursor.getItem() instanceof GooBlobItem) {
             return handleBlobInsert(canister, cursor, cursorAccess);
         }
-        if (cursor.getItem() instanceof GooOmniblobItem) {
-            return handleOmniblobInsert(canister, cursor, cursorAccess);
-        }
-        return false;
+        return cursor.getItem() instanceof GooOmniblobItem
+                && handleOmniblobInsert(canister, cursor, cursorAccess);
     }
 
     // --- Blob/omniblob insert ---
@@ -57,7 +55,7 @@ final class CanisterInventoryHandler {
         int accepted = CanisterItem.addGoo(canister, type, volume);
         if (accepted <= 0) { return false; }
 
-        int blobsUsed = (int) (accepted / BlobStacks.MB_PER_BLOB);
+        int blobsUsed = (accepted / BlobStacks.MB_PER_BLOB);
         cursor.shrink(blobsUsed);
         if (cursor.isEmpty()) { cursorAccess.set(ItemStack.EMPTY); }
         return true;

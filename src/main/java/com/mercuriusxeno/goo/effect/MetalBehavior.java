@@ -66,6 +66,8 @@ public final class MetalBehavior implements ChainBehavior {
     private static final float DISSIPATE_PITCH = 1.2f;
     /** Body-height fraction for particle spawn at entity midpoint. */
     private static final double ENTITY_MID_HEIGHT = 0.5;
+    /** Block update flags: notify neighbors + send to clients. */
+    private static final int BLOCK_UPDATE_FLAGS = 3;
     /** Array offset for X target coordinate in anim data. */
     private static final int ANIM_OFFSET_TX = 2;
     /** Array offset for Y target coordinate in anim data. */
@@ -145,13 +147,35 @@ public final class MetalBehavior implements ChainBehavior {
         while (it.hasNext()) {
             SpikeAnim anim = it.next().getValue();
             anim.tick++;
-            if (anim.tick == STRIKE_TICK && !anim.damageDealt) {
-                dealDamage(level, anim);
-            }
-            if (anim.tick >= TOTAL_ANIM_TICKS) {
-                it.remove();
-            }
+            tickSingleAnim(level, it, anim);
         }
+        tryDissipate(level, pos);
+    }
+
+    /**
+     * Deals damage at strike tick and removes completed animations.
+     *
+     * @param level the server level
+     * @param it    the iterator for safe removal
+     * @param anim  the spike animation to advance
+     */
+    private void tickSingleAnim(ServerLevel level,
+            Iterator<Map.Entry<Integer, SpikeAnim>> it, SpikeAnim anim) {
+        if (anim.tick == STRIKE_TICK && !anim.damageDealt) {
+            dealDamage(level, anim);
+        }
+        if (anim.tick >= TOTAL_ANIM_TICKS) {
+            it.remove();
+        }
+    }
+
+    /**
+     * Spawns dissipate smoke once all anims are done and no stacks remain.
+     *
+     * @param level the server level
+     * @param pos   the marker block position
+     */
+    private void tryDissipate(ServerLevel level, BlockPos pos) {
         if (!dissipated && spikeAnims.isEmpty() && lastKnownStacks <= 0) {
             dissipated = true;
             spawnDissipateSmoke(level, pos);
@@ -213,17 +237,27 @@ public final class MetalBehavior implements ChainBehavior {
 
         for (Entity entity : level.getEntities(null, area)) {
             if (!isValidTarget(entity, center)) { continue; }
-            int id = entity.getId();
-            if (!spikeAnims.containsKey(id) && spikeCooldown <= 0) {
-                if (be.getStackCount() <= 0) { break; }
-                be.decrementStack();
-                lastKnownStacks = be.getStackCount();
-                Vec3 captured = entity.getBoundingBox().getCenter();
-                spikeAnims.put(id, new SpikeAnim(id,
-                        captured.x, captured.y, captured.z));
-                spikeCooldown = SPIKE_COOLDOWN;
-            }
+            if (!tryStartSpike(entity, be)) { break; }
         }
+    }
+
+    /**
+     * Starts a spike animation on the entity if not already animated and off cooldown.
+     *
+     * @param entity the target entity
+     * @param be     the owning block entity for charge management
+     * @return true if scanning should continue, false if charges exhausted
+     */
+    private boolean tryStartSpike(Entity entity, ChainMarkerBlockEntity be) {
+        int id = entity.getId();
+        if (spikeAnims.containsKey(id) || spikeCooldown > 0) { return true; }
+        if (be.getStackCount() <= 0) { return false; }
+        be.decrementStack();
+        lastKnownStacks = be.getStackCount();
+        Vec3 captured = entity.getBoundingBox().getCenter();
+        spikeAnims.put(id, new SpikeAnim(id, captured.x, captured.y, captured.z));
+        spikeCooldown = SPIKE_COOLDOWN;
+        return true;
     }
 
     @Override
@@ -282,8 +316,7 @@ public final class MetalBehavior implements ChainBehavior {
         float t = animTick + partialTick;
         if (t < EMERGE_TICK) { return 0f; }
         if (t < STRIKE_TICK) {
-            float frac = (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
-            return frac;
+            return (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
         }
         if (t < RETRACT_TICK) { return 1f; }
         if (t < TOTAL_ANIM_TICKS) {
@@ -333,10 +366,6 @@ public final class MetalBehavior implements ChainBehavior {
         return entity.position().distanceTo(center) <= SPIKE_RADIUS;
     }
 
-
-    /** Block update flags: notify neighbors + send to clients. */
-    private static final int BLOCK_UPDATE_FLAGS = 3;
-
     /** Triggers a block update to sync state to clients.
      *
      * @param be the owning block entity
@@ -356,11 +385,12 @@ public final class MetalBehavior implements ChainBehavior {
         int[] animData = new int[spikeAnims.size() * ANIM_STRIDE];
         int idx = 0;
         for (SpikeAnim anim : spikeAnims.values()) {
-            animData[idx++] = anim.entityId;
-            animData[idx++] = anim.tick;
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetX);
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetY);
-            animData[idx++] = Float.floatToRawIntBits((float) anim.targetZ);
+            animData[idx] = anim.entityId;
+            animData[idx + 1] = anim.tick;
+            animData[idx + ANIM_OFFSET_TX] = Float.floatToRawIntBits((float) anim.targetX);
+            animData[idx + ANIM_OFFSET_TY] = Float.floatToRawIntBits((float) anim.targetY);
+            animData[idx + ANIM_OFFSET_TZ] = Float.floatToRawIntBits((float) anim.targetZ);
+            idx += ANIM_STRIDE;
         }
         output.putIntArray(TAG_SPIKE_ANIMS, animData);
     }

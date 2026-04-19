@@ -25,6 +25,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -118,6 +119,12 @@ public class ReactorBlockEntityRenderer
 
     /** Deceleration in degrees/tick/tick when not crafting. */
     private static final float WHEEL_DECEL = 0.3f;
+    /** Number of vertices per wheel quad. */
+    private static final int WHEEL_CORNERS = 4;
+    /** Stride between consecutive (y,z) pairs in the corner array. */
+    private static final int WHEEL_YZ_STRIDE = 2;
+    /** First two vertices use V1, last two use V0. */
+    private static final int WHEEL_UV_SPLIT = 2;
 
     /** Speed threshold below which the wheel snaps to rest at the nearest 90. */
     private static final float IDLE_SNAP_SPEED = 0.8f;
@@ -331,35 +338,65 @@ public class ReactorBlockEntityRenderer
      */
     private static void emitRotatedWheel(RenderContext ctx, float x,
             float angle, float u0, float u1) {
+        float[] yz = computeWheelCorners(angle);
+        float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
+
+        for (int v = 0; v < WHEEL_CORNERS; v++) {
+            emitWheelVertex(ctx, x, u0, u1, v, yz, nx);
+        }
+    }
+
+    private static void emitWheelVertex(RenderContext ctx, float x, float u0, float u1, int v, float[] yz, float nx) {
+        float u = getWheelVertexU(u0, u1, v);
+        float wv = getWheelVertexV(v);
+        emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
+    }
+
+    private static float getWheelVertexV(int v) {
+        return (v < WHEEL_UV_SPLIT) ? WHEEL_V1 : WHEEL_V0;
+    }
+
+    private static float getWheelVertexU(float u0, float u1, int v) {
+        return (v == 0 || v == WHEEL_CORNERS - 1) ? u0 : u1;
+    }
+
+    private static float @NonNull [] computeWheelCorners(float angle) {
         float rad = (float) Math.toRadians(angle);
-        float cos = (float) Math.cos(rad);
-        float sin = (float) Math.sin(rad);
+        return computeWheelCorners((float) Math.cos(rad), (float) Math.sin(rad));
+    }
 
-        float y0 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
-        float z0 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
-        float y1 = WHEEL_CENTER + (WHEEL_RADIUS * cos - (-WHEEL_RADIUS) * sin);
-        float z1 = WHEEL_CENTER + (WHEEL_RADIUS * sin + (-WHEEL_RADIUS) * cos);
-        float y2 = WHEEL_CENTER + (WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
-        float z2 = WHEEL_CENTER + (WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
-        float y3 = WHEEL_CENTER + (-WHEEL_RADIUS * cos - WHEEL_RADIUS * sin);
-        float z3 = WHEEL_CENTER + (-WHEEL_RADIUS * sin + WHEEL_RADIUS * cos);
+    /**
+     * Rotates the 4 wheel corners by cos/sin and returns {y0,z0,y1,z1,y2,z2,y3,z3}.
+     * @param cos cosine of the rotation angle
+     * @param sin sine of the rotation angle
+     * @return interleaved {y,z} pairs for 4 corners
+     */
+    private static float[] computeWheelCorners(float cos, float sin) {
+        float r = WHEEL_RADIUS;
+        return new float[] {
+            WHEEL_CENTER + (-r * cos + r * sin), WHEEL_CENTER + (-r * sin - r * cos),
+            WHEEL_CENTER + (r * cos + r * sin),  WHEEL_CENTER + (r * sin - r * cos),
+            WHEEL_CENTER + (r * cos - r * sin),  WHEEL_CENTER + (r * sin + r * cos),
+            WHEEL_CENTER + (-r * cos - r * sin), WHEEL_CENTER + (-r * sin + r * cos),
+        };
+    }
 
-        ctx.c().addVertex(ctx.pose(), x, y0, z0)
+    /**
+     * Emits a single wheel quad vertex with standard lighting and overlay.
+     * @param ctx the render context with pose and consumer
+     * @param x the vertex X position
+     * @param y the vertex Y position
+     * @param z the vertex Z position
+     * @param u the texture U coordinate
+     * @param v the texture V coordinate
+     * @param nx the face normal X component
+     */
+    private static void emitWheelVertex(RenderContext ctx, float x,
+            float y, float z, float u, float v, float nx) {
+        ctx.c().addVertex(ctx.pose(), x, y, z)
                 .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u0, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y1, z1)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u1, WHEEL_V1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y2, z2)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u1, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
-        ctx.c().addVertex(ctx.pose(), x, y3, z3)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
-                .setUv(u0, WHEEL_V0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
-                .setNormal(x < BLOCK_CENTER ? NORMAL_WEST : 1f, 0f, 0f);
+                .setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
+                .setNormal(nx, 0f, 0f);
     }
 
     /**

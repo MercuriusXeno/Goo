@@ -112,7 +112,7 @@ public class SlottedCanisterState {
     public int insertFluid(int slot, Fluid fluid, int volume) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0; }
-        return h.insertFluid(fluid, (int) Math.min(volume, Integer.MAX_VALUE), false);
+        return h.insertFluid(fluid, Math.min(volume, Integer.MAX_VALUE), false);
     }
 
     /**
@@ -138,7 +138,7 @@ public class SlottedCanisterState {
     public int extractFluid(int slot, Fluid fluid, int requested) {
         CanisterSlotFluidHandler h = (slot >= 0 && slot < maxSlots) ? slots.handlers()[slot] : null;
         if (h == null) { return 0; }
-        return h.extractFluid(fluid, (int) Math.min(requested, Integer.MAX_VALUE), false);
+        return h.extractFluid(fluid, Math.min(requested, Integer.MAX_VALUE), false);
     }
 
     /**
@@ -280,21 +280,36 @@ public class SlottedCanisterState {
      */
     private int distributeAcrossSlots(Fluid fluid, int amount) {
         int remaining = amount;
-        // First pass: slots already holding this fluid
-        for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            CanisterSlotFluidHandler handler = slots.handlers()[i];
-            if (handler == null || handler.isEmpty() || handler.getFluid() != fluid) { continue; }
-            int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
-            remaining -= handler.insertFluid(fluid, toInsert, false);
-        }
-        // Second pass: empty slots
-        for (int i = 0; i < maxSlots && remaining > 0; i++) {
-            CanisterSlotFluidHandler handler = slots.handlers()[i];
-            if (handler == null || !handler.isEmpty()) { continue; }
-            int toInsert = (int) Math.min(remaining, Integer.MAX_VALUE);
-            remaining -= handler.insertFluid(fluid, toInsert, false);
-        }
+        remaining = distributePass(fluid, remaining, true);
+        remaining = distributePass(fluid, remaining, false);
         return amount - remaining;
+    }
+
+    /**
+     * Single distribution pass: inserts into matching slots (existing=true) or empty slots.
+     * @param fluid the fluid to insert
+     * @param remaining volume in microblobs still to distribute
+     * @param existing true to target occupied matching slots, false for empty
+     * @return the undistributed remainder in microblobs
+     */
+    private int distributePass(Fluid fluid, int remaining, boolean existing) {
+        int left = remaining;
+        for (int i = 0; i < maxSlots && left > 0; i++) {
+            CanisterSlotFluidHandler handler = slots.handlers()[i];
+            if (handler == null) { continue; }
+            if (!isEligibleFluidHolder(fluid, existing, handler)) { continue; }
+            left -= handler.insertFluid(fluid, left, false);
+        }
+        return left;
+    }
+
+    private static boolean isEligibleFluidHolder(Fluid fluid, boolean existing, CanisterSlotFluidHandler handler) {
+        return handler != null && (handler.isEmpty() ||
+                (existing && isMatchingHandlerFluid(fluid, handler)));
+    }
+
+    private static boolean isMatchingHandlerFluid(Fluid fluid, CanisterSlotFluidHandler handler) {
+        return !handler.isEmpty() && handler.getFluid() == fluid;
     }
 
     // --- Pusher tick ---

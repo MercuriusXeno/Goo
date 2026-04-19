@@ -187,8 +187,7 @@ public class PlexerBlockEntityRenderer
     public void submit(PlexerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
         boolean hasTarget = !state.targetItem.isEmpty();
-        boolean showGhost = state.aimingAtCutaway && state.heldItemValid
-                && !ItemStack.isSameItemSameComponents(state.heldItem, state.targetItem);
+        boolean showGhost = shouldShowGhost(state);
 
         if (hasTarget && showGhost) {
             submitCrossfade(state, poseStack, nodeCollector);
@@ -197,6 +196,16 @@ public class PlexerBlockEntityRenderer
         } else if (showGhost) {
             submitBreathingGhost(state, poseStack, nodeCollector);
         }
+    }
+
+    /**
+     * True when the player is aiming at the cutaway with a valid, different item.
+     * @param state the plexer render state
+     * @return true if a ghost preview should render
+     */
+    private static boolean shouldShowGhost(PlexerRenderState state) {
+        return state.aimingAtCutaway && state.heldItemValid
+                && !ItemStack.isSameItemSameComponents(state.heldItem, state.targetItem);
     }
 
     /**
@@ -241,17 +250,29 @@ public class PlexerBlockEntityRenderer
         float t = oscillateT(state.gameTime, CROSSFADE_SPEED);
 
         if (t < CROSSFADE_MIDPOINT) {
-            float fade = 1f - (t / CROSSFADE_MIDPOINT);
-            int alpha = Math.round(fade * CROSSFADE_ALPHA_MAX);
-            if (alpha > 0 && resolveModel(targetRenderState, state.targetItem)) {
-                submitItemAtCutaway(targetRenderState, state, poseStack, nodeCollector, alpha);
-            }
+            submitCrossfadeHalf(1f - (t / CROSSFADE_MIDPOINT),
+                    targetRenderState, state.targetItem, state, poseStack, nodeCollector);
         } else {
-            float fade = (t - CROSSFADE_MIDPOINT) / CROSSFADE_MIDPOINT;
-            int alpha = Math.round(fade * CROSSFADE_ALPHA_MAX);
-            if (alpha > 0 && resolveModel(ghostRenderState, state.heldItem)) {
-                submitItemAtCutaway(ghostRenderState, state, poseStack, nodeCollector, alpha);
-            }
+            submitCrossfadeHalf((t - CROSSFADE_MIDPOINT) / CROSSFADE_MIDPOINT,
+                    ghostRenderState, state.heldItem, state, poseStack, nodeCollector);
+        }
+    }
+
+    /**
+     * Renders one half of the crossfade if the computed alpha is visible and the model resolves.
+     * @param fade the fade factor from 0 to 1
+     * @param renderState the item render state to populate
+     * @param item the item stack to render
+     * @param state the plexer render state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
+     */
+    private void submitCrossfadeHalf(float fade, ItemStackRenderState renderState,
+            ItemStack item, PlexerRenderState state, PoseStack poseStack,
+            SubmitNodeCollector nodeCollector) {
+        int alpha = Math.round(fade * CROSSFADE_ALPHA_MAX);
+        if (alpha > 0 && resolveModel(renderState, item)) {
+            submitItemAtCutaway(renderState, state, poseStack, nodeCollector, alpha);
         }
     }
 

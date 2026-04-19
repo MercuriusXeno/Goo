@@ -131,11 +131,20 @@ public final class CrystalBehavior implements ChainBehavior {
      * @return true if the entity should be damaged
      */
     private static boolean isShredTarget(Entity entity, Vec3 center) {
-        if (entity instanceof ItemEntity) { return false; }
-        if (!(entity instanceof LivingEntity)) { return false; }
-        if (entity instanceof Player player && player.isShiftKeyDown()) { return false; }
-        if (entity.position().distanceTo(center) > CLOUD_RADIUS) { return false; }
-        return entity.getDeltaMovement().lengthSqr() > MOVE_THRESHOLD_SQ;
+        if (!isShredEligible(entity)) { return false; }
+        return entity.position().distanceTo(center) <= CLOUD_RADIUS
+                && entity.getDeltaMovement().lengthSqr() > MOVE_THRESHOLD_SQ;
+    }
+
+    /**
+     * Rejects items, non-living entities, and sneaking players.
+     *
+     * @param entity the entity to test
+     * @return true if the entity can be damaged by the cloud
+     */
+    private static boolean isShredEligible(Entity entity) {
+        return !(entity instanceof ItemEntity) && entity instanceof LivingEntity
+                && !(entity instanceof Player player && player.isShiftKeyDown());
     }
 
     /**

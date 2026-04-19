@@ -127,17 +127,36 @@ final class CanisterEntitySerializer {
             int slot, CompoundTag slotTag, @Nullable GooType[] slotStreamType,
             @Nullable Fluid[] slotStreamFluid,
             int[] slotStreamRate, long[] slotStreamTick) {
-        GooType[] types = GooType.values();
-        int ordinal = slotTag.getIntOr(TAG_TYPE, INVALID_ORDINAL);
-        slotStreamType[slot] = ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
-        if (slotStreamFluid != null && slotTag.contains(TAG_FLUID)) {
-            FluidStack fs = FluidStack.CODEC.parse(
-                    NbtOps.INSTANCE, slotTag.getCompoundOrEmpty(TAG_FLUID))
-                    .result().orElse(FluidStack.EMPTY);
-            slotStreamFluid[slot] = fs.isEmpty() ? null : fs.getFluid();
-        }
+        slotStreamType[slot] = resolveGooType(slotTag);
+        deserializeSlotFluid(slot, slotTag, slotStreamFluid);
         slotStreamRate[slot] = slotTag.getIntOr(TAG_RATE, 0);
         slotStreamTick[slot] = slotTag.getLongOr(TAG_TICK, 0);
+    }
+
+    /**
+     * Resolves the goo type ordinal from NBT, returning null for invalid values.
+     * @param slotTag the compound tag for this slot
+     * @return the resolved goo type, or null if invalid
+     */
+    private static @Nullable GooType resolveGooType(CompoundTag slotTag) {
+        GooType[] types = GooType.values();
+        int ordinal = slotTag.getIntOr(TAG_TYPE, INVALID_ORDINAL);
+        return ordinal >= 0 && ordinal < types.length ? types[ordinal] : null;
+    }
+
+    /**
+     * Deserializes the vanilla fluid from NBT into the stream array if present.
+     * @param slot the slot index
+     * @param slotTag the compound tag for this slot
+     * @param slotStreamFluid per-slot stream fluids array (written in-place)
+     */
+    private static void deserializeSlotFluid(int slot, CompoundTag slotTag,
+            @Nullable Fluid[] slotStreamFluid) {
+        if (slotStreamFluid == null || !slotTag.contains(TAG_FLUID)) { return; }
+        FluidStack fs = FluidStack.CODEC.parse(
+                NbtOps.INSTANCE, slotTag.getCompoundOrEmpty(TAG_FLUID))
+                .result().orElse(FluidStack.EMPTY);
+        slotStreamFluid[slot] = fs.isEmpty() ? null : fs.getFluid();
     }
 
     /**

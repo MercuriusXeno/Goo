@@ -87,6 +87,17 @@ public class ChainMarkerBlockEntityRenderer
     /** Extra scale bump when targeted. */
     private static final float TARGET_SCALE_BOOST = 1.15f;
 
+    /** Index of the perp-Y component in the cone basis array. */
+    private static final int BASIS_PERP_Y = 1;
+    /** Index of the perp-Z component in the cone basis array. */
+    private static final int BASIS_PERP_Z = 2;
+    /** Index of the cross-X component in the cone basis array. */
+    private static final int BASIS_CROSS_X = 3;
+    /** Index of the cross-Y component in the cone basis array. */
+    private static final int BASIS_CROSS_Y = 4;
+    /** Index of the cross-Z component in the cone basis array. */
+    private static final int BASIS_CROSS_Z = 5;
+
     /** Ticks before detonation where implosion starts. */
     private static final int IMPLOSION_TICKS = 6;
 
@@ -288,19 +299,52 @@ public class ChainMarkerBlockEntityRenderer
     private static void submitFuseOrb(ChainMarkerRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector) {
         float coreHalf = computeCoreHalf(state);
-        float shellHalf = state.gooType == GooType.GLOW
-                ? coreHalf : coreHalf + SHELL_MARGIN;
-        float implosion = state.behaviorActive
-                ? 1f : computeImplosionScale(state.fuseRemaining, state.partialTick);
-        float pulse = computePulseScale(state);
-        float targetBoost = state.targeted ? TARGET_SCALE_BOOST : 1f;
-        float spikeContract = computeSpikeContraction(state);
-        float modifier = implosion * pulse * targetBoost * spikeContract;
+        float shellHalf = computeShellHalf(state, coreHalf);
+        float modifier = computeOrbModifier(state);
         int shellColor = computeShellColor(state);
         GooRenderUtil.UvRect uv = lookupSpriteUv(state.gooType);
 
         poseStack.pushPose();
         translateToFace(poseStack, state);
+        applyOrbScale(poseStack, state, coreHalf, modifier);
+        submitCubeLayer(poseStack, nodeCollector, GooRenderUtil.OPAQUE_WHITE, coreHalf, uv);
+        submitCubeLayer(poseStack, nodeCollector, shellColor, shellHalf, uv);
+        poseStack.popPose();
+    }
+
+    /**
+     * Glow orbs have no shell margin; all others add one.
+     * @param state the chain marker render state
+     * @param coreHalf the inner core half-size in block units
+     * @return the shell half-size in block units
+     */
+    private static float computeShellHalf(ChainMarkerRenderState state, float coreHalf) {
+        return state.gooType == GooType.GLOW ? coreHalf : coreHalf + SHELL_MARGIN;
+    }
+
+    /**
+     * Combines implosion, pulse, target boost, and spike contraction into a single scale factor.
+     * @param state the chain marker render state
+     * @return the combined scale modifier
+     */
+    private static float computeOrbModifier(ChainMarkerRenderState state) {
+        float implosion = state.behaviorActive
+                ? 1f : computeImplosionScale(state.fuseRemaining, state.partialTick);
+        float pulse = computePulseScale(state);
+        float targetBoost = state.targeted ? TARGET_SCALE_BOOST : 1f;
+        float spikeContract = computeSpikeContraction(state);
+        return implosion * pulse * targetBoost * spikeContract;
+    }
+
+    /**
+     * Applies the correct scale transform based on goo type and flat mode.
+     * @param poseStack the pose stack for rendering
+     * @param state the chain marker render state
+     * @param coreHalf the inner core half-size in block units
+     * @param modifier the combined scale modifier
+     */
+    private static void applyOrbScale(PoseStack poseStack, ChainMarkerRenderState state,
+            float coreHalf, float modifier) {
         if (state.gooType == GooType.GLOW) {
             applyGlowScale(poseStack, state, coreHalf);
         } else if (state.flatMode) {
@@ -308,9 +352,6 @@ public class ChainMarkerBlockEntityRenderer
         } else {
             poseStack.scale(modifier, modifier, modifier);
         }
-        submitCubeLayer(poseStack, nodeCollector, GooRenderUtil.OPAQUE_WHITE, coreHalf, uv);
-        submitCubeLayer(poseStack, nodeCollector, shellColor, shellHalf, uv);
-        poseStack.popPose();
     }
 
     /**
@@ -518,12 +559,10 @@ public class ChainMarkerBlockEntityRenderer
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         int color = (SPIKE_ALPHA << ALPHA_SHIFT) | (GooColors.highlight(state.gooType) & RGB_MASK);
         GooRenderUtil.UvRect uv = lookupSpriteUv(state.gooType);
-        BlockPos pos = state.blockPos;
         Direction face = state.placedFace;
         float cx = HALF - face.getStepX() * HALF;
         float cy = HALF - face.getStepY() * HALF;
         float cz = HALF - face.getStepZ() * HALF;
-        float partial = state.partialTick;
 
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS),
@@ -531,22 +570,36 @@ public class ChainMarkerBlockEntityRenderer
                     RenderContext ctx = new RenderContext(pose, consumer,
                             LightCoordsUtil.FULL_BRIGHT);
                     for (int[] snap : state.spikeAnims) {
-                        int animTick = snap[1];
-                        float tx = Float.intBitsToFloat(snap[SNAP_TX]);
-                        float ty = Float.intBitsToFloat(snap[SNAP_TY]);
-                        float tz = Float.intBitsToFloat(snap[SNAP_TZ]);
-                        float dx = tx - pos.getX() - cx;
-                        float dy = ty - pos.getY() - cy;
-                        float dz = tz - pos.getZ() - cz;
-                        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-                        if (len < SPIKE_EPSILON) { continue; }
-                        float ext = MetalBehavior.extensionFraction(animTick, partial);
-                        float tipDist = (len + SPIKE_OVERSHOOT) * ext;
-                        emitSpikeCone(ctx, cx, cy, cz,
-                                dx / len, dy / len, dz / len,
-                                tipDist, color, uv);
+                        emitSingleSpike(ctx, snap, state, cx, cy, cz, color, uv);
                     }
                 });
+    }
+
+    /**
+     * Emits a single spike cone toward a tracked entity position.
+     * @param ctx the render context (pose, consumer, light)
+     * @param snap the spike animation snapshot array
+     * @param state the chain marker render state
+     * @param cx the orb center X in block space
+     * @param cy the orb center Y in block space
+     * @param cz the orb center Z in block space
+     * @param color the packed ARGB spike color
+     * @param uv the fluid sprite UV rectangle
+     */
+    private static void emitSingleSpike(RenderContext ctx, int[] snap,
+            ChainMarkerRenderState state, float cx, float cy, float cz,
+            int color, GooRenderUtil.UvRect uv) {
+        float tx = Float.intBitsToFloat(snap[SNAP_TX]);
+        float ty = Float.intBitsToFloat(snap[SNAP_TY]);
+        float tz = Float.intBitsToFloat(snap[SNAP_TZ]);
+        float dx = tx - state.blockPos.getX() - cx;
+        float dy = ty - state.blockPos.getY() - cy;
+        float dz = tz - state.blockPos.getZ() - cz;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < SPIKE_EPSILON) { return; }
+        float ext = MetalBehavior.extensionFraction(snap[1], state.partialTick);
+        float tipDist = (len + SPIKE_OVERSHOOT) * ext;
+        emitSpikeCone(ctx, cx, cy, cz, dx / len, dy / len, dz / len, tipDist, color, uv);
     }
 
     /**
@@ -585,42 +638,48 @@ public class ChainMarkerBlockEntityRenderer
      * @return array of {perpX, perpY, perpZ, crossX, crossY, crossZ}
      */
     private static float[] computeConeBasis(float dirX, float dirY, float dirZ) {
-        float perpX;
-        float perpY;
-        float perpZ;
-        if (Math.abs(dirY) < DIRECTION_THRESHOLD) {
-            perpX = -dirZ;
-            perpY = 0;
-            perpZ = dirX;
-        } else {
-            perpX = 1;
-            perpY = 0;
-            perpZ = 0;
-        }
-        float dot = perpX * dirX + perpY * dirY + perpZ * dirZ;
-        perpX -= dot * dirX;
-        perpY -= dot * dirY;
-        perpZ -= dot * dirZ;
-        float pLen = (float) Math.sqrt(perpX * perpX + perpY * perpY + perpZ * perpZ);
-        perpX /= pLen;
-        perpY /= pLen;
-        perpZ /= pLen;
-        float crossX = dirY * perpZ - dirZ * perpY;
-        float crossY = dirZ * perpX - dirX * perpZ;
-        float crossZ = dirX * perpY - dirY * perpX;
-        return new float[]{perpX, perpY, perpZ, crossX, crossY, crossZ};
+        float[] perp = seedPerp(dirX, dirY, dirZ);
+        orthonormalize(perp, dirX, dirY, dirZ);
+        float crossX = dirY * perp[BASIS_PERP_Z] - dirZ * perp[BASIS_PERP_Y];
+        float crossY = dirZ * perp[0] - dirX * perp[BASIS_PERP_Z];
+        float crossZ = dirX * perp[BASIS_PERP_Y] - dirY * perp[0];
+        return new float[]{perp[0], perp[BASIS_PERP_Y], perp[BASIS_PERP_Z],
+                crossX, crossY, crossZ};
     }
 
-    /** Index of the perp-Y component in the cone basis array. */
-    private static final int BASIS_PERP_Y = 1;
-    /** Index of the perp-Z component in the cone basis array. */
-    private static final int BASIS_PERP_Z = 2;
-    /** Index of the cross-X component in the cone basis array. */
-    private static final int BASIS_CROSS_X = 3;
-    /** Index of the cross-Y component in the cone basis array. */
-    private static final int BASIS_CROSS_Y = 4;
-    /** Index of the cross-Z component in the cone basis array. */
-    private static final int BASIS_CROSS_Z = 5;
+    /**
+     * Picks a seed perpendicular avoiding near-parallel alignment.
+     * @param dirX the cone direction X component
+     * @param dirY the cone direction Y component
+     * @param dirZ the cone direction Z component
+     * @return a 3-element seed perpendicular vector
+     */
+    private static float[] seedPerp(float dirX, float dirY, float dirZ) {
+        if (Math.abs(dirY) < DIRECTION_THRESHOLD) {
+            return new float[]{-dirZ, 0, dirX};
+        }
+        return new float[]{1, 0, 0};
+    }
+
+    /**
+     * Gram-Schmidt orthonormalizes perp against dir in-place.
+     * @param perp the perpendicular vector to orthonormalize
+     * @param dirX the reference direction X component
+     * @param dirY the reference direction Y component
+     * @param dirZ the reference direction Z component
+     */
+    private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
+        float dot = perp[0] * dirX + perp[BASIS_PERP_Y] * dirY + perp[BASIS_PERP_Z] * dirZ;
+        perp[0] -= dot * dirX;
+        perp[BASIS_PERP_Y] -= dot * dirY;
+        perp[BASIS_PERP_Z] -= dot * dirZ;
+        float len = (float) Math.sqrt(
+                perp[0] * perp[0] + perp[BASIS_PERP_Y] * perp[BASIS_PERP_Y]
+                + perp[BASIS_PERP_Z] * perp[BASIS_PERP_Z]);
+        perp[0] /= len;
+        perp[BASIS_PERP_Y] /= len;
+        perp[BASIS_PERP_Z] /= len;
+    }
 
     /** Emits textured triangular fan faces around the cone from base to tip.
      * Each triangle maps the goo fluid sprite across the face for a
@@ -645,37 +704,58 @@ public class ChainMarkerBlockEntityRenderer
             float tipX, float tipY, float tipZ,
             float dirX, float dirY, float dirZ,
             float[] basis, int color, GooRenderUtil.UvRect uv) {
-        float perpX = basis[0], perpY = basis[BASIS_PERP_Y], perpZ = basis[BASIS_PERP_Z];
-        float crossX = basis[BASIS_CROSS_X], crossY = basis[BASIS_CROSS_Y], crossZ = basis[BASIS_CROSS_Z];
         float uMid = (uv.u0() + uv.u1()) * HALF;
         for (int i = 0; i < SPIKE_SIDES; i++) {
-            float a0 = TWO_PI * i / SPIKE_SIDES;
-            float a1 = TWO_PI * (i + 1) / SPIKE_SIDES;
-            float cos0 = (float) Math.cos(a0) * SPIKE_BASE_RADIUS;
-            float sin0 = (float) Math.sin(a0) * SPIKE_BASE_RADIUS;
-            float cos1 = (float) Math.cos(a1) * SPIKE_BASE_RADIUS;
-            float sin1 = (float) Math.sin(a1) * SPIKE_BASE_RADIUS;
-            float nx = perpX * ((float) Math.cos(a0 + a1) * HALF)
-                    + crossX * ((float) Math.sin(a0 + a1) * HALF);
-            float ny = perpY * ((float) Math.cos(a0 + a1) * HALF)
-                    + crossY * ((float) Math.sin(a0 + a1) * HALF);
-            float nz = perpZ * ((float) Math.cos(a0 + a1) * HALF)
-                    + crossZ * ((float) Math.sin(a0 + a1) * HALF);
-            ctx.vertexColored(color,
-                    bx + perpX * cos0 + crossX * sin0,
-                    by + perpY * cos0 + crossY * sin0,
-                    bz + perpZ * cos0 + crossZ * sin0,
-                    uv.u0(), uv.v0(), nx, ny, nz);
-            ctx.vertexColored(color,
-                    bx + perpX * cos1 + crossX * sin1,
-                    by + perpY * cos1 + crossY * sin1,
-                    bz + perpZ * cos1 + crossZ * sin1,
-                    uv.u1(), uv.v0(), nx, ny, nz);
-            ctx.vertexColored(color, tipX, tipY, tipZ,
-                    uMid, uv.v1(), dirX, dirY, dirZ);
-            ctx.vertexColored(color, tipX, tipY, tipZ,
-                    uMid, uv.v1(), dirX, dirY, dirZ);
+            emitConeSegment(ctx, basis, color, uv, uMid,
+                    bx, by, bz, tipX, tipY, tipZ, dirX, dirY, dirZ, i);
         }
+    }
+
+    /**
+     * Emits one triangular segment of a spike cone.
+     * @param ctx the render context (pose, consumer, light)
+     * @param basis the orthonormal basis vectors
+     * @param color the packed ARGB cone color
+     * @param uv the fluid sprite UV rectangle
+     * @param uMid the U-axis midpoint for the tip vertex
+     * @param bx the cone base center X
+     * @param by the cone base center Y
+     * @param bz the cone base center Z
+     * @param tipX the cone tip X position
+     * @param tipY the cone tip Y position
+     * @param tipZ the cone tip Z position
+     * @param dirX the cone direction X for tip normal
+     * @param dirY the cone direction Y for tip normal
+     * @param dirZ the cone direction Z for tip normal
+     * @param i the segment index around the cone
+     */
+    private static void emitConeSegment(RenderContext ctx, float[] basis,
+            int color, GooRenderUtil.UvRect uv, float uMid,
+            float bx, float by, float bz, float tipX, float tipY, float tipZ,
+            float dirX, float dirY, float dirZ, int i) {
+        float a0 = TWO_PI * i / SPIKE_SIDES;
+        float a1 = TWO_PI * (i + 1) / SPIKE_SIDES;
+        float cos0 = (float) Math.cos(a0) * SPIKE_BASE_RADIUS;
+        float sin0 = (float) Math.sin(a0) * SPIKE_BASE_RADIUS;
+        float cos1 = (float) Math.cos(a1) * SPIKE_BASE_RADIUS;
+        float sin1 = (float) Math.sin(a1) * SPIKE_BASE_RADIUS;
+        float midCos = (float) Math.cos(a0 + a1) * HALF;
+        float midSin = (float) Math.sin(a0 + a1) * HALF;
+        float nx = basis[0] * midCos + basis[BASIS_CROSS_X] * midSin;
+        float ny = basis[BASIS_PERP_Y] * midCos + basis[BASIS_CROSS_Y] * midSin;
+        float nz = basis[BASIS_PERP_Z] * midCos + basis[BASIS_CROSS_Z] * midSin;
+        ctx.vertexColored(color,
+                bx + basis[0] * cos0 + basis[BASIS_CROSS_X] * sin0,
+                by + basis[BASIS_PERP_Y] * cos0 + basis[BASIS_CROSS_Y] * sin0,
+                bz + basis[BASIS_PERP_Z] * cos0 + basis[BASIS_CROSS_Z] * sin0,
+                uv.u0(), uv.v0(), nx, ny, nz);
+        ctx.vertexColored(color,
+                bx + basis[0] * cos1 + basis[BASIS_CROSS_X] * sin1,
+                by + basis[BASIS_PERP_Y] * cos1 + basis[BASIS_CROSS_Y] * sin1,
+                bz + basis[BASIS_PERP_Z] * cos1 + basis[BASIS_CROSS_Z] * sin1,
+                uv.u1(), uv.v0(), nx, ny, nz);
+        ctx.vertexColored(color, tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+        ctx.vertexColored(color, tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
     }
 
 
@@ -715,7 +795,15 @@ public class ChainMarkerBlockEntityRenderer
      */
     private static boolean shouldShowGhostOutline(ChainMarkerRenderState state) {
         if (state.fuseRemaining <= 0 && !state.behaviorActive) { return false; }
-        GooType type = state.gooType;
+        return hasGhostOutline(state.gooType);
+    }
+
+    /**
+     * True for goo types that display a destructive-area ghost outline.
+     * @param type the goo type to check
+     * @return true if the type has a destructive-area ghost
+     */
+    private static boolean hasGhostOutline(GooType type) {
         return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST
                 || type == GooType.CRYSTAL;
     }
@@ -737,7 +825,7 @@ public class ChainMarkerBlockEntityRenderer
      * @return set of packed position keys
      */
     private static Set<Long> packOffsets(List<int[]> offsets) {
-        Set<Long> filled = new HashSet<>(offsets.size());
+        Set<Long> filled = HashSet.newHashSet(offsets.size());
         for (int[] o : offsets) {
             filled.add(packPos(o[X], o[Y], o[Z]));
         }

@@ -201,15 +201,44 @@ public final class CanisterHudRenderer {
         Level level = Minecraft.getInstance().level;
         if (level == null) { return null; }
         BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof TapBlockEntity tap && slot == CanisterTargetResolver.TAP_SLOT) {
-            return lookupTapSlotData(tap);
+        return dispatchSlotData(be, slot);
+    }
+
+    /**
+     * Routes to the appropriate slot-data extractor based on block entity type.
+     * @param be the block entity at the target position
+     * @param slot the canister slot index
+     * @return slot data for the matched entity, or null
+     */
+    private static @Nullable SlotData dispatchSlotData(@Nullable BlockEntity be, int slot) {
+        if (be instanceof TapBlockEntity tap) {
+            return matchTapSlot(tap, slot);
         }
-        if (be instanceof ReactorBlockEntity reactor
-                && slot == CanisterTargetResolver.REACTOR_SLOT) {
-            return lookupReactorSlotData(reactor);
+        if (be instanceof ReactorBlockEntity reactor) {
+            return matchReactorSlot(reactor, slot);
         }
         if (be instanceof ICanisterHolder holder) { return lookupContainerSlotData(holder, slot); }
         return null;
+    }
+
+    /**
+     * Returns tap slot data only when the slot index matches the tap's dedicated slot.
+     * @param tap the tap block entity
+     * @param slot the requested slot index
+     * @return slot data if the slot matches, or null
+     */
+    private static @Nullable SlotData matchTapSlot(TapBlockEntity tap, int slot) {
+        return slot == CanisterTargetResolver.TAP_SLOT ? lookupTapSlotData(tap) : null;
+    }
+
+    /**
+     * Returns reactor slot data only when the slot index matches the reactor's output slot.
+     * @param reactor the reactor block entity
+     * @param slot the requested slot index
+     * @return slot data if the slot matches, or null
+     */
+    private static @Nullable SlotData matchReactorSlot(ReactorBlockEntity reactor, int slot) {
+        return slot == CanisterTargetResolver.REACTOR_SLOT ? lookupReactorSlotData(reactor) : null;
     }
 
     /**

@@ -162,7 +162,7 @@ public interface ICanisterHolder {
      */
     static <T extends BlockEntity & ICanisterHolder> CanisterSlotFluidHandler createSlotHandler(T be, int slot) {
         ItemStack stack = be.containerState().canisters.get(slot);
-        int capacity = (int) ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
+        int capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(stack));
         CanisterSlotFluidHandler handler = new CanisterSlotFluidHandler(capacity,
             () -> syncSlotToItemStack(be, slot),
             () -> be.getLevel() != null ? be.getLevel().getGameTime() : 0);
@@ -200,6 +200,18 @@ public interface ICanisterHolder {
         CanisterSlotFluidHandler h = state.slots.handlers()[slot];
         if (h == null) { return; }
         long tick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
+        writeStreamSnapshot(state, slot, h, tick);
+    }
+
+    /**
+     * Reads stream state from the handler and writes it to the snapshot arrays if active.
+     * @param state the slotted container state
+     * @param slot the slot index
+     * @param h the slot fluid handler to read from
+     * @param tick the current game tick
+     */
+    private static void writeStreamSnapshot(
+            SlottedCanisterState state, int slot, CanisterSlotFluidHandler h, long tick) {
         GooType gooType = h.getStreamGooType(tick);
         Fluid fluid = h.getStreamFluid(tick);
         int rate = h.getStreamRate(tick);

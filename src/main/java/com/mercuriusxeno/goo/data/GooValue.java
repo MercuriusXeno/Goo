@@ -207,7 +207,7 @@ public class GooValue {
     public GooContents toGooContents(int count) {
         if (isEmpty() || count <= 0) { return GooContents.EMPTY; }
         Map<GooType, Integer> longMap = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> longMap.put(type,     (int) amount * count));
+        values.forEach((type, amount) -> longMap.put(type,     amount * count));
         return new GooContents(longMap);
     }
 

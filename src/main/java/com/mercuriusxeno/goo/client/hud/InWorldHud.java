@@ -38,6 +38,14 @@ public final class InWorldHud {
     private static final float MAX_DT = 0.1f;
     /** Texture path prefix for goo type icons. */
     private static final String ICON_PATH_PREFIX = "textures/item/";
+
+    /** Water bucket item texture for HUD icon. */
+    private static final Identifier WATER_BUCKET_ICON =
+            Identifier.withDefaultNamespace("textures/item/water_bucket.png");
+
+    /** Lava bucket item texture for HUD icon. */
+    private static final Identifier LAVA_BUCKET_ICON =
+            Identifier.withDefaultNamespace("textures/item/lava_bucket.png");
     /** Texture path suffix for goo type icons. */
     private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
     /** Goo mod namespace for resource identifiers. */
@@ -431,20 +439,6 @@ public final class InWorldHud {
         String text = GooTooltipHandler.formatFluidDisplayCompact(amount);
         return ICON_SIZE + ICON_TEXT_GAP + font.width(text);
     }
-
-    /** Water tint for HUD icon (plains blue). */
-    private static final int WATER_TINT = 0xFF3F76E4;
-
-    /** Opaque white tint for non-water fluids. */
-    private static final int OPAQUE_WHITE_TINT = 0xFFFFFFFF;
-
-    /** Water bucket item texture for HUD icon. */
-    private static final Identifier WATER_BUCKET_ICON =
-            Identifier.withDefaultNamespace("textures/item/water_bucket.png");
-
-    /** Lava bucket item texture for HUD icon. */
-    private static final Identifier LAVA_BUCKET_ICON =
-            Identifier.withDefaultNamespace("textures/item/lava_bucket.png");
 
     /**
      * Renders a vanilla fluid bucket icon without depth testing.

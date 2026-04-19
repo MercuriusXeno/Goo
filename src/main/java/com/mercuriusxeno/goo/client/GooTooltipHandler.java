@@ -63,17 +63,33 @@ public final class GooTooltipHandler {
     public static void onGatherComponents(RenderTooltipEvent.GatherComponents event) {
         ItemStack stack = event.getItemStack();
         if (stack.isEmpty()) { return; }
-        long window = Minecraft.getInstance().getWindow().handle();
-        if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) != GLFW.GLFW_PRESS
-                && GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) != GLFW.GLFW_PRESS) {
+        if (!isShiftHeld()) {
             if (hasGooData(stack)) {
                 event.getTooltipElements().add(Either.left(SHIFT_HINT));
             }
             return;
         }
-        if (handleBlobTooltip(event.getTooltipElements(), stack)) { return; }
-        if (handleContainerTooltip(event.getTooltipElements(), stack)) { return; }
+        handleTooltipOrchestration(event, stack);
+    }
+
+    private static void handleTooltipOrchestration(RenderTooltipEvent.GatherComponents event, ItemStack stack) {
+        if (handleBlobTooltip(event.getTooltipElements(), stack)) {
+            return;
+        }
+        if (handleContainerTooltip(event.getTooltipElements(), stack)) {
+            return;
+        }
         handleItemTooltip(event.getTooltipElements(), stack);
+    }
+
+    /**
+     * Returns true if either shift key is currently held.
+     * @return true if left or right shift is pressed
+     */
+    private static boolean isShiftHeld() {
+        long window = Minecraft.getInstance().getWindow().handle();
+        return GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS
+                || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
     }
 
     /**
@@ -85,13 +101,29 @@ public final class GooTooltipHandler {
     private static boolean hasGooData(ItemStack stack) {
         if (stack.getItem() instanceof GooBlobItem) { return true; }
         if (stack.getItem() instanceof GooOmniblobItem) { return true; }
-        if (getGooContentType(stack) != null) { return true; }
+        return getGooContentType(stack) != null || hasStoredGooData(stack);
+    }
+
+    /**
+     * Returns true if the stack carries goo contents, canister fluid, or a base goo value.
+     * @param stack the item stack to inspect
+     * @return true if any goo data component is present
+     */
+    private static boolean hasStoredGooData(ItemStack stack) {
         GooContents contents = stack.get(GooDataComponents.GOO_CONTENTS.get());
-        if (contents != null && !contents.isEmpty()) { return true; }
+        if (isEmptyContents(contents)) { return true; }
         CanisterFluidContent canister = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
-        if (canister != null && !canister.isEmpty()) { return true; }
+        if (isEmptyCanister(canister)) { return true; }
         GooValue value = lookupValue(stack);
         return value != null && !value.isEmpty();
+    }
+
+    private static boolean isEmptyCanister(CanisterFluidContent canister) {
+        return canister != null && !canister.isEmpty();
+    }
+
+    private static boolean isEmptyContents(GooContents contents) {
+        return contents != null && !contents.isEmpty();
     }
 
     /** Handles blob and omniblob items, returning true if a blob tooltip was appended.
@@ -129,16 +161,24 @@ public final class GooTooltipHandler {
 
         elements.add(Either.left(Component.empty()));
         elements.add(Either.right(new GooValueTooltipComponent(contentType, contentAmount)));
-
-        GooValue containerValue = lookupContainerValue(stack);
-        if (containerValue != null && !containerValue.isEmpty()) {
-            elements.add(Either.left(PLUS_SEPARATOR));
-            for (Map.Entry<GooType, Integer> e : containerValue.getAll().entrySet()) {
-                elements.add(Either.right(
-                        new GooValueTooltipComponent(e.getKey(), e.getValue())));
-            }
-        }
+        appendContainerValue(elements, stack);
         return true;
+    }
+
+    /**
+     * Appends the "+" separator and base-item goo value rows if the container has one.
+     * @param elements the tooltip element list
+     * @param stack the container item stack
+     */
+    private static void appendContainerValue(
+            List<Either<FormattedText, TooltipComponent>> elements, ItemStack stack) {
+        GooValue containerValue = lookupContainerValue(stack);
+        if (containerValue == null || containerValue.isEmpty()) { return; }
+        elements.add(Either.left(PLUS_SEPARATOR));
+        for (Map.Entry<GooType, Integer> e : containerValue.getAll().entrySet()) {
+            elements.add(Either.right(
+                    new GooValueTooltipComponent(e.getKey(), e.getValue())));
+        }
     }
 
     /**
@@ -152,7 +192,7 @@ public final class GooTooltipHandler {
             return GooFluids.getTypeFromFluid(bucket.content);
         }
         CanisterFluidContent content = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
-        if (content != null && !content.isEmpty()) {
+        if (isEmptyCanister(content)) {
             return content.getGooType();
         }
         return null;
@@ -167,7 +207,7 @@ public final class GooTooltipHandler {
     private static int getGooContentAmount(ItemStack stack) {
         if (stack.getItem() instanceof BucketItem) { return BUCKET_VOLUME; }
         CanisterFluidContent content = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
-        if (content != null && !content.isEmpty()) { return content.amount(); }
+        if (isEmptyCanister(content)) { return content.amount(); }
         return 0;
     }
 
@@ -192,19 +232,32 @@ public final class GooTooltipHandler {
      * @param stack    the item stack
      */
     private static void handleItemTooltip(List<Either<FormattedText, TooltipComponent>> elements, ItemStack stack) {
-        GooContents gooContents = stack.get(GooDataComponents.GOO_CONTENTS.get());
-        boolean hasGooContents = gooContents != null && !gooContents.isEmpty();
-        CanisterFluidContent canisterContent = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
-        boolean hasCanisterContent = canisterContent != null && !canisterContent.isEmpty();
-        if (hasGooContents) {
-            appendGooContentsComponents(elements, gooContents);
-        } else if (hasCanisterContent) {
-            appendCanisterFluidComponent(elements, canisterContent);
-        }
+        boolean appendedFluid = appendFluidComponents(elements, stack);
         appendUpgradeComponents(elements, stack);
-        if (!hasGooContents && !hasCanisterContent) {
+        if (!appendedFluid) {
             appendBaseValueTooltip(elements, stack);
         }
+    }
+
+    /**
+     * Appends goo contents or canister fluid rows, returning true if either was present.
+     * @param elements the tooltip element list
+     * @param stack the item stack to inspect
+     * @return true if fluid rows were appended
+     */
+    private static boolean appendFluidComponents(
+            List<Either<FormattedText, TooltipComponent>> elements, ItemStack stack) {
+        GooContents gooContents = stack.get(GooDataComponents.GOO_CONTENTS.get());
+        if (isEmptyContents(gooContents)) {
+            appendGooContentsComponents(elements, gooContents);
+            return true;
+        }
+        CanisterFluidContent canisterContent = stack.get(GooDataComponents.CANISTER_FLUID_CONTENT.get());
+        if (isEmptyCanister(canisterContent)) {
+            appendCanisterFluidComponent(elements, canisterContent);
+            return true;
+        }
+        return false;
     }
 
     /** Appends registry base value tooltip lines for items without explicit goo contents.

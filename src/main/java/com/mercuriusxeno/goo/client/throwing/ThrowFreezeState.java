@@ -119,9 +119,6 @@ public final class ThrowFreezeState {
         if (target instanceof TargetResult.ChainMarkerTarget cmt) {
             return cmt.pos().equals(pos);
         }
-        if (target instanceof TargetResult.BlockTarget bt) {
-            return bt.pos().equals(pos);
-        }
-        return false;
+        return target instanceof TargetResult.BlockTarget bt && bt.pos().equals(pos);
     }
 }

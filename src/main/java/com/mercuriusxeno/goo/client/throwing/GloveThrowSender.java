@@ -7,6 +7,7 @@ import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.network.BlobThrowPayload;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
@@ -30,6 +31,9 @@ public final class GloveThrowSender {
 
     /** In-flight throws toward chain markers, keyed by block position. */
     private static final Map<BlockPos, Integer> IN_FLIGHT = new HashMap<>();
+
+    /** Empty sentinel for unknown goo type (no chain profile). */
+    private static final int[] UNKNOWN_STACKS = new int[0];
 
     private GloveThrowSender() {}
 
@@ -124,22 +128,42 @@ public final class GloveThrowSender {
             return wouldExceedCrystalMax(gct);
         }
         BlockPos pos = resolveTrackingPos(target);
-        if (pos == null) { return false; }
+        return pos != null && wouldExceedMarkerMax(pos, gooType);
+    }
+
+    /**
+     * Checks current + pending stacks against the marker's max, using the BE if present.
+     *
+     * @param pos     the canonical marker position
+     * @param gooType the goo type being thrown
+     * @return true if the throw should be blocked
+     */
+    private static boolean wouldExceedMarkerMax(BlockPos pos, GooType gooType) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) { return false; }
 
-        int current = 0;
-        int max;
-        if (mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) {
-            current = be.getStackCount();
-            max = be.getMaxStacks();
-        } else {
-            ChainProfile profile = ChainProfile.forType(gooType);
-            if (profile == null) { return false; }
-            max = profile.maxStacks();
-        }
+        int[] currentAndMax = resolveCurrentAndMax(mc.level, pos, gooType);
+        if (currentAndMax.length == 0) { return false; }
         int pending = IN_FLIGHT.getOrDefault(pos, 0);
-        return current + pending >= max;
+        return currentAndMax[0] + pending >= currentAndMax[1];
+    }
+
+    /**
+     * Returns [current, max] from the marker BE or chain profile, or empty if unknown.
+     *
+     * @param level   the client level
+     * @param pos     the marker position
+     * @param gooType the goo type being thrown
+     * @return a 2-element array [current, max], or empty if the type has no profile
+     */
+    private static int[] resolveCurrentAndMax(
+            ClientLevel level, BlockPos pos, GooType gooType) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) {
+            return new int[]{be.getStackCount(), be.getMaxStacks()};
+        }
+        ChainProfile profile = ChainProfile.forType(gooType);
+        if (profile == null) { return UNKNOWN_STACKS; }
+        return new int[]{0, profile.maxStacks()};
     }
 
     /**
@@ -231,14 +255,55 @@ public final class GloveThrowSender {
      * @param gooType the selected goo type
      * @return the payload, or null for no target
      */
-    private static BlobThrowPayload targetToPayload(TargetResult target, GooType gooType) {
+    private static @Nullable BlobThrowPayload targetToPayload(TargetResult target, GooType gooType) {
+        if (target instanceof TargetResult.None) { return null; }
+        return buildPayload(target, gooType.getId());
+    }
+
+    /** Builds the payload for non-None targets. Kept separate so the None early-exit
+     * @param target the resolved non-None aim target
+     * @param typeId the goo type registry id
+     * @return the constructed throw payload
+     * reduces the switch to 4 arms and keeps CC within threshold. */
+    private static BlobThrowPayload buildPayload(TargetResult target, String typeId) {
         return switch (target) {
-            case TargetResult.EntityTarget et -> new BlobThrowPayload(gooType.getId(), et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
-            case TargetResult.BlockTarget bt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
-            case TargetResult.ChainMarkerTarget cmt -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, cmt.pos(), resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal(), false);
-            case TargetResult.GlowCrystalTarget gct -> new BlobThrowPayload(gooType.getId(), NO_ENTITY, gct.pos(), gct.face().ordinal(), false);
-            case TargetResult.None ignored -> null;
+            case TargetResult.EntityTarget et -> entityPayload(typeId, et);
+            case TargetResult.BlockTarget bt -> blockPayload(typeId, bt);
+            case TargetResult.ChainMarkerTarget cmt -> chainMarkerPayload(typeId, cmt);
+            case TargetResult.GlowCrystalTarget gct -> new BlobThrowPayload(typeId, NO_ENTITY, gct.pos(), gct.face().ordinal(), false);
+            default -> throw new IllegalArgumentException(target.toString());
         };
+    }
+
+    /**
+     * Builds a throw payload aimed at an entity.
+     * @param typeId the goo type registry id
+     * @param et the entity aim target
+     * @return the entity-targeted throw payload
+     */
+    private static BlobThrowPayload entityPayload(String typeId, TargetResult.EntityTarget et) {
+        return new BlobThrowPayload(typeId, et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
+    }
+
+    /**
+     * Builds a throw payload aimed at a block face.
+     * @param typeId the goo type registry id
+     * @param bt the block face aim target
+     * @return the block-targeted throw payload
+     */
+    private static BlobThrowPayload blockPayload(String typeId, TargetResult.BlockTarget bt) {
+        return new BlobThrowPayload(typeId, NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
+    }
+
+    /**
+     * Builds a throw payload aimed at a chain marker, resolving its placed face.
+     * @param typeId the goo type registry id
+     * @param cmt the chain marker aim target
+     * @return the chain-marker-targeted throw payload
+     */
+    private static BlobThrowPayload chainMarkerPayload(String typeId, TargetResult.ChainMarkerTarget cmt) {
+        int faceOrdinal = resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal();
+        return new BlobThrowPayload(typeId, NO_ENTITY, cmt.pos(), faceOrdinal, false);
     }
 
     /**

@@ -98,7 +98,7 @@ public class GooBlobItem extends Item implements IGooItemInteraction {
         int wholeBlobs = BlobStacks.wholeBlobs(oldVolume);
         int remainder = BlobStacks.remainder(oldVolume);
 
-        int newCount = (int) Math.min(wholeBlobs, BlobStacks.MAX_STACK);
+        int newCount = Math.min(wholeBlobs, BlobStacks.MAX_STACK);
         stack.setCount(newCount);
 
         int overflowVolume = computeOverflow(wholeBlobs, remainder);

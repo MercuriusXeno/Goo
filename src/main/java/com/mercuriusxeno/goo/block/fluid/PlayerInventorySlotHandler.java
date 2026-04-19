@@ -117,7 +117,7 @@ public final class PlayerInventorySlotHandler implements ResourceHandler<FluidRe
         if (type == null) { return 0; }
         ItemStack stack = getStack();
         if (!(stack.getItem() instanceof CanisterItem)) { return 0; }
-        return (int) Math.min(CanisterItem.addGoo(stack, type, amount), Integer.MAX_VALUE);
+        return Math.min(CanisterItem.addGoo(stack, type, amount), Integer.MAX_VALUE);
     }
 
     /** Extracts goo from the canister at the matching type index.
@@ -135,7 +135,7 @@ public final class PlayerInventorySlotHandler implements ResourceHandler<FluidRe
         if (type == null) { return 0; }
         ItemStack stack = getStack();
         if (!(stack.getItem() instanceof CanisterItem)) { return 0; }
-        return (int) Math.min(CanisterItem.removeGoo(stack, type, amount), Integer.MAX_VALUE);
+        return Math.min(CanisterItem.removeGoo(stack, type, amount), Integer.MAX_VALUE);
     }
 
     /** Validates a fluid operation: checks amount, resource, and index match.
