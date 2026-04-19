@@ -177,9 +177,9 @@ final class CanisterPanelPainter {
 
     /**
      * True when goo decomposition is empty but the canister has raw fluid (single untyped row).
-     * @param goo TODO PARAM DESCRIPTION
-     * @param content TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param goo the decomposed goo contents
+     * @param content the raw canister fluid content
+     * @return true if goo is empty but fluid is present
      */
     private static boolean isSingleFluidRow(GooContents goo, CanisterFluidContent content) {
         return goo.isEmpty() && !content.isEmpty();
@@ -187,15 +187,15 @@ final class CanisterPanelPainter {
 
     /**
      * Delegates to the correct width measurement based on single-fluid vs multi-type layout.
-     * @param font TODO PARAM DESCRIPTION
-     * @param goo TODO PARAM DESCRIPTION
-     * @param content TODO PARAM DESCRIPTION
-     * @param singleFluidRow TODO PARAM DESCRIPTION
-     * @param label TODO PARAM DESCRIPTION
-     * @param upgradeText TODO PARAM DESCRIPTION
-     * @param hasLabel TODO PARAM DESCRIPTION
-     * @param hasUpgrade TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param font the font renderer for width measurement
+     * @param goo the decomposed goo contents
+     * @param content the raw canister fluid content
+     * @param singleFluidRow true if rendering a single untyped row
+     * @param label the canister label text, or null
+     * @param upgradeText the formatted upgrade level string
+     * @param hasLabel whether a label row is present
+     * @param hasUpgrade whether an upgrade row is present
+     * @return the widest content row width in pixels
      */
     private static float measurePanelContentWidth(Font font, GooContents goo,
             CanisterFluidContent content, boolean singleFluidRow,

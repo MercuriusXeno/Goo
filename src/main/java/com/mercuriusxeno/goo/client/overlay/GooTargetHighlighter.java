@@ -314,11 +314,11 @@ public final class GooTargetHighlighter {
 
     /**
      * True when the hit qualifies for a granny-arc: side face, upper edge, air above.
-     * @param level TODO PARAM DESCRIPTION
-     * @param hit TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @param face TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param level the current level
+     * @param hit the block hit result
+     * @param pos the hit block position
+     * @param face the hit face direction
+     * @return true if the hit qualifies for a granny arc
      */
     private static boolean isGrannyArcCandidate(Level level, BlockHitResult hit,
             BlockPos pos, Direction face) {

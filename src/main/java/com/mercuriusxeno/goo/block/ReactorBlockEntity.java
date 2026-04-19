@@ -189,11 +189,11 @@ public class ReactorBlockEntity extends BlockEntity
 
     /**
      * Attempts to resolve and execute a reaction batch; returns false if any step fails.
-     * @param inputBe TODO PARAM DESCRIPTION
-     * @param level TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @param bState TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param inputBe the input canister block entity above
+     * @param level the server level
+     * @param pos the reactor block position
+     * @param bState the current block state
+     * @return true if a reaction was executed
      */
     private boolean tryExecuteReaction(
             CanisterBlockEntity inputBe, Level level, BlockPos pos, BlockState bState) {

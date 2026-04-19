@@ -25,6 +25,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -337,24 +338,38 @@ public class ReactorBlockEntityRenderer
      */
     private static void emitRotatedWheel(RenderContext ctx, float x,
             float angle, float u0, float u1) {
-        float rad = (float) Math.toRadians(angle);
-        float cos = (float) Math.cos(rad);
-        float sin = (float) Math.sin(rad);
-        float[] yz = computeWheelCorners(cos, sin);
+        float[] yz = computeWheelCorners(angle);
         float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
 
         for (int v = 0; v < WHEEL_CORNERS; v++) {
-            float u = (v == 0 || v == WHEEL_CORNERS - 1) ? u0 : u1;
-            float wv = (v < WHEEL_UV_SPLIT) ? WHEEL_V1 : WHEEL_V0;
-            emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
+            emitWheelVertex(ctx, x, u0, u1, v, yz, nx);
         }
+    }
+
+    private static void emitWheelVertex(RenderContext ctx, float x, float u0, float u1, int v, float[] yz, float nx) {
+        float u = getWheelVertexU(u0, u1, v);
+        float wv = getWheelVertexV(v);
+        emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
+    }
+
+    private static float getWheelVertexV(int v) {
+        return (v < WHEEL_UV_SPLIT) ? WHEEL_V1 : WHEEL_V0;
+    }
+
+    private static float getWheelVertexU(float u0, float u1, int v) {
+        return (v == 0 || v == WHEEL_CORNERS - 1) ? u0 : u1;
+    }
+
+    private static float @NonNull [] computeWheelCorners(float angle) {
+        float rad = (float) Math.toRadians(angle);
+        return computeWheelCorners((float) Math.cos(rad), (float) Math.sin(rad));
     }
 
     /**
      * Rotates the 4 wheel corners by cos/sin and returns {y0,z0,y1,z1,y2,z2,y3,z3}.
-     * @param cos TODO PARAM DESCRIPTION
-     * @param sin TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param cos cosine of the rotation angle
+     * @param sin sine of the rotation angle
+     * @return interleaved {y,z} pairs for 4 corners
      */
     private static float[] computeWheelCorners(float cos, float sin) {
         float r = WHEEL_RADIUS;
@@ -368,13 +383,13 @@ public class ReactorBlockEntityRenderer
 
     /**
      * Emits a single wheel quad vertex with standard lighting and overlay.
-     * @param ctx TODO PARAM DESCRIPTION
-     * @param x TODO PARAM DESCRIPTION
-     * @param y TODO PARAM DESCRIPTION
-     * @param z TODO PARAM DESCRIPTION
-     * @param u TODO PARAM DESCRIPTION
-     * @param v TODO PARAM DESCRIPTION
-     * @param nx TODO PARAM DESCRIPTION
+     * @param ctx the render context with pose and consumer
+     * @param x the vertex X position
+     * @param y the vertex Y position
+     * @param z the vertex Z position
+     * @param u the texture U coordinate
+     * @param v the texture V coordinate
+     * @param nx the face normal X component
      */
     private static void emitWheelVertex(RenderContext ctx, float x,
             float y, float z, float u, float v, float nx) {

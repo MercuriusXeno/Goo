@@ -711,19 +711,19 @@ public final class BlobFlightRenderer {
 
     /**
      * Emits one triangular segment of the dart cone.
-     * @param pose TODO PARAM DESCRIPTION
-     * @param c TODO PARAM DESCRIPTION
-     * @param basis TODO PARAM DESCRIPTION
-     * @param uv TODO PARAM DESCRIPTION
-     * @param baseRadius TODO PARAM DESCRIPTION
-     * @param uMid TODO PARAM DESCRIPTION
-     * @param tipX TODO PARAM DESCRIPTION
-     * @param tipY TODO PARAM DESCRIPTION
-     * @param tipZ TODO PARAM DESCRIPTION
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
-     * @param i TODO PARAM DESCRIPTION
+     * @param pose the pose matrix entry
+     * @param c the vertex consumer
+     * @param basis the orthonormal basis vectors
+     * @param uv the fluid sprite UV rectangle
+     * @param baseRadius the cone base radius
+     * @param uMid the U-axis midpoint for the tip vertex
+     * @param tipX the cone tip X position
+     * @param tipY the cone tip Y position
+     * @param tipZ the cone tip Z position
+     * @param dirX the cone direction X for tip normal
+     * @param dirY the cone direction Y for tip normal
+     * @param dirZ the cone direction Z for tip normal
+     * @param i the segment index around the cone
      */
     private static void emitDartSegment(PoseStack.Pose pose, VertexConsumer c,
             float[] basis, GooRenderUtil.UvRect uv, float baseRadius, float uMid,
@@ -735,25 +735,38 @@ public final class BlobFlightRenderer {
         float cos1 = (float) Math.cos(a1) * baseRadius;
         float sin1 = (float) Math.sin(a1) * baseRadius;
 
-        float midA = (a0 + a1) * UV_MIDPOINT;
-        float nx = basis[PERP_X] * (float) Math.cos(midA) + basis[CROSS_X] * (float) Math.sin(midA);
-        float ny = basis[PERP_Y] * (float) Math.cos(midA) + basis[CROSS_Y] * (float) Math.sin(midA);
-        float nz = basis[PERP_Z] * (float) Math.cos(midA) + basis[CROSS_Z] * (float) Math.sin(midA);
+        float[] n = segmentNormal(basis, (a0 + a1) * UV_MIDPOINT);
 
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
                 basis[PERP_X] * cos0 + basis[CROSS_X] * sin0,
                 basis[PERP_Y] * cos0 + basis[CROSS_Y] * sin0,
                 basis[PERP_Z] * cos0 + basis[CROSS_Z] * sin0,
-                uv.u0(), uv.v0(), nx, ny, nz);
+                uv.u0(), uv.v0(), n[PERP_X], n[PERP_Y], n[PERP_Z]);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
                 basis[PERP_X] * cos1 + basis[CROSS_X] * sin1,
                 basis[PERP_Y] * cos1 + basis[CROSS_Y] * sin1,
                 basis[PERP_Z] * cos1 + basis[CROSS_Z] * sin1,
-                uv.u1(), uv.v0(), nx, ny, nz);
+                uv.u1(), uv.v0(), n[PERP_X], n[PERP_Y], n[PERP_Z]);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
                 tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
                 tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
+    }
+
+    /** Computes the interpolated face normal for a cone segment at the given mid-angle.
+     *
+     * @param basis the orthonormal basis array
+     * @param midA  the midpoint angle between the two segment edges
+     * @return a 3-element normal vector {nx, ny, nz}
+     */
+    private static float[] segmentNormal(float[] basis, float midA) {
+        float cosM = (float) Math.cos(midA);
+        float sinM = (float) Math.sin(midA);
+        return new float[]{
+            basis[PERP_X] * cosM + basis[CROSS_X] * sinM,
+            basis[PERP_Y] * cosM + basis[CROSS_Y] * sinM,
+            basis[PERP_Z] * cosM + basis[CROSS_Z] * sinM,
+        };
     }
 
     /**
@@ -776,10 +789,10 @@ public final class BlobFlightRenderer {
 
     /**
      * Picks a seed perpendicular vector that avoids near-parallel alignment with dir.
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param dirX the direction X component
+     * @param dirY the direction Y component
+     * @param dirZ the direction Z component
+     * @return a 3-element seed perpendicular vector
      */
     private static float[] initialPerp(float dirX, float dirY, float dirZ) {
         if (Math.abs(dirY) < UP_THRESHOLD) {
@@ -790,10 +803,10 @@ public final class BlobFlightRenderer {
 
     /**
      * Gram-Schmidt orthonormalizes perp against dir in-place.
-     * @param perp TODO PARAM DESCRIPTION
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
+     * @param perp the perpendicular vector to orthonormalize
+     * @param dirX the reference direction X component
+     * @param dirY the reference direction Y component
+     * @param dirZ the reference direction Z component
      */
     private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
         float dot = perp[PERP_X] * dirX + perp[PERP_Y] * dirY + perp[PERP_Z] * dirZ;

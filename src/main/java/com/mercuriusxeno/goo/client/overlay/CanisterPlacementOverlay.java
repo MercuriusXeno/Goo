@@ -104,15 +104,17 @@ public final class CanisterPlacementOverlay {
 
     /**
      * Returns true if a non-sneaking player clicked a machine's interactive region.
-     * @param mc TODO PARAM DESCRIPTION
-     * @param hitState TODO PARAM DESCRIPTION
-     * @param bhr TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param mc the Minecraft client instance
+     * @param hitState the block state at the hit position
+     * @param bhr the block hit result
+     * @return true if the hit targets a machine hollow
      */
     private static boolean isMachineInteraction(Minecraft mc, BlockState hitState, BlockHitResult bhr) {
         if (mc.player != null && mc.player.isSecondaryUseActive()) { return false; }
-        Block block = hitState.getBlock();
-        BlockPos pos = bhr.getBlockPos();
+        return isMachineHollowInteraction(hitState, bhr, hitState.getBlock(), bhr.getBlockPos());
+    }
+
+    private static boolean isMachineHollowInteraction(BlockState hitState, BlockHitResult bhr, Block block, BlockPos pos) {
         return (block instanceof PlexerBlock && PlexerInteractionHelper.isCutawayClick(hitState, pos, bhr))
                 || (block instanceof ReactorBlock && ReactorBlock.isHollowClick(hitState, pos, bhr));
     }

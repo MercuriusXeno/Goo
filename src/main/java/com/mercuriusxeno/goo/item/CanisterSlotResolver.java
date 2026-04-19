@@ -85,11 +85,12 @@ public final class CanisterSlotResolver {
 
     /**
      * Returns true if the slot is empty and passes placement constraints.
-     * @param be TODO PARAM DESCRIPTION
-     * @param level TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @param slot TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     *
+     * @param be    the canister block entity
+     * @param level the current level
+     * @param pos   the canister block position
+     * @param slot  the slot index to check
+     * @return true if the slot is empty and allowed
      */
     private static boolean isEmptyAndAllowed(CanisterBlockEntity be, Level level,
             BlockPos pos, int slot) {

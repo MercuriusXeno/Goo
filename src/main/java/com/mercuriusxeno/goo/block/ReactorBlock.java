@@ -186,12 +186,12 @@ public class ReactorBlock extends BaseEntityBlock {
 
     /**
      * Routes canister clicks to insert or remove based on slot occupancy.
-     * @param reactor TODO PARAM DESCRIPTION
-     * @param stack TODO PARAM DESCRIPTION
-     * @param player TODO PARAM DESCRIPTION
-     * @param level TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param reactor the reactor block entity
+     * @param stack the held canister item stack
+     * @param player the interacting player
+     * @param level the current level
+     * @param pos the block position
+     * @return SUCCESS, PASS, or TRY_WITH_EMPTY_HAND
      */
     private static InteractionResult handleCanisterInteraction(
             ReactorBlockEntity reactor, ItemStack stack, Player player,

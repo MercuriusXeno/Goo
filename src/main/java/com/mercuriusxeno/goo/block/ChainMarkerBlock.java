@@ -234,9 +234,9 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
 
     /**
      * Checks whether the destroy action should fall through to default block removal.
-     * @param level TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param level the current level
+     * @param pos the block position
+     * @return true if the block should be removed normally
      */
     private static boolean shouldDeferToSuper(Level level, BlockPos pos) {
         return !(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)

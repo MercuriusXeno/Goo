@@ -200,8 +200,8 @@ public class PlexerBlockEntityRenderer
 
     /**
      * True when the player is aiming at the cutaway with a valid, different item.
-     * @param state TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param state the plexer render state
+     * @return true if a ghost preview should render
      */
     private static boolean shouldShowGhost(PlexerRenderState state) {
         return state.aimingAtCutaway && state.heldItemValid
@@ -260,12 +260,12 @@ public class PlexerBlockEntityRenderer
 
     /**
      * Renders one half of the crossfade if the computed alpha is visible and the model resolves.
-     * @param fade TODO PARAM DESCRIPTION
-     * @param renderState TODO PARAM DESCRIPTION
-     * @param item TODO PARAM DESCRIPTION
-     * @param state TODO PARAM DESCRIPTION
-     * @param poseStack TODO PARAM DESCRIPTION
-     * @param nodeCollector TODO PARAM DESCRIPTION
+     * @param fade the fade factor from 0 to 1
+     * @param renderState the item render state to populate
+     * @param item the item stack to render
+     * @param state the plexer render state
+     * @param poseStack the pose stack for rendering
+     * @param nodeCollector the render node collector
      */
     private void submitCrossfadeHalf(float fade, ItemStackRenderState renderState,
             ItemStack item, PlexerRenderState state, PoseStack poseStack,

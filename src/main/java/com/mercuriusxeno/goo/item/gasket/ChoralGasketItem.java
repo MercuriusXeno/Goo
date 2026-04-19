@@ -173,8 +173,9 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
 
     /**
      * Returns true if the existing blockstate allows gasket placement (air, replaceable, or water).
-     * @param existing TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     *
+     * @param existing the blockstate at the placement position
+     * @return true if a gasket block can be placed here
      */
     private static boolean canPlaceGasketAt(BlockState existing) {
         if (existing.canBeReplaced() || existing.isAir()) { return true; }

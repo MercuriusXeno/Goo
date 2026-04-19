@@ -287,23 +287,29 @@ public class SlottedCanisterState {
 
     /**
      * Single distribution pass: inserts into matching slots (existing=true) or empty slots.
-     * @param fluid TODO PARAM DESCRIPTION
-     * @param remaining TODO PARAM DESCRIPTION
-     * @param existing TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param fluid the fluid to insert
+     * @param remaining volume in microblobs still to distribute
+     * @param existing true to target occupied matching slots, false for empty
+     * @return the undistributed remainder in microblobs
      */
     private int distributePass(Fluid fluid, int remaining, boolean existing) {
         int left = remaining;
         for (int i = 0; i < maxSlots && left > 0; i++) {
             CanisterSlotFluidHandler handler = slots.handlers()[i];
             if (handler == null) { continue; }
-            boolean eligible = existing
-                    ? (!handler.isEmpty() && handler.getFluid() == fluid)
-                    : handler.isEmpty();
-            if (!eligible) { continue; }
+            if (!isEligibleFluidHolder(fluid, existing, handler)) { continue; }
             left -= handler.insertFluid(fluid, left, false);
         }
         return left;
+    }
+
+    private static boolean isEligibleFluidHolder(Fluid fluid, boolean existing, CanisterSlotFluidHandler handler) {
+        return handler != null && (handler.isEmpty() ||
+                (existing && isMatchingHandlerFluid(fluid, handler)));
+    }
+
+    private static boolean isMatchingHandlerFluid(Fluid fluid, CanisterSlotFluidHandler handler) {
+        return !handler.isEmpty() && handler.getFluid() == fluid;
     }
 
     // --- Pusher tick ---

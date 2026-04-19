@@ -314,9 +314,9 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Glow orbs have no shell margin; all others add one.
-     * @param state TODO PARAM DESCRIPTION
-     * @param coreHalf TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param state the chain marker render state
+     * @param coreHalf the inner core half-size in block units
+     * @return the shell half-size in block units
      */
     private static float computeShellHalf(ChainMarkerRenderState state, float coreHalf) {
         return state.gooType == GooType.GLOW ? coreHalf : coreHalf + SHELL_MARGIN;
@@ -324,8 +324,8 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Combines implosion, pulse, target boost, and spike contraction into a single scale factor.
-     * @param state TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param state the chain marker render state
+     * @return the combined scale modifier
      */
     private static float computeOrbModifier(ChainMarkerRenderState state) {
         float implosion = state.behaviorActive
@@ -338,10 +338,10 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Applies the correct scale transform based on goo type and flat mode.
-     * @param poseStack TODO PARAM DESCRIPTION
-     * @param state TODO PARAM DESCRIPTION
-     * @param coreHalf TODO PARAM DESCRIPTION
-     * @param modifier TODO PARAM DESCRIPTION
+     * @param poseStack the pose stack for rendering
+     * @param state the chain marker render state
+     * @param coreHalf the inner core half-size in block units
+     * @param modifier the combined scale modifier
      */
     private static void applyOrbScale(PoseStack poseStack, ChainMarkerRenderState state,
             float coreHalf, float modifier) {
@@ -577,14 +577,14 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Emits a single spike cone toward a tracked entity position.
-     * @param ctx TODO PARAM DESCRIPTION
-     * @param snap TODO PARAM DESCRIPTION
-     * @param state TODO PARAM DESCRIPTION
-     * @param cx TODO PARAM DESCRIPTION
-     * @param cy TODO PARAM DESCRIPTION
-     * @param cz TODO PARAM DESCRIPTION
-     * @param color TODO PARAM DESCRIPTION
-     * @param uv TODO PARAM DESCRIPTION
+     * @param ctx the render context (pose, consumer, light)
+     * @param snap the spike animation snapshot array
+     * @param state the chain marker render state
+     * @param cx the orb center X in block space
+     * @param cy the orb center Y in block space
+     * @param cz the orb center Z in block space
+     * @param color the packed ARGB spike color
+     * @param uv the fluid sprite UV rectangle
      */
     private static void emitSingleSpike(RenderContext ctx, int[] snap,
             ChainMarkerRenderState state, float cx, float cy, float cz,
@@ -649,10 +649,10 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Picks a seed perpendicular avoiding near-parallel alignment.
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param dirX the cone direction X component
+     * @param dirY the cone direction Y component
+     * @param dirZ the cone direction Z component
+     * @return a 3-element seed perpendicular vector
      */
     private static float[] seedPerp(float dirX, float dirY, float dirZ) {
         if (Math.abs(dirY) < DIRECTION_THRESHOLD) {
@@ -663,10 +663,10 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Gram-Schmidt orthonormalizes perp against dir in-place.
-     * @param perp TODO PARAM DESCRIPTION
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
+     * @param perp the perpendicular vector to orthonormalize
+     * @param dirX the reference direction X component
+     * @param dirY the reference direction Y component
+     * @param dirZ the reference direction Z component
      */
     private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
         float dot = perp[0] * dirX + perp[BASIS_PERP_Y] * dirY + perp[BASIS_PERP_Z] * dirZ;
@@ -713,21 +713,21 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * Emits one triangular segment of a spike cone.
-     * @param ctx TODO PARAM DESCRIPTION
-     * @param basis TODO PARAM DESCRIPTION
-     * @param color TODO PARAM DESCRIPTION
-     * @param uv TODO PARAM DESCRIPTION
-     * @param uMid TODO PARAM DESCRIPTION
-     * @param bx TODO PARAM DESCRIPTION
-     * @param by TODO PARAM DESCRIPTION
-     * @param bz TODO PARAM DESCRIPTION
-     * @param tipX TODO PARAM DESCRIPTION
-     * @param tipY TODO PARAM DESCRIPTION
-     * @param tipZ TODO PARAM DESCRIPTION
-     * @param dirX TODO PARAM DESCRIPTION
-     * @param dirY TODO PARAM DESCRIPTION
-     * @param dirZ TODO PARAM DESCRIPTION
-     * @param i TODO PARAM DESCRIPTION
+     * @param ctx the render context (pose, consumer, light)
+     * @param basis the orthonormal basis vectors
+     * @param color the packed ARGB cone color
+     * @param uv the fluid sprite UV rectangle
+     * @param uMid the U-axis midpoint for the tip vertex
+     * @param bx the cone base center X
+     * @param by the cone base center Y
+     * @param bz the cone base center Z
+     * @param tipX the cone tip X position
+     * @param tipY the cone tip Y position
+     * @param tipZ the cone tip Z position
+     * @param dirX the cone direction X for tip normal
+     * @param dirY the cone direction Y for tip normal
+     * @param dirZ the cone direction Z for tip normal
+     * @param i the segment index around the cone
      */
     private static void emitConeSegment(RenderContext ctx, float[] basis,
             int color, GooRenderUtil.UvRect uv, float uMid,
@@ -800,8 +800,8 @@ public class ChainMarkerBlockEntityRenderer
 
     /**
      * True for goo types that display a destructive-area ghost outline.
-     * @param type TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param type the goo type to check
+     * @return true if the type has a destructive-area ghost
      */
     private static boolean hasGhostOutline(GooType type) {
         return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST

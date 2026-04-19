@@ -138,7 +138,12 @@ public record CanisterFluidContent(Fluid fluid, int amount) {
         return Math.min(addAmount, space);
     }
 
-    /** Returns true if this content is empty or already holds the given fluid. */
+    /**
+     * Returns true if this content is empty or already holds the given fluid.
+     *
+     * @param candidate the fluid to test
+     * @return true if the candidate is compatible
+     */
     private boolean canAccept(Fluid candidate) {
         return isEmpty() || fluid == candidate;
     }

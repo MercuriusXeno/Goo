@@ -135,8 +135,8 @@ final class CanisterEntitySerializer {
 
     /**
      * Resolves the goo type ordinal from NBT, returning null for invalid values.
-     * @param slotTag TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param slotTag the compound tag for this slot
+     * @return the resolved goo type, or null if invalid
      */
     private static @Nullable GooType resolveGooType(CompoundTag slotTag) {
         GooType[] types = GooType.values();
@@ -146,9 +146,9 @@ final class CanisterEntitySerializer {
 
     /**
      * Deserializes the vanilla fluid from NBT into the stream array if present.
-     * @param slot TODO PARAM DESCRIPTION
-     * @param slotTag TODO PARAM DESCRIPTION
-     * @param slotStreamFluid TODO PARAM DESCRIPTION
+     * @param slot the slot index
+     * @param slotTag the compound tag for this slot
+     * @param slotStreamFluid per-slot stream fluids array (written in-place)
      */
     private static void deserializeSlotFluid(int slot, CompoundTag slotTag,
             @Nullable Fluid[] slotStreamFluid) {

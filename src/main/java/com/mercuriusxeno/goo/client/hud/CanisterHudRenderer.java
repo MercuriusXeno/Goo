@@ -206,9 +206,9 @@ public final class CanisterHudRenderer {
 
     /**
      * Routes to the appropriate slot-data extractor based on block entity type.
-     * @param be TODO PARAM DESCRIPTION
-     * @param slot TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param be the block entity at the target position
+     * @param slot the canister slot index
+     * @return slot data for the matched entity, or null
      */
     private static @Nullable SlotData dispatchSlotData(@Nullable BlockEntity be, int slot) {
         if (be instanceof TapBlockEntity tap) {
@@ -223,9 +223,9 @@ public final class CanisterHudRenderer {
 
     /**
      * Returns tap slot data only when the slot index matches the tap's dedicated slot.
-     * @param tap TODO PARAM DESCRIPTION
-     * @param slot TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param tap the tap block entity
+     * @param slot the requested slot index
+     * @return slot data if the slot matches, or null
      */
     private static @Nullable SlotData matchTapSlot(TapBlockEntity tap, int slot) {
         return slot == CanisterTargetResolver.TAP_SLOT ? lookupTapSlotData(tap) : null;
@@ -233,9 +233,9 @@ public final class CanisterHudRenderer {
 
     /**
      * Returns reactor slot data only when the slot index matches the reactor's output slot.
-     * @param reactor TODO PARAM DESCRIPTION
-     * @param slot TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param reactor the reactor block entity
+     * @param slot the requested slot index
+     * @return slot data if the slot matches, or null
      */
     private static @Nullable SlotData matchReactorSlot(ReactorBlockEntity reactor, int slot) {
         return slot == CanisterTargetResolver.REACTOR_SLOT ? lookupReactorSlotData(reactor) : null;

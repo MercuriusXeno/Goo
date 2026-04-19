@@ -374,9 +374,9 @@ public final class CubeHoleStyle implements NetherHoleStyle {
 
     /**
      * Fills 4 vertices of a face with the same normal vector.
-     * @param out TODO PARAM DESCRIPTION
-     * @param face TODO PARAM DESCRIPTION
-     * @param normal TODO PARAM DESCRIPTION
+     * @param out the stride-3 normal output array
+     * @param face the face index (0-5)
+     * @param normal the xyz unit normal for this face
      */
     private static void fillFaceNormals(float[] out, int face, float[] normal) {
         int base = face * CUBE_VERTICES_PER_FACE * CUBE_POS_STRIDE;

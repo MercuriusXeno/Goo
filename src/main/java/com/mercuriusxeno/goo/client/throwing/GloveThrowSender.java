@@ -32,6 +32,9 @@ public final class GloveThrowSender {
     /** In-flight throws toward chain markers, keyed by block position. */
     private static final Map<BlockPos, Integer> IN_FLIGHT = new HashMap<>();
 
+    /** Empty sentinel for unknown goo type (no chain profile). */
+    private static final int[] UNKNOWN_STACKS = new int[0];
+
     private GloveThrowSender() {}
 
     /**
@@ -144,9 +147,6 @@ public final class GloveThrowSender {
         int pending = IN_FLIGHT.getOrDefault(pos, 0);
         return currentAndMax[0] + pending >= currentAndMax[1];
     }
-
-    /** Empty sentinel for unknown goo type (no chain profile). */
-    private static final int[] UNKNOWN_STACKS = new int[0];
 
     /**
      * Returns [current, max] from the marker BE or chain profile, or empty if unknown.
@@ -261,9 +261,9 @@ public final class GloveThrowSender {
     }
 
     /** Builds the payload for non-None targets. Kept separate so the None early-exit
-     * @param target TODO PARAM DESCRIPTION
-     * @param typeId TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param target the resolved non-None aim target
+     * @param typeId the goo type registry id
+     * @return the constructed throw payload
      * reduces the switch to 4 arms and keeps CC within threshold. */
     private static BlobThrowPayload buildPayload(TargetResult target, String typeId) {
         return switch (target) {
@@ -277,9 +277,9 @@ public final class GloveThrowSender {
 
     /**
      * Builds a throw payload aimed at an entity.
-     * @param typeId TODO PARAM DESCRIPTION
-     * @param et TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param typeId the goo type registry id
+     * @param et the entity aim target
+     * @return the entity-targeted throw payload
      */
     private static BlobThrowPayload entityPayload(String typeId, TargetResult.EntityTarget et) {
         return new BlobThrowPayload(typeId, et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
@@ -287,9 +287,9 @@ public final class GloveThrowSender {
 
     /**
      * Builds a throw payload aimed at a block face.
-     * @param typeId TODO PARAM DESCRIPTION
-     * @param bt TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param typeId the goo type registry id
+     * @param bt the block face aim target
+     * @return the block-targeted throw payload
      */
     private static BlobThrowPayload blockPayload(String typeId, TargetResult.BlockTarget bt) {
         return new BlobThrowPayload(typeId, NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
@@ -297,9 +297,9 @@ public final class GloveThrowSender {
 
     /**
      * Builds a throw payload aimed at a chain marker, resolving its placed face.
-     * @param typeId TODO PARAM DESCRIPTION
-     * @param cmt TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param typeId the goo type registry id
+     * @param cmt the chain marker aim target
+     * @return the chain-marker-targeted throw payload
      */
     private static BlobThrowPayload chainMarkerPayload(String typeId, TargetResult.ChainMarkerTarget cmt) {
         int faceOrdinal = resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal();

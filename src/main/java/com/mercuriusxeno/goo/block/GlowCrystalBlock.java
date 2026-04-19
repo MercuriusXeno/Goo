@@ -221,11 +221,11 @@ public class GlowCrystalBlock extends Block {
 
     /**
      * Builds a shape anchored to the up or down face.
-     * @param facing TODO PARAM DESCRIPTION
-     * @param min TODO PARAM DESCRIPTION
-     * @param max TODO PARAM DESCRIPTION
-     * @param depth TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param facing vertical surface direction (UP or DOWN)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the Y-axis-anchored voxel shape
      */
     private static VoxelShape shapeAlongY(Direction facing, double min, double max, double depth) {
         return facing == Direction.UP
@@ -235,11 +235,11 @@ public class GlowCrystalBlock extends Block {
 
     /**
      * Builds a shape anchored to the north or south face.
-     * @param facing TODO PARAM DESCRIPTION
-     * @param min TODO PARAM DESCRIPTION
-     * @param max TODO PARAM DESCRIPTION
-     * @param depth TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param facing horizontal Z-axis direction (NORTH or SOUTH)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the Z-axis-anchored voxel shape
      */
     private static VoxelShape shapeAlongZ(Direction facing, double min, double max, double depth) {
         return facing == Direction.NORTH
@@ -249,11 +249,11 @@ public class GlowCrystalBlock extends Block {
 
     /**
      * Builds a shape anchored to the west or east face.
-     * @param facing TODO PARAM DESCRIPTION
-     * @param min TODO PARAM DESCRIPTION
-     * @param max TODO PARAM DESCRIPTION
-     * @param depth TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param facing horizontal X-axis direction (WEST or EAST)
+     * @param min lateral min in block fractions
+     * @param max lateral max in block fractions
+     * @param depth depth from the face in block fractions
+     * @return the X-axis-anchored voxel shape
      */
     private static VoxelShape shapeAlongX(Direction facing, double min, double max, double depth) {
         return facing == Direction.WEST

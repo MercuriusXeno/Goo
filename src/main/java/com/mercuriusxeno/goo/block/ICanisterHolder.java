@@ -205,10 +205,10 @@ public interface ICanisterHolder {
 
     /**
      * Reads stream state from the handler and writes it to the snapshot arrays if active.
-     * @param state TODO PARAM DESCRIPTION
-     * @param slot TODO PARAM DESCRIPTION
-     * @param h TODO PARAM DESCRIPTION
-     * @param tick TODO PARAM DESCRIPTION
+     * @param state the slotted container state
+     * @param slot the slot index
+     * @param h the slot fluid handler to read from
+     * @param tick the current game tick
      */
     private static void writeStreamSnapshot(
             SlottedCanisterState state, int slot, CanisterSlotFluidHandler h, long tick) {

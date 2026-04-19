@@ -184,7 +184,7 @@ public final class SlotOutlineRenderer {
 
     /**
      * True when the local player exists and is not sneaking (secondary use).
-     * @return TODO RETURN DESCRIPTION
+     * @return true if the player is present and not sneaking
      */
     private static boolean isPlayerStandingIdle() {
         var player = Minecraft.getInstance().player;
@@ -217,10 +217,10 @@ public final class SlotOutlineRenderer {
 
     /**
      * True when the aimed slot is occupied and the player is not sneaking to override.
-     * @param hit TODO PARAM DESCRIPTION
-     * @param pos TODO PARAM DESCRIPTION
-     * @param be TODO PARAM DESCRIPTION
-     * @return TODO RETURN DESCRIPTION
+     * @param hit the block hit result
+     * @param pos the canister block position
+     * @param be the canister block entity
+     * @return true if aiming at an occupied slot without sneaking
      */
     private static boolean isOccupiedSlotWithoutSneak(BlockHitResult hit, BlockPos pos,
             CanisterBlockEntity be) {
