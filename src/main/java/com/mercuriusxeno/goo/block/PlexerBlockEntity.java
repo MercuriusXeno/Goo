@@ -280,7 +280,10 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
             ItemStack stack = ref.entity.getCanister(ref.slot);
             if (stack.isEmpty()) { continue; }
             int removed = CanisterItem.removeGoo(stack, type, remaining);
-            remaining -= removed;
+            if (removed > 0) {
+                ref.entity.containerState().onSlotChanged();
+                remaining -= removed;
+            }
         }
     }
 

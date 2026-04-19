@@ -289,8 +289,9 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Renders both wheels with rotation around the X axis. The wheels
-     * are always on the east/west faces regardless of block facing.
+     * Renders both wheels, rotating them to match the block facing so
+     * they appear on the correct lateral sides (E/W for N/S facing,
+     * N/S for E/W facing).
      *
      * @param state         the render state
      * @param poseStack     the pose stack
@@ -298,8 +299,11 @@ public class ReactorBlockEntityRenderer
      */
     private static void submitWheels(ReactorRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
+        poseStack.pushPose();
+        rotateToFacing(poseStack, state.facing);
         submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, true);
         submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, false);
+        poseStack.popPose();
     }
 
     /**

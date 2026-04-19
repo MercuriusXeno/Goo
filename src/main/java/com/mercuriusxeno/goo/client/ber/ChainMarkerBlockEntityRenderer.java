@@ -87,6 +87,9 @@ public class ChainMarkerBlockEntityRenderer
     /** Extra scale bump when targeted. */
     private static final float TARGET_SCALE_BOOST = 1.15f;
 
+    /** Ticks for one full crystal animation cycle (slow drift). */
+    private static final int CRYSTAL_ANIM_PERIOD = 200;
+
     /** Index of the perp-Y component in the cone basis array. */
     private static final int BASIS_PERP_Y = 1;
     /** Index of the perp-Z component in the cone basis array. */
@@ -266,12 +269,18 @@ public class ChainMarkerBlockEntityRenderer
      */
     private static void extractCrystalState(ChainMarkerBlockEntity be,
             ChainMarkerRenderState state) {
-        if (be.getBehavior() instanceof CrystalBehavior crystal) {
+        if (be.getBehavior() instanceof CrystalBehavior crystal
+                && (crystal.getDensity() > 0f || crystal.isAnimating())) {
             state.crystalActive = true;
             state.crystalDensity = crystal.getDensity();
+            state.crystalRadiusFraction = crystal.getRadiusFraction();
+            long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0;
+            state.crystalAnimationTime = (float) gameTime;
         } else {
             state.crystalActive = false;
             state.crystalDensity = 0f;
+            state.crystalRadiusFraction = 0f;
+            state.crystalAnimationTime = 0f;
         }
     }
 
@@ -283,10 +292,23 @@ public class ChainMarkerBlockEntityRenderer
             return;
         }
         submitFuseOrb(state, poseStack, nodeCollector);
+        submitCrystalCloud(state, poseStack, nodeCollector);
         submitGhostOutline(state, poseStack, nodeCollector);
         if (state.metalActive && !state.spikeAnims.isEmpty()) {
             submitMetalSpikes(state, poseStack, nodeCollector);
         }
+    }
+
+    /** Copies the scene framebuffer and submits crystal shard geometry if active.
+     *
+     * @param state         the render state snapshot
+     * @param poseStack     the pose stack
+     * @param nodeCollector the render node collector
+     */
+    private static void submitCrystalCloud(ChainMarkerRenderState state,
+            PoseStack poseStack, SubmitNodeCollector nodeCollector) {
+        if (!state.crystalActive) { return; }
+        CrystalFissureRenderer.submit(state, poseStack, nodeCollector);
     }
 
     /**
@@ -331,9 +353,8 @@ public class ChainMarkerBlockEntityRenderer
         float implosion = state.behaviorActive
                 ? 1f : computeImplosionScale(state.fuseRemaining, state.partialTick);
         float pulse = computePulseScale(state);
-        float targetBoost = state.targeted ? TARGET_SCALE_BOOST : 1f;
         float spikeContract = computeSpikeContraction(state);
-        return implosion * pulse * targetBoost * spikeContract;
+        return implosion * pulse * spikeContract;
     }
 
     /**
@@ -804,8 +825,7 @@ public class ChainMarkerBlockEntityRenderer
      * @return true if the type has a destructive-area ghost
      */
     private static boolean hasGhostOutline(GooType type) {
-        return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST
-                || type == GooType.CRYSTAL;
+        return type == GooType.ROCK || type == GooType.BLAZE || type == GooType.FROST;
     }
 
     /** Computes ghost offsets with mined-layer and air-block filtering applied.
