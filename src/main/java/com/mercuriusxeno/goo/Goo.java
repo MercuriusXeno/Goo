@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo;
 
+import com.mercuriusxeno.goo.ability.AbilityLoader;
 import com.mercuriusxeno.goo.command.GooCommand;
 import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
@@ -129,6 +130,7 @@ public class Goo {
     @SubscribeEvent
     public void onAddReloadListeners(AddServerReloadListenersEvent event) {
         event.addListener(GooReactionLoader.LISTENER_ID, new GooReactionLoader());
+        event.addListener(AbilityLoader.LISTENER_ID, new AbilityLoader());
     }
 
     /**

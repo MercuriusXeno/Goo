@@ -1,0 +1,30 @@
+{
+  "gooType": "unstable",
+  "displayName": "goo.ability.unstable.proximity_mine",
+  "icon": "goo:textures/ability/proximity_mine.png",
+  "order": 2,
+  "cost": {
+    "formula": "power_law",
+    "baseCost": 2000,
+    "mult": 1.5
+  },
+  "chain": {
+    "fuseTicks": -1,
+    "maxStacks": 6,
+    "supportsFlatMode": false,
+    "rangeFormula": "constant",
+    "rangeValue": 1
+  },
+  "behaviors": [
+    {
+      "type": "explosion",
+      "params": {
+        "basePower": "2.5",
+        "powerPerStack": "1.0",
+        "proximityTrigger": "true",
+        "triggerRadius": "3.0"
+      }
+    }
+  ],
+  "tags": ["explosive", "trap"]
+}

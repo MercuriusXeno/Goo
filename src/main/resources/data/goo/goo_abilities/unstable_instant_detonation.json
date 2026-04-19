@@ -1,0 +1,30 @@
+{
+  "gooType": "unstable",
+  "displayName": "goo.ability.unstable.instant_detonation",
+  "icon": "goo:textures/ability/instant_detonation.png",
+  "order": 1,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1500,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "chain": {
+    "fuseTicks": 1,
+    "maxStacks": 4,
+    "supportsFlatMode": false,
+    "rangeFormula": "constant",
+    "rangeValue": 1
+  },
+  "behaviors": [
+    {
+      "type": "explosion",
+      "params": {
+        "basePower": "3.0",
+        "powerPerStack": "1.5"
+      }
+    }
+  ],
+  "tags": ["explosive", "instant"]
+}
