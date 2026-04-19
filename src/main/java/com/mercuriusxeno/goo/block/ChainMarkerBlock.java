@@ -100,7 +100,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         m.put(GooType.ROCK, ChainMarkerBlock::spawnRockParticles);
         m.put(GooType.NETHER, ChainMarkerBlock::spawnNetherParticles);
         m.put(GooType.METAL, ChainMarkerBlock::spawnMetalParticles);
-        m.put(GooType.CRYSTAL, ChainMarkerBlock::spawnCrystalParticles);
+        // Crystal uses shard cloud BER visual instead of ambient particles.
         PARTICLE_EMITTERS = Map.copyOf(m);
     }
 

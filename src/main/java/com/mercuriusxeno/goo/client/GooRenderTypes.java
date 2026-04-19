@@ -217,6 +217,58 @@ public final class GooRenderTypes {
                     .createRenderSetup()
     );
 
+    /**
+     * Voronoi fissure pipeline: procedural crack pattern on a sphere mesh.
+     * Translucent blend, depth test on (occluded by terrain), depth write off
+     * (cracks are overlay), cull off (visible from inside). Reserved for
+     * future use - not currently wired to any effect.
+     */
+    public static final RenderPipeline VORONOI_FISSURE = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/voronoi_fissure"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/voronoi_fissure"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/voronoi_fissure"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType for the voronoi fissure sphere (reserved, not wired). */
+    public static final RenderType VORONOI_FISSURE_TYPE = RenderType.create(
+            "goo_voronoi_fissure",
+            RenderSetup.builder(VORONOI_FISSURE)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
+    /**
+     * Crystal shard pipeline: translucent glass splinter quads scattered
+     * in a cloud volume. Depth test on, depth write off, cull off.
+     */
+    public static final RenderPipeline CRYSTAL_SHARD = RenderPipeline.builder(
+                    RenderPipelines.MATRICES_PROJECTION_SNIPPET,
+                    RenderPipelines.GLOBALS_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/crystal_shard"))
+            .withVertexShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/crystal_shard"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath(NAMESPACE, "core/crystal_shard"))
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(new DepthStencilState(
+                    DepthStencilState.DEFAULT.depthTest(), false))
+            .withCull(false)
+            .build();
+
+    /** RenderType that submits the crystal shard splinters with scene copy sampler. */
+    public static final RenderType CRYSTAL_SHARD_TYPE = RenderType.create(
+            "goo_crystal_shard",
+            RenderSetup.builder(CRYSTAL_SHARD)
+                    .setOutputTarget(OutputTarget.MAIN_TARGET)
+                    .createRenderSetup()
+    );
+
     private GooRenderTypes() {}
 
     /**
@@ -233,5 +285,7 @@ public final class GooRenderTypes {
         event.registerPipeline(LINES_NO_DEPTH_PIPELINE);
         event.registerPipeline(QUADS_NO_DEPTH_PIPELINE);
         event.registerPipeline(QUADS_ADDITIVE_NO_DEPTH_PIPELINE);
+        event.registerPipeline(VORONOI_FISSURE);
+        event.registerPipeline(CRYSTAL_SHARD);
     }
 }

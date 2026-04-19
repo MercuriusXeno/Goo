@@ -67,6 +67,12 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** Charge density [0-1] for crystal cloud visual scaling. */
     public float crystalDensity;
 
+    /** Slow cycling phase [0-1] for crystal crack drift animation. */
+    public float crystalAnimationTime;
+
+    /** Cloud radius fraction [0-1] for expand/contract animation. */
+    public float crystalRadiusFraction;
+
     /** True when a nether black-hole behavior is active on this marker.
      * The BER uses this flag to branch between the orb visual (false) and
      * the shader sphere (true). */

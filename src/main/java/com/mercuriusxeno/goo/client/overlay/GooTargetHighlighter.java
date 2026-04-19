@@ -299,6 +299,9 @@ public final class GooTargetHighlighter {
     private static TargetResult classifyBlockHit(Level level, BlockHitResult hit) {
         BlockPos pos = hit.getBlockPos();
         Direction face = hit.getDirection();
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity) {
+            return TargetResult.chainMarker(pos);
+        }
         if (level.getBlockState(pos).getBlock() instanceof GlowCrystalBlock) {
             return TargetResult.glowCrystal(pos, face);
         }
@@ -447,7 +450,21 @@ public final class GooTargetHighlighter {
         if (canAcceptMoreBlobs(mc.level, cmt.pos())) {
             VoxelHighlightRenderer.renderBlockShape(ps, buf, camera, cmt.pos(), selectedType);
         }
-        renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(), selectedType);
+        GooType blobType = resolveMarkerGooType(mc.level, cmt.pos());
+        renderChainMarkerBillboard(ps, buf, camera, mc, cmt.pos(),
+                blobType != null ? blobType : selectedType);
+    }
+
+    /** Reads the goo type from a chain marker BE, or null if unavailable.
+     *
+     * @param level the current level
+     * @param pos   the block position
+     * @return the marker's goo type, or null
+     */
+    private static @Nullable GooType resolveMarkerGooType(Level level, BlockPos pos) {
+        if (level == null) { return null; }
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return null; }
+        return be.getGooType();
     }
 
 
