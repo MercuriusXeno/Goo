@@ -17,10 +17,11 @@ import org.jspecify.annotations.NonNull;
  * @param targetPos      the target block position
  * @param targetFace     the target face ordinal
  * @param grannyArc      whether to use the boosted arc trajectory
+ * @param abilityId      the selected ability id string, or empty for legacy
  */
 public record BlobThrowPayload(String gooTypeId, int targetEntityId,
                                BlockPos targetPos, int targetFace,
-                               boolean grannyArc)
+                               boolean grannyArc, String abilityId)
         implements CustomPacketPayload {
 
     /** Payload type ID for registration. */
@@ -48,6 +49,7 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         buf.writeBlockPos(payload.targetPos);
         buf.writeVarInt(payload.targetFace);
         buf.writeBoolean(payload.grannyArc);
+        buf.writeUtf(payload.abilityId);
     }
 
     /**
@@ -62,6 +64,8 @@ public record BlobThrowPayload(String gooTypeId, int targetEntityId,
         BlockPos targetPos = buf.readBlockPos();
         int targetFace = buf.readVarInt();
         boolean grannyArc = buf.readBoolean();
-        return new BlobThrowPayload(gooTypeId, targetEntityId, targetPos, targetFace, grannyArc);
+        String abilityId = buf.readUtf();
+        return new BlobThrowPayload(gooTypeId, targetEntityId, targetPos, targetFace,
+                grannyArc, abilityId);
     }
 }

@@ -1,10 +1,12 @@
 package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
+import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.network.BlobThrowPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -12,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
@@ -34,6 +37,8 @@ public final class GloveThrowSender {
 
     /** Empty sentinel for unknown goo type (no chain profile). */
     private static final int[] UNKNOWN_STACKS = new int[0];
+    /** Empty ability id for legacy throws. */
+    private static final String LEGACY_ABILITY = "";
 
     private GloveThrowSender() {}
 
@@ -53,7 +58,8 @@ public final class GloveThrowSender {
             ThrowFreezeState.armThrowBlock();
             return;
         }
-        BlobThrowPayload payload = targetToPayload(target, gooType);
+        String abilityId = resolveAbilityId(player);
+        BlobThrowPayload payload = targetToPayload(target, gooType, abilityId);
         if (payload != null) {
             ThrowFreezeState.arm(target);
             trackInFlight(target);
@@ -253,24 +259,43 @@ public final class GloveThrowSender {
      *
      * @param target  the aim target
      * @param gooType the selected goo type
+     * @param abilityId the selected ability id string
      * @return the payload, or null for no target
      */
-    private static @Nullable BlobThrowPayload targetToPayload(TargetResult target, GooType gooType) {
+    private static @Nullable BlobThrowPayload targetToPayload(TargetResult target,
+            GooType gooType, String abilityId) {
         if (target instanceof TargetResult.None) { return null; }
-        return buildPayload(target, gooType.getId());
+        return buildPayload(target, gooType.getId(), abilityId);
+    }
+
+    /**
+     * Reads the ability ID from the player's glove, or empty for legacy.
+     * @param player    the local player
+     * @return the ability id, or empty for legacy
+     */
+    private static String resolveAbilityId(Player player) {
+        ItemStack glove = player.getMainHandItem();
+        if (!(glove.getItem() instanceof GooGloveItem)) {
+            glove = player.getOffhandItem();
+        }
+        GloveSelection sel = GooGloveItem.getSelection(glove);
+        if (sel != null && sel.hasAbility()) { return sel.abilityId(); }
+        return LEGACY_ABILITY;
     }
 
     /** Builds the payload for non-None targets. Kept separate so the None early-exit
      * @param target the resolved non-None aim target
      * @param typeId the goo type registry id
+     * @param abilityId the selected ability id string
      * @return the constructed throw payload
      * reduces the switch to 4 arms and keeps CC within threshold. */
-    private static BlobThrowPayload buildPayload(TargetResult target, String typeId) {
+    private static BlobThrowPayload buildPayload(TargetResult target, String typeId, String abilityId) {
         return switch (target) {
-            case TargetResult.EntityTarget et -> entityPayload(typeId, et);
-            case TargetResult.BlockTarget bt -> blockPayload(typeId, bt);
-            case TargetResult.ChainMarkerTarget cmt -> chainMarkerPayload(typeId, cmt);
-            case TargetResult.GlowCrystalTarget gct -> new BlobThrowPayload(typeId, NO_ENTITY, gct.pos(), gct.face().ordinal(), false);
+            case TargetResult.EntityTarget et -> entityPayload(typeId, et, abilityId);
+            case TargetResult.BlockTarget bt -> blockPayload(typeId, bt, abilityId);
+            case TargetResult.ChainMarkerTarget cmt -> chainMarkerPayload(typeId, cmt, abilityId);
+            case TargetResult.GlowCrystalTarget gct -> new BlobThrowPayload(typeId, NO_ENTITY,
+                    gct.pos(), gct.face().ordinal(), false, abilityId);
             default -> throw new IllegalArgumentException(target.toString());
         };
     }
@@ -279,31 +304,39 @@ public final class GloveThrowSender {
      * Builds a throw payload aimed at an entity.
      * @param typeId the goo type registry id
      * @param et the entity aim target
+     * @param abilityId the selected ability id string
      * @return the entity-targeted throw payload
      */
-    private static BlobThrowPayload entityPayload(String typeId, TargetResult.EntityTarget et) {
-        return new BlobThrowPayload(typeId, et.entity().getId(), BlockPos.ZERO, NO_ENTITY, false);
+    private static BlobThrowPayload entityPayload(String typeId,
+            TargetResult.EntityTarget et, String abilityId) {
+        return new BlobThrowPayload(typeId, et.entity().getId(), BlockPos.ZERO, NO_ENTITY,
+                false, abilityId);
     }
 
     /**
      * Builds a throw payload aimed at a block face.
      * @param typeId the goo type registry id
      * @param bt the block face aim target
+     * @param abilityId the selected ability id string
      * @return the block-targeted throw payload
      */
-    private static BlobThrowPayload blockPayload(String typeId, TargetResult.BlockTarget bt) {
-        return new BlobThrowPayload(typeId, NO_ENTITY, bt.pos(), bt.face().ordinal(), bt.grannyArc());
+    private static BlobThrowPayload blockPayload(String typeId,
+            TargetResult.BlockTarget bt, String abilityId) {
+        return new BlobThrowPayload(typeId, NO_ENTITY, bt.pos(), bt.face().ordinal(),
+                bt.grannyArc(), abilityId);
     }
 
     /**
      * Builds a throw payload aimed at a chain marker, resolving its placed face.
      * @param typeId the goo type registry id
      * @param cmt the chain marker aim target
+     * @param abilityId the selected ability id string
      * @return the chain-marker-targeted throw payload
      */
-    private static BlobThrowPayload chainMarkerPayload(String typeId, TargetResult.ChainMarkerTarget cmt) {
+    private static BlobThrowPayload chainMarkerPayload(String typeId,
+            TargetResult.ChainMarkerTarget cmt, String abilityId) {
         int faceOrdinal = resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal();
-        return new BlobThrowPayload(typeId, NO_ENTITY, cmt.pos(), faceOrdinal, false);
+        return new BlobThrowPayload(typeId, NO_ENTITY, cmt.pos(), faceOrdinal, false, abilityId);
     }
 
     /**

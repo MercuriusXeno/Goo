@@ -28,6 +28,8 @@ public final class ChainMarkerFallScheduler {
     private static final int NO_ENTITY = -1;
     /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
+    /** Empty ability id for legacy (non-ability) flight payloads. */
+    private static final String LEGACY_ABILITY = "";
 
     private static final List<PendingFall> PENDING_FALLS = new ArrayList<>();
 
@@ -112,7 +114,8 @@ public final class ChainMarkerFallScheduler {
                 landingPos,
                 Direction.UP.ordinal(),
                 travelTicks,
-                false);
+                false,
+                LEGACY_ABILITY);
         PacketDistributor.sendToPlayersTrackingChunk(
                 level, level.getChunkAt(oldPos).getPos(), flight);
     }

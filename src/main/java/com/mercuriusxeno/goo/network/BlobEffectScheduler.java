@@ -96,7 +96,8 @@ final class BlobEffectScheduler {
         Direction face = BlobThrowHandler.directionFromOrdinal(payload.targetFace());
         PENDING_EFFECTS.add(new PendingEffect(
                 arrivalTick, level, player, gooType,
-                payload.targetEntityId(), payload.targetPos(), face));
+                payload.targetEntityId(), payload.targetPos(), face,
+                payload.abilityId()));
     }
 
     /**
@@ -185,5 +186,5 @@ final class BlobEffectScheduler {
     record PendingEffect(int arrivalTick, ServerLevel level,
                          ServerPlayer thrower, GooType gooType,
                          int targetEntityId, BlockPos targetPos,
-                         Direction targetFace) {}
+                         Direction targetFace, String abilityId) {}
 }
