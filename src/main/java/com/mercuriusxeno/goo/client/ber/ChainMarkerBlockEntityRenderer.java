@@ -57,6 +57,15 @@ public class ChainMarkerBlockEntityRenderer
     private static final Identifier BLOCK_ATLAS =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
+    /** Blob shape constant for flat visual. */
+    private static final String SHAPE_FLAT = "flat";
+    /** Area mode constant for tunnel delivery. */
+    private static final String MODE_TUNNEL = "tunnel";
+    /** Area mode constant for sphere delivery. */
+    private static final String MODE_SPHERE = "sphere";
+    /** Area mode constant for flat circle delivery. */
+    private static final String MODE_FLAT_CIRCLE = "flat_circle";
+
     /** Base inner core half-size in block units (2 pixels) at 1 stack. */
     private static final float CORE_BASE = 2f / 16f;
 
@@ -212,7 +221,8 @@ public class ChainMarkerBlockEntityRenderer
         state.maxStacks = be.getMaxStacks();
         state.fuseRemaining = be.getFuseRemaining();
         state.partialTick = partialTick;
-        state.flatMode = be.isFlatMode();
+        state.blobShape = be.getBlobShape();
+        state.areaMode = be.getAreaMode();
         state.lastStackTick = be.getLastStackTick();
         state.gameTime = be.getLevel() != null
                 ? be.getLevel().getGameTime() + partialTick : 0f;
@@ -368,7 +378,7 @@ public class ChainMarkerBlockEntityRenderer
             float coreHalf, float modifier) {
         if (state.gooType == GooType.GLOW) {
             applyGlowScale(poseStack, state, coreHalf);
-        } else if (state.flatMode) {
+        } else if (SHAPE_FLAT.equals(state.blobShape)) {
             applySplatScale(poseStack, state.placedFace, modifier);
         } else {
             poseStack.scale(modifier, modifier, modifier);
@@ -520,7 +530,7 @@ public class ChainMarkerBlockEntityRenderer
      */
     private static void applyGlowScale(PoseStack poseStack,
             ChainMarkerRenderState state, float coreHalf) {
-        float visibleDepth = (float) (state.flatMode
+        float visibleDepth = (float) (SHAPE_FLAT.equals(state.blobShape)
                 ? GlowCrystalBlock.FLAT_DEPTH : GlowCrystalBlock.BUMP_DEPTH);
         float depthScale = visibleDepth / coreHalf;
         Direction face = state.placedFace;
@@ -801,7 +811,7 @@ public class ChainMarkerBlockEntityRenderer
         int fillColor = (GHOST_FILL_ALPHA << ALPHA_SHIFT) | edgeRgb;
         int wireColor = (GHOST_WIRE_ALPHA << ALPHA_SHIFT) | edgeRgb;
 
-        Direction blastDir = state.flatMode ? null : state.placedFace.getOpposite();
+        Direction blastDir = MODE_TUNNEL.equals(state.areaMode) ? state.placedFace.getOpposite() : null;
         int minedLayers = state.minedLayers;
         submitGhostFill(poseStack, nodeCollector, offsets, filled, fillColor, blastDir, minedLayers);
         submitGhostWireframe(poseStack, nodeCollector, offsets, filled, wireColor, blastDir, minedLayers);
@@ -883,18 +893,14 @@ public class ChainMarkerBlockEntityRenderer
      * @return the block offsets for the ghost outline
      */
     private static List<int[]> computeGhostOffsets(GooType type, ChainMarkerRenderState state) {
-        if (!state.flatMode) {
-            if (type == GooType.FROST) {
-                int radius = EffectMath.computeFreezeRadius(state.stackCount);
-                return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
-            }
-            if (type == GooType.CRYSTAL) {
-                int radius = (int) CrystalBehavior.CLOUD_RADIUS;
-                return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
-            }
+        if (MODE_SPHERE.equals(state.areaMode)) {
+            int radius = EffectMath.computeFreezeRadius(state.stackCount);
+            return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
         }
-        return ChainFootprint.computeRegionOffsets(
-                state.stackCount, state.flatMode, state.placedFace);
+        if (MODE_FLAT_CIRCLE.equals(state.areaMode)) {
+            return ChainFootprint.computeRegionOffsets(state.stackCount, true, state.placedFace);
+        }
+        return ChainFootprint.computeRegionOffsets(state.stackCount, false, state.placedFace);
     }
 
     /**

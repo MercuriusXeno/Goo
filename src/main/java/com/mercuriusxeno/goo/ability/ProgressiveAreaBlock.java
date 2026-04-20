@@ -45,7 +45,6 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private static final String TAG_LAYER_DEPTH = "AreaLayerDepth";
     private static final String TAG_STACK_SNAPSHOT = "AreaStackSnapshot";
     private static final String TAG_FACE_SNAPSHOT = "AreaFace";
-    private static final String TAG_FLAT_MODE = "AreaFlatMode";
 
     private final String areaMode;
     private final String blockAction;
@@ -56,7 +55,6 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private int layerDepth;
     private int stackCount;
     private Direction placedFace = Direction.UP;
-    private boolean flatMode;
 
     /**
      * Creates a progressive area behavior with the given configuration.
@@ -97,16 +95,13 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
         initAreaMode();
     }
 
-    /** Sets flatMode and layerDepth based on the configured areaMode string. */
+    /** Sets layerDepth based on the configured areaMode string. */
     private void initAreaMode() {
         if (AREA_SPHERE.equals(areaMode)) {
-            this.flatMode = false;
             this.layerDepth = EffectMath.computeFreezeRadius(stackCount);
         } else if (AREA_TUNNEL.equals(areaMode)) {
-            this.flatMode = false;
             this.layerDepth = ChainFootprint.tunnelDepth(stackCount);
         } else {
-            this.flatMode = true;
             this.layerDepth = 1;
         }
     }
@@ -139,9 +134,10 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param pos   the marker block position
      */
     private void previewLayer(ServerLevel level, BlockPos pos) {
+        boolean flat = isFlatArea();
         switch (particleStyle) {
             case STYLE_BLAZE -> BlazeExecutor.previewLayer(level, pos, placedFace,
-                    pipelineTick, stackCount, flatMode);
+                    pipelineTick, stackCount, flat);
             case STYLE_FROST -> {} // Frost has no preview particles yet
             default -> RockExecutor.previewLayer(level, pos, placedFace, pipelineTick);
         }
@@ -158,14 +154,23 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
             applySphereShell(level, pos, layerIndex);
             return;
         }
+        boolean flat = isFlatArea();
         switch (blockAction) {
             case ACTION_FORTUNE_SMELT -> BlazeExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flatMode);
+                    layerIndex, stackCount, flat);
             case ACTION_FREEZE -> FrostExecutor.freezeLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flatMode);
+                    layerIndex, stackCount, flat);
             default -> RockExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flatMode);
+                    layerIndex, stackCount, flat);
         }
+    }
+
+    /** Returns true if this behavior uses flat area mode.
+     *
+     * @return true for flat_circle area mode
+     */
+    private boolean isFlatArea() {
+        return !AREA_TUNNEL.equals(areaMode) && !AREA_SPHERE.equals(areaMode);
     }
 
     /** Applies a single spherical shell at the given radius.
@@ -186,7 +191,6 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
         output.putInt(TAG_LAYER_DEPTH, layerDepth);
         output.putInt(TAG_STACK_SNAPSHOT, stackCount);
         output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
-        output.putBoolean(TAG_FLAT_MODE, flatMode);
     }
 
     @Override
@@ -194,7 +198,6 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
         pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
         layerDepth = input.getIntOr(TAG_LAYER_DEPTH, 0);
         stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
-        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE);
         Direction dir = Direction.byName(faceName);
         placedFace = dir != null ? dir : Direction.UP;

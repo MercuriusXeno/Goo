@@ -9,8 +9,7 @@
   },
   "chain": {
     "fuseTicks": 30,
-    "maxStacks": 8,
-    "supportsFlatMode": true
+    "maxStacks": 8
   },
   "behaviors": [
     {

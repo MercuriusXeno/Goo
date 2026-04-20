@@ -64,7 +64,7 @@ public final class CrystalBehavior implements ChainBehavior {
         this.chargesRemaining = be.getStackCount() * CHARGES_PER_BLOB;
         this.maxCharges = chargesRemaining;
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
+        this.flatMode = false;
         this.tickCounter = 0;
         this.expandTicks = ANIM_DURATION;
     }
@@ -87,11 +87,11 @@ public final class CrystalBehavior implements ChainBehavior {
      * @param be the owning block entity
      */
     private void checkFlatModeToggle(ChainMarkerBlockEntity be) {
-        if (!flatMode && be.isFlatMode()) {
+        if (!flatMode && false) {
             flatMode = true;
             contractTicks = ANIM_DURATION;
             expandTicks = 0;
-        } else if (flatMode && !be.isFlatMode()) {
+        } else if (flatMode && !false) {
             flatMode = false;
             expandTicks = ANIM_DURATION;
             contractTicks = 0;

@@ -36,7 +36,7 @@ public final class BlazeBehavior implements ChainBehavior {
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.stackCount = be.getStackCount();
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
+        this.flatMode = false;
         this.miningDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
         this.pipelineTick = 0;
     }

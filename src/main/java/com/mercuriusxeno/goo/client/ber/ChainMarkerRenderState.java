@@ -33,8 +33,11 @@ public class ChainMarkerRenderState extends BlockEntityRenderState {
     /** True when the player's crosshair is on this block. */
     public boolean targeted;
 
-    /** True when flat mining mode is active. */
-    public boolean flatMode;
+    /** Cosmetic blob shape: "blob" or "flat". */
+    public String blobShape = "blob";
+
+    /** Delivery area mode: "tunnel", "flat_circle", or "sphere". */
+    public String areaMode = "tunnel";
 
     /** Game tick when the last stack was added (for pulse animation). */
     public long lastStackTick;

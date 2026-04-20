@@ -75,26 +75,31 @@ public record AbilityDefinition(
     /**
      * Chain marker parameters for abilities that use the chain system.
      *
-     * @param fuseTicks        fuse countdown (-1 for trigger-based)
-     * @param maxStacks        maximum blob stacks
-     * @param supportsFlatMode whether flat mode toggle is available
-     * @param rangeFormula     range formula name (constant, tunnel_depth, freeze_radius, etc.)
-     * @param rangeValue       base value for constant range formulas
+     * @param fuseTicks    fuse countdown (-1 for trigger-based)
+     * @param maxStacks    maximum blob stacks
+     * @param blobShape    cosmetic blob shape: "blob" (default) or "flat" (squished)
+     * @param rangeFormula range formula name (constant, tunnel_depth, freeze_radius, etc.)
+     * @param rangeValue   base value for constant range formulas
      */
     public record ChainConfig(
             int fuseTicks,
             int maxStacks,
-            boolean supportsFlatMode,
+            String blobShape,
             String rangeFormula,
             int rangeValue
     ) {
+        /** Default blob shape. */
+        public static final String SHAPE_BLOB = "blob";
+        /** Squished blob shape. */
+        public static final String SHAPE_FLAT = "flat";
+
         /** Default chain config for abilities that don't specify one. */
-        static final ChainConfig DEFAULT = new ChainConfig(30, 1, false, "constant", 1);
+        static final ChainConfig DEFAULT = new ChainConfig(30, 1, SHAPE_BLOB, "constant", 1);
 
         static final Codec<ChainConfig> CODEC = RecordCodecBuilder.create(inst -> inst.group(
                 Codec.INT.optionalFieldOf("fuseTicks", 30).forGetter(ChainConfig::fuseTicks),
                 Codec.INT.optionalFieldOf("maxStacks", 1).forGetter(ChainConfig::maxStacks),
-                Codec.BOOL.optionalFieldOf("supportsFlatMode", false).forGetter(ChainConfig::supportsFlatMode),
+                Codec.STRING.optionalFieldOf("blobShape", SHAPE_BLOB).forGetter(ChainConfig::blobShape),
                 Codec.STRING.optionalFieldOf("rangeFormula", "constant").forGetter(ChainConfig::rangeFormula),
                 Codec.INT.optionalFieldOf("rangeValue", 1).forGetter(ChainConfig::rangeValue)
         ).apply(inst, ChainConfig::new));

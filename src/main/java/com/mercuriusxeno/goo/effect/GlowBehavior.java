@@ -25,7 +25,7 @@ public final class GlowBehavior implements ChainBehavior {
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         CrystalSize size = CrystalSize.fromStacks(be.getStackCount());
-        CrystalShape shape = be.isFlatMode() ? CrystalShape.FLAT : CrystalShape.BUMP;
+        CrystalShape shape = be.isFlatBlob() ? CrystalShape.FLAT : CrystalShape.BUMP;
         Direction facing = be.getPlacedFace();
 
         BlockState crystal = GooBlocks.GLOW_CRYSTAL.get().defaultBlockState()

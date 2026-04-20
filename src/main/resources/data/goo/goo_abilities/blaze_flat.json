@@ -9,7 +9,7 @@
   "chain": {
     "fuseTicks": 30,
     "maxStacks": 28,
-    "supportsFlatMode": false
+    "blobShape": "flat"
   },
   "behaviors": [
     {

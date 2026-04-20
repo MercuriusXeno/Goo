@@ -13,7 +13,6 @@
   "chain": {
     "fuseTicks": 1,
     "maxStacks": 4,
-    "supportsFlatMode": false,
     "rangeFormula": "constant",
     "rangeValue": 1
   },

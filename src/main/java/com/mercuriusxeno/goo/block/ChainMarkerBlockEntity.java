@@ -46,9 +46,16 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private static final String DEFAULT_GOO_TYPE = "rock";
     /** Default face name when loading from NBT. */
     private static final String DEFAULT_FACE = "up";
-    private static final String TAG_FLAT_MODE = "FlatMode";
+    private static final String TAG_BLOB_SHAPE = "BlobShape";
+    private static final String TAG_AREA_MODE = "AreaMode";
     private static final String TAG_LAST_STACK_TICK = "LastStackTick";
     private static final String TAG_ABILITY_ID = "AbilityId";
+    /** Default area mode for legacy profiles. */
+    private static final String DEFAULT_AREA_MODE = "tunnel";
+    /** Behavior type key for progressive_area (used to extract areaMode). */
+    private static final String PROGRESSIVE_AREA_TYPE = "progressive_area";
+    /** Param key for area mode in progressive_area behaviors. */
+    private static final String PARAM_AREA_MODE = "areaMode";
     /** Empty ability id sentinel for legacy ChainProfile path. */
     private static final String NO_ABILITY = "";
 
@@ -62,8 +69,10 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private int maxStacks = 1;
     private int fuseRemaining;
     private Direction placedFace = Direction.UP;
-    /** True when the marker is in flat (perpendicular) mining mode. */
-    private boolean flatMode;
+    /** Cosmetic blob shape: "blob" or "flat". Affects BER mesh only. */
+    private String blobShape = AbilityDefinition.ChainConfig.SHAPE_BLOB;
+    /** Delivery area mode: "tunnel", "flat_circle", or "sphere". Drives footprint. */
+    private String areaMode = DEFAULT_AREA_MODE;
     /** Game tick when the last stack was added (for client pulse animation). */
     private long lastStackTick;
     /** Active post-fuse behavior; null during FUSE phase. Set at fuse
@@ -118,8 +127,24 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         this.maxStacks = chain.maxStacks();
         this.fuseRemaining = chain.fuseTicks();
         this.abilityId = ability.id().toString();
+        this.blobShape = chain.blobShape();
+        this.areaMode = extractAreaMode(ability);
         setChanged();
         syncToClient();
+    }
+
+    /** Extracts the areaMode from the first progressive_area behavior entry.
+     *
+     * @param ability the ability definition
+     * @return the area mode string, or "tunnel" if none found
+     */
+    private static String extractAreaMode(AbilityDefinition ability) {
+        for (AbilityDefinition.BehaviorEntry entry : ability.behaviors()) {
+            if (PROGRESSIVE_AREA_TYPE.equals(entry.type())) {
+                return entry.params().getOrDefault(PARAM_AREA_MODE, DEFAULT_AREA_MODE);
+            }
+        }
+        return DEFAULT_AREA_MODE;
     }
 
 
@@ -165,16 +190,18 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      * Restores full state after a fall re-placement. Called by
      * {@link ChainMarkerFallScheduler} after the flight animation completes.
      *
-     * @param stacks  the snapshotted stack count
-     * @param max     the snapshotted max stacks
-     * @param fuse    the snapshotted fuse remaining
-     * @param flat    the snapshotted flat mode
+     * @param stacks    the snapshotted stack count
+     * @param max       the snapshotted max stacks
+     * @param fuse      the snapshotted fuse remaining
+     * @param shape     the snapshotted blob shape
+     * @param area      the snapshotted area mode
      */
-    public void restoreFromFall(int stacks, int max, int fuse, boolean flat) {
+    public void restoreFromFall(int stacks, int max, int fuse, String shape, String area) {
         this.stackCount = stacks;
         this.maxStacks = max;
         this.fuseRemaining = fuse;
-        this.flatMode = flat;
+        this.blobShape = shape;
+        this.areaMode = area;
         setChanged();
         syncToClient();
     }
@@ -203,29 +230,28 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         syncToClient();
     }
 
-    /**
-     * Toggles between tunnel and flat mining mode. Resets the fuse
-     * so the player has time to stack more after toggling.
+    /** Returns the cosmetic blob shape ("blob" or "flat").
+     *
+     * @return the blob shape string
      */
-    public void toggleFlatMode() {
-        flatMode = !flatMode;
-        if (behavior == null) {
-            ChainProfile profile = ChainProfile.forType(gooType);
-            if (profile != null) {
-                fuseRemaining = profile.fuseTicks();
-            }
-        }
-        setChanged();
-        syncToClient();
+    public String getBlobShape() {
+        return blobShape;
     }
 
-    /**
-     * Returns true if this marker is in flat mining mode.
+    /** Returns the delivery area mode ("tunnel", "flat_circle", or "sphere").
      *
-     * @return true for flat mode, false for tunnel
+     * @return the area mode string
      */
-    public boolean isFlatMode() {
-        return flatMode;
+    public String getAreaMode() {
+        return areaMode;
+    }
+
+    /** Returns true if the blob should render as squished (flat shape).
+     *
+     * @return true for flat blob visual
+     */
+    public boolean isFlatBlob() {
+        return AbilityDefinition.ChainConfig.SHAPE_FLAT.equals(blobShape);
     }
 
     /**
@@ -421,7 +447,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         stackCount = input.getIntOr(TAG_STACK_COUNT, 1);
         maxStacks = input.getIntOr(TAG_MAX_STACKS, 1);
         fuseRemaining = input.getIntOr(TAG_FUSE_REMAINING, 0);
-        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
+        blobShape = input.getStringOr(TAG_BLOB_SHAPE, AbilityDefinition.ChainConfig.SHAPE_BLOB);
+        areaMode = input.getStringOr(TAG_AREA_MODE, DEFAULT_AREA_MODE);
         lastStackTick = input.getLongOr(TAG_LAST_STACK_TICK, 0);
         abilityId = input.getStringOr(TAG_ABILITY_ID, NO_ABILITY);
     }
@@ -462,7 +489,8 @@ public class ChainMarkerBlockEntity extends BlockEntity {
         output.putInt(TAG_MAX_STACKS, maxStacks);
         output.putInt(TAG_FUSE_REMAINING, fuseRemaining);
         output.putString(TAG_PLACED_FACE, placedFace.getName());
-        output.putBoolean(TAG_FLAT_MODE, flatMode);
+        output.putString(TAG_BLOB_SHAPE, blobShape);
+        output.putString(TAG_AREA_MODE, areaMode);
         output.putLong(TAG_LAST_STACK_TICK, lastStackTick);
         output.putString(TAG_ABILITY_ID, abilityId);
         if (behavior != null) {

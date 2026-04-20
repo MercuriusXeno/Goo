@@ -11,7 +11,6 @@
   "chain": {
     "fuseTicks": -1,
     "maxStacks": 6,
-    "supportsFlatMode": false,
     "rangeFormula": "constant",
     "rangeValue": 1
   },

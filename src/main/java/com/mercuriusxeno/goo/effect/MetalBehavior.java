@@ -119,14 +119,14 @@ public final class MetalBehavior implements ChainBehavior {
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
+        this.flatMode = false;
         this.lastKnownStacks = be.getStackCount();
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         lastKnownStacks = be.getStackCount();
-        flatMode = be.isFlatMode();
+        flatMode = false;
         if (spikeCooldown > 0) { spikeCooldown--; }
         advanceAndCleanAnims(level, pos);
         if (!flatMode && lastKnownStacks > 0) {

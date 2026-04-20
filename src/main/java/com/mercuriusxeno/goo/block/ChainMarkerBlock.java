@@ -1,7 +1,6 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -11,8 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -180,9 +177,9 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
             return SELECTION_SHAPE;
         }
         if (be.getGooType() == GooType.GLOW) {
-            return computeGlowShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
+            return computeGlowShape(be.getStackCount(), be.getPlacedFace(), be.isFlatBlob());
         }
-        return computeOrbShape(be.getStackCount(), be.getPlacedFace(), be.isFlatMode());
+        return computeOrbShape(be.getStackCount(), be.getPlacedFace(), be.isFlatBlob());
     }
 
     /**
@@ -226,8 +223,6 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         ChainMarkerBlockEntity be = (ChainMarkerBlockEntity) level.getBlockEntity(pos);
         if (be.getGooType() == GooType.UNSTABLE && !level.isClientSide()) {
             be.instantDetonate();
-        } else {
-            tryToggleFlatMode(level, pos, be);
         }
         return false;
     }
@@ -243,20 +238,6 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
                 || (be.getBehavior() != null && !be.getBehavior().allowsTopOff());
     }
 
-    /** Toggles flat mode on the marker if the goo type supports it.
-     *
-     * @param level the current level
-     * @param pos   the block position
-     * @param be    the chain marker block entity
-     */
-    private static void tryToggleFlatMode(Level level, BlockPos pos, ChainMarkerBlockEntity be) {
-        if (!canToggleFlatMode(level, pos)) { return; }
-        if (level.isClientSide()) { return; }
-        be.toggleFlatMode();
-        level.playSound(null, pos, SoundEvents.SLIME_SQUISH,
-                SoundSource.BLOCKS, 1.0f,
-                be.isFlatMode() ? FLAT_MODE_PITCH : TUNNEL_MODE_PITCH);
-    }
 
     /**
      * Builds a voxel shape matching the BER orb at the face boundary.
@@ -394,7 +375,8 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         level.removeBlock(pos, false);
         ChainMarkerFallScheduler.scheduleFall(level, pos, landing,
                 state.getBlock(), be.getGooType(), be.getStackCount(),
-                be.getMaxStacks(), be.getFuseRemaining(), be.getPlacedFace(), be.isFlatMode());
+                be.getMaxStacks(), be.getFuseRemaining(), be.getPlacedFace(),
+                be.getBlobShape(), be.getAreaMode());
     }
 
     /**
@@ -437,38 +419,14 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
     }
 
 
-    /**
-     * Returns true if the marker at pos is a rock/blaze type still in fuse phase.
-     *
-     * @param level the current level
-     * @param pos   the marker block position
-     * @return true if flat mode can be toggled
-     */
-    private static boolean canToggleFlatMode(Level level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
-        if (be.getBehavior() != null && !be.getBehavior().allowsTopOff()) { return false; }
-        return supportsFlatMode(be.getGooType());
-    }
-
-    /** Returns true if this marker should be unbreakable (punch toggles
-     * flat mode instead). Protects fuse-phase markers and post-fuse
-     * markers whose behavior supports top-off (metal, crystal).
+    /** Returns true if this marker should be unbreakable during fuse phase
+     * or if its behavior supports top-off (metal, crystal).
      *
      * @param be the chain marker block entity
      * @return true if breaking should be prevented
      */
     private static boolean isProtectedFromBreaking(ChainMarkerBlockEntity be) {
         return be.getBehavior() == null || be.getBehavior().allowsTopOff();
-    }
-
-    /** Goo types that support flat/tunnel mode toggling.
-     *
-     * @param type the goo type to check
-     * @return true if the type supports flat mode
-     */
-    private static boolean supportsFlatMode(GooType type) {
-        ChainProfile profile = ChainProfile.forType(type);
-        return profile != null && profile.supportsFlatMode();
     }
 
 
