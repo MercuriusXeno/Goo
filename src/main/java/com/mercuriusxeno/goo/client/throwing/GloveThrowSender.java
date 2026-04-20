@@ -51,8 +51,7 @@ public final class GloveThrowSender {
      * @param gooType the selected goo type to throw
      */
     public static void sendThrow(Player player, GooType gooType) {
-        if (!GloveUseTracker.isSelectedTypeAvailable()) { return; }
-        if (ThrowFreezeState.isThrowBlocked()) { return; }
+        if (!canThrow(player)) { return; }
         TargetResult target = resolveAimTarget(player);
         if (wouldExceedMaxStacks(target, gooType)) {
             ThrowFreezeState.armThrowBlock();
@@ -65,6 +64,17 @@ public final class GloveThrowSender {
             trackInFlight(target);
             sendPayload(payload);
         }
+    }
+
+    /** Pre-throw validation: goo available, not throw-blocked, ability selected.
+     *
+     * @param player the local player
+     * @return true if throwing is allowed
+     */
+    private static boolean canThrow(Player player) {
+        return GloveUseTracker.isSelectedTypeAvailable()
+                && !ThrowFreezeState.isThrowBlocked()
+                && hasAbilitySelected(player);
     }
 
     /**
@@ -266,6 +276,21 @@ public final class GloveThrowSender {
             GooType gooType, String abilityId) {
         if (target instanceof TargetResult.None) { return null; }
         return buildPayload(target, gooType.getId(), abilityId);
+    }
+
+    /** Returns true if the player's glove has an ability selected.
+     * Throws are suppressed when no ability is chosen.
+     *
+     * @param player the local player
+     * @return true if an ability is selected
+     */
+    private static boolean hasAbilitySelected(Player player) {
+        ItemStack glove = player.getMainHandItem();
+        if (!(glove.getItem() instanceof GooGloveItem)) {
+            glove = player.getOffhandItem();
+        }
+        GloveSelection sel = GooGloveItem.getSelection(glove);
+        return sel != null && sel.hasAbility();
     }
 
     /**

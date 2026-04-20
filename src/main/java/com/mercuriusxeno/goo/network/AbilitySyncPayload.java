@@ -45,7 +45,7 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
         for (GooType type : GooType.values()) {
             for (AbilityDefinition def : AbilityRegistry.getAbilitiesForType(type)) {
                 entries.add(new Entry(def.id().toString(), type.getId(),
-                        def.displayName(), def.icon(), def.order()));
+                        def.displayName(), def.icon(), def.order(), def.tags()));
             }
         }
         return new AbilitySyncPayload(entries);
@@ -59,7 +59,13 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
             buf.writeUtf(e.displayName);
             buf.writeUtf(e.icon);
             buf.writeVarInt(e.order);
+            encodeTags(buf, e.tags);
         }
+    }
+
+    private static void encodeTags(FriendlyByteBuf buf, List<String> tags) {
+        buf.writeVarInt(tags.size());
+        for (String tag : tags) { buf.writeUtf(tag); }
     }
 
     private static AbilitySyncPayload decode(FriendlyByteBuf buf) {
@@ -67,9 +73,16 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
         List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             entries.add(new Entry(buf.readUtf(), buf.readUtf(), buf.readUtf(),
-                    buf.readUtf(), buf.readVarInt()));
+                    buf.readUtf(), buf.readVarInt(), decodeTags(buf)));
         }
         return new AbilitySyncPayload(entries);
+    }
+
+    private static List<String> decodeTags(FriendlyByteBuf buf) {
+        int tagCount = buf.readVarInt();
+        List<String> tags = new ArrayList<>(tagCount);
+        for (int j = 0; j < tagCount; j++) { tags.add(buf.readUtf()); }
+        return List.copyOf(tags);
     }
 
     /**
@@ -80,7 +93,8 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
      * @param displayName the translation key
      * @param icon        the icon texture path override (empty for convention path)
      * @param order       the sort order within the type
+     * @param tags        categorical tags for targeting and display
      */
     public record Entry(String abilityId, String gooTypeId, String displayName,
-            String icon, int order) {}
+            String icon, int order, List<String> tags) {}
 }

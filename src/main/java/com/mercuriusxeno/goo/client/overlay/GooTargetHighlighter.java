@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.overlay;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.client.TargetResult;
@@ -12,6 +13,8 @@ import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
 import com.mercuriusxeno.goo.client.throwing.GloveUseTracker;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.item.GooGloveItem;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler.ClientAbility;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -111,7 +114,50 @@ public final class GooTargetHighlighter {
     /** Separator between stack count and max stacks in the billboard. */
     private static final String STACK_SEPARATOR = " / ";
 
+    /** Entity tag on ability definitions. */
+    private static final String TAG_ENTITY = "entity";
+
     private GooTargetHighlighter() {}
+
+    /** Targeting mode derived from the selected ability's tags. */
+    public enum TargetingHint {
+        /** No ability selected - suppress all targeting and throws. */
+        NONE,
+        /** Entity-tagged ability - aim-assist entities only, no block fallback. */
+        ENTITY,
+        /** Block-tagged ability - block targeting only, no entity aim-assist. */
+        BLOCK
+    }
+
+    /** Resolves the targeting hint from the player's glove ability selection.
+     *
+     * @param player the local player
+     * @return the targeting hint
+     */
+    public static TargetingHint resolveTargetingHint(Player player) {
+        GloveSelection sel = readGloveSelection(player);
+        if (sel == null || !sel.hasAbility()) { return TargetingHint.NONE; }
+        GooType type = sel.getGooType();
+        if (type == null) { return TargetingHint.NONE; }
+        return hintFromAbility(type, sel);
+    }
+
+    private static @Nullable GloveSelection readGloveSelection(Player player) {
+        ItemStack main = player.getMainHandItem();
+        if (main.getItem() instanceof GooGloveItem) { return GooGloveItem.getSelection(main); }
+        ItemStack off = player.getOffhandItem();
+        if (off.getItem() instanceof GooGloveItem) { return GooGloveItem.getSelection(off); }
+        return null;
+    }
+
+    private static TargetingHint hintFromAbility(GooType type, GloveSelection sel) {
+        for (ClientAbility ca : AbilitySyncHandler.getAbilitiesForType(type)) {
+            if (ca.id() != null && ca.id().toString().equals(sel.abilityId())) {
+                return ca.hasTag(TAG_ENTITY) ? TargetingHint.ENTITY : TargetingHint.BLOCK;
+            }
+        }
+        return TargetingHint.NONE;
+    }
 
     /**
      * Client tick: resolves aim target and stores entity + goo color for the
@@ -130,7 +176,8 @@ public final class GooTargetHighlighter {
     }
 
     /**
-     * Resolves goo type selection and updates aim target for the local player.
+     * Resolves goo type + ability selection and updates aim target.
+     * No ability selected = no targeting at all.
      *
      * @param mc the Minecraft client instance
      */
@@ -140,7 +187,12 @@ public final class GooTargetHighlighter {
             clearTarget();
             return;
         }
-        updateTarget(mc.player, selectedType);
+        TargetingHint hint = resolveTargetingHint(mc.player);
+        if (hint == TargetingHint.NONE) {
+            clearTarget();
+            return;
+        }
+        updateTarget(mc.player, selectedType, hint);
     }
 
     /** Resets aim hit and outline color when no valid aim exists. */
@@ -154,9 +206,10 @@ public final class GooTargetHighlighter {
      *
      * @param player       the local player
      * @param selectedType the currently selected goo type
+     * @param hint         the targeting hint from the selected ability
      */
-    private static void updateTarget(Player player, GooType selectedType) {
-        TargetResult target = resolveTarget(player, 1.0f);
+    private static void updateTarget(Player player, GooType selectedType, TargetingHint hint) {
+        TargetResult target = resolveTarget(player, 1.0f, hint);
         boolean hasEntity = target instanceof TargetResult.EntityTarget;
         targetOutlineColor = hasEntity ? ARGB.opaque(GooColors.highlight(selectedType)) : 0;
     }
@@ -195,26 +248,47 @@ public final class GooTargetHighlighter {
 
     /**
      * Resolves what the player is aiming at within throw range.
-     * Entity hits take priority over block hits unless sneaking,
-     * which forces block-only targeting with no aim assist.
+     * Targeting is filtered by the hint derived from the selected ability:
+     * ENTITY = entities only, BLOCK = blocks only, NONE = nothing.
+     * Sneak overrides ENTITY to BLOCK as an escape hatch.
      *
-     * @param player the local player
+     * @param player      the local player
      * @param partialTick interpolation factor for smooth rendering
      * @return entity target, block face target, or NONE
      */
     public static TargetResult resolveTarget(Player player, float partialTick) {
-        // Sneak always cancels the post-throw freeze, matching the existing
-        // "shift bypasses aim assist" rule at line 169 below.
+        return resolveTarget(player, partialTick, resolveTargetingHint(player));
+    }
+
+    /**
+     * Resolves targeting with an explicit hint.
+     *
+     * @param player      the local player
+     * @param partialTick interpolation factor for smooth rendering
+     * @param hint        the targeting mode from the selected ability
+     * @return entity target, block face target, or NONE
+     */
+    public static TargetResult resolveTarget(Player player, float partialTick, TargetingHint hint) {
+        if (hint == TargetingHint.NONE) { return TargetResult.NONE; }
         if (player.isShiftKeyDown()) {
             ThrowFreezeState.clear();
+            hint = TargetingHint.BLOCK;
         } else {
             TargetResult frozen = ThrowFreezeState.getFrozenTarget();
             if (frozen != null) { return frozen; }
         }
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 reach = eyePos.add(player.getViewVector(partialTick).scale(MAX_RANGE));
-        TargetResult entityResult = resolveEntityTarget(player, eyePos, reach);
-        if (entityResult != null) { return entityResult; }
+        return resolveWithHint(player, eyePos, reach, hint);
+    }
+
+    private static TargetResult resolveWithHint(Player player, Vec3 eyePos,
+            Vec3 reach, TargetingHint hint) {
+        if (hint == TargetingHint.ENTITY) {
+            TargetResult entityResult = resolveEntityTarget(player, eyePos, reach);
+            return entityResult != null ? entityResult : TargetResult.NONE;
+        }
+        lastAimHit = null;
         return resolveBlockTarget(player, eyePos, reach);
     }
 

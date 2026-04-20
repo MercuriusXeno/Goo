@@ -43,6 +43,10 @@ final class AbilityRadialRenderer {
     private static final String ABILITY_ICON_SUFFIX = ".png";
     /** Vertical gap between icon and label text. */
     private static final int LABEL_GAP = 1;
+    /** Tag marking entity-targeted abilities. */
+    private static final String TAG_ENTITY = "entity";
+    /** Suffix appended to entity ability labels. */
+    private static final String MOB_SUFFIX = " (Mob)";
 
     private AbilityRadialRenderer() {}
 
@@ -106,9 +110,22 @@ final class AbilityRadialRenderer {
             int sy = centerY + (int) (Math.sin(midAngle) * slotRadius);
             renderSlotIcon(graphics, abilities.get(i), sx, sy, colors[i]);
             int textColor = (i == hoveredIndex) ? HOVER_TEXT_COLOR : TEXT_COLOR;
-            Component label = Component.translatable(abilities.get(i).displayName());
+            Component label = buildLabel(abilities.get(i));
             graphics.centeredText(font, label, sx, sy + ICON_OFFSET + LABEL_GAP, textColor);
         }
+    }
+
+    /** Builds the display label for an ability, appending "(Mob)" for entity abilities.
+     *
+     * @param ability the client ability descriptor
+     * @return the label component
+     */
+    private static Component buildLabel(ClientAbility ability) {
+        Component base = Component.translatable(ability.displayName());
+        if (ability.hasTag(TAG_ENTITY)) {
+            return base.copy().append(MOB_SUFFIX);
+        }
+        return base;
     }
 
     /** Renders a single ability icon at the slot center, tinted with the wedge color.

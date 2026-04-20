@@ -42,7 +42,7 @@ public final class AbilitySyncHandler {
             map.computeIfAbsent(type, t -> new ArrayList<>())
                     .add(new ClientAbility(
                             Identifier.tryParse(e.abilityId()),
-                            e.displayName(), e.icon(), e.order()));
+                            e.displayName(), e.icon(), e.order(), e.tags()));
         }
         for (List<ClientAbility> list : map.values()) {
             list.sort(Comparator.comparingInt(ClientAbility::order));
@@ -81,6 +81,16 @@ public final class AbilitySyncHandler {
      * @param displayName the translation key
      * @param icon        the icon texture path override (empty for convention path)
      * @param order       the sort order
+     * @param tags        categorical tags for targeting and display
      */
-    public record ClientAbility(Identifier id, String displayName, String icon, int order) {}
+    public record ClientAbility(Identifier id, String displayName, String icon,
+            int order, List<String> tags) {
+
+        /** Returns true if this ability has the given tag.
+         *
+         * @param tag the tag to check
+         * @return true if present
+         */
+        public boolean hasTag(String tag) { return tags.contains(tag); }
+    }
 }

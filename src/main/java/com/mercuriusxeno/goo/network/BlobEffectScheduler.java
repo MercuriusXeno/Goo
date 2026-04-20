@@ -2,11 +2,15 @@ package com.mercuriusxeno.goo.network;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.ability.AbilityRegistry;
+import com.mercuriusxeno.goo.effect.EntityEffectRegistry;
 import com.mercuriusxeno.goo.effect.GooMobEffects;
 import com.mercuriusxeno.goo.effect.WorldEffects;
 import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -44,6 +48,12 @@ final class BlobEffectScheduler {
 
     /** Log: entity no longer exists at blob arrival. */
     private static final String LOG_ENTITY_GONE = "Blob arrived but entity {} no longer exists";
+    /** Behavior type name for entity effects. */
+    private static final String ENTITY_EFFECT_TYPE = "entity_effect";
+    /** Param key for handler name in entity_effect behaviors. */
+    private static final String HANDLER_PARAM = "handler";
+    /** Empty handler fallback. */
+    private static final String NO_HANDLER = "";
 
     /** Pending effects waiting for their blob to arrive. */
     private static final List<PendingEffect> PENDING_EFFECTS = new ArrayList<>();
@@ -144,6 +154,8 @@ final class BlobEffectScheduler {
 
     /**
      * Applies the goo effect to a living entity target with impact sound.
+     * Uses the ability-driven EntityEffectRegistry if an abilityId is set,
+     * falling back to legacy GooMobEffects dispatch otherwise.
      *
      * @param pe the pending effect targeting an entity
      */
@@ -154,7 +166,41 @@ final class BlobEffectScheduler {
             return;
         }
         playImpactSound(pe.level, living.getX(), living.getY(), living.getZ());
-        GooMobEffects.apply(pe.level, living, pe.gooType, pe.thrower);
+        if (!pe.abilityId.isEmpty()) {
+            applyEntityAbilityEffect(pe, living);
+        } else {
+            GooMobEffects.apply(pe.level, living, pe.gooType, pe.thrower);
+        }
+    }
+
+    /** Dispatches via the data-driven entity_effect handler.
+     *
+     * @param pe     the pending effect
+     * @param living the target entity
+     */
+    private static void applyEntityAbilityEffect(PendingEffect pe, LivingEntity living) {
+        AbilityDefinition def = resolveAbility(pe.abilityId);
+        if (def == null) { return; }
+        dispatchEntityHandlers(pe, def, living);
+    }
+
+    private static AbilityDefinition resolveAbility(String abilityId) {
+        Identifier id = Identifier.tryParse(abilityId);
+        if (id == null) { return null; }
+        return AbilityRegistry.getAbility(id);
+    }
+
+    private static void dispatchEntityHandlers(PendingEffect pe,
+            AbilityDefinition def, LivingEntity living) {
+        for (AbilityDefinition.BehaviorEntry entry : def.behaviors()) {
+            if (ENTITY_EFFECT_TYPE.equals(entry.type())) {
+                String handler = entry.params().getOrDefault(HANDLER_PARAM, NO_HANDLER);
+                var fn = EntityEffectRegistry.get(handler);
+                if (fn != null) {
+                    fn.accept(new EntityEffectRegistry.Context(pe.level, living, pe.thrower));
+                }
+            }
+        }
     }
 
     /**
