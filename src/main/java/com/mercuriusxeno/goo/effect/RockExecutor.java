@@ -188,6 +188,23 @@ public final class RockExecutor {
         return true;
     }
 
+    /** Silk-breaks a single block, dropping items at its position.
+     * Used by ring-based flat delivery.
+     *
+     * @param level the server level
+     * @param pos   the block position to mine
+     */
+    public static void silkBreakSingle(ServerLevel level, BlockPos pos) {
+        if (!canMineRockAt(level, pos)) { return; }
+        ItemStack tool = buildSilkTouchTool(level);
+        List<ItemStack> drops = new ArrayList<>();
+        if (tryMineBlock(level, pos, tool, drops)) {
+            for (ItemStack drop : drops) {
+                Block.popResource(level, pos, drop);
+            }
+        }
+    }
+
     /** Returns true if the block at target is in-bounds, non-air, and rock-compatible.
      *
      * @param level  the server level

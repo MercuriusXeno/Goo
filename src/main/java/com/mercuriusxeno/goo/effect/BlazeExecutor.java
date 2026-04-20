@@ -229,6 +229,23 @@ public final class BlazeExecutor {
         return true;
     }
 
+    /** Fortune-smelts a single block, dropping items at its position.
+     * Used by ring-based flat delivery.
+     *
+     * @param level the server level
+     * @param pos   the block position to mine and smelt
+     */
+    public static void fortuneSmeltSingle(ServerLevel level, BlockPos pos) {
+        if (!canMineAt(level, pos)) { return; }
+        ItemStack tool = buildFortuneTool(level);
+        List<ItemStack> drops = new ArrayList<>();
+        if (tryMineBlock(level, pos, tool, drops)) {
+            for (ItemStack drop : drops) {
+                Block.popResource(level, pos, drop);
+            }
+        }
+    }
+
     /** Returns true if the block at pos is in-bounds, non-air, and destructible.
      *
      * @param level the server level

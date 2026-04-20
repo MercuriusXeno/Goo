@@ -101,6 +101,47 @@ public final class ChainFootprint {
 
 
     /**
+     * Decomposes the flat footprint into concentric distance rings.
+     * Each ring contains positions at the same squared distance from center.
+     * Ring 0 is the origin, ring 1 is the first cardinal neighbors, etc.
+     * The union of all rings equals {@link #flatFootprint(int)}.
+     *
+     * @param stacks blob stack count (1-based)
+     * @return list of rings, each ring a list of [a, b] offset pairs
+     */
+    public static List<List<int[]>> flatRings(int stacks) {
+        if (stacks <= FULL_THRESHOLD) { return List.of(layerFootprint(stacks)); }
+        int budget = totalBlocks(stacks);
+        int searchRadius = (int) Math.ceil(Math.sqrt(budget)) + 1;
+        List<int[]> candidates = collectCandidates(searchRadius);
+        candidates.sort((p, q) -> Integer.compare(sqDist(p), sqDist(q)));
+        return splitIntoTiers(candidates, budget);
+    }
+
+    /** Splits sorted candidates into distance tiers, stopping at budget.
+     *
+     * @param sorted   positions sorted by squared distance
+     * @param budget   maximum total block count
+     * @return the tier-decomposed ring list
+     */
+    private static List<List<int[]>> splitIntoTiers(List<int[]> sorted, int budget) {
+        List<List<int[]>> rings = new ArrayList<>();
+        int total = 0;
+        int i = 0;
+        while (i < sorted.size()) {
+            int tierEnd = findTierEnd(sorted, i);
+            int tierSize = tierEnd - i;
+            if (total + tierSize > budget) { break; }
+            List<int[]> ring = new ArrayList<>(tierSize);
+            addRange(ring, sorted, i, tierEnd);
+            rings.add(ring);
+            total += tierSize;
+            i = tierEnd;
+        }
+        return rings;
+    }
+
+    /**
      * Builds the roundest possible flat region by filling positions
      * sorted by Euclidean distance from center. Positions at equal
      * distance form a tier; tiers are added in full to maintain

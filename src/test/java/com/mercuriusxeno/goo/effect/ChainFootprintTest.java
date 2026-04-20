@@ -149,6 +149,59 @@ class ChainFootprintTest {
     }
 
     @Nested
+    class FlatRings {
+        @Test void ringsUnionEqualsFlatFootprint() {
+            for (int s = 4; s <= 10; s++) {
+                List<List<int[]>> rings = ChainFootprint.flatRings(s);
+                Set<String> union = new HashSet<>();
+                for (List<int[]> ring : rings) {
+                    for (int[] p : ring) { union.add(p[0] + "," + p[1]); }
+                }
+                List<int[]> flat = ChainFootprint.flatFootprint(s);
+                assertEquals(flat.size(), union.size(),
+                        "ring union size != flat footprint at stacks=" + s);
+            }
+        }
+
+        @Test void ringsDoNotOverlap() {
+            for (int s = 4; s <= 8; s++) {
+                List<List<int[]>> rings = ChainFootprint.flatRings(s);
+                Set<String> seen = new HashSet<>();
+                for (List<int[]> ring : rings) {
+                    for (int[] p : ring) {
+                        assertTrue(seen.add(p[0] + "," + p[1]),
+                                "duplicate across rings at stacks=" + s);
+                    }
+                }
+            }
+        }
+
+        @Test void firstRingIsOrigin() {
+            List<List<int[]>> rings = ChainFootprint.flatRings(5);
+            assertFalse(rings.isEmpty());
+            assertTrue(containsOffset(rings.get(0), 0, 0));
+        }
+
+        @Test void ringsExpandOutward() {
+            List<List<int[]>> rings = ChainFootprint.flatRings(6);
+            for (int i = 1; i < rings.size(); i++) {
+                int prevMaxDist = maxSqDist(rings.get(i - 1));
+                int currMinDist = minSqDist(rings.get(i));
+                assertTrue(currMinDist > prevMaxDist,
+                        "ring " + i + " not strictly farther than ring " + (i - 1));
+            }
+        }
+
+        private int maxSqDist(List<int[]> ring) {
+            return ring.stream().mapToInt(p -> p[0] * p[0] + p[1] * p[1]).max().orElse(0);
+        }
+
+        private int minSqDist(List<int[]> ring) {
+            return ring.stream().mapToInt(p -> p[0] * p[0] + p[1] * p[1]).min().orElse(0);
+        }
+    }
+
+    @Nested
     class SphereShell {
         @Test void radius0IsOriginOnly() {
             List<int[]> shell = ChainFootprint.sphereShell(0);

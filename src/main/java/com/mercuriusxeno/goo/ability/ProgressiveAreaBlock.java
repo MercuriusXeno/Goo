@@ -55,6 +55,8 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private int layerDepth;
     private int stackCount;
     private Direction placedFace = Direction.UP;
+    /** Cached flat rings for ring-by-ring delivery. Null when not flat_circle. */
+    private transient java.util.List<java.util.List<int[]>> cachedFlatRings;
 
     /**
      * Creates a progressive area behavior with the given configuration.
@@ -102,7 +104,8 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
         } else if (AREA_TUNNEL.equals(areaMode)) {
             this.layerDepth = ChainFootprint.tunnelDepth(stackCount);
         } else {
-            this.layerDepth = 1;
+            this.cachedFlatRings = ChainFootprint.flatRings(stackCount);
+            this.layerDepth = cachedFlatRings.size();
         }
     }
 
@@ -154,14 +157,17 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
             applySphereShell(level, pos, layerIndex);
             return;
         }
-        boolean flat = isFlatArea();
+        if (isFlatArea()) {
+            applyFlatRing(level, pos, layerIndex);
+            return;
+        }
         switch (blockAction) {
             case ACTION_FORTUNE_SMELT -> BlazeExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flat);
+                    layerIndex, stackCount, false);
             case ACTION_FREEZE -> FrostExecutor.freezeLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flat);
+                    layerIndex, stackCount, false);
             default -> RockExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, flat);
+                    layerIndex, stackCount, false);
         }
     }
 
@@ -182,6 +188,45 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private void applySphereShell(ServerLevel level, BlockPos pos, int shellIndex) {
         if (ACTION_FREEZE.equals(blockAction)) {
             FrostExecutor.freezeShell(level, pos, placedFace, shellIndex);
+        }
+    }
+
+    /** Applies one ring of the flat circle footprint at depth 1.
+     *
+     * @param level     the server level
+     * @param pos       the marker block position
+     * @param ringIndex the ring index
+     */
+    private void applyFlatRing(ServerLevel level, BlockPos pos, int ringIndex) {
+        if (cachedFlatRings == null || ringIndex >= cachedFlatRings.size()) { return; }
+        java.util.List<int[]> ring = cachedFlatRings.get(ringIndex);
+        Direction blastDir = placedFace.getOpposite();
+        BlockPos layerCenter = pos.relative(blastDir);
+        Direction.Axis blastAxis = blastDir.getAxis();
+        for (int[] fp : ring) {
+            BlockPos target = resolveRingPos(layerCenter, blastAxis, fp);
+            applyBlockAction(level, target);
+        }
+    }
+
+    private static BlockPos resolveRingPos(BlockPos center, Direction.Axis axis, int[] fp) {
+        return switch (axis) {
+            case X -> center.offset(0, fp[0], fp[1]);
+            case Y -> center.offset(fp[0], 0, fp[1]);
+            case Z -> center.offset(fp[0], fp[1], 0);
+        };
+    }
+
+    /** Applies the configured block action to a single position.
+     *
+     * @param level the server level
+     * @param pos   the target block position
+     */
+    private void applyBlockAction(ServerLevel level, BlockPos pos) {
+        switch (blockAction) {
+            case ACTION_FORTUNE_SMELT -> BlazeExecutor.fortuneSmeltSingle(level, pos);
+            case ACTION_FREEZE -> FrostExecutor.convertBlock(level, pos);
+            default -> RockExecutor.silkBreakSingle(level, pos);
         }
     }
 

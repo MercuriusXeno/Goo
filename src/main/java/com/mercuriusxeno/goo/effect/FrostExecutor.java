@@ -193,7 +193,7 @@ public final class FrostExecutor {
      * @param level the server level
      * @param pos   the block position to convert
      */
-    private static void convertBlock(ServerLevel level, BlockPos pos) {
+    public static void convertBlock(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         Block replacement = frostReplacement(state);
         if (replacement != null) {
