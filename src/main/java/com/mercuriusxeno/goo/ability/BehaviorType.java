@@ -31,6 +31,10 @@ public final class BehaviorType {
     static {
         register("explosion", ParameterizedExplosion::fromEntry);
         register("progressive_area", ProgressiveAreaBlock::fromEntry);
+        register("glow_crystal", (e, d) -> new com.mercuriusxeno.goo.effect.GlowBehavior());
+        register("metal_spikes", (e, d) -> new com.mercuriusxeno.goo.effect.MetalBehavior());
+        register("crystal_cloud", (e, d) -> new com.mercuriusxeno.goo.effect.CrystalBehavior());
+        register("black_hole", (e, d) -> new com.mercuriusxeno.goo.effect.NetherBehavior());
     }
 
     private BehaviorType() {}

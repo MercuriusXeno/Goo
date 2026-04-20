@@ -1,0 +1,21 @@
+{
+  "gooType": "nether",
+  "displayName": "goo.ability.nether.black_hole",
+  "order": 0,
+  "cost": {
+    "formula": "power_law",
+    "baseCost": 2000,
+    "mult": 1.5
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 5,
+    "supportsFlatMode": false
+  },
+  "behaviors": [
+    {
+      "type": "black_hole"
+    }
+  ],
+  "tags": ["field_effect", "implosion"]
+}
