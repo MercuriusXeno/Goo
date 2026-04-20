@@ -13,10 +13,10 @@
   },
   "behaviors": [
     {
-      "type": "progressive_break",
+      "type": "progressive_area",
       "params": {
         "areaMode": "flat_circle",
-        "breakMode": "fortune_smelt",
+        "blockAction": "fortune_smelt_break",
         "previewDelayTicks": "8",
         "particleStyle": "blaze"
       }

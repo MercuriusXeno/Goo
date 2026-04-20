@@ -13,58 +13,58 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * Unified progressive block-break behavior. Replaces both BlazeBehavior
- * and RockBehavior with a parameterized pipeline that dispatches to the
- * appropriate executor based on the configured break mode.
+ * Progressive area-coverage behavior. Affects blocks in an expanding
+ * footprint one layer at a time. The per-block action is determined
+ * by the {@code blockAction} parameter: silk-break, fortune-smelt-break,
+ * freeze, or other actions added later.
  *
  * <p>The pipeline previews each layer, waits a configurable delay, then
- * mines the layer. Area mode selects tunnel (directional) or flat circle.
- * Break mode selects silk-touch drops or fortune+smelt drops.</p>
+ * applies the action. Area mode selects tunnel, flat circle, or sphere.</p>
  */
-public final class ProgressiveBreakBlock implements ChainBehavior {
+public final class ProgressiveAreaBlock implements ChainBehavior {
 
     private static final String AREA_TUNNEL = "tunnel";
-    private static final String BREAK_SILK = "silk";
-    private static final String BREAK_FORTUNE_SMELT = "fortune_smelt";
+    private static final String ACTION_SILK_BREAK = "silk_break";
+    private static final String ACTION_FORTUNE_SMELT = "fortune_smelt_break";
     private static final String STYLE_BLAZE = "blaze";
 
     private static final int DEFAULT_PREVIEW_DELAY = 8;
     private static final String DEFAULT_FACE = "up";
     private static final String PARAM_AREA_MODE = "areaMode";
-    private static final String PARAM_BREAK_MODE = "breakMode";
+    private static final String PARAM_BLOCK_ACTION = "blockAction";
     private static final String PARAM_PREVIEW_DELAY = "previewDelayTicks";
     private static final String PARAM_PARTICLE_STYLE = "particleStyle";
     private static final String DEFAULT_PARTICLE_STYLE = "rock";
 
-    private static final String TAG_PIPELINE_TICK = "BreakPipelineTick";
-    private static final String TAG_MINING_DEPTH = "BreakMiningDepth";
-    private static final String TAG_STACK_SNAPSHOT = "BreakStackSnapshot";
-    private static final String TAG_FACE_SNAPSHOT = "BreakFace";
-    private static final String TAG_FLAT_MODE = "BreakFlatMode";
+    private static final String TAG_PIPELINE_TICK = "AreaPipelineTick";
+    private static final String TAG_LAYER_DEPTH = "AreaLayerDepth";
+    private static final String TAG_STACK_SNAPSHOT = "AreaStackSnapshot";
+    private static final String TAG_FACE_SNAPSHOT = "AreaFace";
+    private static final String TAG_FLAT_MODE = "AreaFlatMode";
 
     private final String areaMode;
-    private final String breakMode;
+    private final String blockAction;
     private final int previewDelayTicks;
     private final String particleStyle;
 
     private int pipelineTick;
-    private int miningDepth;
+    private int layerDepth;
     private int stackCount;
     private Direction placedFace = Direction.UP;
     private boolean flatMode;
 
     /**
-     * Creates a progressive break behavior with the given configuration.
+     * Creates a progressive area behavior with the given configuration.
      *
-     * @param areaMode         "tunnel" or "flat_circle"
-     * @param breakMode        "silk" or "fortune_smelt"
-     * @param previewDelayTicks ticks between preview and mine
-     * @param particleStyle    "blaze" or "rock" for executor dispatch
+     * @param areaMode         "tunnel", "flat_circle", or "sphere"
+     * @param blockAction      "silk_break", "fortune_smelt_break", "freeze", etc.
+     * @param previewDelayTicks ticks between preview and action
+     * @param particleStyle    "blaze", "rock", "frost" for preview dispatch
      */
-    public ProgressiveBreakBlock(String areaMode, String breakMode,
+    public ProgressiveAreaBlock(String areaMode, String blockAction,
             int previewDelayTicks, String particleStyle) {
         this.areaMode = areaMode;
-        this.breakMode = breakMode;
+        this.blockAction = blockAction;
         this.previewDelayTicks = previewDelayTicks;
         this.particleStyle = particleStyle;
     }
@@ -74,12 +74,12 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
      *
      * @param entry the behavior entry with params
      * @param def   the parent ability definition
-     * @return a new ProgressiveBreakBlock
+     * @return a new ProgressiveAreaBlock
      */
     public static ChainBehavior fromEntry(BehaviorEntry entry, AbilityDefinition def) {
-        return new ProgressiveBreakBlock(
+        return new ProgressiveAreaBlock(
                 entry.params().getOrDefault(PARAM_AREA_MODE, AREA_TUNNEL),
-                entry.params().getOrDefault(PARAM_BREAK_MODE, BREAK_SILK),
+                entry.params().getOrDefault(PARAM_BLOCK_ACTION, ACTION_SILK_BREAK),
                 (int) entry.getFloat(PARAM_PREVIEW_DELAY, DEFAULT_PREVIEW_DELAY),
                 entry.params().getOrDefault(PARAM_PARTICLE_STYLE, DEFAULT_PARTICLE_STYLE));
     }
@@ -89,25 +89,25 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
         this.stackCount = be.getStackCount();
         this.placedFace = be.getPlacedFace();
         this.flatMode = !AREA_TUNNEL.equals(areaMode);
-        this.miningDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
+        this.layerDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
         this.pipelineTick = 0;
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        if (pipelineTick < miningDepth) {
+        if (pipelineTick < layerDepth) {
             previewLayer(level, pos);
         }
-        int breakIndex = pipelineTick - previewDelayTicks;
-        if (breakIndex >= 0 && breakIndex < miningDepth) {
-            mineLayer(level, pos, breakIndex);
+        int actionIndex = pipelineTick - previewDelayTicks;
+        if (actionIndex >= 0 && actionIndex < layerDepth) {
+            applyLayer(level, pos, actionIndex);
         }
         pipelineTick++;
     }
 
     @Override
     public boolean isActive() {
-        return pipelineTick < miningDepth + previewDelayTicks;
+        return pipelineTick < layerDepth + previewDelayTicks;
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
         return Math.max(0, pipelineTick - previewDelayTicks);
     }
 
-    /** Dispatches preview to the appropriate executor.
+    /** Dispatches preview to the appropriate particle style.
      *
      * @param level the server level
      * @param pos   the marker block position
@@ -129,18 +129,18 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
         }
     }
 
-    /** Dispatches mine to the appropriate executor.
+    /** Dispatches the per-block action to the appropriate executor.
      *
      * @param level      the server level
      * @param pos        the marker block position
-     * @param breakIndex the current layer depth index
+     * @param layerIndex the current layer depth index
      */
-    private void mineLayer(ServerLevel level, BlockPos pos, int breakIndex) {
-        if (BREAK_FORTUNE_SMELT.equals(breakMode)) {
-            BlazeExecutor.mineLayer(level, pos, placedFace, breakIndex,
+    private void applyLayer(ServerLevel level, BlockPos pos, int layerIndex) {
+        if (ACTION_FORTUNE_SMELT.equals(blockAction)) {
+            BlazeExecutor.mineLayer(level, pos, placedFace, layerIndex,
                     stackCount, flatMode);
         } else {
-            RockExecutor.mineLayer(level, pos, placedFace, breakIndex,
+            RockExecutor.mineLayer(level, pos, placedFace, layerIndex,
                     stackCount, flatMode);
         }
     }
@@ -148,7 +148,7 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
     @Override
     public void saveAdditional(ValueOutput output) {
         output.putInt(TAG_PIPELINE_TICK, pipelineTick);
-        output.putInt(TAG_MINING_DEPTH, miningDepth);
+        output.putInt(TAG_LAYER_DEPTH, layerDepth);
         output.putInt(TAG_STACK_SNAPSHOT, stackCount);
         output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
         output.putBoolean(TAG_FLAT_MODE, flatMode);
@@ -157,7 +157,7 @@ public final class ProgressiveBreakBlock implements ChainBehavior {
     @Override
     public void loadAdditional(ValueInput input) {
         pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
-        miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
+        layerDepth = input.getIntOr(TAG_LAYER_DEPTH, 0);
         stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
         flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE);
