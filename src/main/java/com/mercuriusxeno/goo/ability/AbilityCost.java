@@ -23,10 +23,47 @@ public sealed interface AbilityCost {
      */
     int costForStack(int n);
 
-    /** Codec that dispatches on the "formula" field. */
-    Codec<AbilityCost> CODEC = Codec.STRING.fieldOf("formula")
-            .codec()
-            .dispatch(AbilityCost::formulaName, AbilityCost::codecForFormula);
+    /** Codec that reads "formula" and all flat fields, constructing the right type. */
+    Codec<AbilityCost> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.<AbilityCost>create(
+            inst -> inst.group(
+                    Codec.STRING.fieldOf("formula").forGetter(AbilityCost::formulaName),
+                    Codec.INT.optionalFieldOf("baseCost", 0).forGetter(c -> switch (c) {
+                        case Quadratic q -> q.baseCost();
+                        case PowerLaw p -> p.baseCost();
+                        default -> 0;
+                    }),
+                    Codec.FLOAT.optionalFieldOf("a", 0f).forGetter(c ->
+                            c instanceof Quadratic q ? q.a() : 0f),
+                    Codec.FLOAT.optionalFieldOf("b", 0f).forGetter(c ->
+                            c instanceof Quadratic q ? q.b() : 0f),
+                    Codec.FLOAT.optionalFieldOf("c", 0f).forGetter(c ->
+                            c instanceof Quadratic q ? q.c() : 0f),
+                    Codec.FLOAT.optionalFieldOf("mult", 0f).forGetter(c ->
+                            c instanceof PowerLaw p ? p.mult() : 0f),
+                    Codec.INT.optionalFieldOf("costPerBlock", 0).forGetter(c ->
+                            c instanceof BlockCount b ? b.costPerBlock() : 0)
+            ).apply(inst, AbilityCost::fromFields));
+
+    /** Constructs the correct AbilityCost variant from flat codec fields.
+     *
+     * @param formula     the formula name
+     * @param baseCost    the base cost (quadratic/power_law)
+     * @param a           quadratic coefficient
+     * @param b           linear coefficient
+     * @param c           constant term
+     * @param mult        power law multiplier
+     * @param costPerBlock block count cost
+     * @return the constructed cost variant
+     */
+    static AbilityCost fromFields(String formula, int baseCost,
+            float a, float b, float c, float mult, int costPerBlock) {
+        return switch (formula) {
+            case FORMULA_QUADRATIC -> new Quadratic(baseCost, a, b, c);
+            case FORMULA_BLOCK_COUNT -> new BlockCount(costPerBlock);
+            case FORMULA_POWER_LAW -> new PowerLaw(baseCost, mult);
+            default -> new Quadratic(baseCost, 0f, 0f, 1f);
+        };
+    }
 
     /**
      * Returns the formula name for codec dispatch.

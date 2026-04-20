@@ -84,8 +84,10 @@ public final class GloveUseTracker {
         if (player.isUsingItem() && player.getUseItem().getItem() instanceof GooGloveItem) {
             holdTicks++;
             if (holdTicks >= GooGloveItem.RADIAL_THRESHOLD_TICKS) {
+                ItemStack glove = player.getUseItem();
+                boolean shifting = player.isShiftKeyDown();
                 player.releaseUsingItem();
-                openAppropriateRadial(player);
+                openAppropriateRadial(player, glove, shifting);
                 holdTicks = 0;
             }
         } else {
@@ -97,12 +99,19 @@ public final class GloveUseTracker {
      *
      * @param player the local player holding the glove
      */
-    private static void openAppropriateRadial(LocalPlayer player) {
-        if (player.isShiftKeyDown()) {
+    /** Opens the type radial (shift+hold) or ability radial (hold).
+     *
+     * @param player   the local player holding the glove
+     * @param glove    the glove item stack (captured before release)
+     * @param shifting true if shift was held during the hold
+     */
+    private static void openAppropriateRadial(LocalPlayer player,
+            ItemStack glove, boolean shifting) {
+        GooType selected = GooGloveItem.getSelectedType(glove);
+        if (shifting) {
             GooRadialScreen.open();
             return;
         }
-        GooType selected = GooGloveItem.getSelectedType(player.getUseItem());
         if (selected != null && AbilitySyncHandler.hasAbilities(selected)) {
             AbilityRadialScreen.open(selected);
         } else {
