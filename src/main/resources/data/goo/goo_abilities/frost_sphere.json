@@ -1,0 +1,29 @@
+{
+  "gooType": "frost",
+  "displayName": "goo.ability.frost.blast",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 4,
+    "supportsFlatMode": false
+  },
+  "behaviors": [
+    {
+      "type": "progressive_area",
+      "params": {
+        "areaMode": "tunnel",
+        "blockAction": "freeze",
+        "previewDelayTicks": "8",
+        "particleStyle": "frost"
+      }
+    }
+  ],
+  "tags": ["transmute", "directional"]
+}

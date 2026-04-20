@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.BlazeExecutor;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
+import com.mercuriusxeno.goo.effect.FrostExecutor;
 import com.mercuriusxeno.goo.effect.RockExecutor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,7 +27,9 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private static final String AREA_TUNNEL = "tunnel";
     private static final String ACTION_SILK_BREAK = "silk_break";
     private static final String ACTION_FORTUNE_SMELT = "fortune_smelt_break";
+    private static final String ACTION_FREEZE = "freeze";
     private static final String STYLE_BLAZE = "blaze";
+    private static final String STYLE_FROST = "frost";
 
     private static final int DEFAULT_PREVIEW_DELAY = 8;
     private static final String DEFAULT_FACE = "up";
@@ -121,11 +124,11 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param pos   the marker block position
      */
     private void previewLayer(ServerLevel level, BlockPos pos) {
-        if (STYLE_BLAZE.equals(particleStyle)) {
-            BlazeExecutor.previewLayer(level, pos, placedFace, pipelineTick,
-                    stackCount, flatMode);
-        } else {
-            RockExecutor.previewLayer(level, pos, placedFace, pipelineTick);
+        switch (particleStyle) {
+            case STYLE_BLAZE -> BlazeExecutor.previewLayer(level, pos, placedFace,
+                    pipelineTick, stackCount, flatMode);
+            case STYLE_FROST -> {} // Frost has no preview particles yet
+            default -> RockExecutor.previewLayer(level, pos, placedFace, pipelineTick);
         }
     }
 
@@ -136,12 +139,13 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param layerIndex the current layer depth index
      */
     private void applyLayer(ServerLevel level, BlockPos pos, int layerIndex) {
-        if (ACTION_FORTUNE_SMELT.equals(blockAction)) {
-            BlazeExecutor.mineLayer(level, pos, placedFace, layerIndex,
-                    stackCount, flatMode);
-        } else {
-            RockExecutor.mineLayer(level, pos, placedFace, layerIndex,
-                    stackCount, flatMode);
+        switch (blockAction) {
+            case ACTION_FORTUNE_SMELT -> BlazeExecutor.mineLayer(level, pos, placedFace,
+                    layerIndex, stackCount, flatMode);
+            case ACTION_FREEZE -> FrostExecutor.freezeLayer(level, pos, placedFace,
+                    layerIndex, stackCount, flatMode);
+            default -> RockExecutor.mineLayer(level, pos, placedFace,
+                    layerIndex, stackCount, flatMode);
         }
     }
 
