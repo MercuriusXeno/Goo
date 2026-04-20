@@ -42,7 +42,7 @@ public final class AbilitySyncHandler {
             map.computeIfAbsent(type, t -> new ArrayList<>())
                     .add(new ClientAbility(
                             Identifier.tryParse(e.abilityId()),
-                            e.displayName(), e.order()));
+                            e.displayName(), e.icon(), e.order()));
         }
         for (List<ClientAbility> list : map.values()) {
             list.sort(Comparator.comparingInt(ClientAbility::order));
@@ -79,7 +79,8 @@ public final class AbilitySyncHandler {
      *
      * @param id          the ability resource identifier
      * @param displayName the translation key
+     * @param icon        the icon texture path override (empty for convention path)
      * @param order       the sort order
      */
-    public record ClientAbility(Identifier id, String displayName, int order) {}
+    public record ClientAbility(Identifier id, String displayName, String icon, int order) {}
 }

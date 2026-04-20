@@ -45,7 +45,7 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
         for (GooType type : GooType.values()) {
             for (AbilityDefinition def : AbilityRegistry.getAbilitiesForType(type)) {
                 entries.add(new Entry(def.id().toString(), type.getId(),
-                        def.displayName(), def.order()));
+                        def.displayName(), def.icon(), def.order()));
             }
         }
         return new AbilitySyncPayload(entries);
@@ -57,6 +57,7 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
             buf.writeUtf(e.abilityId);
             buf.writeUtf(e.gooTypeId);
             buf.writeUtf(e.displayName);
+            buf.writeUtf(e.icon);
             buf.writeVarInt(e.order);
         }
     }
@@ -65,7 +66,8 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
         int count = buf.readVarInt();
         List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            entries.add(new Entry(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readVarInt()));
+            entries.add(new Entry(buf.readUtf(), buf.readUtf(), buf.readUtf(),
+                    buf.readUtf(), buf.readVarInt()));
         }
         return new AbilitySyncPayload(entries);
     }
@@ -76,7 +78,9 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
      * @param abilityId   the ability resource id string
      * @param gooTypeId   the goo type id string
      * @param displayName the translation key
+     * @param icon        the icon texture path override (empty for convention path)
      * @param order       the sort order within the type
      */
-    public record Entry(String abilityId, String gooTypeId, String displayName, int order) {}
+    public record Entry(String abilityId, String gooTypeId, String displayName,
+            String icon, int order) {}
 }

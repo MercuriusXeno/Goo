@@ -1,6 +1,6 @@
 {
   "gooType": "frost",
-  "displayName": "goo.ability.frost.blast",
+  "displayName": "goo.ability.frost.sphere",
   "order": 0,
   "cost": {
     "formula": "quadratic",
@@ -18,12 +18,12 @@
     {
       "type": "progressive_area",
       "params": {
-        "areaMode": "tunnel",
+        "areaMode": "sphere",
         "blockAction": "freeze",
         "previewDelayTicks": "8",
         "particleStyle": "frost"
       }
     }
   ],
-  "tags": ["transmute", "directional"]
+  "tags": ["transmute", "radial"]
 }

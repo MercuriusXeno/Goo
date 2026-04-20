@@ -5,6 +5,7 @@ import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.BlazeExecutor;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
+import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.effect.FrostExecutor;
 import com.mercuriusxeno.goo.effect.RockExecutor;
 import net.minecraft.core.BlockPos;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 public final class ProgressiveAreaBlock implements ChainBehavior {
 
     private static final String AREA_TUNNEL = "tunnel";
+    private static final String AREA_SPHERE = "sphere";
     private static final String ACTION_SILK_BREAK = "silk_break";
     private static final String ACTION_FORTUNE_SMELT = "fortune_smelt_break";
     private static final String ACTION_FREEZE = "freeze";
@@ -91,9 +93,22 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.stackCount = be.getStackCount();
         this.placedFace = be.getPlacedFace();
-        this.flatMode = !AREA_TUNNEL.equals(areaMode);
-        this.layerDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
         this.pipelineTick = 0;
+        initAreaMode();
+    }
+
+    /** Sets flatMode and layerDepth based on the configured areaMode string. */
+    private void initAreaMode() {
+        if (AREA_SPHERE.equals(areaMode)) {
+            this.flatMode = false;
+            this.layerDepth = EffectMath.computeFreezeRadius(stackCount);
+        } else if (AREA_TUNNEL.equals(areaMode)) {
+            this.flatMode = false;
+            this.layerDepth = ChainFootprint.tunnelDepth(stackCount);
+        } else {
+            this.flatMode = true;
+            this.layerDepth = 1;
+        }
     }
 
     @Override
@@ -139,6 +154,10 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param layerIndex the current layer depth index
      */
     private void applyLayer(ServerLevel level, BlockPos pos, int layerIndex) {
+        if (AREA_SPHERE.equals(areaMode)) {
+            applySphereShell(level, pos, layerIndex);
+            return;
+        }
         switch (blockAction) {
             case ACTION_FORTUNE_SMELT -> BlazeExecutor.mineLayer(level, pos, placedFace,
                     layerIndex, stackCount, flatMode);
@@ -146,6 +165,18 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
                     layerIndex, stackCount, flatMode);
             default -> RockExecutor.mineLayer(level, pos, placedFace,
                     layerIndex, stackCount, flatMode);
+        }
+    }
+
+    /** Applies a single spherical shell at the given radius.
+     *
+     * @param level      the server level
+     * @param pos        the marker block position
+     * @param shellIndex the shell radius to apply
+     */
+    private void applySphereShell(ServerLevel level, BlockPos pos, int shellIndex) {
+        if (ACTION_FREEZE.equals(blockAction)) {
+            FrostExecutor.freezeShell(level, pos, placedFace, shellIndex);
         }
     }
 

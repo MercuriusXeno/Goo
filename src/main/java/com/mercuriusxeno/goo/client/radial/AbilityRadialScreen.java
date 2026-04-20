@@ -17,11 +17,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Ability radial menu: shows the abilities available for a specific goo type.
- * Opens when the player holds use (without shift) while a type is selected.
- * Selecting an ability sets the full GloveSelection (type + ability).
+ * Reached by clicking a type wedge in the GooRadialScreen.
+ * Left-click an ability to confirm. Center click returns to type radial.
+ * Right-click dismisses without changing selection.
  */
 public final class AbilityRadialScreen extends Screen {
 
@@ -31,26 +33,31 @@ public final class AbilityRadialScreen extends Screen {
     private final GooType gooType;
     private final List<ClientAbility> abilities;
     private final int[] wedgeColors;
+    /** Goo availability snapshot, passed through for back-navigation. */
+    private final Map<GooType, Integer> available;
     private int hoveredIndex = NO_SELECTION;
 
-    private AbilityRadialScreen(GooType gooType, List<ClientAbility> abilities) {
+    private AbilityRadialScreen(GooType gooType, List<ClientAbility> abilities,
+            Map<GooType, Integer> available) {
         super(Component.empty());
         this.gooType = gooType;
         this.abilities = abilities;
+        this.available = available;
         this.wedgeColors = new int[abilities.size()];
     }
 
     /**
-     * Opens the ability radial for the given goo type.
-     * Does nothing if the type has no synced abilities.
+     * Opens the ability radial for the given goo type, carrying the
+     * availability snapshot for back-navigation to the type radial.
      *
-     * @param type the goo type to show abilities for
+     * @param type      the goo type to show abilities for
+     * @param available the goo availability snapshot from the type radial
      */
-    public static void open(GooType type) {
+    public static void open(GooType type, Map<GooType, Integer> available) {
         List<ClientAbility> abilities = AbilitySyncHandler.getAbilitiesForType(type);
         if (abilities.isEmpty()) { return; }
         Minecraft mc = Minecraft.getInstance();
-        mc.setScreen(new AbilityRadialScreen(type, abilities));
+        mc.setScreen(new AbilityRadialScreen(type, abilities, available));
     }
 
     @Override
@@ -70,21 +77,37 @@ public final class AbilityRadialScreen extends Screen {
                 hoveredIndex, abilities, font);
     }
 
+    /**
+     * Left-click on ability confirms selection and closes.
+     * Left-click on center returns to type radial.
+     * Right-click dismisses without changing selection.
+     *
+     * @param event       the mouse button click event
+     * @param doubleClick true if this is a double-click
+     * @return true if the event was handled
+     */
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         int button = event.button();
-        if (button == 0 || button == 1) {
-            confirmSelection();
+        if (button == 1) {
+            onClose();
             return true;
         }
-        return super.mouseReleased(event);
+        if (button == 0) {
+            handleLeftClick();
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
     }
 
-    private void confirmSelection() {
+    /** Processes a left-click: confirm ability or navigate back to types. */
+    private void handleLeftClick() {
         if (hoveredIndex >= 0 && hoveredIndex < abilities.size()) {
             selectAbility(abilities.get(hoveredIndex));
+            onClose();
+        } else if (hoveredIndex == NO_SELECTION) {
+            GooRadialScreen.openWithSnapshot(available);
         }
-        onClose();
     }
 
     private void selectAbility(ClientAbility ability) {

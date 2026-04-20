@@ -128,6 +128,24 @@ public final class FrostExecutor {
     }
 
     /**
+     * Freezes all convertible blocks in one spherical shell at the given
+     * radius, centered one block into the wall from the marker.
+     *
+     * @param level      the server level
+     * @param origin     the chain marker position
+     * @param placedFace the face the marker was placed on
+     * @param shellRadius the shell radius to freeze
+     */
+    public static void freezeShell(ServerLevel level, BlockPos origin,
+            Direction placedFace, int shellRadius) {
+        List<int[]> offsets = ChainFootprint.sphereShellOffsets(shellRadius, placedFace);
+        for (int[] o : offsets) {
+            convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
+        }
+        spawnEffects(level, origin.relative(placedFace.getOpposite()), shellRadius);
+    }
+
+    /**
      * Freezes one layer of blocks at the given depth, following the same
      * progressive footprint pattern as rock/blaze mine layers.
      *

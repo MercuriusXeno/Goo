@@ -38,9 +38,9 @@ final class CrucibleFuelDisplay {
     /** Format string for decimal-second fuel display. */
     private static final String FUEL_DEC_FORMAT = "%.1fs";
     /** Texture path prefix for goo type icons. */
-    private static final String ICON_PATH_PREFIX = "textures/item/";
+    private static final String ICON_PATH_PREFIX = "textures/goo/type/";
     /** Texture path suffix for bordered goo type icons. */
-    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+    private static final String ICON_PATH_SUFFIX = ".png";
     /** Texture path prefix for depleted blaze rod stages. */
     private static final String BLAZE_ROD_PREFIX = "textures/item/depleted_blaze_rod_";
     /** Texture path suffix for depleted blaze rod stages. */

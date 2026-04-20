@@ -148,7 +148,66 @@ class ChainFootprintTest {
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
+    @Nested
+    class SphereShell {
+        @Test void radius0IsOriginOnly() {
+            List<int[]> shell = ChainFootprint.sphereShell(0);
+            assertEquals(1, shell.size());
+            assertTrue(containsOffset3d(shell, 0, 0, 0));
+        }
+
+        @Test void radius1HasSixCardinals() {
+            List<int[]> shell = ChainFootprint.sphereShell(1);
+            assertTrue(containsOffset3d(shell, 1, 0, 0));
+            assertTrue(containsOffset3d(shell, -1, 0, 0));
+            assertTrue(containsOffset3d(shell, 0, 1, 0));
+            assertTrue(containsOffset3d(shell, 0, -1, 0));
+            assertTrue(containsOffset3d(shell, 0, 0, 1));
+            assertTrue(containsOffset3d(shell, 0, 0, -1));
+            assertFalse(containsOffset3d(shell, 0, 0, 0), "origin should not be in shell 1");
+        }
+
+        @Test void shellsDoNotOverlap() {
+            Set<String> r0 = toSet3d(ChainFootprint.sphereShell(0));
+            Set<String> r1 = toSet3d(ChainFootprint.sphereShell(1));
+            Set<String> r2 = toSet3d(ChainFootprint.sphereShell(2));
+            assertTrue(disjoint(r0, r1), "shell 0 and 1 overlap");
+            assertTrue(disjoint(r1, r2), "shell 1 and 2 overlap");
+            assertTrue(disjoint(r0, r2), "shell 0 and 2 overlap");
+        }
+
+        @Test void shellsUnionEqualsSolid() {
+            int radius = 3;
+            Set<String> union = new HashSet<>();
+            for (int r = 0; r <= radius; r++) {
+                union.addAll(toSet3d(ChainFootprint.sphereShell(r)));
+            }
+            int r2 = radius * radius;
+            int solidCount = 0;
+            for (int x = -radius; x <= radius; x++) {
+                for (int y = -radius; y <= radius; y++) {
+                    for (int z = -radius; z <= radius; z++) {
+                        if (x * x + y * y + z * z <= r2) { solidCount++; }
+                    }
+                }
+            }
+            assertEquals(solidCount, union.size(),
+                    "union of shells 0.." + radius + " should equal solid sphere");
+        }
+
+        @Test void allUniqueWithinShell() {
+            for (int r = 0; r <= 4; r++) {
+                List<int[]> shell = ChainFootprint.sphereShell(r);
+                Set<String> seen = new HashSet<>();
+                for (int[] p : shell) {
+                    assertTrue(seen.add(p[0] + "," + p[1] + "," + p[2]),
+                            "duplicate in shell " + r);
+                }
+            }
+        }
+    }
+
+    // ── Helpers ──
 
     private static boolean containsOffset(List<int[]> list, int a, int b) {
         return list.stream().anyMatch(p -> p[0] == a && p[1] == b);
@@ -160,5 +219,20 @@ class ChainFootprintTest {
             assertTrue(seen.add(p[0] + "," + p[1]),
                     "Duplicate offset [" + p[0] + "," + p[1] + "]");
         }
+    }
+
+    private static boolean containsOffset3d(List<int[]> list, int x, int y, int z) {
+        return list.stream().anyMatch(p -> p[0] == x && p[1] == y && p[2] == z);
+    }
+
+    private static Set<String> toSet3d(List<int[]> list) {
+        Set<String> set = new HashSet<>();
+        for (int[] p : list) { set.add(p[0] + "," + p[1] + "," + p[2]); }
+        return set;
+    }
+
+    private static boolean disjoint(Set<String> a, Set<String> b) {
+        for (String s : a) { if (b.contains(s)) { return false; } }
+        return true;
     }
 }

@@ -35,6 +35,8 @@ public final class ChainFootprint {
     private static final int NEG = -1;
     /** AABB expansion: blocks occupy full unit cubes. */
     private static final int BLOCK_SIZE = 1;
+    /** Array index for Z component in offset triples. */
+    private static final int Z_INDEX = 2;
 
     private ChainFootprint() {}
 
@@ -289,6 +291,67 @@ public final class ChainFootprint {
                     }
                 }
             }
+        }
+        return result;
+    }
+
+    /**
+     * Returns 3D offsets for a single spherical shell at the given radius.
+     * Shell r contains all integer positions where r-1 < distance <= r,
+     * computed as floor(sqrt(d2)) == r. Shell 0 is the origin block.
+     * Shells 0..R union to the full solid sphere of radius R.
+     *
+     * @param shellRadius the shell radius (0 = origin only)
+     * @return list of {dx, dy, dz} offsets
+     */
+    public static List<int[]> sphereShell(int shellRadius) {
+        if (shellRadius == 0) { return List.of(new int[]{0, 0, 0}); }
+        int r2max = shellRadius * shellRadius;
+        int r2min = (shellRadius - 1) * (shellRadius - 1);
+        List<int[]> result = new ArrayList<>();
+        for (int dx = -shellRadius; dx <= shellRadius; dx++) {
+            collectShellSlice(result, dx, shellRadius, r2min, r2max);
+        }
+        return result;
+    }
+
+    /** Collects all positions in one x-slice of a spherical shell.
+     *
+     * @param result     the output list
+     * @param dx         the x offset
+     * @param shellRadius the shell radius
+     * @param r2min      the squared inner radius (exclusive)
+     * @param r2max      the squared outer radius (inclusive)
+     */
+    private static void collectShellSlice(List<int[]> result, int dx,
+            int shellRadius, int r2min, int r2max) {
+        for (int dy = -shellRadius; dy <= shellRadius; dy++) {
+            for (int dz = -shellRadius; dz <= shellRadius; dz++) {
+                int d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 <= r2max && d2 > r2min) {
+                    result.add(new int[]{dx, dy, dz});
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns 3D offsets for a single spherical shell, translated so the
+     * sphere center is one block into the wall from the marker.
+     *
+     * @param shellRadius the shell radius (0 = center block)
+     * @param face        the placed face (determines center offset)
+     * @return list of {dx, dy, dz} offsets relative to the marker
+     */
+    public static List<int[]> sphereShellOffsets(int shellRadius, Direction face) {
+        Direction blastDir = face.getOpposite();
+        int cx = blastDir.getStepX();
+        int cy = blastDir.getStepY();
+        int cz = blastDir.getStepZ();
+        List<int[]> shell = sphereShell(shellRadius);
+        List<int[]> result = new ArrayList<>(shell.size());
+        for (int[] p : shell) {
+            result.add(new int[]{p[0] + cx, p[1] + cy, p[Z_INDEX] + cz});
         }
         return result;
     }

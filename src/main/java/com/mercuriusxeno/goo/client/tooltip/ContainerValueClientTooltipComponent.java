@@ -34,9 +34,9 @@ public class ContainerValueClientTooltipComponent implements ClientTooltipCompon
     /** Namespace for goo textures. */
     private static final String GOO_NAMESPACE = "goo";
     /** Texture path prefix for goo type icons. */
-    private static final String ICON_TEXTURE_PREFIX = "textures/item/";
+    private static final String ICON_TEXTURE_PREFIX = "textures/goo/type/";
     /** Texture path suffix for bordered goo type icons. */
-    private static final String ICON_TEXTURE_SUFFIX = "_icon_bordered.png";
+    private static final String ICON_TEXTURE_SUFFIX = ".png";
 
     private final List<ColumnEntry> leftEntries;
     private final List<ColumnEntry> rightEntries;

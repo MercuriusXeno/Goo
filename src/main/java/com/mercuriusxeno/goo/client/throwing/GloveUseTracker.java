@@ -2,11 +2,9 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.client.radial.AbilityRadialScreen;
 import com.mercuriusxeno.goo.client.radial.GooRadialScreen;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
-import com.mercuriusxeno.goo.network.AbilitySyncHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -95,28 +93,15 @@ public final class GloveUseTracker {
         }
     }
 
-    /** Opens the type radial (shift+hold) or ability radial (hold).
-     *
-     * @param player the local player holding the glove
-     */
-    /** Opens the type radial (shift+hold) or ability radial (hold).
+    /** Opens the unified radial menu (type selection first, then abilities).
      *
      * @param player   the local player holding the glove
      * @param glove    the glove item stack (captured before release)
-     * @param shifting true if shift was held during the hold
+     * @param shifting true if shift was held during the hold (unused)
      */
     private static void openAppropriateRadial(LocalPlayer player,
             ItemStack glove, boolean shifting) {
-        GooType selected = GooGloveItem.getSelectedType(glove);
-        if (shifting) {
-            GooRadialScreen.open();
-            return;
-        }
-        if (selected != null && AbilitySyncHandler.hasAbilities(selected)) {
-            AbilityRadialScreen.open(selected);
-        } else {
-            GooRadialScreen.open();
-        }
+        GooRadialScreen.open();
     }
 
     /**

@@ -25,9 +25,9 @@ public class BlobVolumeDecorator implements IItemDecorator {
     /** Namespace for goo icon textures. */
     private static final String NAMESPACE_GOO = "goo";
     /** Texture path prefix for goo type icons. */
-    private static final String ICON_PATH_PREFIX = "textures/item/";
+    private static final String ICON_PATH_PREFIX = "textures/goo/type/";
     /** Texture path suffix for goo type icons. */
-    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+    private static final String ICON_PATH_SUFFIX = ".png";
     /** Icon X offset from slot left edge. */
     private static final int ICON_X_OFFSET = 10;
     /** Source and dest size for icon blit. */
