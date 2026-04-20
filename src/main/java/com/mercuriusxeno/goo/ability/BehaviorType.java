@@ -30,6 +30,7 @@ public final class BehaviorType {
 
     static {
         register("explosion", ParameterizedExplosion::fromEntry);
+        register("progressive_break", ProgressiveBreakBlock::fromEntry);
     }
 
     private BehaviorType() {}
