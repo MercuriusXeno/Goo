@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.client.radial;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.ability.AbilityDefinition;
-import com.mercuriusxeno.goo.ability.AbilityRegistry;
 import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.item.GooGloveItem;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler.ClientAbility;
 import com.mercuriusxeno.goo.network.GloveSelectPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -25,17 +25,15 @@ import java.util.List;
  */
 public final class AbilityRadialScreen extends Screen {
 
-    /** Sentinel value for no wedge hovered. */
     private static final int NO_SELECTION = -1;
-    /** Divisor for centering. */
     private static final int HALF = 2;
 
     private final GooType gooType;
-    private final List<AbilityDefinition> abilities;
+    private final List<ClientAbility> abilities;
     private final int[] wedgeColors;
     private int hoveredIndex = NO_SELECTION;
 
-    private AbilityRadialScreen(GooType gooType, List<AbilityDefinition> abilities) {
+    private AbilityRadialScreen(GooType gooType, List<ClientAbility> abilities) {
         super(Component.empty());
         this.gooType = gooType;
         this.abilities = abilities;
@@ -44,12 +42,12 @@ public final class AbilityRadialScreen extends Screen {
 
     /**
      * Opens the ability radial for the given goo type.
-     * Falls back to the type radial if the type has no abilities.
+     * Does nothing if the type has no synced abilities.
      *
      * @param type the goo type to show abilities for
      */
     public static void open(GooType type) {
-        List<AbilityDefinition> abilities = AbilityRegistry.getAbilitiesForType(type);
+        List<ClientAbility> abilities = AbilitySyncHandler.getAbilitiesForType(type);
         if (abilities.isEmpty()) { return; }
         Minecraft mc = Minecraft.getInstance();
         mc.setScreen(new AbilityRadialScreen(type, abilities));
@@ -67,8 +65,8 @@ public final class AbilityRadialScreen extends Screen {
         int centerY = height / HALF;
         hoveredIndex = AbilityRadialRenderer.computeHoveredIndex(
                 mouseX, mouseY, centerX, centerY, abilities.size());
-        AbilityRadialRenderer.computeWedgeColors(wedgeColors, abilities, gooType, hoveredIndex);
-        AbilityRadialRenderer.renderSlots(graphics, centerX, centerY, wedgeColors,
+        AbilityRadialRenderer.computeWedgeColorsFromSync(wedgeColors, abilities, gooType, hoveredIndex);
+        AbilityRadialRenderer.renderSlotsFromSync(graphics, centerX, centerY, wedgeColors,
                 hoveredIndex, abilities, font);
     }
 
@@ -89,7 +87,7 @@ public final class AbilityRadialScreen extends Screen {
         onClose();
     }
 
-    private void selectAbility(AbilityDefinition ability) {
+    private void selectAbility(ClientAbility ability) {
         ItemStack glove = findGloveStack();
         if (glove == null) { return; }
         GloveSelection selection = GloveSelection.ofAbility(gooType, ability.id());

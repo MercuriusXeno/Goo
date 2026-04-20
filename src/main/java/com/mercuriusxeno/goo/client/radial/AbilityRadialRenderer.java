@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.radial;
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler.ClientAbility;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -90,6 +91,49 @@ final class AbilityRadialRenderer {
      */
     static void renderSlots(GuiGraphicsExtractor graphics, int centerX, int centerY,
             int[] colors, int hoveredIndex, List<AbilityDefinition> abilities, Font font) {
+        if (abilities.isEmpty()) { return; }
+        double wedgeArc = TWO_PI / abilities.size();
+        double slotRadius = INNER_RADIUS + (OUTER_RADIUS - INNER_RADIUS) * LABEL_FRAC;
+        for (int i = 0; i < abilities.size(); i++) {
+            double midAngle = i * wedgeArc + wedgeArc / ANGLE_HALF + ANGLE_OFFSET;
+            int sx = centerX + (int) (Math.cos(midAngle) * slotRadius);
+            int sy = centerY + (int) (Math.sin(midAngle) * slotRadius);
+            graphics.fill(RenderPipelines.GUI, sx - SLOT_HALF, sy - SLOT_HALF,
+                    sx + SLOT_HALF, sy + SLOT_HALF, colors[i]);
+            int textColor = (i == hoveredIndex) ? HOVER_TEXT_COLOR : TEXT_COLOR;
+            Component label = Component.translatable(abilities.get(i).displayName());
+            graphics.centeredText(font, label, sx, sy + SLOT_HALF + 1, textColor);
+        }
+    }
+
+    /** Color computation for synced client abilities.
+     *
+     * @param colors       the output color array
+     * @param abilities    the synced ability list
+     * @param type         the goo type for base color
+     * @param hoveredIndex the currently hovered wedge
+     */
+    static void computeWedgeColorsFromSync(int[] colors, List<ClientAbility> abilities,
+            GooType type, int hoveredIndex) {
+        int baseColor = GooColors.wheel(type);
+        for (int i = 0; i < abilities.size(); i++) {
+            int alpha = (i == hoveredIndex) ? HOVER_ALPHA : NORMAL_ALPHA;
+            colors[i] = ARGB.color(alpha, baseColor);
+        }
+    }
+
+    /** Renders slots for synced client abilities.
+     *
+     * @param graphics     the GUI graphics extractor
+     * @param centerX      the screen center x
+     * @param centerY      the screen center y
+     * @param colors       the per-wedge ARGB colors
+     * @param hoveredIndex the hovered wedge index
+     * @param abilities    the synced ability list
+     * @param font         the font renderer
+     */
+    static void renderSlotsFromSync(GuiGraphicsExtractor graphics, int centerX, int centerY,
+            int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
         if (abilities.isEmpty()) { return; }
         double wedgeArc = TWO_PI / abilities.size();
         double slotRadius = INNER_RADIUS + (OUTER_RADIUS - INNER_RADIUS) * LABEL_FRAC;

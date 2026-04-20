@@ -42,6 +42,8 @@ public final class GooNetworking {
                 TunerFeedbackHandler::handle);
         r.playToClient(BlobFlightPayload.TYPE, BlobFlightPayload.STREAM_CODEC,
                 BlobFlightHandler::handle);
+        r.playToClient(AbilitySyncPayload.TYPE, AbilitySyncPayload.STREAM_CODEC,
+                AbilitySyncHandler::handle);
     }
 
     /** Registers server-bound payloads.

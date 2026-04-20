@@ -2,11 +2,11 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.ability.AbilityRegistry;
 import com.mercuriusxeno.goo.client.radial.AbilityRadialScreen;
 import com.mercuriusxeno.goo.client.radial.GooRadialScreen;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -103,7 +103,7 @@ public final class GloveUseTracker {
             return;
         }
         GooType selected = GooGloveItem.getSelectedType(player.getUseItem());
-        if (selected != null && AbilityRegistry.hasAbilities(selected)) {
+        if (selected != null && AbilitySyncHandler.hasAbilities(selected)) {
             AbilityRadialScreen.open(selected);
         } else {
             GooRadialScreen.open();
