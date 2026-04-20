@@ -8,6 +8,8 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Generates and caches anti-aliased mask textures for the radial menu.
@@ -68,6 +70,19 @@ public final class RadialTextures {
     /** Registered cancel circle texture identifier. */
     private static Identifier cancelId;
 
+    /** Cache of dynamically generated wedge masks for variable-count radials.
+     * Key: (wedgeCount << 16) | wedgeIndex. */
+    private static final Map<Integer, Identifier> DYNAMIC_WEDGES = new HashMap<>();
+
+    /** Dynamic texture label prefix for variable-count wedges. */
+    private static final String DYN_WEDGE_LABEL = "goo_dyn_wedge_";
+    /** Dynamic texture path prefix for variable-count wedges. */
+    private static final String DYN_WEDGE_PATH = "dynamic/dyn_wedge_";
+    /** Separator between count and index in dynamic wedge names. */
+    private static final String DYN_SEP = "_";
+    /** Bit shift for packing wedge count into cache key. */
+    private static final int COUNT_SHIFT = 16;
+
     /** Whether textures have been generated and registered. */
     private static boolean initialized;
 
@@ -127,6 +142,34 @@ public final class RadialTextures {
      */
     public static Identifier getCancelTexture() {
         return cancelId;
+    }
+
+    /**
+     * Returns a wedge mask texture for a variable-count radial (e.g., ability radial).
+     * Generates and caches on first use per (wedgeCount, wedgeIndex) pair.
+     *
+     * @param wedgeCount the total number of wedges
+     * @param wedgeIndex the index of this wedge
+     * @return the registered texture identifier
+     */
+    public static Identifier getWedgeTexture(int wedgeCount, int wedgeIndex) {
+        ensureInitialized();
+        int key = (wedgeCount << COUNT_SHIFT) | wedgeIndex;
+        return DYNAMIC_WEDGES.computeIfAbsent(key, k -> registerDynamicWedge(wedgeCount, wedgeIndex));
+    }
+
+    private static Identifier registerDynamicWedge(int wedgeCount, int wedgeIndex) {
+        double startAngle = wedgeIndex * (TWO_PI / wedgeCount);
+        double endAngle = (wedgeIndex + 1) * (TWO_PI / wedgeCount);
+        NativeImage image = new NativeImage(TEX_SIZE, TEX_SIZE, true);
+        rasterizeWedge(image, TEX_SIZE / HALF_DIVISOR, startAngle, endAngle);
+        int count = wedgeCount;
+        int idx = wedgeIndex;
+        DynamicTexture tex = new DynamicTexture(() -> DYN_WEDGE_LABEL + count + DYN_SEP + idx, image);
+        Identifier id = Identifier.fromNamespaceAndPath(
+                Goo.MODID, DYN_WEDGE_PATH + count + DYN_SEP + wedgeIndex);
+        Minecraft.getInstance().getTextureManager().register(id, tex);
+        return id;
     }
 
     /**

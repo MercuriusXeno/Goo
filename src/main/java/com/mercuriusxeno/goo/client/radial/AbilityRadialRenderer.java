@@ -47,6 +47,16 @@ final class AbilityRadialRenderer {
     private static final String TAG_ENTITY = "entity";
     /** Suffix appended to entity ability labels. */
     private static final String MOB_SUFFIX = " (Mob)";
+    /** Divisor for centering and sizing. */
+    private static final int HALF = 2;
+    /** Semi-transparent white for cancel zone when hovered. */
+    private static final int CANCEL_HOVER_COLOR = 0x88FFFFFF;
+    /** Semi-transparent white for cancel zone when idle. */
+    private static final int CANCEL_IDLE_COLOR = 0x44FFFFFF;
+    /** Fully opaque white. */
+    private static final int COLOR_WHITE = 0xFFFFFFFF;
+    /** Back arrow symbol for the cancel zone (returns to type radial). */
+    private static final String BACK_SYMBOL = "\u2190";
 
     private AbilityRadialRenderer() {}
 
@@ -102,6 +112,66 @@ final class AbilityRadialRenderer {
     static void renderSlotsFromSync(GuiGraphicsExtractor graphics, int centerX, int centerY,
             int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
         if (abilities.isEmpty()) { return; }
+        renderWedges(graphics, centerX, centerY, colors, abilities.size());
+        renderCancelZone(graphics, centerX, centerY, hoveredIndex, font);
+        renderIconsAndLabels(graphics, centerX, centerY, colors, hoveredIndex, abilities, font);
+    }
+
+    /** Renders tinted wedge mask textures for the ability ring.
+     *
+     * @param graphics   the GUI graphics extractor
+     * @param centerX    the screen center x
+     * @param centerY    the screen center y
+     * @param colors     the per-wedge ARGB colors
+     * @param wedgeCount the number of wedges
+     */
+    private static void renderWedges(GuiGraphicsExtractor graphics, int centerX, int centerY,
+            int[] colors, int wedgeCount) {
+        int x = centerX - OUTER_RADIUS;
+        int y = centerY - OUTER_RADIUS;
+        int size = OUTER_RADIUS * HALF;
+        for (int i = 0; i < wedgeCount; i++) {
+            Identifier tex = RadialTextures.getWedgeTexture(wedgeCount, i);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, tex,
+                    x, y, 0.0f, 0.0f, size, size, RadialTextures.TEX_SIZE, RadialTextures.TEX_SIZE, colors[i]);
+        }
+    }
+
+    /** Renders the cancel/back zone circle in the center.
+     *
+     * @param graphics     the GUI graphics extractor
+     * @param centerX      the screen center x
+     * @param centerY      the screen center y
+     * @param hoveredIndex the hovered wedge index (-1 = center)
+     * @param font         the font renderer
+     */
+    private static void renderCancelZone(GuiGraphicsExtractor graphics, int centerX, int centerY,
+            int hoveredIndex, Font font) {
+        boolean cancelHovered = hoveredIndex == NO_SELECTION;
+        int color = cancelHovered ? CANCEL_HOVER_COLOR : CANCEL_IDLE_COLOR;
+        int size = OUTER_RADIUS * HALF;
+        int x = centerX - OUTER_RADIUS;
+        int y = centerY - OUTER_RADIUS;
+        graphics.blit(RenderPipelines.GUI_TEXTURED, RadialTextures.getCancelTexture(),
+                x, y, 0.0f, 0.0f, size, size, RadialTextures.TEX_SIZE, RadialTextures.TEX_SIZE, color);
+        if (cancelHovered) {
+            graphics.centeredText(font, Component.literal(BACK_SYMBOL),
+                    centerX, centerY - font.lineHeight / HALF, COLOR_WHITE);
+        }
+    }
+
+    /** Renders icons and labels on top of the wedge backgrounds.
+     *
+     * @param graphics     the GUI graphics extractor
+     * @param centerX      the screen center x
+     * @param centerY      the screen center y
+     * @param colors       the per-wedge ARGB colors
+     * @param hoveredIndex the hovered wedge index
+     * @param abilities    the synced ability list
+     * @param font         the font renderer
+     */
+    private static void renderIconsAndLabels(GuiGraphicsExtractor graphics, int centerX, int centerY,
+            int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
         double wedgeArc = TWO_PI / abilities.size();
         double slotRadius = INNER_RADIUS + (OUTER_RADIUS - INNER_RADIUS) * LABEL_FRAC;
         for (int i = 0; i < abilities.size(); i++) {

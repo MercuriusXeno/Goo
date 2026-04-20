@@ -68,6 +68,7 @@ public final class AbilityRadialScreen extends Screen {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
+        RadialTextures.ensureInitialized();
         int centerX = width / HALF;
         int centerY = height / HALF;
         hoveredIndex = AbilityRadialRenderer.computeHoveredIndex(
