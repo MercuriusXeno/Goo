@@ -17,6 +17,7 @@ import com.mercuriusxeno.goo.registry.GooItems;
 import com.mercuriusxeno.goo.registry.GooParticles;
 import com.mercuriusxeno.goo.registry.GooPotions;
 import com.mercuriusxeno.goo.registry.GooSounds;
+import com.mercuriusxeno.goo.registry.GooTestFunctions;
 import com.mercuriusxeno.goo.registry.GooTickets;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -53,6 +54,7 @@ public class Goo {
     public Goo(IEventBus modEventBus, ModContainer modContainer) {
         registerDeferredRegistries(modEventBus);
         registerModListeners(modEventBus);
+        GooTestFunctions.init(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, GooConfig.SPEC);
 

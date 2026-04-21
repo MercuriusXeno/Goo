@@ -34,10 +34,32 @@ runs {
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         // GUI enabled so the server window can be closed cleanly
     }
+    gameTestServer {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        // JUnit XML report for sca-digest.py consumption
+        arguments.addAll '--report', file("${layout.buildDirectory.get()}/test-results/gameTest/TEST-gametest.xml").absolutePath
+        // JaCoCo agent for coverage merge with unit tests.
+        // The jacocoAgent configuration resolves to a wrapper jar containing jacocoagent.jar.
+        var wrapperJar = configurations.jacocoAgent.singleFile
+        var agentJar = zipTree(wrapperJar).matching { include 'jacocoagent.jar' }.singleFile
+        jvmArguments.add("-javaagent:${agentJar}=destfile=${layout.buildDirectory.get()}/jacoco/gameTest.exec,includes=com.mercuriusxeno.goo.*")
+    }
     clientData {
         arguments.addAll '--mod', project.mod_id, '--all',
             '--output', file('src/generated/resources/').absolutePath,
             '--existing', file('src/main/resources/').absolutePath
+    }
+}
+
+// Attach JaCoCo agent to gameTestServer so coverage merges with unit tests.
+// The jacocoAgent configuration is provided by the jacoco plugin; we resolve it
+// lazily to avoid eager dependency resolution during project configuration.
+afterEvaluate {
+    tasks.named('runGameTestServer').configure {
+        // JUnitLikeTestReporter doesn't create parent dirs before writing XML.
+        // Capture path at config time to stay config-cache safe.
+        var reportDir = file("${layout.buildDirectory.get()}/test-results/gameTest")
+        doFirst { reportDir.mkdirs() }
     }
 }
 
@@ -100,7 +122,7 @@ tasks.register('gooTest', Test) {
 }
 
 tasks.register('jacocoGooTestReport', JacocoReport) {
-    description = 'Generates JaCoCo coverage report for gooTest'
+    description = 'Generates JaCoCo coverage report merging unit tests and gametests'
     group = 'verification'
     dependsOn tasks.named('gooTest')
     executionData fileTree(dir: layout.buildDirectory, includes: ['jacoco/*.exec'])
@@ -111,6 +133,13 @@ tasks.register('jacocoGooTestReport', JacocoReport) {
         csv.required = true
     }
     // No exclusions. Every 0% class is a MOCK_BLOCK extraction waiting to happen.
+}
+
+tasks.register('coverage') {
+    description = 'Runs unit tests + gametests, then generates merged JaCoCo report'
+    group = 'verification'
+    dependsOn 'gooTest', 'runGameTestServer'
+    finalizedBy 'jacocoGooTestReport'
 }
 
 checkstyle {
@@ -214,6 +243,10 @@ tasks.checkstyleMain.finalizedBy(tasks.scaDigest)
 tasks.pmdMain.finalizedBy(tasks.scaDigest)
 tasks.spotbugsMain.finalizedBy(tasks.scaDigest)
 tasks.named('cpd') { finalizedBy tasks.scaDigest }
+// Gametests boot a full Minecraft server; opt-in via -PgameTests
+if (project.hasProperty('gameTests')) {
+    tasks.named('check') { dependsOn 'runGameTestServer' }
+}
 tasks.named('check') { finalizedBy tasks.scaDigest }
 
 tasks.register('generateTextures', JavaExec) {
