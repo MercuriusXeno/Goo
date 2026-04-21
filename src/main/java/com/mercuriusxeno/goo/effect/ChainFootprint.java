@@ -38,6 +38,13 @@ public final class ChainFootprint {
     /** Array index for Z component in offset triples. */
     private static final int Z_INDEX = 2;
 
+    /** Area mode: 3x3 tunnel advancing along placed face axis. */
+    public static final String AREA_TUNNEL = "tunnel";
+    /** Area mode: euclidean circle, one layer deep. */
+    public static final String AREA_FLAT_CIRCLE = "flat_circle";
+    /** Area mode: expanding sphere. */
+    public static final String AREA_SPHERE = "sphere";
+
     private ChainFootprint() {}
 
 
@@ -270,6 +277,24 @@ public final class ChainFootprint {
         int depth = flatMode ? 1 : tunnelDepth(stacks);
         Direction blastDir = face.getOpposite();
         return expandLayers(footprint, depth, blastDir);
+    }
+
+    /**
+     * Returns all 3D block offsets in the effect region for the given area mode.
+     * Dispatches to tunnel, flat circle, or sphere computation.
+     *
+     * @param stacks   blob stack count
+     * @param areaMode "tunnel", "flat_circle", or "sphere"
+     * @param face     the placed face
+     * @return list of {dx, dy, dz} offsets
+     */
+    public static List<int[]> computeRegionOffsets(int stacks, String areaMode, Direction face) {
+        if (AREA_SPHERE.equals(areaMode)) {
+            int radius = EffectMath.computeFreezeRadius(stacks);
+            return computeSphereOffsets(radius, face);
+        }
+        boolean flat = AREA_FLAT_CIRCLE.equals(areaMode);
+        return computeRegionOffsets(stacks, flat, face);
     }
 
     /** Expands a 2D footprint into 3D offsets along the blast direction.

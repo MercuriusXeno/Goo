@@ -96,19 +96,16 @@ public final class BlazeExecutor {
      * @param placedFace the face the marker was attached to
      * @param stepIndex  zero-based layer offset along the blast direction
      * @param stackCount the raw stack count (scales sound volume)
-     * @param flatMode   true for flat (Euclidean circle) footprint
      * @return the number of blocks destroyed in this layer
      */
     public static int mineLayer(ServerLevel level, BlockPos origin,
                                 Direction placedFace, int stepIndex,
-                                int stackCount, boolean flatMode) {
+                                int stackCount) {
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
         ItemStack fortuneTool = buildFortuneTool(level);
         List<ItemStack> drops = new ArrayList<>();
-        List<int[]> footprint = flatMode
-                ? ChainFootprint.flatFootprint(stackCount)
-                : ChainFootprint.layerFootprint(stackCount);
+        List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
         int destroyed = mineFootprint(level, layerCenter, blastAxis, fortuneTool, drops, footprint);
         if (destroyed > 0) {
             ejectDrops(level, origin, placedFace, drops);
@@ -130,16 +127,13 @@ public final class BlazeExecutor {
      * @param placedFace the face the marker was attached to
      * @param stepIndex  zero-based layer offset along the blast direction
      * @param stackCount the stack count for footprint computation
-     * @param flatMode   true for flat footprint
      */
     public static void previewLayer(ServerLevel level, BlockPos origin,
                                     Direction placedFace, int stepIndex,
-                                    int stackCount, boolean flatMode) {
+                                    int stackCount) {
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
         BlockPos layerCenter = resolveLayerCenter(origin, placedFace, stepIndex);
-        List<int[]> footprint = flatMode
-                ? ChainFootprint.flatFootprint(stackCount)
-                : ChainFootprint.layerFootprint(stackCount);
+        List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
         for (int[] offset : footprint) {
             BlockPos blockPos = offsetPerpendicular(layerCenter, blastAxis, offset[0], offset[1]);
             double bx = blockPos.getX() + BLOCK_CENTER_OFFSET;

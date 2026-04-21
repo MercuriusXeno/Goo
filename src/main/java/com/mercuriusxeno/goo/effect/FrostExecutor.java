@@ -154,15 +154,12 @@ public final class FrostExecutor {
      * @param placedFace the face the marker was placed on
      * @param stepIndex  the current layer depth index
      * @param stackCount the blob stack count
-     * @param flatMode   true for flat circle, false for tunnel
      */
     public static void freezeLayer(ServerLevel level, BlockPos origin,
-            Direction placedFace, int stepIndex, int stackCount, boolean flatMode) {
+            Direction placedFace, int stepIndex, int stackCount) {
         BlockPos layerCenter = origin.relative(placedFace.getOpposite(), stepIndex + 1);
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
-        List<int[]> footprint = flatMode
-                ? ChainFootprint.flatFootprint(stackCount)
-                : ChainFootprint.layerFootprint(stackCount);
+        List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
         for (int[] fp : footprint) {
             BlockPos target = resolveFootprintPos(layerCenter, blastAxis, fp);
             convertBlock(level, target);

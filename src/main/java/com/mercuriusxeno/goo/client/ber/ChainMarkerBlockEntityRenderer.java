@@ -12,7 +12,6 @@ import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
 import com.mercuriusxeno.goo.effect.ChainFootprint;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.CrystalBehavior;
-import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.effect.MetalBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -893,14 +892,7 @@ public class ChainMarkerBlockEntityRenderer
      * @return the block offsets for the ghost outline
      */
     private static List<int[]> computeGhostOffsets(GooType type, ChainMarkerRenderState state) {
-        if (MODE_SPHERE.equals(state.areaMode)) {
-            int radius = EffectMath.computeFreezeRadius(state.stackCount);
-            return ChainFootprint.computeSphereOffsets(radius, state.placedFace);
-        }
-        if (MODE_FLAT_CIRCLE.equals(state.areaMode)) {
-            return ChainFootprint.computeRegionOffsets(state.stackCount, true, state.placedFace);
-        }
-        return ChainFootprint.computeRegionOffsets(state.stackCount, false, state.placedFace);
+        return ChainFootprint.computeRegionOffsets(state.stackCount, state.areaMode, state.placedFace);
     }
 
     /**

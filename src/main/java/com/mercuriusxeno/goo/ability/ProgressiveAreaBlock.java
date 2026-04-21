@@ -45,6 +45,10 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private static final String TAG_LAYER_DEPTH = "AreaLayerDepth";
     private static final String TAG_STACK_SNAPSHOT = "AreaStackSnapshot";
     private static final String TAG_FACE_SNAPSHOT = "AreaFace";
+    /** Array index for Z component in 3D offset triples. */
+    private static final int Z_INDEX = 2;
+    /** Negative unit step for blast direction. */
+    private static final int NEG_STEP = -1;
 
     private final String areaMode;
     private final String blockAction;
@@ -137,83 +141,83 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param pos   the marker block position
      */
     private void previewLayer(ServerLevel level, BlockPos pos) {
-        boolean flat = isFlatArea();
         switch (particleStyle) {
             case STYLE_BLAZE -> BlazeExecutor.previewLayer(level, pos, placedFace,
-                    pipelineTick, stackCount, flat);
+                    pipelineTick, stackCount);
             case STYLE_FROST -> {} // Frost has no preview particles yet
             default -> RockExecutor.previewLayer(level, pos, placedFace, pipelineTick);
         }
     }
 
-    /** Dispatches the per-block action to the appropriate executor.
+    /** Computes the positions for this layer and applies the block action to each.
+     * All three area modes use the same per-block dispatch.
      *
      * @param level      the server level
      * @param pos        the marker block position
-     * @param layerIndex the current layer depth index
+     * @param layerIndex the current layer/ring/shell index
      */
     private void applyLayer(ServerLevel level, BlockPos pos, int layerIndex) {
-        if (AREA_SPHERE.equals(areaMode)) {
-            applySphereShell(level, pos, layerIndex);
-            return;
-        }
-        if (isFlatArea()) {
-            applyFlatRing(level, pos, layerIndex);
-            return;
-        }
-        switch (blockAction) {
-            case ACTION_FORTUNE_SMELT -> BlazeExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, false);
-            case ACTION_FREEZE -> FrostExecutor.freezeLayer(level, pos, placedFace,
-                    layerIndex, stackCount, false);
-            default -> RockExecutor.mineLayer(level, pos, placedFace,
-                    layerIndex, stackCount, false);
+        java.util.List<int[]> offsets = computeLayerOffsets(pos, layerIndex);
+        for (int[] o : offsets) {
+            applyBlockAction(level, pos.offset(o[0], o[1], o[Z_INDEX]));
         }
     }
 
-    /** Returns true if this behavior uses flat area mode.
+    /** Computes 3D offsets for one delivery step based on area mode.
      *
-     * @return true for flat_circle area mode
-     */
-    private boolean isFlatArea() {
-        return !AREA_TUNNEL.equals(areaMode) && !AREA_SPHERE.equals(areaMode);
-    }
-
-    /** Applies a single spherical shell at the given radius.
-     *
-     * @param level      the server level
      * @param pos        the marker block position
-     * @param shellIndex the shell radius to apply
+     * @param layerIndex the current step index
+     * @return list of {dx, dy, dz} offsets relative to the marker
      */
-    private void applySphereShell(ServerLevel level, BlockPos pos, int shellIndex) {
-        if (ACTION_FREEZE.equals(blockAction)) {
-            FrostExecutor.freezeShell(level, pos, placedFace, shellIndex);
+    private java.util.List<int[]> computeLayerOffsets(BlockPos pos, int layerIndex) {
+        if (AREA_SPHERE.equals(areaMode)) {
+            return ChainFootprint.sphereShellOffsets(layerIndex, placedFace);
         }
+        if (cachedFlatRings != null && layerIndex < cachedFlatRings.size()) {
+            return expandFlatRing(cachedFlatRings.get(layerIndex));
+        }
+        return computeTunnelLayerOffsets(layerIndex);
     }
 
-    /** Applies one ring of the flat circle footprint at depth 1.
+    /** Expands a 2D flat ring into 3D offsets at depth 1 along the blast axis.
      *
-     * @param level     the server level
-     * @param pos       the marker block position
-     * @param ringIndex the ring index
+     * @param ring the 2D ring offsets
+     * @return list of 3D offsets relative to the marker
      */
-    private void applyFlatRing(ServerLevel level, BlockPos pos, int ringIndex) {
-        if (cachedFlatRings == null || ringIndex >= cachedFlatRings.size()) { return; }
-        java.util.List<int[]> ring = cachedFlatRings.get(ringIndex);
+    private java.util.List<int[]> expandFlatRing(java.util.List<int[]> ring) {
         Direction blastDir = placedFace.getOpposite();
-        BlockPos layerCenter = pos.relative(blastDir);
-        Direction.Axis blastAxis = blastDir.getAxis();
+        Direction.Axis axis = blastDir.getAxis();
+        int step = blastDir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : NEG_STEP;
+        java.util.List<int[]> result = new java.util.ArrayList<>(ring.size());
         for (int[] fp : ring) {
-            BlockPos target = resolveRingPos(layerCenter, blastAxis, fp);
-            applyBlockAction(level, target);
+            result.add(mapToWorld(axis, fp[0], fp[1], step));
         }
+        return result;
     }
 
-    private static BlockPos resolveRingPos(BlockPos center, Direction.Axis axis, int[] fp) {
+    /** Computes 3D offsets for one tunnel layer at the given depth.
+     *
+     * @param layerIndex the layer depth index
+     * @return list of 3D offsets relative to the marker
+     */
+    private java.util.List<int[]> computeTunnelLayerOffsets(int layerIndex) {
+        Direction blastDir = placedFace.getOpposite();
+        Direction.Axis axis = blastDir.getAxis();
+        int step = blastDir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : NEG_STEP;
+        int depthOffset = (layerIndex + 1) * step;
+        java.util.List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
+        java.util.List<int[]> result = new java.util.ArrayList<>(footprint.size());
+        for (int[] fp : footprint) {
+            result.add(mapToWorld(axis, fp[0], fp[1], depthOffset));
+        }
+        return result;
+    }
+
+    private static int[] mapToWorld(Direction.Axis axis, int a, int b, int d) {
         return switch (axis) {
-            case X -> center.offset(0, fp[0], fp[1]);
-            case Y -> center.offset(fp[0], 0, fp[1]);
-            case Z -> center.offset(fp[0], fp[1], 0);
+            case X -> new int[]{d, a, b};
+            case Y -> new int[]{a, d, b};
+            case Z -> new int[]{a, b, d};
         };
     }
 
