@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.gametest.EffectExecutorTests;
 import com.mercuriusxeno.goo.gametest.GasketHolderTests;
 import com.mercuriusxeno.goo.gametest.GasketPusherTests;
+import com.mercuriusxeno.goo.gametest.MachineTests;
 import com.mercuriusxeno.goo.gametest.MobEffectTests;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -47,6 +48,15 @@ public final class GooTestFunctions {
     private static final String FX_UNSTABLE = "fx_unstable_explodes";
     private static final String FX_GLOW = "fx_glow_runs";
 
+    // --- Machines ---
+    private static final String MACHINE_CANISTER_INSERT = "machine_canister_insert";
+    private static final String MACHINE_CANISTER_REMOVE = "machine_canister_remove";
+    private static final String MACHINE_CANISTER_TICK = "machine_canister_tick";
+    private static final String MACHINE_CANISTER_BREAK = "machine_canister_break";
+    private static final String MACHINE_REACTOR_IDLE = "machine_reactor_idle";
+    private static final String MACHINE_REACTOR_BREAK = "machine_reactor_break";
+    private static final String MACHINE_PLEXER_IDLE = "machine_plexer_idle";
+
     // --- MobEffects ---
     private static final String MOB_METAL = "mob_metal_javelin";
     private static final String MOB_CRYSTAL = "mob_crystal_flechettes";
@@ -64,6 +74,7 @@ public final class GooTestFunctions {
     private static final String MOB_ENDER = "mob_ender_teleport";
     private static final String MOB_UNSTABLE = "mob_unstable_explode";
     private static final String MOB_AEON = "mob_aeon_time_stop";
+    private static final String MOB_DISPATCHER = "mob_dispatcher_routes";
 
     private GooTestFunctions() {}
 
@@ -87,6 +98,7 @@ public final class GooTestFunctions {
             reg(registrar, SMOKE, h -> h.succeed());
             registerGasketTests(registrar);
             registerEffectExecutorTests(registrar);
+            registerMachineTests(registrar);
             registerMobEffectTests(registrar);
         });
     }
@@ -115,6 +127,16 @@ public final class GooTestFunctions {
         reg(r, FX_GLOW, EffectExecutorTests::glowRuns);
     }
 
+    private static void registerMachineTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
+        reg(r, MACHINE_CANISTER_INSERT, MachineTests::canisterInsertCreatesHandler);
+        reg(r, MACHINE_CANISTER_REMOVE, MachineTests::canisterRemoveClearsHandler);
+        reg(r, MACHINE_CANISTER_TICK, MachineTests::canisterTicksWithSlot);
+        reg(r, MACHINE_CANISTER_BREAK, MachineTests::canisterBreakWithSlotIsSafe);
+        reg(r, MACHINE_REACTOR_IDLE, MachineTests::reactorIdleTick);
+        reg(r, MACHINE_REACTOR_BREAK, MachineTests::reactorBreakIsSafe);
+        reg(r, MACHINE_PLEXER_IDLE, MachineTests::plexerIdleTick);
+    }
+
     private static void registerMobEffectTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
         reg(r, MOB_METAL, MobEffectTests::metalJavelin);
         reg(r, MOB_CRYSTAL, MobEffectTests::crystalFlechettes);
@@ -132,6 +154,7 @@ public final class GooTestFunctions {
         reg(r, MOB_ENDER, MobEffectTests::enderTeleport);
         reg(r, MOB_UNSTABLE, MobEffectTests::unstableExplode);
         reg(r, MOB_AEON, MobEffectTests::aeonTimeStop);
+        reg(r, MOB_DISPATCHER, MobEffectTests::dispatcherRoutes);
     }
 
     /**

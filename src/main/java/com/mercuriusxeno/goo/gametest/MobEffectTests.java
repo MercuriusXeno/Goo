@@ -1,11 +1,13 @@
 package com.mercuriusxeno.goo.gametest;
 
+import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.effect.AeonMobEffect;
 import com.mercuriusxeno.goo.effect.BlazeMobEffect;
 import com.mercuriusxeno.goo.effect.CrystalMobEffect;
 import com.mercuriusxeno.goo.effect.EnderMobEffect;
 import com.mercuriusxeno.goo.effect.FrostMobEffect;
 import com.mercuriusxeno.goo.effect.GlowMobEffect;
+import com.mercuriusxeno.goo.effect.GooMobEffects;
 import com.mercuriusxeno.goo.effect.HexMobEffect;
 import com.mercuriusxeno.goo.effect.LeafMobEffect;
 import com.mercuriusxeno.goo.effect.MetalMobEffect;
@@ -228,6 +230,20 @@ public final class MobEffectTests {
         helper.assertTrue(mob.isNoAi(), SHOULD_HAVE_NO_AI);
         helper.assertTrue(mob.isInvulnerable(), SHOULD_BE_INVULNERABLE);
         helper.assertTrue(mob.hasEffect(MobEffects.GLOWING), SHOULD_HAVE_GLOWING);
+        helper.succeed();
+    }
+
+    /**
+     * GooMobEffects.apply() dispatcher routes to the correct per-type handler.
+     * Exercises the dispatch map that was previously the monolith entry point.
+     *
+     * @param helper the gametest helper
+     */
+    public static void dispatcherRoutes(GameTestHelper helper) {
+        Mob mob = helper.spawnWithNoFreeWill(EntityType.COW, SPAWN_POS);
+        GooMobEffects.apply(helper.getLevel(), mob, GooType.LEAF, null);
+        helper.assertTrue(mob.hasEffect(MobEffects.SLOWNESS), SHOULD_HAVE_SLOWNESS);
+        helper.assertTrue(mob.hasEffect(MobEffects.POISON), SHOULD_HAVE_POISON);
         helper.succeed();
     }
 }
