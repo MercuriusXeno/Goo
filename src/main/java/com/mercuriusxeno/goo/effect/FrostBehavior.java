@@ -19,7 +19,7 @@ public final class FrostBehavior implements ChainBehavior {
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         int stackCount = be.getStackCount();
         Direction placedFace = be.getPlacedFace();
-        boolean flatMode = be.isFlatMode();
+        boolean flatMode = false;
         boolean underwater = level.getFluidState(pos).isSource();
         if (flatMode) {
             FrostExecutor.executeFlatMode(level, pos, placedFace, stackCount);

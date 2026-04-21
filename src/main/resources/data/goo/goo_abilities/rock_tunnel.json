@@ -1,0 +1,25 @@
+{
+  "gooType": "rock",
+  "displayName": "goo.ability.rock.tunnel",
+  "order": 0,
+  "cost": {
+    "formula": "block_count",
+    "costPerBlock": 200
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 28
+  },
+  "behaviors": [
+    {
+      "type": "progressive_area",
+      "params": {
+        "areaMode": "tunnel",
+        "blockAction": "silk_break",
+        "previewDelayTicks": "8",
+        "particleStyle": "rock"
+      }
+    }
+  ],
+  "tags": ["block_break", "directional"]
+}

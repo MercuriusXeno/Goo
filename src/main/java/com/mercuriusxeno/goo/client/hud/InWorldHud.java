@@ -37,7 +37,7 @@ public final class InWorldHud {
     /** Maximum delta-time clamp to handle lag spikes. */
     private static final float MAX_DT = 0.1f;
     /** Texture path prefix for goo type icons. */
-    private static final String ICON_PATH_PREFIX = "textures/item/";
+    private static final String ICON_PATH_PREFIX = "textures/goo/type/";
 
     /** Water bucket item texture for HUD icon. */
     private static final Identifier WATER_BUCKET_ICON =
@@ -47,7 +47,7 @@ public final class InWorldHud {
     private static final Identifier LAVA_BUCKET_ICON =
             Identifier.withDefaultNamespace("textures/item/lava_bucket.png");
     /** Texture path suffix for goo type icons. */
-    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+    private static final String ICON_PATH_SUFFIX = ".png";
     /** Goo mod namespace for resource identifiers. */
     private static final String NAMESPACE_GOO = "goo";
     /** Scale factor: 1 pixel = 1/64 of a block. */

@@ -28,6 +28,8 @@ public final class ChainMarkerFallScheduler {
     private static final int NO_ENTITY = -1;
     /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
+    /** Empty ability id for legacy (non-ability) flight payloads. */
+    private static final String LEGACY_ABILITY = "";
 
     private static final List<PendingFall> PENDING_FALLS = new ArrayList<>();
 
@@ -46,11 +48,12 @@ public final class ChainMarkerFallScheduler {
      * @param maxStacks   the marker's max stacks
      * @param fuse        the remaining fuse ticks
      * @param face        the placed face direction
-     * @param flatMode    whether flat mode is active
+     * @param blobShape   the cosmetic blob shape
+     * @param areaMode    the delivery area mode
      */
     public static void scheduleFall(ServerLevel level, BlockPos oldPos, BlockPos landingPos,
             Block markerBlock, GooType gooType, int stackCount, int maxStacks, int fuse,
-            Direction face, boolean flatMode) {
+            Direction face, String blobShape, String areaMode) {
         double distance = oldPos.distManhattan(landingPos);
         int travelTicks = (int) ThrowArc.travelTicks(distance);
 
@@ -59,7 +62,7 @@ public final class ChainMarkerFallScheduler {
         int arrivalTick = level.getServer().getTickCount() + travelTicks;
         PENDING_FALLS.add(new PendingFall(
                 arrivalTick, level, landingPos, markerBlock, gooType,
-                stackCount, maxStacks, fuse, face, flatMode));
+                stackCount, maxStacks, fuse, face, blobShape, areaMode));
     }
 
     /**
@@ -112,7 +115,8 @@ public final class ChainMarkerFallScheduler {
                 landingPos,
                 Direction.UP.ordinal(),
                 travelTicks,
-                false);
+                false,
+                LEGACY_ABILITY);
         PacketDistributor.sendToPlayersTrackingChunk(
                 level, level.getChunkAt(oldPos).getPos(), flight);
     }
@@ -131,7 +135,7 @@ public final class ChainMarkerFallScheduler {
         pf.level.setBlock(pf.landingPos, markerState, BLOCK_UPDATE_FLAGS);
         if (pf.level.getBlockEntity(pf.landingPos) instanceof ChainMarkerBlockEntity be) {
             be.initChain(pf.gooType, pf.face);
-            be.restoreFromFall(pf.stackCount, pf.maxStacks, pf.fuse, pf.flatMode);
+            be.restoreFromFall(pf.stackCount, pf.maxStacks, pf.fuse, pf.blobShape, pf.areaMode);
         }
     }
 
@@ -139,5 +143,5 @@ public final class ChainMarkerFallScheduler {
     private record PendingFall(int arrivalTick, ServerLevel level, BlockPos landingPos,
                                Block markerBlock, GooType gooType, int stackCount,
                                int maxStacks, int fuse, Direction face,
-                               boolean flatMode) {}
+                               String blobShape, String areaMode) {}
 }

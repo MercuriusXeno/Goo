@@ -1,0 +1,26 @@
+{
+  "gooType": "blaze",
+  "displayName": "goo.ability.blaze.flat",
+  "order": 1,
+  "cost": {
+    "formula": "block_count",
+    "costPerBlock": 200
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 28,
+    "blobShape": "flat"
+  },
+  "behaviors": [
+    {
+      "type": "progressive_area",
+      "params": {
+        "areaMode": "flat_circle",
+        "blockAction": "fortune_smelt_break",
+        "previewDelayTicks": "8",
+        "particleStyle": "blaze"
+      }
+    }
+  ],
+  "tags": ["block_break", "area"]
+}

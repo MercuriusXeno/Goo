@@ -70,10 +70,10 @@ final class GooRadialRenderer {
     private static final int DISABLED_TEXT_COLOR = 0xFF888888;
 
     /** Texture path prefix for goo type icons. */
-    private static final String ICON_PATH_PREFIX = "textures/item/";
+    private static final String ICON_PATH_PREFIX = "textures/goo/type/";
 
     /** Texture path suffix for bordered goo type icons. */
-    private static final String ICON_PATH_SUFFIX = "_icon_bordered.png";
+    private static final String ICON_PATH_SUFFIX = ".png";
 
     // --- Quantity formatting constants ---
 

@@ -411,7 +411,9 @@ public class ReactorBlockEntity extends BlockEntity
             CanisterItem.setFluidContent(state.canisters.get(OUTPUT_SLOT),
                     handler.toFluidContent());
         }
-        output.store(TAG_OUTPUT_CANISTER, ItemStack.CODEC, getOutputCanister());
+        if (!getOutputCanister().isEmpty()) {
+            output.store(TAG_OUTPUT_CANISTER, ItemStack.CODEC, getOutputCanister());
+        }
     }
 
     @Override

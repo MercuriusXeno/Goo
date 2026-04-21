@@ -35,6 +35,15 @@ public final class ChainFootprint {
     private static final int NEG = -1;
     /** AABB expansion: blocks occupy full unit cubes. */
     private static final int BLOCK_SIZE = 1;
+    /** Array index for Z component in offset triples. */
+    private static final int Z_INDEX = 2;
+
+    /** Area mode: 3x3 tunnel advancing along placed face axis. */
+    public static final String AREA_TUNNEL = "tunnel";
+    /** Area mode: euclidean circle, one layer deep. */
+    public static final String AREA_FLAT_CIRCLE = "flat_circle";
+    /** Area mode: expanding sphere. */
+    public static final String AREA_SPHERE = "sphere";
 
     private ChainFootprint() {}
 
@@ -97,6 +106,47 @@ public final class ChainFootprint {
         return euclideanCircle(totalBlocks(stacks));
     }
 
+
+    /**
+     * Decomposes the flat footprint into concentric distance rings.
+     * Each ring contains positions at the same squared distance from center.
+     * Ring 0 is the origin, ring 1 is the first cardinal neighbors, etc.
+     * The union of all rings equals {@link #flatFootprint(int)}.
+     *
+     * @param stacks blob stack count (1-based)
+     * @return list of rings, each ring a list of [a, b] offset pairs
+     */
+    public static List<List<int[]>> flatRings(int stacks) {
+        if (stacks <= FULL_THRESHOLD) { return List.of(layerFootprint(stacks)); }
+        int budget = totalBlocks(stacks);
+        int searchRadius = (int) Math.ceil(Math.sqrt(budget)) + 1;
+        List<int[]> candidates = collectCandidates(searchRadius);
+        candidates.sort((p, q) -> Integer.compare(sqDist(p), sqDist(q)));
+        return splitIntoTiers(candidates, budget);
+    }
+
+    /** Splits sorted candidates into distance tiers, stopping at budget.
+     *
+     * @param sorted   positions sorted by squared distance
+     * @param budget   maximum total block count
+     * @return the tier-decomposed ring list
+     */
+    private static List<List<int[]>> splitIntoTiers(List<int[]> sorted, int budget) {
+        List<List<int[]>> rings = new ArrayList<>();
+        int total = 0;
+        int i = 0;
+        while (i < sorted.size()) {
+            int tierEnd = findTierEnd(sorted, i);
+            int tierSize = tierEnd - i;
+            if (total + tierSize > budget) { break; }
+            List<int[]> ring = new ArrayList<>(tierSize);
+            addRange(ring, sorted, i, tierEnd);
+            rings.add(ring);
+            total += tierSize;
+            i = tierEnd;
+        }
+        return rings;
+    }
 
     /**
      * Builds the roundest possible flat region by filling positions
@@ -229,6 +279,24 @@ public final class ChainFootprint {
         return expandLayers(footprint, depth, blastDir);
     }
 
+    /**
+     * Returns all 3D block offsets in the effect region for the given area mode.
+     * Dispatches to tunnel, flat circle, or sphere computation.
+     *
+     * @param stacks   blob stack count
+     * @param areaMode "tunnel", "flat_circle", or "sphere"
+     * @param face     the placed face
+     * @return list of {dx, dy, dz} offsets
+     */
+    public static List<int[]> computeRegionOffsets(int stacks, String areaMode, Direction face) {
+        if (AREA_SPHERE.equals(areaMode)) {
+            int radius = EffectMath.computeFreezeRadius(stacks);
+            return computeSphereOffsets(radius, face);
+        }
+        boolean flat = AREA_FLAT_CIRCLE.equals(areaMode);
+        return computeRegionOffsets(stacks, flat, face);
+    }
+
     /** Expands a 2D footprint into 3D offsets along the blast direction.
      *
      * @param footprint the 2D footprint offsets
@@ -289,6 +357,67 @@ public final class ChainFootprint {
                     }
                 }
             }
+        }
+        return result;
+    }
+
+    /**
+     * Returns 3D offsets for a single spherical shell at the given radius.
+     * Shell r contains all integer positions where r-1 < distance <= r,
+     * computed as floor(sqrt(d2)) == r. Shell 0 is the origin block.
+     * Shells 0..R union to the full solid sphere of radius R.
+     *
+     * @param shellRadius the shell radius (0 = origin only)
+     * @return list of {dx, dy, dz} offsets
+     */
+    public static List<int[]> sphereShell(int shellRadius) {
+        if (shellRadius == 0) { return List.of(new int[]{0, 0, 0}); }
+        int r2max = shellRadius * shellRadius;
+        int r2min = (shellRadius - 1) * (shellRadius - 1);
+        List<int[]> result = new ArrayList<>();
+        for (int dx = -shellRadius; dx <= shellRadius; dx++) {
+            collectShellSlice(result, dx, shellRadius, r2min, r2max);
+        }
+        return result;
+    }
+
+    /** Collects all positions in one x-slice of a spherical shell.
+     *
+     * @param result     the output list
+     * @param dx         the x offset
+     * @param shellRadius the shell radius
+     * @param r2min      the squared inner radius (exclusive)
+     * @param r2max      the squared outer radius (inclusive)
+     */
+    private static void collectShellSlice(List<int[]> result, int dx,
+            int shellRadius, int r2min, int r2max) {
+        for (int dy = -shellRadius; dy <= shellRadius; dy++) {
+            for (int dz = -shellRadius; dz <= shellRadius; dz++) {
+                int d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 <= r2max && d2 > r2min) {
+                    result.add(new int[]{dx, dy, dz});
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns 3D offsets for a single spherical shell, translated so the
+     * sphere center is one block into the wall from the marker.
+     *
+     * @param shellRadius the shell radius (0 = center block)
+     * @param face        the placed face (determines center offset)
+     * @return list of {dx, dy, dz} offsets relative to the marker
+     */
+    public static List<int[]> sphereShellOffsets(int shellRadius, Direction face) {
+        Direction blastDir = face.getOpposite();
+        int cx = blastDir.getStepX();
+        int cy = blastDir.getStepY();
+        int cz = blastDir.getStepZ();
+        List<int[]> shell = sphereShell(shellRadius);
+        List<int[]> result = new ArrayList<>(shell.size());
+        for (int[] p : shell) {
+            result.add(new int[]{p[0] + cx, p[1] + cy, p[Z_INDEX] + cz});
         }
         return result;
     }

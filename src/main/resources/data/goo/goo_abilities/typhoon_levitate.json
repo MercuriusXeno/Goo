@@ -1,0 +1,21 @@
+{
+  "gooType": "typhoon",
+  "displayName": "goo.ability.typhoon.levitate",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "behaviors": [
+    {
+      "type": "entity_effect",
+      "params": {
+        "handler": "typhoon_levitate"
+      }
+    }
+  ],
+  "tags": ["entity"]
+}

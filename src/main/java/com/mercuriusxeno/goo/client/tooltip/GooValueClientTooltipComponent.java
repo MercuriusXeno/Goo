@@ -36,7 +36,7 @@ public class GooValueClientTooltipComponent implements ClientTooltipComponent {
      */
     public GooValueClientTooltipComponent(GooValueTooltipComponent data) {
         this.iconTexture = Identifier.fromNamespaceAndPath(
-                "goo", "textures/item/" + data.type().getId() + "_icon_bordered.png");
+                "goo", "textures/goo/type/" + data.type().getId() + ".png");
         this.displayText = buildDisplayText(data);
     }
 

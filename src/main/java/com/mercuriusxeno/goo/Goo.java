@@ -1,8 +1,10 @@
 package com.mercuriusxeno.goo;
 
+import com.mercuriusxeno.goo.ability.AbilityLoader;
 import com.mercuriusxeno.goo.command.GooCommand;
 import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
+import com.mercuriusxeno.goo.network.AbilitySyncPayload;
 import com.mercuriusxeno.goo.network.GooValueSync;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooBlocks;
@@ -17,7 +19,6 @@ import com.mercuriusxeno.goo.registry.GooPotions;
 import com.mercuriusxeno.goo.registry.GooSounds;
 import com.mercuriusxeno.goo.registry.GooTickets;
 import com.mojang.logging.LogUtils;
-import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -27,10 +28,11 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.slf4j.Logger;
 
 @Mod(Goo.MODID)
@@ -129,6 +131,7 @@ public class Goo {
     @SubscribeEvent
     public void onAddReloadListeners(AddServerReloadListenersEvent event) {
         event.addListener(GooReactionLoader.LISTENER_ID, new GooReactionLoader());
+        event.addListener(AbilityLoader.LISTENER_ID, new AbilityLoader());
     }
 
     /**
@@ -153,15 +156,17 @@ public class Goo {
     }
 
     /**
-     * Sends the full goo value map to a player when they log in.
+     * Sends goo values and ability definitions to players on login and datapack reload.
      *
-     * @param event the player login event
+     * @param event the datapack sync event (player-specific on login, all players on /reload)
      */
     @SubscribeEvent
-    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-            GooValueSync.sendToPlayer(serverPlayer);
-        }
+    public void onDatapackSync(OnDatapackSyncEvent event) {
+        AbilitySyncPayload abilityPayload = AbilitySyncPayload.fromRegistry();
+        event.getRelevantPlayers().forEach(player -> {
+            GooValueSync.sendToPlayer(player);
+            PacketDistributor.sendToPlayer(player, abilityPayload);
+        });
     }
 
     /**

@@ -128,12 +128,69 @@ public final class FrostExecutor {
     }
 
     /**
+     * Freezes all convertible blocks in one spherical shell at the given
+     * radius, centered one block into the wall from the marker.
+     *
+     * @param level      the server level
+     * @param origin     the chain marker position
+     * @param placedFace the face the marker was placed on
+     * @param shellRadius the shell radius to freeze
+     */
+    public static void freezeShell(ServerLevel level, BlockPos origin,
+            Direction placedFace, int shellRadius) {
+        List<int[]> offsets = ChainFootprint.sphereShellOffsets(shellRadius, placedFace);
+        for (int[] o : offsets) {
+            convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
+        }
+        spawnEffects(level, origin.relative(placedFace.getOpposite()), shellRadius);
+    }
+
+    /**
+     * Freezes one layer of blocks at the given depth, following the same
+     * progressive footprint pattern as rock/blaze mine layers.
+     *
+     * @param level      the server level
+     * @param origin     the chain marker position
+     * @param placedFace the face the marker was placed on
+     * @param stepIndex  the current layer depth index
+     * @param stackCount the blob stack count
+     */
+    public static void freezeLayer(ServerLevel level, BlockPos origin,
+            Direction placedFace, int stepIndex, int stackCount) {
+        BlockPos layerCenter = origin.relative(placedFace.getOpposite(), stepIndex + 1);
+        Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
+        List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
+        for (int[] fp : footprint) {
+            BlockPos target = resolveFootprintPos(layerCenter, blastAxis, fp);
+            convertBlock(level, target);
+        }
+        int radius = EffectMath.computeFreezeRadius(stackCount);
+        spawnEffects(level, layerCenter, radius);
+    }
+
+    /** Maps a 2D footprint offset to a world position at the layer center.
+     *
+     * @param layerCenter the center of the current layer
+     * @param blastAxis   the axis along which layers advance
+     * @param fp          the 2D footprint offset {perpA, perpB}
+     * @return the world position
+     */
+    private static BlockPos resolveFootprintPos(BlockPos layerCenter,
+            Direction.Axis blastAxis, int[] fp) {
+        return switch (blastAxis) {
+            case X -> layerCenter.offset(0, fp[0], fp[1]);
+            case Y -> layerCenter.offset(fp[0], 0, fp[1]);
+            case Z -> layerCenter.offset(fp[0], fp[1], 0);
+        };
+    }
+
+    /**
      * Converts a single block per the frost rules.
      *
      * @param level the server level
      * @param pos   the block position to convert
      */
-    private static void convertBlock(ServerLevel level, BlockPos pos) {
+    public static void convertBlock(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         Block replacement = frostReplacement(state);
         if (replacement != null) {

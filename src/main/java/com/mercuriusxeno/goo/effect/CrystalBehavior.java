@@ -40,7 +40,6 @@ public final class CrystalBehavior implements ChainBehavior {
     private static final String TAG_CHARGES = "CrystalCharges";
     private static final String TAG_MAX_CHARGES = "CrystalMaxCharges";
     private static final String TAG_FACE = "CrystalFace";
-    private static final String TAG_FLAT_MODE = "CrystalFlatMode";
     private static final String TAG_TICK = "CrystalTick";
     private static final String TAG_DISSOLVE = "CrystalDissolve";
     private static final String TAG_EXPAND = "CrystalExpand";
@@ -51,7 +50,6 @@ public final class CrystalBehavior implements ChainBehavior {
     private int chargesRemaining;
     private int maxCharges;
     private Direction placedFace = Direction.UP;
-    private boolean flatMode;
     /** Internal tick counter for hit interval timing. */
     private int tickCounter;
     /** Remaining contract ticks when flattening, 0 when not contracting. */
@@ -64,38 +62,20 @@ public final class CrystalBehavior implements ChainBehavior {
         this.chargesRemaining = be.getStackCount() * CHARGES_PER_BLOB;
         this.maxCharges = chargesRemaining;
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
         this.tickCounter = 0;
         this.expandTicks = ANIM_DURATION;
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        checkFlatModeToggle(be);
         if (expandTicks > 0) { expandTicks--; }
         if (contractTicks > 0) {
             contractTicks--;
             return;
         }
-        if (flatMode || chargesRemaining <= 0) { return; }
+        if (chargesRemaining <= 0) { return; }
         tickCounter++;
         shredEntities(level, pos, be);
-    }
-
-    /** Detects a flat-mode toggle and starts expand or contract animation.
-     *
-     * @param be the owning block entity
-     */
-    private void checkFlatModeToggle(ChainMarkerBlockEntity be) {
-        if (!flatMode && be.isFlatMode()) {
-            flatMode = true;
-            contractTicks = ANIM_DURATION;
-            expandTicks = 0;
-        } else if (flatMode && !be.isFlatMode()) {
-            flatMode = false;
-            expandTicks = ANIM_DURATION;
-            contractTicks = 0;
-        }
     }
 
     /** Returns the cloud radius as a fraction [0-1] for the expand/contract animation.
@@ -109,7 +89,7 @@ public final class CrystalBehavior implements ChainBehavior {
         if (contractTicks > 0) {
             return (float) contractTicks / ANIM_DURATION;
         }
-        return flatMode ? 0f : 1f;
+        return 1f;
     }
 
     /** Returns true if the cloud is animating (expanding or contracting).
@@ -248,7 +228,6 @@ public final class CrystalBehavior implements ChainBehavior {
         output.putInt(TAG_CHARGES, chargesRemaining);
         output.putInt(TAG_MAX_CHARGES, maxCharges);
         output.putString(TAG_FACE, placedFace.getName());
-        output.putBoolean(TAG_FLAT_MODE, flatMode);
         output.putInt(TAG_TICK, tickCounter);
         output.putInt(TAG_DISSOLVE, contractTicks);
         output.putInt(TAG_EXPAND, expandTicks);
@@ -258,7 +237,6 @@ public final class CrystalBehavior implements ChainBehavior {
     public void loadAdditional(ValueInput input) {
         chargesRemaining = input.getIntOr(TAG_CHARGES, 0);
         maxCharges = input.getIntOr(TAG_MAX_CHARGES, 0);
-        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         tickCounter = input.getIntOr(TAG_TICK, 0);
         contractTicks = input.getIntOr(TAG_DISSOLVE, 0);
         expandTicks = input.getIntOr(TAG_EXPAND, 0);

@@ -157,6 +157,27 @@ public final class GooMobEffects {
     /** Dispatch context: all parameters an effect handler might need. */
     private record EffectContext(Level level, LivingEntity target, @Nullable Entity thrower) {}
 
+    // ── Handler name constants ──
+    static final String H_METAL_JAVELIN = "metal_javelin";
+    static final String H_CRYSTAL_FLECHETTES = "crystal_flechettes";
+    static final String H_LEAF_ENTANGLE = "leaf_entangle";
+    static final String H_VITAL_CLONE = "vital_clone";
+    static final String H_SHROOM_DEBUFF = "shroom_debuff";
+    static final String H_ROCK_PETRIFY = "rock_petrify";
+    static final String H_BLAZE_IGNITE = "blaze_ignite";
+    static final String H_FROST_SNAP = "frost_snap";
+    static final String H_TYPHOON_LEVITATE = "typhoon_levitate";
+    static final String H_GLOW_LASER = "glow_laser";
+    static final String H_HEX_CHARM = "hex_charm";
+    static final String H_PULSE_SHORT_CIRCUIT = "pulse_short_circuit";
+    static final String H_NETHER_WITHER = "nether_wither";
+    static final String H_ENDER_TELEPORT = "ender_teleport";
+    static final String H_AEON_TIME_STOP = "aeon_time_stop";
+    static final String H_UNSTABLE_EXPLODE = "unstable_explode";
+
+    /** String-keyed handler map for data-driven entity_effect dispatch. */
+    private static final Map<String, Consumer<EffectContext>> NAMED = buildNamedMap();
+
     private GooMobEffects() {}
 
     /**
@@ -171,6 +192,42 @@ public final class GooMobEffects {
         if (level.isClientSide()) { return; }
         var handler = EFFECTS.get(type);
         if (handler != null) { handler.accept(new EffectContext(level, target, thrower)); }
+    }
+
+    /**
+     * Applies a named entity effect handler. Used by EntityEffectRegistry
+     * for data-driven ability dispatch.
+     *
+     * @param name the handler name (e.g., "metal_javelin")
+     * @param ctx  the entity effect context
+     */
+    public static void applyNamed(String name, EntityEffectRegistry.Context ctx) {
+        if (ctx.level().isClientSide()) { return; }
+        var handler = NAMED.get(name);
+        if (handler != null) {
+            handler.accept(new EffectContext(ctx.level(), ctx.target(), ctx.thrower()));
+        }
+    }
+
+    private static Map<String, Consumer<EffectContext>> buildNamedMap() {
+        Map<String, Consumer<EffectContext>> map = new java.util.HashMap<>();
+        map.put(H_METAL_JAVELIN, ctx -> metalJavelin(ctx.target()));
+        map.put(H_CRYSTAL_FLECHETTES, ctx -> crystalFlechettes(ctx.level(), ctx.target()));
+        map.put(H_LEAF_ENTANGLE, ctx -> leafEntangle(ctx.target()));
+        map.put(H_VITAL_CLONE, ctx -> vitalClone(ctx.level(), ctx.target()));
+        map.put(H_SHROOM_DEBUFF, ctx -> shroomDebuff(ctx.target()));
+        map.put(H_ROCK_PETRIFY, ctx -> rockPetrify(ctx.level(), ctx.target()));
+        map.put(H_BLAZE_IGNITE, ctx -> blazeIgnite(ctx.level(), ctx.target()));
+        map.put(H_FROST_SNAP, ctx -> frostSnap(ctx.target()));
+        map.put(H_TYPHOON_LEVITATE, ctx -> typhoonLevitate(ctx.target()));
+        map.put(H_GLOW_LASER, ctx -> glowLaser(ctx.level(), ctx.target()));
+        map.put(H_HEX_CHARM, ctx -> hexCharm(ctx.target(), ctx.thrower()));
+        map.put(H_PULSE_SHORT_CIRCUIT, ctx -> pulseShortCircuit(ctx.target()));
+        map.put(H_NETHER_WITHER, ctx -> netherWither(ctx.target()));
+        map.put(H_ENDER_TELEPORT, ctx -> enderTeleport(ctx.level(), ctx.target()));
+        map.put(H_AEON_TIME_STOP, ctx -> aeonTimeStop(ctx.target()));
+        map.put(H_UNSTABLE_EXPLODE, ctx -> unstableExplode(ctx.level(), ctx.target()));
+        return Map.copyOf(map);
     }
 
     /**

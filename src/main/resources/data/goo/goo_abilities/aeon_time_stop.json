@@ -1,0 +1,21 @@
+{
+  "gooType": "aeon",
+  "displayName": "goo.ability.aeon.time_stop",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "behaviors": [
+    {
+      "type": "entity_effect",
+      "params": {
+        "handler": "aeon_time_stop"
+      }
+    }
+  ],
+  "tags": ["entity"]
+}

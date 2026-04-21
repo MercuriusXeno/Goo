@@ -83,6 +83,16 @@ public enum GooType implements StringRepresentable {
      * @param id the string identifier to look up
      * @return the matching GooType, or null if not found
      */
+    /** Codec that serializes a GooType as its string id. */
+    public static final com.mojang.serialization.Codec<GooType> CODEC =
+            com.mojang.serialization.Codec.STRING.xmap(
+                    id -> {
+                        GooType t = fromId(id);
+                        if (t == null) { throw new IllegalArgumentException("Unknown goo type: " + id); }
+                        return t;
+                    },
+                    GooType::getId);
+
     @org.jspecify.annotations.Nullable
     public static GooType fromId(String id) {
         for (GooType type : values()) {

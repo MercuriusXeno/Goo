@@ -2,19 +2,19 @@
   "variants": {
     "crafting=false,facing=north,triggered=false": { "model": "goo:block/reactor", "y": 180 },
     "crafting=false,facing=north,triggered=true":  { "model": "goo:block/reactor_triggered", "y": 180 },
-    "crafting=true,facing=north,triggered=false":  { "model": "goo:block/reactor_crafting_triggered", "y": 180 },
-    "crafting=true,facing=north,triggered=true":   { "model": "goo:block/reactor_crafting_triggered", "y": 180 },
+    "crafting=true,facing=north,triggered=false":  { "model": "goo:block/reactor_crafting", "y": 180 },
+    "crafting=true,facing=north,triggered=true":   { "model": "goo:block/reactor_crafting", "y": 180 },
     "crafting=false,facing=south,triggered=false": { "model": "goo:block/reactor" },
     "crafting=false,facing=south,triggered=true":  { "model": "goo:block/reactor_triggered" },
-    "crafting=true,facing=south,triggered=false":  { "model": "goo:block/reactor_crafting_triggered" },
-    "crafting=true,facing=south,triggered=true":   { "model": "goo:block/reactor_crafting_triggered" },
+    "crafting=true,facing=south,triggered=false":  { "model": "goo:block/reactor_crafting" },
+    "crafting=true,facing=south,triggered=true":   { "model": "goo:block/reactor_crafting" },
     "crafting=false,facing=east,triggered=false":  { "model": "goo:block/reactor", "y": 270 },
     "crafting=false,facing=east,triggered=true":   { "model": "goo:block/reactor_triggered", "y": 270 },
-    "crafting=true,facing=east,triggered=false":   { "model": "goo:block/reactor_crafting_triggered", "y": 270 },
-    "crafting=true,facing=east,triggered=true":    { "model": "goo:block/reactor_crafting_triggered", "y": 270 },
+    "crafting=true,facing=east,triggered=false":   { "model": "goo:block/reactor_crafting", "y": 270 },
+    "crafting=true,facing=east,triggered=true":    { "model": "goo:block/reactor_crafting", "y": 270 },
     "crafting=false,facing=west,triggered=false":  { "model": "goo:block/reactor", "y": 90 },
     "crafting=false,facing=west,triggered=true":   { "model": "goo:block/reactor_triggered", "y": 90 },
-    "crafting=true,facing=west,triggered=false":   { "model": "goo:block/reactor_crafting_triggered", "y": 90 },
-    "crafting=true,facing=west,triggered=true":    { "model": "goo:block/reactor_crafting_triggered", "y": 90 }
+    "crafting=true,facing=west,triggered=false":   { "model": "goo:block/reactor_crafting", "y": 90 },
+    "crafting=true,facing=west,triggered=true":    { "model": "goo:block/reactor_crafting", "y": 90 }
   }
 }

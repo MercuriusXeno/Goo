@@ -1,0 +1,25 @@
+{
+  "gooType": "blaze",
+  "displayName": "goo.ability.blaze.tunnel",
+  "order": 0,
+  "cost": {
+    "formula": "block_count",
+    "costPerBlock": 200
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 28
+  },
+  "behaviors": [
+    {
+      "type": "progressive_area",
+      "params": {
+        "areaMode": "tunnel",
+        "blockAction": "fortune_smelt_break",
+        "previewDelayTicks": "8",
+        "particleStyle": "blaze"
+      }
+    }
+  ],
+  "tags": ["block_break", "directional"]
+}

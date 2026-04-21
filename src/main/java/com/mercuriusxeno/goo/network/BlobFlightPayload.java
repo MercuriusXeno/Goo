@@ -21,11 +21,13 @@ import org.jspecify.annotations.NonNull;
  * @param targetFace     the target face ordinal
  * @param travelTicks    the number of ticks for the flight arc
  * @param grannyArc      whether to use the boosted arc trajectory
+ * @param abilityId      the selected ability id string, or empty for legacy
  */
 public record BlobFlightPayload(double startX, double startY, double startZ,
                                 String gooTypeId, int targetEntityId,
                                 BlockPos targetPos, int targetFace,
-                                int travelTicks, boolean grannyArc)
+                                int travelTicks, boolean grannyArc,
+                                String abilityId)
         implements CustomPacketPayload {
 
     /** Payload type ID for registration. */
@@ -75,6 +77,7 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         buf.writeVarInt(payload.targetFace);
         buf.writeVarInt(payload.travelTicks);
         buf.writeBoolean(payload.grannyArc);
+        buf.writeUtf(payload.abilityId);
     }
 
     /**
@@ -87,6 +90,7 @@ public record BlobFlightPayload(double startX, double startY, double startZ,
         return new BlobFlightPayload(
                 buf.readDouble(), buf.readDouble(), buf.readDouble(),
                 buf.readUtf(), buf.readVarInt(), buf.readBlockPos(),
-                buf.readVarInt(), buf.readVarInt(), buf.readBoolean());
+                buf.readVarInt(), buf.readVarInt(), buf.readBoolean(),
+                buf.readUtf());
     }
 }

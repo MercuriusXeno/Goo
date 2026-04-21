@@ -3,6 +3,8 @@ package com.mercuriusxeno.goo.network;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
+import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.ability.AbilityRegistry;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
@@ -74,9 +76,10 @@ public final class BlobThrowHandler {
         GooType gooType = validateGooType(payload);
         if (gooType == null) { return; }
         if (!validateRange(player, payload)) { return; }
-        if (!validateSupply(player, gooType)) { return; }
+        int cost = resolveThrowCost(player, payload, gooType);
+        if (!validateSupply(player, gooType, cost)) { return; }
         double distSq = targetDistanceSquared(player, payload);
-        depleteAndThrow(player, payload, gooType, distSq);
+        depleteAndThrow(player, payload, gooType, distSq, cost);
     }
 
     /** Validates glove is held, logging rejection if not.
@@ -122,12 +125,44 @@ public final class BlobThrowHandler {
      *
      * @param player  the throwing player
      * @param gooType the goo type to check
+     * @param cost    the resolved mB cost for this throw
      * @return true if supply is sufficient
      */
-    private static boolean validateSupply(ServerPlayer player, GooType gooType) {
-        if (GooSourceScanner.hasEnough(player, gooType, THROW_COST)) { return true; }
+    private static boolean validateSupply(ServerPlayer player, GooType gooType, int cost) {
+        if (GooSourceScanner.hasEnough(player, gooType, cost)) { return true; }
         if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_NO_GOO, gooType.getId()); }
         return false;
+    }
+
+    /** Resolves the throw cost from the ability definition, falling back to THROW_COST.
+     * Uses the sequence-aware stack position (landed + in-flight at target).
+     *
+     * @param player  the throwing player
+     * @param payload the throw payload
+     * @param gooType the resolved goo type
+     * @return the cost in mB for this throw
+     */
+    private static int resolveThrowCost(ServerPlayer player, BlobThrowPayload payload,
+            GooType gooType) {
+        if (payload.abilityId().isEmpty()) { return THROW_COST; }
+        net.minecraft.resources.Identifier abilityId =
+                net.minecraft.resources.Identifier.tryParse(payload.abilityId());
+        if (abilityId == null) { return THROW_COST; }
+        AbilityDefinition def = AbilityRegistry.getAbility(abilityId);
+        if (def == null || def.gooType() != gooType) { return THROW_COST; }
+        int stackPos = countExistingStacks(player.level(), payload.targetPos());
+        return def.cost().costForStack(stackPos);
+    }
+
+    /** Counts the current stack count at a target position (landed blobs).
+     *
+     * @param level the server level
+     * @param pos   the target block position
+     * @return the current stack count, or 0 if no marker exists
+     */
+    private static int countExistingStacks(ServerLevel level, BlockPos pos) {
+        ChainMarkerBlockEntity be = findChainMarker(level, pos, null);
+        return be != null ? be.getStackCount() : 0;
     }
 
     /** Depletes goo, broadcasts the flight, and schedules the delayed effect.
@@ -136,12 +171,13 @@ public final class BlobThrowHandler {
      * @param payload the throw payload data
      * @param gooType the validated goo type
      * @param distSq  squared distance to target (pre-validated)
+     * @param cost    the resolved mB cost for this throw
      */
     private static void depleteAndThrow(ServerPlayer player, BlobThrowPayload payload,
-            GooType gooType, double distSq) {
-        int depleted = GooSourceScanner.deplete(player, gooType, THROW_COST);
-        if (depleted < THROW_COST && Goo.LOGGER.isWarnEnabled()) {
-            Goo.LOGGER.warn(LOG_PARTIAL_DEPLETE, depleted, THROW_COST, gooType.getId());
+            GooType gooType, double distSq, int cost) {
+        int depleted = GooSourceScanner.deplete(player, gooType, cost);
+        if (depleted < cost && Goo.LOGGER.isWarnEnabled()) {
+            Goo.LOGGER.warn(LOG_PARTIAL_DEPLETE, depleted, cost, gooType.getId());
         }
 
         stallChainMarkerFuse(player, payload);
@@ -185,7 +221,8 @@ public final class BlobThrowHandler {
                 payload.targetPos(),
                 payload.targetFace(),
                 travelTicks,
-                payload.grannyArc()
+                payload.grannyArc(),
+                payload.abilityId()
         );
     }
 

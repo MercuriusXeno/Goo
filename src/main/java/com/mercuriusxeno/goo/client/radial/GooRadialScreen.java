@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.radial;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.item.GooGloveItem;
 import com.mercuriusxeno.goo.item.GooSourceScanner;
+import com.mercuriusxeno.goo.network.AbilitySyncHandler;
 import com.mercuriusxeno.goo.network.GloveSelectPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -19,12 +20,11 @@ import java.util.Map;
 /**
  * 15-wedge radial menu for selecting a goo type on the glove.
  * Opens when the player holds right-click past the radial threshold.
- * Mouse angle selects a wedge; releasing confirms the selection.
- * Center circle acts as a cancel/deselect zone.
+ * Left-click a wedge to drill into that type's ability radial.
+ * Left-click center to deselect. Right-click to dismiss.
  *
  * Wedges are rendered via pre-generated anti-aliased mask textures
- * (see {@link RadialTextures}) with per-wedge color tinting, replacing
- * the old scanline rasterizer.
+ * (see {@link RadialTextures}) with per-wedge color tinting.
  */
 public final class GooRadialScreen extends Screen {
 
@@ -85,6 +85,17 @@ public final class GooRadialScreen extends Screen {
     }
 
     /**
+     * Re-opens the type radial with a pre-existing availability snapshot.
+     * Used when navigating back from the ability radial.
+     *
+     * @param snapshot the goo availability map to reuse
+     */
+    public static void openWithSnapshot(Map<GooType, Integer> snapshot) {
+        Minecraft mc = Minecraft.getInstance();
+        mc.setScreen(new GooRadialScreen(snapshot));
+    }
+
+    /**
      * Returns false so the game continues running while the radial is open.
      *
      * @return always false
@@ -120,49 +131,47 @@ public final class GooRadialScreen extends Screen {
     // --- Input handling ---
 
     /**
-     * Confirms the hovered selection on left or right mouse button release.
+     * Left-click on a wedge transitions to ability radial for that type.
+     * Left-click on center deselects and closes.
+     * Right-click dismisses without changing selection.
      *
-     * @param event the mouse button release event
+     * @param event       the mouse button click event
+     * @param doubleClick true if this is a double-click
      * @return true if the event was handled
      */
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        // Right-click release (button 1) or left-click release (button 0) confirms
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         int button = event.button();
-        if (button == 0 || button == 1) {
-            confirmSelection();
+        if (button == 1) {
+            onClose();
             return true;
         }
-        return super.mouseReleased(event);
+        if (button == 0) {
+            handleLeftClick();
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
     }
 
-    /**
-     * Delegates to default key handling; ESC closes without selecting.
-     *
-     * @param event the key press event
-     * @return true if the event was handled
-     */
-
-    /** Applies the hovered selection to the glove and closes the screen. */
-    private void confirmSelection() {
+    /** Processes a left-click: drill into type or deselect from center. */
+    private void handleLeftClick() {
         if (hoveredIndex >= 0 && hoveredIndex < WEDGE_COUNT) {
-            trySelectType(GooType.values()[hoveredIndex]);
+            tryTransitionToAbilities(GooType.values()[hoveredIndex]);
         } else if (hoveredIndex == NO_SELECTION) {
             tryDeselectType();
+            onClose();
         }
-        onClose();
     }
 
-    /** Selects the given goo type on the glove if the player has any available.
+    /** Transitions to the ability radial for the given type if available.
      *
-     * @param type the goo type to select
+     * @param type the goo type to drill into
      */
-    private void trySelectType(GooType type) {
+    private void tryTransitionToAbilities(GooType type) {
         if (available.getOrDefault(type, 0) <= 0) { return; }
-        ItemStack glove = findGloveStack();
-        if (glove == null) { return; }
-        GooGloveItem.setSelectedType(glove, type);
-        sendSelectionToServer(type.getId());
+        if (AbilitySyncHandler.hasAbilities(type)) {
+            AbilityRadialScreen.open(type, available);
+        }
     }
 
     /** Clears the glove selection (cancel/deselect zone). */

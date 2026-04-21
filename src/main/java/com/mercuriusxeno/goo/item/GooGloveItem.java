@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.item;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
+import com.mercuriusxeno.goo.ability.GloveSelection;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import net.minecraft.core.BlockPos;
@@ -165,6 +166,8 @@ public class GooGloveItem extends Item {
      * @return the selected GooType, or null if none selected
      */
     public static @Nullable GooType getSelectedType(ItemStack stack) {
+        GloveSelection sel = getSelection(stack);
+        if (sel != null && sel.hasType()) { return sel.getGooType(); }
         String id = stack.get(GooDataComponents.SELECTED_GOO_TYPE.get());
         if (id == null || id.isEmpty()) { return null; }
         return GooType.fromId(id);
@@ -172,6 +175,7 @@ public class GooGloveItem extends Item {
 
     /**
      * Writes the selected goo type to this glove's data component.
+     * Also updates the legacy SELECTED_GOO_TYPE for backward compat.
      *
      * @param stack the glove stack
      * @param type the goo type to select, or null to clear
@@ -179,8 +183,37 @@ public class GooGloveItem extends Item {
     public static void setSelectedType(ItemStack stack, @Nullable GooType type) {
         if (type == null) {
             stack.remove(GooDataComponents.SELECTED_GOO_TYPE.get());
+            stack.remove(GooDataComponents.SELECTED_ABILITY.get());
         } else {
             stack.set(GooDataComponents.SELECTED_GOO_TYPE.get(), type.getId());
+            stack.set(GooDataComponents.SELECTED_ABILITY.get(), GloveSelection.ofType(type));
+        }
+    }
+
+    /**
+     * Reads the full selection (type + ability) from this glove.
+     *
+     * @param stack the glove stack
+     * @return the selection, or null if none
+     */
+    public static @Nullable GloveSelection getSelection(ItemStack stack) {
+        return stack.get(GooDataComponents.SELECTED_ABILITY.get());
+    }
+
+    /**
+     * Writes a full selection (type + ability) to this glove.
+     * Also updates the legacy SELECTED_GOO_TYPE for backward compat.
+     *
+     * @param stack     the glove stack
+     * @param selection the selection to set
+     */
+    public static void setSelection(ItemStack stack, GloveSelection selection) {
+        if (selection.isEmpty()) {
+            stack.remove(GooDataComponents.SELECTED_ABILITY.get());
+            stack.remove(GooDataComponents.SELECTED_GOO_TYPE.get());
+        } else {
+            stack.set(GooDataComponents.SELECTED_ABILITY.get(), selection);
+            stack.set(GooDataComponents.SELECTED_GOO_TYPE.get(), selection.gooTypeId());
         }
     }
 }

@@ -82,13 +82,26 @@ public final class GloveUseTracker {
         if (player.isUsingItem() && player.getUseItem().getItem() instanceof GooGloveItem) {
             holdTicks++;
             if (holdTicks >= GooGloveItem.RADIAL_THRESHOLD_TICKS) {
+                ItemStack glove = player.getUseItem();
+                boolean shifting = player.isShiftKeyDown();
                 player.releaseUsingItem();
-                GooRadialScreen.open();
+                openAppropriateRadial(player, glove, shifting);
                 holdTicks = 0;
             }
         } else {
             holdTicks = 0;
         }
+    }
+
+    /** Opens the unified radial menu (type selection first, then abilities).
+     *
+     * @param player   the local player holding the glove
+     * @param glove    the glove item stack (captured before release)
+     * @param shifting true if shift was held during the hold (unused)
+     */
+    private static void openAppropriateRadial(LocalPlayer player,
+            ItemStack glove, boolean shifting) {
+        GooRadialScreen.open();
     }
 
     /**

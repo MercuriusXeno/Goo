@@ -1,0 +1,26 @@
+{
+  "gooType": "rock",
+  "displayName": "goo.ability.rock.flat",
+  "order": 1,
+  "cost": {
+    "formula": "block_count",
+    "costPerBlock": 200
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 28,
+    "blobShape": "flat"
+  },
+  "behaviors": [
+    {
+      "type": "progressive_area",
+      "params": {
+        "areaMode": "flat_circle",
+        "blockAction": "silk_break",
+        "previewDelayTicks": "8",
+        "particleStyle": "rock"
+      }
+    }
+  ],
+  "tags": ["block_break", "area"]
+}

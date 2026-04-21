@@ -95,14 +95,12 @@ public final class MetalBehavior implements ChainBehavior {
 
 
     private static final String TAG_FACE = "MetalFace";
-    private static final String TAG_FLAT_MODE = "MetalFlatMode";
     private static final String TAG_SPIKE_ANIMS = "MetalSpikeAnims";
     private static final String DEFAULT_FACE = "up";
     /** Stride for the flat spike anim array (entityId, tick, fx, fy, fz). */
     private static final int ANIM_STRIDE = 5;
 
     private Direction placedFace = Direction.UP;
-    private boolean flatMode;
 
     /** Active per-entity spike animations, keyed by entity ID. */
     private final Map<Integer, SpikeAnim> spikeAnims = new HashMap<>();
@@ -119,17 +117,15 @@ public final class MetalBehavior implements ChainBehavior {
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
         this.lastKnownStacks = be.getStackCount();
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         lastKnownStacks = be.getStackCount();
-        flatMode = be.isFlatMode();
         if (spikeCooldown > 0) { spikeCooldown--; }
         advanceAndCleanAnims(level, pos);
-        if (!flatMode && lastKnownStacks > 0) {
+        if (lastKnownStacks > 0) {
             scanForNewTargets(level, pos, be);
         }
         syncToClient(be);
@@ -381,7 +377,6 @@ public final class MetalBehavior implements ChainBehavior {
     @Override
     public void saveAdditional(ValueOutput output) {
         output.putString(TAG_FACE, placedFace.getName());
-        output.putBoolean(TAG_FLAT_MODE, flatMode);
         int[] animData = new int[spikeAnims.size() * ANIM_STRIDE];
         int idx = 0;
         for (SpikeAnim anim : spikeAnims.values()) {
@@ -397,7 +392,6 @@ public final class MetalBehavior implements ChainBehavior {
 
     @Override
     public void loadAdditional(ValueInput input) {
-        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         String faceName = input.getStringOr(TAG_FACE, DEFAULT_FACE);
         Direction dir = Direction.byName(faceName);
         placedFace = dir != null ? dir : Direction.UP;

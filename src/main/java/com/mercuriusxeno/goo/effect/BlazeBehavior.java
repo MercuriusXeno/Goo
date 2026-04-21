@@ -23,34 +23,29 @@ public final class BlazeBehavior implements ChainBehavior {
     private static final String TAG_MINING_DEPTH = "BlazeMiningDepth";
     private static final String TAG_STACK_SNAPSHOT = "BlazeStackSnapshot";
     private static final String TAG_FACE_SNAPSHOT = "BlazeFace";
-    private static final String TAG_FLAT_MODE = "BlazeFlatMode";
     private static final String DEFAULT_FACE_NAME = "up";
 
     private int pipelineTick;
     private int miningDepth;
     private int stackCount;
     private Direction placedFace = Direction.UP;
-    private boolean flatMode;
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         this.stackCount = be.getStackCount();
         this.placedFace = be.getPlacedFace();
-        this.flatMode = be.isFlatMode();
-        this.miningDepth = flatMode ? 1 : ChainFootprint.tunnelDepth(stackCount);
+        this.miningDepth = ChainFootprint.tunnelDepth(stackCount);
         this.pipelineTick = 0;
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         if (pipelineTick < miningDepth) {
-            BlazeExecutor.previewLayer(level, pos, placedFace, pipelineTick,
-                    stackCount, flatMode);
+            BlazeExecutor.previewLayer(level, pos, placedFace, pipelineTick, stackCount);
         }
         int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
         if (breakIndex >= 0 && breakIndex < miningDepth) {
-            BlazeExecutor.mineLayer(level, pos, placedFace, breakIndex,
-                    stackCount, flatMode);
+            BlazeExecutor.mineLayer(level, pos, placedFace, breakIndex, stackCount);
         }
         pipelineTick++;
     }
@@ -72,7 +67,6 @@ public final class BlazeBehavior implements ChainBehavior {
         output.putInt(TAG_MINING_DEPTH, miningDepth);
         output.putInt(TAG_STACK_SNAPSHOT, stackCount);
         output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
-        output.putBoolean(TAG_FLAT_MODE, flatMode);
     }
 
     @Override
@@ -80,7 +74,6 @@ public final class BlazeBehavior implements ChainBehavior {
         pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
         miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
         stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
-        flatMode = input.getBooleanOr(TAG_FLAT_MODE, false);
         String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE_NAME);
         Direction dir = Direction.byName(faceName);
         placedFace = dir != null ? dir : Direction.UP;

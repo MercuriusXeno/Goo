@@ -1,0 +1,20 @@
+{
+  "gooType": "metal",
+  "displayName": "goo.ability.metal.spikes",
+  "order": 0,
+  "cost": {
+    "formula": "power_law",
+    "baseCost": 1000,
+    "mult": 1.2
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 8
+  },
+  "behaviors": [
+    {
+      "type": "metal_spikes"
+    }
+  ],
+  "tags": ["field_effect", "trap"]
+}

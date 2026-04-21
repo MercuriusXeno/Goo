@@ -1,0 +1,21 @@
+{
+  "gooType": "leaf",
+  "displayName": "goo.ability.leaf.entangle",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "behaviors": [
+    {
+      "type": "entity_effect",
+      "params": {
+        "handler": "leaf_entangle"
+      }
+    }
+  ],
+  "tags": ["entity"]
+}

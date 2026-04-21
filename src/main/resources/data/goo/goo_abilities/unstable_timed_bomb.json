@@ -1,0 +1,29 @@
+{
+  "gooType": "unstable",
+  "displayName": "goo.ability.unstable.timed_bomb",
+  "icon": "goo:textures/ability/timed_bomb.png",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "chain": {
+    "fuseTicks": 60,
+    "maxStacks": 8,
+    "rangeFormula": "constant",
+    "rangeValue": 1
+  },
+  "behaviors": [
+    {
+      "type": "explosion",
+      "params": {
+        "basePower": "2.0",
+        "powerPerStack": "1.0"
+      }
+    }
+  ],
+  "tags": ["explosive", "delayed"]
+}

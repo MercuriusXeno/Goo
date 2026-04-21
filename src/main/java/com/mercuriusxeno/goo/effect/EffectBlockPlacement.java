@@ -33,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  * so non-solid targets do not always push the marker one block off the
  * face.</p>
  */
-final class EffectBlockPlacement {
+public final class EffectBlockPlacement {
 
     /** Block update flags for setBlock calls. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
@@ -285,5 +285,35 @@ final class EffectBlockPlacement {
      */
     private static BlockPos pickCandidate(Decision decision, BlockPos hitPos, BlockPos adjPos) {
         return decision.candidateIndex() == 0 ? hitPos : adjPos;
+    }
+
+    /**
+     * Places or stacks a chain marker using a data-driven ability definition.
+     * If a chain marker already exists at the target, stacks onto it.
+     * Otherwise places a new marker and initializes from the ability.
+     *
+     * @param level   the server level
+     * @param pos     the target block position
+     * @param type    the goo type
+     * @param face    the target face
+     * @param ability the ability definition
+     */
+    public static void placeOrStackAbility(ServerLevel level, BlockPos pos,
+            GooType type, Direction face,
+            com.mercuriusxeno.goo.ability.AbilityDefinition ability) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity existing) {
+            existing.tryStack();
+            return;
+        }
+        BlockPos adj = pos.relative(face);
+        if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity existing) {
+            existing.tryStack();
+            return;
+        }
+        BlockState markerState = GooBlocks.CHAIN_MARKER.get().defaultBlockState();
+        level.setBlock(adj, markerState, BLOCK_UPDATE_FLAGS);
+        if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity be) {
+            be.initChainFromAbility(type, face, ability);
+        }
     }
 }

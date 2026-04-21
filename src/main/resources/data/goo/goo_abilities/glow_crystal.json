@@ -1,0 +1,22 @@
+{
+  "gooType": "glow",
+  "displayName": "goo.ability.glow.crystal",
+  "order": 0,
+  "cost": {
+    "formula": "quadratic",
+    "baseCost": 1000,
+    "a": 0.0,
+    "b": 1.0,
+    "c": 1.0
+  },
+  "chain": {
+    "fuseTicks": 30,
+    "maxStacks": 4
+  },
+  "behaviors": [
+    {
+      "type": "glow_crystal"
+    }
+  ],
+  "tags": ["place_block", "instant"]
+}
