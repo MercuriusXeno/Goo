@@ -29,6 +29,8 @@ runs {
     client {
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         systemProperty 'devauth.enabled', 'true'
+        // 4GB heap + ZGC for low-latency recording sessions
+        jvmArguments.addAll '-Xmx4G', '-Xms4G', '-XX:+UseZGC', '-XX:+AlwaysPreTouch'
     }
     server {
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id

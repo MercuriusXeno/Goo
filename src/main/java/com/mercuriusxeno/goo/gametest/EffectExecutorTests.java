@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.gametest;
 
+import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
@@ -29,6 +30,7 @@ public final class EffectExecutorTests {
     private static final int SHORT_POST_FUSE = 5;
     private static final String MARKER_GONE = "Chain marker should be removed after behavior completes";
     private static final String BLOCK_MINED = "Stone should be mined by the effect";
+    private static final String VALUES_REQUIRED = "Goo values must be loaded for rock mining to work";
     private static final int WALL_X_MAX = 5;
     private static final int WALL_Y_MAX = 3;
     private static final int WALL_Z_MAX = 2;
@@ -54,7 +56,7 @@ public final class EffectExecutorTests {
         // Place marker in air just south of the wall
         helper.setBlock(MARKER_POS, GooBlocks.CHAIN_MARKER.get());
         ChainMarkerBlockEntity be = helper.getBlockEntity(MARKER_POS, ChainMarkerBlockEntity.class);
-        be.initChain(type, Direction.NORTH);
+        be.initChain(type, Direction.SOUTH);
     }
 
     /**
@@ -73,11 +75,13 @@ public final class EffectExecutorTests {
     }
 
     /**
-     * Rock: same pattern as blaze - verify stone is mined.
+     * Rock: places marker facing stone wall, verifies the block is mined.
+     * Requires goo values to be loaded so stone is recognized as rock-compatible.
      *
      * @param helper the gametest helper
      */
     public static void rockMinesBlock(GameTestHelper helper) {
+        helper.assertTrue(Goo.GOO_VALUES.size() > 0, VALUES_REQUIRED);
         placeMarkerWithWall(helper, GooType.ROCK);
         BlockPos target = MARKER_POS.north();
         helper.runAfterDelay(FUSE_TICKS + MINING_POST_FUSE, () -> {

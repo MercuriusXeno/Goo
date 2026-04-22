@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.gametest.CanisterInteractionTests;
 import com.mercuriusxeno.goo.gametest.EffectExecutorTests;
 import com.mercuriusxeno.goo.gametest.GasketHolderTests;
 import com.mercuriusxeno.goo.gametest.GasketPusherTests;
@@ -47,6 +48,12 @@ public final class GooTestFunctions {
     private static final String FX_NETHER = "fx_nether_implodes";
     private static final String FX_UNSTABLE = "fx_unstable_explodes";
     private static final String FX_GLOW = "fx_glow_runs";
+
+    // --- Canister interactions ---
+    private static final String IX_CANISTER_SHIFT_INSERT = "ix_canister_shift_insert";
+    private static final String IX_CANISTER_CLICK_PICKUP = "ix_canister_click_pickup";
+    private static final String IX_CANISTER_LAST_PICKUP = "ix_canister_last_pickup";
+    private static final String IX_CANISTER_EMPTY_HAND = "ix_canister_empty_hand";
 
     // --- Machines ---
     private static final String MACHINE_CANISTER_INSERT = "machine_canister_insert";
@@ -98,6 +105,7 @@ public final class GooTestFunctions {
             reg(registrar, SMOKE, h -> h.succeed());
             registerGasketTests(registrar);
             registerEffectExecutorTests(registrar);
+            registerCanisterInteractionTests(registrar);
             registerMachineTests(registrar);
             registerMobEffectTests(registrar);
         });
@@ -125,6 +133,13 @@ public final class GooTestFunctions {
         reg(r, FX_NETHER, EffectExecutorTests::netherImplodes);
         reg(r, FX_UNSTABLE, EffectExecutorTests::unstableExplodes);
         reg(r, FX_GLOW, EffectExecutorTests::glowRuns);
+    }
+
+    private static void registerCanisterInteractionTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
+        reg(r, IX_CANISTER_SHIFT_INSERT, CanisterInteractionTests::shiftClickInserts);
+        reg(r, IX_CANISTER_CLICK_PICKUP, CanisterInteractionTests::clickPicksUp);
+        reg(r, IX_CANISTER_LAST_PICKUP, CanisterInteractionTests::lastPickupRemovesBlock);
+        reg(r, IX_CANISTER_EMPTY_HAND, CanisterInteractionTests::emptyHandPicksUp);
     }
 
     private static void registerMachineTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
