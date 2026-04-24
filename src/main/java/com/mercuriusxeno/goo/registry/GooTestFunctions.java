@@ -2,11 +2,14 @@ package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.gametest.CanisterInteractionTests;
+import com.mercuriusxeno.goo.gametest.CrucibleTests;
 import com.mercuriusxeno.goo.gametest.EffectExecutorTests;
 import com.mercuriusxeno.goo.gametest.GasketHolderTests;
 import com.mercuriusxeno.goo.gametest.GasketPusherTests;
+import com.mercuriusxeno.goo.gametest.MachineInteractionTests;
 import com.mercuriusxeno.goo.gametest.MachineTests;
 import com.mercuriusxeno.goo.gametest.MobEffectTests;
+import com.mercuriusxeno.goo.gametest.PlacementTests;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -48,12 +51,33 @@ public final class GooTestFunctions {
     private static final String FX_NETHER = "fx_nether_implodes";
     private static final String FX_UNSTABLE = "fx_unstable_explodes";
     private static final String FX_GLOW = "fx_glow_runs";
+    private static final String FX_ABILITY_BLAZE = "fx_ability_blaze_tunnel";
+    private static final String FX_ABILITY_ROCK = "fx_ability_rock_tunnel";
+    private static final String FX_ABILITY_FROST = "fx_ability_frost_sphere";
+
+    // --- Crucible ---
+    private static final String CR_BLOB_INSERT = "cr_blob_insert";
+    private static final String CR_ITEM_ABSORB = "cr_item_absorb";
+
+    // --- Placement ---
+    private static final String PL_BLAZE = "pl_blaze_places";
+    private static final String PL_ROCK = "pl_rock_places";
+    private static final String PL_FROST = "pl_frost_places";
+    private static final String PL_DOUBLE_STACK = "pl_double_hit_stacks";
+    private static final String PL_OTHER_TYPES = "pl_other_types_place";
 
     // --- Canister interactions ---
     private static final String IX_CANISTER_SHIFT_INSERT = "ix_canister_shift_insert";
     private static final String IX_CANISTER_CLICK_PICKUP = "ix_canister_click_pickup";
     private static final String IX_CANISTER_LAST_PICKUP = "ix_canister_last_pickup";
     private static final String IX_CANISTER_EMPTY_HAND = "ix_canister_empty_hand";
+
+    // --- Machine interactions ---
+    private static final String IX_TAP_VALVE = "ix_tap_valve_toggle";
+    private static final String IX_VAT_GASKET = "ix_vat_gasket_apply";
+    private static final String IX_HUB_INSERT = "ix_hub_canister_insert";
+    private static final String IX_PLEXER_TARGET = "ix_plexer_set_target";
+    private static final String IX_CRUCIBLE_FUEL = "ix_crucible_fuel_insert";
 
     // --- Machines ---
     private static final String MACHINE_CANISTER_INSERT = "machine_canister_insert";
@@ -105,7 +129,10 @@ public final class GooTestFunctions {
             reg(registrar, SMOKE, h -> h.succeed());
             registerGasketTests(registrar);
             registerEffectExecutorTests(registrar);
+            registerCrucibleTests(registrar);
+            registerPlacementTests(registrar);
             registerCanisterInteractionTests(registrar);
+            registerMachineInteractionTests(registrar);
             registerMachineTests(registrar);
             registerMobEffectTests(registrar);
         });
@@ -133,6 +160,30 @@ public final class GooTestFunctions {
         reg(r, FX_NETHER, EffectExecutorTests::netherImplodes);
         reg(r, FX_UNSTABLE, EffectExecutorTests::unstableExplodes);
         reg(r, FX_GLOW, EffectExecutorTests::glowRuns);
+        reg(r, FX_ABILITY_BLAZE, EffectExecutorTests::abilityBlazeTunnel);
+        reg(r, FX_ABILITY_ROCK, EffectExecutorTests::abilityRockTunnel);
+        reg(r, FX_ABILITY_FROST, EffectExecutorTests::abilityFrostSphere);
+    }
+
+    private static void registerMachineInteractionTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
+        reg(r, IX_TAP_VALVE, MachineInteractionTests::tapCanisterInsert);
+        reg(r, IX_VAT_GASKET, MachineInteractionTests::vatGasketApply);
+        reg(r, IX_HUB_INSERT, MachineInteractionTests::hubCanisterInsert);
+        reg(r, IX_PLEXER_TARGET, MachineInteractionTests::plexerSetTarget);
+        reg(r, IX_CRUCIBLE_FUEL, MachineInteractionTests::crucibleFuelInsert);
+    }
+
+    private static void registerCrucibleTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
+        reg(r, CR_BLOB_INSERT, CrucibleTests::blobInsertViaInteraction);
+        reg(r, CR_ITEM_ABSORB, CrucibleTests::itemEntityAbsorption);
+    }
+
+    private static void registerPlacementTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
+        reg(r, PL_BLAZE, PlacementTests::blazePlacesMarker);
+        reg(r, PL_ROCK, PlacementTests::rockPlacesMarker);
+        reg(r, PL_FROST, PlacementTests::frostPlacesMarker);
+        reg(r, PL_DOUBLE_STACK, PlacementTests::doubleHitStacks);
+        reg(r, PL_OTHER_TYPES, PlacementTests::otherTypesPlaceMarker);
     }
 
     private static void registerCanisterInteractionTests(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {

@@ -2,11 +2,14 @@ package com.mercuriusxeno.goo.gametest;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.ability.AbilityRegistry;
 import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -34,6 +37,10 @@ public final class EffectExecutorTests {
     private static final int WALL_X_MAX = 5;
     private static final int WALL_Y_MAX = 3;
     private static final int WALL_Z_MAX = 2;
+    private static final String ABILITIES_REQUIRED = "Ability registry must be loaded";
+    private static final String ABILITY_BLAZE_TUNNEL = "goo:blaze_tunnel";
+    private static final String ABILITY_ROCK_TUNNEL = "goo:rock_tunnel";
+    private static final String ABILITY_FROST_SPHERE = "goo:frost_sphere";
 
     private EffectExecutorTests() {}
 
@@ -163,6 +170,76 @@ public final class EffectExecutorTests {
     public static void glowRuns(GameTestHelper helper) {
         placeMarkerWithWall(helper, GooType.GLOW);
         helper.runAfterDelay(FUSE_TICKS + SHORT_POST_FUSE, () -> {
+            helper.succeed();
+        });
+    }
+
+    // --- Data-driven ability path ---
+
+    /**
+     * Places a chain marker initialized via the ability path instead of
+     * the legacy ChainProfile path. Covers DataDrivenChainBehavior,
+     * ProgressiveAreaBlock, and the BehaviorType factory.
+     *
+     * @param helper    the gametest helper
+     * @param type      the goo type
+     * @param abilityId the ability identifier string
+     */
+    private static void placeMarkerWithAbility(GameTestHelper helper, GooType type, String abilityId) {
+        for (int x = 1; x <= WALL_X_MAX; x++) {
+            for (int y = 1; y <= WALL_Y_MAX; y++) {
+                for (int z = 0; z <= WALL_Z_MAX; z++) {
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                }
+            }
+        }
+        helper.setBlock(MARKER_POS, GooBlocks.CHAIN_MARKER.get());
+        ChainMarkerBlockEntity be = helper.getBlockEntity(MARKER_POS, ChainMarkerBlockEntity.class);
+        AbilityDefinition ability = AbilityRegistry.getAbility(Identifier.parse(abilityId));
+        helper.assertTrue(ability != null, ABILITIES_REQUIRED);
+        be.initChainFromAbility(type, Direction.SOUTH, ability);
+    }
+
+    /**
+     * Blaze tunnel via the data-driven ability path. Exercises
+     * DataDrivenChainBehavior -> ProgressiveAreaBlock -> BlazeExecutor.
+     *
+     * @param helper the gametest helper
+     */
+    public static void abilityBlazeTunnel(GameTestHelper helper) {
+        placeMarkerWithAbility(helper, GooType.BLAZE, ABILITY_BLAZE_TUNNEL);
+        BlockPos target = MARKER_POS.north();
+        helper.runAfterDelay(FUSE_TICKS + MINING_POST_FUSE, () -> {
+            helper.assertBlockNotPresent(Blocks.STONE, target);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Rock tunnel via the data-driven ability path. Exercises
+     * DataDrivenChainBehavior -> ProgressiveAreaBlock -> RockExecutor.
+     *
+     * @param helper the gametest helper
+     */
+    public static void abilityRockTunnel(GameTestHelper helper) {
+        helper.assertTrue(Goo.GOO_VALUES.size() > 0, VALUES_REQUIRED);
+        placeMarkerWithAbility(helper, GooType.ROCK, ABILITY_ROCK_TUNNEL);
+        BlockPos target = MARKER_POS.north();
+        helper.runAfterDelay(FUSE_TICKS + MINING_POST_FUSE, () -> {
+            helper.assertBlockNotPresent(Blocks.STONE, target);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Frost sphere via the data-driven ability path. Exercises
+     * DataDrivenChainBehavior -> ProgressiveAreaBlock -> FrostExecutor.
+     *
+     * @param helper the gametest helper
+     */
+    public static void abilityFrostSphere(GameTestHelper helper) {
+        placeMarkerWithAbility(helper, GooType.FROST, ABILITY_FROST_SPHERE);
+        helper.runAfterDelay(FUSE_TICKS + MINING_POST_FUSE, () -> {
             helper.succeed();
         });
     }
