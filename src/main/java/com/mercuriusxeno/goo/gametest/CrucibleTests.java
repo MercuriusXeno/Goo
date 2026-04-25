@@ -24,9 +24,12 @@ public final class CrucibleTests {
 
     private static final BlockPos BE_POS = new BlockPos(1, 1, 1);
     private static final int ABSORB_DELAY = 5;
+    /** X/Z center of the crucible basin in test-relative coords. */
+    private static final float BASIN_CENTER_XZ = 1.5f;
+    /** Y position just above the crucible body surface (13/16 + block y=1). */
+    private static final float BASIN_SURFACE_Y = 1.85f;
     private static final String SHOULD_HAVE_GOO = "Crucible reservoir should contain goo after blob insert";
     private static final String SHOULD_ABSORB = "Crucible should absorb the item entity";
-    private static final String ITEM_GONE = "Item entity should be discarded after absorption";
 
     private CrucibleTests() {}
 
@@ -65,7 +68,8 @@ public final class CrucibleTests {
         CrucibleBlockEntity crucible = helper.getBlockEntity(BE_POS, CrucibleBlockEntity.class);
         crucible.addFuel(new ItemStack(Items.BLAZE_ROD));
 
-        helper.spawnItem(Items.COBBLESTONE, BE_POS);
+        // Spawn inside the basin (center of block, just above the body surface)
+        helper.spawnItem(Items.COBBLESTONE, BASIN_CENTER_XZ, BASIN_SURFACE_Y, BASIN_CENTER_XZ);
 
         helper.runAfterDelay(ABSORB_DELAY, () -> {
             helper.assertFalse(crucible.reservoirHandler().isEmpty(), SHOULD_ABSORB);

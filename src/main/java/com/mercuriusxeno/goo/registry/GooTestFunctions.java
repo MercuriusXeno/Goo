@@ -84,8 +84,13 @@ public final class GooTestFunctions {
     private static final String MACHINE_CANISTER_REMOVE = "machine_canister_remove";
     private static final String MACHINE_CANISTER_TICK = "machine_canister_tick";
     private static final String MACHINE_CANISTER_BREAK = "machine_canister_break";
+    private static final String MACHINE_CANISTER_FLUID = "machine_canister_fluid";
+    private static final String MACHINE_CANISTER_ROUTING = "machine_canister_routing";
+    private static final String MACHINE_CANISTER_ROUNDTRIP = "machine_canister_roundtrip";
     private static final String MACHINE_REACTOR_IDLE = "machine_reactor_idle";
     private static final String MACHINE_REACTOR_BREAK = "machine_reactor_break";
+    private static final String MACHINE_REACTOR_REACTION = "machine_reactor_reaction";
+    private static final String MACHINE_REACTOR_REDSTONE = "machine_reactor_redstone";
     private static final String MACHINE_PLEXER_IDLE = "machine_plexer_idle";
 
     // --- MobEffects ---
@@ -198,8 +203,13 @@ public final class GooTestFunctions {
         reg(r, MACHINE_CANISTER_REMOVE, MachineTests::canisterRemoveClearsHandler);
         reg(r, MACHINE_CANISTER_TICK, MachineTests::canisterTicksWithSlot);
         reg(r, MACHINE_CANISTER_BREAK, MachineTests::canisterBreakWithSlotIsSafe);
+        reg(r, MACHINE_CANISTER_FLUID, MachineTests::canisterFluidInsertExtract);
+        reg(r, MACHINE_CANISTER_ROUTING, MachineTests::canisterFluidRouting);
+        reg(r, MACHINE_CANISTER_ROUNDTRIP, MachineTests::canisterSurvivesRoundTrip);
         reg(r, MACHINE_REACTOR_IDLE, MachineTests::reactorIdleTick);
         reg(r, MACHINE_REACTOR_BREAK, MachineTests::reactorBreakIsSafe);
+        reg(r, MACHINE_REACTOR_REACTION, MachineTests::reactorProcessesReaction);
+        reg(r, MACHINE_REACTOR_REDSTONE, MachineTests::reactorRedstoneHalts);
         reg(r, MACHINE_PLEXER_IDLE, MachineTests::plexerIdleTick);
     }
 
