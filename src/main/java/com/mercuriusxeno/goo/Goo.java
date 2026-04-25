@@ -17,6 +17,7 @@ import com.mercuriusxeno.goo.registry.GooItems;
 import com.mercuriusxeno.goo.registry.GooParticles;
 import com.mercuriusxeno.goo.registry.GooPotions;
 import com.mercuriusxeno.goo.registry.GooSounds;
+import com.mercuriusxeno.goo.registry.GooTestFunctions;
 import com.mercuriusxeno.goo.registry.GooTickets;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -43,6 +44,8 @@ public class Goo {
     public static final GooValueRegistry GOO_VALUES = new GooValueRegistry();
     /** Log message for startup value loading. */
     private static final String LOG_VALUES_LOADED = "Goo values loaded: {} effective values from cache";
+    /** Log message when no cache exists and derivation runs on first boot. */
+    private static final String LOG_NO_CACHE = "No cached goo values found, deriving from recipes";
 
     /**
      * Registers all deferred registries, event listeners, and config on mod construction.
@@ -53,6 +56,7 @@ public class Goo {
     public Goo(IEventBus modEventBus, ModContainer modContainer) {
         registerDeferredRegistries(modEventBus);
         registerModListeners(modEventBus);
+        GooTestFunctions.init(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, GooConfig.SPEC);
 
@@ -136,12 +140,20 @@ public class Goo {
 
     /**
      * Loads goo values from the effective cache when the server starts.
+     * If no cache exists (first run or fresh world), derives values from
+     * recipes and saves the cache for subsequent starts.
      *
      * @param event the server starting event
      */
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         GOO_VALUES.loadEffectiveCache();
+        if (GOO_VALUES.size() == 0) {
+            LOGGER.info(LOG_NO_CACHE);
+            GOO_VALUES.loadBaseValuesFromPacks(event.getServer());
+            GOO_VALUES.deriveFromRecipes(event.getServer());
+            GOO_VALUES.saveEffectiveValues();
+        }
         if (LOGGER.isInfoEnabled()) { LOGGER.info(LOG_VALUES_LOADED, GOO_VALUES.size()); }
     }
 

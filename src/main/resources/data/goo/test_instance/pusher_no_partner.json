@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "function": "goo:pusher_no_partner",
+  "environment": "minecraft:default",
+  "structure": "minecraft:empty",
+  "max_ticks": 40,
+  "setup_ticks": 0,
+  "required": true
+}
