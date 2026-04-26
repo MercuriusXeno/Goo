@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
 import com.mercuriusxeno.goo.client.ber.NetherBlackHoleRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;

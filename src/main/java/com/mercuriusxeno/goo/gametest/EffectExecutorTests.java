@@ -4,7 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
 import com.mercuriusxeno.goo.ability.AbilityRegistry;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

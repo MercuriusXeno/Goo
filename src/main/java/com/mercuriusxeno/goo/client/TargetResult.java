@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

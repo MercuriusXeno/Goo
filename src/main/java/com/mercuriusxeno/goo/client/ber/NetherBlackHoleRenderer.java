@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
 import com.mercuriusxeno.goo.effect.NetherBehavior;

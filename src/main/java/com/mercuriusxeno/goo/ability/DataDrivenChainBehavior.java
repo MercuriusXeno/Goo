@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.ability;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

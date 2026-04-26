@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.ability;
 
 import com.mercuriusxeno.goo.ability.AbilityDefinition.BehaviorEntry;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.BlazeExecutor;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainFootprint;

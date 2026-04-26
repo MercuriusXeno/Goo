@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.network.BlobFlightPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

@@ -1,9 +1,10 @@
-package com.mercuriusxeno.goo.block;
+package com.mercuriusxeno.goo.block.ability;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
 import com.mercuriusxeno.goo.ability.AbilityRegistry;
 import com.mercuriusxeno.goo.ability.DataDrivenChainBehavior;
+import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.effect.ChainBehavior;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.effect.EffectMath;

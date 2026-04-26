@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.effect;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock.CrystalShape;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock.CrystalSize;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

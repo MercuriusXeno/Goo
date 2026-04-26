@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.GloveSelection;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
 import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;

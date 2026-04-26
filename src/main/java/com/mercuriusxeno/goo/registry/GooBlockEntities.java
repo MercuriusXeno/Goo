@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.ChoralGasketBlockEntity;
 import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
 import com.mercuriusxeno.goo.block.HubBlockEntity;
@@ -10,6 +9,7 @@ import com.mercuriusxeno.goo.block.PlexerBlockEntity;
 import com.mercuriusxeno.goo.block.ReactorBlockEntity;
 import com.mercuriusxeno.goo.block.TapBlockEntity;
 import com.mercuriusxeno.goo.block.VatBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;

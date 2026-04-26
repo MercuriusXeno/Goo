@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.effect;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooSounds;

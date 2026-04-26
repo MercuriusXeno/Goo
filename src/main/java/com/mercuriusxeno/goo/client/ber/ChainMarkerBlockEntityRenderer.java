@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mercuriusxeno.goo.client.ber.style.NetherHoleStyles;

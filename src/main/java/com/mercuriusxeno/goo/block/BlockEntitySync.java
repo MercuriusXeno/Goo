@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 public final class BlockEntitySync {
 
     /** Block update flags: notify neighbors + send to clients. */
-    static final int BLOCK_UPDATE_FLAGS = 3;
+    public static final int BLOCK_UPDATE_FLAGS = 3;
 
     private BlockEntitySync() {}
 

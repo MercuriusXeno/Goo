@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.ChainMarkerBlock;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.CandidateState;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.Decision;
 import com.mercuriusxeno.goo.effect.ChainPlacementRules.WaterHandling;
