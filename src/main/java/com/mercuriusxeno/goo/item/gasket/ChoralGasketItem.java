@@ -233,7 +233,7 @@ public class ChoralGasketItem extends Item implements IGooItemInteraction {
     }
 
     /**
-     * Generic blockstate-based gasket installation for tap and plexer.
+     * Generic blockstate-based gasket installation for tap.
      * Same pattern as crucible: flips a HAS_GASKET boolean property.
      *
      * @param context        the use-on context

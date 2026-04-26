@@ -2,13 +2,10 @@ package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
-import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.data.IGooValueLookup;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
-import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -34,19 +31,14 @@ import java.util.Map;
  * All 9 copper fittings on the top face are always available (no slot
  * constraints or matrix upgrades).
  */
-public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachable, IGasketHolder {
+public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachable {
 
     /** Total canister positions on the 3x3 grid. */
     private static final int SLOT_COUNT = 9;
-    /** Face label returned for tuner display. */
-    private static final String FACE_LABEL = "plexer";
     /** NBT key for the observer target item. */
     private static final String TAG_TARGET_ITEM = "TargetItem";
 
     private ItemStack targetItem = ItemStack.EMPTY;
-
-    /** Composed gasket state for the RECEIVER role. */
-    private final GasketState gasketState = GasketState.single(GasketRole.RECEIVER, FACE_LABEL);
 
     /** Creates a plexer block entity at the given position.
      *
@@ -91,22 +83,6 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
             if (!canisterBe.getCanister(slot).isEmpty()) { count++; }
         }
         return count;
-    }
-
-    // --- IGasketHolder (RECEIVER only) ---
-
-    /** {@inheritDoc} */
-    @Override
-    public GasketState gasketState() { return gasketState; }
-
-    /** {@inheritDoc} */
-    @Override
-    public Runnable gasketSyncCallback() { return this::setChanged; }
-
-    /** {@inheritDoc} Checks blockstate in addition to role. */
-    @Override
-    public boolean supportsRole(GasketRole role) {
-        return role == GasketRole.RECEIVER && getBlockState().getValue(PlexerBlock.HAS_GASKET);
     }
 
     // --- Target item ---
@@ -289,7 +265,7 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
 
     // --- Serialization ---
 
-    /** Persists target item and gasket state.
+    /** Persists target item.
      *
      * @param output the value output to write to
      */
@@ -299,10 +275,9 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
         if (!targetItem.isEmpty()) {
             output.store(TAG_TARGET_ITEM, ItemStack.CODEC, targetItem);
         }
-        gasketState.save(output);
     }
 
-    /** Restores target item and gasket state from persistent storage.
+    /** Restores target item from persistent storage.
      *
      * @param input the value input to read from
      */
@@ -310,7 +285,6 @@ public class PlexerBlockEntity extends BlockEntity implements ICanisterAttachabl
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
         targetItem = input.read(TAG_TARGET_ITEM, ItemStack.CODEC).orElse(ItemStack.EMPTY);
-        gasketState.load(input);
     }
 
     /** Returns full NBT for initial chunk sync to clients.

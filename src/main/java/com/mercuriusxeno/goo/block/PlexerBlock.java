@@ -43,9 +43,6 @@ public class PlexerBlock extends BaseEntityBlock {
     /** Horizontal facing direction - orients the face opening. */
     public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
 
-    /** Whether a choral gasket is installed on this plexer. */
-    public static final BooleanProperty HAS_GASKET = BooleanProperty.create("has_gasket");
-
     /** Whether the plexer is currently receiving a redstone signal. */
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
 
@@ -84,7 +81,6 @@ public class PlexerBlock extends BaseEntityBlock {
         super(properties);
         registerDefaultState(stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
-            .setValue(HAS_GASKET, false)
             .setValue(TRIGGERED, false)
             .setValue(CRAFTING, false));
     }
@@ -110,7 +106,7 @@ public class PlexerBlock extends BaseEntityBlock {
      */
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NonNull Builder<Block, BlockState> builder) {
-        builder.add(FACING, HAS_GASKET, TRIGGERED, CRAFTING);
+        builder.add(FACING, TRIGGERED, CRAFTING);
     }
 
     /** Places the plexer facing the player, with initial redstone state.
@@ -262,7 +258,7 @@ public class PlexerBlock extends BaseEntityBlock {
     // -- Block break drops --
 
     /**
-     * Drops the target item and gasket (if installed) before the block is removed.
+     * Drops the target item before the block is removed.
      * Canisters are external (CanisterBlock above) and drop independently.
      *
      * @param level  the current level
@@ -277,7 +273,6 @@ public class PlexerBlock extends BaseEntityBlock {
             @NonNull BlockState state, @NonNull Player player) {
         if (!level.isClientSide()) {
             dropTargetItem(level, pos);
-            dropGasket(level, pos, state);
         }
         return super.playerWillDestroy(level, pos, state, player);
     }
@@ -293,19 +288,6 @@ public class PlexerBlock extends BaseEntityBlock {
         ItemStack target = plexer.getTargetItem();
         if (!target.isEmpty()) {
             popResource(level, pos, target.copy());
-        }
-    }
-
-    /** Drops a gasket item if one is installed.
-     *
-     * @param level the current level
-     * @param pos   the block position
-     * @param state the block state
-     */
-    private void dropGasket(Level level, BlockPos pos, BlockState state) {
-        if (state.getValue(HAS_GASKET)) {
-            popResource(level, pos,
-                new ItemStack(com.mercuriusxeno.goo.registry.GooItems.CHORAL_GASKET.get()));
         }
     }
 }
