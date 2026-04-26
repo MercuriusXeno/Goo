@@ -233,7 +233,7 @@ public final class EffectExecutorTests {
 
     /**
      * Frost sphere via the data-driven ability path. Exercises
-     * DataDrivenChainBehavior -> ProgressiveAreaBlock -> FrostExecutor.
+     * DataDrivenChainBehavior -> ProgressiveAreaBlock -> FrostBehavior.
      *
      * @param helper the gametest helper
      */

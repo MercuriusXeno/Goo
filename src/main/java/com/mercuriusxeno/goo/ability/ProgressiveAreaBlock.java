@@ -1,13 +1,10 @@
 package com.mercuriusxeno.goo.ability;
 
 import com.mercuriusxeno.goo.ability.AbilityDefinition.BehaviorEntry;
+import com.mercuriusxeno.goo.ability.world.BlazeBehavior;
+import com.mercuriusxeno.goo.ability.world.FrostBehavior;
+import com.mercuriusxeno.goo.ability.world.RockBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.effect.BlazeExecutor;
-import com.mercuriusxeno.goo.effect.ChainBehavior;
-import com.mercuriusxeno.goo.effect.ChainFootprint;
-import com.mercuriusxeno.goo.effect.EffectMath;
-import com.mercuriusxeno.goo.effect.FrostExecutor;
-import com.mercuriusxeno.goo.effect.RockExecutor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -104,7 +101,7 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     /** Sets layerDepth based on the configured areaMode string. */
     private void initAreaMode() {
         if (AREA_SPHERE.equals(areaMode)) {
-            this.layerDepth = EffectMath.computeFreezeRadius(stackCount);
+            this.layerDepth = AbilityMath.computeFreezeRadius(stackCount);
         } else if (AREA_TUNNEL.equals(areaMode)) {
             this.layerDepth = ChainFootprint.tunnelDepth(stackCount);
         } else {
@@ -142,10 +139,10 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      */
     private void previewLayer(ServerLevel level, BlockPos pos) {
         switch (particleStyle) {
-            case STYLE_BLAZE -> BlazeExecutor.previewLayer(level, pos, placedFace,
+            case STYLE_BLAZE -> BlazeBehavior.previewLayer(level, pos, placedFace,
                     pipelineTick, stackCount);
             case STYLE_FROST -> {} // Frost has no preview particles yet
-            default -> RockExecutor.previewLayer(level, pos, placedFace, pipelineTick);
+            default -> RockBehavior.previewLayer(level, pos, placedFace, pipelineTick);
         }
     }
 
@@ -228,9 +225,9 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      */
     private void applyBlockAction(ServerLevel level, BlockPos pos) {
         switch (blockAction) {
-            case ACTION_FORTUNE_SMELT -> BlazeExecutor.fortuneSmeltSingle(level, pos);
-            case ACTION_FREEZE -> FrostExecutor.convertBlock(level, pos);
-            default -> RockExecutor.silkBreakSingle(level, pos);
+            case ACTION_FORTUNE_SMELT -> BlazeBehavior.fortuneSmeltSingle(level, pos);
+            case ACTION_FREEZE -> FrostBehavior.convertBlock(level, pos);
+            default -> RockBehavior.silkBreakSingle(level, pos);
         }
     }
 

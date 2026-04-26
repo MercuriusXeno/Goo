@@ -2,12 +2,12 @@ package com.mercuriusxeno.goo.block.ability;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
+import com.mercuriusxeno.goo.ability.AbilityMath;
 import com.mercuriusxeno.goo.ability.AbilityRegistry;
+import com.mercuriusxeno.goo.ability.ChainBehavior;
+import com.mercuriusxeno.goo.ability.ChainProfiles.ChainProfile;
 import com.mercuriusxeno.goo.ability.DataDrivenChainBehavior;
 import com.mercuriusxeno.goo.block.BlockEntitySync;
-import com.mercuriusxeno.goo.effect.ChainBehavior;
-import com.mercuriusxeno.goo.effect.ChainProfiles.ChainProfile;
-import com.mercuriusxeno.goo.effect.EffectMath;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
@@ -157,7 +157,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
      */
     public boolean tryStack() {
         if (behavior != null && !behavior.allowsTopOff()) { return false; }
-        if (!EffectMath.canStack(stackCount, maxStacks)) { return false; }
+        if (!AbilityMath.canStack(stackCount, maxStacks)) { return false; }
         stackCount++;
         lastStackTick = level != null ? level.getGameTime() : 0;
         applyStackEffect();
@@ -298,7 +298,7 @@ public class ChainMarkerBlockEntity extends BlockEntity {
     private void tickFuse(ServerLevel level, BlockPos pos) {
         if (fuseRemaining < 0) { return; }
         fuseRemaining--;
-        if (!EffectMath.isFuseLive(fuseRemaining)) {
+        if (!AbilityMath.isFuseLive(fuseRemaining)) {
             detonate(level, pos);
             return;
         }

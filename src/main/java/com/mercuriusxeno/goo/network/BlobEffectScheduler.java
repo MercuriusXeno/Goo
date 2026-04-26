@@ -4,9 +4,10 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
 import com.mercuriusxeno.goo.ability.AbilityRegistry;
-import com.mercuriusxeno.goo.effect.EntityEffectRegistry;
-import com.mercuriusxeno.goo.effect.GooMobEffects;
-import com.mercuriusxeno.goo.effect.WorldEffects;
+import com.mercuriusxeno.goo.ability.MobAbilityRegistry;
+import com.mercuriusxeno.goo.ability.mob.MobAbilities;
+import com.mercuriusxeno.goo.ability.world.EffectBlockPlacement;
+import com.mercuriusxeno.goo.ability.world.WorldEffects;
 import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -169,7 +170,7 @@ final class BlobEffectScheduler {
         if (!pe.abilityId.isEmpty()) {
             applyEntityAbilityEffect(pe, living);
         } else {
-            GooMobEffects.apply(pe.level, living, pe.gooType, pe.thrower);
+            MobAbilities.apply(pe.level, living, pe.gooType, pe.thrower);
         }
     }
 
@@ -195,9 +196,9 @@ final class BlobEffectScheduler {
         for (AbilityDefinition.BehaviorEntry entry : def.behaviors()) {
             if (ENTITY_EFFECT_TYPE.equals(entry.type())) {
                 String handler = entry.params().getOrDefault(HANDLER_PARAM, NO_HANDLER);
-                var fn = EntityEffectRegistry.get(handler);
+                var fn = MobAbilityRegistry.get(handler);
                 if (fn != null) {
-                    fn.accept(new EntityEffectRegistry.Context(pe.level, living, pe.thrower));
+                    fn.accept(new MobAbilityRegistry.Context(pe.level, living, pe.thrower));
                 }
             }
         }
@@ -227,7 +228,7 @@ final class BlobEffectScheduler {
         if (id == null) { return; }
         com.mercuriusxeno.goo.ability.AbilityDefinition def = com.mercuriusxeno.goo.ability.AbilityRegistry.getAbility(id);
         if (def == null) { return; }
-        com.mercuriusxeno.goo.effect.EffectBlockPlacement.placeOrStackAbility(
+        EffectBlockPlacement.placeOrStackAbility(
                 pe.level, pe.targetPos, pe.gooType, pe.targetFace, def);
     }
 

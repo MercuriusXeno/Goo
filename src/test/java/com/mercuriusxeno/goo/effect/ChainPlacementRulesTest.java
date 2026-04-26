@@ -1,9 +1,10 @@
 package com.mercuriusxeno.goo.effect;
 
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.Action;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.CandidateState;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.Decision;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.WaterHandling;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.Action;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.CandidateState;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.Decision;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.WaterHandling;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;

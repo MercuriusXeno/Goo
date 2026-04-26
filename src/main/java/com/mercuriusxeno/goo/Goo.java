@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.ability.AbilityLoader;
+import com.mercuriusxeno.goo.ability.ChainProfiles;
 import com.mercuriusxeno.goo.command.GooCommand;
 import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
@@ -122,7 +123,7 @@ public class Goo {
      * @param event the common setup event
      */
     private static void commonSetup(FMLCommonSetupEvent event) {
-        com.mercuriusxeno.goo.effect.ChainProfiles.registerAll();
+        ChainProfiles.registerAll();
         com.mercuriusxeno.goo.item.gasket.ChoralGasketItem.setGasketBlockSupplier(
                 GooBlocks.CHORAL_GASKET_BLOCK::get);
     }

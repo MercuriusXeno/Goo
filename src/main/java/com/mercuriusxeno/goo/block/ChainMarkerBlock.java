@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.block;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;

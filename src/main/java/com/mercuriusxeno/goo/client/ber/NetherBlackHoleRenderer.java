@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.client.ber;
 
+import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
-import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;

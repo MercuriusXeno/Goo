@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.ability;
 
 import com.mercuriusxeno.goo.ability.AbilityDefinition.BehaviorEntry;
+import com.mercuriusxeno.goo.ability.world.UnstableBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.effect.ChainBehavior;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Data-driven explosion behavior. Replaces the hardcoded
- * {@link com.mercuriusxeno.goo.effect.UnstableBehavior} with
+ * {@link UnstableBehavior} with
  * parameters read from the ability JSON.
  */
 public final class ParameterizedExplosion implements ChainBehavior {

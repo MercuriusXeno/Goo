@@ -1,7 +1,10 @@
 package com.mercuriusxeno.goo.ability;
 
 import com.mercuriusxeno.goo.ability.AbilityDefinition.BehaviorEntry;
-import com.mercuriusxeno.goo.effect.ChainBehavior;
+import com.mercuriusxeno.goo.ability.world.CrystalBehavior;
+import com.mercuriusxeno.goo.ability.world.GlowBehavior;
+import com.mercuriusxeno.goo.ability.world.MetalBehavior;
+import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,11 +34,11 @@ public final class BehaviorType {
     static {
         register("explosion", ParameterizedExplosion::fromEntry);
         register("progressive_area", ProgressiveAreaBlock::fromEntry);
-        register("glow_crystal", (e, d) -> new com.mercuriusxeno.goo.effect.GlowBehavior());
-        register("metal_spikes", (e, d) -> new com.mercuriusxeno.goo.effect.MetalBehavior());
-        register("crystal_cloud", (e, d) -> new com.mercuriusxeno.goo.effect.CrystalBehavior());
-        register("black_hole", (e, d) -> new com.mercuriusxeno.goo.effect.NetherBehavior());
-        register("entity_effect", EntityEffectBehavior::fromEntry);
+        register("glow_crystal", (e, d) -> new GlowBehavior());
+        register("metal_spikes", (e, d) -> new MetalBehavior());
+        register("crystal_cloud", (e, d) -> new CrystalBehavior());
+        register("black_hole", (e, d) -> new NetherBehavior());
+        register("entity_effect", MobAbilityBehavior::fromEntry);
     }
 
     private BehaviorType() {}

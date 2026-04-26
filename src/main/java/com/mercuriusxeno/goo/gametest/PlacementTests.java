@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.gametest;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.effect.WorldEffects;
+import com.mercuriusxeno.goo.ability.world.WorldEffects;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

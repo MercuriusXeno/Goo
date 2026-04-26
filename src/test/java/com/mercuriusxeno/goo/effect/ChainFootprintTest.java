@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.effect;
 
+import com.mercuriusxeno.goo.ability.ChainFootprint;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
