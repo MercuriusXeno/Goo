@@ -1,3 +1,11 @@
+// Buildscript classpath for plantuml-generator-util so the umlDiagrams task
+// can call its API directly from Groovy (the tool ships only as a Maven plugin
+// or library; no Gradle plugin exists).
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'de.elnarion.util:plantuml-generator-util:3.0.1' }
+}
+
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -310,4 +318,55 @@ tasks.configureEach {
     if (name.contains('net.neoforged.fml.startup')) {
         notCompatibleWithConfigurationCache('NeoGradle run tasks use Task.project at execution time')
     }
+}
+
+// PlantUML class diagrams via plantuml-generator-util (de.elnarion.util:3.0.1).
+// Operates on compiled bytecode through ClassGraph (not BCEL). Output is raw
+// .puml text. Slices are data; one task per slice keeps each renewable.
+// Aggregate `umlDiagrams` regenerates everything. Add a slice by adding an
+// entry to umlSlices below.
+def umlSlices = [
+        [name    : 'Ability',
+         file    : 'ability-effect.puml',
+         packages: ['com.mercuriusxeno.goo.ability',
+                    'com.mercuriusxeno.goo.effect']],
+        [name    : 'Block',
+         file    : 'block.puml',
+         packages: ['com.mercuriusxeno.goo.block',
+                    'com.mercuriusxeno.goo.block.fluid',
+                    'com.mercuriusxeno.goo.block.gasket']],
+]
+
+def umlOutputDir = file("${layout.buildDirectory.get()}/reports/diagrams/class")
+// Resolve at configuration time; sourceSets is not accessible inside doLast.
+def umlClasspathFiles = (sourceSets.main.output.classesDirs.files +
+                         sourceSets.main.compileClasspath.files) as Set
+
+umlSlices.each { slice ->
+    tasks.register("umlDiagrams${slice.name}") {
+        description = "Generates PlantUML class diagram for ${slice.packages.join(', ')}"
+        group = 'documentation'
+        dependsOn tasks.named('compileJava')
+
+        doLast {
+            umlOutputDir.mkdirs()
+            // Classloader spanning goo's compiled classes plus compile-time
+            // dependencies (NeoForge, Minecraft) so ClassGraph resolves types.
+            def urls = umlClasspathFiles.collect { it.toURI().toURL() } as URL[]
+            def cl = new URLClassLoader(urls, this.class.classLoader)
+            def cfg = new de.elnarion.util.plantuml.generator.classdiagram.config.PlantUMLClassDiagramConfigBuilder(slice.packages)
+                    .withClassLoader(cl)
+                    .build()
+            def gen = new de.elnarion.util.plantuml.generator.classdiagram.PlantUMLClassDiagramGenerator(cfg)
+            def out = new File(umlOutputDir, slice.file)
+            out.text = gen.generateDiagramText()
+            println "Wrote ${out} (${out.length()} bytes)"
+        }
+    }
+}
+
+tasks.register('umlDiagrams') {
+    description = 'Regenerates all UML class diagram slices'
+    group = 'documentation'
+    dependsOn umlSlices.collect { "umlDiagrams${it.name}" }
 }
