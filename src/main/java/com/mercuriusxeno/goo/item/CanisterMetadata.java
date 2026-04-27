@@ -35,39 +35,45 @@ public record CanisterMetadata(
         @Nullable GasketPartner topPartner,
         @Nullable GasketPartner bottomPartner) {
 
-    /** Empty metadata with no gaskets, label, or partners. */
+    /**
+     * Empty metadata with no gaskets, label, or partners.
+     */
     public static final CanisterMetadata EMPTY =
-        new CanisterMetadata(null, null, null, null, null);
+            new CanisterMetadata(null, null, null, null, null);
 
-    /** Persistent codec for saving/loading canister metadata. */
+    /**
+     * Persistent codec for saving/loading canister metadata.
+     */
     public static final Codec<CanisterMetadata> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            UUIDUtil.STRING_CODEC.optionalFieldOf("top_gasket_id")
-                .forGetter(c -> Optional.ofNullable(c.topGasketId())),
-            UUIDUtil.STRING_CODEC.optionalFieldOf("bottom_gasket_id")
-                .forGetter(c -> Optional.ofNullable(c.bottomGasketId())),
-            Codec.STRING.optionalFieldOf("label")
-                .forGetter(c -> Optional.ofNullable(c.label())),
-            GasketPartner.CODEC.optionalFieldOf("top_partner")
-                .forGetter(c -> Optional.ofNullable(c.topPartner())),
-            GasketPartner.CODEC.optionalFieldOf("bottom_partner")
-                .forGetter(c -> Optional.ofNullable(c.bottomPartner()))
-        ).apply(instance, CanisterMetadata::fromCodec)
+            instance.group(
+                    UUIDUtil.STRING_CODEC.optionalFieldOf("top_gasket_id")
+                            .forGetter(c -> Optional.ofNullable(c.topGasketId())),
+                    UUIDUtil.STRING_CODEC.optionalFieldOf("bottom_gasket_id")
+                            .forGetter(c -> Optional.ofNullable(c.bottomGasketId())),
+                    Codec.STRING.optionalFieldOf("label")
+                            .forGetter(c -> Optional.ofNullable(c.label())),
+                    GasketPartner.CODEC.optionalFieldOf("top_partner")
+                            .forGetter(c -> Optional.ofNullable(c.topPartner())),
+                    GasketPartner.CODEC.optionalFieldOf("bottom_partner")
+                            .forGetter(c -> Optional.ofNullable(c.bottomPartner()))
+            ).apply(instance, CanisterMetadata::fromCodec)
     );
 
-    /** Network codec for client-server sync. */
+    /**
+     * Network codec for client-server sync.
+     */
     public static final StreamCodec<ByteBuf, CanisterMetadata> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
-        c -> Optional.ofNullable(c.topGasketId()),
-        ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
-        c -> Optional.ofNullable(c.bottomGasketId()),
-        ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8),
-        c -> Optional.ofNullable(c.label()),
-        ByteBufCodecs.optional(GasketPartner.STREAM_CODEC),
-        c -> Optional.ofNullable(c.topPartner()),
-        ByteBufCodecs.optional(GasketPartner.STREAM_CODEC),
-        c -> Optional.ofNullable(c.bottomPartner()),
-        CanisterMetadata::fromStreamCodec
+            ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
+            c -> Optional.ofNullable(c.topGasketId()),
+            ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
+            c -> Optional.ofNullable(c.bottomGasketId()),
+            ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8),
+            c -> Optional.ofNullable(c.label()),
+            ByteBufCodecs.optional(GasketPartner.STREAM_CODEC),
+            c -> Optional.ofNullable(c.topPartner()),
+            ByteBufCodecs.optional(GasketPartner.STREAM_CODEC),
+            c -> Optional.ofNullable(c.bottomPartner()),
+            CanisterMetadata::fromStreamCodec
     );
 
     /**
@@ -85,9 +91,9 @@ public record CanisterMetadata(
             Optional<String> label,
             Optional<GasketPartner> topPartner, Optional<GasketPartner> bottomPartner) {
         return new CanisterMetadata(
-            topGasketId.orElse(null), bottomGasketId.orElse(null),
-            label.orElse(null),
-            topPartner.orElse(null), bottomPartner.orElse(null));
+                topGasketId.orElse(null), bottomGasketId.orElse(null),
+                label.orElse(null),
+                topPartner.orElse(null), bottomPartner.orElse(null));
     }
 
     /**
@@ -105,9 +111,9 @@ public record CanisterMetadata(
             Optional<String> label,
             Optional<GasketPartner> topPartner, Optional<GasketPartner> bottomPartner) {
         return new CanisterMetadata(
-            topGasketId.orElse(null), bottomGasketId.orElse(null),
-            label.orElse(null),
-            topPartner.orElse(null), bottomPartner.orElse(null));
+                topGasketId.orElse(null), bottomGasketId.orElse(null),
+                label.orElse(null),
+                topPartner.orElse(null), bottomPartner.orElse(null));
     }
 
     /**
@@ -157,9 +163,9 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withFreshGasketIds() {
         return new CanisterMetadata(
-            topGasketId != null ? UUID.randomUUID() : null,
-            bottomGasketId != null ? UUID.randomUUID() : null,
-            label, null, null);
+                topGasketId != null ? UUID.randomUUID() : null,
+                bottomGasketId != null ? UUID.randomUUID() : null,
+                label, null, null);
     }
 
     /**
@@ -170,7 +176,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withLabel(@Nullable String newLabel) {
         return new CanisterMetadata(topGasketId, bottomGasketId,
-            newLabel, topPartner, bottomPartner);
+                newLabel, topPartner, bottomPartner);
     }
 
     /**
@@ -179,10 +185,12 @@ public record CanisterMetadata(
      * @return new metadata with gasket UUIDs ensured
      */
     public CanisterMetadata withGasketIds() {
-        if (topGasketId != null && bottomGasketId != null) { return this; }
+        if (topGasketId != null && bottomGasketId != null) {
+            return this;
+        }
         return new CanisterMetadata(
-            getOrCreateTopGasketId(), getOrCreateBottomGasketId(),
-            label, topPartner, bottomPartner);
+                getOrCreateTopGasketId(), getOrCreateBottomGasketId(),
+                label, topPartner, bottomPartner);
     }
 
     /**
@@ -193,7 +201,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withTopGasketId(UUID id) {
         return new CanisterMetadata(id, bottomGasketId,
-            label, topPartner, bottomPartner);
+                label, topPartner, bottomPartner);
     }
 
     /**
@@ -204,7 +212,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withBottomGasketId(UUID id) {
         return new CanisterMetadata(topGasketId, id,
-            label, topPartner, bottomPartner);
+                label, topPartner, bottomPartner);
     }
 
     /**
@@ -214,7 +222,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withoutTopGasket() {
         return new CanisterMetadata(null, bottomGasketId,
-            label, null, bottomPartner);
+                label, null, bottomPartner);
     }
 
     /**
@@ -224,7 +232,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withoutBottomGasket() {
         return new CanisterMetadata(topGasketId, null,
-            label, topPartner, null);
+                label, topPartner, null);
     }
 
     /**
@@ -235,7 +243,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withTopPartner(@Nullable GasketPartner partner) {
         return new CanisterMetadata(topGasketId, bottomGasketId,
-            label, partner, bottomPartner);
+                label, partner, bottomPartner);
     }
 
     /**
@@ -246,7 +254,7 @@ public record CanisterMetadata(
      */
     public CanisterMetadata withBottomPartner(@Nullable GasketPartner partner) {
         return new CanisterMetadata(topGasketId, bottomGasketId,
-            label, topPartner, partner);
+                label, topPartner, partner);
     }
 
     /**

@@ -4,37 +4,17 @@ import com.google.common.reflect.TypeToken;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ISidedProxy;
-import com.mercuriusxeno.goo.client.ber.CanisterBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.CrucibleBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.HubBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.PlexerBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.ReactorBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.TapBlockEntityRenderer;
-import com.mercuriusxeno.goo.client.ber.VatBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.*;
 import com.mercuriusxeno.goo.client.machine.FuelRemainingProperty;
 import com.mercuriusxeno.goo.client.machine.TunerAwaitState;
-import com.mercuriusxeno.goo.client.model.CanisterBodyModels;
-import com.mercuriusxeno.goo.client.model.CanisterSpecialRenderer;
-import com.mercuriusxeno.goo.client.model.GloveBodyModels;
-import com.mercuriusxeno.goo.client.model.GloveSpecialRenderer;
-import com.mercuriusxeno.goo.client.model.VatBodyModels;
-import com.mercuriusxeno.goo.client.model.VatSpecialRenderer;
+import com.mercuriusxeno.goo.client.model.*;
 import com.mercuriusxeno.goo.client.overlay.GooTargetHighlighter;
-import com.mercuriusxeno.goo.client.particle.GooBubbleParticle;
-import com.mercuriusxeno.goo.client.particle.GooDripParticle;
-import com.mercuriusxeno.goo.client.particle.GooFogParticle;
-import com.mercuriusxeno.goo.client.particle.GooSparkParticle;
-import com.mercuriusxeno.goo.client.particle.OrientedBoomParticle;
+import com.mercuriusxeno.goo.client.particle.*;
 import com.mercuriusxeno.goo.client.throwing.BlobFlightManager;
 import com.mercuriusxeno.goo.client.throwing.BlobSizeProperty;
 import com.mercuriusxeno.goo.client.throwing.BlobVolumeDecorator;
 import com.mercuriusxeno.goo.client.throwing.ThrowFreezeState;
-import com.mercuriusxeno.goo.registry.GooBlockEntities;
-import com.mercuriusxeno.goo.registry.GooFluidTypes;
-import com.mercuriusxeno.goo.registry.GooFluids;
-import com.mercuriusxeno.goo.registry.GooItems;
-import com.mercuriusxeno.goo.registry.GooParticles;
+import com.mercuriusxeno.goo.registry.*;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -44,15 +24,7 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.event.RegisterFluidModelsEvent;
-import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
-import net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent;
-import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
-import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
+import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.fluid.FluidTintSources;
@@ -64,27 +36,48 @@ import net.neoforged.neoforge.fluids.FluidType;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GooClientSetup {
-    /** Property name for blob size range select. */
+    /**
+     * Property name for blob size range select.
+     */
     private static final String PROP_BLOB_SIZE = "blob_size";
-    /** Property name for fuel remaining range select. */
+    /**
+     * Property name for fuel remaining range select.
+     */
     private static final String PROP_FUEL_REMAINING = "fuel_remaining";
-    /** Special renderer key for canister goo. */
+    /**
+     * Special renderer key for canister goo.
+     */
     private static final String RENDERER_CANISTER = "canister_goo";
-    /** Special renderer key for vat goo. */
+    /**
+     * Special renderer key for vat goo.
+     */
     private static final String RENDERER_VAT = "vat_goo";
-    /** Special renderer key for glove goo. */
+    /**
+     * Special renderer key for glove goo.
+     */
     private static final String RENDERER_GLOVE = "glove_goo";
-    /** Fluid texture path prefix. */
+    /**
+     * Fluid texture path prefix.
+     */
     private static final String FLUID_TEX_PREFIX = "fluid/";
-    /** Fluid texture path suffix. */
+    /**
+     * Fluid texture path suffix.
+     */
     private static final String FLUID_TEX_SUFFIX = "_fluid";
-    /** Opaque alpha OR-mask for fluid tint color. */
+    /**
+     * Opaque alpha OR-mask for fluid tint color.
+     */
     private static final int OPAQUE_ALPHA = 0xFF000000;
-    /** SuppressWarnings annotation value for unchecked casts. */
+    /**
+     * SuppressWarnings annotation value for unchecked casts.
+     */
     private static final String SUPPRESS_UNCHECKED = "unchecked";
 
     static {
         ISidedProxy.INSTANCE[0] = new ClientProxy();
+    }
+
+    private GooClientSetup() {
     }
 
     /**
@@ -110,30 +103,32 @@ public final class GooClientSetup {
 
     /**
      * Registers renderers for crucible, hub, and canister block entities.
+     *
      * @param event the renderer registration event
      */
     private static void registerFluidMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CRUCIBLE.get(),
-            CrucibleBlockEntityRenderer::new);
+                CrucibleBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.HUB.get(),
-            HubBlockEntityRenderer::new);
+                HubBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.CANISTER.get(),
-            CanisterBlockEntityRenderer::new);
+                CanisterBlockEntityRenderer::new);
     }
 
     /**
      * Registers renderers for vat, plexer, and tap block entities.
+     *
      * @param event the renderer registration event
      */
     private static void registerLogisticMachineRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.VAT.get(),
-            VatBlockEntityRenderer::new);
+                VatBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.PLEXER.get(),
-            PlexerBlockEntityRenderer::new);
+                PlexerBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.REACTOR.get(),
-            ReactorBlockEntityRenderer::new);
+                ReactorBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(GooBlockEntities.TAP.get(),
-            TapBlockEntityRenderer::new);
+                TapBlockEntityRenderer::new);
     }
 
     /**
@@ -143,7 +138,7 @@ public final class GooClientSetup {
      */
     private static void registerEffectRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(GooBlockEntities.CHAIN_MARKER.get(),
-            ChainMarkerBlockEntityRenderer::new);
+                ChainMarkerBlockEntityRenderer::new);
     }
 
     /**
@@ -168,12 +163,12 @@ public final class GooClientSetup {
     @SubscribeEvent
     public static void registerRangeSelectProperties(RegisterRangeSelectItemModelPropertyEvent event) {
         event.register(
-            Identifier.fromNamespaceAndPath(Goo.MODID, PROP_BLOB_SIZE),
-            BlobSizeProperty.MAP_CODEC
+                Identifier.fromNamespaceAndPath(Goo.MODID, PROP_BLOB_SIZE),
+                BlobSizeProperty.MAP_CODEC
         );
         event.register(
-            Identifier.fromNamespaceAndPath(Goo.MODID, PROP_FUEL_REMAINING),
-            FuelRemainingProperty.MAP_CODEC
+                Identifier.fromNamespaceAndPath(Goo.MODID, PROP_FUEL_REMAINING),
+                FuelRemainingProperty.MAP_CODEC
         );
     }
 
@@ -203,7 +198,8 @@ public final class GooClientSetup {
     public static void registerRenderStateModifiers(
             RegisterRenderStateModifiersEvent event) {
         event.registerEntityModifier(
-                new TypeToken<EntityRenderer<Entity, EntityRenderState>>() {},
+                new TypeToken<EntityRenderer<Entity, EntityRenderState>>() {
+                },
                 GooTargetHighlighter::modifyEntityRenderState);
     }
 
@@ -237,16 +233,16 @@ public final class GooClientSetup {
     @SubscribeEvent
     public static void registerSpecialModelRenderers(RegisterSpecialModelRendererEvent event) {
         event.register(
-            Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_CANISTER),
-            CanisterSpecialRenderer.Unbaked.MAP_CODEC
+                Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_CANISTER),
+                CanisterSpecialRenderer.Unbaked.MAP_CODEC
         );
         event.register(
-            Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_VAT),
-            VatSpecialRenderer.Unbaked.MAP_CODEC
+                Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_VAT),
+                VatSpecialRenderer.Unbaked.MAP_CODEC
         );
         event.register(
-            Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_GLOVE),
-            GloveSpecialRenderer.Unbaked.MAP_CODEC
+                Identifier.fromNamespaceAndPath(Goo.MODID, RENDERER_GLOVE),
+                GloveSpecialRenderer.Unbaked.MAP_CODEC
         );
     }
 
@@ -260,13 +256,13 @@ public final class GooClientSetup {
         for (GooType type : GooType.values()) {
             String id = type.getId();
             Material texture = new Material(
-                Identifier.fromNamespaceAndPath(Goo.MODID, FLUID_TEX_PREFIX + id + FLUID_TEX_SUFFIX), true);
+                    Identifier.fromNamespaceAndPath(Goo.MODID, FLUID_TEX_PREFIX + id + FLUID_TEX_SUFFIX), true);
             FluidModel.Unbaked model = new FluidModel.Unbaked(
-                texture, texture, null,
-                FluidTintSources.constant(OPAQUE_ALPHA | type.getColor()));
+                    texture, texture, null,
+                    FluidTintSources.constant(OPAQUE_ALPHA | type.getColor()));
             event.register(model,
-                GooFluids.SOURCES.get(type),
-                GooFluids.FLOWING.get(type));
+                    GooFluids.SOURCES.get(type),
+                    GooFluids.FLOWING.get(type));
         }
     }
 
@@ -290,7 +286,8 @@ public final class GooClientSetup {
      * @return a new IClientFluidTypeExtensions instance
      */
     private static IClientFluidTypeExtensions createFluidExtensions(GooType type) {
-        return new IClientFluidTypeExtensions() {};
+        return new IClientFluidTypeExtensions() {
+        };
     }
 
     /**
@@ -315,7 +312,5 @@ public final class GooClientSetup {
     public static void onClientLogin(ClientPlayerNetworkEvent.LoggingIn event) {
         TunerAwaitState.clear();
     }
-
-    private GooClientSetup() {}
 
 }

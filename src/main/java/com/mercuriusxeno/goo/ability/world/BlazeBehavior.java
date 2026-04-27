@@ -45,7 +45,9 @@ import java.util.Optional;
  */
 public final class BlazeBehavior implements WorldEffect, ChainBehavior {
 
-    /** Ticks the flame preview leads the actual break. */
+    /**
+     * Ticks the flame preview leads the actual break.
+     */
     private static final int PREVIEW_DELAY_TICKS = 8;
 
     private static final String TAG_PIPELINE_TICK = "BlazePipelineTick";
@@ -54,49 +56,89 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
     private static final String TAG_FACE_SNAPSHOT = "BlazeFace";
     private static final String DEFAULT_FACE_NAME = "up";
 
-    /** Offset to get block center from integer position. */
+    /**
+     * Offset to get block center from integer position.
+     */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
-    /** Fortune level applied to ore drops. */
+    /**
+     * Fortune level applied to ore drops.
+     */
     private static final int FORTUNE_LEVEL = 3;
-    /** Block break level event ID (sends break particles to clients). */
+    /**
+     * Block break level event ID (sends break particles to clients).
+     */
     private static final int BREAK_EFFECT_EVENT = 2001;
 
-    /** Flame particles per destroyed block in a single layer. */
+    /**
+     * Flame particles per destroyed block in a single layer.
+     */
     private static final int FLAME_PARTICLES_PER_BLOCK = 6;
-    /** Lava drip particles per destroyed block. */
+    /**
+     * Lava drip particles per destroyed block.
+     */
     private static final int LAVA_PARTICLES_PER_BLOCK = 2;
-    /** Ember particles per destroyed block. */
+    /**
+     * Ember particles per destroyed block.
+     */
     private static final int EMBER_PARTICLES_PER_BLOCK = 4;
-    /** Spread perpendicular to the blast axis. */
+    /**
+     * Spread perpendicular to the blast axis.
+     */
     private static final double FLAME_PERP_SPREAD = 0.45;
-    /** Spread along the blast axis: one layer thick. */
+    /**
+     * Spread along the blast axis: one layer thick.
+     */
     private static final double FLAME_ALONG_SPREAD = 0.12;
-    /** Upward velocity for flame particles. */
+    /**
+     * Upward velocity for flame particles.
+     */
     private static final double FLAME_PARTICLE_SPEED = 0.05;
-    /** Speed for ember particles - slower, floatier than main flames. */
+    /**
+     * Speed for ember particles - slower, floatier than main flames.
+     */
     private static final double EMBER_PARTICLE_SPEED = 0.03;
 
-    /** Base volume per layer explosion sound. */
+    /**
+     * Base volume per layer explosion sound.
+     */
     private static final float LAYER_VOLUME_BASE = 0.4f;
-    /** Extra volume per stack for the per-layer sound. */
+    /**
+     * Extra volume per stack for the per-layer sound.
+     */
     private static final float LAYER_VOLUME_PER_STACK = 0.06f;
-    /** Starting pitch for layer 0. */
+    /**
+     * Starting pitch for layer 0.
+     */
     private static final float LAYER_PITCH_BASE = 1.1f;
-    /** Pitch reduction per step as the blast digs deeper. */
+    /**
+     * Pitch reduction per step as the blast digs deeper.
+     */
     private static final float LAYER_PITCH_STEP = 0.03f;
-    /** Minimum pitch after step-based reduction. */
+    /**
+     * Minimum pitch after step-based reduction.
+     */
     private static final float LAYER_PITCH_MIN = 0.7f;
 
-    /** Base explosion damage at the layer center. */
+    /**
+     * Base explosion damage at the layer center.
+     */
     private static final float LAYER_DAMAGE = 6f;
-    /** Knockback strength at the layer center. */
+    /**
+     * Knockback strength at the layer center.
+     */
     private static final double KNOCKBACK_STRENGTH = 0.8;
-    /** AABB expansion beyond the footprint for entity search. */
+    /**
+     * AABB expansion beyond the footprint for entity search.
+     */
     private static final double ENTITY_SEARCH_EXPAND = 1.5;
 
-    /** Flame particles per block in the preview footprint. */
+    /**
+     * Flame particles per block in the preview footprint.
+     */
     private static final int PREVIEW_FLAMES_PER_BLOCK = 3;
-    /** Preview particle spread. */
+    /**
+     * Preview particle spread.
+     */
     private static final double PREVIEW_SPREAD = 0.3;
 
     private int pipelineTick;
@@ -105,64 +147,6 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
     private Direction placedFace = Direction.UP;
 
     // --- WorldEffect (instant blob hit) ---
-
-    @Override
-    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        EffectBlockPlacement.blazeExplosion(level, pos, targetFace);
-    }
-
-    // --- ChainBehavior (fused chain marker detonation) ---
-
-    @Override
-    public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        this.stackCount = be.getStackCount();
-        this.placedFace = be.getPlacedFace();
-        this.miningDepth = ChainFootprint.tunnelDepth(stackCount);
-        this.pipelineTick = 0;
-    }
-
-    @Override
-    public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        if (pipelineTick < miningDepth) {
-            previewLayer(level, pos, placedFace, pipelineTick, stackCount);
-        }
-        int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
-        if (breakIndex >= 0 && breakIndex < miningDepth) {
-            mineLayer(level, pos, placedFace, breakIndex, stackCount);
-        }
-        pipelineTick++;
-    }
-
-    @Override
-    public boolean isActive() {
-        return pipelineTick < miningDepth + PREVIEW_DELAY_TICKS;
-    }
-
-    @Override
-    public int getMinedLayers() {
-        int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
-        return Math.max(0, breakIndex);
-    }
-
-    @Override
-    public void saveAdditional(ValueOutput output) {
-        output.putInt(TAG_PIPELINE_TICK, pipelineTick);
-        output.putInt(TAG_MINING_DEPTH, miningDepth);
-        output.putInt(TAG_STACK_SNAPSHOT, stackCount);
-        output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
-    }
-
-    @Override
-    public void loadAdditional(ValueInput input) {
-        pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
-        miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
-        stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
-        String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE_NAME);
-        Direction dir = Direction.byName(faceName);
-        placedFace = dir != null ? dir : Direction.UP;
-    }
-
-    // --- Layer mining utility (used by chain pipeline + ProgressiveAreaBlock) ---
 
     /**
      * Mines a single layer of the blaze burn at the given
@@ -194,6 +178,8 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         return destroyed;
     }
 
+    // --- ChainBehavior (fused chain marker detonation) ---
+
     /**
      * Emits flame burst particles at each block in the footprint for
      * {@code stepIndex}, without touching blocks. The caller schedules
@@ -223,8 +209,8 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         }
     }
 
-
-    /** First layer (stepIndex 0) lands on the hit block itself, one step
+    /**
+     * First layer (stepIndex 0) lands on the hit block itself, one step
      * into the wall from the marker's air block.
      *
      * @param origin     the anchor (marker) block position
@@ -236,8 +222,8 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         return origin.relative(placedFace.getOpposite(), stepIndex + 1);
     }
 
-
-    /** Creates a diamond pickaxe with fortune 3 for loot context.
+    /**
+     * Creates a diamond pickaxe with fortune 3 for loot context.
      *
      * @param level the server level (provides registry access)
      * @return a fortune-3 diamond pickaxe
@@ -268,7 +254,9 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         int destroyed = 0;
         for (int[] offset : footprint) {
             BlockPos target = offsetPerpendicular(layerCenter, blastAxis, offset[0], offset[1]);
-            if (tryMineBlock(level, target, tool, drops)) { destroyed++; }
+            if (tryMineBlock(level, target, tool, drops)) {
+                destroyed++;
+            }
         }
         return destroyed;
     }
@@ -286,7 +274,9 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
      */
     private static boolean tryMineBlock(ServerLevel level, BlockPos pos,
                                         ItemStack tool, List<ItemStack> drops) {
-        if (!canMineAt(level, pos)) { return false; }
+        if (!canMineAt(level, pos)) {
+            return false;
+        }
         BlockState state = level.getBlockState(pos);
         BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
 
@@ -301,14 +291,17 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         return true;
     }
 
-    /** Fortune-smelts a single block, dropping items at its position.
+    /**
+     * Fortune-smelts a single block, dropping items at its position.
      * Used by ring-based flat delivery.
      *
      * @param level the server level
      * @param pos   the block position to mine and smelt
      */
     public static void fortuneSmeltSingle(ServerLevel level, BlockPos pos) {
-        if (!canMineAt(level, pos)) { return; }
+        if (!canMineAt(level, pos)) {
+            return;
+        }
         ItemStack tool = buildFortuneTool(level);
         List<ItemStack> drops = new ArrayList<>();
         if (tryMineBlock(level, pos, tool, drops)) {
@@ -318,19 +311,25 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         }
     }
 
-    /** Returns true if the block at pos is in-bounds, non-air, and destructible.
+    // --- Layer mining utility (used by chain pipeline + ProgressiveAreaBlock) ---
+
+    /**
+     * Returns true if the block at pos is in-bounds, non-air, and destructible.
      *
      * @param level the server level
      * @param pos   the block position to check
      * @return true if the block can be mined
      */
     private static boolean canMineAt(ServerLevel level, BlockPos pos) {
-        if (!level.isInWorldBounds(pos)) { return false; }
+        if (!level.isInWorldBounds(pos)) {
+            return false;
+        }
         BlockState state = level.getBlockState(pos);
         return !state.isAir() && state.getDestroySpeed(level, pos) >= 0;
     }
 
-    /** Attempts to smelt an item via furnace recipe. Returns the smelted
+    /**
+     * Attempts to smelt an item via furnace recipe. Returns the smelted
      * result at the same stack count, or the original if no recipe exists.
      *
      * @param level the server level
@@ -384,7 +383,6 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         }
     }
 
-
     /**
      * Offsets a position in the two axes perpendicular to the blast axis.
      *
@@ -403,7 +401,6 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
             case Z -> center.offset(a, b, 0);
         };
     }
-
 
     /**
      * Damages living entities within the layer's footprint AABB.
@@ -429,10 +426,16 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
                 cx + radius, cy + radius, cz + radius);
 
         for (Entity entity : level.getEntities(null, area)) {
-            if (entity instanceof ItemEntity) { continue; }
-            if (!(entity instanceof LivingEntity)) { continue; }
+            if (entity instanceof ItemEntity) {
+                continue;
+            }
+            if (!(entity instanceof LivingEntity)) {
+                continue;
+            }
             double dist = entity.position().distanceTo(center);
-            if (dist > radius) { continue; }
+            if (dist > radius) {
+                continue;
+            }
             float falloff = 1f - (float) (dist / radius);
             entity.hurtServer(level,
                     level.damageSources().source(DamageTypes.EXPLOSION),
@@ -444,7 +447,8 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         }
     }
 
-    /** Computes the maximum Euclidean offset in the footprint for entity
+    /**
+     * Computes the maximum Euclidean offset in the footprint for entity
      * search radius.
      *
      * @param footprint 2D offsets from {@link ChainFootprint}
@@ -454,11 +458,12 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
         double max = 0;
         for (int[] offset : footprint) {
             double dist = Math.sqrt(offset[0] * offset[0] + offset[1] * offset[1]);
-            if (dist > max) { max = dist; }
+            if (dist > max) {
+                max = dist;
+            }
         }
         return max;
     }
-
 
     /**
      * Spawns flame, lava, and ember particles at the layer center,
@@ -489,7 +494,6 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
                 spreadX, spreadY, spreadZ, EMBER_PARTICLE_SPEED);
     }
 
-
     /**
      * Plays a localized explosion sound for this layer. Pitch dips
      * per step to suggest the burn grinding deeper.
@@ -506,5 +510,59 @@ public final class BlazeBehavior implements WorldEffect, ChainBehavior {
                 LAYER_PITCH_BASE - LAYER_PITCH_STEP * stepIndex);
         level.playSound(null, layerCenter, SoundEvents.GENERIC_EXPLODE.value(),
                 SoundSource.BLOCKS, volume, pitch);
+    }
+
+    @Override
+    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        EffectBlockPlacement.blazeExplosion(level, pos, targetFace);
+    }
+
+    @Override
+    public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
+        this.stackCount = be.getStackCount();
+        this.placedFace = be.getPlacedFace();
+        this.miningDepth = ChainFootprint.tunnelDepth(stackCount);
+        this.pipelineTick = 0;
+    }
+
+    @Override
+    public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
+        if (pipelineTick < miningDepth) {
+            previewLayer(level, pos, placedFace, pipelineTick, stackCount);
+        }
+        int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
+        if (breakIndex >= 0 && breakIndex < miningDepth) {
+            mineLayer(level, pos, placedFace, breakIndex, stackCount);
+        }
+        pipelineTick++;
+    }
+
+    @Override
+    public boolean isActive() {
+        return pipelineTick < miningDepth + PREVIEW_DELAY_TICKS;
+    }
+
+    @Override
+    public int getMinedLayers() {
+        int breakIndex = pipelineTick - PREVIEW_DELAY_TICKS;
+        return Math.max(0, breakIndex);
+    }
+
+    @Override
+    public void saveAdditional(ValueOutput output) {
+        output.putInt(TAG_PIPELINE_TICK, pipelineTick);
+        output.putInt(TAG_MINING_DEPTH, miningDepth);
+        output.putInt(TAG_STACK_SNAPSHOT, stackCount);
+        output.putString(TAG_FACE_SNAPSHOT, placedFace.getName());
+    }
+
+    @Override
+    public void loadAdditional(ValueInput input) {
+        pipelineTick = input.getIntOr(TAG_PIPELINE_TICK, 0);
+        miningDepth = input.getIntOr(TAG_MINING_DEPTH, 0);
+        stackCount = input.getIntOr(TAG_STACK_SNAPSHOT, 1);
+        String faceName = input.getStringOr(TAG_FACE_SNAPSHOT, DEFAULT_FACE_NAME);
+        Direction dir = Direction.byName(faceName);
+        placedFace = dir != null ? dir : Direction.UP;
     }
 }

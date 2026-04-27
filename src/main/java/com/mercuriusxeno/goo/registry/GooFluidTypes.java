@@ -14,13 +14,22 @@ import java.util.Map;
  */
 public class GooFluidTypes {
 
+    /**
+     * Deferred register for NeoForge fluid types.
+     */
+    public static final DeferredRegister<FluidType> FLUID_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, Goo.MODID);
+    /**
+     * One fluid type per goo type, keyed by enum.
+     */
+    public static final Map<GooType, DeferredHolder<FluidType, FluidType>> TYPES =
+            new EnumMap<>(GooType.class);
     // ── Density values (kg/m^3, water = 1000) ──
     private static final int DENSITY_METAL = 2500;
     private static final int DENSITY_ROCK = 2000;
     private static final int DENSITY_NETHER_BLAZE = 1500;
     private static final int DENSITY_CRYSTAL_ENDER = 1200;
     private static final int DENSITY_DEFAULT = 1000;
-
     // ── Viscosity values (higher = thicker, water = 1000) ──
     private static final int VISCOSITY_AEON_SHROOM = 3000;
     private static final int VISCOSITY_METAL_ROCK = 2000;
@@ -28,23 +37,15 @@ public class GooFluidTypes {
     private static final int VISCOSITY_DEFAULT = 1000;
     private static final int VISCOSITY_BLAZE_FROST = 800;
     private static final int VISCOSITY_TYPHOON = 500;
-
     // ── Temperature values (Kelvin, room temp = 300) ──
     private static final int TEMP_BLAZE = 1300;
     private static final int TEMP_NETHER = 900;
     private static final int TEMP_GLOW = 400;
     private static final int TEMP_DEFAULT = 300;
     private static final int TEMP_FROST = 200;
-
-    /** Deferred register for NeoForge fluid types. */
-    public static final DeferredRegister<FluidType> FLUID_TYPES =
-            DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, Goo.MODID);
-
-    /** One fluid type per goo type, keyed by enum. */
-    public static final Map<GooType, DeferredHolder<FluidType, FluidType>> TYPES =
-            new EnumMap<>(GooType.class);
-
-    /** Per-type viscosity overrides; types not present default to VISCOSITY_DEFAULT. */
+    /**
+     * Per-type viscosity overrides; types not present default to VISCOSITY_DEFAULT.
+     */
     private static final Map<GooType, Integer> VISCOSITY_MAP = new EnumMap<>(Map.ofEntries(
             Map.entry(GooType.AEON, VISCOSITY_AEON_SHROOM),
             Map.entry(GooType.SHROOM, VISCOSITY_AEON_SHROOM),

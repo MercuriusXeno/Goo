@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.item;
 
-import com.mercuriusxeno.goo.block.CanisterSlotLayout;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import net.minecraft.core.Direction;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,10 +14,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CanisterSlotConstraintTest {
 
-    /** Corner slots allowed by the reactor. */
+    /**
+     * Corner slots allowed by the reactor.
+     */
     private static final Set<Integer> CORNER_SLOTS = Set.of(0, 2, 6, 8);
 
-    /** Cross slots excluded by the reactor. */
+    /**
+     * Cross slots excluded by the reactor.
+     */
     private static final Set<Integer> CROSS_SLOTS = Set.of(1, 3, 4, 5, 7);
 
     @Test

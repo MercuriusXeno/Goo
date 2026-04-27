@@ -28,111 +28,199 @@ final class GooAuditReport {
 
     // --- Shared/template constants (package-private for GooAuditValues access) ---
 
-    /** Width of section separator lines in the audit report. */
+    /**
+     * Width of section separator lines in the audit report.
+     */
     static final int SEPARATOR_WIDTH = 50;
-    /** Dash character for section separator lines. */
+    /**
+     * Dash character for section separator lines.
+     */
     static final String SEPARATOR_CHAR = "-";
-    /** Indent prefix for report lines. */
+    /**
+     * Indent prefix for report lines.
+     */
     static final String INDENT = "  ";
-    /** Empty line separator in report output. */
+    /**
+     * Empty line separator in report output.
+     */
     static final String EMPTY_LINE = "";
-    /** Single space separator. */
+    /**
+     * Single space separator.
+     */
     static final String SEP_SPACE = " ";
-    /** Closing parenthesis. */
+    /**
+     * Closing parenthesis.
+     */
     static final String MSG_CLOSE_PAREN = ")";
-    /** Denied source label. */
+    /**
+     * Denied source label.
+     */
     static final String LABEL_DENIED = "(denied)";
-    /** Valued source label. */
+    /**
+     * Valued source label.
+     */
     static final String LABEL_VALUED = "(valued)";
 
     // --- Audit orchestration constants (private) ---
 
-    /** Audit report title. */
+    /**
+     * Audit report title.
+     */
     private static final String AUDIT_TITLE = "Goo Audit Report";
-    /** Audit report title underline. */
+    /**
+     * Audit report title underline.
+     */
     private static final String AUDIT_UNDERLINE = "================";
-    /** Audit file output path. */
+    /**
+     * Audit file output path.
+     */
     private static final String FILE_AUDIT = "goo_audit.txt";
-    /** All checks passed message. */
+    /**
+     * All checks passed message.
+     */
     private static final String MSG_ALL_PASSED = "All checks passed. No issues found.";
-    /** Audit issues found suffix. */
+    /**
+     * Audit issues found suffix.
+     */
     private static final String MSG_ISSUES_SUFFIX = " issue(s) found. See config/goo_audit.txt";
-    /** Link to full report. */
+    /**
+     * Link to full report.
+     */
     private static final String MSG_FULL_REPORT = "Full report: config/goo_audit.txt";
-    /** Log message for diagnostic file write failure. */
+    /**
+     * Log message for diagnostic file write failure.
+     */
     private static final String LOG_WRITE_FAIL = "Failed to write diagnostic file: {}";
 
     // --- Expression warning constants (private) ---
 
-    /** Expression warnings section header prefix. */
+    /**
+     * Expression warnings section header prefix.
+     */
     private static final String HDR_EXPR_PREFIX = "EXPRESSION WARNINGS (";
-    /** Expression warnings section header suffix. */
+    /**
+     * Expression warnings section header suffix.
+     */
     private static final String HDR_EXPR_SUFFIX = " issues in base_values.json expressions)";
-    /** All expressions valid message. */
+    /**
+     * All expressions valid message.
+     */
     private static final String MSG_EXPR_VALID = "  All expressions are valid.";
-    /** Expression warnings chat prefix. */
+    /**
+     * Expression warnings chat prefix.
+     */
     private static final String MSG_EXPR_CHAT_PREFIX = "  Expression warnings: ";
-    /** Expression warnings chat suffix. */
+    /**
+     * Expression warnings chat suffix.
+     */
     private static final String MSG_EXPR_CHAT_SUFFIX = " issue(s)";
 
     // --- Phantom ID constants (private) ---
 
-    /** Phantom IDs section header prefix. */
+    /**
+     * Phantom IDs section header prefix.
+     */
     private static final String HDR_PHANTOM_PREFIX = "PHANTOM IDS (";
-    /** Phantom IDs section header suffix. */
+    /**
+     * Phantom IDs section header suffix.
+     */
     private static final String HDR_PHANTOM_SUFFIX = " identifiers in base_values.json don't match any registered item)";
-    /** All identifiers valid message. */
+    /**
+     * All identifiers valid message.
+     */
     private static final String MSG_IDS_VALID = "  All identifiers are valid.";
-    /** Phantom IDs chat prefix. */
+    /**
+     * Phantom IDs chat prefix.
+     */
     private static final String MSG_PHANTOM_CHAT_PREFIX = "  Phantoms: ";
-    /** Phantom IDs chat suffix. */
+    /**
+     * Phantom IDs chat suffix.
+     */
     private static final String MSG_PHANTOM_CHAT_SUFFIX = " ID(s) in base_values.json don't exist in game";
 
     // --- Cycle constants (private) ---
 
-    /** Cycles section header prefix. */
+    /**
+     * Cycles section header prefix.
+     */
     private static final String HDR_CYCLES_PREFIX = "CYCLES (";
-    /** Cycles section header middle. */
+    /**
+     * Cycles section header middle.
+     */
     private static final String HDR_CYCLES_MID = " total, ";
-    /** Cycles section header suffix. */
+    /**
+     * Cycles section header suffix.
+     */
     private static final String HDR_CYCLES_SUFFIX = " dead)";
-    /** No cycles detected message. */
+    /**
+     * No cycles detected message.
+     */
     private static final String MSG_NO_CYCLES = "  No recipe cycles detected.";
-    /** Cycles chat prefix. */
+    /**
+     * Cycles chat prefix.
+     */
     private static final String MSG_CYCLES_CHAT_PREFIX = "  Cycles: ";
-    /** Cycles chat suffix. */
+    /**
+     * Cycles chat suffix.
+     */
     private static final String MSG_CYCLES_CHAT_SUFFIX = " unanchored (need base values to resolve)";
-    /** Cycle arrow separator. */
+    /**
+     * Cycle arrow separator.
+     */
     private static final String CYCLE_ARROW = " -> ";
-    /** Anchored cycle prefix. */
+    /**
+     * Anchored cycle prefix.
+     */
     private static final String CYCLE_OK_PREFIX = "  [OK]   ";
-    /** Anchored cycle suffix. */
+    /**
+     * Anchored cycle suffix.
+     */
     private static final String CYCLE_ANCHORED_BY = " (anchored by ";
-    /** Dead cycle prefix. */
+    /**
+     * Dead cycle prefix.
+     */
     private static final String CYCLE_DEAD_PREFIX = "  [DEAD] ";
-    /** Dead cycle suffix. */
+    /**
+     * Dead cycle suffix.
+     */
     private static final String CYCLE_DEAD_SUFFIX = " (no base values - unresolvable)";
 
     // --- No-value constants (private) ---
 
-    /** No value section header prefix. */
+    /**
+     * No value section header prefix.
+     */
     private static final String HDR_NO_VALUE_PREFIX = "NO VALUE (";
-    /** No value section header suffix. */
+    /**
+     * No value section header suffix.
+     */
     private static final String HDR_NO_VALUE_SUFFIX = " registered items have no goo value)";
-    /** All items have values message. */
+    /**
+     * All items have values message.
+     */
     private static final String MSG_ALL_VALUED = "  All registered items have goo values.";
-    /** No value quote-comma format prefix. */
+    /**
+     * No value quote-comma format prefix.
+     */
     private static final String NO_VALUE_QUOTE = "\"";
-    /** No value quote-comma format suffix. */
+    /**
+     * No value quote-comma format suffix.
+     */
     private static final String NO_VALUE_SUFFIX = "\",";
-    /** No value chat prefix. */
+    /**
+     * No value chat prefix.
+     */
     private static final String MSG_NO_VALUE_CHAT_PREFIX = "  No value: ";
-    /** No value chat suffix. */
+    /**
+     * No value chat suffix.
+     */
     private static final String MSG_NO_VALUE_CHAT_SUFFIX = " item(s) have no goo value";
 
-    private GooAuditReport() {}
+    private GooAuditReport() {
+    }
 
-    /** Runs the full audit: builds report, writes file, sends results to chat.
+    /**
+     * Runs the full audit: builds report, writes file, sends results to chat.
      *
      * @param ctx the command context
      * @return 1 on success
@@ -161,7 +249,8 @@ final class GooAuditReport {
         return issues;
     }
 
-    /** Appends all issue-counting sections and returns the total issue count.
+    /**
+     * Appends all issue-counting sections and returns the total issue count.
      *
      * @param report the report lines list
      * @return the combined issue count
@@ -200,26 +289,30 @@ final class GooAuditReport {
         GooAuditValues.sendDivisibilitySummary(ctx);
         sendNoValueSummary(ctx);
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_FULL_REPORT).withStyle(ChatFormatting.GRAY), false);
+                Component.literal(MSG_FULL_REPORT).withStyle(ChatFormatting.GRAY), false);
     }
 
     // --- Section template ---
 
-    /** Appends a standard audit section: header, separator, items (or empty message), blank line.
+    /**
+     * Appends a standard audit section: header, separator, items (or empty message), blank line.
      *
-     * @param report   the report lines list
-     * @param header   the section header line
-     * @param emptyMsg the message to show when the list is empty
-     * @param items    the items to format
+     * @param report    the report lines list
+     * @param header    the section header line
+     * @param emptyMsg  the message to show when the list is empty
+     * @param items     the items to format
      * @param formatter formats each item into a report line
-     * @param <T>      the item type
+     * @param <T>       the item type
      */
     static <T> void appendSectionBody(List<String> report, String header,
-            String emptyMsg, List<T> items, Function<T, String> formatter) {
+                                      String emptyMsg, List<T> items, Function<T, String> formatter) {
         report.add(header);
         report.add(SEPARATOR_CHAR.repeat(SEPARATOR_WIDTH));
-        if (items.isEmpty()) { report.add(emptyMsg); }
-        else { items.forEach(item -> report.add(formatter.apply(item))); }
+        if (items.isEmpty()) {
+            report.add(emptyMsg);
+        } else {
+            items.forEach(item -> report.add(formatter.apply(item)));
+        }
         report.add(EMPTY_LINE);
     }
 
@@ -262,10 +355,12 @@ final class GooAuditReport {
      */
     private static void sendExpressionWarningsSummary(CommandContext<CommandSourceStack> ctx) {
         List<String> warnings = Goo.GOO_VALUES.validateBaseValues();
-        if (warnings.isEmpty()) { return; }
+        if (warnings.isEmpty()) {
+            return;
+        }
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_EXPR_CHAT_PREFIX + warnings.size() + MSG_EXPR_CHAT_SUFFIX)
-                .withStyle(ChatFormatting.YELLOW), false);
+                Component.literal(MSG_EXPR_CHAT_PREFIX + warnings.size() + MSG_EXPR_CHAT_SUFFIX)
+                        .withStyle(ChatFormatting.YELLOW), false);
     }
 
     // --- Phantom IDs ---
@@ -307,11 +402,13 @@ final class GooAuditReport {
      */
     private static void sendPhantomIdsSummary(CommandContext<CommandSourceStack> ctx) {
         List<Identifier> phantoms = findPhantomIds();
-        if (phantoms.isEmpty()) { return; }
+        if (phantoms.isEmpty()) {
+            return;
+        }
 
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_PHANTOM_CHAT_PREFIX + phantoms.size() + MSG_PHANTOM_CHAT_SUFFIX)
-                .withStyle(ChatFormatting.RED), false);
+                Component.literal(MSG_PHANTOM_CHAT_PREFIX + phantoms.size() + MSG_PHANTOM_CHAT_SUFFIX)
+                        .withStyle(ChatFormatting.RED), false);
     }
 
     // --- Cycles ---
@@ -339,11 +436,13 @@ final class GooAuditReport {
     private static void sendCyclesSummary(CommandContext<CommandSourceStack> ctx) {
         List<GooValueRegistry.RecipeCycle> cycles = Goo.GOO_VALUES.diagnostics().cycles();
         long deadCount = cycles.stream().filter(c -> !c.hasAnchor()).count();
-        if (deadCount == 0) { return; }
+        if (deadCount == 0) {
+            return;
+        }
 
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_CYCLES_CHAT_PREFIX + deadCount + MSG_CYCLES_CHAT_SUFFIX)
-                .withStyle(ChatFormatting.RED), false);
+                Component.literal(MSG_CYCLES_CHAT_PREFIX + deadCount + MSG_CYCLES_CHAT_SUFFIX)
+                        .withStyle(ChatFormatting.RED), false);
     }
 
     /**
@@ -354,8 +453,8 @@ final class GooAuditReport {
      */
     private static String formatCycleFileLine(GooValueRegistry.RecipeCycle cycle) {
         String items = cycle.items().stream()
-            .map(Identifier::toString)
-            .collect(Collectors.joining(CYCLE_ARROW));
+                .map(Identifier::toString)
+                .collect(Collectors.joining(CYCLE_ARROW));
 
         if (cycle.hasAnchor()) {
             return CYCLE_OK_PREFIX + items + CYCLE_ANCHORED_BY + cycle.anchor() + MSG_CLOSE_PAREN;
@@ -399,11 +498,13 @@ final class GooAuditReport {
      */
     private static void sendNoValueSummary(CommandContext<CommandSourceStack> ctx) {
         List<Identifier> noValue = findItemsWithNoValue();
-        if (noValue.isEmpty()) { return; }
+        if (noValue.isEmpty()) {
+            return;
+        }
 
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_NO_VALUE_CHAT_PREFIX + noValue.size() + MSG_NO_VALUE_CHAT_SUFFIX)
-                .withStyle(ChatFormatting.GRAY), false);
+                Component.literal(MSG_NO_VALUE_CHAT_PREFIX + noValue.size() + MSG_NO_VALUE_CHAT_SUFFIX)
+                        .withStyle(ChatFormatting.GRAY), false);
     }
 
 }

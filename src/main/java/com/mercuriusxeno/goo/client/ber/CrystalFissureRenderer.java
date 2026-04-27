@@ -27,27 +27,45 @@ public final class CrystalFissureRenderer {
     private static final float BLOCK_CENTER = 0.5f;
     private static final float CLOUD_RADIUS = (float) CrystalBehavior.CLOUD_RADIUS;
 
-    /** Total slivers at full charge. */
+    /**
+     * Total slivers at full charge.
+     */
     private static final int MAX_SLIVERS = 256;
-    /** Half-length of each sliver quad along its long axis. */
+    /**
+     * Half-length of each sliver quad along its long axis.
+     */
     private static final float SLIVER_HALF_LENGTH = 0.08f;
-    /** Full opacity alpha for ARGB packing. */
+    /**
+     * Full opacity alpha for ARGB packing.
+     */
     private static final int FULL_ALPHA = 0xFF;
-    /** Max value for packing a float [0-1] into a color byte. */
+    /**
+     * Max value for packing a float [0-1] into a color byte.
+     */
     private static final float BYTE_SCALE = 255f;
-    /** Seed for deterministic sliver placement. */
+    /**
+     * Seed for deterministic sliver placement.
+     */
     private static final long SLIVER_SEED = 0xC5745_5A4DL;
 
-    /** Probability that a sliver has zero spin. */
+    /**
+     * Probability that a sliver has zero spin.
+     */
     private static final float NO_SPIN_CHANCE = 0.3f;
-    /** Maximum spin speed in radians per tick for spinning shards. */
+    /**
+     * Maximum spin speed in radians per tick for spinning shards.
+     */
     private static final float MAX_SPIN_SPEED = 0.06f;
-    /** Minimum spin speed when spinning. */
+    /**
+     * Minimum spin speed when spinning.
+     */
     private static final float MIN_SPIN_SPEED = 0.008f;
 
-    /** Pre-computed per-sliver data stride. Layout:
+    /**
+     * Pre-computed per-sliver data stride. Layout:
      * [cx, cy, cz, axisX, axisY, axisZ, perpX, perpY, perpZ, halfLen,
-     *  spinAxisX, spinAxisY, spinAxisZ, spinSpeed] */
+     * spinAxisX, spinAxisY, spinAxisZ, spinSpeed]
+     */
     private static final int SLIVER_STRIDE = 17;
     private static final int OFF_CY = 1;
     private static final int OFF_CZ = 2;
@@ -62,67 +80,120 @@ public final class CrystalFissureRenderer {
     private static final int OFF_SPIN_AY = 11;
     private static final int OFF_SPIN_AZ = 12;
     private static final int OFF_SPIN_SPEED = 13;
-    /** 0 = single spike (triangle), 1 = diamond, 2 = asymmetric diamond. */
+    /**
+     * 0 = single spike (triangle), 1 = diamond, 2 = asymmetric diamond.
+     */
     private static final int OFF_SHAPE = 14;
-    /** Width ratio: how wide the perp arm is relative to half-length. */
+    /**
+     * Width ratio: how wide the perp arm is relative to half-length.
+     */
     private static final int OFF_WIDTH_RATIO = 15;
-    /** Pyramid depth: how far the apex protrudes along the face normal. */
+    /**
+     * Pyramid depth: how far the apex protrudes along the face normal.
+     */
     private static final int OFF_DEPTH = 16;
 
     private static final float SHAPE_SINGLE_SPIKE = 0f;
     private static final float SHAPE_DIAMOND = 1f;
     private static final float SHAPE_ASYMMETRIC = 2f;
-    /** Chance of single spike vs diamond shapes. */
+    /**
+     * Chance of single spike vs diamond shapes.
+     */
     private static final float SINGLE_SPIKE_CHANCE = 0.2f;
-    /** Chance of symmetric diamond (of the non-spike remainder). */
+    /**
+     * Chance of symmetric diamond (of the non-spike remainder).
+     */
     private static final float SYMMETRIC_CHANCE = 0.15f;
-    /** Min width ratio for perpendicular arm. */
+    /**
+     * Min width ratio for perpendicular arm.
+     */
     private static final float MIN_WIDTH_RATIO = 0.02f;
-    /** Max width ratio for perpendicular arm. */
+    /**
+     * Max width ratio for perpendicular arm.
+     */
     private static final float MAX_WIDTH_RATIO = 0.10f;
-    /** Min pyramid depth as fraction of half-length. */
+    /**
+     * Min pyramid depth as fraction of half-length.
+     */
     private static final float MIN_DEPTH_RATIO = 0.08f;
-    /** Max pyramid depth as fraction of half-length. */
+    /**
+     * Max pyramid depth as fraction of half-length.
+     */
     private static final float MAX_DEPTH_RATIO = 0.25f;
-    /** Long arm multiplier for asymmetric diamonds. */
+    /**
+     * Long arm multiplier for asymmetric diamonds.
+     */
     private static final float ASYM_LONG_FACTOR = 1.0f;
-    /** Short arm multiplier for asymmetric diamonds - very short to create sliver shapes. */
+    /**
+     * Short arm multiplier for asymmetric diamonds - very short to create sliver shapes.
+     */
     private static final float ASYM_SHORT_FACTOR = 0.1f;
-    /** Maps [-1,1] random floats into [-radius, radius] range. */
+    /**
+     * Maps [-1,1] random floats into [-radius, radius] range.
+     */
     private static final float RNG_RANGE = 2f;
-    /** Minimum half-length scale factor for size variation. */
+    /**
+     * Minimum half-length scale factor for size variation.
+     */
     private static final float MIN_LEN_SCALE = 0.5f;
-    /** Range of half-length scale variation added to min. */
+    /**
+     * Range of half-length scale variation added to min.
+     */
     private static final float LEN_SCALE_RANGE = 1.0f;
-    /** Threshold for near-parallel detection in perpendicular vector construction. */
+    /**
+     * Threshold for near-parallel detection in perpendicular vector construction.
+     */
     private static final float PARALLEL_THRESHOLD = 0.9f;
-    /** Minimum vector length to avoid normalizing near-zero vectors. */
+    /**
+     * Minimum vector length to avoid normalizing near-zero vectors.
+     */
     private static final float NORMALIZE_EPSILON = 0.001f;
-    /** Z index in a 3-element vector array. */
+    /**
+     * Z index in a 3-element vector array.
+     */
     private static final int VEC_Z = 2;
-    /** Offset of perp X in the resolved axes array {ax,ay,az,px,py,pz}. */
+    /**
+     * Offset of perp X in the resolved axes array {ax,ay,az,px,py,pz}.
+     */
     private static final int AXES_PX = 3;
-    /** Offset of perp Y in the resolved axes array. */
+    /**
+     * Offset of perp Y in the resolved axes array.
+     */
     private static final int AXES_PY = 4;
-    /** Offset of perp Z in the resolved axes array. */
+    /**
+     * Offset of perp Z in the resolved axes array.
+     */
     private static final int AXES_PZ = 5;
 
-    /** How far to raycast for reflected block color (in blocks). */
+    /**
+     * How far to raycast for reflected block color (in blocks).
+     */
     private static final double RAYCAST_RANGE = 16.0;
-    /** Brightness multiplier on reflected block colors. */
+    /**
+     * Brightness multiplier on reflected block colors.
+     */
     private static final float REFLECT_BRIGHTNESS = 1.3f;
-    /** Base alpha for shards. */
+    /**
+     * Base alpha for shards.
+     */
     private static final float BASE_ALPHA = 0.8f;
-    /** Fallback color when raycast misses (sky blue). */
+    /**
+     * Fallback color when raycast misses (sky blue).
+     */
     private static final int SKY_COLOR = 0x87CEEB;
-    /** Minimum density floor for alpha calculation. */
+    /**
+     * Minimum density floor for alpha calculation.
+     */
     private static final float MIN_DENSITY_FLOOR = 0.2f;
-    /** Reflection formula coefficient (v - 2*(v.n)*n). */
+    /**
+     * Reflection formula coefficient (v - 2*(v.n)*n).
+     */
     private static final double REFLECT_COEFF = 2.0;
 
     private static final float[] SLIVER_DATA = buildSliverData();
 
-    private CrystalFissureRenderer() {}
+    private CrystalFissureRenderer() {
+    }
 
     /**
      * Submits crystal shard splinters for rendering.
@@ -132,11 +203,15 @@ public final class CrystalFissureRenderer {
      * @param nodeCollector the render node collector
      */
     public static void submit(ChainMarkerRenderState state,
-            PoseStack poseStack, SubmitNodeCollector nodeCollector) {
+                              PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         float radiusFrac = state.crystalRadiusFraction;
-        if (radiusFrac <= 0f) { return; }
+        if (radiusFrac <= 0f) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null) { return; }
+        if (mc.level == null || mc.player == null) {
+            return;
+        }
         Level level = mc.level;
         Vec3 camPos = mc.player.getEyePosition(state.partialTick);
         BlockPos bePos = state.blockPos;
@@ -154,21 +229,22 @@ public final class CrystalFissureRenderer {
                 });
     }
 
-    /** Emits one sliver quad, applying spin rotation if the shard has one.
+    /**
+     * Emits one sliver quad, applying spin rotation if the shard has one.
      *
-     * @param pose  the current pose entry
-     * @param c     the vertex consumer
-     * @param index the sliver index
+     * @param pose   the current pose entry
+     * @param c      the vertex consumer
+     * @param index  the sliver index
      * @param time   the game time in ticks for spin animation
      * @param radius the current cloud radius (animated)
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
+     * @param alpha  pre-computed vertex alpha [0-255]
+     * @param level  the client level for raycasting
      * @param camPos the camera eye position
-     * @param bePos the block entity position
+     * @param bePos  the block entity position
      */
     private static void emitSliver(PoseStack.Pose pose, VertexConsumer c,
-            int index, int alpha, float time, float radius,
-            Level level, Vec3 camPos, BlockPos bePos) {
+                                   int index, int alpha, float time, float radius,
+                                   Level level, Vec3 camPos, BlockPos bePos) {
         int off = index * SLIVER_STRIDE;
         float cx = BLOCK_CENTER + SLIVER_DATA[off] * radius;
         float cy = BLOCK_CENTER + SLIVER_DATA[off + OFF_CY] * radius;
@@ -188,7 +264,8 @@ public final class CrystalFissureRenderer {
                 halfLen, hw, depth, shape, alpha, level, camPos, worldCenter);
     }
 
-    /** Returns {ax, ay, az, px, py, pz} after applying spin rotation if any.
+    /**
+     * Returns {ax, ay, az, px, py, pz} after applying spin rotation if any.
      *
      * @param off  the sliver data offset
      * @param time the game time for spin animation
@@ -202,7 +279,9 @@ public final class CrystalFissureRenderer {
         float py = SLIVER_DATA[off + OFF_PY];
         float pz = SLIVER_DATA[off + OFF_PZ];
         float spinSpeed = SLIVER_DATA[off + OFF_SPIN_SPEED];
-        if (spinSpeed <= 0f) { return new float[]{ax, ay, az, px, py, pz}; }
+        if (spinSpeed <= 0f) {
+            return new float[]{ax, ay, az, px, py, pz};
+        }
         float angle = time * spinSpeed;
         float sax = SLIVER_DATA[off + OFF_SPIN_AX];
         float say = SLIVER_DATA[off + OFF_SPIN_AY];
@@ -212,35 +291,36 @@ public final class CrystalFissureRenderer {
         return new float[]{ra[0], ra[1], ra[VEC_Z], rp[0], rp[1], rp[VEC_Z]};
     }
 
-    /** Emits a shard shape: single spike, diamond, or asymmetric diamond.
+    /**
+     * Emits a shard shape: single spike, diamond, or asymmetric diamond.
      * All shapes are emitted as quads (degenerate for triangles).
      *
-     * @param pose  the pose entry
-     * @param c     the vertex consumer
-     * @param cx    center X
-     * @param cy    center Y
-     * @param cz    center Z
-     * @param ax    long axis X
-     * @param ay    long axis Y
-     * @param az    long axis Z
-     * @param px    perp axis X
-     * @param py    perp axis Y
-     * @param pz    perp axis Z
-     * @param hl    half-length along the long axis
-     * @param hw    half-width along the perp axis
-     * @param shape the shape type (0=spike, 1=diamond, 2=asymmetric)
-     * @param depth pyramid height along the normal
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
-     * @param camPos the camera eye position
+     * @param pose        the pose entry
+     * @param c           the vertex consumer
+     * @param cx          center X
+     * @param cy          center Y
+     * @param cz          center Z
+     * @param ax          long axis X
+     * @param ay          long axis Y
+     * @param az          long axis Z
+     * @param px          perp axis X
+     * @param py          perp axis Y
+     * @param pz          perp axis Z
+     * @param hl          half-length along the long axis
+     * @param hw          half-width along the perp axis
+     * @param shape       the shape type (0=spike, 1=diamond, 2=asymmetric)
+     * @param depth       pyramid height along the normal
+     * @param alpha       pre-computed vertex alpha [0-255]
+     * @param level       the client level for raycasting
+     * @param camPos      the camera eye position
      * @param worldCenter the shard world position
      */
     private static void emitShape(PoseStack.Pose pose, VertexConsumer c,
-            float cx, float cy, float cz,
-            float ax, float ay, float az,
-            float px, float py, float pz,
-            float hl, float hw, float depth, float shape, int alpha,
-            Level level, Vec3 camPos, Vec3 worldCenter) {
+                                  float cx, float cy, float cz,
+                                  float ax, float ay, float az,
+                                  float px, float py, float pz,
+                                  float hl, float hw, float depth, float shape, int alpha,
+                                  Level level, Vec3 camPos, Vec3 worldCenter) {
         // Normal = cross(axis, perp) - used for pyramid apex direction
         float nx = ay * pz - az * py;
         float ny = az * px - ax * pz;
@@ -263,33 +343,34 @@ public final class CrystalFissureRenderer {
 
     /**
      * Spike pyramid: 3 base verts (tip, base-left, base-right) + apex. 3 faces.
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param cx    center X
-     * @param cy    center Y
-     * @param cz    center Z
-     * @param ax    long axis X
-     * @param ay    long axis Y
-     * @param az    long axis Z
-     * @param px    perp axis X
-     * @param py    perp axis Y
-     * @param pz    perp axis Z
-     * @param hl    half-length along long axis
-     * @param hw    half-width along perp axis
-     * @param apX  apex X
-     * @param apY  apex Y
-     * @param apZ  apex Z
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
-     * @param camPos the camera eye position
+     *
+     * @param pose        the pose matrix entry
+     * @param c           the vertex consumer
+     * @param cx          center X
+     * @param cy          center Y
+     * @param cz          center Z
+     * @param ax          long axis X
+     * @param ay          long axis Y
+     * @param az          long axis Z
+     * @param px          perp axis X
+     * @param py          perp axis Y
+     * @param pz          perp axis Z
+     * @param hl          half-length along long axis
+     * @param hw          half-width along perp axis
+     * @param apX         apex X
+     * @param apY         apex Y
+     * @param apZ         apex Z
+     * @param alpha       pre-computed vertex alpha [0-255]
+     * @param level       the client level for raycasting
+     * @param camPos      the camera eye position
      * @param worldCenter the shard world position
      */
     private static void emitSpikePyramid(PoseStack.Pose pose, VertexConsumer c,
-            float cx, float cy, float cz,
-            float ax, float ay, float az, float px, float py, float pz,
-            float hl, float hw,
-            float apX, float apY, float apZ, int alpha,
-            Level level, Vec3 camPos, Vec3 worldCenter) {
+                                         float cx, float cy, float cz,
+                                         float ax, float ay, float az, float px, float py, float pz,
+                                         float hl, float hw,
+                                         float apX, float apY, float apZ, int alpha,
+                                         Level level, Vec3 camPos, Vec3 worldCenter) {
         float tipX = cx + ax * hl, tipY = cy + ay * hl, tipZ = cz + az * hl;
         float blX = cx - ax * hl - px * hw, blY = cy - ay * hl - py * hw, blZ = cz - az * hl - pz * hw;
         float brX = cx - ax * hl + px * hw, brY = cy - ay * hl + py * hw, brZ = cz - az * hl + pz * hw;
@@ -303,33 +384,34 @@ public final class CrystalFissureRenderer {
 
     /**
      * Diamond pyramid: 4 base verts (+axis, +perp, -axis, -perp) + apex. 4 faces.
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param cx    center X
-     * @param cy    center Y
-     * @param cz    center Z
-     * @param ax    long axis X
-     * @param ay    long axis Y
-     * @param az    long axis Z
-     * @param px    perp axis X
-     * @param py    perp axis Y
-     * @param pz    perp axis Z
-     * @param hl    half-length along long axis
-     * @param hw    half-width along perp axis
-     * @param apX  apex X
-     * @param apY  apex Y
-     * @param apZ  apex Z
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
-     * @param camPos the camera eye position
+     *
+     * @param pose        the pose matrix entry
+     * @param c           the vertex consumer
+     * @param cx          center X
+     * @param cy          center Y
+     * @param cz          center Z
+     * @param ax          long axis X
+     * @param ay          long axis Y
+     * @param az          long axis Z
+     * @param px          perp axis X
+     * @param py          perp axis Y
+     * @param pz          perp axis Z
+     * @param hl          half-length along long axis
+     * @param hw          half-width along perp axis
+     * @param apX         apex X
+     * @param apY         apex Y
+     * @param apZ         apex Z
+     * @param alpha       pre-computed vertex alpha [0-255]
+     * @param level       the client level for raycasting
+     * @param camPos      the camera eye position
      * @param worldCenter the shard world position
      */
     private static void emitDiamondPyramid(PoseStack.Pose pose, VertexConsumer c,
-            float cx, float cy, float cz,
-            float ax, float ay, float az, float px, float py, float pz,
-            float hl, float hw,
-            float apX, float apY, float apZ, int alpha,
-            Level level, Vec3 camPos, Vec3 worldCenter) {
+                                           float cx, float cy, float cz,
+                                           float ax, float ay, float az, float px, float py, float pz,
+                                           float hl, float hw,
+                                           float apX, float apY, float apZ, int alpha,
+                                           Level level, Vec3 camPos, Vec3 worldCenter) {
         float tX = cx + ax * hl, tY = cy + ay * hl, tZ = cz + az * hl;
         float rX = cx + px * hw, rY = cy + py * hw, rZ = cz + pz * hw;
         float bX = cx - ax * hl, bY = cy - ay * hl, bZ = cz - az * hl;
@@ -346,33 +428,34 @@ public final class CrystalFissureRenderer {
 
     /**
      * Asymmetric diamond pyramid: uneven arm lengths + apex. 4 faces.
-     * @param pose  the pose matrix entry
-     * @param c     the vertex consumer
-     * @param cx    center X
-     * @param cy    center Y
-     * @param cz    center Z
-     * @param ax    long axis X
-     * @param ay    long axis Y
-     * @param az    long axis Z
-     * @param px    perp axis X
-     * @param py    perp axis Y
-     * @param pz    perp axis Z
-     * @param hl    half-length along long axis
-     * @param hw    half-width along perp axis
-     * @param apX  apex X
-     * @param apY  apex Y
-     * @param apZ  apex Z
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
-     * @param camPos the camera eye position
+     *
+     * @param pose        the pose matrix entry
+     * @param c           the vertex consumer
+     * @param cx          center X
+     * @param cy          center Y
+     * @param cz          center Z
+     * @param ax          long axis X
+     * @param ay          long axis Y
+     * @param az          long axis Z
+     * @param px          perp axis X
+     * @param py          perp axis Y
+     * @param pz          perp axis Z
+     * @param hl          half-length along long axis
+     * @param hw          half-width along perp axis
+     * @param apX         apex X
+     * @param apY         apex Y
+     * @param apZ         apex Z
+     * @param alpha       pre-computed vertex alpha [0-255]
+     * @param level       the client level for raycasting
+     * @param camPos      the camera eye position
      * @param worldCenter the shard world position
      */
     private static void emitAsymPyramid(PoseStack.Pose pose, VertexConsumer c,
-            float cx, float cy, float cz,
-            float ax, float ay, float az, float px, float py, float pz,
-            float hl, float hw,
-            float apX, float apY, float apZ, int alpha,
-            Level level, Vec3 camPos, Vec3 worldCenter) {
+                                        float cx, float cy, float cz,
+                                        float ax, float ay, float az, float px, float py, float pz,
+                                        float hl, float hw,
+                                        float apX, float apY, float apZ, int alpha,
+                                        Level level, Vec3 camPos, Vec3 worldCenter) {
         float la = hl * ASYM_LONG_FACTOR, sa = hl * ASYM_SHORT_FACTOR;
         float tX = cx + ax * la, tY = cy + ay * la, tZ = cz + az * la;
         float rX = cx + px * hw, rY = cy + py * hw, rZ = cz + pz * hw;
@@ -388,29 +471,30 @@ public final class CrystalFissureRenderer {
                 alpha, level, camPos, worldCenter);
     }
 
-    /** Emits one triangular pyramid face as a degenerate quad (v0, v1, apex, apex).
+    /**
+     * Emits one triangular pyramid face as a degenerate quad (v0, v1, apex, apex).
      *
-     * @param pose the pose entry
-     * @param c    the vertex consumer
-     * @param v0x  first base vertex X
-     * @param v0y  first base vertex Y
-     * @param v0z  first base vertex Z
-     * @param v1x  second base vertex X
-     * @param v1y  second base vertex Y
-     * @param v1z  second base vertex Z
-     * @param apX  apex X
-     * @param apY  apex Y
-     * @param apZ  apex Z
-     * @param alpha pre-computed vertex alpha [0-255]
-     * @param level the client level for raycasting
-     * @param camPos the camera eye position
+     * @param pose        the pose entry
+     * @param c           the vertex consumer
+     * @param v0x         first base vertex X
+     * @param v0y         first base vertex Y
+     * @param v0z         first base vertex Z
+     * @param v1x         second base vertex X
+     * @param v1y         second base vertex Y
+     * @param v1z         second base vertex Z
+     * @param apX         apex X
+     * @param apY         apex Y
+     * @param apZ         apex Z
+     * @param alpha       pre-computed vertex alpha [0-255]
+     * @param level       the client level for raycasting
+     * @param camPos      the camera eye position
      * @param worldCenter the shard world position
      */
     private static void emitPyramidFace(PoseStack.Pose pose, VertexConsumer c,
-            float v0x, float v0y, float v0z,
-            float v1x, float v1y, float v1z,
-            float apX, float apY, float apZ, int alpha,
-            Level level, Vec3 camPos, Vec3 worldCenter) {
+                                        float v0x, float v0y, float v0z,
+                                        float v1x, float v1y, float v1z,
+                                        float apX, float apY, float apZ, int alpha,
+                                        Level level, Vec3 camPos, Vec3 worldCenter) {
         float e0x = v1x - v0x, e0y = v1y - v0y, e0z = v1z - v0z;
         float e1x = apX - v0x, e1y = apY - v0y, e1z = apZ - v0z;
         float nx = e0y * e1z - e0z * e1y;
@@ -423,7 +507,8 @@ public final class CrystalFissureRenderer {
         c.addVertex(pose, apX, apY, apZ).setColor(color).setNormal(pose, nx, ny, nz);
     }
 
-    /** Raycasts along the reflected camera direction to find a block color.
+    /**
+     * Raycasts along the reflected camera direction to find a block color.
      *
      * @param level       the client level
      * @param camPos      the camera eye position
@@ -435,9 +520,11 @@ public final class CrystalFissureRenderer {
      * @return packed ARGB with reflected block color and the given alpha
      */
     private static int reflectColor(Level level, Vec3 camPos, Vec3 worldCenter,
-            float nx, float ny, float nz, int alpha) {
+                                    float nx, float ny, float nz, int alpha) {
         float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (len < NORMALIZE_EPSILON) { return ARGB.color(alpha, SKY_COLOR); }
+        if (len < NORMALIZE_EPSILON) {
+            return ARGB.color(alpha, SKY_COLOR);
+        }
         float invLen = 1f / len;
         Vec3 reflDir = computeReflection(camPos, worldCenter, nx * invLen, ny * invLen, nz * invLen);
         int rgb = raycastBlockColor(level, worldCenter, reflDir);
@@ -447,7 +534,8 @@ public final class CrystalFissureRenderer {
         return ARGB.color(Math.max(1, alpha), r, g, b);
     }
 
-    /** Reflects the camera-to-shard direction off the given unit normal.
+    /**
+     * Reflects the camera-to-shard direction off the given unit normal.
      *
      * @param camPos      the camera eye position
      * @param worldCenter the shard world position
@@ -457,7 +545,7 @@ public final class CrystalFissureRenderer {
      * @return the reflected direction vector
      */
     private static Vec3 computeReflection(Vec3 camPos, Vec3 worldCenter,
-            float fnx, float fny, float fnz) {
+                                          float fnx, float fny, float fnz) {
         Vec3 toShard = worldCenter.subtract(camPos).normalize();
         double dot = toShard.x * fnx + toShard.y * fny + toShard.z * fnz;
         return new Vec3(
@@ -466,7 +554,8 @@ public final class CrystalFissureRenderer {
                 toShard.z - REFLECT_COEFF * dot * fnz);
     }
 
-    /** Raycasts along a direction and returns the hit block's map color, or sky.
+    /**
+     * Raycasts along a direction and returns the hit block's map color, or sky.
      *
      * @param level  the client level
      * @param origin the ray start position
@@ -478,12 +567,15 @@ public final class CrystalFissureRenderer {
         BlockHitResult hit = level.clip(new ClipContext(
                 origin, end, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE,
                 net.minecraft.world.phys.shapes.CollisionContext.empty()));
-        if (hit.getType() != HitResult.Type.BLOCK) { return SKY_COLOR; }
+        if (hit.getType() != HitResult.Type.BLOCK) {
+            return SKY_COLOR;
+        }
         MapColor mc = level.getBlockState(hit.getBlockPos()).getMapColor(level, hit.getBlockPos());
         return mc.calculateARGBColor(MapColor.Brightness.NORMAL);
     }
 
-    /** Rodrigues rotation: rotates vector (vx,vy,vz) around unit axis (ux,uy,uz) by angle.
+    /**
+     * Rodrigues rotation: rotates vector (vx,vy,vz) around unit axis (ux,uy,uz) by angle.
      *
      * @param vx    vector X
      * @param vy    vector Y
@@ -495,7 +587,7 @@ public final class CrystalFissureRenderer {
      * @return rotated vector as {x, y, z}
      */
     private static float[] rodrigues(float vx, float vy, float vz,
-            float ux, float uy, float uz, float angle) {
+                                     float ux, float uy, float uz, float angle) {
         float cosA = (float) Math.cos(angle);
         float sinA = (float) Math.sin(angle);
         float dot = ux * vx + uy * vy + uz * vz;
@@ -503,10 +595,10 @@ public final class CrystalFissureRenderer {
         float kx = uy * vz - uz * vy;
         float ky = uz * vx - ux * vz;
         float kz = ux * vy - uy * vx;
-        return new float[] {
-            vx * cosA + kx * sinA + ux * dot * (1f - cosA),
-            vy * cosA + ky * sinA + uy * dot * (1f - cosA),
-            vz * cosA + kz * sinA + uz * dot * (1f - cosA),
+        return new float[]{
+                vx * cosA + kx * sinA + ux * dot * (1f - cosA),
+                vy * cosA + ky * sinA + uy * dot * (1f - cosA),
+                vz * cosA + kz * sinA + uz * dot * (1f - cosA),
         };
     }
 
@@ -525,7 +617,8 @@ public final class CrystalFissureRenderer {
         return data;
     }
 
-    /** Populates one sliver's geometry and spin parameters.
+    /**
+     * Populates one sliver's geometry and spin parameters.
      *
      * @param rng  the seeded random source
      * @param data the output float array
@@ -549,7 +642,8 @@ public final class CrystalFissureRenderer {
         buildSpinData(rng, data, off);
     }
 
-    /** Assigns a random shape type and width ratio to the shard.
+    /**
+     * Assigns a random shape type and width ratio to the shard.
      *
      * @param rng  the random source
      * @param data the output array
@@ -568,7 +662,8 @@ public final class CrystalFissureRenderer {
         data[off + OFF_DEPTH] = MIN_DEPTH_RATIO + rng.nextFloat() * (MAX_DEPTH_RATIO - MIN_DEPTH_RATIO);
     }
 
-    /** Assigns spin axis and speed. Many shards are still, some tumble slowly.
+    /**
+     * Assigns spin axis and speed. Many shards are still, some tumble slowly.
      *
      * @param rng  the random source
      * @param data the output array
@@ -586,7 +681,8 @@ public final class CrystalFissureRenderer {
         data[off + OFF_SPIN_SPEED] = MIN_SPIN_SPEED + rng.nextFloat() * (MAX_SPIN_SPEED - MIN_SPIN_SPEED);
     }
 
-    /** Returns a random point uniformly distributed inside the unit sphere.
+    /**
+     * Returns a random point uniformly distributed inside the unit sphere.
      *
      * @param rng the seeded random source
      * @return a point with length less than 1
@@ -608,7 +704,9 @@ public final class CrystalFissureRenderer {
         float y = rng.nextFloat() * RNG_RANGE - 1f;
         float z = rng.nextFloat() * RNG_RANGE - 1f;
         float len = (float) Math.sqrt(x * x + y * y + z * z);
-        if (len < NORMALIZE_EPSILON) { return new Vector3f(0f, 1f, 0f); }
+        if (len < NORMALIZE_EPSILON) {
+            return new Vector3f(0f, 1f, 0f);
+        }
         return new Vector3f(x / len, y / len, z / len);
     }
 

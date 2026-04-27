@@ -18,18 +18,18 @@ import java.util.Optional;
 public record GasketPairing(BlockPos source, @Nullable BlockPos destination) {
 
     public static final Codec<GasketPairing> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            BlockPos.CODEC.fieldOf("source").forGetter(GasketPairing::source),
-            BlockPos.CODEC.optionalFieldOf("destination").forGetter(p -> Optional.ofNullable(p.destination()))
-        ).apply(instance, (src, dest) -> new GasketPairing(src, dest.orElse(null)))
+            instance.group(
+                    BlockPos.CODEC.fieldOf("source").forGetter(GasketPairing::source),
+                    BlockPos.CODEC.optionalFieldOf("destination").forGetter(p -> Optional.ofNullable(p.destination()))
+            ).apply(instance, (src, dest) -> new GasketPairing(src, dest.orElse(null)))
     );
 
     public static final StreamCodec<ByteBuf, GasketPairing> STREAM_CODEC = StreamCodec.composite(
-        BlockPos.STREAM_CODEC,
-        GasketPairing::source,
-        ByteBufCodecs.optional(BlockPos.STREAM_CODEC),
-        p -> Optional.ofNullable(p.destination()),
-        (src, dest) -> new GasketPairing(src, dest.orElse(null))
+            BlockPos.STREAM_CODEC,
+            GasketPairing::source,
+            ByteBufCodecs.optional(BlockPos.STREAM_CODEC),
+            p -> Optional.ofNullable(p.destination()),
+            (src, dest) -> new GasketPairing(src, dest.orElse(null))
     );
 
     /**

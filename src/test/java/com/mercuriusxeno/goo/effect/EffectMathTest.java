@@ -5,9 +5,7 @@ import com.mercuriusxeno.goo.ability.AbilityMath;
 import com.mercuriusxeno.goo.data.GooValue;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

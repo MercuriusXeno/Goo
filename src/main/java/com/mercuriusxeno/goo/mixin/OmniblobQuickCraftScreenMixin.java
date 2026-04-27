@@ -26,57 +26,71 @@ import java.util.Set;
 @Mixin(AbstractContainerScreen.class)
 public abstract class OmniblobQuickCraftScreenMixin {
 
-    /** Mixin method target: shouldAddSlotToQuickCraft. In 26.1 the quickcraft count/replace
-     *  gate lives here, not inlined in mouseDragged as in older versions. */
+    /**
+     * Mixin method target: shouldAddSlotToQuickCraft. In 26.1 the quickcraft count/replace
+     * gate lives here, not inlined in mouseDragged as in older versions.
+     */
     private static final String METHOD_SHOULD_ADD_SLOT = "shouldAddSlotToQuickCraft";
-    /** Mixin method target: extractSlot. In 26.1 the per-slot render pass was
-     *  renamed from renderSlot to extractSlot (render state extraction). */
+    /**
+     * Mixin method target: extractSlot. In 26.1 the per-slot render pass was
+     * renamed from renderSlot to extractSlot (render state extraction).
+     */
     private static final String METHOD_EXTRACT_SLOT = "extractSlot";
-    /** Mixin injection point type: invoke. */
+    /**
+     * Mixin injection point type: invoke.
+     */
     private static final String AT_INVOKE = "INVOKE";
-    /** Mixin target: ItemStack.getCount(). */
+    /**
+     * Mixin target: ItemStack.getCount().
+     */
     private static final String TARGET_GET_COUNT =
-        "Lnet/minecraft/world/item/ItemStack;getCount()I";
-    /** Mixin target: AbstractContainerMenu.canItemQuickReplace(). */
+            "Lnet/minecraft/world/item/ItemStack;getCount()I";
+    /**
+     * Mixin target: AbstractContainerMenu.canItemQuickReplace().
+     */
     private static final String TARGET_CAN_QUICK_REPLACE =
-        "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
-        + "canItemQuickReplace(Lnet/minecraft/world/inventory/Slot;"
-        + "Lnet/minecraft/world/item/ItemStack;Z)Z";
-    /** Mixin target: AbstractContainerMenu.getQuickCraftPlaceCount(). */
+            "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
+                    + "canItemQuickReplace(Lnet/minecraft/world/inventory/Slot;"
+                    + "Lnet/minecraft/world/item/ItemStack;Z)Z";
+    /**
+     * Mixin target: AbstractContainerMenu.getQuickCraftPlaceCount().
+     */
     private static final String TARGET_GET_PLACE_COUNT =
-        "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
-        + "getQuickCraftPlaceCount(IILnet/minecraft/world/item/ItemStack;)I";
-    /** Mixin target: AbstractContainerScreen.renderSlotContents(). */
+            "Lnet/minecraft/world/inventory/AbstractContainerMenu;"
+                    + "getQuickCraftPlaceCount(IILnet/minecraft/world/item/ItemStack;)I";
+    /**
+     * Mixin target: AbstractContainerScreen.renderSlotContents().
+     */
     private static final String TARGET_RENDER_SLOT_CONTENTS =
-        "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;"
-        + "renderSlotContents(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
-        + "Lnet/minecraft/world/item/ItemStack;"
-        + "Lnet/minecraft/world/inventory/Slot;Ljava/lang/String;)V";
-    /** Mixin method target: recalculateQuickCraftRemaining. */
+            "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;"
+                    + "renderSlotContents(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
+                    + "Lnet/minecraft/world/item/ItemStack;"
+                    + "Lnet/minecraft/world/inventory/Slot;Ljava/lang/String;)V";
+    /**
+     * Mixin method target: recalculateQuickCraftRemaining.
+     */
     private static final String METHOD_RECALC = "recalculateQuickCraftRemaining";
-    /** Mixin injection point type: HEAD. */
+    /**
+     * Mixin injection point type: HEAD.
+     */
     private static final String AT_HEAD = "HEAD";
 
     @Shadow
     @Final
     protected Set<Slot> quickCraftSlots;
-
+    @Shadow
+    protected boolean isQuickCrafting;
+    @Shadow
+    @Final
+    protected AbstractContainerMenu menu;
     @Shadow
     private int quickCraftingType;
-
     @Shadow
     private int quickCraftingRemainder;
 
     @Shadow
-    protected boolean isQuickCrafting;
-
-    @Shadow
-    @Final
-    protected AbstractContainerMenu menu;
-
-    @Shadow
     protected abstract void renderSlotContents(GuiGraphicsExtractor guiGraphics,
-            ItemStack stack, Slot slot, String countString);
+                                               ItemStack stack, Slot slot, String countString);
 
     /**
      * Redirects the getCount() call inside shouldAddSlotToQuickCraft's gate
@@ -89,8 +103,8 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return the effective count for the gate check
      */
     @Redirect(
-        method = METHOD_SHOULD_ADD_SLOT,
-        at = @At(value = AT_INVOKE, target = TARGET_GET_COUNT)
+            method = METHOD_SHOULD_ADD_SLOT,
+            at = @At(value = AT_INVOKE, target = TARGET_GET_COUNT)
     )
     private int goo$omniblobBypassCountGate(ItemStack stack) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(stack)) {
@@ -111,7 +125,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
     private boolean omniblobCanQuickReplace(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
             ItemStack existing = slot.getItem();
-            if (existing.isEmpty()) { return true; }
+            if (existing.isEmpty()) {
+                return true;
+            }
             GooType carriedType = BlobStacks.gooTypeOf(carried);
             GooType existingType = BlobStacks.gooTypeOf(existing);
             return carriedType != null && carriedType == existingType;
@@ -130,9 +146,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return true if the slot should be collected
      */
     @Redirect(
-        method = METHOD_SHOULD_ADD_SLOT,
-        at = @At(value = AT_INVOKE,
-            target = TARGET_CAN_QUICK_REPLACE)
+            method = METHOD_SHOULD_ADD_SLOT,
+            at = @At(value = AT_INVOKE,
+                    target = TARGET_CAN_QUICK_REPLACE)
     )
     private boolean goo$allowSameTypeCollect(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         return omniblobCanQuickReplace(slot, carried, stackSizeMatters);
@@ -149,9 +165,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return true if the slot should remain collected
      */
     @Redirect(
-        method = METHOD_EXTRACT_SLOT,
-        at = @At(value = AT_INVOKE,
-            target = TARGET_CAN_QUICK_REPLACE)
+            method = METHOD_EXTRACT_SLOT,
+            at = @At(value = AT_INVOKE,
+                    target = TARGET_CAN_QUICK_REPLACE)
     )
     private boolean goo$allowSameTypeQuickReplace(Slot slot, ItemStack carried, boolean stackSizeMatters) {
         return omniblobCanQuickReplace(slot, carried, stackSizeMatters);
@@ -168,9 +184,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @return the place count (1 for omniblobs, vanilla result otherwise)
      */
     @Redirect(
-        method = METHOD_EXTRACT_SLOT,
-        at = @At(value = AT_INVOKE,
-            target = TARGET_GET_PLACE_COUNT)
+            method = METHOD_EXTRACT_SLOT,
+            at = @At(value = AT_INVOKE,
+                    target = TARGET_GET_PLACE_COUNT)
     )
     private int goo$omniblobPlaceCount(int slotCount, int craftType, ItemStack carried) {
         if (OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
@@ -192,12 +208,12 @@ public abstract class OmniblobQuickCraftScreenMixin {
      * @param countString  the vanilla count string overlay
      */
     @Redirect(
-        method = METHOD_EXTRACT_SLOT,
-        at = @At(value = AT_INVOKE,
-            target = TARGET_RENDER_SLOT_CONTENTS)
+            method = METHOD_EXTRACT_SLOT,
+            at = @At(value = AT_INVOKE,
+                    target = TARGET_RENDER_SLOT_CONTENTS)
     )
     private void goo$fixOmniblobPreview(AbstractContainerScreen<?> self,
-            GuiGraphicsExtractor graphics, ItemStack previewStack, Slot slot, String countString) {
+                                        GuiGraphicsExtractor graphics, ItemStack previewStack, Slot slot, String countString) {
         ItemStack carried = menu.getCarried();
         if (isQuickCrafting && quickCraftSlots.contains(slot)
                 && OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
@@ -209,9 +225,10 @@ public abstract class OmniblobQuickCraftScreenMixin {
 
     /**
      * Builds and renders a volume-correct omniblob preview for one quickcraft slot.
+     *
      * @param graphics the GUI graphics context for rendering
-     * @param slot the slot being previewed during quickcraft drag
-     * @param carried the omniblob item stack on the cursor
+     * @param slot     the slot being previewed during quickcraft drag
+     * @param carried  the omniblob item stack on the cursor
      */
     private void renderOmniblobSlotPreview(GuiGraphicsExtractor graphics, Slot slot, ItemStack carried) {
         GooType type = BlobStacks.gooTypeOf(carried);
@@ -236,7 +253,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
     @Inject(method = METHOD_RECALC, at = @At(AT_HEAD), cancellable = true)
     private void goo$omniblobRecalcRemainder(CallbackInfo ci) {
         ItemStack carried = menu.getCarried();
-        if (!isQuickCrafting || !OmniblobQuickCraft.isOmniblobQuickCraft(carried)) { return; }
+        if (!isQuickCrafting || !OmniblobQuickCraft.isOmniblobQuickCraft(carried)) {
+            return;
+        }
 
         int totalVolume = BlobStacks.volumeOf(carried);
         int perSlot = computeClientPerSlot(totalVolume);
@@ -259,7 +278,9 @@ public abstract class OmniblobQuickCraftScreenMixin {
             return OmniblobQuickCraft.greedyPerSlot();
         }
         int slotCount = quickCraftSlots.size();
-        if (slotCount <= 0) { return 0; }
+        if (slotCount <= 0) {
+            return 0;
+        }
         return OmniblobQuickCraft.charitablePerSlot(totalVolume, slotCount);
     }
 }

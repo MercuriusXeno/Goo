@@ -10,8 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Growth-themed world effects: leaf growth (crop ticking) and shroom spores
- * (mycelium spread + mushroom placement). Extracted from WorldEffects to
- * keep method counts under the TooManyMethods threshold.
+ * (mycelium spread + mushroom placement).
  */
 final class GrowthEffects {
 

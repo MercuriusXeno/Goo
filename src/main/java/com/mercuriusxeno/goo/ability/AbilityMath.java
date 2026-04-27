@@ -13,29 +13,48 @@ import java.util.function.Consumer;
  */
 public final class AbilityMath {
 
-    /** Goo types counted toward rock majority (rock and crystal from quartz ancestry). */
+    /**
+     * Goo types counted toward rock majority (rock and crystal from quartz ancestry).
+     */
     private static final Set<GooType> ROCK_FAMILY = EnumSet.of(GooType.ROCK, GooType.CRYSTAL);
 
-    /** Base pulse interval in ticks (16 seconds). */
+    /**
+     * Base pulse interval in ticks (16 seconds).
+     */
     private static final int BASE_PULSE_INTERVAL = 320;
-    /** Maximum stacks that affect pulse interval. */
+    /**
+     * Maximum stacks that affect pulse interval.
+     */
     private static final int MAX_PULSE_STACKS = 4;
 
-    /** Ticks per second, used by duration formulas. */
+    /**
+     * Ticks per second, used by duration formulas.
+     */
     private static final int TICKS_PER_SECOND = 20;
 
-    /** Majority threshold multiplier: rockTotal * 2 > total means >50%. */
+    /**
+     * Majority threshold multiplier: rockTotal * 2 > total means >50%.
+     */
     private static final int MAJORITY_MULTIPLIER = 2;
-    /** Base freeze radius before stacking. */
+    /**
+     * Base freeze radius before stacking.
+     */
     private static final int FREEZE_BASE_RADIUS = 2;
-    /** Duration multiplier per unit of radius for frost fields. */
+    /**
+     * Duration multiplier per unit of radius for frost fields.
+     */
     private static final int FROST_DURATION_PER_RADIUS = 4;
-    /** Nether conversion base radius. */
+    /**
+     * Nether conversion base radius.
+     */
     private static final int NETHER_BASE_RADIUS = 1;
-    /** Nether conversion radius added per stack. */
+    /**
+     * Nether conversion radius added per stack.
+     */
     private static final int NETHER_RADIUS_PER_STACK = 2;
 
-    private AbilityMath() {}
+    private AbilityMath() {
+    }
 
     /**
      * Iterates all block positions within a sphere and applies the action to each.
@@ -101,7 +120,9 @@ public final class AbilityMath {
      * @return true if rock family is the majority
      */
     public static boolean isRockCompatible(GooValue value) {
-        if (value == null || value.isEmpty()) { return false; }
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
         int rockTotal = 0;
         for (GooType type : ROCK_FAMILY) {
             rockTotal += value.get(type);

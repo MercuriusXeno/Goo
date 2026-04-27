@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.effect;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.data.GooValue;
 import com.mercuriusxeno.goo.ability.world.NetherBehavior;
+import com.mercuriusxeno.goo.data.GooValue;
 import org.junit.jupiter.api.Test;
 import java.util.EnumMap;
 import java.util.Map;
@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class NetherExecutorTest {
 
-    /** Merging into an empty accumulator plants the value verbatim. */
+    /**
+     * Merging into an empty accumulator plants the value verbatim.
+     */
     @Test
     void mergeValue_emptyAccumulator_plantsValue() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
@@ -30,7 +32,9 @@ class NetherExecutorTest {
         assertEquals(2, totals.size());
     }
 
-    /** Merging two blocks with the same type sums their amounts. */
+    /**
+     * Merging two blocks with the same type sums their amounts.
+     */
     @Test
     void mergeValue_sameType_sums() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
@@ -43,7 +47,9 @@ class NetherExecutorTest {
         assertEquals(2152, totals.get(GooType.ROCK));
     }
 
-    /** Merging blocks with different types keeps both, independently. */
+    /**
+     * Merging blocks with different types keeps both, independently.
+     */
     @Test
     void mergeValue_differentTypes_independent() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
@@ -54,7 +60,9 @@ class NetherExecutorTest {
         assertEquals(500, totals.get(GooType.FROST));
     }
 
-    /** Many blocks of grass (simulating a nether hit on a grass layer) accumulate cleanly. */
+    /**
+     * Many blocks of grass (simulating a nether hit on a grass layer) accumulate cleanly.
+     */
     @Test
     void mergeValue_repeatedGrass_accumulates() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
@@ -70,7 +78,9 @@ class NetherExecutorTest {
         assertEquals(1, totals.size());
     }
 
-    /** Empty GooValue is a no-op on the accumulator. */
+    /**
+     * Empty GooValue is a no-op on the accumulator.
+     */
     @Test
     void mergeValue_empty_noop() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
@@ -82,14 +92,16 @@ class NetherExecutorTest {
         assertEquals(1, totals.size());
     }
 
-    /** A block with multiple goo types distributes correctly across the accumulator. */
+    /**
+     * A block with multiple goo types distributes correctly across the accumulator.
+     */
     @Test
     void mergeValue_multiType_distributes() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);
         GooValue complex = new GooValue(Map.of(
-            GooType.ROCK, 800,
-            GooType.BLAZE, 200,
-            GooType.NETHER, 100));
+                GooType.ROCK, 800,
+                GooType.BLAZE, 200,
+                GooType.NETHER, 100));
 
         NetherBehavior.mergeValue(totals, complex);
 
@@ -98,7 +110,9 @@ class NetherExecutorTest {
         assertEquals(100, totals.get(GooType.NETHER));
     }
 
-    /** Cross-tick: accumulator survives merges across independent GooValue instances. */
+    /**
+     * Cross-tick: accumulator survives merges across independent GooValue instances.
+     */
     @Test
     void mergeValue_mixedAccumulation_producesCorrectTotals() {
         Map<GooType, Integer> totals = new EnumMap<>(GooType.class);

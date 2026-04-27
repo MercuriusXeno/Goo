@@ -1,14 +1,7 @@
 package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Tag-based grouping of scaffold roots. Builds a tag-to-item index from
@@ -17,16 +10,19 @@ import java.util.Set;
  */
 final class ScaffoldTagIndex {
 
-    /** Minimum members for a tag to qualify as a scaffold group. */
+    /**
+     * Minimum members for a tag to qualify as a scaffold group.
+     */
     private static final int MIN_GROUP_SIZE = 2;
 
-    private ScaffoldTagIndex() {}
+    private ScaffoldTagIndex() {
+    }
 
     /**
      * Groups roots by tag: roots whose itemId appears in a multi-variant tagged slot.
      * A root qualifies if its itemId is a member of some slot with size > 1 that has a tag ID.
      *
-     * @param roots the roots to group
+     * @param roots   the roots to group
      * @param recipes recipes providing tag metadata for grouping
      * @return map of tag ID to the list of roots that belong to that tag
      */
@@ -39,7 +35,7 @@ final class ScaffoldTagIndex {
     /**
      * For each tag, collects roots that are members and returns groups with 2+ members.
      *
-     * @param roots all roots to match against tags
+     * @param roots      all roots to match against tags
      * @param tagMembers tag ID to member item IDs
      * @return map of tag ID to grouped roots (only groups with MIN_GROUP_SIZE+ members)
      */
@@ -59,7 +55,7 @@ final class ScaffoldTagIndex {
     /**
      * Collects roots whose itemId is in the given tag member set.
      *
-     * @param roots all roots to filter
+     * @param roots    all roots to filter
      * @param tagItems item IDs belonging to the tag
      * @return roots matching the tag (may be empty)
      */
@@ -93,7 +89,7 @@ final class ScaffoldTagIndex {
     /**
      * Indexes all tagged multi-variant slots in a single recipe into the tag index.
      *
-     * @param index tag index to populate (mutated)
+     * @param index  tag index to populate (mutated)
      * @param recipe the recipe whose slots to scan
      */
     private static void indexRecipeSlots(Map<Identifier, Set<Identifier>> index, RecipeInput recipe) {
@@ -109,12 +105,16 @@ final class ScaffoldTagIndex {
      *
      * @param index tag index to populate (mutated)
      * @param tagId the slot's tag ID (empty if untagged)
-     * @param alts the slot's alternative item IDs
+     * @param alts  the slot's alternative item IDs
      */
     private static void indexSlotTag(Map<Identifier, Set<Identifier>> index,
-                                      Optional<Identifier> tagId, Set<Identifier> alts) {
-        if (tagId.isEmpty()) { return; }
-        if (alts.size() <= 1) { return; }
+                                     Optional<Identifier> tagId, Set<Identifier> alts) {
+        if (tagId.isEmpty()) {
+            return;
+        }
+        if (alts.size() <= 1) {
+            return;
+        }
         index.computeIfAbsent(tagId.get(), k -> new HashSet<>()).addAll(alts);
     }
 }

@@ -18,36 +18,61 @@ final class GooIntExpressionEvaluator {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Operator string for addition. */
+    /**
+     * Operator string for addition.
+     */
     private static final String OP_ADD = "+";
-    /** Operator string for subtraction. */
+    /**
+     * Operator string for subtraction.
+     */
     private static final String OP_SUB = "-";
-    /** Operator string for multiplication. */
+    /**
+     * Operator string for multiplication.
+     */
     private static final String OP_MUL = "*";
-    /** Operator string for division. */
+    /**
+     * Operator string for division.
+     */
     private static final String OP_DIV = "/";
-    /** Opening parenthesis token. */
+    /**
+     * Opening parenthesis token.
+     */
     private static final String TOKEN_OPEN = "(";
-    /** Closing parenthesis token. */
+    /**
+     * Closing parenthesis token.
+     */
     private static final String TOKEN_CLOSE = ")";
-    /** Log warning for missing closing parenthesis. */
+    /**
+     * Log warning for missing closing parenthesis.
+     */
     private static final String WARN_MISSING_PAREN = "Missing closing parenthesis in expression";
-    /** Prefix for constant reference tokens. */
+    /**
+     * Prefix for constant reference tokens.
+     */
     private static final String CONSTANT_PREFIX = "$";
-    /** Dot separator for type extraction. */
+    /**
+     * Dot separator for type extraction.
+     */
     private static final String DOT = ".";
-    /** Log warning for unknown constant reference. */
+    /**
+     * Log warning for unknown constant reference.
+     */
     private static final String WARN_UNKNOWN_CONSTANT = "Unknown constant: ${}";
-    /** Log warning for unknown operator. */
+    /**
+     * Log warning for unknown operator.
+     */
     private static final String WARN_UNKNOWN_OP = "Unknown operator in constant expression: {}";
 
-    /** Utility class, not instantiable. */
-    private GooIntExpressionEvaluator() {}
+    /**
+     * Utility class, not instantiable.
+     */
+    private GooIntExpressionEvaluator() {
+    }
 
     /**
      * Resolves a JSON element to an integer value using only scalar constants.
      *
-     * @param element the JSON element to resolve
+     * @param element   the JSON element to resolve
      * @param constants scalar constant symbol table
      * @return the resolved integer value
      */
@@ -58,9 +83,9 @@ final class GooIntExpressionEvaluator {
     /**
      * Resolves a JSON element to an integer value with all constant and item lookup sources.
      *
-     * @param element the JSON element to resolve
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param element       the JSON element to resolve
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table for $name.type lookups
      * @return the resolved integer value
      */
@@ -79,9 +104,9 @@ final class GooIntExpressionEvaluator {
      * Evaluates an expression with optional parentheses and item dot-notation.
      * Tokenizes first, then recurses on parenthetical groups.
      *
-     * @param expr the expression string to evaluate
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param expr          the expression string to evaluate
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the evaluated integer result
      */
@@ -96,10 +121,10 @@ final class GooIntExpressionEvaluator {
     /**
      * Additive level: handles + and -, delegates * and / to evalTerm.
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the evaluated integer result
      */
@@ -110,7 +135,9 @@ final class GooIntExpressionEvaluator {
         int result = evalTerm(tokens, pos, constants, baseValues, treeConstants);
         while (pos[0] < tokens.size()) {
             String op = tokens.get(pos[0]);
-            if (!isAdditiveOp(op)) { break; }
+            if (!isAdditiveOp(op)) {
+                break;
+            }
             pos[0]++;
             result = applyOperator(result, op, evalTerm(tokens, pos, constants, baseValues, treeConstants));
         }
@@ -130,10 +157,10 @@ final class GooIntExpressionEvaluator {
     /**
      * Multiplicative level: * and /, plus implicit multiplication (e.g. "4 $base").
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the evaluated integer result
      */
@@ -150,6 +177,7 @@ final class GooIntExpressionEvaluator {
 
     /**
      * Returns true if the token continues a multiplicative term (explicit op or implicit multiply).
+     *
      * @param token the next token in the expression
      * @return true if the token is a multiplicative operator or can start a new atom
      */
@@ -159,25 +187,27 @@ final class GooIntExpressionEvaluator {
 
     /**
      * Consumes and applies one multiplicative factor (explicit or implicit).
-     * @param result the accumulated value from previous factors
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     *
+     * @param result        the accumulated value from previous factors
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the result after applying the next multiplicative factor
      */
     private static int applyTermFactor(int result, List<String> tokens, int[] pos,
-            Map<String, Integer> constants, Map<Identifier, GooValue> baseValues,
-            Map<String, GooValue> treeConstants) {
+                                       Map<String, Integer> constants, Map<Identifier, GooValue> baseValues,
+                                       Map<String, GooValue> treeConstants) {
         String op = consumeMultiplicativeOp(tokens, pos);
         return applyOperator(result, op, evalAtom(tokens, pos, constants, baseValues, treeConstants));
     }
 
     /**
      * Consumes an explicit multiplicative operator, or returns implicit multiply without advancing.
+     *
      * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
+     * @param pos    mutable position index into tokens
      * @return the explicit operator token, or "*" for implicit multiplication
      */
     private static String consumeMultiplicativeOp(List<String> tokens, int[] pos) {
@@ -214,10 +244,10 @@ final class GooIntExpressionEvaluator {
      * Reads one atom: unary minus, parenthesized sub-expression, $constant,
      * int literal, or item.type ref.
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the evaluated integer result
      */
@@ -296,9 +326,9 @@ final class GooIntExpressionEvaluator {
      * Resolves a single operand token: $constant (with optional .type for tree extraction),
      * integer literal, or dot-notation item reference (e.g. minecraft:coal.blaze).
      *
-     * @param token the operand token to resolve
-     * @param constants scalar constant symbol table
-     * @param baseValues item values for dot-notation lookups (may be null)
+     * @param token         the operand token to resolve
+     * @param constants     scalar constant symbol table
+     * @param baseValues    item values for dot-notation lookups (may be null)
      * @param treeConstants tree constant symbol table
      * @return the resolved integer value
      */
@@ -318,8 +348,8 @@ final class GooIntExpressionEvaluator {
      * Resolves a $constant operand, trying tree dot extraction first (e.g. $log.leaf),
      * then falling back to scalar constant lookup.
      *
-     * @param name the constant name (without $ prefix, may contain dot)
-     * @param constants scalar constant symbol table
+     * @param name          the constant name (without $ prefix, may contain dot)
+     * @param constants     scalar constant symbol table
      * @param treeConstants tree constant symbol table
      * @return the resolved integer value
      */
@@ -340,8 +370,8 @@ final class GooIntExpressionEvaluator {
      * Returns {@link Integer#MIN_VALUE} as a sentinel if extraction fails (not a valid
      * tree constant or goo type).
      *
-     * @param name the full constant name including dot suffix
-     * @param dotIdx position of the last dot in name
+     * @param name          the full constant name including dot suffix
+     * @param dotIdx        position of the last dot in name
      * @param treeConstants tree constant symbol table
      * @return the extracted type value, or Integer.MIN_VALUE if not resolvable
      */
@@ -376,7 +406,7 @@ final class GooIntExpressionEvaluator {
     /**
      * Looks up a scalar constant by name, returning 0 if unknown.
      *
-     * @param name the constant name (without $ prefix)
+     * @param name      the constant name (without $ prefix)
      * @param constants scalar constant symbol table
      * @return the constant value, or 0 if unknown
      */
@@ -395,8 +425,8 @@ final class GooIntExpressionEvaluator {
      * Applies an arithmetic operator to two integer operands.
      * Division by zero returns 0 rather than throwing.
      *
-     * @param base the left operand
-     * @param op the operator string (+, -, *, /)
+     * @param base    the left operand
+     * @param op      the operator string (+, -, *, /)
      * @param operand the right operand
      * @return the result of the arithmetic operation
      */
@@ -413,7 +443,7 @@ final class GooIntExpressionEvaluator {
     /**
      * Integer division guarded against divide-by-zero, returning 0 instead.
      *
-     * @param base the dividend
+     * @param base    the dividend
      * @param operand the divisor
      * @return the quotient, or 0 if the divisor is zero
      */

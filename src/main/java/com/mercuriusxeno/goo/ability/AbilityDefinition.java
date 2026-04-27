@@ -34,10 +34,14 @@ public record AbilityDefinition(
         List<String> tags
 ) {
 
-    /** Placeholder id used during codec parsing; replaced by filename in the loader. */
+    /**
+     * Placeholder id used during codec parsing; replaced by filename in the loader.
+     */
     private static final Identifier PLACEHOLDER_ID = Identifier.withDefaultNamespace("unknown");
 
-    /** Codec for the ability JSON. The id comes from the filename, not the JSON body. */
+    /**
+     * Codec for the ability JSON. The id comes from the filename, not the JSON body.
+     */
     public static final Codec<AbilityDefinition> CODEC = RecordCodecBuilder.create(inst -> inst.group(
             GooType.CODEC.fieldOf("gooType").forGetter(AbilityDefinition::gooType),
             Codec.STRING.fieldOf("displayName").forGetter(AbilityDefinition::displayName),
@@ -88,12 +92,18 @@ public record AbilityDefinition(
             String rangeFormula,
             int rangeValue
     ) {
-        /** Default blob shape. */
+        /**
+         * Default blob shape.
+         */
         public static final String SHAPE_BLOB = "blob";
-        /** Squished blob shape. */
+        /**
+         * Squished blob shape.
+         */
         public static final String SHAPE_FLAT = "flat";
 
-        /** Default chain config for abilities that don't specify one. */
+        /**
+         * Default chain config for abilities that don't specify one.
+         */
         static final ChainConfig DEFAULT = new ChainConfig(30, 1, SHAPE_BLOB, "constant", 1);
 
         static final Codec<ChainConfig> CODEC = RecordCodecBuilder.create(inst -> inst.group(
@@ -131,7 +141,9 @@ public record AbilityDefinition(
          */
         public float getFloat(String key, float defaultValue) {
             String v = params.get(key);
-            if (v == null) { return defaultValue; }
+            if (v == null) {
+                return defaultValue;
+            }
             try {
                 return Float.parseFloat(v);
             } catch (NumberFormatException e) {

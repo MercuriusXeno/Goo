@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client;
 
-import com.mercuriusxeno.goo.block.VatBlock;
-import com.mercuriusxeno.goo.block.VatBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlock;
+import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
@@ -17,7 +17,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class VatStackAggregator {
 
-    private VatStackAggregator() {}
+    private VatStackAggregator() {
+    }
 
     /**
      * Aggregates vat stack data centered on the targeted position.
@@ -25,13 +26,15 @@ public final class VatStackAggregator {
      * label come from the targeted vat. Cap gasket from the top-most
      * vat, base gasket from the bottom-most.
      *
-     * @param level the level to query
+     * @param level     the level to query
      * @param targetPos the position of the vat the player is targeting
      * @return aggregated stack data, or null if not a valid vat
      */
     public static @Nullable VatStackData aggregate(Level level, BlockPos targetPos) {
         BlockEntity be = level.getBlockEntity(targetPos);
-        if (!(be instanceof VatBlockEntity targetVat)) { return null; }
+        if (!(be instanceof VatBlockEntity targetVat)) {
+            return null;
+        }
 
         BlockPos topPos = findStackTop(level, targetPos);
         BlockPos bottomPos = findStackBottom(level, targetPos);
@@ -53,16 +56,16 @@ public final class VatStackAggregator {
      * @return the assembled stack data
      */
     private static VatStackData buildStackData(VatBlockEntity targetVat,
-            GooContents contents, StackGaskets gaskets, int stackSize) {
+                                               GooContents contents, StackGaskets gaskets, int stackSize) {
         return new VatStackData(
-            contents,
-            targetVat.getCompressionLevel(),
-            gaskets.capGasket(),
-            gaskets.baseGasket(),
-            targetVat.getLabel(),
-            gaskets.capPartner(),
-            gaskets.basePartner(),
-            stackSize
+                contents,
+                targetVat.getCompressionLevel(),
+                gaskets.capGasket(),
+                gaskets.baseGasket(),
+                targetVat.getLabel(),
+                gaskets.capPartner(),
+                gaskets.basePartner(),
+                stackSize
         );
     }
 
@@ -99,8 +102,8 @@ public final class VatStackAggregator {
     /**
      * Sums GooContents across all vats from top to bottom inclusive.
      *
-     * @param level the current level
-     * @param top whether to render the top cap
+     * @param level  the current level
+     * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      * @return the result
      */
@@ -119,8 +122,8 @@ public final class VatStackAggregator {
     /**
      * Resolves gasket state from the top-most and bottom-most vats.
      *
-     * @param level the current level
-     * @param top whether to render the top cap
+     * @param level  the current level
+     * @param top    whether to render the top cap
      * @param bottom whether to render the bottom cap
      * @return the resolved result, or null if unresolvable
      */
@@ -143,7 +146,9 @@ public final class VatStackAggregator {
         return new StackGaskets(capGasket, baseGasket, capPartner, basePartner);
     }
 
-    /** Gasket state from the top and bottom vats of a stack. */
+    /**
+     * Gasket state from the top and bottom vats of a stack.
+     */
     private record StackGaskets(
             boolean capGasket, boolean baseGasket,
             @Nullable GasketPartner capPartner, @Nullable GasketPartner basePartner) {

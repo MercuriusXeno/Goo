@@ -12,8 +12,7 @@ import net.minecraft.world.phys.AABB;
 /**
  * Damage-cloud world effects: metal urchin, crystal shards, and hex ensorcelled.
  * All three spawn an AreaEffectCloud; metal and crystal also deal immediate AoE
- * damage. Extracted from WorldEffects to keep method counts under the
- * TooManyMethods threshold.
+ * damage.
  */
 final class DamageCloudEffects {
 

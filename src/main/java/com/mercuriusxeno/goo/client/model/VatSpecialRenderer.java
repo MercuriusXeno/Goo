@@ -31,135 +31,105 @@ import java.util.function.Consumer;
  */
 public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRenderer.VatData> {
 
-    /** Block atlas texture path for fluid sprite lookups. */
+    /**
+     * Block atlas texture path for fluid sprite lookups.
+     */
     private static final Identifier BLOCK_ATLAS_TEXTURE =
-        Identifier.withDefaultNamespace("textures/atlas/blocks.png");
+            Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
     // -- Vat geometry in block coords --
 
-    /** Vat body left/front edge (1px inset from block edge). */
+    /**
+     * Vat body left/front edge (1px inset from block edge).
+     */
     private static final float WALL = 1f / 16f;
 
-    /** Vat body bottom (top of base cap, y=2px). */
+    /**
+     * Vat body bottom (top of base cap, y=2px).
+     */
     private static final float BODY_BOT = 2f / 16f;
 
-    /** Vat body top (bottom of top cap, y=14px). */
+    /**
+     * Vat body top (bottom of top cap, y=14px).
+     */
     private static final float BODY_TOP = 14f / 16f;
 
-    /** Vat full bottom (y=0). */
+    /**
+     * Vat full bottom (y=0).
+     */
     private static final float VAT_BOT = 0f;
 
-    /** Vat full top (y=16px). */
+    /**
+     * Vat full top (y=16px).
+     */
     private static final float VAT_TOP = 1f;
-    /** Fully opaque white in ARGB for untinted quad rendering. */
+    /**
+     * Fully opaque white in ARGB for untinted quad rendering.
+     */
     private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
-    /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
+    /**
+     * Inset from body walls to avoid z-fighting with fluid surfaces (0.5px).
+     */
     private static final float FLUID_INSET = 0.5f / 16f;
 
-    /** Vertical nudge above vat base to prevent z-fighting at low fill (0.01px). */
+    /**
+     * Vertical nudge above vat base to prevent z-fighting at low fill (0.01px).
+     */
     private static final float Y_EPSILON = 0.01f / 16f;
 
-    /** Creates a vat special renderer. */
+    /**
+     * Creates a vat special renderer.
+     */
     public VatSpecialRenderer() {
-    }
-
-    /**
-     * Extracted render data from the vat item stack.
-     *
-     * @param gooType the dominant goo type, or null if empty
-     * @param fill    the fill fraction [0, 1]
-     */
-    public record VatData(@Nullable GooType gooType, float fill) {
-    }
-
-    /**
-     * Extracts goo render data from the vat item stack.
-     *
-     * @param stack the item stack
-     * @return the extracted render data, or null
-     */
-    @Override
-    public @Nullable VatData extractArgument(ItemStack stack) {
-        GooContents contents = VatBlockItem.getGooContents(stack);
-        if (contents.isEmpty()) { return null; }
-        int compression = GooEnchantments.getCompressionLevel(stack);
-        int capacity = ContainerCapacity.vatCapacity(compression);
-        float fill = Math.min(1f, (float) contents.totalVolume() / capacity);
-        return new VatData(contents.largestType(), fill);
-    }
-
-    /**
-     * Renders the vat shell and fluid fill for the item.
-     *
-     * @param data the extracted render data
-     * @param poseStack the pose stack for rendering
-     * @param nodeCollector the render node collector
-     * @param packedLight the packed light value
-     * @param packedOverlay the packed overlay value
-     * @param hasFoil whether the item has enchantment foil
-     * @param outlineColor the outline color for selected items
-     */
-    @Override
-    public void submit(@Nullable VatData data,
-            PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            int packedLight, int packedOverlay, boolean hasFoil, int outlineColor) {
-        poseStack.pushPose();
-
-        submitShell(poseStack, nodeCollector, packedLight);
-
-        if (data != null && data.gooType() != null && data.fill() > 0f) {
-            submitFluid(poseStack, nodeCollector, packedLight, data.gooType(), data.fill());
-        }
-
-        poseStack.popPose();
     }
 
     /**
      * Submits the baked vat shell model (cap + body + base).
      *
-     * @param poseStack the pose stack for rendering
+     * @param poseStack     the pose stack for rendering
      * @param nodeCollector the render node collector
-     * @param packedLight the packed light value
+     * @param packedLight   the packed light value
      */
     private static void submitShell(PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            int packedLight) {
+                                    int packedLight) {
         QuadCollection model = VatBodyModels.getModel();
         nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> {
-                QuadInstance qi = new QuadInstance();
-                qi.setColor(OPAQUE_WHITE);
-                qi.setLightCoords(packedLight);
-                qi.setOverlayCoords(OverlayTexture.NO_OVERLAY);
-                for (BakedQuad quad : model.getAll()) {
-                    c.putBakedQuad(pose, quad, qi);
-                }
-            });
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
+                (pose, c) -> {
+                    QuadInstance qi = new QuadInstance();
+                    qi.setColor(OPAQUE_WHITE);
+                    qi.setLightCoords(packedLight);
+                    qi.setOverlayCoords(OverlayTexture.NO_OVERLAY);
+                    for (BakedQuad quad : model.getAll()) {
+                        c.putBakedQuad(pose, quad, qi);
+                    }
+                });
     }
 
     /**
      * Submits fluid surface geometry inside the vat body.
      * Renders top face + 4 side faces from body bottom up to the fill level.
      *
-     * @param poseStack the pose stack for rendering
+     * @param poseStack     the pose stack for rendering
      * @param nodeCollector the render node collector
-     * @param packedLight the packed light value
-     * @param type the goo type
-     * @param fill the fill fraction in [0, 1]
+     * @param packedLight   the packed light value
+     * @param type          the goo type
+     * @param fill          the fill fraction in [0, 1]
      */
     private static void submitFluid(PoseStack poseStack,
-            SubmitNodeCollector nodeCollector, int packedLight,
-            GooType type, float fill) {
+                                    SubmitNodeCollector nodeCollector, int packedLight,
+                                    GooType type, float fill) {
         CuboidBounds b = computeFluidBounds(fill);
         nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> FluidFaceEmitter.emitFluidFaces(
-                new RenderContext(pose, c, packedLight), b, type));
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
+                (pose, c) -> FluidFaceEmitter.emitFluidFaces(
+                        new RenderContext(pose, c, packedLight), b, type));
     }
 
     /**
      * Computes the fluid cuboid bounds inset from the vat walls.
+     *
      * @param fill the fill fraction [0, 1]
      * @return the cuboid bounds for the fluid volume inside the vat walls
      */
@@ -171,6 +141,50 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
         float yBot = BODY_BOT + Y_EPSILON;
         float y = yBot + fill * (BODY_TOP - yBot);
         return new CuboidBounds(x0, x1, z0, z1, yBot, y);
+    }
+
+    /**
+     * Extracts goo render data from the vat item stack.
+     *
+     * @param stack the item stack
+     * @return the extracted render data, or null
+     */
+    @Override
+    public @Nullable VatData extractArgument(ItemStack stack) {
+        GooContents contents = VatBlockItem.getGooContents(stack);
+        if (contents.isEmpty()) {
+            return null;
+        }
+        int compression = GooEnchantments.getCompressionLevel(stack);
+        int capacity = ContainerCapacity.vatCapacity(compression);
+        float fill = Math.min(1f, (float) contents.totalVolume() / capacity);
+        return new VatData(contents.largestType(), fill);
+    }
+
+    /**
+     * Renders the vat shell and fluid fill for the item.
+     *
+     * @param data          the extracted render data
+     * @param poseStack     the pose stack for rendering
+     * @param nodeCollector the render node collector
+     * @param packedLight   the packed light value
+     * @param packedOverlay the packed overlay value
+     * @param hasFoil       whether the item has enchantment foil
+     * @param outlineColor  the outline color for selected items
+     */
+    @Override
+    public void submit(@Nullable VatData data,
+                       PoseStack poseStack, SubmitNodeCollector nodeCollector,
+                       int packedLight, int packedOverlay, boolean hasFoil, int outlineColor) {
+        poseStack.pushPose();
+
+        submitShell(poseStack, nodeCollector, packedLight);
+
+        if (data != null && data.gooType() != null && data.fill() > 0f) {
+            submitFluid(poseStack, nodeCollector, packedLight, data.gooType(), data.fill());
+        }
+
+        poseStack.popPose();
     }
 
     /**
@@ -186,14 +200,25 @@ public class VatSpecialRenderer implements SpecialModelRenderer<VatSpecialRender
     }
 
     /**
+     * Extracted render data from the vat item stack.
+     *
+     * @param gooType the dominant goo type, or null if empty
+     * @param fill    the fill fraction [0, 1]
+     */
+    public record VatData(@Nullable GooType gooType, float fill) {
+    }
+
+    /**
      * Unbaked factory for the vat special renderer. Registered as
      * "goo:vat_goo" in the special model renderer registry.
      */
     public record Unbaked() implements SpecialModelRenderer.Unbaked<VatData> {
 
-        /** Codec for data-driven item model deserialization. */
+        /**
+         * Codec for data-driven item model deserialization.
+         */
         public static final MapCodec<VatSpecialRenderer.Unbaked> MAP_CODEC =
-            MapCodec.unit(new VatSpecialRenderer.Unbaked());
+                MapCodec.unit(new VatSpecialRenderer.Unbaked());
 
         @Override
         public MapCodec<VatSpecialRenderer.Unbaked> type() {

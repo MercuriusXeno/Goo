@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.item;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.CanisterSlotLayout;
-import com.mercuriusxeno.goo.block.ICanisterAttachable;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
+import com.mercuriusxeno.goo.block.canister.ICanisterAttachable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +19,8 @@ import java.util.Set;
  */
 public final class CanisterPlacementValidator {
 
-    private CanisterPlacementValidator() {}
+    private CanisterPlacementValidator() {
+    }
 
     /**
      * Returns true if the block below can support a canister. A canister needs
@@ -31,7 +32,9 @@ public final class CanisterPlacementValidator {
      */
     static boolean isSupportedBelow(Level level, BlockPos belowPos) {
         BlockState belowState = level.getBlockState(belowPos);
-        if (belowState.isSolidRender()) { return true; }
+        if (belowState.isSolidRender()) {
+            return true;
+        }
         BlockEntity be = level.getBlockEntity(belowPos);
         return be instanceof ICanisterAttachable att && att.canAttachOnTop();
     }
@@ -41,8 +44,8 @@ public final class CanisterPlacementValidator {
      * position, or null if no constraint applies. Queries the ICanisterAttachable
      * block below (if any) for its allowed slot set.
      *
-     * @param level        the current level
-     * @param canisterPos  the canister block position
+     * @param level       the current level
+     * @param canisterPos the canister block position
      * @return the allowed slots, or null if unconstrained
      */
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull") // null = unconstrained (all slots); empty = none
@@ -59,9 +62,9 @@ public final class CanisterPlacementValidator {
      * Returns true if the given slot is allowed for a canister block at the given
      * position. If there is no ICanisterAttachable below, all slots are allowed.
      *
-     * @param level        the current level
-     * @param canisterPos  the canister block position
-     * @param slot         the slot index to check
+     * @param level       the current level
+     * @param canisterPos the canister block position
+     * @param slot        the slot index to check
      * @return true if the slot is allowed
      */
     public static boolean isSlotAllowed(Level level, BlockPos canisterPos, int slot) {
@@ -78,7 +81,9 @@ public final class CanisterPlacementValidator {
      * @return the constrained slot index
      */
     static int constrainSlot(int slot, Level level, BlockPos pos) {
-        if (isSlotAllowed(level, pos, slot)) { return slot; }
+        if (isSlotAllowed(level, pos, slot)) {
+            return slot;
+        }
         Set<Integer> allowed = getAllowedSlots(level, pos);
         if (allowed != null && !allowed.isEmpty()) {
             return allowed.iterator().next();
@@ -90,8 +95,8 @@ public final class CanisterPlacementValidator {
      * Computes the target slot for new block placement using the click location
      * on the adjacent solid block's face.
      *
-     * @param clickLoc the click location in world coordinates
-     * @param placePos the block position being placed
+     * @param clickLoc  the click location in world coordinates
+     * @param placePos  the block position being placed
      * @param entryFace the face the placement enters from
      * @return the target slot index (0-8)
      */

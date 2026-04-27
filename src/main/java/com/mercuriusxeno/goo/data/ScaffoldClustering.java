@@ -1,12 +1,7 @@
 package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Union-find clustering and cycle-entry selection for the scaffold pipeline.
@@ -16,7 +11,8 @@ import java.util.Set;
  */
 final class ScaffoldClustering {
 
-    private ScaffoldClustering() {}
+    private ScaffoldClustering() {
+    }
 
     /**
      * Builds connected components from homogenous recipes.
@@ -24,7 +20,7 @@ final class ScaffoldClustering {
      * any one member propagates to all others via reverse derivation.
      *
      * @param homogenous recipes with a single repeated input item
-     * @param allItems all items to include in clustering
+     * @param allItems   all items to include in clustering
      * @return map from each item to its cluster set (shared reference)
      */
     static Map<Identifier, Set<Identifier>> buildClusters(
@@ -33,7 +29,9 @@ final class ScaffoldClustering {
         for (RecipeInput recipe : homogenous) {
             Identifier input = recipe.soleInputItem();
             Identifier output = recipe.output();
-            if (!isValidClusterEdge(input, output)) { continue; }
+            if (!isValidClusterEdge(input, output)) {
+                continue;
+            }
             mergeClusters(membership, input, output);
         }
         return membership;
@@ -58,7 +56,7 @@ final class ScaffoldClustering {
     /**
      * A recipe edge is valid for clustering when input and output are distinct non-null items.
      *
-     * @param input the recipe's sole input item (may be null)
+     * @param input  the recipe's sole input item (may be null)
      * @param output the recipe's output item
      * @return true if this edge should merge clusters
      */
@@ -71,14 +69,16 @@ final class ScaffoldClustering {
      * Updates all membership pointers for the absorbed cluster.
      *
      * @param membership the union-find membership map (mutated)
-     * @param a first item whose cluster to merge
-     * @param b second item whose cluster to merge
+     * @param a          first item whose cluster to merge
+     * @param b          second item whose cluster to merge
      */
     private static void mergeClusters(Map<Identifier, Set<Identifier>> membership,
-                                       Identifier a, Identifier b) {
+                                      Identifier a, Identifier b) {
         Set<Identifier> clusterA = membership.get(a);
         Set<Identifier> clusterB = membership.get(b);
-        if (shouldSkipMerge(clusterA, clusterB)) { return; }
+        if (shouldSkipMerge(clusterA, clusterB)) {
+            return;
+        }
         absorbSmaller(membership, clusterA, clusterB);
     }
 
@@ -97,15 +97,17 @@ final class ScaffoldClustering {
      * Absorbs the smaller cluster into the larger, updating all membership pointers.
      *
      * @param membership the union-find membership map (mutated)
-     * @param clusterA first cluster
-     * @param clusterB second cluster
+     * @param clusterA   first cluster
+     * @param clusterB   second cluster
      */
     private static void absorbSmaller(Map<Identifier, Set<Identifier>> membership,
-                                       Set<Identifier> clusterA, Set<Identifier> clusterB) {
+                                      Set<Identifier> clusterA, Set<Identifier> clusterB) {
         Set<Identifier> larger = clusterA.size() >= clusterB.size() ? clusterA : clusterB;
         Set<Identifier> smaller = larger == clusterA ? clusterB : clusterA;
         larger.addAll(smaller);
-        for (Identifier id : smaller) { membership.put(id, larger); }
+        for (Identifier id : smaller) {
+            membership.put(id, larger);
+        }
     }
 
     /**
@@ -114,17 +116,19 @@ final class ScaffoldClustering {
      * within-cluster recipes is the smallest base unit (e.g. nugget > ingot
      * > block). Ties broken by fan-out.
      *
-     * @param cluster the set of items in the cycle cluster
-     * @param homogenous homogenous recipes for propagation scoring
+     * @param cluster     the set of items in the cycle cluster
+     * @param homogenous  homogenous recipes for propagation scoring
      * @param reverseDeps reverse dependency graph for fan-out tiebreaking
-     * @param denied items excluded from selection
+     * @param denied      items excluded from selection
      * @return the best cycle entry point item ID
      */
     static Identifier pickCycleEntry(Set<Identifier> cluster,
-                                      List<RecipeInput> homogenous,
-                                      Map<Identifier, Set<Identifier>> reverseDeps,
-                                      Set<Identifier> denied) {
-        if (cluster.size() == 1) { return cluster.iterator().next(); }
+                                     List<RecipeInput> homogenous,
+                                     Map<Identifier, Set<Identifier>> reverseDeps,
+                                     Set<Identifier> denied) {
+        if (cluster.size() == 1) {
+            return cluster.iterator().next();
+        }
 
         Map<Identifier, Long> factors = initFactors(cluster);
         propagateFactors(factors, cluster, homogenous);
@@ -149,13 +153,13 @@ final class ScaffoldClustering {
      * Propagates multiplication factors through homogenous recipes within
      * the cluster until no more updates occur.
      *
-     * @param factors mutable factor map (mutated)
-     * @param cluster the cycle cluster members
+     * @param factors    mutable factor map (mutated)
+     * @param cluster    the cycle cluster members
      * @param homogenous homogenous recipes to propagate through
      */
     private static void propagateFactors(Map<Identifier, Long> factors,
-                                          Set<Identifier> cluster,
-                                          List<RecipeInput> homogenous) {
+                                         Set<Identifier> cluster,
+                                         List<RecipeInput> homogenous) {
         boolean changed = true;
         while (changed) {
             changed = propagateFactorsOnePass(factors, cluster, homogenous);
@@ -165,14 +169,14 @@ final class ScaffoldClustering {
     /**
      * Runs one pass of factor propagation across homogenous recipes.
      *
-     * @param factors mutable factor map (may grow)
-     * @param cluster the cycle cluster members
+     * @param factors    mutable factor map (may grow)
+     * @param cluster    the cycle cluster members
      * @param homogenous homogenous recipes to check
      * @return true if at least one factor was updated this pass
      */
     private static boolean propagateFactorsOnePass(Map<Identifier, Long> factors,
-                                                    Set<Identifier> cluster,
-                                                    List<RecipeInput> homogenous) {
+                                                   Set<Identifier> cluster,
+                                                   List<RecipeInput> homogenous) {
         boolean changed = false;
         for (RecipeInput recipe : homogenous) {
             if (tryPropagateFactorRecipe(factors, cluster, recipe)) {
@@ -187,15 +191,17 @@ final class ScaffoldClustering {
      *
      * @param factors mutable factor map (may be mutated)
      * @param cluster the cycle cluster members
-     * @param recipe the homogenous recipe to check
+     * @param recipe  the homogenous recipe to check
      * @return true if a factor was updated
      */
     private static boolean tryPropagateFactorRecipe(Map<Identifier, Long> factors,
-                                                     Set<Identifier> cluster,
-                                                     RecipeInput recipe) {
+                                                    Set<Identifier> cluster,
+                                                    RecipeInput recipe) {
         Identifier input = recipe.soleInputItem();
         Identifier output = recipe.output();
-        if (input == null || !cluster.contains(input) || !cluster.contains(output)) { return false; }
+        if (input == null || !cluster.contains(input) || !cluster.contains(output)) {
+            return false;
+        }
 
         long outputFactor = computeOutputFactor(factors, input, recipe);
         return tryUpdateFactor(factors, output, outputFactor);
@@ -205,8 +211,8 @@ final class ScaffoldClustering {
      * Computes the output multiplication factor from a recipe's input factor.
      *
      * @param factors current factor map
-     * @param input the recipe's input item
-     * @param recipe the recipe providing result count and input count
+     * @param input   the recipe's input item
+     * @param recipe  the recipe providing result count and input count
      * @return the computed output factor
      */
     private static long computeOutputFactor(Map<Identifier, Long> factors, Identifier input, RecipeInput recipe) {
@@ -218,8 +224,8 @@ final class ScaffoldClustering {
     /**
      * Updates the factor for an item if the new factor exceeds the current one.
      *
-     * @param factors mutable factor map (may be mutated)
-     * @param item the item to update
+     * @param factors   mutable factor map (may be mutated)
+     * @param item      the item to update
      * @param newFactor the proposed new factor
      * @return true if the factor was updated
      */
@@ -234,16 +240,16 @@ final class ScaffoldClustering {
     /**
      * Selects the best cycle entry: highest multiplication factor, tiebroken by fan-out.
      *
-     * @param cluster the cycle cluster members
-     * @param factors multiplication factor map
+     * @param cluster     the cycle cluster members
+     * @param factors     multiplication factor map
      * @param reverseDeps reverse dependency graph for fan-out tiebreaking
-     * @param denied items excluded from selection
+     * @param denied      items excluded from selection
      * @return the best cycle entry point item ID
      */
     private static Identifier selectBestEntry(Set<Identifier> cluster,
-                                               Map<Identifier, Long> factors,
-                                               Map<Identifier, Set<Identifier>> reverseDeps,
-                                               Set<Identifier> denied) {
+                                              Map<Identifier, Long> factors,
+                                              Map<Identifier, Set<Identifier>> reverseDeps,
+                                              Set<Identifier> denied) {
         return cluster.stream()
                 .filter(id -> !denied.contains(id))
                 .max(Comparator.<Identifier>comparingLong(id -> factors.getOrDefault(id, 1L))

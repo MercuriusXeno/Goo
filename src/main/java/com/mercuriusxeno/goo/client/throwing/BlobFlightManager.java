@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.client.throwing;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ThrowArc;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.network.BlobFlightPayload;
 import net.minecraft.client.Minecraft;
@@ -24,17 +24,24 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class BlobFlightManager {
 
     /** Active flights, keyed by a monotonically increasing ID. */
-/** Divisor for computing entity vertical center. */
+    /**
+     * Divisor for computing entity vertical center.
+     */
     private static final double ENTITY_CENTER_DIVISOR = 2.0;
-    /** Epsilon for near-zero length detection in direction vectors. */
+    /**
+     * Epsilon for near-zero length detection in direction vectors.
+     */
     private static final double DIRECTION_EPSILON = 1e-6;
 
     private static final Map<Integer, BlobFlight> FLIGHTS = new ConcurrentHashMap<>();
+    /**
+     * Velocity finite-difference step size.
+     */
+    private static final float VELOCITY_DT = 0.01f;
     private static int nextId;
-        /** Velocity finite-difference step size. */
-        private static final float VELOCITY_DT = 0.01f;
 
-    private BlobFlightManager() {}
+    private BlobFlightManager() {
+    }
 
     /**
      * Adds a new flight from the server's flight broadcast.
@@ -44,7 +51,9 @@ public final class BlobFlightManager {
      */
     public static void addFlight(BlobFlightPayload payload) {
         GooType type = GooType.fromId(payload.gooTypeId());
-        if (type == null) { return; }
+        if (type == null) {
+            return;
+        }
 
         Vec3 start = new Vec3(payload.startX(), payload.startY(), payload.startZ());
         int targetEntityId = payload.targetEntityId();
@@ -58,7 +67,9 @@ public final class BlobFlightManager {
                 payload.targetPos(), type, travelTicks, grannyArc));
     }
 
-    /** Called each client tick to advance flights and remove arrivals. */
+    /**
+     * Called each client tick to advance flights and remove arrivals.
+     */
     public static void tick() {
         Iterator<Map.Entry<Integer, BlobFlight>> it = FLIGHTS.entrySet().iterator();
         while (it.hasNext()) {
@@ -111,7 +122,9 @@ public final class BlobFlightManager {
         return FLIGHTS.values();
     }
 
-    /** Clears all flights (on disconnect or dimension change). */
+    /**
+     * Clears all flights (on disconnect or dimension change).
+     */
     public static void clear() {
         FLIGHTS.clear();
         nextId = 0;
@@ -154,20 +167,32 @@ public final class BlobFlightManager {
      */
     private static @Nullable Vec3 resolveEntityPos(int entityId) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) { return null; }
+        if (mc.level == null) {
+            return null;
+        }
         Entity e = mc.level.getEntity(entityId);
-        if (e == null) { return null; }
+        if (e == null) {
+            return null;
+        }
         return e.position().add(0, e.getBbHeight() / ENTITY_CENTER_DIVISOR, 0);
     }
 
-    /** Mutable flight state for a single blob in transit. */
+    /**
+     * Mutable flight state for a single blob in transit.
+     */
     public static class BlobFlight {
         public final Vec3 start;
-        /** Fixed end position for block targets; ignored for entity targets. */
+        /**
+         * Fixed end position for block targets; ignored for entity targets.
+         */
         public final Vec3 blockEnd;
-        /** Target entity ID, or -1 for block targets. */
+        /**
+         * Target entity ID, or -1 for block targets.
+         */
         public final int targetEntityId;
-        /** Target block position for in-flight tracking. */
+        /**
+         * Target block position for in-flight tracking.
+         */
         public final BlockPos targetBlockPos;
         public final GooType gooType;
         public final int travelTicks;
@@ -195,7 +220,9 @@ public final class BlobFlightManager {
         public Vec3 getEnd() {
             if (targetEntityId >= 0) {
                 Vec3 live = resolveEntityPos(targetEntityId);
-                if (live != null) { return live; }
+                if (live != null) {
+                    return live;
+                }
             }
             return blockEnd;
         }
@@ -206,7 +233,9 @@ public final class BlobFlightManager {
          * @return the peak height in blocks above the start-end line
          */
         private double peak() {
-            if (gooType == GooType.GLOW) { return 0; }
+            if (gooType == GooType.GLOW) {
+                return 0;
+            }
             return grannyArc
                     ? ThrowArc.grannyPeak(travelTicks)
                     : ThrowArc.basePeak(travelTicks);

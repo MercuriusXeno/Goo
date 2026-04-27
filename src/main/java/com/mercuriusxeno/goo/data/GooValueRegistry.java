@@ -12,13 +12,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Central registry for all item goo values. Loads base values from JSON,
@@ -37,107 +31,90 @@ public class GooValueRegistry implements IGooValueLookup {
 
     static final int MAX_DERIVATION_PASSES = 20;
 
-    /** Log: derived values from recipes. */
+    /**
+     * Log: derived values from recipes.
+     */
     private static final String LOG_DERIVED = "Derived {} goo values from recipes";
-    /** Log: client received values. */
+    /**
+     * Log: client received values.
+     */
     private static final String LOG_CLIENT_RECEIVED = "Client received {} effective goo values";
-    /** Warning: no base values loaded yet. */
+    /**
+     * Warning: no base values loaded yet.
+     */
     private static final String WARN_NO_BASE_VALUES = "No base values loaded. Run /goo regen first.";
-    /** Error: no datapack provides base values. */
+    /**
+     * Error: no datapack provides base values.
+     */
     private static final String ERROR_NO_DATAPACK = "No datapack provides goo_values/base_values.json";
 
     // --- Instance state (package-private for test access) ---
 
     final Map<Identifier, GooValue> baseValues = new HashMap<>();
-    /** Effective values after LCD comparison between base and derived. */
+    /**
+     * Effective values after LCD comparison between base and derived.
+     */
     final Map<Identifier, GooValue> effectiveValues = new HashMap<>();
-    /** Items explicitly denied a value (e.g. ore blocks - fortune makes them unvaluable). */
+    /**
+     * Items explicitly denied a value (e.g. ore blocks - fortune makes them unvaluable).
+     */
     final Set<Identifier> deniedItems = new HashSet<>();
-    /** Items restricted from plexer reconstitution but still decomposable. */
+    /**
+     * Items restricted from plexer reconstitution but still decomposable.
+     */
     final Set<Identifier> restrictedItems = new HashSet<>();
-    /** Named constants from _constants block, resolved during value parsing. */
+    /**
+     * Named constants from _constants block, resolved during value parsing.
+     */
     final Map<String, Integer> constants = new HashMap<>();
-    /** Tree constants from _constants block: GooValue objects keyed by name. */
+    /**
+     * Tree constants from _constants block: GooValue objects keyed by name.
+     */
     final Map<String, GooValue> treeConstants = new HashMap<>();
-    /** Pseudo-tags from _groups block: group name to item set. */
+    /**
+     * Pseudo-tags from _groups block: group name to item set.
+     */
     final Map<String, Set<Identifier>> pseudoTags = new HashMap<>();
-    /** Pre-derivation conversions from _conversions block. */
+    /**
+     * Pre-derivation conversions from _conversions block.
+     */
     GooConversion.ParsedConversions preConversions;
-    /** Post-derivation conversions from _post_conversions block. */
+    /**
+     * Post-derivation conversions from _post_conversions block.
+     */
     GooConversion.ParsedConversions postConversions;
 
-    /** Result of the last derivation or cache load. Null before first derivation. */
+    /**
+     * Result of the last derivation or cache load. Null before first derivation.
+     */
     @Nullable
     DerivationResult lastDerivation;
 
-    /** Cached recipe inputs from the last derivation, for scaffold generation. */
+    /**
+     * Cached recipe inputs from the last derivation, for scaffold generation.
+     */
     List<RecipeInput> lastRecipes = List.of();
 
-    /** Last merged base_values JSON from regen, retained for validation. */
+    /**
+     * Last merged base_values JSON from regen, retained for validation.
+     */
     @Nullable
     JsonObject lastMergedBaseValues;
 
     private Path effectiveCachePath;
 
     /**
-     * A strongly connected component in the recipe dependency graph.
+     * Loads the datapack resource stack for base_values.json.
      *
-     * @param items     the items forming the cycle
-     * @param hasAnchor whether the cycle contains a hand-keyed anchor value
-     * @param anchor    the anchor item, or null if no anchor
+     * @param server the server providing the resource manager
+     * @return the ordered resource stack
      */
-    public record RecipeCycle(List<Identifier> items, boolean hasAnchor, @Nullable Identifier anchor) {}
-
-    /**
-     * A disagreement between a hand-keyed base value and a recipe-derived value.
-     *
-     * @param item        the conflicting item
-     * @param baseValue   the hand-keyed base value
-     * @param recipeValue the recipe-derived value
-     */
-    public record ValueConflict(Identifier item, GooValue baseValue, GooValue recipeValue) {
-        /**
-         * Returns true if the recipe path produces fewer total blobs than the base value.
-         *
-         * @return true if derived is cheaper than hand-keyed
-         */
-        public boolean isRecipeCheaper() { return recipeValue.totalBlobs() < baseValue.totalBlobs(); }
+    private static List<Resource> loadResourceStack(MinecraftServer server) {
+        ResourceManager resourceManager = server.getResourceManager();
+        Identifier location = Identifier.fromNamespaceAndPath(
+                GooValueLoader.modNamespace(), GooValueLoader.baseValuesResource());
+        return resourceManager.getResourceStack(location);
     }
-
-    /**
-     * A recipe where integer division causes value loss in the output.
-     *
-     * @param output       the output item
-     * @param outputCount  the recipe output count
-     * @param inputTotal   the total input value in blobs
-     * @param perItemValue the per-item value after division
-     * @param lostBlobs    the blobs lost to integer truncation
-     * @param recipe       the source recipe input
-     */
-    public record DivisibilityLoss(Identifier output, int outputCount, int inputTotal,
-            int perItemValue, int lostBlobs, RecipeInput recipe) {}
-
-    /**
-     * Snapshot of diagnostic data from the last derivation run.
-     * Returned by {@link #diagnostics()} to consolidate accessors.
-     *
-     * @param baseSize           number of hand-keyed base values
-     * @param derivedSize        number of recipe-derived values
-     * @param cycles             recipe dependency cycles
-     * @param conflicts          base/derived value conflicts
-     * @param divisibilityLosses recipes with integer division loss
-     * @param allReferencedIds   all item IDs in base_values.json (valued + denied + restricted)
-     * @param derivationSources  map from derived item ID to the recipe that produced its value
-     */
-    public record DiagnosticSnapshot(
-            int baseSize, int derivedSize,
-            List<RecipeCycle> cycles,
-            List<ValueConflict> conflicts,
-            List<DivisibilityLoss> divisibilityLosses,
-            Set<Identifier> allReferencedIds,
-            Map<Identifier, RecipeInput> derivationSources
-    ) {}
-
 
     /**
      * Sets the path for the effective value cache file.
@@ -181,25 +158,13 @@ public class GooValueRegistry implements IGooValueLookup {
 
     /**
      * Creates a fresh ParseState backed by this registry's maps.
+     *
      * @return a new ParseState wired to this registry's mutable maps
      */
     private GooValueLoader.ParseState createParseState() {
         return new GooValueLoader.ParseState(
                 baseValues, effectiveValues, deniedItems, restrictedItems,
                 constants, treeConstants, pseudoTags);
-    }
-
-    /**
-     * Loads the datapack resource stack for base_values.json.
-     *
-     * @param server the server providing the resource manager
-     * @return the ordered resource stack
-     */
-    private static List<Resource> loadResourceStack(MinecraftServer server) {
-        ResourceManager resourceManager = server.getResourceManager();
-        Identifier location = Identifier.fromNamespaceAndPath(
-                GooValueLoader.modNamespace(), GooValueLoader.baseValuesResource());
-        return resourceManager.getResourceStack(location);
     }
 
     /**
@@ -270,7 +235,9 @@ public class GooValueRegistry implements IGooValueLookup {
     public void receiveClientValues(Map<Identifier, GooValue> values) {
         effectiveValues.clear();
         effectiveValues.putAll(values);
-        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_CLIENT_RECEIVED, values.size()); }
+        if (Goo.LOGGER.isDebugEnabled()) {
+            Goo.LOGGER.debug(LOG_CLIENT_RECEIVED, values.size());
+        }
     }
 
     /**
@@ -291,7 +258,7 @@ public class GooValueRegistry implements IGooValueLookup {
      * Generates scaffold by collecting recipes fresh from the server.
      *
      * @param server the running server providing recipes
-     * @param bare if true, emit only root keys with empty values
+     * @param bare   if true, emit only root keys with empty values
      * @return scaffold result with lines and root count
      */
     public ScaffoldGenerator.ScaffoldResult generateScaffoldFresh(MinecraftServer server, boolean bare) {
@@ -317,8 +284,9 @@ public class GooValueRegistry implements IGooValueLookup {
         return ScaffoldGenerator.generateScaffold(roots, lastRecipes, bare);
     }
 
-
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GooValue lookup(Identifier itemId) {
         return effectiveValues.get(itemId);
@@ -332,32 +300,54 @@ public class GooValueRegistry implements IGooValueLookup {
      * @return effective GooValue, or null if none
      */
     public GooValue lookup(ItemStack stack) {
-        if (stack.isEmpty()) { return null; }
+        if (stack.isEmpty()) {
+            return null;
+        }
         GooValue base = lookup(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-        if (base != null) { return base; }
+        if (base != null) {
+            return base;
+        }
         if (stack.getItem() instanceof IComponentValueProvider provider) {
             return provider.computeComponentValue(stack, this);
         }
         return null;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public int size() { return effectiveValues.size(); }
+    public int size() {
+        return effectiveValues.size();
+    }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public boolean hasBaseValue(Identifier itemId) { return baseValues.containsKey(itemId); }
+    public boolean hasBaseValue(Identifier itemId) {
+        return baseValues.containsKey(itemId);
+    }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public boolean isDenied(Identifier itemId) { return deniedItems.contains(itemId); }
+    public boolean isDenied(Identifier itemId) {
+        return deniedItems.contains(itemId);
+    }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public boolean isRestricted(Identifier itemId) { return restrictedItems.contains(itemId); }
+    public boolean isRestricted(Identifier itemId) {
+        return restrictedItems.contains(itemId);
+    }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<Identifier, GooValue> getEffectiveValues() {
         return Collections.unmodifiableMap(effectiveValues);
@@ -399,7 +389,6 @@ public class GooValueRegistry implements IGooValueLookup {
         );
     }
 
-
     /**
      * Derives goo values from MC-free recipe inputs using the LCD rule.
      *
@@ -413,6 +402,70 @@ public class GooValueRegistry implements IGooValueLookup {
         effectiveValues.putAll(lastDerivation.effectiveValues());
         GooConversionLoader.applyConversions(postConversions, effectiveValues, pseudoTags);
         return lastDerivation.derivedValues().size();
+    }
+
+    /**
+     * A strongly connected component in the recipe dependency graph.
+     *
+     * @param items     the items forming the cycle
+     * @param hasAnchor whether the cycle contains a hand-keyed anchor value
+     * @param anchor    the anchor item, or null if no anchor
+     */
+    public record RecipeCycle(List<Identifier> items, boolean hasAnchor, @Nullable Identifier anchor) {
+    }
+
+    /**
+     * A disagreement between a hand-keyed base value and a recipe-derived value.
+     *
+     * @param item        the conflicting item
+     * @param baseValue   the hand-keyed base value
+     * @param recipeValue the recipe-derived value
+     */
+    public record ValueConflict(Identifier item, GooValue baseValue, GooValue recipeValue) {
+        /**
+         * Returns true if the recipe path produces fewer total blobs than the base value.
+         *
+         * @return true if derived is cheaper than hand-keyed
+         */
+        public boolean isRecipeCheaper() {
+            return recipeValue.totalBlobs() < baseValue.totalBlobs();
+        }
+    }
+
+    /**
+     * A recipe where integer division causes value loss in the output.
+     *
+     * @param output       the output item
+     * @param outputCount  the recipe output count
+     * @param inputTotal   the total input value in blobs
+     * @param perItemValue the per-item value after division
+     * @param lostBlobs    the blobs lost to integer truncation
+     * @param recipe       the source recipe input
+     */
+    public record DivisibilityLoss(Identifier output, int outputCount, int inputTotal,
+                                   int perItemValue, int lostBlobs, RecipeInput recipe) {
+    }
+
+    /**
+     * Snapshot of diagnostic data from the last derivation run.
+     * Returned by {@link #diagnostics()} to consolidate accessors.
+     *
+     * @param baseSize           number of hand-keyed base values
+     * @param derivedSize        number of recipe-derived values
+     * @param cycles             recipe dependency cycles
+     * @param conflicts          base/derived value conflicts
+     * @param divisibilityLosses recipes with integer division loss
+     * @param allReferencedIds   all item IDs in base_values.json (valued + denied + restricted)
+     * @param derivationSources  map from derived item ID to the recipe that produced its value
+     */
+    public record DiagnosticSnapshot(
+            int baseSize, int derivedSize,
+            List<RecipeCycle> cycles,
+            List<ValueConflict> conflicts,
+            List<DivisibilityLoss> divisibilityLosses,
+            Set<Identifier> allReferencedIds,
+            Map<Identifier, RecipeInput> derivationSources
+    ) {
     }
 
 }

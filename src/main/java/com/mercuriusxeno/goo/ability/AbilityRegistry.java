@@ -3,11 +3,7 @@ package com.mercuriusxeno.goo.ability;
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,7 +16,8 @@ public final class AbilityRegistry {
     private static Map<Identifier, AbilityDefinition> byId = Map.of();
     private static Map<GooType, List<AbilityDefinition>> byType = new EnumMap<>(GooType.class);
 
-    private AbilityRegistry() {}
+    private AbilityRegistry() {
+    }
 
     /**
      * Replaces the registry contents. Called by the loader after parsing.

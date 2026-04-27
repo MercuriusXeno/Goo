@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.gametest;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.PlexerBlockEntity;
-import com.mercuriusxeno.goo.block.ReactorBlockEntity;
-import com.mercuriusxeno.goo.block.SlottedCanisterState;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.SlottedCanisterData;
+import com.mercuriusxeno.goo.block.plexer.PlexerBlockEntity;
+import com.mercuriusxeno.goo.block.reactor.ReactorBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.registry.GooBlocks;
@@ -36,7 +36,9 @@ public final class MachineTests {
     private static final int INPUT_AMOUNT = 1000;
     private static final int TEST_VOLUME = 500;
     private static final int DOUBLED_VOLUME = TEST_VOLUME * 2;
-    /** Corner slot index for second input canister (top-right of 3x3). */
+    /**
+     * Corner slot index for second input canister (top-right of 3x3).
+     */
     private static final int CORNER_SLOT_2 = 2;
 
     private static final String SHOULD_INSERT = "Canister should insert into empty slot";
@@ -64,7 +66,8 @@ public final class MachineTests {
     private static final String FLUID_SURVIVES = "Fluid type should survive round-trip";
     private static final String AMOUNT_SURVIVES = "Fluid amount should survive round-trip";
 
-    private MachineTests() {}
+    private MachineTests() {
+    }
 
     // --- Canister ---
 
@@ -80,8 +83,8 @@ public final class MachineTests {
         ItemStack canister = new ItemStack(GooItems.CANISTER.get());
         helper.assertTrue(be.insertCanister(CENTER_SLOT, canister, false), SHOULD_INSERT);
         helper.assertTrue(
-            be.containerState().getSlotFluidHandler(CENTER_SLOT) != null,
-            SHOULD_HAVE_HANDLER);
+                be.containerState().getSlotFluidHandler(CENTER_SLOT) != null,
+                SHOULD_HAVE_HANDLER);
         helper.succeed();
     }
 
@@ -98,11 +101,11 @@ public final class MachineTests {
         ItemStack removed = be.removeCanister(CENTER_SLOT);
         helper.assertFalse(removed.isEmpty(), SHOULD_REMOVE);
         helper.assertTrue(
-            be.containerState().getCanister(CENTER_SLOT).isEmpty(),
-            SHOULD_BE_EMPTY);
+                be.containerState().getCanister(CENTER_SLOT).isEmpty(),
+                SHOULD_BE_EMPTY);
         helper.assertTrue(
-            be.containerState().getSlotFluidHandler(CENTER_SLOT) == null,
-            HANDLER_SHOULD_CLEAR);
+                be.containerState().getSlotFluidHandler(CENTER_SLOT) == null,
+                HANDLER_SHOULD_CLEAR);
         helper.succeed();
     }
 
@@ -239,7 +242,7 @@ public final class MachineTests {
         CanisterBlockEntity be = helper.getBlockEntity(BE_POS, CanisterBlockEntity.class);
         be.insertCanister(CENTER_SLOT, new ItemStack(GooItems.CANISTER.get()), false);
 
-        SlottedCanisterState state = be.containerState();
+        SlottedCanisterData state = be.containerState();
         Fluid blazeFluid = GooFluids.SOURCES.get(GooType.BLAZE).get();
 
         int inserted = state.insertFluid(CENTER_SLOT, blazeFluid, TEST_VOLUME);
@@ -274,7 +277,7 @@ public final class MachineTests {
         // Slot 2: empty canister (can accept any fluid)
         be.insertCanister(CORNER_SLOT_2, new ItemStack(GooItems.CANISTER.get()), false);
 
-        SlottedCanisterState state = be.containerState();
+        SlottedCanisterData state = be.containerState();
         int routed = state.routeFluid(blazeFluid, TEST_VOLUME);
         helper.assertTrue(routed == TEST_VOLUME, ROUTE_ACCEPTS_FULL);
 
@@ -350,7 +353,7 @@ public final class MachineTests {
      * @param amount the amount in mB
      */
     private static void insertFilledCanister(CanisterBlockEntity be,
-            int slot, Fluid fluid, int amount) {
+                                             int slot, Fluid fluid, int amount) {
         ItemStack canister = new ItemStack(GooItems.CANISTER.get());
         CanisterItem.setFluidContent(canister, new CanisterFluidContent(fluid, amount));
         be.insertCanister(slot, canister, false);

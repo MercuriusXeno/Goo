@@ -31,35 +31,45 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 public record GasketPartner(BlockPos pos, int slot, @Nullable UUID entityId) {
 
     /** Slot value indicating a single-gasket machine (vat, crucible). */
-    /** Coordinate label prefix for X axis. */
-    private static final String COORD_X = "X: ";
-    /** Coordinate label prefix for Y axis. */
-    private static final String COORD_Y = "Y: ";
-    /** Coordinate label prefix for Z axis. */
-    private static final String COORD_Z = "Z: ";
-    /** Separator between coordinate components. */
-    private static final String COORD_SEP = ", ";
-
-    /** Persistent codec. entityId is optional for backward compatibility. */
+    /**
+     * Persistent codec. entityId is optional for backward compatibility.
+     */
     public static final Codec<GasketPartner> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            BlockPos.CODEC.fieldOf("pos").forGetter(GasketPartner::pos),
-            Codec.INT.optionalFieldOf("slot", NO_SLOT).forGetter(GasketPartner::slot),
-            UUIDUtil.STRING_CODEC.optionalFieldOf("entity_id")
-                .forGetter(p -> Optional.ofNullable(p.entityId()))
-        ).apply(instance, (pos, slot, entityOpt) ->
-            new GasketPartner(pos, slot, entityOpt.orElse(null)))
+            instance.group(
+                    BlockPos.CODEC.fieldOf("pos").forGetter(GasketPartner::pos),
+                    Codec.INT.optionalFieldOf("slot", NO_SLOT).forGetter(GasketPartner::slot),
+                    UUIDUtil.STRING_CODEC.optionalFieldOf("entity_id")
+                            .forGetter(p -> Optional.ofNullable(p.entityId()))
+            ).apply(instance, (pos, slot, entityOpt) ->
+                    new GasketPartner(pos, slot, entityOpt.orElse(null)))
     );
-
-    /** Network codec. Sends entityId as optional. */
+    /**
+     * Network codec. Sends entityId as optional.
+     */
     public static final StreamCodec<ByteBuf, GasketPartner> STREAM_CODEC =
-        StreamCodec.composite(
-            BlockPos.STREAM_CODEC, GasketPartner::pos,
-            ByteBufCodecs.VAR_INT, GasketPartner::slot,
-            ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
-                p -> Optional.ofNullable(p.entityId()),
-            (pos, slot, entityOpt) -> new GasketPartner(pos, slot, entityOpt.orElse(null))
-        );
+            StreamCodec.composite(
+                    BlockPos.STREAM_CODEC, GasketPartner::pos,
+                    ByteBufCodecs.VAR_INT, GasketPartner::slot,
+                    ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC),
+                    p -> Optional.ofNullable(p.entityId()),
+                    (pos, slot, entityOpt) -> new GasketPartner(pos, slot, entityOpt.orElse(null))
+            );
+    /**
+     * Coordinate label prefix for X axis.
+     */
+    private static final String COORD_X = "X: ";
+    /**
+     * Coordinate label prefix for Y axis.
+     */
+    private static final String COORD_Y = "Y: ";
+    /**
+     * Coordinate label prefix for Z axis.
+     */
+    private static final String COORD_Z = "Z: ";
+    /**
+     * Separator between coordinate components.
+     */
+    private static final String COORD_SEP = ", ";
 
     /**
      * Convenience constructor for block targets (no entity).

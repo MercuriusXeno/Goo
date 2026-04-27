@@ -20,7 +20,9 @@ import java.util.List;
  */
 public final class ParameterizedExplosion implements ChainBehavior {
 
-    /** Block center offset. */
+    /**
+     * Block center offset.
+     */
     private static final double BLOCK_CENTER = 0.5;
     private static final String PARAM_BASE_POWER = "basePower";
     private static final String PARAM_POWER_PER_STACK = "powerPerStack";
@@ -29,9 +31,11 @@ public final class ParameterizedExplosion implements ChainBehavior {
     private static final float DEFAULT_BASE_POWER = 2f;
     private static final float DEFAULT_POWER_PER_STACK = 1f;
     private static final float DEFAULT_TRIGGER_RADIUS = 3f;
-    /** Diameter multiplier for AABB sizing from radius. */
+    /**
+     * Diameter multiplier for AABB sizing from radius.
+     */
     private static final int DIAMETER_MULT = 2;
-
+    private static final String TAG_DETONATED = "Detonated";
     private final float basePower;
     private final float powerPerStack;
     private final boolean proximityTrigger;
@@ -47,7 +51,7 @@ public final class ParameterizedExplosion implements ChainBehavior {
      * @param triggerRadius    detection radius for proximity mode
      */
     public ParameterizedExplosion(float basePower, float powerPerStack,
-            boolean proximityTrigger, float triggerRadius) {
+                                  boolean proximityTrigger, float triggerRadius) {
         this.basePower = basePower;
         this.powerPerStack = powerPerStack;
         this.proximityTrigger = proximityTrigger;
@@ -71,13 +75,17 @@ public final class ParameterizedExplosion implements ChainBehavior {
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        if (proximityTrigger) { return; }
+        if (proximityTrigger) {
+            return;
+        }
         detonate(level, pos, be);
     }
 
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        if (!proximityTrigger || detonated) { return; }
+        if (!proximityTrigger || detonated) {
+            return;
+        }
         if (detectEntity(level, pos)) {
             detonate(level, pos, be);
         }
@@ -85,12 +93,15 @@ public final class ParameterizedExplosion implements ChainBehavior {
 
     @Override
     public boolean isActive() {
-        if (proximityTrigger) { return !detonated; }
+        if (proximityTrigger) {
+            return !detonated;
+        }
         return false;
     }
 
     /**
      * Triggers the explosion.
+     *
      * @param level the server level
      * @param pos   the block position
      * @param be    the owning block entity
@@ -107,6 +118,7 @@ public final class ParameterizedExplosion implements ChainBehavior {
 
     /**
      * Returns true if any living entity is within trigger radius.
+     *
      * @param level the server level
      * @param pos   the block position
      * @return true if an entity is detected
@@ -124,8 +136,6 @@ public final class ParameterizedExplosion implements ChainBehavior {
         }
         return false;
     }
-
-    private static final String TAG_DETONATED = "Detonated";
 
     @Override
     public void saveAdditional(ValueOutput output) {

@@ -25,7 +25,9 @@ import java.util.function.Supplier;
  */
 public class GasketPusher implements IGasketPusher {
 
-    /** Release the forced chunk ticket after this many ticks with no transfer. */
+    /**
+     * Release the forced chunk ticket after this many ticks with no transfer.
+     */
     static final int IDLE_THRESHOLD = 200;
 
     private final ResourceHandler<FluidResource> source;
@@ -67,7 +69,58 @@ public class GasketPusher implements IGasketPusher {
         this.registryAccess = registryAccess;
     }
 
-    /** Pushes goo to the partner if a target exists, otherwise tracks idle time. */
+    /**
+     * Forces the chunk of a receiver gasket's transmitter partner.
+     * Called on block entity load so the transmitter wakes up and can push.
+     * Keeps ServerLevel for dimension checks and chunk forcing, but registry
+     * access is decoupled through the interface.
+     *
+     * @param receiverGasketId the receiver gasket UUID
+     * @param registryAccess   decoupled access to the gasket registry
+     * @param serverLevel      the server level (for dimension + chunk forcing)
+     * @param ownerPos         the receiver block entity's position (ticket owner)
+     */
+    public static void forceTransmitterChunk(
+            @Nullable UUID receiverGasketId,
+            IGasketRegistryAccess registryAccess,
+            ServerLevel serverLevel,
+            BlockPos ownerPos) {
+        GasketLocation loc = resolveTransmitterLocation(receiverGasketId, registryAccess);
+        if (loc == null || !loc.dimension().equals(serverLevel.dimension())) {
+            return;
+        }
+        ChunkPos cp = ChunkPos.containing(loc.pos());
+        GooTickets.gasketChunks.forceChunk(
+                serverLevel, ownerPos, cp.x(), cp.z(), true, false);
+    }
+
+    /**
+     * Resolves the transmitter's location from a receiver gasket UUID, or null if unlinked.
+     *
+     * @param receiverGasketId the receiver gasket UUID
+     * @param registryAccess   decoupled access to the gasket registry
+     * @return the transmitter location, or null
+     */
+    private static @Nullable GasketLocation resolveTransmitterLocation(
+            @Nullable UUID receiverGasketId, IGasketRegistryAccess registryAccess) {
+        if (receiverGasketId == null) {
+            return null;
+        }
+        GasketRegistry registry = registryAccess.get();
+        UUID sourceId = registry.getSource(receiverGasketId);
+        if (sourceId == null) {
+            return null;
+        }
+        GasketLocation loc = registry.getLocation(sourceId);
+        if (loc == null || loc.isEntityTarget()) {
+            return null;
+        }
+        return loc;
+    }
+
+    /**
+     * Pushes goo to the partner if a target exists, otherwise tracks idle time.
+     */
     @Override
     public void tick() {
         if (!hasPushableTarget()) {
@@ -78,27 +131,38 @@ public class GasketPusher implements IGasketPusher {
         pushToDestinations();
     }
 
-    /** Releases the forced chunk ticket and clears the endpoint cache. */
+    /**
+     * Releases the forced chunk ticket and clears the endpoint cache.
+     */
     @Override
     public void dispose() {
         unforceChunk();
         endpointCache = null;
     }
 
-    /** Rebuilds the BlockCapabilityCache for the current partner, forcing the target chunk. */
+    /**
+     * Rebuilds the BlockCapabilityCache for the current partner, forcing the target chunk.
+     */
     @Override
     public void rebuildCache() {
         unforceChunk();
         endpointCache = null;
-        if (!canBuildCache()) { return; }
+        if (!canBuildCache()) {
+            return;
+        }
         GasketPartner p = partner.get();
-        if (p == null || p.isEntityTarget()) { return; }
+        if (p == null || p.isEntityTarget()) {
+            return;
+        }
         UUID targetGasketId = resolveTargetGasketId();
-        if (targetGasketId == null) { return; }
+        if (targetGasketId == null) {
+            return;
+        }
         buildBlockCache(p, targetGasketId);
     }
 
-    /** Forces the partner's chunk and creates a BlockCapabilityCache for the target block.
+    /**
+     * Forces the partner's chunk and creates a BlockCapabilityCache for the target block.
      *
      * @param p              the block-based gasket partner
      * @param targetGasketId the resolved gasket UUID on the partner side
@@ -107,13 +171,15 @@ public class GasketPusher implements IGasketPusher {
         ServerLevel serverLevel = (ServerLevel) level.get();
         ChunkPos cp = ChunkPos.containing(p.pos());
         GooTickets.gasketChunks.forceChunk(
-            serverLevel, ownerPos.get(), cp.x(), cp.z(), true, false);
+                serverLevel, ownerPos.get(), cp.x(), cp.z(), true, false);
         forcedChunk = cp;
         endpointCache = BlockCapabilityCache.create(
-            GooCapabilities.GASKET_BLOCK, serverLevel, p.pos(), targetGasketId);
+                GooCapabilities.GASKET_BLOCK, serverLevel, p.pos(), targetGasketId);
     }
 
-    /** Increments idle counter and releases the chunk ticket when the threshold is reached. */
+    /**
+     * Increments idle counter and releases the chunk ticket when the threshold is reached.
+     */
     private void trackIdle() {
         idleTicks++;
         if (idleTicks >= IDLE_THRESHOLD && forcedChunk != null) {
@@ -121,24 +187,35 @@ public class GasketPusher implements IGasketPusher {
         }
     }
 
-    /** Re-forces the target chunk if the ticket was released due to idle. */
+    /**
+     * Re-forces the target chunk if the ticket was released due to idle.
+     */
     private void ensureChunkForced() {
-        if (forcedChunk != null) { return; }
+        if (forcedChunk != null) {
+            return;
+        }
         GasketPartner p = partner.get();
-        if (p == null || p.isEntityTarget()) { return; }
-        if (!(level.get() instanceof ServerLevel serverLevel)) { return; }
+        if (p == null || p.isEntityTarget()) {
+            return;
+        }
+        if (!(level.get() instanceof ServerLevel serverLevel)) {
+            return;
+        }
         forcedChunk = ChunkPos.containing(p.pos());
         GooTickets.gasketChunks.forceChunk(
-            serverLevel, ownerPos.get(), forcedChunk.x(), forcedChunk.z(), true, false);
+                serverLevel, ownerPos.get(), forcedChunk.x(), forcedChunk.z(), true, false);
     }
 
-    /** Returns true when the reservoir has goo and a valid push target is configured.
+    /**
+     * Returns true when the reservoir has goo and a valid push target is configured.
      *
      * @return true if pushable target
      */
     private boolean hasPushableTarget() {
         GasketPartner p = partner.get();
-        if (isSourceEmpty() || p == null) { return false; }
+        if (isSourceEmpty() || p == null) {
+            return false;
+        }
         return p.isEntityTarget() || endpointCache != null;
     }
 
@@ -156,7 +233,8 @@ public class GasketPusher implements IGasketPusher {
         return true;
     }
 
-    /** Returns true when the cache can be built (server-side with a partner).
+    /**
+     * Returns true when the cache can be built (server-side with a partner).
      *
      * @return true if build cache
      */
@@ -165,21 +243,29 @@ public class GasketPusher implements IGasketPusher {
         return lvl != null && !lvl.isClientSide() && partner.get() != null;
     }
 
-    /** Releases the forced chunk ticket, if one is held. */
+    /**
+     * Releases the forced chunk ticket, if one is held.
+     */
     private void unforceChunk() {
-        if (forcedChunk == null) { return; }
+        if (forcedChunk == null) {
+            return;
+        }
         Level lvl = level.get();
         if (lvl instanceof ServerLevel serverLevel) {
             GooTickets.gasketChunks.forceChunk(
-                serverLevel, ownerPos.get(), forcedChunk.x(), forcedChunk.z(), false, false);
+                    serverLevel, ownerPos.get(), forcedChunk.x(), forcedChunk.z(), false, false);
         }
         forcedChunk = null;
     }
 
-    /** Dispatches to block or entity push path based on partner type. */
+    /**
+     * Dispatches to block or entity push path based on partner type.
+     */
     private void pushToDestinations() {
         GasketPartner p = partner.get();
-        if (isSourceEmpty() || p == null) { return; }
+        if (isSourceEmpty() || p == null) {
+            return;
+        }
         if (p.isEntityTarget()) {
             pushToEntityTarget(p);
         } else {
@@ -187,27 +273,39 @@ public class GasketPusher implements IGasketPusher {
         }
     }
 
-    /** Pushes via BlockCapabilityCache for block-based gasket partners. */
+    /**
+     * Pushes via BlockCapabilityCache for block-based gasket partners.
+     */
     private void pushToBlockTarget() {
-        if (endpointCache == null) { return; }
+        if (endpointCache == null) {
+            return;
+        }
         ResourceHandler<FluidResource> handler = endpointCache.getCapability();
-        if (handler == null) { return; }
+        if (handler == null) {
+            return;
+        }
         pushViaHandler(handler);
     }
 
-    /** Looks up the player entity by UUID and queries GASKET_ENTITY.
+    /**
+     * Looks up the player entity by UUID and queries GASKET_ENTITY.
      *
      * @param p the gasket partner describing the entity target
      */
     private void pushToEntityTarget(GasketPartner p) {
         Level lvl = level.get();
-        if (!(lvl instanceof ServerLevel serverLevel)) { return; }
+        if (!(lvl instanceof ServerLevel serverLevel)) {
+            return;
+        }
         ResourceHandler<FluidResource> handler = resolveEntityHandler(serverLevel, p);
-        if (handler == null) { return; }
+        if (handler == null) {
+            return;
+        }
         pushViaHandler(handler);
     }
 
-    /** Resolves the fluid handler for an entity-based gasket partner, or null if unavailable.
+    /**
+     * Resolves the fluid handler for an entity-based gasket partner, or null if unavailable.
      *
      * @param serverLevel the server level
      * @param p           the entity-based gasket partner
@@ -216,11 +314,17 @@ public class GasketPusher implements IGasketPusher {
     private @Nullable ResourceHandler<FluidResource> resolveEntityHandler(
             ServerLevel serverLevel, GasketPartner p) {
         UUID targetEntityId = p.entityId();
-        if (targetEntityId == null) { return null; }
+        if (targetEntityId == null) {
+            return null;
+        }
         UUID targetGasketId = resolveTargetGasketId();
-        if (targetGasketId == null) { return null; }
+        if (targetGasketId == null) {
+            return null;
+        }
         Player player = serverLevel.getPlayerByUUID(targetEntityId);
-        if (player == null) { return null; }
+        if (player == null) {
+            return null;
+        }
         return player.getCapability(GooCapabilities.GASKET_ENTITY, targetGasketId);
     }
 
@@ -235,11 +339,15 @@ public class GasketPusher implements IGasketPusher {
         boolean moved = false;
         for (int i = 0; i < source.size(); i++) {
             FluidResource resource = source.getResource(i);
-            if (resource.isEmpty()) { continue; }
+            if (resource.isEmpty()) {
+                continue;
+            }
             int amount = (int) source.getAmountAsLong(i);
             double exponent = GasketPushMath.exponentFor(resource.getFluid());
             int offer = GasketPushMath.taperRate(amount, exponent);
-            if (offer <= 0) { continue; }
+            if (offer <= 0) {
+                continue;
+            }
             moved |= transferSlot(target, i, resource, offer);
         }
         if (moved) {
@@ -259,12 +367,16 @@ public class GasketPusher implements IGasketPusher {
      * @return true if any fluid was transferred
      */
     private boolean transferSlot(ResourceHandler<FluidResource> target,
-            int slot, FluidResource resource, int offer) {
+                                 int slot, FluidResource resource, int offer) {
         try (var tx = Transaction.openRoot()) {
             int extracted = source.extract(slot, resource, offer, tx);
-            if (extracted <= 0) { return false; }
+            if (extracted <= 0) {
+                return false;
+            }
             int inserted = target.insert(resource, extracted, tx);
-            if (inserted <= 0) { return false; }
+            if (inserted <= 0) {
+                return false;
+            }
             if (inserted < extracted) {
                 source.insert(slot, resource, extracted - inserted, tx);
             }
@@ -281,47 +393,9 @@ public class GasketPusher implements IGasketPusher {
      */
     private @Nullable UUID resolveTargetGasketId() {
         UUID id = gasketId.get();
-        if (id == null) { return null; }
+        if (id == null) {
+            return null;
+        }
         return registryAccess.get().getTarget(id);
-    }
-
-    /**
-     * Forces the chunk of a receiver gasket's transmitter partner.
-     * Called on block entity load so the transmitter wakes up and can push.
-     * Keeps ServerLevel for dimension checks and chunk forcing, but registry
-     * access is decoupled through the interface.
-     *
-     * @param receiverGasketId the receiver gasket UUID
-     * @param registryAccess   decoupled access to the gasket registry
-     * @param serverLevel      the server level (for dimension + chunk forcing)
-     * @param ownerPos         the receiver block entity's position (ticket owner)
-     */
-    public static void forceTransmitterChunk(
-            @Nullable UUID receiverGasketId,
-            IGasketRegistryAccess registryAccess,
-            ServerLevel serverLevel,
-            BlockPos ownerPos) {
-        GasketLocation loc = resolveTransmitterLocation(receiverGasketId, registryAccess);
-        if (loc == null || !loc.dimension().equals(serverLevel.dimension())) { return; }
-        ChunkPos cp = ChunkPos.containing(loc.pos());
-        GooTickets.gasketChunks.forceChunk(
-            serverLevel, ownerPos, cp.x(), cp.z(), true, false);
-    }
-
-    /** Resolves the transmitter's location from a receiver gasket UUID, or null if unlinked.
-     *
-     * @param receiverGasketId the receiver gasket UUID
-     * @param registryAccess   decoupled access to the gasket registry
-     * @return the transmitter location, or null
-     */
-    private static @Nullable GasketLocation resolveTransmitterLocation(
-            @Nullable UUID receiverGasketId, IGasketRegistryAccess registryAccess) {
-        if (receiverGasketId == null) { return null; }
-        GasketRegistry registry = registryAccess.get();
-        UUID sourceId = registry.getSource(receiverGasketId);
-        if (sourceId == null) { return null; }
-        GasketLocation loc = registry.getLocation(sourceId);
-        if (loc == null || loc.isEntityTarget()) { return null; }
-        return loc;
     }
 }

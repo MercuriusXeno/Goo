@@ -34,27 +34,17 @@ public record TunerFeedbackPayload(
 
     /** Sentinel slot value meaning no sub-slot awaiting. */
 
-    /** Payload type ID for registration. */
+    /**
+     * Payload type ID for registration.
+     */
     public static final Type<TunerFeedbackPayload> TYPE =
-        new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "tuner_feedback"));
+            new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "tuner_feedback"));
 
-    /** Stream codec for encoding/decoding. */
+    /**
+     * Stream codec for encoding/decoding.
+     */
     public static final StreamCodec<FriendlyByteBuf, TunerFeedbackPayload> STREAM_CODEC =
-        StreamCodec.of(TunerFeedbackPayload::encode, TunerFeedbackPayload::decode);
-
-    /** Feedback type categories. */
-    public enum FeedbackType {
-        /** Brief transient message (single line). */
-        BRIEF,
-        /** Link completed successfully. */
-        LINK_COMPLETE,
-        /** Awaiting state set: machine gasket is waiting for a partner. */
-        AWAITING,
-        /** Confirmation prompt: action requires a second click. */
-        CONFIRM_PROMPT,
-        /** Selection or await cancelled. */
-        CANCEL
-    }
+            StreamCodec.of(TunerFeedbackPayload::encode, TunerFeedbackPayload::decode);
 
     /**
      * Creates a brief feedback with a single message line.
@@ -64,7 +54,7 @@ public record TunerFeedbackPayload(
      */
     public static TunerFeedbackPayload brief(String message) {
         return new TunerFeedbackPayload(FeedbackType.BRIEF,
-            List.of(message), null, NO_SLOT, null);
+                List.of(message), null, NO_SLOT, null);
     }
 
     /**
@@ -75,7 +65,7 @@ public record TunerFeedbackPayload(
      */
     public static TunerFeedbackPayload linkComplete(List<String> lines) {
         return new TunerFeedbackPayload(FeedbackType.LINK_COMPLETE,
-            lines, null, NO_SLOT, null);
+                lines, null, NO_SLOT, null);
     }
 
     /**
@@ -90,7 +80,7 @@ public record TunerFeedbackPayload(
     public static TunerFeedbackPayload awaiting(
             String message, BlockPos pos, int slot, GasketRole role) {
         return new TunerFeedbackPayload(FeedbackType.AWAITING,
-            List.of(message), pos, slot, role);
+                List.of(message), pos, slot, role);
     }
 
     /**
@@ -101,7 +91,7 @@ public record TunerFeedbackPayload(
      */
     public static TunerFeedbackPayload confirmPrompt(String message) {
         return new TunerFeedbackPayload(FeedbackType.CONFIRM_PROMPT,
-            List.of(message), null, NO_SLOT, null);
+                List.of(message), null, NO_SLOT, null);
     }
 
     /**
@@ -112,12 +102,7 @@ public record TunerFeedbackPayload(
      */
     public static TunerFeedbackPayload cancel(String message) {
         return new TunerFeedbackPayload(FeedbackType.CANCEL,
-            List.of(message), null, NO_SLOT, null);
-    }
-
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+                List.of(message), null, NO_SLOT, null);
     }
 
     /**
@@ -131,7 +116,8 @@ public record TunerFeedbackPayload(
         encodeAwaitState(buf, payload);
     }
 
-    /** Writes feedback type and message lines.
+    /**
+     * Writes feedback type and message lines.
      *
      * @param buf     the output buffer
      * @param payload the payload
@@ -139,10 +125,13 @@ public record TunerFeedbackPayload(
     private static void encodeHeader(FriendlyByteBuf buf, TunerFeedbackPayload payload) {
         buf.writeVarInt(payload.feedbackType().ordinal());
         buf.writeVarInt(payload.lines.size());
-        for (String line : payload.lines) { buf.writeUtf(line); }
+        for (String line : payload.lines) {
+            buf.writeUtf(line);
+        }
     }
 
-    /** Writes optional await state (pos, slot, role).
+    /**
+     * Writes optional await state (pos, slot, role).
      *
      * @param buf     the output buffer
      * @param payload the payload
@@ -168,7 +157,8 @@ public record TunerFeedbackPayload(
         return decodeWithAwaitState(buf, feedbackType, lines);
     }
 
-    /** Reads the message lines list from the buffer.
+    /**
+     * Reads the message lines list from the buffer.
      *
      * @param buf the input buffer
      * @return the immutable list of message lines
@@ -176,11 +166,14 @@ public record TunerFeedbackPayload(
     private static List<String> decodeLines(FriendlyByteBuf buf) {
         int count = buf.readVarInt();
         List<String> lines = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) { lines.add(buf.readUtf()); }
+        for (int i = 0; i < count; i++) {
+            lines.add(buf.readUtf());
+        }
         return List.copyOf(lines);
     }
 
-    /** Reads optional await state and builds the final payload.
+    /**
+     * Reads optional await state and builds the final payload.
      *
      * @param buf          the input buffer
      * @param feedbackType the decoded feedback type
@@ -188,7 +181,7 @@ public record TunerFeedbackPayload(
      * @return the decoded payload
      */
     private static TunerFeedbackPayload decodeWithAwaitState(FriendlyByteBuf buf,
-            FeedbackType feedbackType, List<String> lines) {
+                                                             FeedbackType feedbackType, List<String> lines) {
         if (!buf.readBoolean()) {
             return new TunerFeedbackPayload(feedbackType, lines, null, NO_SLOT, null);
         }
@@ -196,5 +189,36 @@ public record TunerFeedbackPayload(
         int slot = buf.readVarInt();
         GasketRole role = buf.readBoolean() ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
         return new TunerFeedbackPayload(feedbackType, lines, pos, slot, role);
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    /**
+     * Feedback type categories.
+     */
+    public enum FeedbackType {
+        /**
+         * Brief transient message (single line).
+         */
+        BRIEF,
+        /**
+         * Link completed successfully.
+         */
+        LINK_COMPLETE,
+        /**
+         * Awaiting state set: machine gasket is waiting for a partner.
+         */
+        AWAITING,
+        /**
+         * Confirmation prompt: action requires a second click.
+         */
+        CONFIRM_PROMPT,
+        /**
+         * Selection or await cancelled.
+         */
+        CANCEL
     }
 }

@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.item;
-import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 
+import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 import java.util.UUID;
@@ -28,8 +28,8 @@ class CanisterMetadataTest {
     @Test
     void withLabel_null_clearsLabel() {
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withLabel("Test")
-            .withLabel(null);
+                .withLabel("Test")
+                .withLabel(null);
         assertNull(meta.label());
     }
 
@@ -45,7 +45,7 @@ class CanisterMetadataTest {
     @Test
     void withGasketIds_preservesLabel() {
         CanisterMetadata meta = new CanisterMetadata(
-            null, null, "Gasket Test", null, null);
+                null, null, "Gasket Test", null, null);
         CanisterMetadata withGaskets = meta.withGasketIds();
         assertEquals("Gasket Test", withGaskets.label());
     }
@@ -88,8 +88,8 @@ class CanisterMetadataTest {
     void withTopPartner_null_clearsPartner() {
         GasketPartner partner = new GasketPartner(new BlockPos(1, 2, 3), 0);
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withTopPartner(partner)
-            .withTopPartner(null);
+                .withTopPartner(partner)
+                .withTopPartner(null);
         assertNull(meta.topPartner());
     }
 
@@ -97,8 +97,8 @@ class CanisterMetadataTest {
     void withPartners_preserveOtherFields() {
         GasketPartner partner = new GasketPartner(new BlockPos(1, 2, 3), 0);
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withLabel("Test")
-            .withTopPartner(partner);
+                .withLabel("Test")
+                .withTopPartner(partner);
         assertEquals("Test", meta.label());
         assertEquals(partner, meta.topPartner());
     }
@@ -115,9 +115,9 @@ class CanisterMetadataTest {
     void withoutTopGasket_clearsTopIdAndPartner() {
         GasketPartner partner = new GasketPartner(new BlockPos(1, 2, 3), 0);
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withTopGasketId(UUID.randomUUID())
-            .withTopPartner(partner)
-            .withBottomGasketId(UUID.randomUUID());
+                .withTopGasketId(UUID.randomUUID())
+                .withTopPartner(partner)
+                .withBottomGasketId(UUID.randomUUID());
         CanisterMetadata cleared = meta.withoutTopGasket();
         assertNull(cleared.topGasketId());
         assertNull(cleared.topPartner());
@@ -128,9 +128,9 @@ class CanisterMetadataTest {
     void withoutBottomGasket_clearsBottomIdAndPartner() {
         GasketPartner partner = new GasketPartner(new BlockPos(4, 5, 6), 1);
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withTopGasketId(UUID.randomUUID())
-            .withBottomGasketId(UUID.randomUUID())
-            .withBottomPartner(partner);
+                .withTopGasketId(UUID.randomUUID())
+                .withBottomGasketId(UUID.randomUUID())
+                .withBottomPartner(partner);
         CanisterMetadata cleared = meta.withoutBottomGasket();
         assertNotNull(cleared.topGasketId());
         assertNull(cleared.bottomGasketId());
@@ -140,8 +140,8 @@ class CanisterMetadataTest {
     @Test
     void withoutTopGasket_preservesOtherFields() {
         CanisterMetadata meta = CanisterMetadata.EMPTY
-            .withLabel("Keep")
-            .withTopGasketId(UUID.randomUUID());
+                .withLabel("Keep")
+                .withTopGasketId(UUID.randomUUID());
         CanisterMetadata cleared = meta.withoutTopGasket();
         assertEquals("Keep", cleared.label());
     }
@@ -156,14 +156,14 @@ class CanisterMetadataTest {
     @Test
     void hasData_withLabelOnly_returnsTrue() {
         CanisterMetadata meta = new CanisterMetadata(
-            null, null, "Named", null, null);
+                null, null, "Named", null, null);
         assertTrue(meta.hasData());
     }
 
     @Test
     void hasData_withGasketOnly_returnsTrue() {
         CanisterMetadata meta = new CanisterMetadata(
-            UUID.randomUUID(), null, null, null, null);
+                UUID.randomUUID(), null, null, null, null);
         assertTrue(meta.hasData());
     }
 
@@ -171,14 +171,14 @@ class CanisterMetadataTest {
     void hasData_withPartnerOnly_returnsTrue() {
         GasketPartner partner = new GasketPartner(new BlockPos(1, 2, 3), 0);
         CanisterMetadata meta = new CanisterMetadata(
-            null, null, null, partner, null);
+                null, null, null, partner, null);
         assertTrue(meta.hasData());
     }
 
     @Test
     void hasData_allDefaults_returnsFalse() {
         CanisterMetadata meta = new CanisterMetadata(
-            null, null, null, null, null);
+                null, null, null, null, null);
         assertFalse(meta.hasData());
     }
 }

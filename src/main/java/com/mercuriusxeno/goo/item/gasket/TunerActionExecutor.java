@@ -21,21 +21,29 @@ import java.util.UUID;
 /**
  * Stateless executor for resolved TunerActions. Each method maps a
  * {@link TunerAction} variant to its side-effects: registry writes,
- * partner updates, state transitions, and player feedback. Extracted
- * from ChoralTunerItem to stay under the TooManyMethods threshold.
+ * partner updates, state transitions, and player feedback.
  */
 final class TunerActionExecutor {
 
-    /** Feedback message for awaiting link state. */
+    /**
+     * Feedback message for awaiting link state.
+     */
     private static final String MSG_AWAITING = "Awaiting link...";
-    /** Feedback message for completed link. */
+    /**
+     * Feedback message for completed link.
+     */
     private static final String MSG_LINKED = "Linked";
-    /** Feedback message for severed link. */
+    /**
+     * Feedback message for severed link.
+     */
     private static final String MSG_SEVERED = "Link severed";
-    /** Default empty label for naming screen. */
+    /**
+     * Default empty label for naming screen.
+     */
     private static final String EMPTY_LABEL = "";
 
-    private TunerActionExecutor() {}
+    private TunerActionExecutor() {
+    }
 
     /**
      * Executes the resolved TunerAction via pattern matching.
@@ -54,8 +62,10 @@ final class TunerActionExecutor {
         return switch (action) {
             case TunerAction.CompleteLink a -> executeCompleteLink(a, state, player, stack, level, clicked);
             case TunerAction.StartAwaiting a -> executeStartAwaiting(a, state, player, stack);
-            case TunerAction.PromptReplace a -> executePromptReplace(a, state, player, stack, clicked.pos(), clicked.slot());
-            case TunerAction.PromptSever a -> executePromptSever(a, state, player, stack, clicked.pos(), clicked.slot());
+            case TunerAction.PromptReplace a ->
+                    executePromptReplace(a, state, player, stack, clicked.pos(), clicked.slot());
+            case TunerAction.PromptSever a ->
+                    executePromptSever(a, state, player, stack, clicked.pos(), clicked.slot());
             default -> executeConfirmOrWarning(action, state, player, stack, level);
         };
     }
@@ -96,7 +106,9 @@ final class TunerActionExecutor {
             TunerAction.CompleteLink link, TunerState state,
             Player player, ItemStack stack, Level level,
             GasketClick clicked) {
-        if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.PASS; }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.PASS;
+        }
 
         GasketRegistry registry = GasketRegistry.get(serverLevel);
         GasketPartnerManager.clearDisplacedEndpoints(level, registry, link);
@@ -117,10 +129,10 @@ final class TunerActionExecutor {
      * @param inputSlot the input endpoint slot index
      */
     private static void writePartnerInfoAndClear(Level level, TunerState state,
-            Player player, ItemStack stack, BlockPos inputPos, int inputSlot) {
+                                                 Player player, ItemStack stack, BlockPos inputPos, int inputSlot) {
         GasketRole outputRole = state.selectedRole();
         GasketRole inputRole = outputRole == GasketRole.TRANSMITTER
-            ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
+                ? GasketRole.RECEIVER : GasketRole.TRANSMITTER;
         GasketPartnerManager.writePartnerInfo(level, state, inputPos, inputSlot, inputRole, outputRole);
         TunerStateHelper.setState(stack, state.clearSelection());
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.linkComplete(List.of(MSG_LINKED)));
@@ -139,12 +151,12 @@ final class TunerActionExecutor {
             TunerAction.StartAwaiting awaiting, TunerState state,
             Player player, ItemStack stack) {
         TunerState newState = state.withRoleSelection(
-            awaiting.gasketId(), awaiting.pos(), awaiting.role(),
-            awaiting.slot(), awaiting.faceLabel());
+                awaiting.gasketId(), awaiting.pos(), awaiting.role(),
+                awaiting.slot(), awaiting.faceLabel());
         TunerStateHelper.setState(stack, newState);
 
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.awaiting(
-            MSG_AWAITING, awaiting.pos(), awaiting.slot(), awaiting.role()));
+                MSG_AWAITING, awaiting.pos(), awaiting.slot(), awaiting.role()));
         return InteractionResult.SUCCESS;
     }
 
@@ -163,7 +175,7 @@ final class TunerActionExecutor {
             TunerAction.PromptReplace prompt, TunerState state,
             Player player, ItemStack stack, BlockPos pos, int slot) {
         TunerState newState = state.withPendingConfirm(
-            ConfirmAction.REPLACE_LINK, pos, slot);
+                ConfirmAction.REPLACE_LINK, pos, slot);
         TunerStateHelper.setState(stack, newState);
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.confirmPrompt(prompt.message()));
         return InteractionResult.SUCCESS;
@@ -184,7 +196,7 @@ final class TunerActionExecutor {
             TunerAction.PromptSever prompt, TunerState state,
             Player player, ItemStack stack, BlockPos pos, int slot) {
         TunerState newState = state.withPendingConfirm(
-            ConfirmAction.SEVER_LINK, pos, slot);
+                ConfirmAction.SEVER_LINK, pos, slot);
         TunerStateHelper.setState(stack, newState);
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.confirmPrompt(prompt.message()));
         return InteractionResult.SUCCESS;
@@ -203,12 +215,12 @@ final class TunerActionExecutor {
             TunerAction.ConfirmReplace confirm, TunerState state,
             Player player, ItemStack stack) {
         TunerState newState = state.withRoleSelection(
-            confirm.newGasketId(), confirm.newPos(), confirm.role(),
-            confirm.newSlot(), confirm.faceLabel());
+                confirm.newGasketId(), confirm.newPos(), confirm.role(),
+                confirm.newSlot(), confirm.faceLabel());
         TunerStateHelper.setState(stack, newState);
 
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.awaiting(
-            MSG_AWAITING, confirm.newPos(), confirm.newSlot(), confirm.role()));
+                MSG_AWAITING, confirm.newPos(), confirm.newSlot(), confirm.role()));
         return InteractionResult.SUCCESS;
     }
 
@@ -224,7 +236,9 @@ final class TunerActionExecutor {
     private static InteractionResult executeConfirmSever(
             TunerAction.ConfirmSever sever, Player player,
             ItemStack stack, Level level) {
-        if (!(level instanceof ServerLevel serverLevel)) { return InteractionResult.PASS; }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.PASS;
+        }
 
         TunerState state = TunerStateHelper.getState(stack);
         GasketPartnerManager.clearSeveredEndpoint(level, state, sever.gasketId());
@@ -261,14 +275,16 @@ final class TunerActionExecutor {
      */
     static InteractionResult handleNaming(
             Player player, IGasketHolder holder, BlockPos pos, int slot) {
-        if (!(player instanceof ServerPlayer serverPlayer)) { return InteractionResult.PASS; }
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return InteractionResult.PASS;
+        }
 
         String currentLabel = holder.getMachineLabel(slot);
         boolean hasLink = hasActiveLink(player.level(), holder, slot);
 
         PacketDistributor.sendToPlayer(serverPlayer,
-            new OpenNamingScreenPayload(pos, slot,
-                currentLabel != null ? currentLabel : EMPTY_LABEL, hasLink));
+                new OpenNamingScreenPayload(pos, slot,
+                        currentLabel != null ? currentLabel : EMPTY_LABEL, hasLink));
         return InteractionResult.SUCCESS;
     }
 
@@ -281,10 +297,12 @@ final class TunerActionExecutor {
      * @return true if any gasket link is active
      */
     private static boolean hasActiveLink(Level level, IGasketHolder holder, int slot) {
-        if (!(level instanceof ServerLevel serverLevel)) { return false; }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return false;
+        }
         GasketRegistry registry = GasketRegistry.get(serverLevel);
         return isLinked(registry, holder.getGasketId(GasketRole.RECEIVER, slot))
-            || isLinked(registry, holder.getGasketId(GasketRole.TRANSMITTER, slot));
+                || isLinked(registry, holder.getGasketId(GasketRole.TRANSMITTER, slot));
     }
 
     /**
@@ -295,8 +313,10 @@ final class TunerActionExecutor {
      * @return true if the gasket is linked
      */
     private static boolean isLinked(GasketRegistry registry, @Nullable UUID gasketId) {
-        if (gasketId == null) { return false; }
+        if (gasketId == null) {
+            return false;
+        }
         return registry.getTarget(gasketId) != null
-            || registry.getSource(gasketId) != null;
+                || registry.getSource(gasketId) != null;
     }
 }

@@ -15,40 +15,57 @@ import java.util.Map;
  */
 final class ExpressionOperators {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
-
-    /** Addition operator. */
+    /**
+     * Addition operator.
+     */
     static final String OP_PLUS = "+";
-    /** Subtraction operator. */
+    /**
+     * Subtraction operator.
+     */
     static final String OP_MINUS = "-";
-    /** Multiplication operator. */
+    /**
+     * Multiplication operator.
+     */
     static final String OP_MULTIPLY = "*";
-    /** Division operator. */
+    /**
+     * Division operator.
+     */
     static final String OP_DIVIDE = "/";
-
-    /** Log: cannot apply operator to two GooValues. */
+    private static final Logger LOGGER = LogUtils.getLogger();
+    /**
+     * Log: cannot apply operator to two GooValues.
+     */
     private static final String LOG_CANNOT_OP_GOO = "Cannot {} two GooValues; use a scalar operand";
-    /** Log: cannot divide scalar by GooValue. */
+    /**
+     * Log: cannot divide scalar by GooValue.
+     */
     private static final String LOG_CANNOT_DIV_SCALAR = "Cannot divide scalar by GooValue";
-    /** Log: cannot mix GooValue and scalar with operator. */
+    /**
+     * Log: cannot mix GooValue and scalar with operator.
+     */
     private static final String LOG_CANNOT_MIX = "Cannot {} GooValue and scalar directly";
 
-    /** Negation multiplier. */
+    /**
+     * Negation multiplier.
+     */
     private static final int NEGATE = -1;
 
-    /** Utility class, not instantiable. */
-    private ExpressionOperators() {}
+    /**
+     * Utility class, not instantiable.
+     */
+    private ExpressionOperators() {
+    }
 
     /**
      * Applies an operator, handling mixed GooValue/scalar operands.
      *
      * @param lhs the left-hand operand
-     * @param op the operator string (+, -, *, /)
+     * @param op  the operator string (+, -, *, /)
      * @param rhs the right-hand operand
      * @return the result of applying the operator
      */
     static ExprVal applyOp(ExprVal lhs, String op,
-                                              ExprVal rhs) {
+                           ExprVal rhs) {
         if (lhs.isScalar() && rhs.isScalar()) {
             return new ScalarVal(intOp(lhs.toInt(), op, rhs.toInt()));
         }
@@ -68,8 +85,8 @@ final class ExpressionOperators {
      * @return the result of the GooValue operation
      */
     private static ExprVal applyGooGooOp(ExprVal lhs,
-                                                            String op,
-                                                            ExprVal rhs) {
+                                         String op,
+                                         ExprVal rhs) {
         return switch (op) {
             case OP_PLUS -> new GooVal(lhs.toGooValue().add(rhs.toGooValue(), 1));
             case OP_MINUS -> new GooVal(lhs.toGooValue().subtract(rhs.toGooValue()));
@@ -90,7 +107,7 @@ final class ExpressionOperators {
      * @return the scaled result
      */
     private static ExprVal applyMixedOp(ExprVal lhs, String op,
-                                                           ExprVal rhs) {
+                                        ExprVal rhs) {
         GooValue gv = lhs.isScalar() ? rhs.toGooValue() : lhs.toGooValue();
         int scalar = lhs.isScalar() ? lhs.toInt() : rhs.toInt();
         return switch (op) {
@@ -127,14 +144,16 @@ final class ExpressionOperators {
      * @return the negated value
      */
     static ExprVal negate(ExprVal val) {
-        if (val.isScalar()) { return new ScalarVal(-val.toInt()); }
+        if (val.isScalar()) {
+            return new ScalarVal(-val.toInt());
+        }
         return new GooVal(multiplyGooValue(val.toGooValue(), NEGATE));
     }
 
     /**
      * Multiplies every type in a GooValue by a scalar.
      *
-     * @param value the GooValue to scale
+     * @param value  the GooValue to scale
      * @param scalar the multiplier to apply per type
      * @return a new GooValue with scaled amounts
      */
@@ -147,9 +166,9 @@ final class ExpressionOperators {
     /**
      * Applies an arithmetic operator to two integer operands.
      *
-     * @param a the left operand
+     * @param a  the left operand
      * @param op the operator string (+, -, *, /)
-     * @param b the right operand
+     * @param b  the right operand
      * @return the result of the arithmetic operation
      */
     private static int intOp(int a, String op, int b) {

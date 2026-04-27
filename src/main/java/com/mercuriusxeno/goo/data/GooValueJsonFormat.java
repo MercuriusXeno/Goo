@@ -19,11 +19,16 @@ final class GooValueJsonFormat {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Log warning for unknown goo type in value JSON. */
+    /**
+     * Log warning for unknown goo type in value JSON.
+     */
     private static final String WARN_UNKNOWN_TYPE = "Unknown goo type in values: {}";
 
-    /** Utility class, not instantiable. */
-    private GooValueJsonFormat() {}
+    /**
+     * Utility class, not instantiable.
+     */
+    private GooValueJsonFormat() {
+    }
 
     /**
      * Parses a flat goo value JSON object with integer-only values (no expressions).
@@ -67,10 +72,10 @@ final class GooValueJsonFormat {
      * Parses a goo value JSON object with item and tree constant dot-notation support.
      * Per-type values can use {@code $tree.type} to extract a single type from a tree constant.
      *
-     * @param json           JSON object whose keys are goo type names and values are ints or expressions
-     * @param constants      symbol table mapping constant names to integer values
-     * @param baseValues     item values for dot-notation lookups (may be null)
-     * @param treeConstants  tree constant symbol table for $name.type lookups
+     * @param json          JSON object whose keys are goo type names and values are ints or expressions
+     * @param constants     symbol table mapping constant names to integer values
+     * @param baseValues    item values for dot-notation lookups (may be null)
+     * @param treeConstants tree constant symbol table for $name.type lookups
      * @return parsed GooValue
      */
     static GooValue parseGooValue(JsonObject json, Map<String, Integer> constants,
@@ -118,7 +123,7 @@ final class GooValueJsonFormat {
     static JsonObject toJson(GooValue value) {
         JsonObject json = new JsonObject();
         value.getAll().forEach((type, amount) ->
-            json.addProperty(type.getId(), amount));
+                json.addProperty(type.getId(), amount));
         return json;
     }
 
@@ -127,7 +132,7 @@ final class GooValueJsonFormat {
      * the constants table. Used by both item values and constant definitions
      * so constants can reference earlier constants.
      *
-     * @param element the JSON element (integer or expression string)
+     * @param element   the JSON element (integer or expression string)
      * @param constants scalar constant symbol table
      * @return the resolved integer value
      */

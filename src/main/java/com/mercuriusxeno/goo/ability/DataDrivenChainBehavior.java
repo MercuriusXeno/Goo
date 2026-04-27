@@ -49,7 +49,9 @@ public final class DataDrivenChainBehavior implements ChainBehavior {
     @Override
     public boolean isActive() {
         for (ChainBehavior block : blocks) {
-            if (block.isActive()) { return true; }
+            if (block.isActive()) {
+                return true;
+            }
         }
         return false;
     }
@@ -57,7 +59,9 @@ public final class DataDrivenChainBehavior implements ChainBehavior {
     @Override
     public boolean allowsTopOff() {
         for (ChainBehavior block : blocks) {
-            if (block.allowsTopOff()) { return true; }
+            if (block.allowsTopOff()) {
+                return true;
+            }
         }
         return false;
     }

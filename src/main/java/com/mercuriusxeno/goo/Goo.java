@@ -2,24 +2,13 @@ package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.ability.AbilityLoader;
 import com.mercuriusxeno.goo.ability.ChainProfiles;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerFallScheduler;
 import com.mercuriusxeno.goo.command.GooCommand;
 import com.mercuriusxeno.goo.data.GooReactionLoader;
 import com.mercuriusxeno.goo.data.GooValueRegistry;
 import com.mercuriusxeno.goo.network.AbilitySyncPayload;
 import com.mercuriusxeno.goo.network.GooValueSync;
-import com.mercuriusxeno.goo.registry.GooBlockEntities;
-import com.mercuriusxeno.goo.registry.GooBlocks;
-import com.mercuriusxeno.goo.registry.GooCreativeTabs;
-import com.mercuriusxeno.goo.registry.GooDataComponents;
-import com.mercuriusxeno.goo.registry.GooEntities;
-import com.mercuriusxeno.goo.registry.GooFluidTypes;
-import com.mercuriusxeno.goo.registry.GooFluids;
-import com.mercuriusxeno.goo.registry.GooItems;
-import com.mercuriusxeno.goo.registry.GooParticles;
-import com.mercuriusxeno.goo.registry.GooPotions;
-import com.mercuriusxeno.goo.registry.GooSounds;
-import com.mercuriusxeno.goo.registry.GooTestFunctions;
-import com.mercuriusxeno.goo.registry.GooTickets;
+import com.mercuriusxeno.goo.registry.*;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -43,9 +32,13 @@ public class Goo {
     public static final String MODID = "goo";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final GooValueRegistry GOO_VALUES = new GooValueRegistry();
-    /** Log message for startup value loading. */
+    /**
+     * Log message for startup value loading.
+     */
     private static final String LOG_VALUES_LOADED = "Goo values loaded: {} effective values from cache";
-    /** Log message when no cache exists and derivation runs on first boot. */
+    /**
+     * Log message when no cache exists and derivation runs on first boot.
+     */
     private static final String LOG_NO_CACHE = "No cached goo values found, deriving from recipes";
 
     /**
@@ -64,7 +57,7 @@ public class Goo {
         NeoForge.EVENT_BUS.register(this);
 
         GOO_VALUES.setEffectiveCachePath(
-            FMLPaths.CONFIGDIR.get().resolve("goo_derived_values.json"));
+                FMLPaths.CONFIGDIR.get().resolve("goo_derived_values.json"));
 
         GooColors.load(FMLPaths.CONFIGDIR.get());
 
@@ -83,6 +76,7 @@ public class Goo {
 
     /**
      * Registers fluid, block, item, and entity registries.
+     *
      * @param modEventBus the mod event bus to register on
      */
     private static void registerCoreRegistries(IEventBus modEventBus) {
@@ -96,6 +90,7 @@ public class Goo {
 
     /**
      * Registers data component, potion, particle, and creative tab registries.
+     *
      * @param modEventBus the mod event bus to register on
      */
     private static void registerContentRegistries(IEventBus modEventBus) {
@@ -155,7 +150,9 @@ public class Goo {
             GOO_VALUES.deriveFromRecipes(event.getServer());
             GOO_VALUES.saveEffectiveValues();
         }
-        if (LOGGER.isInfoEnabled()) { LOGGER.info(LOG_VALUES_LOADED, GOO_VALUES.size()); }
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(LOG_VALUES_LOADED, GOO_VALUES.size());
+        }
     }
 
     /**
@@ -190,8 +187,8 @@ public class Goo {
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         com.mercuriusxeno.goo.network.BlobThrowHandler.onServerTick(event);
-        if (com.mercuriusxeno.goo.block.ChainMarkerFallScheduler.hasPending()) {
-            com.mercuriusxeno.goo.block.ChainMarkerFallScheduler
+        if (ChainMarkerFallScheduler.hasPending()) {
+            ChainMarkerFallScheduler
                     .drainArrivedFalls(event.getServer().getTickCount());
         }
     }

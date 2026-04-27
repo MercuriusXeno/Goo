@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.ICanisterHolder;
-import com.mercuriusxeno.goo.block.fluid.CanisterSlotFluidHandler;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotFluidHandler;
 import com.mercuriusxeno.goo.block.fluid.PlayerInventorySlotHandler;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.fluid.CanisterFluidHandler;
@@ -31,7 +31,8 @@ import java.util.UUID;
  */
 final class GooCapabilityRegistration {
 
-    private GooCapabilityRegistration() { }
+    private GooCapabilityRegistration() {
+    }
 
     /**
      * Registers capabilities: fluid handlers and gasket endpoint resolution.
@@ -61,7 +62,7 @@ final class GooCapabilityRegistration {
      */
     private static void registerCanisterFluidCapability(RegisterCapabilitiesEvent event) {
         event.registerItem(Capabilities.Fluid.ITEM,
-            (stack, ctx) -> new CanisterFluidHandler(ctx), GooItems.CANISTER.get());
+                (stack, ctx) -> new CanisterFluidHandler(ctx), GooItems.CANISTER.get());
     }
 
     /**
@@ -71,11 +72,11 @@ final class GooCapabilityRegistration {
      */
     static void registerBlockFluidCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, GooBlockEntities.VAT.get(),
-            (be, side) -> isVatFluidSide(side) ? be.getFluidHandler() : null);
+                (be, side) -> isVatFluidSide(side) ? be.getFluidHandler() : null);
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, GooBlockEntities.HUB.get(),
-            (be, side) -> isHubFluidSide(side) ? be.getFluidHandler() : null);
+                (be, side) -> isHubFluidSide(side) ? be.getFluidHandler() : null);
         event.registerBlockEntity(Capabilities.Fluid.BLOCK, GooBlockEntities.CHORAL_GASKET.get(),
-            (be, side) -> be.getWaterSource());
+                (be, side) -> be.getWaterSource());
     }
 
     /**
@@ -117,8 +118,8 @@ final class GooCapabilityRegistration {
      */
     static void registerCanisterGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.CANISTER.get(),
-            (be, gasketId) -> findSlotForGasket(be, CanisterBlockEntity.MAX_SLOTS, gasketId));
+                GooBlockEntities.CANISTER.get(),
+                (be, gasketId) -> findSlotForGasket(be, CanisterBlockEntity.MAX_SLOTS, gasketId));
     }
 
     /**
@@ -128,13 +129,13 @@ final class GooCapabilityRegistration {
      */
     static void registerHubGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.HUB.get(), GooCapabilityRegistration::resolveHubGasket);
+                GooBlockEntities.HUB.get(), GooCapabilityRegistration::resolveHubGasket);
     }
 
     /**
      * Checks the hub's own receiver gasket first, then scans canister slots.
      *
-     * @param be the hub block entity
+     * @param be       the hub block entity
      * @param gasketId the gasket UUID to resolve
      * @return the matching fluid handler, or null
      */
@@ -164,13 +165,13 @@ final class GooCapabilityRegistration {
      */
     private static void registerVatGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.VAT.get(), (be, gasketId) -> {
-                if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))
-                        || gasketId.equals(be.getGasketId(GasketRole.TRANSMITTER))) {
-                    return be.getFluidHandler();
-                }
-                return null;
-            });
+                GooBlockEntities.VAT.get(), (be, gasketId) -> {
+                    if (gasketId.equals(be.getGasketId(GasketRole.RECEIVER))
+                            || gasketId.equals(be.getGasketId(GasketRole.TRANSMITTER))) {
+                        return be.getFluidHandler();
+                    }
+                    return null;
+                });
     }
 
     /**
@@ -180,7 +181,7 @@ final class GooCapabilityRegistration {
      */
     private static void registerTapGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.TAP.get(), (be, gasketId) -> null);
+                GooBlockEntities.TAP.get(), (be, gasketId) -> null);
     }
 
     /**
@@ -190,7 +191,7 @@ final class GooCapabilityRegistration {
      */
     private static void registerPlexerGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.PLEXER.get(), (be, gasketId) -> null);
+                GooBlockEntities.PLEXER.get(), (be, gasketId) -> null);
     }
 
     /**
@@ -200,9 +201,9 @@ final class GooCapabilityRegistration {
      */
     private static void registerChoralGasketBlock(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(GooCapabilities.GASKET_BLOCK,
-            GooBlockEntities.CHORAL_GASKET.get(), (be, gasketId) ->
-                gasketId.equals(be.getGasketId(GasketRole.TRANSMITTER))
-                    ? be.getWaterSource() : null);
+                GooBlockEntities.CHORAL_GASKET.get(), (be, gasketId) ->
+                        gasketId.equals(be.getGasketId(GasketRole.TRANSMITTER))
+                                ? be.getWaterSource() : null);
     }
 
     /**
@@ -212,8 +213,8 @@ final class GooCapabilityRegistration {
      */
     static void registerGasketEntityCapabilities(RegisterCapabilitiesEvent event) {
         event.registerEntity(GooCapabilities.GASKET_ENTITY,
-            net.minecraft.world.entity.EntityType.PLAYER,
-            GooCapabilityRegistration::findPlayerCanisterForGasket);
+                net.minecraft.world.entity.EntityType.PLAYER,
+                GooCapabilityRegistration::findPlayerCanisterForGasket);
     }
 
     /**
@@ -221,14 +222,16 @@ final class GooCapabilityRegistration {
      *
      * @param container the slotted goo container (canister shelf or hub)
      * @param slotCount the number of slots to scan
-     * @param gasketId the gasket UUID to match
+     * @param gasketId  the gasket UUID to match
      * @return the slot's fluid handler if found, or null
      */
     @Nullable
     private static CanisterSlotFluidHandler findSlotForGasket(
             ICanisterHolder container, int slotCount, UUID gasketId) {
         for (int i = 0; i < slotCount; i++) {
-            if (container.getCanister(i).isEmpty()) { continue; }
+            if (container.getCanister(i).isEmpty()) {
+                continue;
+            }
             CanisterMetadata meta = container.getSlotMetadata(i);
             if (gasketMatchesSlot(gasketId, meta)) {
                 return container.containerState().getSlotFluidHandler(i);
@@ -241,7 +244,7 @@ final class GooCapabilityRegistration {
      * Returns true if the gasket UUID matches either gasket on a canister's metadata.
      *
      * @param gasketId the gasket UUID to test
-     * @param meta the canister metadata
+     * @param meta     the canister metadata
      * @return true if either top or bottom gasket matches
      */
     private static boolean gasketMatchesSlot(UUID gasketId, CanisterMetadata meta) {
@@ -252,7 +255,7 @@ final class GooCapabilityRegistration {
     /**
      * Scans the player's inventory for a canister matching the given gasket UUID.
      *
-     * @param player the player whose inventory to scan
+     * @param player   the player whose inventory to scan
      * @param gasketId the gasket UUID to match
      * @return a slot handler for the matching canister, or null
      */
@@ -260,7 +263,9 @@ final class GooCapabilityRegistration {
     private static PlayerInventorySlotHandler findPlayerCanisterForGasket(Player player, UUID gasketId) {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (!stack.is(GooItems.CANISTER.get())) { continue; }
+            if (!stack.is(GooItems.CANISTER.get())) {
+                continue;
+            }
             if (gasketMatchesSlot(gasketId, CanisterItem.getMetadata(stack))) {
                 return new PlayerInventorySlotHandler(player, i);
             }

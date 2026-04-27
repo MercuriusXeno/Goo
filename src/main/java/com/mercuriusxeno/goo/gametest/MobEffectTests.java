@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.gametest;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.mob.*;
-import com.mercuriusxeno.goo.ability.mob.MobAbilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.effect.MobEffects;
@@ -28,10 +27,12 @@ public final class MobEffectTests {
     private static final String SHOULD_BE_INVULNERABLE = "Target should be invulnerable";
     private static final String SHOULD_HAVE_LEVITATION = "Target should have levitation";
 
-    private MobEffectTests() {}
+    private MobEffectTests() {
+    }
 
     /**
      * Metal javelin deals direct magic damage.
+     *
      * @param helper the gametest helper
      */
     public static void metalJavelin(GameTestHelper helper) {
@@ -44,6 +45,7 @@ public final class MobEffectTests {
 
     /**
      * Crystal flechettes deal damage to the primary target.
+     *
      * @param helper the gametest helper
      */
     public static void crystalFlechettes(GameTestHelper helper) {
@@ -56,6 +58,7 @@ public final class MobEffectTests {
 
     /**
      * Leaf entangle applies slowness and poison.
+     *
      * @param helper the gametest helper
      */
     public static void leafEntangle(GameTestHelper helper) {
@@ -68,6 +71,7 @@ public final class MobEffectTests {
 
     /**
      * Vital clone attempts to clone the mob (probabilistic - just verify no crash).
+     *
      * @param helper the gametest helper
      */
     public static void vitalClone(GameTestHelper helper) {
@@ -78,6 +82,7 @@ public final class MobEffectTests {
 
     /**
      * Shroom debuff applies slowness, weakness, and poison.
+     *
      * @param helper the gametest helper
      */
     public static void shroomDebuff(GameTestHelper helper) {
@@ -91,6 +96,7 @@ public final class MobEffectTests {
 
     /**
      * Rock petrify applies max slowness.
+     *
      * @param helper the gametest helper
      */
     public static void rockPetrify(GameTestHelper helper) {
@@ -102,6 +108,7 @@ public final class MobEffectTests {
 
     /**
      * Blaze ignite sets the target on fire.
+     *
      * @param helper the gametest helper
      */
     public static void blazeIgnite(GameTestHelper helper) {
@@ -113,6 +120,7 @@ public final class MobEffectTests {
 
     /**
      * Frost snap deals damage and applies slowness.
+     *
      * @param helper the gametest helper
      */
     public static void frostSnap(GameTestHelper helper) {
@@ -126,6 +134,7 @@ public final class MobEffectTests {
 
     /**
      * Typhoon applies levitation.
+     *
      * @param helper the gametest helper
      */
     public static void typhoonLevitate(GameTestHelper helper) {
@@ -137,6 +146,7 @@ public final class MobEffectTests {
 
     /**
      * Glow laser deals damage and applies glowing.
+     *
      * @param helper the gametest helper
      */
     public static void glowLaser(GameTestHelper helper) {
@@ -150,6 +160,7 @@ public final class MobEffectTests {
 
     /**
      * Hex charm applies weakness and glowing to mobs.
+     *
      * @param helper the gametest helper
      */
     public static void hexCharm(GameTestHelper helper) {
@@ -162,6 +173,7 @@ public final class MobEffectTests {
 
     /**
      * Pulse stun disables AI and applies max slowness.
+     *
      * @param helper the gametest helper
      */
     public static void pulseStun(GameTestHelper helper) {
@@ -174,6 +186,7 @@ public final class MobEffectTests {
 
     /**
      * Nether wither halves health and applies wither.
+     *
      * @param helper the gametest helper
      */
     public static void netherWither(GameTestHelper helper) {
@@ -187,6 +200,7 @@ public final class MobEffectTests {
 
     /**
      * Ender teleport moves the target (just verify no crash).
+     *
      * @param helper the gametest helper
      */
     public static void enderTeleport(GameTestHelper helper) {
@@ -197,6 +211,7 @@ public final class MobEffectTests {
 
     /**
      * Unstable explode detonates at the target (just verify no crash).
+     *
      * @param helper the gametest helper
      */
     public static void unstableExplode(GameTestHelper helper) {
@@ -207,6 +222,7 @@ public final class MobEffectTests {
 
     /**
      * Aeon time stop disables AI and makes invulnerable.
+     *
      * @param helper the gametest helper
      */
     public static void aeonTimeStop(GameTestHelper helper) {

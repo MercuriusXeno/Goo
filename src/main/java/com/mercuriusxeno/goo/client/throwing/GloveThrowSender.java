@@ -29,29 +29,40 @@ import java.util.Map;
  */
 public final class GloveThrowSender {
 
-    /** Sentinel value indicating no entity target. */
+    /**
+     * Sentinel value indicating no entity target.
+     */
     private static final int NO_ENTITY = -1;
 
-    /** In-flight throws toward chain markers, keyed by block position. */
+    /**
+     * In-flight throws toward chain markers, keyed by block position.
+     */
     private static final Map<BlockPos, Integer> IN_FLIGHT = new HashMap<>();
 
-    /** Empty sentinel for unknown goo type (no chain profile). */
+    /**
+     * Empty sentinel for unknown goo type (no chain profile).
+     */
     private static final int[] UNKNOWN_STACKS = new int[0];
-    /** Empty ability id for legacy throws. */
+    /**
+     * Empty ability id for legacy throws.
+     */
     private static final String LEGACY_ABILITY = "";
 
-    private GloveThrowSender() {}
+    private GloveThrowSender() {
+    }
 
     /**
      * Resolves the current aim target and sends the throw packet.
      * Blocks the throw if in-flight blobs would exceed the marker's
      * max stacks, and arms a throw-block freeze when maxed.
      *
-     * @param player the local player
+     * @param player  the local player
      * @param gooType the selected goo type to throw
      */
     public static void sendThrow(Player player, GooType gooType) {
-        if (!canThrow(player)) { return; }
+        if (!canThrow(player)) {
+            return;
+        }
         TargetResult target = resolveAimTarget(player);
         if (wouldExceedMaxStacks(target, gooType)) {
             ThrowFreezeState.armThrowBlock();
@@ -66,7 +77,8 @@ public final class GloveThrowSender {
         }
     }
 
-    /** Pre-throw validation: goo available, not throw-blocked, ability selected.
+    /**
+     * Pre-throw validation: goo available, not throw-blocked, ability selected.
      *
      * @param player the local player
      * @return true if throwing is allowed
@@ -86,7 +98,9 @@ public final class GloveThrowSender {
         // arrived flights. This tick cleans up stale entries.
         Iterator<Map.Entry<BlockPos, Integer>> it = IN_FLIGHT.entrySet().iterator();
         while (it.hasNext()) {
-            if (it.next().getValue() <= 0) { it.remove(); }
+            if (it.next().getValue() <= 0) {
+                it.remove();
+            }
         }
     }
 
@@ -99,13 +113,18 @@ public final class GloveThrowSender {
      * @param pos the target position from the flight payload
      */
     public static void onFlightArrived(BlockPos pos) {
-        if (decrementInFlight(pos)) { return; }
+        if (decrementInFlight(pos)) {
+            return;
+        }
         for (Direction dir : Direction.values()) {
-            if (decrementInFlight(pos.relative(dir))) { return; }
+            if (decrementInFlight(pos.relative(dir))) {
+                return;
+            }
         }
     }
 
-    /** Decrements the in-flight count at pos. Returns true if the entry existed.
+    /**
+     * Decrements the in-flight count at pos. Returns true if the entry existed.
      *
      * @param pos the block position to decrement
      * @return true if an in-flight entry existed at pos
@@ -114,7 +133,9 @@ public final class GloveThrowSender {
         return IN_FLIGHT.computeIfPresent(pos, (k, v) -> v > 1 ? v - 1 : null) != null;
     }
 
-    /** Clears all in-flight tracking (on disconnect or dimension change). */
+    /**
+     * Clears all in-flight tracking (on disconnect or dimension change).
+     */
     public static void clearInFlight() {
         IN_FLIGHT.clear();
     }
@@ -156,10 +177,14 @@ public final class GloveThrowSender {
      */
     private static boolean wouldExceedMarkerMax(BlockPos pos, GooType gooType) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) { return false; }
+        if (mc.level == null) {
+            return false;
+        }
 
         int[] currentAndMax = resolveCurrentAndMax(mc.level, pos, gooType);
-        if (currentAndMax.length == 0) { return false; }
+        if (currentAndMax.length == 0) {
+            return false;
+        }
         int pending = IN_FLIGHT.getOrDefault(pos, 0);
         return currentAndMax[0] + pending >= currentAndMax[1];
     }
@@ -178,7 +203,9 @@ public final class GloveThrowSender {
             return new int[]{be.getStackCount(), be.getMaxStacks()};
         }
         ChainProfile profile = ChainProfile.forType(gooType);
-        if (profile == null) { return UNKNOWN_STACKS; }
+        if (profile == null) {
+            return UNKNOWN_STACKS;
+        }
         return new int[]{0, profile.maxStacks()};
     }
 
@@ -190,14 +217,19 @@ public final class GloveThrowSender {
      */
     private static boolean wouldExceedCrystalMax(TargetResult.GlowCrystalTarget gct) {
         int current = gct.currentStacks();
-        if (current <= 0) { return false; }
+        if (current <= 0) {
+            return false;
+        }
         ChainProfile profile = ChainProfile.forType(GooType.GLOW);
-        if (profile == null) { return false; }
+        if (profile == null) {
+            return false;
+        }
         int pending = IN_FLIGHT.getOrDefault(gct.pos(), 0);
         return current + pending >= profile.maxStacks();
     }
 
-    /** Increments the in-flight count for any throw that would place or
+    /**
+     * Increments the in-flight count for any throw that would place or
      * stack on a chain marker. Tracks even before the marker exists so
      * rapid throws during flight time are counted.
      *
@@ -232,7 +264,8 @@ public final class GloveThrowSender {
         return null;
     }
 
-    /** Resolves the tracking position for a block target. If a marker
+    /**
+     * Resolves the tracking position for a block target. If a marker
      * already exists at the hit pos or adjacent, returns its position.
      * Otherwise predicts placement: replaceable blocks are displaced
      * in-place, solid blocks place the marker on the adjacent face.
@@ -242,7 +275,9 @@ public final class GloveThrowSender {
      */
     private static @Nullable BlockPos resolveBlockTrackingPos(TargetResult.BlockTarget bt) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) { return null; }
+        if (mc.level == null) {
+            return null;
+        }
         if (mc.level.getBlockEntity(bt.pos()) instanceof ChainMarkerBlockEntity) {
             return bt.pos();
         }
@@ -254,7 +289,8 @@ public final class GloveThrowSender {
         return state.canBeReplaced() ? bt.pos() : adjacent;
     }
 
-    /** Resolves the player's current aim target at the current partial tick.
+    /**
+     * Resolves the player's current aim target at the current partial tick.
      *
      * @param player the local player
      * @return the resolved target result
@@ -265,20 +301,24 @@ public final class GloveThrowSender {
         return GooTargetHighlighter.resolveTarget(player, partialTick);
     }
 
-    /** Converts a target result into a throw payload, or null if no valid target.
+    /**
+     * Converts a target result into a throw payload, or null if no valid target.
      *
-     * @param target  the aim target
-     * @param gooType the selected goo type
+     * @param target    the aim target
+     * @param gooType   the selected goo type
      * @param abilityId the selected ability id string
      * @return the payload, or null for no target
      */
     private static @Nullable BlobThrowPayload targetToPayload(TargetResult target,
-            GooType gooType, String abilityId) {
-        if (target instanceof TargetResult.None) { return null; }
+                                                              GooType gooType, String abilityId) {
+        if (target instanceof TargetResult.None) {
+            return null;
+        }
         return buildPayload(target, gooType.getId(), abilityId);
     }
 
-    /** Returns true if the player's glove has an ability selected.
+    /**
+     * Returns true if the player's glove has an ability selected.
      * Throws are suppressed when no ability is chosen.
      *
      * @param player the local player
@@ -295,7 +335,8 @@ public final class GloveThrowSender {
 
     /**
      * Reads the ability ID from the player's glove, or empty for legacy.
-     * @param player    the local player
+     *
+     * @param player the local player
      * @return the ability id, or empty for legacy
      */
     private static String resolveAbilityId(Player player) {
@@ -304,16 +345,21 @@ public final class GloveThrowSender {
             glove = player.getOffhandItem();
         }
         GloveSelection sel = GooGloveItem.getSelection(glove);
-        if (sel != null && sel.hasAbility()) { return sel.abilityId(); }
+        if (sel != null && sel.hasAbility()) {
+            return sel.abilityId();
+        }
         return LEGACY_ABILITY;
     }
 
-    /** Builds the payload for non-None targets. Kept separate so the None early-exit
-     * @param target the resolved non-None aim target
-     * @param typeId the goo type registry id
+    /**
+     * Builds the payload for non-None targets. Kept separate so the None early-exit
+     *
+     * @param target    the resolved non-None aim target
+     * @param typeId    the goo type registry id
      * @param abilityId the selected ability id string
      * @return the constructed throw payload
-     * reduces the switch to 4 arms and keeps CC within threshold. */
+     * reduces the switch to 4 arms and keeps CC within threshold.
+     */
     private static BlobThrowPayload buildPayload(TargetResult target, String typeId, String abilityId) {
         return switch (target) {
             case TargetResult.EntityTarget et -> entityPayload(typeId, et, abilityId);
@@ -327,39 +373,42 @@ public final class GloveThrowSender {
 
     /**
      * Builds a throw payload aimed at an entity.
-     * @param typeId the goo type registry id
-     * @param et the entity aim target
+     *
+     * @param typeId    the goo type registry id
+     * @param et        the entity aim target
      * @param abilityId the selected ability id string
      * @return the entity-targeted throw payload
      */
     private static BlobThrowPayload entityPayload(String typeId,
-            TargetResult.EntityTarget et, String abilityId) {
+                                                  TargetResult.EntityTarget et, String abilityId) {
         return new BlobThrowPayload(typeId, et.entity().getId(), BlockPos.ZERO, NO_ENTITY,
                 false, abilityId);
     }
 
     /**
      * Builds a throw payload aimed at a block face.
-     * @param typeId the goo type registry id
-     * @param bt the block face aim target
+     *
+     * @param typeId    the goo type registry id
+     * @param bt        the block face aim target
      * @param abilityId the selected ability id string
      * @return the block-targeted throw payload
      */
     private static BlobThrowPayload blockPayload(String typeId,
-            TargetResult.BlockTarget bt, String abilityId) {
+                                                 TargetResult.BlockTarget bt, String abilityId) {
         return new BlobThrowPayload(typeId, NO_ENTITY, bt.pos(), bt.face().ordinal(),
                 bt.grannyArc(), abilityId);
     }
 
     /**
      * Builds a throw payload aimed at a chain marker, resolving its placed face.
-     * @param typeId the goo type registry id
-     * @param cmt the chain marker aim target
+     *
+     * @param typeId    the goo type registry id
+     * @param cmt       the chain marker aim target
      * @param abilityId the selected ability id string
      * @return the chain-marker-targeted throw payload
      */
     private static BlobThrowPayload chainMarkerPayload(String typeId,
-            TargetResult.ChainMarkerTarget cmt, String abilityId) {
+                                                       TargetResult.ChainMarkerTarget cmt, String abilityId) {
         int faceOrdinal = resolveChainMarkerFace(cmt.pos()).getOpposite().ordinal();
         return new BlobThrowPayload(typeId, NO_ENTITY, cmt.pos(), faceOrdinal, false, abilityId);
     }
@@ -380,7 +429,8 @@ public final class GloveThrowSender {
         return Direction.UP;
     }
 
-    /** Sends a custom payload packet to the server.
+    /**
+     * Sends a custom payload packet to the server.
      *
      * @param payload the payload to send
      */

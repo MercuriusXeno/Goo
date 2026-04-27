@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.network;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.VatBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import net.minecraft.core.BlockPos;
@@ -16,14 +16,21 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public final class CanisterRenameHandler {
 
-    /** Maximum interaction range in blocks. */
+    /**
+     * Maximum interaction range in blocks.
+     */
     private static final double MAX_RANGE = 8.0;
-    /** Maximum distance (in blocks) from which a player can rename. */
+    /**
+     * Maximum distance (in blocks) from which a player can rename.
+     */
     private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
-    /** Block center offset (half-block). */
+    /**
+     * Block center offset (half-block).
+     */
     private static final double BLOCK_CENTER = 0.5;
 
-    private CanisterRenameHandler() {}
+    private CanisterRenameHandler() {
+    }
 
     /**
      * Handles the rename payload on the server thread.
@@ -33,7 +40,9 @@ public final class CanisterRenameHandler {
      */
     public static void handle(CanisterRenamePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) { return; }
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
             applyRename(player, payload.pos(), payload.slot(), payload.newLabel());
         });
     }
@@ -48,7 +57,9 @@ public final class CanisterRenameHandler {
      */
     private static void applyRename(
             ServerPlayer player, BlockPos pos, int slot, String newLabel) {
-        if (!isInRange(player, pos)) { return; }
+        if (!isInRange(player, pos)) {
+            return;
+        }
         String sanitized = sanitizeLabel(newLabel);
 
         BlockEntity be = player.level().getBlockEntity(pos);
@@ -69,10 +80,12 @@ public final class CanisterRenameHandler {
      */
     private static void applyCanisterRename(
             ServerPlayer player, CanisterBlockEntity canister, int slot, String label) {
-        if (!isOwnerOrUnowned(player, canister)) { return; }
+        if (!isOwnerOrUnowned(player, canister)) {
+            return;
+        }
         CanisterMetadata meta = canister.getSlotMetadata(slot);
         canister.setSlotMetadata(slot, meta.withLabel(
-            label.isEmpty() ? null : label));
+                label.isEmpty() ? null : label));
     }
 
     /**
@@ -94,7 +107,7 @@ public final class CanisterRenameHandler {
      */
     private static boolean isInRange(ServerPlayer player, BlockPos pos) {
         return player.distanceToSqr(pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER)
-            <= MAX_RANGE_SQUARED;
+                <= MAX_RANGE_SQUARED;
     }
 
     /**
@@ -107,7 +120,7 @@ public final class CanisterRenameHandler {
     private static boolean isOwnerOrUnowned(
             ServerPlayer player, CanisterBlockEntity canister) {
         return canister.getOwner() == null
-            || canister.getOwner().equals(player.getUUID());
+                || canister.getOwner().equals(player.getUUID());
     }
 
     /**

@@ -15,7 +15,9 @@ class GasketRegistryTest {
     @Nested
     class Link {
 
-        /** Linking two gaskets makes each findable from the other direction. */
+        /**
+         * Linking two gaskets makes each findable from the other direction.
+         */
         @Test
         void linkCreatesBidirectionalLookup() {
             GasketRegistry reg = new GasketRegistry();
@@ -26,7 +28,9 @@ class GasketRegistryTest {
             assertEquals(out, reg.getSource(in));
         }
 
-        /** Linking replaces any prior pairing on either gasket. */
+        /**
+         * Linking replaces any prior pairing on either gasket.
+         */
         @Test
         void linkReplacesExistingPairing() {
             GasketRegistry reg = new GasketRegistry();
@@ -40,7 +44,9 @@ class GasketRegistryTest {
             assertEquals(a, reg.getSource(c));
         }
 
-        /** Linking an input that was already paired unlinks its old output. */
+        /**
+         * Linking an input that was already paired unlinks its old output.
+         */
         @Test
         void linkEvictsOldOutputWhenInputReused() {
             GasketRegistry reg = new GasketRegistry();
@@ -58,7 +64,9 @@ class GasketRegistryTest {
     @Nested
     class Unlink {
 
-        /** Unlinking by output removes both forward and reverse entries. */
+        /**
+         * Unlinking by output removes both forward and reverse entries.
+         */
         @Test
         void unlinkByOutputClearsBothMaps() {
             GasketRegistry reg = new GasketRegistry();
@@ -70,7 +78,9 @@ class GasketRegistryTest {
             assertNull(reg.getSource(in));
         }
 
-        /** Unlinking by input removes both forward and reverse entries. */
+        /**
+         * Unlinking by input removes both forward and reverse entries.
+         */
         @Test
         void unlinkByInputClearsBothMaps() {
             GasketRegistry reg = new GasketRegistry();
@@ -82,7 +92,9 @@ class GasketRegistryTest {
             assertNull(reg.getSource(in));
         }
 
-        /** Unlinking a UUID not in any pairing is a no-op. */
+        /**
+         * Unlinking a UUID not in any pairing is a no-op.
+         */
         @Test
         void unlinkUnknownIdIsNoOp() {
             GasketRegistry reg = new GasketRegistry();
@@ -93,7 +105,9 @@ class GasketRegistryTest {
     @Nested
     class InverseConsistency {
 
-        /** Forward and reverse maps stay consistent across multiple link/unlink cycles. */
+        /**
+         * Forward and reverse maps stay consistent across multiple link/unlink cycles.
+         */
         @Test
         void multipleOperationsKeepMapsConsistent() {
             GasketRegistry reg = new GasketRegistry();
@@ -114,7 +128,9 @@ class GasketRegistryTest {
             assertEquals(c, reg.getSource(d));
         }
 
-        /** Deserialization constructor rebuilds the inverse index from forward pairings. */
+        /**
+         * Deserialization constructor rebuilds the inverse index from forward pairings.
+         */
         @Test
         void constructorRebuildsReverseFromForward() {
             UUID out = UUID.randomUUID();
@@ -129,7 +145,9 @@ class GasketRegistryTest {
     @Nested
     class Location {
 
-        /** Storing a location makes it retrievable by gasket ID. */
+        /**
+         * Storing a location makes it retrievable by gasket ID.
+         */
         @Test
         void updateLocationStoresAndRetrieves() {
             GasketRegistry reg = new GasketRegistry();
@@ -139,7 +157,9 @@ class GasketRegistryTest {
             assertSame(loc, reg.getLocation(id));
         }
 
-        /** Passing null removes the stored location. */
+        /**
+         * Passing null removes the stored location.
+         */
         @Test
         void updateLocationWithNullRemoves() {
             GasketRegistry reg = new GasketRegistry();
@@ -149,14 +169,18 @@ class GasketRegistryTest {
             assertNull(reg.getLocation(id));
         }
 
-        /** getLocation returns null for unknown IDs. */
+        /**
+         * getLocation returns null for unknown IDs.
+         */
         @Test
         void getLocationReturnsNullForUnknown() {
             GasketRegistry reg = new GasketRegistry();
             assertNull(reg.getLocation(UUID.randomUUID()));
         }
 
-        /** Locations survive the deserialization constructor round-trip. */
+        /**
+         * Locations survive the deserialization constructor round-trip.
+         */
         @Test
         void constructorPreservesLocations() {
             UUID id = UUID.randomUUID();
@@ -165,7 +189,9 @@ class GasketRegistryTest {
             assertSame(loc, reg.getLocation(id));
         }
 
-        /** getSource + getLocation together resolve a transmitter's position from the receiver side. */
+        /**
+         * getSource + getLocation together resolve a transmitter's position from the receiver side.
+         */
         @Test
         void sourceLocationResolvableFromReceiver() {
             GasketRegistry reg = new GasketRegistry();

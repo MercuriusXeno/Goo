@@ -17,19 +17,23 @@ import java.util.Map;
  * Uses non-flowing {@link GooFluid} variants so goo stays where placed.
  */
 public final class GooFluids {
-    /** Deferred register for vanilla fluids. */
+    /**
+     * Deferred register for vanilla fluids.
+     */
     public static final DeferredRegister<Fluid> FLUIDS =
             DeferredRegister.create(Registries.FLUID, Goo.MODID);
 
-    /** Source fluid per goo type. */
+    /**
+     * Source fluid per goo type.
+     */
     public static final Map<GooType, DeferredHolder<Fluid, GooFluid.Source>> SOURCES =
             new EnumMap<>(GooType.class);
 
-    /** Flowing fluid per goo type. */
+    /**
+     * Flowing fluid per goo type.
+     */
     public static final Map<GooType, DeferredHolder<Fluid, GooFluid.Flowing>> FLOWING =
             new EnumMap<>(GooType.class);
-
-    private GooFluids() {}
 
     static {
         for (GooType type : GooType.values()) {
@@ -39,6 +43,9 @@ public final class GooFluids {
             FLOWING.put(type, FLUIDS.register(id + "_goo_flowing",
                     () -> new GooFluid.Flowing(fluidProperties(type))));
         }
+    }
+
+    private GooFluids() {
     }
 
     /**
@@ -88,6 +95,6 @@ public final class GooFluids {
                 SOURCES.get(type),
                 FLOWING.get(type)
         ).bucket(GooItems.BUCKETS.get(type))
-         .block(GooBlocks.FLUID_BLOCKS.get(type));
+                .block(GooBlocks.FLUID_BLOCKS.get(type));
     }
 }

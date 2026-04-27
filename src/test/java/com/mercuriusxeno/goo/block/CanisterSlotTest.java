@@ -1,9 +1,11 @@
 package com.mercuriusxeno.goo.block;
 
+import com.mercuriusxeno.goo.block.canister.CanisterBlock;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import net.minecraft.core.Direction;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import java.util.function.IntPredicate;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for the canister 3x3 grid hit detection.
@@ -11,14 +13,16 @@ import java.util.function.IntPredicate;
  */
 class CanisterSlotTest {
 
-    /** Slot centers in pixel coordinates (from CanisterSlotLayout). */
+    /**
+     * Slot centers in pixel coordinates (from CanisterSlotLayout).
+     */
     private static final float[][] CENTERS = CanisterSlotLayout.SLOT_CENTERS;
 
     @Test
     void exactCenter_returnsCorrectSlot() {
         for (int i = 0; i < 9; i++) {
             assertEquals(i, CanisterSlotLayout.nearestSlot(CENTERS[i][0], CENTERS[i][1]),
-                "Exact center of slot " + i);
+                    "Exact center of slot " + i);
         }
     }
 
@@ -43,7 +47,7 @@ class CanisterSlotTest {
         // Distance to slot 0: 2.5, distance to slot 1: 2.5 -> either is valid
         int result = CanisterSlotLayout.nearestSlot(5.5f, 3);
         assertTrue(result == 0 || result == 1,
-            "Midpoint should resolve to slot 0 or 1, got " + result);
+                "Midpoint should resolve to slot 0 or 1, got " + result);
     }
 
     @Test
@@ -129,9 +133,9 @@ class CanisterSlotTest {
     void findSlot_respectsMaxSlots() {
         IntPredicate onlySlot7 = i -> i == 7;
         assertEquals(-1, GooBlockInteraction.findSlot(-1, 5, onlySlot7),
-            "Slot 7 should not be found when maxSlots is 5");
+                "Slot 7 should not be found when maxSlots is 5");
         assertEquals(7, GooBlockInteraction.findSlot(-1, 8, onlySlot7),
-            "Slot 7 should be found when maxSlots is 8");
+                "Slot 7 should be found when maxSlots is 8");
     }
 
     // --- placementSlot tests ---

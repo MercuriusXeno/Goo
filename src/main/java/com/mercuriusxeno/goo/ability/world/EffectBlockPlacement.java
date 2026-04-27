@@ -5,7 +5,7 @@ import com.mercuriusxeno.goo.ability.ChainPlacementRules;
 import com.mercuriusxeno.goo.ability.ChainPlacementRules.CandidateState;
 import com.mercuriusxeno.goo.ability.ChainPlacementRules.Decision;
 import com.mercuriusxeno.goo.ability.ChainPlacementRules.WaterHandling;
-import com.mercuriusxeno.goo.block.ChainMarkerBlock;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlock;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
@@ -36,13 +36,18 @@ import org.jspecify.annotations.Nullable;
  */
 public final class EffectBlockPlacement {
 
-    /** Block update flags for setBlock calls. */
+    /**
+     * Block update flags for setBlock calls.
+     */
     private static final int BLOCK_UPDATE_FLAGS = 3;
     /** Initial frost field stack count on first placement. */
-    /** Fallback face used when the hit direction is unknown. */
+    /**
+     * Fallback face used when the hit direction is unknown.
+     */
     private static final Direction DEFAULT_FACE = Direction.UP;
 
-    private EffectBlockPlacement() {}
+    private EffectBlockPlacement() {
+    }
 
     /**
      * Rock: chain implosion. Places a chain marker on the hit block (if
@@ -53,7 +58,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void rockImplosion(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.ROCK);
     }
 
@@ -67,7 +74,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void blazeExplosion(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.BLAZE);
     }
 
@@ -83,7 +92,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void netherConvert(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.NETHER);
     }
 
@@ -108,7 +119,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void frostColdSnap(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.FROST);
     }
 
@@ -121,7 +134,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void crystalCloud(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.CRYSTAL);
     }
 
@@ -134,7 +149,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void unstableExplosion(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.UNSTABLE);
     }
 
@@ -147,7 +164,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void glowCrystal(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.GLOW);
     }
 
@@ -160,7 +179,9 @@ public final class EffectBlockPlacement {
      * @param targetFace the face that was hit, or null
      */
     static void metalSpikeTrap(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
         placeChainMarker(level, pos, targetFace, GooType.METAL);
     }
 
@@ -169,13 +190,13 @@ public final class EffectBlockPlacement {
      * Computes and applies the placement decision for a chain marker at the
      * hit block or the face-adjacent block.
      *
-     * @param level     the current level
-     * @param hitBlock  the hit block position
-     * @param face      the face that was hit, or null
-     * @param type      the goo type for the marker
+     * @param level    the current level
+     * @param hitBlock the hit block position
+     * @param face     the face that was hit, or null
+     * @param type     the goo type for the marker
      */
     private static void placeChainMarker(Level level, BlockPos hitBlock,
-            @Nullable Direction face, GooType type) {
+                                         @Nullable Direction face, GooType type) {
         Direction resolvedFace = face == null ? DEFAULT_FACE : face;
         BlockPos adjacentPos = hitBlock.relative(resolvedFace);
 
@@ -233,7 +254,7 @@ public final class EffectBlockPlacement {
      * @param face     the resolved hit face
      */
     private static void applyChainDecision(Level level, Decision decision,
-            BlockPos hitPos, BlockPos adjPos, GooType type, Direction face) {
+                                           BlockPos hitPos, BlockPos adjPos, GooType type, Direction face) {
         BlockPos target = pickCandidate(decision, hitPos, adjPos);
         switch (decision.action()) {
             case STACK -> stackChainMarker(level, target);
@@ -266,7 +287,7 @@ public final class EffectBlockPlacement {
      * @param waterlogged whether the marker should coexist with a water fluid
      */
     private static void placeFreshChainMarker(Level level, BlockPos pos, GooType type,
-            Direction face, boolean waterlogged) {
+                                              Direction face, boolean waterlogged) {
         BlockState markerState = GooBlocks.CHAIN_MARKER.get().defaultBlockState()
                 .setValue(ChainMarkerBlock.WATERLOGGED, waterlogged);
         level.setBlock(pos, markerState, BLOCK_UPDATE_FLAGS);
@@ -300,8 +321,8 @@ public final class EffectBlockPlacement {
      * @param ability the ability definition
      */
     public static void placeOrStackAbility(ServerLevel level, BlockPos pos,
-            GooType type, Direction face,
-            com.mercuriusxeno.goo.ability.AbilityDefinition ability) {
+                                           GooType type, Direction face,
+                                           com.mercuriusxeno.goo.ability.AbilityDefinition ability) {
         if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity existing) {
             existing.tryStack();
             return;

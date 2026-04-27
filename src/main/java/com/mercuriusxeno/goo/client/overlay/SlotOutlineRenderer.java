@@ -1,14 +1,14 @@
 package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.CanisterBlock;
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.HubBlock;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.ReactorBlock;
-import com.mercuriusxeno.goo.block.ReactorBlockEntity;
-import com.mercuriusxeno.goo.block.TapBlock;
-import com.mercuriusxeno.goo.block.TapBlockEntity;
+import com.mercuriusxeno.goo.block.tap.TapBlock;
+import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlock;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.hub.HubBlock;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
+import com.mercuriusxeno.goo.block.reactor.ReactorBlock;
+import com.mercuriusxeno.goo.block.reactor.ReactorBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterSlotResolver;
 import net.minecraft.client.Minecraft;
@@ -34,13 +34,18 @@ import org.jspecify.annotations.Nullable;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class SlotOutlineRenderer {
-    /** Block-local coordinate to pixel conversion factor. */
+    /**
+     * Block-local coordinate to pixel conversion factor.
+     */
     private static final double BLOCK_PIXELS = 16.0;
 
-    /** Default slot index for canister (center slot). */
+    /**
+     * Default slot index for canister (center slot).
+     */
     private static final int DEFAULT_CANISTER_SLOT = 4;
 
-    private SlotOutlineRenderer() {}
+    private SlotOutlineRenderer() {
+    }
 
     /**
      * Intercepts outline extraction for hub and canister blocks,
@@ -80,15 +85,17 @@ public final class SlotOutlineRenderer {
     /**
      * Computes the hub outline: frame + the single occupied slot the player is aiming at.
      *
-     * @param hit the block hit result
-     * @param pos the block position
+     * @param hit   the block hit result
+     * @param pos   the block position
      * @param event the event instance
      * @return the computed hubOutline
      */
     private static VoxelShape computeHubOutline(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
         int slot = HubBlock.hitSlot(hit, pos);
-        if (slot < 0) { return HubBlock.frameShape(); }
+        if (slot < 0) {
+            return HubBlock.frameShape();
+        }
         if (event.getLevel().getBlockEntity(pos) instanceof HubBlockEntity be
                 && !be.getCanister(slot).isEmpty()) {
             return Shapes.or(HubBlock.frameShape(), HubBlock.slotShape(slot));
@@ -100,17 +107,23 @@ public final class SlotOutlineRenderer {
      * Computes the placement preview bounds for a hub slot by projecting
      * the player's view ray onto the hit face plane of the block.
      *
-     * @param hit the block hit result
-     * @param pos the block position
+     * @param hit   the block hit result
+     * @param pos   the block position
      * @param event the event instance
      * @return the computed hubPreview
      */
     private static @Nullable AABB computeHubPreview(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerHoldingCanister()) { return null; }
-        if (!(event.getLevel().getBlockEntity(pos) instanceof HubBlockEntity be)) { return null; }
+        if (!isPlayerHoldingCanister()) {
+            return null;
+        }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof HubBlockEntity be)) {
+            return null;
+        }
         int slot = projectToHubSlot(hit, pos);
-        if (slot < 0 || !be.getCanister(slot).isEmpty()) { return null; }
+        if (slot < 0 || !be.getCanister(slot).isEmpty()) {
+            return null;
+        }
         return HubBlock.slotShape(slot).bounds();
     }
 
@@ -148,8 +161,8 @@ public final class SlotOutlineRenderer {
     /**
      * Computes the canister outline: just the single slot the player is aiming at.
      *
-     * @param hit the block hit result
-     * @param pos the block position
+     * @param hit   the block hit result
+     * @param pos   the block position
      * @param event the event instance
      * @return the computed canisterOutline
      */
@@ -166,24 +179,29 @@ public final class SlotOutlineRenderer {
      * Red wireframe on the canister the player would pick up. Shown when
      * not sneaking and aiming at an occupied slot.
      *
-     * @param hit the block hit result
-     * @param pos the block position
+     * @param hit   the block hit result
+     * @param pos   the block position
      * @param event the event instance
      * @return the pickup highlight bounds, or null
      */
     private static @Nullable AABB computeCanisterPickup(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerStandingIdle()) { return null; }
+        if (!isPlayerStandingIdle()) {
+            return null;
+        }
         if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
             return null;
         }
         int slot = CanisterBlock.hitSlot(hit, pos);
-        if (slot < 0 || be.getCanister(slot).isEmpty()) { return null; }
+        if (slot < 0 || be.getCanister(slot).isEmpty()) {
+            return null;
+        }
         return CanisterBlock.slotShape(slot).bounds();
     }
 
     /**
      * True when the local player exists and is not sneaking (secondary use).
+     *
      * @return true if the player is present and not sneaking
      */
     private static boolean isPlayerStandingIdle() {
@@ -196,37 +214,46 @@ public final class SlotOutlineRenderer {
      * - sneaking + aiming at occupied slot (resolves to adjacent empty), or
      * - aiming at an empty slot (regardless of sneak).
      *
-     * @param hit the block hit result
-     * @param pos the block position
+     * @param hit   the block hit result
+     * @param pos   the block position
      * @param event the event instance
      * @return the placement preview bounds, or null
      */
     private static @Nullable AABB computeCanisterPreview(
             BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerHoldingCanister()) { return null; }
+        if (!isPlayerHoldingCanister()) {
+            return null;
+        }
         if (!(event.getLevel().getBlockEntity(pos) instanceof CanisterBlockEntity be)) {
             return null;
         }
-        if (isOccupiedSlotWithoutSneak(hit, pos, be)) { return null; }
+        if (isOccupiedSlotWithoutSneak(hit, pos, be)) {
+            return null;
+        }
 
         int slot = CanisterSlotResolver.resolveAndConstrain(
                 hit.getLocation(), pos, hit.getDirection(), be);
-        if (slot < 0) { return null; }
+        if (slot < 0) {
+            return null;
+        }
         return CanisterBlock.slotShape(slot).bounds();
     }
 
     /**
      * True when the aimed slot is occupied and the player is not sneaking to override.
+     *
      * @param hit the block hit result
      * @param pos the canister block position
-     * @param be the canister block entity
+     * @param be  the canister block entity
      * @return true if aiming at an occupied slot without sneaking
      */
     private static boolean isOccupiedSlotWithoutSneak(BlockHitResult hit, BlockPos pos,
-            CanisterBlockEntity be) {
+                                                      CanisterBlockEntity be) {
         int hitSlot = CanisterBlock.hitSlot(hit, pos);
         boolean aimingAtOccupied = hitSlot >= 0 && !be.getCanister(hitSlot).isEmpty();
-        if (!aimingAtOccupied) { return false; }
+        if (!aimingAtOccupied) {
+            return false;
+        }
         var player = Minecraft.getInstance().player;
         return player == null || !player.isSecondaryUseActive();
     }
@@ -249,7 +276,7 @@ public final class SlotOutlineRenderer {
      * Returns canister slot bounds as a placement preview when the player holds
      * a canister and the tap's canister slot is empty.
      *
-     * @param pos the block position
+     * @param pos   the block position
      * @param state the block state
      * @param event the event instance
      * @return the computed tapPreview
@@ -258,9 +285,15 @@ public final class SlotOutlineRenderer {
             BlockPos pos,
             net.minecraft.world.level.block.state.BlockState state,
             ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerHoldingCanister()) { return null; }
-        if (!(event.getLevel().getBlockEntity(pos) instanceof TapBlockEntity tap)) { return null; }
-        if (!tap.getCanister().isEmpty()) { return null; }
+        if (!isPlayerHoldingCanister()) {
+            return null;
+        }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof TapBlockEntity tap)) {
+            return null;
+        }
+        if (!tap.getCanister().isEmpty()) {
+            return null;
+        }
         net.minecraft.core.Direction facing = state.getValue(TapBlock.FACING);
         return TapBlock.canisterSlotShape(facing).bounds();
     }
@@ -290,11 +323,15 @@ public final class SlotOutlineRenderer {
      */
     private static @Nullable AABB computeReactorPreview(
             BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerHoldingCanister()) { return null; }
+        if (!isPlayerHoldingCanister()) {
+            return null;
+        }
         if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return null;
         }
-        if (!reactor.getOutputCanister().isEmpty()) { return null; }
+        if (!reactor.getOutputCanister().isEmpty()) {
+            return null;
+        }
         if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
             return null;
         }
@@ -313,11 +350,15 @@ public final class SlotOutlineRenderer {
      */
     private static @Nullable AABB computeReactorPickup(
             BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
-        if (!isPlayerStandingIdle()) { return null; }
+        if (!isPlayerStandingIdle()) {
+            return null;
+        }
         if (!(event.getLevel().getBlockEntity(pos) instanceof ReactorBlockEntity reactor)) {
             return null;
         }
-        if (reactor.getOutputCanister().isEmpty()) { return null; }
+        if (reactor.getOutputCanister().isEmpty()) {
+            return null;
+        }
         if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
             return null;
         }
@@ -340,7 +381,7 @@ public final class SlotOutlineRenderer {
      * Creates a custom outline renderer that draws the given shape
      * with standard block outline styling, plus an optional placement preview.
      *
-     * @param shape the voxel shape to render
+     * @param shape   the voxel shape to render
      * @param preview the placement preview bounds, or null
      * @return the custom outline renderer
      */

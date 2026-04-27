@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.item.gasket;
 
-import com.mercuriusxeno.goo.block.HubBlock;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.ICanisterAttachable;
+import com.mercuriusxeno.goo.block.canister.ICanisterAttachable;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
+import com.mercuriusxeno.goo.block.hub.HubBlock;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import com.mercuriusxeno.goo.data.GasketLocation;
 import com.mercuriusxeno.goo.data.GasketRegistry;
 import net.minecraft.core.BlockPos;
@@ -27,12 +27,17 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
  */
 final class GasketInstallHelper {
 
-    /** Block update flags: notify clients + update neighbors. */
+    /**
+     * Block update flags: notify clients + update neighbors.
+     */
     private static final int BLOCK_UPDATE_FLAGS = 3;
-    /** Feedback: gasket installed successfully. */
+    /**
+     * Feedback: gasket installed successfully.
+     */
     private static final String MSG_GASKET_INSTALLED = "Gasket installed";
 
-    private GasketInstallHelper() {}
+    private GasketInstallHelper() {
+    }
 
     /**
      * Returns true if the intake is blocked by a canister attachment above.

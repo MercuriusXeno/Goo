@@ -21,32 +21,40 @@ import java.util.UUID;
  */
 public class GasketRegistry extends SavedData {
 
-    /** Output gasket -> input gasket (directional pairing). */
+    /**
+     * Codec for persistent serialization of the registry.
+     */
+    public static final Codec<GasketRegistry> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, UUIDUtil.STRING_CODEC)
+                            .fieldOf("pairings").forGetter(r -> r.pairings),
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, GasketLocation.CODEC)
+                            .fieldOf("locations").forGetter(r -> r.locations)
+            ).apply(instance, GasketRegistry::new)
+    );
+    /**
+     * SavedData type registration. Stored as goo/gasket_registry.dat in the server data storage.
+     */
+    public static final SavedDataType<GasketRegistry> TYPE =
+            new SavedDataType<>(
+                    Identifier.fromNamespaceAndPath("goo", "gasket_registry"),
+                    GasketRegistry::new, CODEC);
+    /**
+     * Output gasket -> input gasket (directional pairing).
+     */
     private final Map<UUID, UUID> pairings;
-
-    /** Input gasket -> output gasket (inverse index for O(1) source lookup). */
+    /**
+     * Input gasket -> output gasket (inverse index for O(1) source lookup).
+     */
     private final Map<UUID, UUID> reversePairings;
-
-    /** Gasket UUID -> current world location (null entries not stored). */
+    /**
+     * Gasket UUID -> current world location (null entries not stored).
+     */
     private final Map<UUID, GasketLocation> locations;
 
-    /** Codec for persistent serialization of the registry. */
-    public static final Codec<GasketRegistry> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            Codec.unboundedMap(UUIDUtil.STRING_CODEC, UUIDUtil.STRING_CODEC)
-                .fieldOf("pairings").forGetter(r -> r.pairings),
-            Codec.unboundedMap(UUIDUtil.STRING_CODEC, GasketLocation.CODEC)
-                .fieldOf("locations").forGetter(r -> r.locations)
-        ).apply(instance, GasketRegistry::new)
-    );
-
-    /** SavedData type registration. Stored as goo/gasket_registry.dat in the server data storage. */
-    public static final SavedDataType<GasketRegistry> TYPE =
-        new SavedDataType<>(
-            Identifier.fromNamespaceAndPath("goo", "gasket_registry"),
-            GasketRegistry::new, CODEC);
-
-    /** Creates a new empty registry. */
+    /**
+     * Creates a new empty registry.
+     */
     public GasketRegistry() {
         this(new HashMap<>(), new HashMap<>());
     }
@@ -54,7 +62,7 @@ public class GasketRegistry extends SavedData {
     /**
      * Creates a registry from deserialized data, rebuilding the inverse index.
      *
-     * @param pairings output-to-input gasket UUID pairs
+     * @param pairings  output-to-input gasket UUID pairs
      * @param locations gasket UUID to world location cache
      */
     public GasketRegistry(Map<UUID, UUID> pairings, Map<UUID, GasketLocation> locations) {
@@ -81,7 +89,7 @@ public class GasketRegistry extends SavedData {
      * for either gasket (each gasket can only participate in one link).
      *
      * @param outputGasket the source (output) gasket UUID
-     * @param inputGasket the destination (input) gasket UUID
+     * @param inputGasket  the destination (input) gasket UUID
      */
     public void link(UUID outputGasket, UUID inputGasket) {
         unlink(outputGasket);
@@ -99,10 +107,13 @@ public class GasketRegistry extends SavedData {
     public void unlink(UUID gasketId) {
         boolean changed = unlinkForward(gasketId);
         changed |= unlinkReverse(gasketId);
-        if (changed) { setDirty(); }
+        if (changed) {
+            setDirty();
+        }
     }
 
-    /** Removes the forward pairing (gasketId as source) and its reverse entry.
+    /**
+     * Removes the forward pairing (gasketId as source) and its reverse entry.
      *
      * @param gasketId the gasket UUID
      * @return true if a forward pairing was removed
@@ -116,7 +127,8 @@ public class GasketRegistry extends SavedData {
         return false;
     }
 
-    /** Removes the reverse pairing (gasketId as target) and its forward entry.
+    /**
+     * Removes the reverse pairing (gasketId as target) and its forward entry.
      *
      * @param gasketId the gasket UUID
      * @return true if a reverse pairing was removed

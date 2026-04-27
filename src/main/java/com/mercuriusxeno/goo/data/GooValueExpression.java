@@ -24,70 +24,42 @@ final class GooValueExpression {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Open parenthesis. */
+    /**
+     * Open parenthesis.
+     */
     private static final String OP_OPEN_PAREN = "(";
-    /** Close parenthesis. */
+    /**
+     * Close parenthesis.
+     */
     private static final String OP_CLOSE_PAREN = ")";
-    /** Dollar-sign prefix for constants. */
+    /**
+     * Dollar-sign prefix for constants.
+     */
     private static final String DOLLAR_PREFIX = "$";
 
     // --- Log messages ---
 
-    /** Log: scalar used where GooValue expected. */
+    /**
+     * Log: scalar used where GooValue expected.
+     */
     private static final String LOG_SCALAR_AS_GOO = "Scalar {} used where GooValue expected";
-    /** Log: missing closing parenthesis. */
+    /**
+     * Log: missing closing parenthesis.
+     */
     private static final String LOG_MISSING_PAREN = "Missing closing parenthesis in GooValue expression";
-    /** Log: unknown item in expression. */
+    /**
+     * Log: unknown item in expression.
+     */
     private static final String LOG_UNKNOWN_ITEM = "Unknown item in expression: {}";
-    /** Log: unknown constant in expression. */
+    /**
+     * Log: unknown constant in expression.
+     */
     private static final String LOG_UNKNOWN_CONST = "Unknown constant in GooValue expression: ${}";
 
-    /** Utility class, not instantiable. */
-    private GooValueExpression() {}
-
     /**
-     * Represents a value in an expression: either a GooValue (multi-type)
-     * or a scalar int (for constants and dot-extracted values).
+     * Utility class, not instantiable.
      */
-    sealed interface ExprVal {
-        /**
-         * Converts this expression value to a GooValue (identity for GooVal, lossy for ScalarVal).
-         *
-         * @return the GooValue representation
-         */
-        GooValue toGooValue();
-
-        /**
-         * Converts this expression value to an int (totalBlobs for GooVal, identity for ScalarVal).
-         *
-         * @return the integer representation
-         */
-        int toInt();
-
-        /**
-         * Returns true if this value is a plain integer (not a multi-type GooValue).
-         *
-         * @return true if scalar, false if multi-type
-         */
-        boolean isScalar();
-    }
-
-    /** Wraps a multi-type GooValue as an expression result. */
-    record GooVal(GooValue value) implements ExprVal {
-        @Override public GooValue toGooValue() { return value; }
-        @Override public int toInt() { return value.totalBlobs(); }
-        @Override public boolean isScalar() { return false; }
-    }
-
-    /** Wraps a plain integer as an expression result. */
-    record ScalarVal(int value) implements ExprVal {
-        @Override public GooValue toGooValue() {
-            // Scalar can't meaningfully become a GooValue; shouldn't happen in well-formed expressions
-            LOGGER.warn(LOG_SCALAR_AS_GOO, value);
-            return GooValue.EMPTY;
-        }
-        @Override public int toInt() { return value; }
-        @Override public boolean isScalar() { return true; }
+    private GooValueExpression() {
     }
 
     /**
@@ -106,10 +78,10 @@ final class GooValueExpression {
     /**
      * Evaluates an item-level expression string into a GooValue, with tree constant support.
      *
-     * @param expr           the expression (e.g. "minecraft:copper_block + $stripped")
-     * @param baseValues     already-parsed item values (order-dependent: earlier items available)
-     * @param constants      $constant symbol table (scalar ints)
-     * @param treeConstants  $constant symbol table (GooValue trees)
+     * @param expr          the expression (e.g. "minecraft:copper_block + $stripped")
+     * @param baseValues    already-parsed item values (order-dependent: earlier items available)
+     * @param constants     $constant symbol table (scalar ints)
+     * @param treeConstants $constant symbol table (GooValue trees)
      * @return the computed GooValue
      */
     static GooValue evaluate(String expr, Map<Identifier, GooValue> baseValues,
@@ -121,14 +93,13 @@ final class GooValueExpression {
         return result.toGooValue();
     }
 
-
     /**
      * Additive level: + and - on GooValues.
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param baseValues item value lookup table
-     * @param constants scalar constant symbol table
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param baseValues    item value lookup table
+     * @param constants     scalar constant symbol table
      * @param treeConstants tree constant symbol table
      * @return the evaluated expression value
      */
@@ -159,10 +130,10 @@ final class GooValueExpression {
     /**
      * Multiplicative level: * and /, plus implicit multiplication (e.g. "4 iron_ingot").
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param baseValues item value lookup table
-     * @param constants scalar constant symbol table
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param baseValues    item value lookup table
+     * @param constants     scalar constant symbol table
      * @param treeConstants tree constant symbol table
      * @return the evaluated term value
      */
@@ -173,7 +144,9 @@ final class GooValueExpression {
         ExprVal result = evalAtom(tokens, pos, baseValues, constants, treeConstants);
         while (pos[0] < tokens.size()) {
             ExprVal folded = foldTermOperand(tokens, pos, result, baseValues, constants, treeConstants);
-            if (folded == null) { break; }
+            if (folded == null) {
+                break;
+            }
             result = folded;
         }
         return result;
@@ -206,6 +179,7 @@ final class GooValueExpression {
 
     /**
      * Returns true if the token is an explicit multiplicative operator (* or /).
+     *
      * @param token the token to test
      * @return true if the token is '*' or '/'
      */
@@ -215,12 +189,13 @@ final class GooValueExpression {
 
     /**
      * Applies implicit multiplication when a scalar precedes an atom token.
-     * @param current the left-hand scalar value
-     * @param next    the next token (potential atom start)
+     *
+     * @param current       the left-hand scalar value
+     * @param next          the next token (potential atom start)
      * @param tokens        the token list being parsed
      * @param pos           the mutable position index into the token list
-     * @param baseValues   the base item-to-goo-value map
-     * @param constants    the named integer constants
+     * @param baseValues    the base item-to-goo-value map
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      * @return the product if implicit multiply applied, otherwise current unchanged
      */
@@ -250,10 +225,10 @@ final class GooValueExpression {
     /**
      * Atom: unary minus, parenthesized group, $constant (tree or scalar), integer, or namespaced item ID.
      *
-     * @param tokens the token list from the tokenizer
-     * @param pos mutable position index into tokens
-     * @param baseValues item value lookup table
-     * @param constants scalar constant symbol table
+     * @param tokens        the token list from the tokenizer
+     * @param pos           mutable position index into tokens
+     * @param baseValues    item value lookup table
+     * @param constants     scalar constant symbol table
      * @param treeConstants tree constant symbol table
      * @return the evaluated atom value
      */
@@ -327,8 +302,8 @@ final class GooValueExpression {
      * Supports dot notation: $log.leaf extracts a single type as a GooValue.
      * At item level, this preserves the type identity (e.g. {leaf: 480}).
      *
-     * @param name the constant name (without $ prefix)
-     * @param constants scalar constant symbol table
+     * @param name          the constant name (without $ prefix)
+     * @param constants     scalar constant symbol table
      * @param treeConstants tree constant symbol table
      * @return the resolved expression value
      */
@@ -336,14 +311,19 @@ final class GooValueExpression {
                                              Map<String, Integer> constants,
                                              Map<String, GooValue> treeConstants) {
         ExprVal dotResult = tryDotExtraction(name, treeConstants);
-        if (dotResult != null) { return dotResult; }
+        if (dotResult != null) {
+            return dotResult;
+        }
         GooValue tree = treeConstants.get(name);
-        if (tree != null) { return new GooVal(tree); }
+        if (tree != null) {
+            return new GooVal(tree);
+        }
         return new ScalarVal(lookupConstant(name, constants));
     }
 
     /**
      * Attempts dot extraction if the name contains a valid dot position.
+     *
      * @param name          the dotted identifier to resolve (e.g. "iron.rock")
      * @param treeConstants the named goo value constants from the expression tree
      * @return the extracted goo type amount, or null if no valid dot position
@@ -399,7 +379,7 @@ final class GooValueExpression {
      * the colon (e.g. minecraft:coal.blaze), returns a single-type tree
      * containing only that component. Otherwise returns the full GooValue.
      *
-     * @param token the namespaced ID token (possibly with .type suffix)
+     * @param token      the namespaced ID token (possibly with .type suffix)
      * @param baseValues item value lookup table
      * @return the resolved expression value
      */
@@ -448,7 +428,7 @@ final class GooValueExpression {
     /**
      * Looks up an item's GooValue by parsing the ID string, returning EMPTY if unknown.
      *
-     * @param id the item ID string to parse and look up
+     * @param id         the item ID string to parse and look up
      * @param baseValues item value lookup table
      * @return the item's GooValue, or EMPTY if not found
      */
@@ -465,7 +445,7 @@ final class GooValueExpression {
     /**
      * Looks up a scalar constant by name, returning 0 if unknown.
      *
-     * @param name the constant name (without $ prefix)
+     * @param name      the constant name (without $ prefix)
      * @param constants scalar constant symbol table
      * @return the constant value, or 0 if unknown
      */
@@ -476,5 +456,74 @@ final class GooValueExpression {
             return 0;
         }
         return value;
+    }
+
+    /**
+     * Represents a value in an expression: either a GooValue (multi-type)
+     * or a scalar int (for constants and dot-extracted values).
+     */
+    sealed interface ExprVal {
+        /**
+         * Converts this expression value to a GooValue (identity for GooVal, lossy for ScalarVal).
+         *
+         * @return the GooValue representation
+         */
+        GooValue toGooValue();
+
+        /**
+         * Converts this expression value to an int (totalBlobs for GooVal, identity for ScalarVal).
+         *
+         * @return the integer representation
+         */
+        int toInt();
+
+        /**
+         * Returns true if this value is a plain integer (not a multi-type GooValue).
+         *
+         * @return true if scalar, false if multi-type
+         */
+        boolean isScalar();
+    }
+
+    /**
+     * Wraps a multi-type GooValue as an expression result.
+     */
+    record GooVal(GooValue value) implements ExprVal {
+        @Override
+        public GooValue toGooValue() {
+            return value;
+        }
+
+        @Override
+        public int toInt() {
+            return value.totalBlobs();
+        }
+
+        @Override
+        public boolean isScalar() {
+            return false;
+        }
+    }
+
+    /**
+     * Wraps a plain integer as an expression result.
+     */
+    record ScalarVal(int value) implements ExprVal {
+        @Override
+        public GooValue toGooValue() {
+            // Scalar can't meaningfully become a GooValue; shouldn't happen in well-formed expressions
+            LOGGER.warn(LOG_SCALAR_AS_GOO, value);
+            return GooValue.EMPTY;
+        }
+
+        @Override
+        public int toInt() {
+            return value;
+        }
+
+        @Override
+        public boolean isScalar() {
+            return true;
+        }
     }
 }

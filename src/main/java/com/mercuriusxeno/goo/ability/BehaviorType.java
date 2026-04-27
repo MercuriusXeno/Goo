@@ -15,20 +15,6 @@ import java.util.Map;
  */
 public final class BehaviorType {
 
-    /** Factory that creates a ChainBehavior from parsed parameters. */
-    @FunctionalInterface
-    public interface Factory {
-
-        /**
-         * Creates a behavior from the given entry's parameters.
-         *
-         * @param entry the behavior entry with type and params
-         * @param def   the parent ability definition for context
-         * @return a new chain behavior instance
-         */
-        ChainBehavior create(BehaviorEntry entry, AbilityDefinition def);
-    }
-
     private static final Map<String, Factory> FACTORIES = new HashMap<>();
 
     static {
@@ -41,7 +27,8 @@ public final class BehaviorType {
         register("entity_effect", MobAbilityBehavior::fromEntry);
     }
 
-    private BehaviorType() {}
+    private BehaviorType() {
+    }
 
     /**
      * Registers a behavior type factory.
@@ -67,5 +54,21 @@ public final class BehaviorType {
             throw new IllegalArgumentException(entry.type());
         }
         return factory.create(entry, def);
+    }
+
+    /**
+     * Factory that creates a ChainBehavior from parsed parameters.
+     */
+    @FunctionalInterface
+    public interface Factory {
+
+        /**
+         * Creates a behavior from the given entry's parameters.
+         *
+         * @param entry the behavior entry with type and params
+         * @param def   the parent ability definition for context
+         * @return a new chain behavior instance
+         */
+        ChainBehavior create(BehaviorEntry entry, AbilityDefinition def);
     }
 }

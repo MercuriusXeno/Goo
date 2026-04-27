@@ -15,10 +15,13 @@ import static java.util.Map.entry;
  */
 public final class WorldEffects {
 
-    /** One effect instance per goo type. */
+    /**
+     * One effect instance per goo type.
+     */
     private static final Map<GooType, WorldEffect> EFFECTS = buildRegistry();
 
-    private WorldEffects() {}
+    private WorldEffects() {
+    }
 
     /**
      * Applies the world effect for the given goo type at the target position.
@@ -37,17 +40,18 @@ public final class WorldEffects {
 
     /**
      * Builds the type-to-effect map. Every GooType should have an entry.
+     *
      * @return immutable type-to-effect map covering all 15 goo types
      */
     private static Map<GooType, WorldEffect> buildRegistry() {
         return new EnumMap<>(Map.ofEntries(
-            entry(GooType.ROCK, new RockBehavior()),       entry(GooType.BLAZE, new BlazeBehavior()),
-            entry(GooType.FROST, new FrostBehavior()),     entry(GooType.METAL, new MetalBehavior()),
-            entry(GooType.CRYSTAL, new CrystalBehavior()), entry(GooType.HEX, new HexEffect()),
-            entry(GooType.LEAF, new LeafEffect()),         entry(GooType.VITAL, new VitalEffect()),
-            entry(GooType.SHROOM, new ShroomEffect()),     entry(GooType.TYPHOON, new TyphoonEffect()),
-            entry(GooType.GLOW, new GlowBehavior()),       entry(GooType.PULSE, new PulseEffect()),
-            entry(GooType.NETHER, new NetherBehavior()),   entry(GooType.ENDER, new EnderEffect()),
-            entry(GooType.AEON, new AeonEffect()),         entry(GooType.UNSTABLE, new UnstableBehavior())));
+                entry(GooType.ROCK, new RockBehavior()), entry(GooType.BLAZE, new BlazeBehavior()),
+                entry(GooType.FROST, new FrostBehavior()), entry(GooType.METAL, new MetalBehavior()),
+                entry(GooType.CRYSTAL, new CrystalBehavior()), entry(GooType.HEX, new HexEffect()),
+                entry(GooType.LEAF, new LeafEffect()), entry(GooType.VITAL, new VitalEffect()),
+                entry(GooType.SHROOM, new ShroomEffect()), entry(GooType.TYPHOON, new TyphoonEffect()),
+                entry(GooType.GLOW, new GlowBehavior()), entry(GooType.PULSE, new PulseEffect()),
+                entry(GooType.NETHER, new NetherBehavior()), entry(GooType.ENDER, new EnderEffect()),
+                entry(GooType.AEON, new AeonEffect()), entry(GooType.UNSTABLE, new UnstableBehavior())));
     }
 }

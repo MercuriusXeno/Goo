@@ -31,91 +31,160 @@ import java.util.Collection;
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class BlobFlightRenderer {
 
-    /** Block atlas texture path - same convention as the BERs. */
+    /**
+     * Block atlas texture path - same convention as the BERs.
+     */
     private static final Identifier BLOCK_ATLAS_TEXTURE =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
-    /** Half-width of the core cuboid (~2.5 pixels). */
+    /**
+     * Half-width of the core cuboid (~2.5 pixels).
+     */
     private static final float CORE_HW = 0.08f;
-    /** Half-width of the shell cuboid (~5 pixels). */
+    /**
+     * Half-width of the shell cuboid (~5 pixels).
+     */
     private static final float SHELL_HW = 0.15f;
-    /** Shell alpha (translucent). */
+    /**
+     * Shell alpha (translucent).
+     */
     private static final int SHELL_ALPHA = 0x60;
 
-    /** Tail quad length behind the blob. */
+    /**
+     * Tail quad length behind the blob.
+     */
     private static final float TAIL_LENGTH = 0.4f;
-    /** Tail quad half-width. */
+    /**
+     * Tail quad half-width.
+     */
     private static final float TAIL_HW = 0.06f;
 
-    /** Full-bright packed light for entity rendering. */
+    /**
+     * Full-bright packed light for entity rendering.
+     */
     private static final int FULL_BRIGHT = 0xF000F0;
 
-    /** Pulse amplitude for core breathing animation. */
+    /**
+     * Pulse amplitude for core breathing animation.
+     */
     private static final float CORE_PULSE_AMP = 0.1f;
 
-    /** Pulse speed multiplier for core breathing animation. */
+    /**
+     * Pulse speed multiplier for core breathing animation.
+     */
     private static final float CORE_PULSE_SPEED = 0.3f;
 
-    /** Normal direction for negative-facing surfaces. */
+    /**
+     * Normal direction for negative-facing surfaces.
+     */
     private static final float NORMAL_NEG = -1f;
 
-    /** Bit shift for alpha channel in ARGB. */
+    /**
+     * Bit shift for alpha channel in ARGB.
+     */
     private static final int ALPHA_SHIFT = 24;
 
-    /** RGB mask for stripping alpha from a color. */
+    /**
+     * RGB mask for stripping alpha from a color.
+     */
     private static final int RGB_MASK = 0xFFFFFF;
 
-    /** Tail alpha value (semi-transparent). */
+    /**
+     * Tail alpha value (semi-transparent).
+     */
     private static final int TAIL_ALPHA = 0x80;
 
-    /** Threshold for up-vector selection to avoid parallel cross products. */
+    /**
+     * Threshold for up-vector selection to avoid parallel cross products.
+     */
     private static final double UP_THRESHOLD = 0.9;
 
 
-    /** Billboard half-width matches the blob core size. */
+    /**
+     * Billboard half-width matches the blob core size.
+     */
     private static final float BEAM_HW = CORE_HW;
-    /** ARGB color for the beam center (white-hot). */
+    /**
+     * ARGB color for the beam center (white-hot).
+     */
     private static final int BEAM_CENTER_COLOR = 0xFFFFFFFF;
-    /** ARGB color for the beam edges at the head (saturated glowstone yellow). */
+    /**
+     * ARGB color for the beam edges at the head (saturated glowstone yellow).
+     */
     private static final int BEAM_EDGE_COLOR = 0xD0FFD700;
-    /** ARGB color for the beam tail (faded glowstone yellow). */
+    /**
+     * ARGB color for the beam tail (faded glowstone yellow).
+     */
     private static final int BEAM_TAIL_COLOR = 0x30FFD700;
 
 
-    /** Short-range threshold: metal spine starts fully formed below this. */
+    /**
+     * Short-range threshold: metal spine starts fully formed below this.
+     */
     private static final float SHORT_RANGE_THRESHOLD = 1.5f;
-    /** Front spear cone length in blocks. */
+    /**
+     * Front spear cone length in blocks.
+     */
     private static final float DART_FRONT_LENGTH = 2.5f;
-    /** Front spear cone base radius (narrow, needlelike). */
+    /**
+     * Front spear cone base radius (narrow, needlelike).
+     */
     private static final float DART_FRONT_RADIUS = 0.05f;
-    /** Rear spear butt length in blocks. */
+    /**
+     * Rear spear butt length in blocks.
+     */
     private static final float DART_REAR_LENGTH = 0.5f;
-    /** Rear spear butt base radius. */
+    /**
+     * Rear spear butt base radius.
+     */
     private static final float DART_REAR_RADIUS = 0.09f;
-    /** Number of triangular faces on dart cones. */
+    /**
+     * Number of triangular faces on dart cones.
+     */
     private static final int DART_SIDES = 3;
-    /** Two pi for dart angle computation. */
+    /**
+     * Two pi for dart angle computation.
+     */
     private static final float TWO_PI = (float) (2 * Math.PI);
-    /** Morph rate: spine is fully formed at 40% of flight time. */
+    /**
+     * Morph rate: spine is fully formed at 40% of flight time.
+     */
     private static final float MORPH_RATE = 2.5f;
-    /** Epsilon for near-zero length detection in beam/direction math. */
+    /**
+     * Epsilon for near-zero length detection in beam/direction math.
+     */
     private static final double LENGTH_EPSILON = 1e-6;
-    /** Array offset for X component of the perpendicular basis vector. */
+    /**
+     * Array offset for X component of the perpendicular basis vector.
+     */
     private static final int PERP_X = 0;
-    /** Array offset for Y component of the perpendicular basis vector. */
+    /**
+     * Array offset for Y component of the perpendicular basis vector.
+     */
     private static final int PERP_Y = 1;
-    /** Array offset for Z component of the perpendicular basis vector. */
+    /**
+     * Array offset for Z component of the perpendicular basis vector.
+     */
     private static final int PERP_Z = 2;
-    /** Array offset for X component of the cross basis vector. */
+    /**
+     * Array offset for X component of the cross basis vector.
+     */
     private static final int CROSS_X = 3;
-    /** Array offset for Y component of the cross basis vector. */
+    /**
+     * Array offset for Y component of the cross basis vector.
+     */
     private static final int CROSS_Y = 4;
-    /** Array offset for Z component of the cross basis vector. */
+    /**
+     * Array offset for Z component of the cross basis vector.
+     */
     private static final int CROSS_Z = 5;
-    /** UV midpoint factor for cone face texture coordinates. */
+    /**
+     * UV midpoint factor for cone face texture coordinates.
+     */
     private static final float UV_MIDPOINT = 0.5f;
 
-    private BlobFlightRenderer() {}
+    private BlobFlightRenderer() {
+    }
 
     /**
      * Renders all active blob flights after translucent blocks so the shell blends correctly.
@@ -125,10 +194,14 @@ public final class BlobFlightRenderer {
     @SubscribeEvent
     public static void onAfterTranslucentBlocks(RenderLevelStageEvent.AfterTranslucentBlocks event) {
         Collection<BlobFlightManager.BlobFlight> flights = BlobFlightManager.getActiveFlights();
-        if (flights.isEmpty()) { return; }
+        if (flights.isEmpty()) {
+            return;
+        }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) { return; }
+        if (mc.level == null) {
+            return;
+        }
 
         RenderContext ctx = buildRenderContext(mc, event.getPoseStack());
         for (BlobFlightManager.BlobFlight flight : flights) {
@@ -139,7 +212,7 @@ public final class BlobFlightRenderer {
     /**
      * Captures the per-frame rendering state needed by all flight renders.
      *
-     * @param mc the Minecraft client instance
+     * @param mc        the Minecraft client instance
      * @param poseStack the pose stack for rendering
      * @return the render context for this frame
      */
@@ -152,29 +225,12 @@ public final class BlobFlightRenderer {
     }
 
     /**
-     * Per-frame render state shared across all flight renders.
-     *
-     * @param poseStack the pose stack for rendering
-     * @param buffers the buffer source for rendering
-     * @param camera the render camera
-     * @param gameTime the level game time including partial tick
-     * @param partialTick the sub-tick interpolation factor for this frame
-     */
-    private record RenderContext(
-            PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers,
-            Camera camera,
-            float gameTime,
-            float partialTick
-    ) {}
-
-    /**
      * Renders a single flight: core, shell, tail, and particles. The
      * flight position and velocity are sampled at the current partial
      * tick so the blob interpolates smoothly at render FPS rather than
      * snapping once per 20 Hz client tick.
      *
-     * @param ctx the per-frame render context
+     * @param ctx    the per-frame render context
      * @param flight the flight to render
      */
     private static void renderFlight(RenderContext ctx, BlobFlightManager.BlobFlight flight) {
@@ -212,9 +268,9 @@ public final class BlobFlightRenderer {
     /**
      * Renders core, shell, and tail layers for a single flight.
      *
-     * @param ctx the per-frame render context
+     * @param ctx  the per-frame render context
      * @param type the goo type
-     * @param vel the velocity vector
+     * @param vel  the velocity vector
      */
     private static void renderFlightLayers(RenderContext ctx, GooType type, Vec3 vel) {
         renderCore(ctx.poseStack, ctx.buffers, type, ctx.gameTime);
@@ -227,12 +283,12 @@ public final class BlobFlightRenderer {
      * Uses entitySolid for fully opaque rendering.
      *
      * @param poseStack the pose stack for rendering
-     * @param buffers the buffer source for rendering
-     * @param type the goo type
-     * @param gameTime the level game time in ticks
+     * @param buffers   the buffer source for rendering
+     * @param type      the goo type
+     * @param gameTime  the level game time in ticks
      */
     private static void renderCore(PoseStack poseStack, MultiBufferSource buffers,
-            GooType type, float gameTime) {
+                                   GooType type, float gameTime) {
         float pulse = 1.0f + CORE_PULSE_AMP * Mth.sin(gameTime * CORE_PULSE_SPEED);
         float hw = CORE_HW * pulse;
 
@@ -248,11 +304,11 @@ public final class BlobFlightRenderer {
      * Gives the blob a slime-like outer glow.
      *
      * @param poseStack the pose stack for rendering
-     * @param buffers the buffer source for rendering
-     * @param type the goo type
+     * @param buffers   the buffer source for rendering
+     * @param type      the goo type
      */
     private static void renderShell(PoseStack poseStack, MultiBufferSource buffers,
-            GooType type) {
+                                    GooType type) {
         int color = (SHELL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
@@ -278,13 +334,13 @@ public final class BlobFlightRenderer {
      * Gives the projectile a streaking motion feel.
      *
      * @param poseStack the pose stack for rendering
-     * @param buffers the buffer source for rendering
-     * @param type the goo type
-     * @param velocity the velocity direction vector
-     * @param gameTime the level game time in ticks
+     * @param buffers   the buffer source for rendering
+     * @param type      the goo type
+     * @param velocity  the velocity direction vector
+     * @param gameTime  the level game time in ticks
      */
     private static void renderTail(PoseStack poseStack, MultiBufferSource buffers,
-            GooType type, Vec3 velocity, float gameTime) {
+                                   GooType type, Vec3 velocity, float gameTime) {
         GooRenderUtil.UvRect uv = spriteToUv(type);
         int tailColor = (TAIL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
@@ -297,13 +353,13 @@ public final class BlobFlightRenderer {
      * Emits two perpendicular tail quads inside a pose push/pop scope.
      *
      * @param poseStack the pose stack for rendering
-     * @param c the vertex consumer
+     * @param c         the vertex consumer
      * @param tailColor the ARGB tail color
-     * @param axes the tail coordinate axes
-     * @param uv the UV texture rectangle
+     * @param axes      the tail coordinate axes
+     * @param uv        the UV texture rectangle
      */
     private static void emitCrossingTailQuads(PoseStack poseStack, VertexConsumer c,
-            int tailColor, TailAxes axes, GooRenderUtil.UvRect uv) {
+                                              int tailColor, TailAxes axes, GooRenderUtil.UvRect uv) {
         poseStack.pushPose();
         PoseStack.Pose pose = poseStack.last();
         emitTailQuad(pose, c, FULL_BRIGHT, tailColor, axes.tailEnd, axes.right, TAIL_HW, uv);
@@ -328,28 +384,19 @@ public final class BlobFlightRenderer {
     }
 
     /**
-     * Holds the local coordinate axes and endpoint for tail quad emission.
-     *
-     * @param right the perpendicular right axis
-     * @param up the perpendicular up axis
-     * @param tailEnd the tail endpoint behind the blob
-     */
-    private record TailAxes(Vec3 right, Vec3 up, Vec3 tailEnd) {}
-
-    /**
      * Emits a single tail quad stretched from origin to tailEnd, with half-width along the axis.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param color the ARGB color value
+     * @param pose    the pose matrix entry
+     * @param c       the vertex consumer
+     * @param light   the packed light value
+     * @param color   the ARGB color value
      * @param tailEnd the tail endpoint behind the blob
-     * @param axis the perpendicular axis vector
-     * @param hw the half-width in block coords
-     * @param uv the UV texture rectangle
+     * @param axis    the perpendicular axis vector
+     * @param hw      the half-width in block coords
+     * @param uv      the UV texture rectangle
      */
     private static void emitTailQuad(PoseStack.Pose pose, VertexConsumer c, int light, int color,
-            Vec3 tailEnd, Vec3 axis, float hw, GooRenderUtil.UvRect uv) {
+                                     Vec3 tailEnd, Vec3 axis, float hw, GooRenderUtil.UvRect uv) {
         TailCorners corners = buildTailCorners(tailEnd, axis, hw);
         Vec3 normal = tailEnd.normalize().cross(axis);
         emitTailFrontFace(pose, c, light, color, corners, uv, normal);
@@ -360,8 +407,8 @@ public final class BlobFlightRenderer {
      * Computes the axis and endpoint offsets for a tail quad's four corners.
      *
      * @param tailEnd the tail endpoint behind the blob
-     * @param axis the perpendicular axis vector
-     * @param hw the half-width in block coords
+     * @param axis    the perpendicular axis vector
+     * @param hw      the half-width in block coords
      * @return the precomputed corner offsets
      */
     private static TailCorners buildTailCorners(Vec3 tailEnd, Vec3 axis, float hw) {
@@ -371,34 +418,22 @@ public final class BlobFlightRenderer {
     }
 
     /**
-     * Precomputed axis and endpoint offsets for a tail quad.
-     *
-     * @param ax the axis X offset scaled by half-width
-     * @param ay the axis Y offset scaled by half-width
-     * @param az the axis Z offset scaled by half-width
-     * @param ex the tail end X coordinate
-     * @param ey the tail end Y coordinate
-     * @param ez the tail end Z coordinate
-     */
-    private record TailCorners(float ax, float ay, float az, float ex, float ey, float ez) {}
-
-    /**
      * Emits the front face of a tail quad using precomputed corner offsets.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param color the ARGB color value
-     * @param tc the precomputed tail corner offsets
-     * @param uv the UV texture rectangle
+     * @param pose   the pose matrix entry
+     * @param c      the vertex consumer
+     * @param light  the packed light value
+     * @param color  the ARGB color value
+     * @param tc     the precomputed tail corner offsets
+     * @param uv     the UV texture rectangle
      * @param normal the face normal vector
      */
     private static void emitTailFrontFace(PoseStack.Pose pose, VertexConsumer c, int light, int color,
-            TailCorners tc, GooRenderUtil.UvRect uv, Vec3 normal) {
+                                          TailCorners tc, GooRenderUtil.UvRect uv, Vec3 normal) {
         float nx = (float) normal.x;
         float ny = (float) normal.y;
         float nz = (float) normal.z;
-        GooRenderUtil.vertexColored(pose, c, light, color,  tc.ax,  tc.ay,  tc.az, uv.u0(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, light, color, tc.ax, tc.ay, tc.az, uv.u0(), uv.v0(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, -tc.ax, -tc.ay, -tc.az, uv.u1(), uv.v0(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, tc.ex - tc.ax, tc.ey - tc.ay, tc.ez - tc.az, uv.u1(), uv.v1(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, tc.ex + tc.ax, tc.ey + tc.ay, tc.ez + tc.az, uv.u0(), uv.v1(), nx, ny, nz);
@@ -407,25 +442,24 @@ public final class BlobFlightRenderer {
     /**
      * Emits the back face (reverse winding) of a tail quad using precomputed corner offsets.
      *
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param light the packed light value
-     * @param color the ARGB color value
-     * @param tc the precomputed tail corner offsets
-     * @param uv the UV texture rectangle
+     * @param pose   the pose matrix entry
+     * @param c      the vertex consumer
+     * @param light  the packed light value
+     * @param color  the ARGB color value
+     * @param tc     the precomputed tail corner offsets
+     * @param uv     the UV texture rectangle
      * @param normal the face normal vector (will be negated for back face)
      */
     private static void emitTailBackFace(PoseStack.Pose pose, VertexConsumer c, int light, int color,
-            TailCorners tc, GooRenderUtil.UvRect uv, Vec3 normal) {
+                                         TailCorners tc, GooRenderUtil.UvRect uv, Vec3 normal) {
         float nx = (float) -normal.x;
         float ny = (float) -normal.y;
         float nz = (float) -normal.z;
         GooRenderUtil.vertexColored(pose, c, light, color, tc.ex + tc.ax, tc.ey + tc.ay, tc.ez + tc.az, uv.u0(), uv.v1(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, tc.ex - tc.ax, tc.ey - tc.ay, tc.ez - tc.az, uv.u1(), uv.v1(), nx, ny, nz);
         GooRenderUtil.vertexColored(pose, c, light, color, -tc.ax, -tc.ay, -tc.az, uv.u1(), uv.v0(), nx, ny, nz);
-        GooRenderUtil.vertexColored(pose, c, light, color,  tc.ax,  tc.ay,  tc.az, uv.u0(), uv.v0(), nx, ny, nz);
+        GooRenderUtil.vertexColored(pose, c, light, color, tc.ax, tc.ay, tc.az, uv.u0(), uv.v0(), nx, ny, nz);
     }
-
 
     /**
      * Renders a glow flight as a camera-facing billboard beam with a
@@ -437,12 +471,14 @@ public final class BlobFlightRenderer {
      * @param flight the glow flight
      */
     private static void renderGlowBeam(RenderContext ctx,
-            BlobFlightManager.BlobFlight flight) {
+                                       BlobFlightManager.BlobFlight flight) {
         Vec3 start = flight.start;
         Vec3 end = flight.getEnd();
         Vec3 dir = end.subtract(start);
         double totalLen = dir.length();
-        if (totalLen < LENGTH_EPSILON) { return; }
+        if (totalLen < LENGTH_EPSILON) {
+            return;
+        }
 
         float smoothTick = flight.ticksElapsed + ctx.partialTick;
         Vec3 headPos = glowHeadPos(start, end, smoothTick, flight.travelTicks);
@@ -450,7 +486,9 @@ public final class BlobFlightRenderer {
 
         Vec3 beamVec = headPos.subtract(tailPos);
         double beamLen = beamVec.length();
-        if (beamLen < LENGTH_EPSILON) { return; }
+        if (beamLen < LENGTH_EPSILON) {
+            return;
+        }
 
         emitGlowBillboard(ctx, tailPos, beamVec);
         renderGlowHead(ctx, headPos);
@@ -479,7 +517,7 @@ public final class BlobFlightRenderer {
      * @return world-space head position
      */
     private static Vec3 glowHeadPos(Vec3 start, Vec3 end,
-            float smoothTick, int travel) {
+                                    float smoothTick, int travel) {
         float headT = Math.min(1f, smoothTick / travel);
         return start.add(end.subtract(start).scale(headT));
     }
@@ -495,8 +533,10 @@ public final class BlobFlightRenderer {
      * @return world-space tail position
      */
     private static Vec3 glowTailPos(Vec3 start, Vec3 end,
-            float smoothTick, int travel) {
-        if (smoothTick <= travel) { return start; }
+                                    float smoothTick, int travel) {
+        if (smoothTick <= travel) {
+            return start;
+        }
         float tailT = Math.min(1f, (smoothTick - travel) / travel);
         return start.add(end.subtract(start).scale(tailT));
     }
@@ -511,10 +551,12 @@ public final class BlobFlightRenderer {
      * @param beamVec head minus tail
      */
     private static void emitGlowBillboard(RenderContext ctx, Vec3 tailPos,
-            Vec3 beamVec) {
+                                          Vec3 beamVec) {
         Vec3 camPos = ctx.camera.position();
         Vec3 lateral = computeGlowLateral(tailPos, beamVec, camPos);
-        if (lateral == null) { return; }
+        if (lateral == null) {
+            return;
+        }
 
         ctx.poseStack.pushPose();
         ctx.poseStack.translate(
@@ -541,12 +583,14 @@ public final class BlobFlightRenderer {
      * @return the lateral offset, or null if degenerate
      */
     private static @Nullable Vec3 computeGlowLateral(Vec3 tailPos,
-            Vec3 beamVec, Vec3 camPos) {
+                                                     Vec3 beamVec, Vec3 camPos) {
         Vec3 beamMid = tailPos.add(beamVec.scale(UV_MIDPOINT));
         Vec3 toCamera = camPos.subtract(beamMid);
         Vec3 lateral = beamVec.cross(toCamera);
         double latLen = lateral.length();
-        if (latLen < LENGTH_EPSILON) { return null; }
+        if (latLen < LENGTH_EPSILON) {
+            return null;
+        }
         return lateral.scale(BEAM_HW / latLen);
     }
 
@@ -561,7 +605,7 @@ public final class BlobFlightRenderer {
      * @param uv      the fluid sprite UV rectangle
      */
     private static void emitGlowHalves(PoseStack.Pose pose, VertexConsumer c,
-            Vec3 lateral, Vec3 fwd, Vec3 normal, GooRenderUtil.UvRect uv) {
+                                       Vec3 lateral, Vec3 fwd, Vec3 normal, GooRenderUtil.UvRect uv) {
         float lx = (float) lateral.x;
         float ly = (float) lateral.y;
         float lz = (float) lateral.z;
@@ -594,10 +638,10 @@ public final class BlobFlightRenderer {
      * @param uv   the fluid sprite UV rectangle
      */
     private static void emitGlowFace(PoseStack.Pose pose, VertexConsumer c,
-            float lx, float ly, float lz,
-            float fx, float fy, float fz,
-            float nx, float ny, float nz,
-            GooRenderUtil.UvRect uv) {
+                                     float lx, float ly, float lz,
+                                     float fx, float fy, float fz,
+                                     float nx, float ny, float nz,
+                                     GooRenderUtil.UvRect uv) {
         // tail-edge (transparent), tail-center (transparent),
         // head-center (white-hot), head-edge (yellow)
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, BEAM_TAIL_COLOR,
@@ -610,7 +654,6 @@ public final class BlobFlightRenderer {
                 fx + lx, fy + ly, fz + lz, uv.u0(), uv.v1(), nx, ny, nz);
     }
 
-
     /**
      * Renders a metal blob flight that morphs into a dart spine mid-flight.
      * The blob shrinks as the spine grows, fully morphed by the midpoint.
@@ -621,7 +664,7 @@ public final class BlobFlightRenderer {
      * @param vel    the velocity vector
      */
     private static void renderMetalSpineLayers(RenderContext ctx,
-            BlobFlightManager.BlobFlight flight, Vec3 vel) {
+                                               BlobFlightManager.BlobFlight flight, Vec3 vel) {
         float progress = Math.min(1f,
                 (flight.ticksElapsed + ctx.partialTick) / flight.travelTicks);
         float dist = (float) flight.start.distanceTo(flight.getEnd());
@@ -658,7 +701,7 @@ public final class BlobFlightRenderer {
      * @param morphFrac morph progress [0, 1]
      */
     private static void emitMetalSpine(PoseStack poseStack, MultiBufferSource buffers,
-            GooType type, Vec3 vel, float morphFrac) {
+                                       GooType type, Vec3 vel, float morphFrac) {
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
@@ -695,9 +738,9 @@ public final class BlobFlightRenderer {
      * @param uv         the fluid sprite UV rectangle
      */
     private static void emitDartCone(PoseStack.Pose pose, VertexConsumer c,
-            float dirX, float dirY, float dirZ,
-            float length, float baseRadius,
-            float[] basis, GooRenderUtil.UvRect uv) {
+                                     float dirX, float dirY, float dirZ,
+                                     float length, float baseRadius,
+                                     float[] basis, GooRenderUtil.UvRect uv) {
         float tipX = dirX * length;
         float tipY = dirY * length;
         float tipZ = dirZ * length;
@@ -711,23 +754,24 @@ public final class BlobFlightRenderer {
 
     /**
      * Emits one triangular segment of the dart cone.
-     * @param pose the pose matrix entry
-     * @param c the vertex consumer
-     * @param basis the orthonormal basis vectors
-     * @param uv the fluid sprite UV rectangle
+     *
+     * @param pose       the pose matrix entry
+     * @param c          the vertex consumer
+     * @param basis      the orthonormal basis vectors
+     * @param uv         the fluid sprite UV rectangle
      * @param baseRadius the cone base radius
-     * @param uMid the U-axis midpoint for the tip vertex
-     * @param tipX the cone tip X position
-     * @param tipY the cone tip Y position
-     * @param tipZ the cone tip Z position
-     * @param dirX the cone direction X for tip normal
-     * @param dirY the cone direction Y for tip normal
-     * @param dirZ the cone direction Z for tip normal
-     * @param i the segment index around the cone
+     * @param uMid       the U-axis midpoint for the tip vertex
+     * @param tipX       the cone tip X position
+     * @param tipY       the cone tip Y position
+     * @param tipZ       the cone tip Z position
+     * @param dirX       the cone direction X for tip normal
+     * @param dirY       the cone direction Y for tip normal
+     * @param dirZ       the cone direction Z for tip normal
+     * @param i          the segment index around the cone
      */
     private static void emitDartSegment(PoseStack.Pose pose, VertexConsumer c,
-            float[] basis, GooRenderUtil.UvRect uv, float baseRadius, float uMid,
-            float tipX, float tipY, float tipZ, float dirX, float dirY, float dirZ, int i) {
+                                        float[] basis, GooRenderUtil.UvRect uv, float baseRadius, float uMid,
+                                        float tipX, float tipY, float tipZ, float dirX, float dirY, float dirZ, int i) {
         float a0 = TWO_PI * i / DART_SIDES;
         float a1 = TWO_PI * (i + 1) / DART_SIDES;
         float cos0 = (float) Math.cos(a0) * baseRadius;
@@ -753,7 +797,8 @@ public final class BlobFlightRenderer {
                 tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
     }
 
-    /** Computes the interpolated face normal for a cone segment at the given mid-angle.
+    /**
+     * Computes the interpolated face normal for a cone segment at the given mid-angle.
      *
      * @param basis the orthonormal basis array
      * @param midA  the midpoint angle between the two segment edges
@@ -763,9 +808,9 @@ public final class BlobFlightRenderer {
         float cosM = (float) Math.cos(midA);
         float sinM = (float) Math.sin(midA);
         return new float[]{
-            basis[PERP_X] * cosM + basis[CROSS_X] * sinM,
-            basis[PERP_Y] * cosM + basis[CROSS_Y] * sinM,
-            basis[PERP_Z] * cosM + basis[CROSS_Z] * sinM,
+                basis[PERP_X] * cosM + basis[CROSS_X] * sinM,
+                basis[PERP_Y] * cosM + basis[CROSS_Y] * sinM,
+                basis[PERP_Z] * cosM + basis[CROSS_Z] * sinM,
         };
     }
 
@@ -789,6 +834,7 @@ public final class BlobFlightRenderer {
 
     /**
      * Picks a seed perpendicular vector that avoids near-parallel alignment with dir.
+     *
      * @param dirX the direction X component
      * @param dirY the direction Y component
      * @param dirZ the direction Z component
@@ -803,6 +849,7 @@ public final class BlobFlightRenderer {
 
     /**
      * Gram-Schmidt orthonormalizes perp against dir in-place.
+     *
      * @param perp the perpendicular vector to orthonormalize
      * @param dirX the reference direction X component
      * @param dirY the reference direction Y component
@@ -815,10 +862,51 @@ public final class BlobFlightRenderer {
         perp[PERP_Z] -= dot * dirZ;
         float len = (float) Math.sqrt(
                 perp[PERP_X] * perp[PERP_X] + perp[PERP_Y] * perp[PERP_Y]
-                + perp[PERP_Z] * perp[PERP_Z]);
+                        + perp[PERP_Z] * perp[PERP_Z]);
         perp[PERP_X] /= len;
         perp[PERP_Y] /= len;
         perp[PERP_Z] /= len;
+    }
+
+    /**
+     * Per-frame render state shared across all flight renders.
+     *
+     * @param poseStack   the pose stack for rendering
+     * @param buffers     the buffer source for rendering
+     * @param camera      the render camera
+     * @param gameTime    the level game time including partial tick
+     * @param partialTick the sub-tick interpolation factor for this frame
+     */
+    private record RenderContext(
+            PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers,
+            Camera camera,
+            float gameTime,
+            float partialTick
+    ) {
+    }
+
+    /**
+     * Holds the local coordinate axes and endpoint for tail quad emission.
+     *
+     * @param right   the perpendicular right axis
+     * @param up      the perpendicular up axis
+     * @param tailEnd the tail endpoint behind the blob
+     */
+    private record TailAxes(Vec3 right, Vec3 up, Vec3 tailEnd) {
+    }
+
+    /**
+     * Precomputed axis and endpoint offsets for a tail quad.
+     *
+     * @param ax the axis X offset scaled by half-width
+     * @param ay the axis Y offset scaled by half-width
+     * @param az the axis Z offset scaled by half-width
+     * @param ex the tail end X coordinate
+     * @param ey the tail end Y coordinate
+     * @param ez the tail end Z coordinate
+     */
+    private record TailCorners(float ax, float ay, float az, float ex, float ey, float ez) {
     }
 
 }

@@ -14,10 +14,10 @@ import javax.imageio.ImageIO;
 /**
  * Generates animated fluid textures and blob base sprites using a cellular automata
  * algorithm inspired by Minecraft Classic's lava/water animation.
- *
+ * <p>
  * Three heat layers (soupHeat, potHeat, flameHeat) simulate fluid dynamics.
  * Per-type parameters control viscosity, turbulence, color palettes, and frame speed.
- *
+ * <p>
  * Run via main() - outputs to src/main/resources/assets/goo/textures/
  */
 @SuppressWarnings("PMD.SystemPrintln") // standalone CLI tool; no logger needed
@@ -26,104 +26,178 @@ public final class FluidTextureGenerator {
     static final int SIZE = 16;
     static final int FRAMES = 32;
     static final int WARMUP = 60;
-
+    /**
+     * Fully transparent ARGB pixel.
+     */
+    static final int TRANSPARENT = 0x00000000;
     private static final Path OUTPUT_ROOT = Path.of("src/main/resources/assets/goo/textures");
-    private static final Path FLUID_DIR = OUTPUT_ROOT.resolve("fluid");
     static final Path ITEM_DIR = OUTPUT_ROOT.resolve("item");
 
     static final Path BLOB_MASK_TINY_PATH = ITEM_DIR.resolve("goo_blob_mask_tiny.png");
     static final Path BLOB_MASK_SMALL_PATH = ITEM_DIR.resolve("goo_blob_mask_small.png");
     static final Path BLOB_MASK_PATH = ITEM_DIR.resolve("goo_blob_mask.png");
     static final Path BLOB_MASK_LARGE_PATH = ITEM_DIR.resolve("goo_blob_mask_large.png");
-
+    private static final Path FLUID_DIR = OUTPUT_ROOT.resolve("fluid");
     private static final Path FLUID_TYPES_JSON = Path.of("src/main/resources/data/goo/goo_fluid_types.json");
 
-    /** Minimum heat range before fallback to 1.0 to avoid division by near-zero. */
-    private static final float MIN_HEAT_RANGE = 0.001f;
-
     // ── ARGB bit-shift and mask constants ──
-    /** Bit shift for alpha channel in ARGB int. */
+    /**
+     * Minimum heat range before fallback to 1.0 to avoid division by near-zero.
+     */
+    private static final float MIN_HEAT_RANGE = 0.001f;
+    /**
+     * Bit shift for alpha channel in ARGB int.
+     */
     private static final int ALPHA_SHIFT = 24;
-    /** Bit shift for red channel in ARGB int. */
+    /**
+     * Bit shift for red channel in ARGB int.
+     */
     private static final int RED_SHIFT = 16;
-    /** Bit shift for green channel in ARGB int. */
+    /**
+     * Bit shift for green channel in ARGB int.
+     */
     private static final int GREEN_SHIFT = 8;
-    /** Fully transparent ARGB pixel. */
-    static final int TRANSPARENT = 0x00000000;
 
     // ── Palette hex parsing constants ──
-    /** Start index for red hex digits. */
+    /**
+     * Start index for red hex digits.
+     */
     private static final int HEX_RED_START = 0;
-    /** End index for red hex digits. */
+    /**
+     * End index for red hex digits.
+     */
     private static final int HEX_RED_END = 2;
-    /** Start index for green hex digits. */
+    /**
+     * Start index for green hex digits.
+     */
     private static final int HEX_GREEN_START = 2;
-    /** End index for green hex digits. */
+    /**
+     * End index for green hex digits.
+     */
     private static final int HEX_GREEN_END = 4;
-    /** Start index for blue hex digits. */
+    /**
+     * Start index for blue hex digits.
+     */
     private static final int HEX_BLUE_START = 4;
-    /** End index for blue hex digits. */
+    /**
+     * End index for blue hex digits.
+     */
     private static final int HEX_BLUE_END = 6;
-    /** Start index for alpha hex digits. */
+    /**
+     * Start index for alpha hex digits.
+     */
     private static final int HEX_ALPHA_START = 6;
-    /** End index for alpha hex digits. */
+    /**
+     * End index for alpha hex digits.
+     */
     private static final int HEX_ALPHA_END = 8;
-    /** Minimum hex string length that includes an alpha channel. */
+    /**
+     * Minimum hex string length that includes an alpha channel.
+     */
     private static final int HEX_WITH_ALPHA_LENGTH = 8;
-    /** Default alpha for hex colors without explicit alpha. */
+    /**
+     * Default alpha for hex colors without explicit alpha.
+     */
     private static final int DEFAULT_ALPHA = 255;
-    /** Hex radix for color parsing. */
+    /**
+     * Hex radix for color parsing.
+     */
     private static final int HEX_RADIX = 16;
 
     // ── Palette color array indices ──
-    /** Index for red in RGBA color arrays. */
+    /**
+     * Index for red in RGBA color arrays.
+     */
     private static final int IDX_R = 0;
-    /** Index for green in RGBA color arrays. */
+    /**
+     * Index for green in RGBA color arrays.
+     */
     private static final int IDX_G = 1;
-    /** Index for blue in RGBA color arrays. */
+    /**
+     * Index for blue in RGBA color arrays.
+     */
     private static final int IDX_B = 2;
-    /** Index for alpha in RGBA color arrays. */
+    /**
+     * Index for alpha in RGBA color arrays.
+     */
     private static final int IDX_A = 3;
-    /** Number of components in an RGBA color array. */
+    /**
+     * Number of components in an RGBA color array.
+     */
     private static final int RGBA_COMPONENTS = 4;
-    /** Required pair size for palette varargs (position + hex). */
+    /**
+     * Required pair size for palette varargs (position + hex).
+     */
     private static final int PALETTE_PAIR_SIZE = 2;
 
     // ── CA engine constants ──
-    /** Maximum viscosity blend factor for soup heat smoothing. */
+    /**
+     * Maximum viscosity blend factor for soup heat smoothing.
+     */
     private static final float MAX_VISCOSITY_BLEND = 0.7f;
-    /** Viscosity scaling factor for blend computation. */
+    /**
+     * Viscosity scaling factor for blend computation.
+     */
     private static final float VISCOSITY_SCALE = 0.28f;
-    /** Soup heat decay rate per tick. */
+    /**
+     * Soup heat decay rate per tick.
+     */
     private static final float SOUP_DECAY = 0.95f;
-    /** Pot heat decay rate per tick. */
+    /**
+     * Pot heat decay rate per tick.
+     */
     private static final float POT_DECAY = 0.9f;
-    /** Cardinal neighbor ignition falloff (adjacent on axis). */
+    /**
+     * Cardinal neighbor ignition falloff (adjacent on axis).
+     */
     private static final float CARDINAL_FALLOFF = 0.6f;
-    /** Diagonal neighbor ignition falloff. */
+    /**
+     * Diagonal neighbor ignition falloff.
+     */
     private static final float DIAGONAL_FALLOFF = 0.35f;
-    /** Console message prefix for generation progress. */
+    /**
+     * Console message prefix for generation progress.
+     */
     private static final String MSG_GENERATING = "Generating: ";
-    /** Console message prefix for completion summary. */
+    /**
+     * Console message prefix for completion summary.
+     */
     private static final String MSG_DONE_PREFIX = "Done. Generated ";
-    /** Console message suffix for completion summary. */
+    /**
+     * Console message suffix for completion summary.
+     */
     private static final String MSG_DONE_SUFFIX = " fluid textures and blob bases.";
-    /** File suffix for fluid PNG textures. */
+    /**
+     * File suffix for fluid PNG textures.
+     */
     private static final String SUFFIX_FLUID_PNG = "_fluid.png";
-    /** Image format for PNG output. */
+    /**
+     * Image format for PNG output.
+     */
     private static final String FORMAT_PNG = "PNG";
-    /** File suffix for fluid mcmeta sidecar. */
+    /**
+     * File suffix for fluid mcmeta sidecar.
+     */
     private static final String SUFFIX_FLUID_MCMETA = "_fluid.png.mcmeta";
-    /** Console format for heat range debug output. */
+    /**
+     * Console format for heat range debug output.
+     */
     private static final String FMT_HEAT_RANGE = "  %s: heat range %.4f-%.4f (spread %.4f)%n";
-    /** Hex color prefix character. */
+    /**
+     * Hex color prefix character.
+     */
     private static final String HEX_PREFIX = "#";
-    /** Negative direction for neighbor iteration. */
+    /**
+     * Negative direction for neighbor iteration.
+     */
     private static final int NEIGHBOR_NEG = -1;
-    /** Error message for invalid palette varargs. */
+    /**
+     * Error message for invalid palette varargs.
+     */
     private static final String ERR_PALETTE_PAIRS = "Args must be pairs of (float position, String hex)";
 
-    private FluidTextureGenerator() {}
+    private FluidTextureGenerator() {
+    }
 
     /**
      * Generates all goo fluid and blob textures from the JSON type definitions.
@@ -131,7 +205,7 @@ public final class FluidTextureGenerator {
      * @param args unused
      * @throws IOException if texture files cannot be read or written
      */
-    public static void main(String[] args) throws IOException {
+    static void main(String[] args) throws IOException {
         Files.createDirectories(FLUID_DIR);
         Files.createDirectories(ITEM_DIR);
         List<GooFluidType> types = loadFluidTypes();
@@ -139,7 +213,8 @@ public final class FluidTextureGenerator {
         System.out.println(MSG_DONE_PREFIX + types.size() + MSG_DONE_SUFFIX);
     }
 
-    /** Generates fluid textures and blob bases for all types with progress output.
+    /**
+     * Generates fluid textures and blob bases for all types with progress output.
      *
      * @param types the list of goo fluid type definitions
      * @throws IOException if texture files cannot be written
@@ -171,7 +246,8 @@ public final class FluidTextureGenerator {
      */
     static List<GooFluidType> parseFluidTypes(String json) {
         Gson gson = new Gson();
-        Type listType = new TypeToken<List<GooFluidTypeJson>>() {}.getType();
+        Type listType = new TypeToken<List<GooFluidTypeJson>>() {
+        }.getType();
         List<GooFluidTypeJson> rawTypes = gson.fromJson(json, listType);
         return rawTypes.stream().map(GooFluidTypeJson::toFluidType).toList();
     }
@@ -190,16 +266,20 @@ public final class FluidTextureGenerator {
         writeFluidStrip(type, heatFrames, heatRange);
     }
 
-    /** Advances the CA the specified number of ticks to reach a stable state.
+    /**
+     * Advances the CA the specified number of ticks to reach a stable state.
      *
      * @param ca    the cellular automata engine
      * @param ticks the number of warmup ticks
      */
     static void warmup(FluidCA ca, int ticks) {
-        for (int i = 0; i < ticks; i++) { ca.tick(); }
+        for (int i = 0; i < ticks; i++) {
+            ca.tick();
+        }
     }
 
-    /** Renders, writes, and logs the fluid sprite strip.
+    /**
+     * Renders, writes, and logs the fluid sprite strip.
      *
      * @param type       the goo fluid type definition
      * @param heatFrames the raw heat values per frame
@@ -207,7 +287,7 @@ public final class FluidTextureGenerator {
      * @throws IOException if files cannot be written
      */
     private static void writeFluidStrip(GooFluidType type, float[][] heatFrames,
-                                         float... heatRange) throws IOException {
+                                        float... heatRange) throws IOException {
         BufferedImage strip = renderFluidStrip(heatFrames, heatRange, type.palette());
         ImageIO.write(strip, FORMAT_PNG, FLUID_DIR.resolve(type.id() + SUFFIX_FLUID_PNG).toFile());
         TextureMcmetaWriter.writeFluidMcmeta(type.frametime(), FLUID_DIR, type.id() + SUFFIX_FLUID_MCMETA);
@@ -230,7 +310,8 @@ public final class FluidTextureGenerator {
         return strip;
     }
 
-    /** Renders a single frame of the fluid strip into the composite image.
+    /**
+     * Renders a single frame of the fluid strip into the composite image.
      *
      * @param strip   the composite sprite strip image
      * @param heat    the raw heat values for this frame
@@ -240,7 +321,7 @@ public final class FluidTextureGenerator {
      * @param palette the color palette to sample
      */
     private static void renderFluidFrame(BufferedImage strip, float[] heat, int frame,
-                                          float minHeat, float range, Palette palette) {
+                                         float minHeat, float range, Palette palette) {
         for (int y = 0; y < SIZE; y++) {
             for (int x = 0; x < SIZE; x++) {
                 float normalized = normalizeHeat(heat[y * SIZE + x], minHeat, range);
@@ -264,14 +345,17 @@ public final class FluidTextureGenerator {
         return heatFrames;
     }
 
-    /** Captures the CA's current heat state into a flat pixel array.
+    /**
+     * Captures the CA's current heat state into a flat pixel array.
      *
-     * @param ca    the cellular automata engine
-     * @param dest  the destination array (SIZE*SIZE elements)
+     * @param ca   the cellular automata engine
+     * @param dest the destination array (SIZE*SIZE elements)
      */
     private static void captureOneFrame(FluidCA ca, float... dest) {
         for (int y = 0; y < SIZE; y++) {
-            for (int x = 0; x < SIZE; x++) { dest[y * SIZE + x] = ca.getRawHeat(x, y); }
+            for (int x = 0; x < SIZE; x++) {
+                dest[y * SIZE + x] = ca.getRawHeat(x, y);
+            }
         }
     }
 
@@ -289,29 +373,37 @@ public final class FluidTextureGenerator {
             maxHeat = Math.max(maxHeat, frameMax(frame));
         }
         float range = maxHeat - minHeat;
-        if (range < MIN_HEAT_RANGE) { range = 1.0f; }
+        if (range < MIN_HEAT_RANGE) {
+            range = 1.0f;
+        }
         return new float[]{minHeat, range};
     }
 
-    /** Returns the minimum value in a single heat frame.
+    /**
+     * Returns the minimum value in a single heat frame.
      *
      * @param frame the heat values for one frame
      * @return the minimum heat value
      */
     private static float frameMin(float... frame) {
         float min = Float.MAX_VALUE;
-        for (float h : frame) { min = Math.min(min, h); }
+        for (float h : frame) {
+            min = Math.min(min, h);
+        }
         return min;
     }
 
-    /** Returns the maximum value in a single heat frame.
+    /**
+     * Returns the maximum value in a single heat frame.
      *
      * @param frame the heat values for one frame
      * @return the maximum heat value
      */
     private static float frameMax(float... frame) {
         float max = Float.MIN_VALUE;
-        for (float h : frame) { max = Math.max(max, h); }
+        for (float h : frame) {
+            max = Math.max(max, h);
+        }
         return max;
     }
 
@@ -328,7 +420,6 @@ public final class FluidTextureGenerator {
     }
 
 
-
     // ---- Cellular Automata Engine ----
 
     /**
@@ -336,7 +427,9 @@ public final class FluidTextureGenerator {
      * Three heat layers (soup, pot, flame) interact to produce organic fluid motion.
      */
     static class FluidCA {
-        /** Multiplier to convert radius to diameter (radius * 2 + 1 = side length). */
+        /**
+         * Multiplier to convert radius to diameter (radius * 2 + 1 = side length).
+         */
         private static final int DIAMETER_FACTOR = 2;
         private final GooFluidGenParams params;
         private final float[][] soupHeat = new float[SIZE][SIZE];
@@ -355,7 +448,9 @@ public final class FluidTextureGenerator {
             this.random = new Random(seed);
         }
 
-        /** Advances the simulation by one tick, updating all three heat layers. */
+        /**
+         * Advances the simulation by one tick, updating all three heat layers.
+         */
         void tick() {
             float[][] newSoup = new float[SIZE][SIZE];
             float[][] newPot = new float[SIZE][SIZE];
@@ -366,7 +461,8 @@ public final class FluidTextureGenerator {
             System.arraycopy(newFlame, 0, flameHeat, 0, SIZE);
         }
 
-        /** Computes the next state for all three layers across the full grid.
+        /**
+         * Computes the next state for all three layers across the full grid.
          *
          * @param newSoup  destination for soup heat values
          * @param newPot   destination for pot heat values
@@ -412,7 +508,8 @@ public final class FluidTextureGenerator {
             return neighborSum / neighborCount;
         }
 
-        /** Sums soup heat of all neighbors within the reach radius, excluding the center cell.
+        /**
+         * Sums soup heat of all neighbors within the reach radius, excluding the center cell.
          *
          * @param x     the cell x coordinate
          * @param y     the cell y coordinate
@@ -423,7 +520,9 @@ public final class FluidTextureGenerator {
             float sum = 0;
             for (int dy = -reach; dy <= reach; dy++) {
                 for (int dx = -reach; dx <= reach; dx++) {
-                    if (dx == 0 && dy == 0) { continue; }
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
                     sum += soupHeat[(y + dy + SIZE) % SIZE][(x + dx + SIZE) % SIZE];
                 }
             }
@@ -468,7 +567,9 @@ public final class FluidTextureGenerator {
         private void spreadIgnitionToNeighbors(int x, int y, float[]... newFlame) {
             for (int dy = NEIGHBOR_NEG; dy <= 1; dy++) {
                 for (int dx = NEIGHBOR_NEG; dx <= 1; dx++) {
-                    if (dx == 0 && dy == 0) { continue; }
+                    if (dx == 0 && dy == 0) {
+                        continue;
+                    }
                     applyIgnitionFalloff(x + dx, y + dy, dx, dy, newFlame);
                 }
             }
@@ -518,7 +619,9 @@ public final class FluidTextureGenerator {
          * @return the constructed palette
          */
         static Palette of(Object... args) {
-            if (args.length % PALETTE_PAIR_SIZE != 0) { throw new IllegalArgumentException(ERR_PALETTE_PAIRS); }
+            if (args.length % PALETTE_PAIR_SIZE != 0) {
+                throw new IllegalArgumentException(ERR_PALETTE_PAIRS);
+            }
             int stops = args.length / PALETTE_PAIR_SIZE;
             float[] positions = new float[stops];
             int[][] colors = new int[stops][RGBA_COMPONENTS];
@@ -526,7 +629,8 @@ public final class FluidTextureGenerator {
             return new Palette(positions, colors);
         }
 
-        /** Parses position/hex pairs from the varargs into parallel arrays.
+        /**
+         * Parses position/hex pairs from the varargs into parallel arrays.
          *
          * @param args      the alternating (float, String) pairs
          * @param stops     the number of stops
@@ -534,7 +638,7 @@ public final class FluidTextureGenerator {
          * @param colors    the destination colors array
          */
         private static void populateStops(Object[] args, int stops,
-                float[] positions, int[]... colors) {
+                                          float[] positions, int[]... colors) {
             for (int i = 0; i < stops; i++) {
                 positions[i] = ((Number) args[i * PALETTE_PAIR_SIZE]).floatValue();
                 colors[i] = parseHex((String) args[i * PALETTE_PAIR_SIZE + 1]);
@@ -573,34 +677,6 @@ public final class FluidTextureGenerator {
         }
 
         /**
-         * Samples the palette at position t (0.0-1.0), interpolating between surrounding stops.
-         *
-         * @param t the normalized position to sample
-         * @return the interpolated ARGB color
-         */
-        int sample(float t) {
-            float clamped = Math.min(1.0f, Math.max(0, t));
-            if (clamped <= positions[0]) { return packColor(colors[0]); }
-            if (clamped >= positions[positions.length - 1]) { return packColor(colors[colors.length - 1]); }
-            return interpolateStop(clamped);
-        }
-
-        /** Finds the surrounding stops and interpolates between them.
-         *
-         * @param t the clamped position to sample
-         * @return the interpolated ARGB color
-         */
-        private int interpolateStop(float t) {
-            for (int i = 0; i < positions.length - 1; i++) {
-                if (t >= positions[i] && t <= positions[i + 1]) {
-                    float local = (t - positions[i]) / (positions[i + 1] - positions[i]);
-                    return lerpColor(colors[i], colors[i + 1], local);
-                }
-            }
-            return packColor(colors[colors.length - 1]);
-        }
-
-        /**
          * Linearly interpolates between two RGBA color arrays.
          *
          * @param a the start color
@@ -625,11 +701,46 @@ public final class FluidTextureGenerator {
         private static int packColor(int... c) {
             return (c[IDX_A] << ALPHA_SHIFT) | (c[IDX_R] << RED_SHIFT) | (c[IDX_G] << GREEN_SHIFT) | c[IDX_B];
         }
+
+        /**
+         * Samples the palette at position t (0.0-1.0), interpolating between surrounding stops.
+         *
+         * @param t the normalized position to sample
+         * @return the interpolated ARGB color
+         */
+        int sample(float t) {
+            float clamped = Math.min(1.0f, Math.max(0, t));
+            if (clamped <= positions[0]) {
+                return packColor(colors[0]);
+            }
+            if (clamped >= positions[positions.length - 1]) {
+                return packColor(colors[colors.length - 1]);
+            }
+            return interpolateStop(clamped);
+        }
+
+        /**
+         * Finds the surrounding stops and interpolates between them.
+         *
+         * @param t the clamped position to sample
+         * @return the interpolated ARGB color
+         */
+        private int interpolateStop(float t) {
+            for (int i = 0; i < positions.length - 1; i++) {
+                if (t >= positions[i] && t <= positions[i + 1]) {
+                    float local = (t - positions[i]) / (positions[i + 1] - positions[i]);
+                    return lerpColor(colors[i], colors[i + 1], local);
+                }
+            }
+            return packColor(colors[colors.length - 1]);
+        }
     }
 
     // ---- Per-Type Data Records ----
 
-    /** Cellular automata tuning parameters that control fluid simulation behavior. */
+    /**
+     * Cellular automata tuning parameters that control fluid simulation behavior.
+     */
     record GooFluidGenParams(
             float viscosity,
             float decayRate,
@@ -638,15 +749,25 @@ public final class FluidTextureGenerator {
             float potHeatRate,
             float potInfluence,
             int neighborhoodReach
-    ) {}
+    ) {
+    }
 
-    /** A single color stop in a gradient palette, used for JSON deserialization. */
-    record PaletteStop(float position, String color) {}
+    /**
+     * A single color stop in a gradient palette, used for JSON deserialization.
+     */
+    record PaletteStop(float position, String color) {
+    }
 
-    /** Complete definition of a goo fluid type, including CA params, palette, and rendering hints. */
-    record GooFluidType(String id, long seed, GooFluidGenParams genParams, int frametime, float shadowHue, Palette palette) {}
+    /**
+     * Complete definition of a goo fluid type, including CA params, palette, and rendering hints.
+     */
+    record GooFluidType(String id, long seed, GooFluidGenParams genParams, int frametime, float shadowHue,
+                        Palette palette) {
+    }
 
-    /** JSON-shaped intermediate for Gson deserialization, converted to GooFluidType via toFluidType(). */
+    /**
+     * JSON-shaped intermediate for Gson deserialization, converted to GooFluidType via toFluidType().
+     */
     private record GooFluidTypeJson(
             String id,
             long seed,

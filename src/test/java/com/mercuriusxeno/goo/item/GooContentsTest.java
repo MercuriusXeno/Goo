@@ -31,7 +31,7 @@ class GooContentsTest {
     @Test
     void multiTypeVolumeSumsAll() {
         GooContents gc = new GooContents(Map.of(
-            GooType.ROCK, 100, GooType.METAL, 200, GooType.VITAL, 50));
+                GooType.ROCK, 100, GooType.METAL, 200, GooType.VITAL, 50));
         assertEquals(350, gc.totalVolume());
         assertEquals(3, gc.typeCount());
     }
@@ -80,7 +80,7 @@ class GooContentsTest {
     @Test
     void largestType_multiType() {
         GooContents gc = new GooContents(Map.of(
-            GooType.ROCK, 100, GooType.METAL, 500, GooType.VITAL, 200));
+                GooType.ROCK, 100, GooType.METAL, 500, GooType.VITAL, 200));
         assertEquals(GooType.METAL, gc.largestType());
     }
 

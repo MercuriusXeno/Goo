@@ -27,7 +27,7 @@ public class ContainerEvaluator implements IContainerEvaluator {
     @Override
     public boolean isContainer(ItemStack stack) {
         return stack.has(DataComponents.CONTAINER)
-            || stack.has(DataComponents.BUNDLE_CONTENTS);
+                || stack.has(DataComponents.BUNDLE_CONTENTS);
     }
 
     /**
@@ -51,7 +51,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         return new ContainerEvaluation(goo, ejects);
     }
 
-    /** Processes one item: recurse into nested containers or evaluate directly.
+    /**
+     * Processes one item: recurse into nested containers or evaluate directly.
      *
      * @param item   the item stack
      * @param lookup goo value lookup
@@ -60,7 +61,7 @@ public class ContainerEvaluator implements IContainerEvaluator {
      * @return the updated goo total
      */
     private GooContents accumulateItem(ItemStack item, IGooValueLookup lookup,
-                                        GooContents goo, List<ItemStack> ejects) {
+                                       GooContents goo, List<ItemStack> ejects) {
         if (isContainer(item)) {
             Identifier nestedId = BuiltInRegistries.ITEM.getKey(item.getItem());
             ContainerEvaluation nested = evaluate(nestedId, item, lookup);
@@ -70,7 +71,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         return evaluateItemOrEject(item, lookup, goo, ejects);
     }
 
-    /** Collects all non-empty item stacks from a container's data components.
+    /**
+     * Collects all non-empty item stacks from a container's data components.
      *
      * @param container the container item stack
      * @return the list
@@ -82,7 +84,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         return items;
     }
 
-    /** Adds non-empty items from a CONTAINER data component.
+    /**
+     * Adds non-empty items from a CONTAINER data component.
      *
      * @param container the container item stack
      * @param component the data component key
@@ -95,7 +98,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         }
     }
 
-    /** Adds items from a BUNDLE_CONTENTS data component.
+    /**
+     * Adds items from a BUNDLE_CONTENTS data component.
      *
      * @param container the container item stack
      * @param items     accumulator for collected items
@@ -107,7 +111,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         }
     }
 
-    /** Resolves ID from the item stack, then delegates to the lookup.
+    /**
+     * Resolves ID from the item stack, then delegates to the lookup.
      *
      * @param item   the item stack to evaluate
      * @param lookup the goo value lookup
@@ -116,7 +121,7 @@ public class ContainerEvaluator implements IContainerEvaluator {
      * @return the goo contents
      */
     private GooContents evaluateItemOrEject(ItemStack item, IGooValueLookup lookup,
-            GooContents goo, List<ItemStack> ejects) {
+                                            GooContents goo, List<ItemStack> ejects) {
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item.getItem());
         GooValue value = lookup.lookup(itemId);
         if (value != null && !value.isEmpty()) {
@@ -126,7 +131,8 @@ public class ContainerEvaluator implements IContainerEvaluator {
         return goo;
     }
 
-    /** Adds the container shell's own goo value using the pre-resolved ID.
+    /**
+     * Adds the container shell's own goo value using the pre-resolved ID.
      *
      * @param containerId the container registry ID
      * @param lookup      the goo value lookup
@@ -134,7 +140,7 @@ public class ContainerEvaluator implements IContainerEvaluator {
      * @return the goo contents
      */
     private GooContents addShellValue(Identifier containerId, IGooValueLookup lookup,
-            GooContents goo) {
+                                      GooContents goo) {
         GooValue shellValue = lookup.lookup(containerId);
         if (shellValue != null && !shellValue.isEmpty()) {
             return goo.mergeWith(shellValue.toGooContents(1));

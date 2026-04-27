@@ -13,39 +13,66 @@ import java.util.List;
  */
 public final class ChainFootprint {
 
-    /** Maximum tunnel depth, reached at 27 stacks. */
+    /**
+     * Maximum tunnel depth, reached at 27 stacks.
+     */
     public static final int MAX_DEPTH = 25;
 
-    /** Maximum meaningful stack count (3 + MAX_DEPTH). */
+    /**
+     * Maximum meaningful stack count (3 + MAX_DEPTH).
+     */
     public static final int MAX_STACKS = 3 + MAX_DEPTH;
-
-    /** Stack count where footprint widens to a cross. */
+    /**
+     * Area mode: 3x3 tunnel advancing along placed face axis.
+     */
+    public static final String AREA_TUNNEL = "tunnel";
+    /**
+     * Area mode: euclidean circle, one layer deep.
+     */
+    public static final String AREA_FLAT_CIRCLE = "flat_circle";
+    /**
+     * Area mode: expanding sphere.
+     */
+    public static final String AREA_SPHERE = "sphere";
+    /**
+     * Stack count where footprint widens to a cross.
+     */
     private static final int CROSS_THRESHOLD = 2;
-    /** Stack count where footprint fills to 3x3. */
+    /**
+     * Stack count where footprint fills to 3x3.
+     */
     private static final int FULL_THRESHOLD = 3;
-    /** Block count for a cross footprint (center + 4 cardinal). */
+    /**
+     * Block count for a cross footprint (center + 4 cardinal).
+     */
     private static final int CROSS_BLOCKS = 5;
-    /** Block count for a 3x3 footprint. */
+    /**
+     * Block count for a 3x3 footprint.
+     */
     private static final int FULL_BLOCKS = 9;
-    /** Depth offset: stacks minus this = tunnel depth for stacks > 3. */
+    /**
+     * Depth offset: stacks minus this = tunnel depth for stacks > 3.
+     */
     private static final int DEPTH_OFFSET = 2;
-    /** Half-width of the 3x3 grid. */
+    /**
+     * Half-width of the 3x3 grid.
+     */
     private static final int GRID_HALF = 1;
-    /** Negative unit offset for cardinal directions. */
+    /**
+     * Negative unit offset for cardinal directions.
+     */
     private static final int NEG = -1;
-    /** AABB expansion: blocks occupy full unit cubes. */
+    /**
+     * AABB expansion: blocks occupy full unit cubes.
+     */
     private static final int BLOCK_SIZE = 1;
-    /** Array index for Z component in offset triples. */
+    /**
+     * Array index for Z component in offset triples.
+     */
     private static final int Z_INDEX = 2;
 
-    /** Area mode: 3x3 tunnel advancing along placed face axis. */
-    public static final String AREA_TUNNEL = "tunnel";
-    /** Area mode: euclidean circle, one layer deep. */
-    public static final String AREA_FLAT_CIRCLE = "flat_circle";
-    /** Area mode: expanding sphere. */
-    public static final String AREA_SPHERE = "sphere";
-
-    private ChainFootprint() {}
+    private ChainFootprint() {
+    }
 
 
     /**
@@ -71,7 +98,9 @@ public final class ChainFootprint {
      * @return depth in layers
      */
     public static int tunnelDepth(int stacks) {
-        if (stacks <= FULL_THRESHOLD) { return 1; }
+        if (stacks <= FULL_THRESHOLD) {
+            return 1;
+        }
         return Math.min(stacks - DEPTH_OFFSET, MAX_DEPTH);
     }
 
@@ -102,7 +131,9 @@ public final class ChainFootprint {
      * @return list of [a, b] offset pairs
      */
     public static List<int[]> flatFootprint(int stacks) {
-        if (stacks <= FULL_THRESHOLD) { return layerFootprint(stacks); }
+        if (stacks <= FULL_THRESHOLD) {
+            return layerFootprint(stacks);
+        }
         return euclideanCircle(totalBlocks(stacks));
     }
 
@@ -117,7 +148,9 @@ public final class ChainFootprint {
      * @return list of rings, each ring a list of [a, b] offset pairs
      */
     public static List<List<int[]>> flatRings(int stacks) {
-        if (stacks <= FULL_THRESHOLD) { return List.of(layerFootprint(stacks)); }
+        if (stacks <= FULL_THRESHOLD) {
+            return List.of(layerFootprint(stacks));
+        }
         int budget = totalBlocks(stacks);
         int searchRadius = (int) Math.ceil(Math.sqrt(budget)) + 1;
         List<int[]> candidates = collectCandidates(searchRadius);
@@ -125,10 +158,11 @@ public final class ChainFootprint {
         return splitIntoTiers(candidates, budget);
     }
 
-    /** Splits sorted candidates into distance tiers, stopping at budget.
+    /**
+     * Splits sorted candidates into distance tiers, stopping at budget.
      *
-     * @param sorted   positions sorted by squared distance
-     * @param budget   maximum total block count
+     * @param sorted positions sorted by squared distance
+     * @param budget maximum total block count
      * @return the tier-decomposed ring list
      */
     private static List<List<int[]>> splitIntoTiers(List<int[]> sorted, int budget) {
@@ -138,7 +172,9 @@ public final class ChainFootprint {
         while (i < sorted.size()) {
             int tierEnd = findTierEnd(sorted, i);
             int tierSize = tierEnd - i;
-            if (total + tierSize > budget) { break; }
+            if (total + tierSize > budget) {
+                break;
+            }
             List<int[]> ring = new ArrayList<>(tierSize);
             addRange(ring, sorted, i, tierEnd);
             rings.add(ring);
@@ -189,8 +225,8 @@ public final class ChainFootprint {
      * Fills complete Euclidean distance tiers until the next full
      * tier would exceed the budget.
      *
-     * @param sorted   positions sorted by squared distance
-     * @param budget   maximum block count
+     * @param sorted positions sorted by squared distance
+     * @param budget maximum block count
      * @return the filled positions
      */
     private static List<int[]> fillByTier(List<int[]> sorted, int budget) {
@@ -199,14 +235,17 @@ public final class ChainFootprint {
         while (i < sorted.size()) {
             int tierEnd = findTierEnd(sorted, i);
             int tierSize = tierEnd - i;
-            if (result.size() + tierSize > budget) { break; }
+            if (result.size() + tierSize > budget) {
+                break;
+            }
             addRange(result, sorted, i, tierEnd);
             i = tierEnd;
         }
         return result;
     }
 
-    /** Returns the exclusive end index of the tier starting at {@code from}.
+    /**
+     * Returns the exclusive end index of the tier starting at {@code from}.
      *
      * @param sorted the sorted offset list
      * @param from   the start index
@@ -215,11 +254,14 @@ public final class ChainFootprint {
     private static int findTierEnd(List<int[]> sorted, int from) {
         int dist = sqDist(sorted.get(from));
         int i = from;
-        while (i < sorted.size() && sqDist(sorted.get(i)) == dist) { i++; }
+        while (i < sorted.size() && sqDist(sorted.get(i)) == dist) {
+            i++;
+        }
         return i;
     }
 
-    /** Adds elements from sorted[start..end) to the result list.
+    /**
+     * Adds elements from sorted[start..end) to the result list.
      *
      * @param result the destination list
      * @param sorted the source list
@@ -297,7 +339,8 @@ public final class ChainFootprint {
         return computeRegionOffsets(stacks, flat, face);
     }
 
-    /** Expands a 2D footprint into 3D offsets along the blast direction.
+    /**
+     * Expands a 2D footprint into 3D offsets along the blast direction.
      *
      * @param footprint the 2D footprint offsets
      * @param depth     the number of layers
@@ -371,7 +414,9 @@ public final class ChainFootprint {
      * @return list of {dx, dy, dz} offsets
      */
     public static List<int[]> sphereShell(int shellRadius) {
-        if (shellRadius == 0) { return List.of(new int[]{0, 0, 0}); }
+        if (shellRadius == 0) {
+            return List.of(new int[]{0, 0, 0});
+        }
         int r2max = shellRadius * shellRadius;
         int r2min = (shellRadius - 1) * (shellRadius - 1);
         List<int[]> result = new ArrayList<>();
@@ -381,16 +426,17 @@ public final class ChainFootprint {
         return result;
     }
 
-    /** Collects all positions in one x-slice of a spherical shell.
+    /**
+     * Collects all positions in one x-slice of a spherical shell.
      *
-     * @param result     the output list
-     * @param dx         the x offset
+     * @param result      the output list
+     * @param dx          the x offset
      * @param shellRadius the shell radius
-     * @param r2min      the squared inner radius (exclusive)
-     * @param r2max      the squared outer radius (inclusive)
+     * @param r2min       the squared inner radius (exclusive)
+     * @param r2max       the squared outer radius (inclusive)
      */
     private static void collectShellSlice(List<int[]> result, int dx,
-            int shellRadius, int r2min, int r2max) {
+                                          int shellRadius, int r2min, int r2max) {
         for (int dy = -shellRadius; dy <= shellRadius; dy++) {
             for (int dz = -shellRadius; dz <= shellRadius; dz++) {
                 int d2 = dx * dx + dy * dy + dz * dz;

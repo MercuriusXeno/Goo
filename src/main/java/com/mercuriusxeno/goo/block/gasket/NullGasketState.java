@@ -13,19 +13,28 @@ import java.util.UUID;
  */
 final class NullGasketState extends GasketState {
 
-    /** Shared singleton - no mutable state. */
+    /**
+     * Shared singleton - no mutable state.
+     */
     static final NullGasketState INSTANCE = new NullGasketState();
 
-    private NullGasketState() {}
+    private NullGasketState() {
+    }
 
     @Override
-    public @Nullable UUID getId(GasketRole role) { return null; }
+    public @Nullable UUID getId(GasketRole role) {
+        return null;
+    }
 
     @Override
-    public @Nullable UUID ensureId(GasketRole role, Runnable syncCallback) { return null; }
+    public @Nullable UUID ensureId(GasketRole role, Runnable syncCallback) {
+        return null;
+    }
 
     @Override
-    public @Nullable GasketPartner getPartner(GasketRole role) { return null; }
+    public @Nullable GasketPartner getPartner(GasketRole role) {
+        return null;
+    }
 
     @Override
     public void setPartner(GasketRole role, @Nullable GasketPartner partner,
@@ -38,10 +47,14 @@ final class NullGasketState extends GasketState {
     public void clear(GasketRole role, Runnable syncCallback) { /* no-op */ }
 
     @Override
-    public boolean supportsRole(GasketRole role) { return false; }
+    public boolean supportsRole(GasketRole role) {
+        return false;
+    }
 
     @Override
-    public @Nullable String getFaceLabel(GasketRole role) { return null; }
+    public @Nullable String getFaceLabel(GasketRole role) {
+        return null;
+    }
 
     @Override
     public void save(ValueOutput output) { /* nothing to persist */ }

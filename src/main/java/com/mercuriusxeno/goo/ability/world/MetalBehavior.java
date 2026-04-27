@@ -19,11 +19,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Metal goo: spike trap. Stitched merge of the prior MetalEffect
@@ -32,40 +28,74 @@ import java.util.Map;
  */
 public final class MetalBehavior implements WorldEffect, ChainBehavior {
 
-    /** Detection and spike reach radius in blocks (50% wider than original). */
+    /**
+     * Detection and spike reach radius in blocks (50% wider than original).
+     */
     public static final double SPIKE_RADIUS = 3.75;
-    /** Damage per impale. */
+    /**
+     * Total ticks for one spike animation cycle.
+     */
+    public static final int TOTAL_ANIM_TICKS = 13;
+    /**
+     * Tick at which the spike reaches full extension and deals damage.
+     */
+    public static final int STRIKE_TICK = 6;
+    /**
+     * Blob contraction scale during windup (0 = no change, positive = smaller).
+     */
+    public static final float WINDUP_CONTRACT = 0.30f;
+    /**
+     * Damage per impale.
+     */
     private static final float STAB_DAMAGE = 6f;
-    /** Cooldown ticks between consecutive spike shots. */
+    /**
+     * Cooldown ticks between consecutive spike shots.
+     */
     private static final int SPIKE_COOLDOWN = 10;
-    /** Crit particle count on spike impact. */
+    /**
+     * Crit particle count on spike impact.
+     */
     private static final int CRIT_PARTICLE_COUNT = 8;
-    /** Crit particle spread radius. */
+    /**
+     * Crit particle spread radius.
+     */
     private static final double CRIT_SPREAD = 0.4;
-    /** Crit particle speed. */
+    /**
+     * Crit particle speed.
+     */
     private static final double CRIT_SPEED = 0.15;
-    /** Smoke particle count when the trap expires. */
+    /**
+     * Smoke particle count when the trap expires.
+     */
     private static final int SMOKE_PARTICLE_COUNT = 12;
-    /** Smoke particle spread radius. */
+    /**
+     * Smoke particle spread radius.
+     */
     private static final double SMOKE_SPREAD = 0.3;
-    /** Smoke particle speed. */
+    /**
+     * Smoke particle speed.
+     */
     private static final double SMOKE_SPEED = 0.05;
-    /** Block center offset (0.5 added to BlockPos coords). */
+    /**
+     * Block center offset (0.5 added to BlockPos coords).
+     */
     private static final double BLOCK_CENTER = 0.5;
-    /** Dissipate sound volume. */
+    /**
+     * Dissipate sound volume.
+     */
     private static final float DISSIPATE_VOLUME = 0.5f;
-    /** Dissipate sound pitch. */
+    /**
+     * Dissipate sound pitch.
+     */
     private static final float DISSIPATE_PITCH = 1.2f;
-    /** Body-height fraction for particle spawn at entity midpoint. */
+    /**
+     * Body-height fraction for particle spawn at entity midpoint.
+     */
     private static final double ENTITY_MID_HEIGHT = 0.5;
-    /** Block update flags: notify neighbors + send to clients. */
+    /**
+     * Block update flags: notify neighbors + send to clients.
+     */
     private static final int BLOCK_UPDATE_FLAGS = 3;
-    /** Array offset for X target coordinate in anim data. */
-    private static final int ANIM_OFFSET_TX = 2;
-    /** Array offset for Y target coordinate in anim data. */
-    private static final int ANIM_OFFSET_TY = 3;
-    /** Array offset for Z target coordinate in anim data. */
-    private static final int ANIM_OFFSET_TZ = 4;
 
     //
     // Ticks 0-3:  WINDUP  - blob contracts 30%, no spike visible
@@ -73,47 +103,168 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
     // Tick 6:     STRIKE  - full extension, damage dealt
     // Ticks 6-8:  HOLD    - spike stays rigid at captured position
     // Ticks 9-12: RETRACT - fast retract back into blob
-
-    /** Total ticks for one spike animation cycle. */
-    public static final int TOTAL_ANIM_TICKS = 13;
-    /** Tick at which the spike reaches full extension and deals damage. */
-    public static final int STRIKE_TICK = 6;
-    /** First tick of the emerge phase (spike starts extending). */
+    /**
+     * Array offset for X target coordinate in anim data.
+     */
+    private static final int ANIM_OFFSET_TX = 2;
+    /**
+     * Array offset for Y target coordinate in anim data.
+     */
+    private static final int ANIM_OFFSET_TY = 3;
+    /**
+     * Array offset for Z target coordinate in anim data.
+     */
+    private static final int ANIM_OFFSET_TZ = 4;
+    /**
+     * First tick of the emerge phase (spike starts extending).
+     */
     private static final int EMERGE_TICK = 4;
-    /** First tick of the retract phase. */
+    /**
+     * First tick of the retract phase.
+     */
     private static final int RETRACT_TICK = 9;
-    /** Blob contraction scale during windup (0 = no change, positive = smaller). */
-    public static final float WINDUP_CONTRACT = 0.30f;
-
-
     private static final String TAG_FACE = "MetalFace";
     private static final String TAG_SPIKE_ANIMS = "MetalSpikeAnims";
     private static final String DEFAULT_FACE = "up";
-    /** Stride for the flat spike anim array (entityId, tick, fx, fy, fz). */
+    /**
+     * Stride for the flat spike anim array (entityId, tick, fx, fy, fz).
+     */
     private static final int ANIM_STRIDE = 5;
-
-    private Direction placedFace = Direction.UP;
-
-    /** Active per-entity spike animations, keyed by entity ID. */
+    /**
+     * Active per-entity spike animations, keyed by entity ID.
+     */
     private final Map<Integer, SpikeAnim> spikeAnims = new HashMap<>();
-
-    /** Tracks the last-known stack count for isActive on the server. */
+    private Direction placedFace = Direction.UP;
+    /**
+     * Tracks the last-known stack count for isActive on the server.
+     */
     private int lastKnownStacks;
 
-    /** Ticks remaining before a new spike can start. */
+    /**
+     * Ticks remaining before a new spike can start.
+     */
     private int spikeCooldown;
 
-    /** True once the dissipate smoke has been spawned. */
+    /**
+     * True once the dissipate smoke has been spawned.
+     */
     private boolean dissipated;
 
     // --- WorldEffect (instant blob hit) ---
+
+    /**
+     * Spawns a poof of smoke when the trap runs out of charges.
+     *
+     * @param level the server level to spawn particles and sound in
+     * @param pos   the block position where smoke appears
+     */
+    private static void spawnDissipateSmoke(ServerLevel level, BlockPos pos) {
+        double cx = pos.getX() + BLOCK_CENTER;
+        double cy = pos.getY() + BLOCK_CENTER;
+        double cz = pos.getZ() + BLOCK_CENTER;
+        level.sendParticles(ParticleTypes.POOF, cx, cy, cz,
+                SMOKE_PARTICLE_COUNT, SMOKE_SPREAD, SMOKE_SPREAD, SMOKE_SPREAD,
+                SMOKE_SPEED);
+        level.playSound(null, cx, cy, cz,
+                SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, DISSIPATE_VOLUME, DISSIPATE_PITCH);
+    }
+
+    // --- ChainBehavior (fused chain marker detonation) ---
+
+    /**
+     * Computes the spike extension fraction for rendering.
+     * <pre>
+     * Ticks 0-3:  0 (windup, blob contracts, no spike)
+     * Ticks 4-5:  0 -> 1.0 (emerge, spike extends full distance)
+     * Ticks 6-8:  1.0 (hold at full extension, damage at tick 6)
+     * Ticks 9-12: 1.0 -> 0 (fast retract)
+     * </pre>
+     *
+     * @param animTick    the animation tick (0 to TOTAL_ANIM_TICKS-1)
+     * @param partialTick the partial tick for smooth interpolation
+     * @return extension fraction in [0, 1]
+     */
+    public static float extensionFraction(int animTick, float partialTick) {
+        float t = animTick + partialTick;
+        if (t < EMERGE_TICK) {
+            return 0f;
+        }
+        if (t < STRIKE_TICK) {
+            return (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
+        }
+        if (t < RETRACT_TICK) {
+            return 1f;
+        }
+        if (t < TOTAL_ANIM_TICKS) {
+            float frac = (t - RETRACT_TICK) / (TOTAL_ANIM_TICKS - RETRACT_TICK);
+            return 1f - frac;
+        }
+        return 0f;
+    }
+
+    /**
+     * Computes the blob contraction scale during the windup phase.
+     * Returns 1.0 normally, dips to (1 - WINDUP_CONTRACT) during
+     * ticks 0-3, and returns to 1.0 during emerge ticks 4-5.
+     *
+     * @param animTick    the animation tick
+     * @param partialTick the partial tick for smooth interpolation
+     * @return scale multiplier for the orb [0.85, 1.0]
+     */
+    public static float blobContraction(int animTick, float partialTick) {
+        float t = animTick + partialTick;
+        if (t < 0) {
+            return 1f;
+        }
+        if (t < EMERGE_TICK) {
+            float frac = t / EMERGE_TICK;
+            float contractCurve = (float) Math.sin(frac * Math.PI);
+            return 1f - WINDUP_CONTRACT * contractCurve;
+        }
+        if (t < STRIKE_TICK) {
+            float frac = (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
+            return 1f - WINDUP_CONTRACT * (1f - frac);
+        }
+        return 1f;
+    }
+
+    /**
+     * Returns true if the entity is a valid impale target: living, not
+     * an item, within radius, and not a sneaking player.
+     *
+     * @param entity the entity to test
+     * @param center the spike trap center position
+     * @return true if the entity can be impaled
+     */
+    private static boolean isValidTarget(Entity entity, Vec3 center) {
+        if (entity instanceof ItemEntity) {
+            return false;
+        }
+        if (!(entity instanceof LivingEntity)) {
+            return false;
+        }
+        if (entity instanceof Player player && player.isShiftKeyDown()) {
+            return false;
+        }
+        return entity.position().distanceTo(center) <= SPIKE_RADIUS;
+    }
+
+    /**
+     * Triggers a block update to sync state to clients.
+     *
+     * @param be the owning block entity
+     */
+    private static void syncToClient(ChainMarkerBlockEntity be) {
+        if (be.getLevel() != null && !be.getLevel().isClientSide()) {
+            be.getLevel().sendBlockUpdated(be.getBlockPos(), be.getBlockState(),
+                    be.getBlockState(), BLOCK_UPDATE_FLAGS);
+        }
+    }
 
     @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
         EffectBlockPlacement.metalSpikeTrap(level, pos, targetFace);
     }
-
-    // --- ChainBehavior (fused chain marker detonation) ---
 
     @Override
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
@@ -124,7 +275,9 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         lastKnownStacks = be.getStackCount();
-        if (spikeCooldown > 0) { spikeCooldown--; }
+        if (spikeCooldown > 0) {
+            spikeCooldown--;
+        }
         advanceAndCleanAnims(level, pos);
         if (lastKnownStacks > 0) {
             scanForNewTargets(level, pos, be);
@@ -157,7 +310,7 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
      * @param anim  the spike animation to advance
      */
     private void tickSingleAnim(ServerLevel level,
-            Iterator<Map.Entry<Integer, SpikeAnim>> it, SpikeAnim anim) {
+                                Iterator<Map.Entry<Integer, SpikeAnim>> it, SpikeAnim anim) {
         if (anim.tick == STRIKE_TICK && !anim.damageDealt) {
             dealDamage(level, anim);
         }
@@ -177,22 +330,6 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
             dissipated = true;
             spawnDissipateSmoke(level, pos);
         }
-    }
-
-    /**
-     * Spawns a poof of smoke when the trap runs out of charges.
-     * @param level the server level to spawn particles and sound in
-     * @param pos the block position where smoke appears
-     */
-    private static void spawnDissipateSmoke(ServerLevel level, BlockPos pos) {
-        double cx = pos.getX() + BLOCK_CENTER;
-        double cy = pos.getY() + BLOCK_CENTER;
-        double cz = pos.getZ() + BLOCK_CENTER;
-        level.sendParticles(ParticleTypes.POOF, cx, cy, cz,
-                SMOKE_PARTICLE_COUNT, SMOKE_SPREAD, SMOKE_SPREAD, SMOKE_SPREAD,
-                SMOKE_SPEED);
-        level.playSound(null, cx, cy, cz,
-                SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, DISSIPATE_VOLUME, DISSIPATE_PITCH);
     }
 
     /**
@@ -226,15 +363,19 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
      * @param be    the owning block entity for charge management
      */
     private void scanForNewTargets(ServerLevel level, BlockPos pos,
-            ChainMarkerBlockEntity be) {
+                                   ChainMarkerBlockEntity be) {
         Vec3 center = Vec3.atCenterOf(pos);
         AABB area = new AABB(
                 center.x - SPIKE_RADIUS, center.y - SPIKE_RADIUS, center.z - SPIKE_RADIUS,
                 center.x + SPIKE_RADIUS, center.y + SPIKE_RADIUS, center.z + SPIKE_RADIUS);
 
         for (Entity entity : level.getEntities(null, area)) {
-            if (!isValidTarget(entity, center)) { continue; }
-            if (!tryStartSpike(entity, be)) { break; }
+            if (!isValidTarget(entity, center)) {
+                continue;
+            }
+            if (!tryStartSpike(entity, be)) {
+                break;
+            }
         }
     }
 
@@ -247,8 +388,12 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
      */
     private boolean tryStartSpike(Entity entity, ChainMarkerBlockEntity be) {
         int id = entity.getId();
-        if (spikeAnims.containsKey(id) || spikeCooldown > 0) { return true; }
-        if (be.getStackCount() <= 0) { return false; }
+        if (spikeAnims.containsKey(id) || spikeCooldown > 0) {
+            return true;
+        }
+        if (be.getStackCount() <= 0) {
+            return false;
+        }
         be.decrementStack();
         lastKnownStacks = be.getStackCount();
         Vec3 captured = entity.getBoundingBox().getCenter();
@@ -295,86 +440,6 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
         return !spikeAnims.isEmpty();
     }
 
-
-    /**
-     * Computes the spike extension fraction for rendering.
-     * <pre>
-     * Ticks 0-3:  0 (windup, blob contracts, no spike)
-     * Ticks 4-5:  0 -> 1.0 (emerge, spike extends full distance)
-     * Ticks 6-8:  1.0 (hold at full extension, damage at tick 6)
-     * Ticks 9-12: 1.0 -> 0 (fast retract)
-     * </pre>
-     *
-     * @param animTick    the animation tick (0 to TOTAL_ANIM_TICKS-1)
-     * @param partialTick the partial tick for smooth interpolation
-     * @return extension fraction in [0, 1]
-     */
-    public static float extensionFraction(int animTick, float partialTick) {
-        float t = animTick + partialTick;
-        if (t < EMERGE_TICK) { return 0f; }
-        if (t < STRIKE_TICK) {
-            return (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
-        }
-        if (t < RETRACT_TICK) { return 1f; }
-        if (t < TOTAL_ANIM_TICKS) {
-            float frac = (t - RETRACT_TICK) / (TOTAL_ANIM_TICKS - RETRACT_TICK);
-            return 1f - frac;
-        }
-        return 0f;
-    }
-
-    /**
-     * Computes the blob contraction scale during the windup phase.
-     * Returns 1.0 normally, dips to (1 - WINDUP_CONTRACT) during
-     * ticks 0-3, and returns to 1.0 during emerge ticks 4-5.
-     *
-     * @param animTick    the animation tick
-     * @param partialTick the partial tick for smooth interpolation
-     * @return scale multiplier for the orb [0.85, 1.0]
-     */
-    public static float blobContraction(int animTick, float partialTick) {
-        float t = animTick + partialTick;
-        if (t < 0) { return 1f; }
-        if (t < EMERGE_TICK) {
-            float frac = t / EMERGE_TICK;
-            float contractCurve = (float) Math.sin(frac * Math.PI);
-            return 1f - WINDUP_CONTRACT * contractCurve;
-        }
-        if (t < STRIKE_TICK) {
-            float frac = (t - EMERGE_TICK) / (STRIKE_TICK - EMERGE_TICK);
-            return 1f - WINDUP_CONTRACT * (1f - frac);
-        }
-        return 1f;
-    }
-
-
-    /**
-     * Returns true if the entity is a valid impale target: living, not
-     * an item, within radius, and not a sneaking player.
-     *
-     * @param entity the entity to test
-     * @param center the spike trap center position
-     * @return true if the entity can be impaled
-     */
-    private static boolean isValidTarget(Entity entity, Vec3 center) {
-        if (entity instanceof ItemEntity) { return false; }
-        if (!(entity instanceof LivingEntity)) { return false; }
-        if (entity instanceof Player player && player.isShiftKeyDown()) { return false; }
-        return entity.position().distanceTo(center) <= SPIKE_RADIUS;
-    }
-
-    /** Triggers a block update to sync state to clients.
-     *
-     * @param be the owning block entity
-     */
-    private static void syncToClient(ChainMarkerBlockEntity be) {
-        if (be.getLevel() != null && !be.getLevel().isClientSide()) {
-            be.getLevel().sendBlockUpdated(be.getBlockPos(), be.getBlockState(),
-                    be.getBlockState(), BLOCK_UPDATE_FLAGS);
-        }
-    }
-
-
     @Override
     public void saveAdditional(ValueOutput output) {
         output.putString(TAG_FACE, placedFace.getName());
@@ -409,8 +474,10 @@ public final class MetalBehavior implements WorldEffect, ChainBehavior {
         }
     }
 
-    /** Mutable animation state for a single spike targeting one entity.
-     * The target position is captured at creation and stays rigid. */
+    /**
+     * Mutable animation state for a single spike targeting one entity.
+     * The target position is captured at creation and stays rigid.
+     */
     static final class SpikeAnim {
         final int entityId;
         final double targetX;

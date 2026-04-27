@@ -26,28 +26,30 @@ public class ContainerValueClientTooltipComponent implements ClientTooltipCompon
     private static final int PLUS_COLOR = 0xFFFFFFFF;
     private static final String PLUS = "+";
     private static final int PLUS_PAD = 6;
-    /** Total width of the plus cell: one pad on each side. */
+    /**
+     * Total width of the plus cell: one pad on each side.
+     */
     private static final int PLUS_CELL_WIDTH = PLUS_PAD * 2;
-    /** Divisor for finding the center row of the column. */
+    /**
+     * Divisor for finding the center row of the column.
+     */
     private static final int ROW_HALVE = 2;
     private static final String AMOUNT_TYPE_SEP = " ";
-    /** Namespace for goo textures. */
+    /**
+     * Namespace for goo textures.
+     */
     private static final String GOO_NAMESPACE = "goo";
-    /** Texture path prefix for goo type icons. */
+    /**
+     * Texture path prefix for goo type icons.
+     */
     private static final String ICON_TEXTURE_PREFIX = "textures/goo/type/";
-    /** Texture path suffix for bordered goo type icons. */
+    /**
+     * Texture path suffix for bordered goo type icons.
+     */
     private static final String ICON_TEXTURE_SUFFIX = ".png";
 
     private final List<ColumnEntry> leftEntries;
     private final List<ColumnEntry> rightEntries;
-
-    /** Pre-rendered column entry with icon texture and display text. */
-    private record ColumnEntry(Identifier icon, Component text) {
-
-        int width(Font font) {
-            return ICON_SIZE + ICON_GAP + font.width(text);
-        }
-    }
 
     /**
      * Constructs the client tooltip from the data model.
@@ -73,6 +75,22 @@ public class ContainerValueClientTooltipComponent implements ClientTooltipCompon
         return result;
     }
 
+    private static int maxWidth(Font font, List<ColumnEntry> entries) {
+        int max = 0;
+        for (ColumnEntry e : entries) {
+            max = Math.max(max, e.width(font));
+        }
+        return max;
+    }
+
+    private static void renderEntry(GuiGraphicsExtractor g, Font font,
+                                    ColumnEntry entry, int x, int y) {
+        g.blit(RenderPipelines.GUI_TEXTURED, entry.icon,
+                x, y + ICON_Y_OFFSET, 0.0f, 0.0f,
+                ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+        g.text(font, entry.text, x + ICON_SIZE + ICON_GAP, y, TEXT_COLOR);
+    }
+
     @Override
     public int getHeight(@NonNull Font font) {
         return Math.max(leftEntries.size(), rightEntries.size()) * LINE_HEIGHT;
@@ -86,17 +104,9 @@ public class ContainerValueClientTooltipComponent implements ClientTooltipCompon
         return left + plus + right;
     }
 
-    private static int maxWidth(Font font, List<ColumnEntry> entries) {
-        int max = 0;
-        for (ColumnEntry e : entries) {
-            max = Math.max(max, e.width(font));
-        }
-        return max;
-    }
-
     @Override
     public void extractImage(@NonNull Font font, int x, int y,
-            int width, int height, @NonNull GuiGraphicsExtractor g) {
+                             int width, int height, @NonNull GuiGraphicsExtractor g) {
         int leftWidth = maxWidth(font, leftEntries);
         int plusWidth = font.width(PLUS) + PLUS_CELL_WIDTH;
         int rightX = x + leftWidth + plusWidth;
@@ -118,11 +128,13 @@ public class ContainerValueClientTooltipComponent implements ClientTooltipCompon
         }
     }
 
-    private static void renderEntry(GuiGraphicsExtractor g, Font font,
-            ColumnEntry entry, int x, int y) {
-        g.blit(RenderPipelines.GUI_TEXTURED, entry.icon,
-                x, y + ICON_Y_OFFSET, 0.0f, 0.0f,
-                ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
-        g.text(font, entry.text, x + ICON_SIZE + ICON_GAP, y, TEXT_COLOR);
+    /**
+     * Pre-rendered column entry with icon texture and display text.
+     */
+    private record ColumnEntry(Identifier icon, Component text) {
+
+        int width(Font font) {
+            return ICON_SIZE + ICON_GAP + font.width(text);
+        }
     }
 }

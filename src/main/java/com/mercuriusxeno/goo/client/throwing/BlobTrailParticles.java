@@ -13,58 +13,87 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 final class BlobTrailParticles {
 
-    /** Tick interval for trail particle spawning (every N ticks). */
+    /**
+     * Tick interval for trail particle spawning (every N ticks).
+     */
     private static final int PARTICLE_TICK_INTERVAL = 2;
 
-    /** Fully opaque black alpha for particle colors. */
+    /**
+     * Fully opaque black alpha for particle colors.
+     */
     private static final int OPAQUE_BLACK = 0xFF000000;
 
-    /** Trail velocity scale for drip particles. */
+    /**
+     * Trail velocity scale for drip particles.
+     */
     private static final double DRIP_VEL_SCALE = 0.05;
 
-    /** Downward velocity for drip particles. */
+    /**
+     * Downward velocity for drip particles.
+     */
     private static final double DRIP_DOWN_VEL = -0.02;
 
-    /** Minimum squared distance from camera before fog particles spawn. */
+    /**
+     * Minimum squared distance from camera before fog particles spawn.
+     */
     private static final double FOG_MIN_DIST_SQ = 9.0;
 
-    /** Base fog particle count before random addition. */
+    /**
+     * Base fog particle count before random addition.
+     */
     private static final int FOG_BASE_COUNT = 2;
 
-    /** Random fog particle count range (exclusive upper bound). */
+    /**
+     * Random fog particle count range (exclusive upper bound).
+     */
     private static final int FOG_RANDOM_RANGE = 3;
 
-    /** Fog position offset scale behind the blob. */
+    /**
+     * Fog position offset scale behind the blob.
+     */
     private static final double FOG_POS_SCALE = 0.15;
 
-    /** Position spread multiplier for fog particles. */
+    /**
+     * Position spread multiplier for fog particles.
+     */
     private static final double FOG_SPREAD = 2;
 
-    /** Velocity jitter for fog particles. */
+    /**
+     * Velocity jitter for fog particles.
+     */
     private static final double FOG_VEL_JITTER = 0.02;
 
-    /** Random offset range half-extent. */
+    /**
+     * Random offset range half-extent.
+     */
     private static final double OFFSET_HALF = 0.5;
 
-    /** Random offset scale. */
+    /**
+     * Random offset scale.
+     */
     private static final double OFFSET_SCALE = 0.1;
 
-    private BlobTrailParticles() {}
+    private BlobTrailParticles() {
+    }
 
     /**
      * Spawns trail particles behind the blob: a viscous slime drip downward
      * and several radial fog puffs along the wake. Throttled to every other tick.
      *
-     * @param pos the blob world position
-     * @param vel the velocity vector
-     * @param type the goo type
+     * @param pos    the blob world position
+     * @param vel    the velocity vector
+     * @param type   the goo type
      * @param flight the flight instance for tick tracking
      */
     static void spawnTrailParticles(Vec3 pos, Vec3 vel, GooType type,
-            BlobFlightManager.BlobFlight flight) {
+                                    BlobFlightManager.BlobFlight flight) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) { return; }
-        if (flight.ticksElapsed % PARTICLE_TICK_INTERVAL != 0) { return; }
+        if (mc.level == null) {
+            return;
+        }
+        if (flight.ticksElapsed % PARTICLE_TICK_INTERVAL != 0) {
+            return;
+        }
 
         int color = type.getColor();
         spawnDripParticle(mc, pos, vel, color);
@@ -74,9 +103,9 @@ final class BlobTrailParticles {
     /**
      * Spawns a single slime drip particle with gentle downward velocity.
      *
-     * @param mc the Minecraft client instance
-     * @param pos the blob world position
-     * @param vel the velocity vector
+     * @param mc    the Minecraft client instance
+     * @param pos   the blob world position
+     * @param vel   the velocity vector
      * @param color the RGB color of the goo type
      */
     private static void spawnDripParticle(Minecraft mc, Vec3 pos, Vec3 vel, int color) {
@@ -90,14 +119,16 @@ final class BlobTrailParticles {
     /**
      * Spawns 2-4 fog puff particles behind the blob, suppressed when close to the camera.
      *
-     * @param mc the Minecraft client instance
-     * @param pos the blob world position
-     * @param vel the velocity vector
+     * @param mc    the Minecraft client instance
+     * @param pos   the blob world position
+     * @param vel   the velocity vector
      * @param color the RGB color of the goo type
      */
     private static void spawnFogParticles(Minecraft mc, Vec3 pos, Vec3 vel, int color) {
         Vec3 camPos = mc.gameRenderer.getMainCamera().position();
-        if (pos.distanceToSqr(camPos) <= FOG_MIN_DIST_SQ) { return; }
+        if (pos.distanceToSqr(camPos) <= FOG_MIN_DIST_SQ) {
+            return;
+        }
 
         ColorParticleOption fogOption = ColorParticleOption.create(
                 GooParticles.GOO_FOG.get(), color | OPAQUE_BLACK);
@@ -110,13 +141,13 @@ final class BlobTrailParticles {
     /**
      * Emits one fog puff particle at a jittered position behind the blob.
      *
-     * @param mc the Minecraft client instance
+     * @param mc        the Minecraft client instance
      * @param fogOption the color particle option for fog
-     * @param pos the blob world position
-     * @param vel the velocity vector
+     * @param pos       the blob world position
+     * @param vel       the velocity vector
      */
     private static void emitSingleFogPuff(Minecraft mc, ColorParticleOption fogOption,
-            Vec3 pos, Vec3 vel) {
+                                          Vec3 pos, Vec3 vel) {
         mc.level.addParticle(fogOption,
                 pos.x - vel.x * FOG_POS_SCALE + randomOffset() * FOG_SPREAD,
                 pos.y - vel.y * FOG_POS_SCALE + randomOffset() * FOG_SPREAD,

@@ -17,21 +17,26 @@ import java.util.UUID;
  */
 public final class GooCapabilities {
 
-    /** Block capability for gasket endpoints. Context is the target gasket UUID. */
+    /**
+     * Block capability for gasket endpoints. Context is the target gasket UUID.
+     */
     @SuppressWarnings("unchecked")
     public static final BlockCapability<ResourceHandler<FluidResource>, UUID> GASKET_BLOCK =
-        BlockCapability.create(
-            Identifier.fromNamespaceAndPath(Goo.MODID, "gasket_block"),
-            (Class<ResourceHandler<FluidResource>>) (Class<?>) ResourceHandler.class,
-            UUID.class);
+            BlockCapability.create(
+                    Identifier.fromNamespaceAndPath(Goo.MODID, "gasket_block"),
+                    (Class<ResourceHandler<FluidResource>>) (Class<?>) ResourceHandler.class,
+                    UUID.class);
 
-    /** Entity capability for gasket endpoints. Context is the target gasket UUID. */
+    /**
+     * Entity capability for gasket endpoints. Context is the target gasket UUID.
+     */
     @SuppressWarnings("unchecked")
     public static final EntityCapability<ResourceHandler<FluidResource>, UUID> GASKET_ENTITY =
-        EntityCapability.create(
-            Identifier.fromNamespaceAndPath(Goo.MODID, "gasket_entity"),
-            (Class<ResourceHandler<FluidResource>>) (Class<?>) ResourceHandler.class,
-            UUID.class);
+            EntityCapability.create(
+                    Identifier.fromNamespaceAndPath(Goo.MODID, "gasket_entity"),
+                    (Class<ResourceHandler<FluidResource>>) (Class<?>) ResourceHandler.class,
+                    UUID.class);
 
-    private GooCapabilities() {}
+    private GooCapabilities() {
+    }
 }

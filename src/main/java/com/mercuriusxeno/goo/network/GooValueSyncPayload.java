@@ -20,18 +20,17 @@ import java.util.Map;
  */
 public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements CustomPacketPayload {
 
-    /** Payload type ID for registration. */
+    /**
+     * Payload type ID for registration.
+     */
     public static final Type<GooValueSyncPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "goo_value_sync"));
 
-    /** Stream codec for encoding/decoding the payload. */
+    /**
+     * Stream codec for encoding/decoding the payload.
+     */
     public static final StreamCodec<FriendlyByteBuf, GooValueSyncPayload> STREAM_CODEC =
             StreamCodec.of(GooValueSyncPayload::encode, GooValueSyncPayload::decode);
-
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 
     /**
      * Writes the full value map to the buffer.
@@ -89,7 +88,8 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         return new GooValue(readTypeAmounts(buf, typeCount));
     }
 
-    /** Reads ordinal-amount pairs from the buffer into a map.
+    /**
+     * Reads ordinal-amount pairs from the buffer into a map.
      *
      * @param buf   the input buffer
      * @param count the number of pairs to read
@@ -101,8 +101,15 @@ public record GooValueSyncPayload(Map<Identifier, GooValue> values) implements C
         for (int i = 0; i < count; i++) {
             int ordinal = buf.readVarInt();
             int amount = buf.readVarInt();
-            if (ordinal >= 0 && ordinal < types.length) { map.put(types[ordinal], amount); }
+            if (ordinal >= 0 && ordinal < types.length) {
+                map.put(types[ordinal], amount);
+            }
         }
         return map;
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

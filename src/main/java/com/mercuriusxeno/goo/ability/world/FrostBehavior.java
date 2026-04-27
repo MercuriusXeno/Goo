@@ -30,68 +30,36 @@ import java.util.List;
  */
 public final class FrostBehavior implements WorldEffect, ChainBehavior {
 
-    /** Offset to get block center from integer position. */
+    /**
+     * Offset to get block center from integer position.
+     */
     private static final double BLOCK_CENTER_OFFSET = 0.5;
-    /** Spread multiplier applied to freeze radius for particle distribution. */
+    /**
+     * Spread multiplier applied to freeze radius for particle distribution.
+     */
     private static final double SNOWFLAKE_SPREAD_FACTOR = 0.8;
-    /** Base number of snowflake particles before per-radius addition. */
+    /**
+     * Base number of snowflake particles before per-radius addition.
+     */
     private static final int SNOWFLAKE_BASE_PARTICLES = 30;
-    /** Additional snowflake particles per unit of radius. */
+    /**
+     * Additional snowflake particles per unit of radius.
+     */
     private static final int SNOWFLAKE_PARTICLES_PER_RADIUS = 10;
-    /** Sound volume for the ice-crack effect. */
+    /**
+     * Sound volume for the ice-crack effect.
+     */
     private static final float ICE_CRACK_VOLUME = 1.0f;
-    /** Sound pitch for the ice-crack effect. */
+    /**
+     * Sound pitch for the ice-crack effect.
+     */
     private static final float ICE_CRACK_PITCH = 0.5f;
-    /** Array index for Z component in offset triples. */
+    /**
+     * Array index for Z component in offset triples.
+     */
     private static final int Z_INDEX = 2;
 
     // --- WorldEffect (instant blob hit) ---
-
-    @Override
-    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        EffectBlockPlacement.frostColdSnap(level, pos, targetFace);
-    }
-
-    // --- ChainBehavior (fused chain marker detonation) ---
-
-    @Override
-    public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        int stackCount = be.getStackCount();
-        Direction placedFace = be.getPlacedFace();
-        boolean flatMode = false;
-        boolean underwater = level.getFluidState(pos).isSource();
-        if (flatMode) {
-            executeFlatMode(level, pos, placedFace, stackCount);
-        } else if (underwater) {
-            executeTunnel(level, pos, placedFace, stackCount);
-        } else {
-            int radius = AbilityMath.computeFreezeRadius(stackCount);
-            BlockPos center = pos.relative(placedFace.getOpposite());
-            execute(level, center, radius);
-        }
-    }
-
-    @Override
-    public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        // Instant: never ticks.
-    }
-
-    @Override
-    public boolean isActive() {
-        return false;
-    }
-
-    @Override
-    public void saveAdditional(ValueOutput output) {
-        // No state.
-    }
-
-    @Override
-    public void loadAdditional(ValueInput input) {
-        // No state.
-    }
-
-    // --- Block-conversion utility (used by both lifecycles + ProgressiveAreaBlock) ---
 
     /**
      * Freezes all convertible blocks in a sphere around the center.
@@ -108,6 +76,8 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
         spawnEffects(level, center, radius);
     }
 
+    // --- ChainBehavior (fused chain marker detonation) ---
+
     /**
      * Freezes all convertible blocks in a flat Euclidean circle footprint.
      * Used when the frost chain marker is in flat mode.
@@ -118,7 +88,7 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @param stackCount the blob stack count
      */
     public static void executeFlatMode(ServerLevel level, BlockPos origin,
-            Direction placedFace, int stackCount) {
+                                       Direction placedFace, int stackCount) {
         List<int[]> offsets = ChainFootprint.computeRegionOffsets(
                 stackCount, true, placedFace);
         for (int[] o : offsets) {
@@ -139,7 +109,7 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @param stackCount the blob stack count
      */
     public static void executeTunnel(ServerLevel level, BlockPos origin,
-            Direction placedFace, int stackCount) {
+                                     Direction placedFace, int stackCount) {
         List<int[]> offsets = ChainFootprint.computeRegionOffsets(
                 stackCount, false, placedFace);
         for (int[] o : offsets) {
@@ -176,9 +146,11 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @param r2     the squared radius threshold
      */
     private static void convertSlice(ServerLevel level, BlockPos center,
-            int dx, int dy, int radius, int r2) {
+                                     int dx, int dy, int radius, int r2) {
         for (int dz = -radius; dz <= radius; dz++) {
-            if (dx * dx + dy * dy + dz * dz > r2) { continue; }
+            if (dx * dx + dy * dy + dz * dz > r2) {
+                continue;
+            }
             convertBlock(level, center.offset(dx, dy, dz));
         }
     }
@@ -187,19 +159,21 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * Freezes all convertible blocks in one spherical shell at the given
      * radius, centered one block into the wall from the marker.
      *
-     * @param level      the server level
-     * @param origin     the chain marker position
-     * @param placedFace the face the marker was placed on
+     * @param level       the server level
+     * @param origin      the chain marker position
+     * @param placedFace  the face the marker was placed on
      * @param shellRadius the shell radius to freeze
      */
     public static void freezeShell(ServerLevel level, BlockPos origin,
-            Direction placedFace, int shellRadius) {
+                                   Direction placedFace, int shellRadius) {
         List<int[]> offsets = ChainFootprint.sphereShellOffsets(shellRadius, placedFace);
         for (int[] o : offsets) {
             convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
         }
         spawnEffects(level, origin.relative(placedFace.getOpposite()), shellRadius);
     }
+
+    // --- Block-conversion utility (used by both lifecycles + ProgressiveAreaBlock) ---
 
     /**
      * Freezes one layer of blocks at the given depth, following the same
@@ -212,7 +186,7 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @param stackCount the blob stack count
      */
     public static void freezeLayer(ServerLevel level, BlockPos origin,
-            Direction placedFace, int stepIndex, int stackCount) {
+                                   Direction placedFace, int stepIndex, int stackCount) {
         BlockPos layerCenter = origin.relative(placedFace.getOpposite(), stepIndex + 1);
         Direction.Axis blastAxis = placedFace.getOpposite().getAxis();
         List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
@@ -224,7 +198,8 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
         spawnEffects(level, layerCenter, radius);
     }
 
-    /** Maps a 2D footprint offset to a world position at the layer center.
+    /**
+     * Maps a 2D footprint offset to a world position at the layer center.
      *
      * @param layerCenter the center of the current layer
      * @param blastAxis   the axis along which layers advance
@@ -232,7 +207,7 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @return the world position
      */
     private static BlockPos resolveFootprintPos(BlockPos layerCenter,
-            Direction.Axis blastAxis, int[] fp) {
+                                                Direction.Axis blastAxis, int[] fp) {
         return switch (blastAxis) {
             case X -> layerCenter.offset(0, fp[0], fp[1]);
             case Y -> layerCenter.offset(fp[0], 0, fp[1]);
@@ -261,9 +236,15 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
      * @return the replacement block, or null
      */
     private static Block frostReplacement(BlockState state) {
-        if (state.is(Blocks.WATER)) { return GooBlocks.MAGICKED_ICE.get(); }
-        if (state.is(Blocks.LAVA)) { return Blocks.OBSIDIAN; }
-        if (isFire(state) || isPlant(state)) { return Blocks.AIR; }
+        if (state.is(Blocks.WATER)) {
+            return GooBlocks.MAGICKED_ICE.get();
+        }
+        if (state.is(Blocks.LAVA)) {
+            return Blocks.OBSIDIAN;
+        }
+        if (isFire(state) || isPlant(state)) {
+            return Blocks.AIR;
+        }
         return null;
     }
 
@@ -422,5 +403,47 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
                 cx, cy, cz, particleCount, spread, spread, spread, 0.0);
         level.playSound(null, center, SoundEvents.GLASS_BREAK,
                 SoundSource.BLOCKS, ICE_CRACK_VOLUME, ICE_CRACK_PITCH);
+    }
+
+    @Override
+    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        EffectBlockPlacement.frostColdSnap(level, pos, targetFace);
+    }
+
+    @Override
+    public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
+        int stackCount = be.getStackCount();
+        Direction placedFace = be.getPlacedFace();
+        boolean flatMode = false;
+        boolean underwater = level.getFluidState(pos).isSource();
+        if (flatMode) {
+            executeFlatMode(level, pos, placedFace, stackCount);
+        } else if (underwater) {
+            executeTunnel(level, pos, placedFace, stackCount);
+        } else {
+            int radius = AbilityMath.computeFreezeRadius(stackCount);
+            BlockPos center = pos.relative(placedFace.getOpposite());
+            execute(level, center, radius);
+        }
+    }
+
+    @Override
+    public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
+        // Instant: never ticks.
+    }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public void saveAdditional(ValueOutput output) {
+        // No state.
+    }
+
+    @Override
+    public void loadAdditional(ValueInput input) {
+        // No state.
     }
 }

@@ -33,12 +33,14 @@ public final class AbilityRadialScreen extends Screen {
     private final GooType gooType;
     private final List<ClientAbility> abilities;
     private final int[] wedgeColors;
-    /** Goo availability snapshot, passed through for back-navigation. */
+    /**
+     * Goo availability snapshot, passed through for back-navigation.
+     */
     private final Map<GooType, Integer> available;
     private int hoveredIndex = NO_SELECTION;
 
     private AbilityRadialScreen(GooType gooType, List<ClientAbility> abilities,
-            Map<GooType, Integer> available) {
+                                Map<GooType, Integer> available) {
         super(Component.empty());
         this.gooType = gooType;
         this.abilities = abilities;
@@ -55,9 +57,36 @@ public final class AbilityRadialScreen extends Screen {
      */
     public static void open(GooType type, Map<GooType, Integer> available) {
         List<ClientAbility> abilities = AbilitySyncHandler.getAbilitiesForType(type);
-        if (abilities.isEmpty()) { return; }
+        if (abilities.isEmpty()) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         mc.setScreen(new AbilityRadialScreen(type, abilities, available));
+    }
+
+    private static @Nullable ItemStack findGloveStack() {
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null) {
+            return null;
+        }
+        ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (main.getItem() instanceof GooGloveItem) {
+            return main;
+        }
+        ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
+        if (off.getItem() instanceof GooGloveItem) {
+            return off;
+        }
+        return null;
+    }
+
+    private static void sendSelectionToServer(GloveSelection selection) {
+        var connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            connection.send(new ServerboundCustomPayloadPacket(
+                    new GloveSelectPayload(selection.gooTypeId(), selection.abilityId())));
+        }
     }
 
     @Override
@@ -101,7 +130,9 @@ public final class AbilityRadialScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
-    /** Processes a left-click: confirm ability or navigate back to types. */
+    /**
+     * Processes a left-click: confirm ability or navigate back to types.
+     */
     private void handleLeftClick() {
         if (hoveredIndex >= 0 && hoveredIndex < abilities.size()) {
             selectAbility(abilities.get(hoveredIndex));
@@ -113,28 +144,11 @@ public final class AbilityRadialScreen extends Screen {
 
     private void selectAbility(ClientAbility ability) {
         ItemStack glove = findGloveStack();
-        if (glove == null) { return; }
+        if (glove == null) {
+            return;
+        }
         GloveSelection selection = GloveSelection.ofAbility(gooType, ability.id());
         GooGloveItem.setSelection(glove, selection);
         sendSelectionToServer(selection);
-    }
-
-    private static @Nullable ItemStack findGloveStack() {
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null) { return null; }
-        ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (main.getItem() instanceof GooGloveItem) { return main; }
-        ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
-        if (off.getItem() instanceof GooGloveItem) { return off; }
-        return null;
-    }
-
-    private static void sendSelectionToServer(GloveSelection selection) {
-        var connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(
-                    new GloveSelectPayload(selection.gooTypeId(), selection.abilityId())));
-        }
     }
 }

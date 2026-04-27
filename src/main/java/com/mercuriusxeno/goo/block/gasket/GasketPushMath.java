@@ -12,22 +12,18 @@ import java.util.function.BiFunction;
  */
 public final class GasketPushMath {
 
-    /** Exponent for goo (viscous). */
+    /**
+     * Exponent for goo (viscous).
+     */
     public static final double GOO_EXPONENT = 0.6;
 
-    /** Exponent for vanilla fluids like water (less viscous, faster). */
+    /**
+     * Exponent for vanilla fluids like water (less viscous, faster).
+     */
     public static final double WATER_EXPONENT = 0.75;
 
-    private GasketPushMath() {}
-
-    /**
-     * Result of a push operation: what was accepted by the destination
-     * and what remains in the reservoir.
-     *
-     * @param accepted  goo contents successfully transferred
-     * @param remaining goo contents left in the reservoir
-     */
-    public record PushResult(GooContents accepted, GooContents remaining) {}
+    private GasketPushMath() {
+    }
 
     /**
      * Computes the per-tick transfer rate for goo fluids (exponent 0.6).
@@ -48,7 +44,9 @@ public final class GasketPushMath {
      * @return mB to transfer this tick (min 1 if remaining > 0, 0 if empty)
      */
     public static int taperRate(int remaining, double exponent) {
-        if (remaining <= 0) { return 0; }
+        if (remaining <= 0) {
+            return 0;
+        }
         return Math.max(1, (int) Math.ceil(Math.pow(remaining, exponent)));
     }
 
@@ -72,7 +70,7 @@ public final class GasketPushMath {
      * @return push result with accepted and remaining contents
      */
     public static PushResult computeTaperedPush(GooContents reservoir,
-            BiFunction<GooType, Integer, Integer> acceptor) {
+                                                BiFunction<GooType, Integer, Integer> acceptor) {
         return computePush(reservoir,
                 (type, vol) -> acceptor.apply(type, Math.min(taperRate(vol), vol)));
     }
@@ -87,14 +85,17 @@ public final class GasketPushMath {
      * @return push result with accepted and remaining contents
      */
     public static PushResult computePush(GooContents reservoir, BiFunction<GooType, Integer, Integer> acceptor) {
-        if (reservoir.isEmpty()) { return new PushResult(GooContents.EMPTY, GooContents.EMPTY); }
+        if (reservoir.isEmpty()) {
+            return new PushResult(GooContents.EMPTY, GooContents.EMPTY);
+        }
         return distributeEntries(reservoir, acceptor);
     }
 
     /**
      * Iterates each goo entry, splitting volume between accepted and remaining.
+     *
      * @param reservoir the source goo contents to distribute from
-     * @param acceptor function (type, volume) -> amount accepted per entry
+     * @param acceptor  function (type, volume) -> amount accepted per entry
      * @return push result splitting volume into accepted and remaining
      */
     private static PushResult distributeEntries(GooContents reservoir, BiFunction<GooType, Integer, Integer> acceptor) {
@@ -108,7 +109,8 @@ public final class GasketPushMath {
         return new PushResult(accepted, remaining);
     }
 
-    /** Clamps the acceptor result to [0, volume].
+    /**
+     * Clamps the acceptor result to [0, volume].
      *
      * @param acceptor the acceptor function
      * @param type     the goo type
@@ -116,11 +118,12 @@ public final class GasketPushMath {
      * @return the clamped accepted amount
      */
     private static int clampedTake(BiFunction<GooType, Integer, Integer> acceptor,
-                                    GooType type, int volume) {
+                                   GooType type, int volume) {
         return Math.max(0, Math.min(acceptor.apply(type, volume), volume));
     }
 
-    /** Adds the amount to the contents only if positive.
+    /**
+     * Adds the amount to the contents only if positive.
      *
      * @param contents the current contents
      * @param type     the goo type
@@ -129,5 +132,15 @@ public final class GasketPushMath {
      */
     private static GooContents addIfPositive(GooContents contents, GooType type, int amount) {
         return amount > 0 ? contents.withAdded(type, amount) : contents;
+    }
+
+    /**
+     * Result of a push operation: what was accepted by the destination
+     * and what remains in the reservoir.
+     *
+     * @param accepted  goo contents successfully transferred
+     * @param remaining goo contents left in the reservoir
+     */
+    public record PushResult(GooContents accepted, GooContents remaining) {
     }
 }

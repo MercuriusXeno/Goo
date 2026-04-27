@@ -17,14 +17,6 @@ import java.util.function.Consumer;
  */
 public final class MobAbilityRegistry {
 
-    /** Dispatch context for entity effect handlers.
-     *
-     * @param level   the current level
-     * @param target  the entity being affected
-     * @param thrower the entity that threw the blob, or null
-     */
-    public record Context(Level level, LivingEntity target, @Nullable Entity thrower) {}
-
     private static final Map<String, Consumer<Context>> HANDLERS = new HashMap<>();
 
     static {
@@ -46,9 +38,11 @@ public final class MobAbilityRegistry {
         register(MobAbilities.UNSTABLE_EXPLODE, ctx -> MobAbilities.applyNamed(MobAbilities.UNSTABLE_EXPLODE, ctx));
     }
 
-    private MobAbilityRegistry() {}
+    private MobAbilityRegistry() {
+    }
 
-    /** Registers a named entity effect handler.
+    /**
+     * Registers a named entity effect handler.
      *
      * @param name    the handler name matching JSON "handler" param
      * @param handler the effect consumer
@@ -57,12 +51,23 @@ public final class MobAbilityRegistry {
         HANDLERS.put(name, handler);
     }
 
-    /** Looks up a handler by name.
+    /**
+     * Looks up a handler by name.
      *
      * @param name the handler name
      * @return the handler, or null if not registered
      */
     public static @Nullable Consumer<Context> get(String name) {
         return HANDLERS.get(name);
+    }
+
+    /**
+     * Dispatch context for entity effect handlers.
+     *
+     * @param level   the current level
+     * @param target  the entity being affected
+     * @param thrower the entity that threw the blob, or null
+     */
+    public record Context(Level level, LivingEntity target, @Nullable Entity thrower) {
     }
 }

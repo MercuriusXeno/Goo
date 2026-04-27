@@ -10,12 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -27,88 +22,163 @@ final class GooAuditValues {
 
     // --- Conflict constants ---
 
-    /** Conflicts section header prefix. */
+    /**
+     * Conflicts section header prefix.
+     */
     private static final String HDR_CONFLICTS_PREFIX = "CONFLICTS (";
-    /** Conflicts section header middle. */
+    /**
+     * Conflicts section header middle.
+     */
     private static final String HDR_CONFLICTS_MID = " total, ";
-    /** Conflicts section header suffix. */
+    /**
+     * Conflicts section header suffix.
+     */
     private static final String HDR_CONFLICTS_SUFFIX = " recipe-cheaper)";
-    /** No conflicts message. */
+    /**
+     * No conflicts message.
+     */
     private static final String MSG_NO_CONFLICTS = "  No base/recipe value conflicts.";
-    /** Conflicts chat prefix. */
+    /**
+     * Conflicts chat prefix.
+     */
     private static final String MSG_CONFLICTS_CHAT_PREFIX = "  Conflicts: ";
-    /** Conflicts chat open paren. */
+    /**
+     * Conflicts chat open paren.
+     */
     private static final String MSG_CONFLICTS_CHAT_MID = " (";
-    /** Conflicts chat suffix. */
+    /**
+     * Conflicts chat suffix.
+     */
     private static final String MSG_CONFLICTS_CHAT_SUFFIX = " recipe-cheaper)";
-    /** Blobs label in conflict lines. */
+    /**
+     * Blobs label in conflict lines.
+     */
     private static final String LABEL_BLOBS_OPEN = " blobs {";
-    /** Close brace in conflict lines. */
+    /**
+     * Close brace in conflict lines.
+     */
     private static final String LABEL_BLOBS_CLOSE = "}";
-    /** Recipe cheaper direction label. */
+    /**
+     * Recipe cheaper direction label.
+     */
     private static final String DIR_RECIPE_CHEAPER = "<- RECIPE CHEAPER";
-    /** Base cheaper direction label. */
+    /**
+     * Base cheaper direction label.
+     */
     private static final String DIR_BASE_CHEAPER = "<- BASE CHEAPER";
-    /** Conflict base prefix. */
+    /**
+     * Conflict base prefix.
+     */
     private static final String CONFLICT_BASE = " - base: ";
-    /** Conflict vs separator. */
+    /**
+     * Conflict vs separator.
+     */
     private static final String CONFLICT_VS = " vs recipe: ";
 
     // --- Divisibility constants ---
 
-    /** Initial capacity for divisibility-line StringBuilder. */
+    /**
+     * Initial capacity for divisibility-line StringBuilder.
+     */
     private static final int DIVISIBILITY_LINE_CAPACITY = 48;
-    /** Divisibility section header prefix. */
+    /**
+     * Divisibility section header prefix.
+     */
     private static final String HDR_DIV_PREFIX = "DIVISIBILITY LOSS (";
-    /** Divisibility section header suffix. */
+    /**
+     * Divisibility section header suffix.
+     */
     private static final String HDR_DIV_SUFFIX = " recipes lose value to integer division)";
-    /** No divisibility losses message. */
+    /**
+     * No divisibility losses message.
+     */
     private static final String MSG_NO_DIV = "  No divisibility losses detected.";
-    /** Divisibility chat prefix. */
+    /**
+     * Divisibility chat prefix.
+     */
     private static final String MSG_DIV_CHAT_PREFIX = "  Divisibility: ";
-    /** Divisibility chat suffix. */
+    /**
+     * Divisibility chat suffix.
+     */
     private static final String MSG_DIV_CHAT_SUFFIX = " recipe(s) lose blobs to integer division";
-    /** Divisibility total label. */
+    /**
+     * Divisibility total label.
+     */
     private static final String DIV_TOTAL = " total / ";
-    /** Divisibility items label. */
+    /**
+     * Divisibility items label.
+     */
     private static final String DIV_ITEMS = " items = ";
-    /** Divisibility each label. */
+    /**
+     * Divisibility each label.
+     */
     private static final String DIV_EACH = " each (loses ";
-    /** Divisibility blob(s) suffix. */
+    /**
+     * Divisibility blob(s) suffix.
+     */
     private static final String DIV_BLOBS = " blob(s))";
-    /** Divisibility ingredient provenance newline indent. */
+    /**
+     * Divisibility ingredient provenance newline indent.
+     */
     private static final String DIV_INGREDIENT_INDENT = "\n      ";
-    /** No value label for ingredient. */
+    /**
+     * No value label for ingredient.
+     */
     private static final String LABEL_NO_VALUE = " = no value";
-    /** Equals-space-value format prefix. */
+    /**
+     * Equals-space-value format prefix.
+     */
     private static final String LABEL_EQ_VALUE = " = ";
-    /** Open brace for value display. */
+    /**
+     * Open brace for value display.
+     */
     private static final String LABEL_OPEN_BRACE = " {";
-    /** Base provenance tag. */
+    /**
+     * Base provenance tag.
+     */
     private static final String LABEL_BASE = " (base)";
-    /** Derived provenance tag. */
+    /**
+     * Derived provenance tag.
+     */
     private static final String LABEL_DERIVED = " (derived)";
 
     // --- All Values constants ---
 
-    /** All values section header prefix. */
+    /**
+     * All values section header prefix.
+     */
     private static final String HDR_ALL_PREFIX = "ALL VALUES (";
-    /** All values section header suffix. */
+    /**
+     * All values section header suffix.
+     */
     private static final String HDR_ALL_SUFFIX = " items)";
-    /** Provenance: base+derived prefix. */
+    /**
+     * Provenance: base+derived prefix.
+     */
     private static final String PROV_BASE_DERIVED = " (base+derived from: ";
-    /** Provenance: derived prefix. */
+    /**
+     * Provenance: derived prefix.
+     */
     private static final String PROV_DERIVED = " (derived from: ";
-    /** Plus separator in recipe format. */
+    /**
+     * Plus separator in recipe format.
+     */
     private static final String RECIPE_PLUS = " + ";
-    /** Multiplier prefix in recipe format. */
+    /**
+     * Multiplier prefix in recipe format.
+     */
     private static final String RECIPE_TIMES_PREFIX = "x ";
-    /** Arrow to result count in recipe format. */
+    /**
+     * Arrow to result count in recipe format.
+     */
     private static final String RECIPE_ARROW = " -> ";
-    /** Hyphen separator between item and detail. */
+    /**
+     * Hyphen separator between item and detail.
+     */
     private static final String SEP_DASH = " - ";
 
-    private GooAuditValues() {}
+    private GooAuditValues() {
+    }
 
     // --- Conflicts ---
 
@@ -134,12 +204,14 @@ final class GooAuditValues {
      */
     static void sendConflictsSummary(CommandContext<CommandSourceStack> ctx) {
         List<GooValueRegistry.ValueConflict> conflicts = Goo.GOO_VALUES.diagnostics().conflicts();
-        if (conflicts.isEmpty()) { return; }
+        if (conflicts.isEmpty()) {
+            return;
+        }
 
         long exploitCount = conflicts.stream().filter(GooValueRegistry.ValueConflict::isRecipeCheaper).count();
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_CONFLICTS_CHAT_PREFIX + conflicts.size() + MSG_CONFLICTS_CHAT_MID + exploitCount + MSG_CONFLICTS_CHAT_SUFFIX)
-                .withStyle(exploitCount > 0 ? ChatFormatting.YELLOW : ChatFormatting.GREEN), false);
+                Component.literal(MSG_CONFLICTS_CHAT_PREFIX + conflicts.size() + MSG_CONFLICTS_CHAT_MID + exploitCount + MSG_CONFLICTS_CHAT_SUFFIX)
+                        .withStyle(exploitCount > 0 ? ChatFormatting.YELLOW : ChatFormatting.GREEN), false);
     }
 
     /**
@@ -177,11 +249,13 @@ final class GooAuditValues {
      */
     static void sendDivisibilitySummary(CommandContext<CommandSourceStack> ctx) {
         List<GooValueRegistry.DivisibilityLoss> losses = Goo.GOO_VALUES.diagnostics().divisibilityLosses();
-        if (losses.isEmpty()) { return; }
+        if (losses.isEmpty()) {
+            return;
+        }
 
         ctx.getSource().sendSuccess(() ->
-            Component.literal(MSG_DIV_CHAT_PREFIX + losses.size() + MSG_DIV_CHAT_SUFFIX)
-                .withStyle(ChatFormatting.YELLOW), false);
+                Component.literal(MSG_DIV_CHAT_PREFIX + losses.size() + MSG_DIV_CHAT_SUFFIX)
+                        .withStyle(ChatFormatting.YELLOW), false);
     }
 
     /**
@@ -193,9 +267,9 @@ final class GooAuditValues {
     private static String formatDivisibilityLine(GooValueRegistry.DivisibilityLoss loss) {
         StringBuilder sb = new StringBuilder(DIVISIBILITY_LINE_CAPACITY);
         sb.append(GooAuditReport.INDENT).append(loss.output()).append(SEP_DASH)
-            .append(loss.inputTotal()).append(DIV_TOTAL)
-            .append(loss.outputCount()).append(DIV_ITEMS).append(loss.perItemValue())
-            .append(DIV_EACH).append(loss.lostBlobs()).append(DIV_BLOBS);
+                .append(loss.inputTotal()).append(DIV_TOTAL)
+                .append(loss.outputCount()).append(DIV_ITEMS).append(loss.perItemValue())
+                .append(DIV_EACH).append(loss.lostBlobs()).append(DIV_BLOBS);
         appendIngredientProvenance(sb, loss);
         return sb.toString();
     }
@@ -207,10 +281,12 @@ final class GooAuditValues {
      * @param loss the divisibility loss record
      */
     private static void appendIngredientProvenance(StringBuilder sb,
-            GooValueRegistry.DivisibilityLoss loss) {
+                                                   GooValueRegistry.DivisibilityLoss loss) {
         for (var alternatives : loss.recipe().ingredientAlternatives()) {
             Identifier cheapest = findCheapestIngredientId(alternatives);
-            if (cheapest == null) { continue; }
+            if (cheapest == null) {
+                continue;
+            }
             sb.append(DIV_INGREDIENT_INDENT).append(cheapest);
             appendValueSource(sb, cheapest);
         }
@@ -239,7 +315,7 @@ final class GooAuditValues {
             return;
         }
         sb.append(LABEL_EQ_VALUE).append(val.totalBlobs()).append(LABEL_OPEN_BRACE).append(val).append(LABEL_BLOBS_CLOSE)
-          .append(Goo.GOO_VALUES.hasBaseValue(itemId) ? LABEL_BASE : LABEL_DERIVED);
+                .append(Goo.GOO_VALUES.hasBaseValue(itemId) ? LABEL_BASE : LABEL_DERIVED);
     }
 
     // --- All Values ---
@@ -267,7 +343,7 @@ final class GooAuditValues {
     private static String formatValueLine(Identifier itemId, GooValue value) {
         StringBuilder sb = new StringBuilder();
         sb.append(GooAuditReport.INDENT).append(itemId).append(LABEL_EQ_VALUE)
-            .append(value.totalBlobs()).append(LABEL_OPEN_BRACE).append(value).append(LABEL_BLOBS_CLOSE);
+                .append(value.totalBlobs()).append(LABEL_OPEN_BRACE).append(value).append(LABEL_BLOBS_CLOSE);
         appendProvenance(sb, itemId);
         return sb.toString();
     }
@@ -299,10 +375,10 @@ final class GooAuditValues {
     private static String formatSourceRecipe(RecipeInput recipe) {
         Map<Identifier, Integer> counts = countIngredients(recipe);
         String ingredientStr = counts.entrySet().stream()
-            .map(e -> e.getValue() > 1 ? e.getValue() + RECIPE_TIMES_PREFIX + e.getKey() : e.getKey().toString())
-            .collect(Collectors.joining(RECIPE_PLUS));
+                .map(e -> e.getValue() > 1 ? e.getValue() + RECIPE_TIMES_PREFIX + e.getKey() : e.getKey().toString())
+                .collect(Collectors.joining(RECIPE_PLUS));
         return recipe.resultCount() > 1
-            ? ingredientStr + RECIPE_ARROW + recipe.resultCount() : ingredientStr;
+                ? ingredientStr + RECIPE_ARROW + recipe.resultCount() : ingredientStr;
     }
 
     /**

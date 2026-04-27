@@ -17,13 +17,18 @@ import java.util.Map;
  */
 public final class GooSourceScanner {
 
-    /** Main inventory: slots 0-35. */
+    /**
+     * Main inventory: slots 0-35.
+     */
     private static final int MAIN_START = 0;
     private static final int MAIN_END = 36;
-    /** Offhand slot index in Inventory. */
+    /**
+     * Offhand slot index in Inventory.
+     */
     private static final int OFFHAND_SLOT = Inventory.SLOT_OFFHAND;
 
-    private GooSourceScanner() {}
+    private GooSourceScanner() {
+    }
 
     /**
      * Aggregates available mB per goo type across all inventory sources.
@@ -55,7 +60,9 @@ public final class GooSourceScanner {
      * @return actual mB depleted
      */
     public static int deplete(Player player, GooType type, int amount) {
-        if (amount <= 0) { return 0; }
+        if (amount <= 0) {
+            return 0;
+        }
 
         int remaining = depleteAllPasses(player.getInventory(), type, amount);
         return amount - remaining;
@@ -71,9 +78,15 @@ public final class GooSourceScanner {
      */
     private static int depleteAllPasses(Inventory inv, GooType type, int remaining) {
         int left = depletePass(inv, type, remaining, GooBlobItem.class);
-        if (left > 0) { left = depletePass(inv, type, left, GooOmniblobItem.class); }
-        if (left > 0) { left = depletePass(inv, type, left, CanisterItem.class); }
-        if (left > 0) { left = depletePass(inv, type, left, VatBlockItem.class); }
+        if (left > 0) {
+            left = depletePass(inv, type, left, GooOmniblobItem.class);
+        }
+        if (left > 0) {
+            left = depletePass(inv, type, left, CanisterItem.class);
+        }
+        if (left > 0) {
+            left = depletePass(inv, type, left, VatBlockItem.class);
+        }
         return left;
     }
 
@@ -93,8 +106,8 @@ public final class GooSourceScanner {
     /**
      * Scans inventory for volume of a specific type, stopping early once threshold is met.
      *
-     * @param inv    the player inventory
-     * @param type   the goo type
+     * @param inv       the player inventory
+     * @param type      the goo type
      * @param threshold minimum mB to find before stopping
      * @return total mB found (may be less than threshold if insufficient)
      */
@@ -118,7 +131,9 @@ public final class GooSourceScanner {
      * @param totals the running totals map
      */
     private static void scanStack(ItemStack stack, Map<GooType, Integer> totals) {
-        if (stack.isEmpty()) { return; }
+        if (stack.isEmpty()) {
+            return;
+        }
 
         if (stack.getItem() instanceof GooBlobItem blob) {
             addToMap(totals, blob.getGooType(), stack.getCount() * BlobStacks.MB_PER_BLOB);
@@ -167,7 +182,9 @@ public final class GooSourceScanner {
      * @return volume in microblobs
      */
     private static int volumeOfType(ItemStack stack, GooType type) {
-        if (stack.isEmpty()) { return 0; }
+        if (stack.isEmpty()) {
+            return 0;
+        }
         int loose = looseGooVolume(stack, type);
         return loose > 0 ? loose : containerVolumeOfType(stack, type);
     }
@@ -240,7 +257,9 @@ public final class GooSourceScanner {
      * @return the remaining amount after depletion
      */
     private static int depleteStack(ItemStack stack, GooType type, int remaining, Class<?> sourceClass) {
-        if (stack.isEmpty()) { return remaining; }
+        if (stack.isEmpty()) {
+            return remaining;
+        }
 
         if (sourceClass == GooBlobItem.class) {
             return depleteBlobStack(stack, type, remaining);
@@ -289,8 +308,8 @@ public final class GooSourceScanner {
     /**
      * Sets omniblob volume to the new value, or destroys the stack if depleted.
      *
-     * @param stack      the omniblob item stack
-     * @param newVolume  the volume to set (destroyed if <= 0)
+     * @param stack     the omniblob item stack
+     * @param newVolume the volume to set (destroyed if <= 0)
      */
     private static void reduceOmniblobVolume(ItemStack stack, int newVolume) {
         if (newVolume <= 0) {

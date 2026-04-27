@@ -31,7 +31,8 @@ final class ConversionApplicator {
     private static final String LOG_CONV_FAILED = "Conversion failed for {}: {}";
     private static final String LOG_UNKNOWN_FORMULA = "Unknown formula or additive @{} in conversion assignment";
 
-    private ConversionApplicator() { }
+    private ConversionApplicator() {
+    }
 
     /**
      * Applies a conversion formula N times to a GooValue. All applications use the
@@ -53,14 +54,15 @@ final class ConversionApplicator {
 
     /**
      * Performs the actual conversion arithmetic.
-     * @param original the item's current goo value
-     * @param formula  the conversion formula to apply
-     * @param times          the conversion multiplier
-     * @param sourceAmount   the source goo amount being consumed
+     *
+     * @param original     the item's current goo value
+     * @param formula      the conversion formula to apply
+     * @param times        the conversion multiplier
+     * @param sourceAmount the source goo amount being consumed
      * @return the converted goo value
      */
     private static GooValue computeConversion(GooValue original, Formula formula,
-                                               int times, int sourceAmount) {
+                                              int times, int sourceAmount) {
         int perApp = exactDivide(sourceAmount, formula.sourceDivisor(),
                 formula.sourceType() + SLASH_SEP + formula.sourceDivisor());
         int removed = perApp * times;
@@ -72,14 +74,15 @@ final class ConversionApplicator {
 
     /**
      * Creates a new GooValue with source removed and target added.
+     *
      * @param original the item's current goo value
      * @param formula  the conversion formula to apply
-     * @param removed        the amount of source goo removed
-     * @param added          the amount of target goo added
+     * @param removed  the amount of source goo removed
+     * @param added    the amount of target goo added
      * @return the converted goo value
      */
     private static GooValue applyDelta(GooValue original, Formula formula,
-                                        int removed, int added) {
+                                       int removed, int added) {
         Map<GooType, Integer> result = new EnumMap<>(GooType.class);
         original.getAll().forEach(result::put);
         result.merge(formula.sourceType(), -removed, Integer::sum);
@@ -89,6 +92,7 @@ final class ConversionApplicator {
 
     /**
      * Integer division that throws if lossy.
+     *
      * @param value   the dividend
      * @param divisor the divisor
      * @param context description for the error message if lossy
@@ -98,7 +102,7 @@ final class ConversionApplicator {
         if (value % divisor != 0) {
             throw new ArithmeticException(
                     LOSSY_PREFIX + value + IN_CTX + context
-                    + REMAINDER_PREFIX + value % divisor + REMAINDER_SUFFIX);
+                            + REMAINDER_PREFIX + value % divisor + REMAINDER_SUFFIX);
         }
         return value / divisor;
     }
@@ -114,11 +118,11 @@ final class ConversionApplicator {
      * @param additives       additive modifier lookup table
      */
     static void applyAssignment(Map<Identifier, GooValue> effectiveValues,
-                                 List<Identifier> targetItems,
-                                 List<Identifier> sourceItems,
-                                 Assignment assignment,
-                                 Map<String, Formula> formulas,
-                                 Map<String, GooValue> additives) {
+                                List<Identifier> targetItems,
+                                List<Identifier> sourceItems,
+                                Assignment assignment,
+                                Map<String, Formula> formulas,
+                                Map<String, GooValue> additives) {
         applyParallelCopy(effectiveValues, targetItems, sourceItems, assignment);
         applyScale(effectiveValues, targetItems, assignment);
         for (Stack stack : assignment.chain()) {
@@ -128,18 +132,23 @@ final class ConversionApplicator {
 
     /**
      * Copies values from source items to target items in parallel (1:1 index mapping).
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param targetItems    the list of target item identifiers
-     * @param sourceItems    the list of source item identifiers
-     * @param assignment the assignment whose fraction caused the error
+     * @param targetItems     the list of target item identifiers
+     * @param sourceItems     the list of source item identifiers
+     * @param assignment      the assignment whose fraction caused the error
      */
     private static void applyParallelCopy(Map<Identifier, GooValue> effectiveValues,
-                                           List<Identifier> targetItems,
-                                           List<Identifier> sourceItems,
-                                           Assignment assignment) {
-        if (sourceItems == null) { return; }
+                                          List<Identifier> targetItems,
+                                          List<Identifier> sourceItems,
+                                          Assignment assignment) {
+        if (sourceItems == null) {
+            return;
+        }
         if (sourceItems.size() != targetItems.size()) {
-            if (LOGGER.isErrorEnabled()) { LOGGER.error(LOG_PARALLEL_MISMATCH, assignment.target(), targetItems.size(), sourceItems.size()); }
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error(LOG_PARALLEL_MISMATCH, assignment.target(), targetItems.size(), sourceItems.size());
+            }
             return;
         }
         copyParallelValues(effectiveValues, targetItems, sourceItems);
@@ -147,13 +156,14 @@ final class ConversionApplicator {
 
     /**
      * Performs the per-index value copy.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param targetItems    the list of target item identifiers
-     * @param sourceItems    the list of source item identifiers
+     * @param targetItems     the list of target item identifiers
+     * @param sourceItems     the list of source item identifiers
      */
     private static void copyParallelValues(Map<Identifier, GooValue> effectiveValues,
-                                            List<Identifier> targetItems,
-                                            List<Identifier> sourceItems) {
+                                           List<Identifier> targetItems,
+                                           List<Identifier> sourceItems) {
         for (int i = 0; i < targetItems.size(); i++) {
             GooValue sourceVal = effectiveValues.get(sourceItems.get(i));
             if (sourceVal != null && !sourceVal.isEmpty()) {
@@ -164,12 +174,13 @@ final class ConversionApplicator {
 
     /**
      * Scales all target items by the assignment's multiplier/divisor fraction.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param targetItems    the list of target item identifiers
-     * @param assignment the assignment whose fraction caused the error
+     * @param targetItems     the list of target item identifiers
+     * @param assignment      the assignment whose fraction caused the error
      */
     private static void applyScale(Map<Identifier, GooValue> effectiveValues,
-                                    List<Identifier> targetItems, Assignment assignment) {
+                                   List<Identifier> targetItems, Assignment assignment) {
         if (assignment.scaleMultiplier() == 1 && assignment.scaleDivisor() == 1) {
             return;
         }
@@ -180,27 +191,31 @@ final class ConversionApplicator {
 
     /**
      * Scales a single item's value by the assignment fraction.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param itemId     the item identifier
-     * @param assignment the assignment whose fraction caused the error
+     * @param itemId          the item identifier
+     * @param assignment      the assignment whose fraction caused the error
      */
     private static void scaleItem(Map<Identifier, GooValue> effectiveValues,
-                                   Identifier itemId, Assignment assignment) {
+                                  Identifier itemId, Assignment assignment) {
         GooValue current = effectiveValues.get(itemId);
-        if (current == null || current.isEmpty()) { return; }
+        if (current == null || current.isEmpty()) {
+            return;
+        }
         tryScaleValue(effectiveValues, itemId, current, assignment);
     }
 
     /**
      * Attempts to scale a value by the assignment fraction, logging on failure.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param itemId     the item identifier
-     * @param current        the item's current goo value
-     * @param assignment the assignment whose fraction caused the error
+     * @param itemId          the item identifier
+     * @param current         the item's current goo value
+     * @param assignment      the assignment whose fraction caused the error
      */
     private static void tryScaleValue(Map<Identifier, GooValue> effectiveValues,
-                                       Identifier itemId, GooValue current,
-                                       Assignment assignment) {
+                                      Identifier itemId, GooValue current,
+                                      Assignment assignment) {
         try {
             GooValue scaled = current.multiply(assignment.scaleMultiplier())
                     .divideExact(assignment.scaleDivisor());
@@ -212,12 +227,13 @@ final class ConversionApplicator {
 
     /**
      * Logs a scale failure at error level.
+     *
      * @param itemId     the item that failed scaling
      * @param assignment the assignment whose fraction caused the error
      * @param e          the arithmetic exception that occurred
      */
     private static void logScaleError(Identifier itemId, Assignment assignment,
-                                       ArithmeticException e) {
+                                      ArithmeticException e) {
         if (LOGGER.isErrorEnabled()) {
             LOGGER.error(LOG_SCALE_FAILED, itemId, assignment.scaleMultiplier(),
                     assignment.scaleDivisor(), e.getMessage());
@@ -226,16 +242,17 @@ final class ConversionApplicator {
 
     /**
      * Applies a single conversion stack (formula or additive) to a list of items.
+     *
      * @param effectiveValues the mutable item-to-value map being built
      * @param items           the list of item identifiers to apply to
      * @param stack           the conversion stack to apply
-     * @param formulas       the named formula map
-     * @param additives      the named additive map
+     * @param formulas        the named formula map
+     * @param additives       the named additive map
      */
     private static void applyStack(Map<Identifier, GooValue> effectiveValues,
-                                    List<Identifier> items, Stack stack,
-                                    Map<String, Formula> formulas,
-                                    Map<String, GooValue> additives) {
+                                   List<Identifier> items, Stack stack,
+                                   Map<String, Formula> formulas,
+                                   Map<String, GooValue> additives) {
         GooValue additive = additives.get(stack.formulaName());
         if (additive != null) {
             applyAdditiveStack(effectiveValues, items, additive, stack.multiplier());
@@ -246,14 +263,15 @@ final class ConversionApplicator {
 
     /**
      * Resolves and applies a formula stack, logging if the formula name is unknown.
+     *
      * @param effectiveValues the mutable item-to-value map being built
      * @param items           the list of item identifiers to apply to
      * @param stack           the conversion stack to apply
-     * @param formulas       the named formula map
+     * @param formulas        the named formula map
      */
     private static void applyResolvedFormula(Map<Identifier, GooValue> effectiveValues,
-                                              List<Identifier> items, Stack stack,
-                                              Map<String, Formula> formulas) {
+                                             List<Identifier> items, Stack stack,
+                                             Map<String, Formula> formulas) {
         Formula formula = formulas.get(stack.formulaName());
         if (formula == null) {
             if (LOGGER.isErrorEnabled()) {
@@ -266,14 +284,15 @@ final class ConversionApplicator {
 
     /**
      * Adds an additive value (times multiplier) to each item.
+     *
      * @param effectiveValues the mutable item-to-value map being built
      * @param items           the list of item identifiers to apply to
-     * @param additive       the additive goo value to add
-     * @param multiplier     the times multiplier for the stack
+     * @param additive        the additive goo value to add
+     * @param multiplier      the times multiplier for the stack
      */
     private static void applyAdditiveStack(Map<Identifier, GooValue> effectiveValues,
-                                            List<Identifier> items, GooValue additive,
-                                            int multiplier) {
+                                           List<Identifier> items, GooValue additive,
+                                           int multiplier) {
         for (Identifier itemId : items) {
             GooValue current = effectiveValues.get(itemId);
             if (current == null) {
@@ -285,14 +304,15 @@ final class ConversionApplicator {
 
     /**
      * Applies a formula conversion (times multiplier) to each item.
+     *
      * @param effectiveValues the mutable item-to-value map being built
      * @param items           the list of item identifiers to apply to
      * @param formula         the conversion formula to apply
-     * @param multiplier     the times multiplier for the stack
+     * @param multiplier      the times multiplier for the stack
      */
     private static void applyFormulaStack(Map<Identifier, GooValue> effectiveValues,
-                                           List<Identifier> items, Formula formula,
-                                           int multiplier) {
+                                          List<Identifier> items, Formula formula,
+                                          int multiplier) {
         for (Identifier itemId : items) {
             applyFormulaToItem(effectiveValues, itemId, formula, multiplier);
         }
@@ -300,29 +320,33 @@ final class ConversionApplicator {
 
     /**
      * Applies a formula to a single item, logging errors on failure.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param itemId     the item identifier
+     * @param itemId          the item identifier
      * @param formula         the conversion formula to apply
-     * @param multiplier     the times multiplier for the stack
+     * @param multiplier      the times multiplier for the stack
      */
     private static void applyFormulaToItem(Map<Identifier, GooValue> effectiveValues,
-                                            Identifier itemId, Formula formula,
-                                            int multiplier) {
+                                           Identifier itemId, Formula formula,
+                                           int multiplier) {
         GooValue current = effectiveValues.get(itemId);
-        if (current == null || current.isEmpty()) { return; }
+        if (current == null || current.isEmpty()) {
+            return;
+        }
         tryApplyFormula(effectiveValues, itemId, current, formula, multiplier);
     }
 
     /**
      * Attempts formula conversion with error handling for arithmetic and negative results.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param itemId     the item identifier
-     * @param current        the item's current goo value
+     * @param itemId          the item identifier
+     * @param current         the item's current goo value
      * @param formula         the conversion formula to apply
-     * @param multiplier     the times multiplier for the stack
+     * @param multiplier      the times multiplier for the stack
      */
     private static void tryApplyFormula(Map<Identifier, GooValue> effectiveValues,
-            Identifier itemId, GooValue current, Formula formula, int multiplier) {
+                                        Identifier itemId, GooValue current, Formula formula, int multiplier) {
         try {
             GooValue converted = apply(current, formula, multiplier);
             storeIfValid(effectiveValues, itemId, converted);
@@ -335,12 +359,13 @@ final class ConversionApplicator {
 
     /**
      * Stores a converted value if it contains no negative entries.
+     *
      * @param effectiveValues the mutable item-to-value map being built
-     * @param itemId     the item identifier
-     * @param converted      the computed result to store
+     * @param itemId          the item identifier
+     * @param converted       the computed result to store
      */
     private static void storeIfValid(Map<Identifier, GooValue> effectiveValues,
-                                      Identifier itemId, GooValue converted) {
+                                     Identifier itemId, GooValue converted) {
         if (converted.hasNegative()) {
             LOGGER.error(LOG_NEGATIVE, itemId, converted);
             return;

@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.ability.world;
 
 import com.mercuriusxeno.goo.ability.ChainBehavior;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock.CrystalShape;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock.CrystalSize;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock.CrystalShape;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock.CrystalSize;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,21 +23,12 @@ import org.jspecify.annotations.Nullable;
  */
 public final class GlowBehavior implements WorldEffect, ChainBehavior {
 
-    /** Block update flags for setBlock calls. */
+    /**
+     * Block update flags for setBlock calls.
+     */
     private static final int BLOCK_UPDATE_FLAGS = 3;
 
     // --- WorldEffect (instant blob hit) ---
-
-    @Override
-    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) { return; }
-        BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof GlowCrystalBlock) {
-            growCrystal(level, pos, state);
-            return;
-        }
-        EffectBlockPlacement.glowCrystal(level, pos, targetFace);
-    }
 
     /**
      * Increases the crystal size by one step if not already at max.
@@ -48,9 +39,24 @@ public final class GlowBehavior implements WorldEffect, ChainBehavior {
      */
     private static void growCrystal(Level level, BlockPos pos, BlockState state) {
         CrystalSize current = state.getValue(GlowCrystalBlock.SIZE);
-        if (current == CrystalSize.LARGE) { return; }
+        if (current == CrystalSize.LARGE) {
+            return;
+        }
         CrystalSize next = CrystalSize.values()[current.ordinal() + 1];
         level.setBlock(pos, state.setValue(GlowCrystalBlock.SIZE, next), BLOCK_UPDATE_FLAGS);
+    }
+
+    @Override
+    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof GlowCrystalBlock) {
+            growCrystal(level, pos, state);
+            return;
+        }
+        EffectBlockPlacement.glowCrystal(level, pos, targetFace);
     }
 
     // --- ChainBehavior (fused chain marker detonation) ---

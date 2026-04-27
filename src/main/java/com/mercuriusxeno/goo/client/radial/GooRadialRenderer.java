@@ -11,97 +11,146 @@ import net.minecraft.resources.Identifier;
 import java.util.Map;
 
 /**
- * Stateless rendering utilities for the goo radial menu.
- * Extracted from {@link GooRadialScreen} to keep that class under
- * the TooManyMethods threshold while isolating pure rendering logic
- * from input handling and selection state.
+ * Stateless rendering utilities for the goo radial menu, separating
+ * pure rendering logic from input handling and selection state.
  */
 final class GooRadialRenderer {
 
     // --- Color manipulation constants ---
 
-    /** Alpha for normal (unhovered) wedges. */
+    /**
+     * Alpha for normal (unhovered) wedges.
+     */
     private static final int NORMAL_ALPHA = 0xAA;
 
-    /** Alpha for hovered wedges. */
+    /**
+     * Alpha for hovered wedges.
+     */
     private static final int HOVER_ALPHA = 0xDD;
 
-    /** Alpha for unavailable (zero quantity) wedges. */
+    /**
+     * Alpha for unavailable (zero quantity) wedges.
+     */
     private static final int DISABLED_ALPHA = 0x55;
 
-    /** Darkening factor for unavailable wedges (multiplied per channel). */
+    /**
+     * Darkening factor for unavailable wedges (multiplied per channel).
+     */
     private static final float DISABLED_DIM = 0.4f;
 
-    /** Bit shift for red channel in ARGB packing. */
+    /**
+     * Bit shift for red channel in ARGB packing.
+     */
     private static final int RED_SHIFT = 16;
 
-    /** Bit shift for green channel in ARGB packing. */
+    /**
+     * Bit shift for green channel in ARGB packing.
+     */
     private static final int GREEN_SHIFT = 8;
 
-    /** Mask for extracting a single color channel (0-255). */
+    /**
+     * Mask for extracting a single color channel (0-255).
+     */
     private static final int CHANNEL_MASK = 0xFF;
 
-    /** Bit shift for alpha channel in ARGB packing. */
+    /**
+     * Bit shift for alpha channel in ARGB packing.
+     */
     private static final int ALPHA_SHIFT = 24;
 
     // --- Cancel zone constants ---
 
-    /** Semi-transparent white for cancel zone when hovered. */
+    /**
+     * Semi-transparent white for cancel zone when hovered.
+     */
     private static final int CANCEL_HOVER_COLOR = 0x88FFFFFF;
 
-    /** Semi-transparent white for cancel zone when idle. */
+    /**
+     * Semi-transparent white for cancel zone when idle.
+     */
     private static final int CANCEL_IDLE_COLOR = 0x44FFFFFF;
 
-    /** Fully opaque white for untinted rendering. */
+    /**
+     * Fully opaque white for untinted rendering.
+     */
     private static final int COLOR_WHITE = 0xFFFFFFFF;
 
-    /** Cancel symbol rendered in the center zone. */
+    /**
+     * Cancel symbol rendered in the center zone.
+     */
     private static final String CANCEL_SYMBOL = "\u2715";
 
     // --- Icon / label constants ---
 
-    /** Icon size in pixels for goo type bordered icons. */
+    /**
+     * Icon size in pixels for goo type bordered icons.
+     */
     private static final int ICON_SIZE = 11;
 
-    /** Half-icon offset for centering icons on their anchor. */
+    /**
+     * Half-icon offset for centering icons on their anchor.
+     */
     private static final int ICON_OFFSET = 5;
 
-    /** Gray text color for disabled (zero quantity) goo types. */
+    /**
+     * Gray text color for disabled (zero quantity) goo types.
+     */
     private static final int DISABLED_TEXT_COLOR = 0xFF888888;
 
-    /** Texture path prefix for goo type icons. */
+    /**
+     * Texture path prefix for goo type icons.
+     */
     private static final String ICON_PATH_PREFIX = "textures/goo/type/";
 
-    /** Texture path suffix for bordered goo type icons. */
+    /**
+     * Texture path suffix for bordered goo type icons.
+     */
     private static final String ICON_PATH_SUFFIX = ".png";
 
     // --- Quantity formatting constants ---
 
-    /** Zero quantity display string. */
+    /**
+     * Zero quantity display string.
+     */
     private static final String ZERO_LABEL = "0";
 
-    /** Threshold below which volume is displayed in raw mB. */
+    /**
+     * Threshold below which volume is displayed in raw mB.
+     */
     private static final int KILO_THRESHOLD = 1_000;
 
-    /** Threshold below which volume is displayed in k (thousands). */
+    /**
+     * Threshold below which volume is displayed in k (thousands).
+     */
     private static final int MEGA_THRESHOLD = 1_000_000;
 
-    /** Divisor for kilo-scale volume formatting. */
+    /**
+     * Divisor for kilo-scale volume formatting.
+     */
     private static final double KILO_DIVISOR = 1_000.0;
 
-    /** Divisor for mega-scale volume formatting. */
+    /**
+     * Divisor for mega-scale volume formatting.
+     */
     private static final double MEGA_DIVISOR = 1_000_000.0;
 
-    /** mB suffix for raw volume display. */
+    /**
+     * mB suffix for raw volume display.
+     */
     private static final String MB_SUFFIX = " mB";
 
-    /** Format string for kilo-scale volume display. */
+    /**
+     * Format string for kilo-scale volume display.
+     */
     private static final String KILO_FORMAT = "%.1fk";
 
-    /** Format string for mega-scale volume display. */
+    /**
+     * Format string for mega-scale volume display.
+     */
     private static final String MEGA_FORMAT = "%.1fM";
 
-    private GooRadialRenderer() { }
+    private GooRadialRenderer() {
+    }
 
     /**
      * Determines which wedge the mouse hovers based on angle and distance from center.
@@ -117,9 +166,13 @@ final class GooRadialRenderer {
         double dx = mouseX - centerX;
         double dy = mouseY - centerY;
         double dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < GooRadialScreen.INNER_RADIUS) { return GooRadialScreen.NO_SELECTION; }
+        if (dist < GooRadialScreen.INNER_RADIUS) {
+            return GooRadialScreen.NO_SELECTION;
+        }
         double angle = Math.atan2(dx, -dy);
-        if (angle < 0) { angle += GooRadialScreen.TWO_PI; }
+        if (angle < 0) {
+            angle += GooRadialScreen.TWO_PI;
+        }
         return (int) (angle / GooRadialScreen.WEDGE_ARC) % GooRadialScreen.WEDGE_COUNT;
     }
 
@@ -154,8 +207,12 @@ final class GooRadialRenderer {
         int r = (baseColor >> RED_SHIFT) & CHANNEL_MASK;
         int g = (baseColor >> GREEN_SHIFT) & CHANNEL_MASK;
         int b = baseColor & CHANNEL_MASK;
-        if (disabled) { return packDisabledColor(r, g, b); }
-        if (hovered) { return packHoveredColor(r, g, b); }
+        if (disabled) {
+            return packDisabledColor(r, g, b);
+        }
+        if (hovered) {
+            return packHoveredColor(r, g, b);
+        }
         return (NORMAL_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
     }
 
@@ -208,12 +265,12 @@ final class GooRadialRenderer {
     /**
      * Blits a single wedge mask texture at the given screen position.
      *
-     * @param graphics the GUI graphics extractor for rendering
-     * @param x the top-left X screen coordinate
-     * @param y the top-left Y screen coordinate
-     * @param size the render size in pixels
+     * @param graphics   the GUI graphics extractor for rendering
+     * @param x          the top-left X screen coordinate
+     * @param y          the top-left Y screen coordinate
+     * @param size       the render size in pixels
      * @param wedgeIndex the wedge index
-     * @param color the ARGB tint color
+     * @param color      the ARGB tint color
      */
     private static void blitWedge(GuiGraphicsExtractor graphics, int x, int y, int size, int wedgeIndex, int color) {
         Identifier tex = RadialTextures.getWedgeTexture(wedgeIndex);
@@ -245,13 +302,13 @@ final class GooRadialRenderer {
      * Blits a full-radius mask texture centered on the given screen coordinates.
      *
      * @param graphics the GUI graphics extractor for rendering
-     * @param centerX the screen center x coordinate
-     * @param centerY the screen center y coordinate
-     * @param tex the texture identifier to blit
-     * @param color the ARGB tint color
+     * @param centerX  the screen center x coordinate
+     * @param centerY  the screen center y coordinate
+     * @param tex      the texture identifier to blit
+     * @param color    the ARGB tint color
      */
     private static void blitFullRadial(GuiGraphicsExtractor graphics,
-            int centerX, int centerY, Identifier tex, int color) {
+                                       int centerX, int centerY, Identifier tex, int color) {
         int texSize = RadialTextures.TEX_SIZE;
         int renderSize = GooRadialScreen.OUTER_RADIUS * GooRadialScreen.HALF;
         int x = centerX - GooRadialScreen.OUTER_RADIUS;
@@ -264,12 +321,12 @@ final class GooRadialRenderer {
      * Draws the "X" cancel symbol centered on the radial menu.
      *
      * @param graphics the GUI graphics extractor for rendering
-     * @param font the font for rendering the cancel symbol
-     * @param centerX the screen center x coordinate
-     * @param centerY the screen center y coordinate
+     * @param font     the font for rendering the cancel symbol
+     * @param centerX  the screen center x coordinate
+     * @param centerY  the screen center y coordinate
      */
     private static void renderCancelSymbol(GuiGraphicsExtractor graphics,
-            Font font, int centerX, int centerY) {
+                                           Font font, int centerX, int centerY) {
         graphics.centeredText(font, Component.literal(CANCEL_SYMBOL),
                 centerX, centerY - font.lineHeight / GooRadialScreen.HALF, COLOR_WHITE);
     }
@@ -296,11 +353,11 @@ final class GooRadialRenderer {
      * Blits bordered goo-type icons on each wedge bisector.
      *
      * @param graphics the GUI graphics extractor for rendering
-     * @param centerX the screen center x coordinate
-     * @param centerY the screen center y coordinate
+     * @param centerX  the screen center x coordinate
+     * @param centerY  the screen center y coordinate
      */
     private static void renderWedgeIcons(GuiGraphicsExtractor graphics,
-            int centerX, int centerY) {
+                                         int centerX, int centerY) {
         GooType[] types = GooType.values();
         for (int i = 0; i < GooRadialScreen.WEDGE_COUNT; i++) {
             renderSingleIcon(graphics, types[i], i, centerX, centerY);
@@ -310,14 +367,14 @@ final class GooRadialRenderer {
     /**
      * Blits one goo-type icon at the bisector of the given wedge.
      *
-     * @param graphics the GUI graphics extractor for rendering
-     * @param type the goo type to render
+     * @param graphics   the GUI graphics extractor for rendering
+     * @param type       the goo type to render
      * @param wedgeIndex the wedge index
-     * @param centerX the screen center x coordinate
-     * @param centerY the screen center y coordinate
+     * @param centerX    the screen center x coordinate
+     * @param centerY    the screen center y coordinate
      */
     private static void renderSingleIcon(GuiGraphicsExtractor graphics,
-            GooType type, int wedgeIndex, int centerX, int centerY) {
+                                         GooType type, int wedgeIndex, int centerX, int centerY) {
         double bisector = GooRadialScreen.WEDGE_ARC * wedgeIndex + GooRadialScreen.WEDGE_ARC / GooRadialScreen.HALF;
         double r = (GooRadialScreen.INNER_RADIUS + GooRadialScreen.OUTER_RADIUS) / (double) GooRadialScreen.HALF;
         int iconX = centerX + (int) (Math.sin(bisector) * r) - ICON_OFFSET;
@@ -329,15 +386,15 @@ final class GooRadialRenderer {
     /**
      * Renders the hovered goo type name and quantity in the center of the radial.
      *
-     * @param graphics the GUI graphics extractor for rendering
-     * @param font the font for rendering text labels
-     * @param centerX the screen center x coordinate
-     * @param centerY the screen center y coordinate
+     * @param graphics     the GUI graphics extractor for rendering
+     * @param font         the font for rendering text labels
+     * @param centerX      the screen center x coordinate
+     * @param centerY      the screen center y coordinate
      * @param hoveredIndex the currently hovered wedge index
-     * @param available map of goo types to available volumes in microblobs
+     * @param available    map of goo types to available volumes in microblobs
      */
     private static void renderHoveredInfo(GuiGraphicsExtractor graphics, Font font,
-            int centerX, int centerY, int hoveredIndex, Map<GooType, Integer> available) {
+                                          int centerX, int centerY, int hoveredIndex, Map<GooType, Integer> available) {
         GooType hovered = GooType.values()[hoveredIndex];
         int qty = available.getOrDefault(hovered, 0);
         int textColor = qty <= 0 ? DISABLED_TEXT_COLOR : COLOR_WHITE;
@@ -354,8 +411,12 @@ final class GooRadialRenderer {
      * @return the human-readable formatted string
      */
     static String formatQuantity(int mB) {
-        if (mB <= 0) { return ZERO_LABEL; }
-        if (mB < KILO_THRESHOLD) { return mB + MB_SUFFIX; }
+        if (mB <= 0) {
+            return ZERO_LABEL;
+        }
+        if (mB < KILO_THRESHOLD) {
+            return mB + MB_SUFFIX;
+        }
         if (mB < MEGA_THRESHOLD) {
             double k = mB / KILO_DIVISOR;
             return String.format(KILO_FORMAT, k);
