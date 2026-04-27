@@ -1,7 +1,6 @@
 package com.mercuriusxeno.goo.block.fluid;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.IGooSource;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooFluids;
 import net.minecraft.world.level.material.Fluid;
@@ -25,7 +24,7 @@ import java.util.function.LongSupplier;
  * @see GooType
  * @see GooContents
  */
-public class GooFluidHandler extends FluidStacksResourceHandler implements IGooSource {
+public class GooFluidHandler extends FluidStacksResourceHandler {
 
     private static final int TANK_COUNT = GooType.values().length;
 
@@ -181,7 +180,6 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @return immutable GooContents reflecting current volumes
      */
-    @Override
     public GooContents toGooContents() {
         Map<GooType, Integer> map = collectNonEmptyTanks();
         return map.isEmpty() ? GooContents.EMPTY : new GooContents(map);
@@ -211,7 +209,6 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @param contents the contents to load from
      */
-    @Override
     public void loadFrom(GooContents contents) {
         suppressCallbacks = true;
         try {
@@ -267,7 +264,6 @@ public class GooFluidHandler extends FluidStacksResourceHandler implements IGooS
      *
      * @return true if empty
      */
-    @Override
     public boolean isEmpty() {
         return totalVolume() == 0;
     }

@@ -2,7 +2,6 @@ package com.mercuriusxeno.goo.block.vat;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.BlockEntitySync;
-import com.mercuriusxeno.goo.block.IGooReservoir;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
 import com.mercuriusxeno.goo.block.gasket.GasketState;
@@ -44,7 +43,7 @@ import org.jspecify.annotations.Nullable;
  * {@link VatGasketOps} (gasket face resolution, stacking, drops).
  * Gasket field storage owned by {@link GasketState#dual}.</p>
  */
-public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooReservoir {
+public class VatBlockEntity extends BlockEntity implements IGasketHolder {
 
     /**
      * Composed gasket state for dual roles: cap (RECEIVER) and base (TRANSMITTER).
@@ -96,14 +95,6 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooRe
             () -> gasketRegistryAccess.get());
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public GooFluidHandler reservoirHandler() {
-        return fluidHandler;
-    }
-
-    /**
      * Returns the current capacity.
      *
      * @return the capacity
@@ -112,8 +103,6 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooRe
         return ContainerCapacity.vatCapacity(compressionLevel);
     }
 
-    // --- IGooReservoir ---
-
     /**
      * Returns the current goo contents.
      *
@@ -121,6 +110,28 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooRe
      */
     public GooContents getContents() {
         return fluidHandler.toGooContents();
+    }
+
+    /**
+     * Inserts goo of the given type into the reservoir.
+     *
+     * @param type   the goo type
+     * @param volume volume in microblobs
+     * @return the amount actually inserted
+     */
+    public int insertGoo(GooType type, int volume) {
+        return fluidHandler.insertGoo(type, Math.min(volume, Integer.MAX_VALUE), false);
+    }
+
+    /**
+     * Extracts up to the given amount of a specific goo type.
+     *
+     * @param type   the goo type
+     * @param amount maximum volume in microblobs
+     * @return the amount actually extracted
+     */
+    public int extractGoo(GooType type, int amount) {
+        return fluidHandler.extractGoo(type, Math.min(amount, Integer.MAX_VALUE), false);
     }
 
     // --- Public accessors ---

@@ -1,7 +1,6 @@
 package com.mercuriusxeno.goo.block.canister;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.IGooSource;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.registry.GooFluids;
@@ -22,7 +21,7 @@ import java.util.function.LongSupplier;
  * <p>Used by canister and hub block entities for per-slot fluid storage.
  * Replaces the multi-tank ordinal-indexed GooFluidHandler for canister slots.</p>
  */
-public class CanisterSlotFluidHandler extends FluidStacksResourceHandler implements IGooSource {
+public class CanisterSlotFluidHandler extends FluidStacksResourceHandler {
 
     private final Runnable onChange;
     private final LongSupplier tickSupplier;
@@ -164,16 +163,11 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
         return (currentTick - streamTick <= 1) ? streamRate : 0;
     }
 
-    // --- Bridge methods ---
-
-    // --- IGooSource bridge (for gasket push compatibility) ---
-
     /**
      * Returns a GooContents snapshot. Single goo entry if holding goo, empty otherwise.
      *
      * @return goo contents for push operations
      */
-    @Override
     public GooContents toGooContents() {
         GooType type = getGooType();
         if (type == null) {
@@ -187,7 +181,6 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      *
      * @param contents the goo contents to load
      */
-    @Override
     public void loadFrom(GooContents contents) {
         suppressCallbacks = true;
         try {
@@ -273,7 +266,6 @@ public class CanisterSlotFluidHandler extends FluidStacksResourceHandler impleme
      *
      * @return true if the tank holds no fluid
      */
-    @Override
     public boolean isEmpty() {
         return getAmountAsLong(0) == 0;
     }

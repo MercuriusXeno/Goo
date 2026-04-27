@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block.crucible;
 
+import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.*;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
@@ -40,7 +41,7 @@ import org.jspecify.annotations.Nullable;
  * {@link CrucibleInsertion} (item/goo insertion),
  * {@link CrucibleSerialization} (NBT).</p>
  */
-public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, IGooReservoir {
+public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
 
     /** Base ignition spray duration in ticks. */
     static final int IGNITION_BASE_TICKS = 4;
@@ -148,11 +149,41 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, I
      */
     public boolean isEnabled() { return !getBlockState().getValue(CrucibleBlock.POWERED); }
 
-    // --- Reservoir access ---
-
-    /** {@inheritDoc} */
-    @Override
+    /**
+     * Returns the backing fluid handler for direct Transfer API access.
+     *
+     * @return the fluid handler
+     */
     public GooFluidHandler reservoirHandler() { return reservoir; }
+
+    /**
+     * Returns the current goo contents as an immutable snapshot.
+     *
+     * @return the snapshot
+     */
+    public GooContents getReservoir() { return reservoir.toGooContents(); }
+
+    /**
+     * Inserts goo of the given type into the reservoir.
+     *
+     * @param type   the goo type
+     * @param volume volume in microblobs
+     * @return the amount actually inserted
+     */
+    public int insertGoo(GooType type, int volume) {
+        return reservoir.insertGoo(type, Math.min(volume, Integer.MAX_VALUE), false);
+    }
+
+    /**
+     * Extracts up to the given amount of a specific goo type.
+     *
+     * @param type   the goo type
+     * @param amount maximum volume in microblobs
+     * @return the amount actually extracted
+     */
+    public int extractGoo(GooType type, int amount) {
+        return reservoir.extractGoo(type, Math.min(amount, Integer.MAX_VALUE), false);
+    }
 
     /** Empties the entire reservoir. */
     public void drainReservoir() {
