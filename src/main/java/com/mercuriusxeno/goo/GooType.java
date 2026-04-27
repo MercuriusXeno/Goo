@@ -90,7 +90,6 @@ public enum GooType implements StringRepresentable {
     /**
      * Looks up a GooType by its string id. Returns null if no match.
      *
-     * @param id the string identifier to look up
      * @return the matching GooType, or null if not found
      */
 

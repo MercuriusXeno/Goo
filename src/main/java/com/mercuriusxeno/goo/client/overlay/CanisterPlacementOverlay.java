@@ -2,13 +2,13 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.CutawayInteractionHelper;
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.tap.TapBlock;
 import com.mercuriusxeno.goo.block.canister.CanisterBlock;
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import com.mercuriusxeno.goo.block.hub.HubBlock;
 import com.mercuriusxeno.goo.block.plexer.PlexerBlock;
 import com.mercuriusxeno.goo.block.reactor.ReactorBlock;
+import com.mercuriusxeno.goo.block.tap.TapBlock;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mercuriusxeno.goo.client.ber.LineContext;
 import com.mercuriusxeno.goo.item.CanisterItem;

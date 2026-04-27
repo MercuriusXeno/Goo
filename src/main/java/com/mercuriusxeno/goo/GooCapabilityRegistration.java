@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo;
 
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
 import com.mercuriusxeno.goo.block.canister.CanisterSlotFluidHandler;
+import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
 import com.mercuriusxeno.goo.block.fluid.PlayerInventorySlotHandler;
 import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterItem;

@@ -1,12 +1,12 @@
 package com.mercuriusxeno.goo.item.gasket;
 
-import com.mercuriusxeno.goo.block.gasket.ChoralGasketBlock;
-import com.mercuriusxeno.goo.block.tap.TapBlock;
-import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
 import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
 import com.mercuriusxeno.goo.block.crucible.CrucibleBlock;
 import com.mercuriusxeno.goo.block.crucible.CrucibleBlockEntity;
+import com.mercuriusxeno.goo.block.gasket.ChoralGasketBlock;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
+import com.mercuriusxeno.goo.block.tap.TapBlock;
+import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.GooInteractionType;
 import com.mercuriusxeno.goo.item.IGooItemInteraction;

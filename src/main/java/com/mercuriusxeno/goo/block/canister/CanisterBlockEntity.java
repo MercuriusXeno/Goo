@@ -12,12 +12,7 @@ import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GasketLocation;
 import com.mercuriusxeno.goo.data.GasketRegistry;
 import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
-import com.mercuriusxeno.goo.item.BlobStacks;
-import com.mercuriusxeno.goo.item.CanisterItem;
-import com.mercuriusxeno.goo.item.CanisterMetadata;
-import com.mercuriusxeno.goo.item.CanisterPlacementValidator;
-import com.mercuriusxeno.goo.item.CanisterSlotResolver;
-import com.mercuriusxeno.goo.item.GooInteractionType;
+import com.mercuriusxeno.goo.item.*;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
@@ -63,9 +58,13 @@ import java.util.UUID;
  */
 public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder, IGasketHolder {
 
-    /** Maximum number of canister slots in the 3x3 grid. */
+    /**
+     * Maximum number of canister slots in the 3x3 grid.
+     */
     public static final int MAX_SLOTS = 9;
-    /** Center slot index in the 3x3 grid (default placement target). */
+    /**
+     * Center slot index in the 3x3 grid (default placement target).
+     */
     static final int CENTER_SLOT = 4;
 
     private static final String TAG_OWNER_UUID = "OwnerUuid";
@@ -93,7 +92,8 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 () -> BlockEntitySync.markDirtyAndSync(this));
     }
 
-    /** Composite shape builder: union of occupied slot shapes, falling back
+    /**
+     * Composite shape builder: union of occupied slot shapes, falling back
      * to the center slot when nothing is occupied (placeholder visual).
      *
      * @param slots the live slot array
@@ -124,6 +124,37 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         be.state.tickPushers();
     }
 
+    private static void applyFluidAndMetadata(ItemStack stack,
+                                              CanisterFluidContent content,
+                                              CanisterMetadata meta) {
+        if (content != null && !content.isEmpty()) {
+            CanisterItem.setFluidContent(stack, content);
+        }
+        if (meta != null && meta.hasData()) {
+            CanisterItem.setMetadata(stack, meta);
+        }
+    }
+
+    private static boolean slotNeedsPusher(CanisterSlot slot) {
+        if (slot.handler() == null || slot.isEmpty()) {
+            return false;
+        }
+        CanisterMetadata meta = CanisterItem.getMetadata(slot.canister());
+        return meta.bottomGasketId() != null && meta.bottomPartner() != null;
+    }
+
+    private static void registerFace(GasketRegistry registry, @Nullable UUID id, GasketLocation location) {
+        if (id != null) {
+            registry.updateLocation(id, location);
+        }
+    }
+
+    private static void deregisterFace(GasketRegistry registry, @Nullable UUID id) {
+        if (id != null) {
+            registry.updateLocation(id, null);
+        }
+    }
+
     @Override
     public SlottedCanisterData containerState() {
         return state;
@@ -146,8 +177,6 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         ownerUuid = owner;
         BlockEntitySync.markDirtyAndSync(this);
     }
-
-    // --- Slot lifecycle ---
 
     /**
      * Inserts a canister into the slot, optionally stripping gasket UUIDs.
@@ -220,30 +249,25 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         BlockEntitySync.invalidateCapabilities(this);
     }
 
-    private static void applyFluidAndMetadata(ItemStack stack,
-            com.mercuriusxeno.goo.item.CanisterFluidContent content,
-            CanisterMetadata meta) {
-        if (content != null && !content.isEmpty()) {
-            CanisterItem.setFluidContent(stack, content);
-        }
-        if (meta != null && meta.hasData()) {
-            CanisterItem.setMetadata(stack, meta);
-        }
-    }
-
-    /** Rebuilds slot fluid handlers for all occupied slots (after deserialization). */
+    /**
+     * Rebuilds slot fluid handlers for all occupied slots (after deserialization).
+     */
     private void rebuildAllSlotHandlers() {
         for (CanisterSlot slot : state.slots) {
             slot.buildHandler(this::gameTime);
         }
     }
 
-    /** Rebuilds gasket pushers for all occupied slots. */
+    /**
+     * Rebuilds gasket pushers for all occupied slots.
+     */
     private void rebuildAllSlotPushers() {
         for (int i = 0; i < MAX_SLOTS; i++) {
             rebuildSlotPusher(i);
         }
     }
+
+    // --- Gasket ops ---
 
     /**
      * Rebuilds the gasket pusher for a slot based on its bottom gasket state.
@@ -262,14 +286,6 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         slot.setPusher(buildPusher(slot));
     }
 
-    private static boolean slotNeedsPusher(CanisterSlot slot) {
-        if (slot.handler() == null || slot.isEmpty()) {
-            return false;
-        }
-        CanisterMetadata meta = CanisterItem.getMetadata(slot.canister());
-        return meta.bottomGasketId() != null && meta.bottomPartner() != null;
-    }
-
     private GasketPusher buildPusher(CanisterSlot slot) {
         GasketPusher pusher = new GasketPusher(slot.handler(),
                 () -> CanisterItem.getMetadata(slot.canister()).bottomGasketId(),
@@ -280,9 +296,9 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         return pusher;
     }
 
-    // --- Gasket ops ---
-
-    /** Registers gasket locations for all occupied slots. */
+    /**
+     * Registers gasket locations for all occupied slots.
+     */
     private void registerAllGaskets() {
         for (int i = 0; i < MAX_SLOTS; i++) {
             if (!state.slots[i].isEmpty()) {
@@ -291,7 +307,8 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         }
     }
 
-    /** Registers gasket locations for a slot's canister in the gasket registry.
+    /**
+     * Registers gasket locations for a slot's canister in the gasket registry.
      *
      * @param slotIndex the slot index
      */
@@ -312,12 +329,6 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 new GasketLocation(dimension, worldPosition, false, slotIndex));
     }
 
-    private static void registerFace(GasketRegistry registry, @Nullable UUID id, GasketLocation location) {
-        if (id != null) {
-            registry.updateLocation(id, location);
-        }
-    }
-
     private void deregisterSlotGaskets(int slotIndex) {
         if (gasketRegistryAccess == null) {
             return;
@@ -330,12 +341,6 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         GasketRegistry registry = gasketRegistryAccess.get();
         deregisterFace(registry, meta.topGasketId());
         deregisterFace(registry, meta.bottomGasketId());
-    }
-
-    private static void deregisterFace(GasketRegistry registry, @Nullable UUID id) {
-        if (id != null) {
-            registry.updateLocation(id, null);
-        }
     }
 
     private void deregisterAllGaskets() {
@@ -364,7 +369,9 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         return gasketState;
     }
 
-    /** Slot-level gaskets always support both transmitter and receiver roles. */
+    /**
+     * Slot-level gaskets always support both transmitter and receiver roles.
+     */
     @Override
     public boolean supportsRole(GasketRole role) {
         return true;
@@ -452,7 +459,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
      * @return SUCCESS if fluid transferred, null if not applicable
      */
     public @Nullable InteractionResult tryFluidInteraction(Player player, InteractionHand hand,
-            BlockHitResult hitResult) {
+                                                           BlockHitResult hitResult) {
         int slotIndex = CanisterBlock.hitSlot(hitResult, worldPosition);
         CanisterSlot slot = slot(slotIndex);
         if (slot == null || slot.handler() == null) {
@@ -474,7 +481,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
      * @return the interaction result
      */
     public InteractionResult dispatch(GooInteractionType interaction, ItemStack stack,
-            Player player, BlockHitResult hitResult) {
+                                      Player player, BlockHitResult hitResult) {
         if (interaction == GooInteractionType.TUNER_PASS) {
             throw new IllegalStateException(ERR_TUNER_PASS);
         }

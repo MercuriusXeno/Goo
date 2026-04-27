@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.network;
 
-import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import net.minecraft.core.BlockPos;
