@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.block.gasket;
 
-import com.mercuriusxeno.goo.block.ICanisterHolder;
+import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
@@ -28,25 +28,46 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
 @SuppressWarnings("PMD.ImplicitFunctionalInterface") // not a lambda target; sole abstract is a composed-state accessor
 public interface IGasketHolder {
 
-    /** Sentinel: hitSlot returned a coordinate outside any slot. */
+    /**
+     * Sentinel: hitSlot returned a coordinate outside any slot.
+     */
     int SLOT_MISS = Integer.MIN_VALUE;
 
     /**
-     * Returns the composed gasket state that owns UUID and partner fields.
-     * Each machine provides the appropriate variant (single, dual, or null).
+     * Applies a partner to the correct side of a canister's metadata based on role.
      *
-     * @return the gasket state
+     * @param meta    the current metadata
+     * @param role    the gasket role
+     * @param partner the partner to set, or null to clear
+     * @return the updated metadata
      */
-    GasketState gasketState();
+    private static CanisterMetadata applyPartner(CanisterMetadata meta, GasketRole role,
+                                                 @Nullable GasketPartner partner) {
+        return role == GasketRole.RECEIVER ? meta.withTopPartner(partner) : meta.withBottomPartner(partner);
+    }
 
     /**
-     * Returns the sync callback invoked after gasket state changes.
-     * Override to supply a real callback (typically markDirtyAndSync).
-     * The default no-ops.
+     * Returns the gasket attachment composed by this BE at construction.
+     * The attachment owns gasket state, registry access, the rebuild+sync closure,
+     * and the synced-BE packet machinery shared by every gasket-capable BE.
      *
-     * @return the sync callback
+     * @return the gasket attachment
      */
-    default Runnable gasketSyncCallback() { return () -> {}; }
+    GasketAttachment gasket();
+
+    /**
+     * @return the underlying gasket state, sourced from the attachment
+     */
+    default GasketState gasketState() {
+        return gasket().state();
+    }
+
+    /**
+     * @return the sync callback, sourced from the attachment
+     */
+    default Runnable gasketSyncCallback() {
+        return gasket().syncCallback();
+    }
 
     /**
      * Returns the gasket UUID for the given role, or null if this machine
@@ -82,28 +103,30 @@ public interface IGasketHolder {
     }
 
     /**
-     * Sets the linked partner for the given role (null to clear).
-     * No-op if the machine doesn't support the given role.
+     * Sets the linked partner for the given role (null to clear). Routes through
+     * the attachment so the rebuild + sync closure runs.
      *
      * @param role    the gasket role
      * @param partner the gasket partner, or null to clear
      */
     default void setPartner(GasketRole role, @Nullable GasketPartner partner) {
-        gasketState().setPartner(role, partner, gasketSyncCallback());
-    }
-
-    /**
-     * Clears the gasket UUID and partner for the given role.
-     *
-     * @param role the gasket role
-     */
-    default void clearGasket(GasketRole role) {
-        gasketState().clear(role, gasketSyncCallback());
+        gasket().setPartner(role, partner);
     }
 
     // --- Slot-aware overloads ---
 
-    /** Returns the gasket UUID for the given role and slot. Routes through slot metadata when applicable.
+    /**
+     * Clears the gasket UUID and partner for the given role. Routes through the
+     * attachment so the rebuild + sync closure runs.
+     *
+     * @param role the gasket role
+     */
+    default void clearGasket(GasketRole role) {
+        gasket().clearGasket(role);
+    }
+
+    /**
+     * Returns the gasket UUID for the given role and slot. Routes through slot metadata when applicable.
      *
      * @param role the gasket role
      * @param slot the slot index
@@ -117,7 +140,8 @@ public interface IGasketHolder {
         return getGasketId(role);
     }
 
-    /** Ensures a gasket UUID exists for the given role and slot, generating if absent.
+    /**
+     * Ensures a gasket UUID exists for the given role and slot, generating if absent.
      *
      * @param role the gasket role
      * @param slot the slot index
@@ -127,13 +151,16 @@ public interface IGasketHolder {
         if (slot >= 0 && this instanceof ICanisterHolder container) {
             CanisterMetadata meta = container.getSlotMetadata(slot);
             CanisterMetadata ensured = meta.withGasketIds();
-            if (ensured != meta) { container.setSlotMetadata(slot, ensured); }
+            if (ensured != meta) {
+                container.setSlotMetadata(slot, ensured);
+            }
             return role == GasketRole.RECEIVER ? ensured.topGasketId() : ensured.bottomGasketId();
         }
         return ensureGasketId(role);
     }
 
-    /** Returns the linked partner for the given role and slot.
+    /**
+     * Returns the linked partner for the given role and slot.
      *
      * @param role the gasket role
      * @param slot the slot index
@@ -147,7 +174,8 @@ public interface IGasketHolder {
         return getPartner(role);
     }
 
-    /** Sets the linked partner for the given role and slot (null to clear).
+    /**
+     * Sets the linked partner for the given role and slot (null to clear).
      *
      * @param role    the gasket role
      * @param slot    the slot index
@@ -160,18 +188,6 @@ public interface IGasketHolder {
             return;
         }
         setPartner(role, partner);
-    }
-
-    /** Applies a partner to the correct side of a canister's metadata based on role.
-     *
-     * @param meta    the current metadata
-     * @param role    the gasket role
-     * @param partner the partner to set, or null to clear
-     * @return the updated metadata
-     */
-    private static CanisterMetadata applyPartner(CanisterMetadata meta, GasketRole role,
-                                                   @Nullable GasketPartner partner) {
-        return role == GasketRole.RECEIVER ? meta.withTopPartner(partner) : meta.withBottomPartner(partner);
     }
 
     // --- Tuner dispatch defaults ---
@@ -211,7 +227,9 @@ public interface IGasketHolder {
      * @param role the gasket role
      * @return true if the condition is met
      */
-    default boolean supportsRole(GasketRole role) { return gasketState().supportsRole(role); }
+    default boolean supportsRole(GasketRole role) {
+        return gasketState().supportsRole(role);
+    }
 
     /**
      * Returns a human-readable label for the gasket face (e.g. "cap", "base", "crucible").
@@ -220,7 +238,9 @@ public interface IGasketHolder {
      * @param role the gasket role
      * @return the face label
      */
-    default @Nullable String getFaceLabel(GasketRole role) { return gasketState().getFaceLabel(role); }
+    default @Nullable String getFaceLabel(GasketRole role) {
+        return gasketState().getFaceLabel(role);
+    }
 
     /**
      * Returns the machine's label at the given slot, or null if unnamed.
@@ -243,11 +263,16 @@ public interface IGasketHolder {
      * @param tunerOwner the UUID of the tuner's owner, or null if unowned
      * @return true if tuning
      */
-    default boolean allowsTuning(@Nullable UUID tunerOwner) { return true; }
+    default boolean allowsTuning(@Nullable UUID tunerOwner) {
+        return true;
+    }
 
-    /** Returns true if this machine has a central intake gasket (hub only).
+    /**
+     * Returns true if this machine has a central intake gasket (hub only).
      *
      * @return true if intake
      */
-    default boolean hasIntake() { return false; }
+    default boolean hasIntake() {
+        return false;
+    }
 }

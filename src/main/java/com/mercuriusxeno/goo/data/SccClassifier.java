@@ -13,7 +13,8 @@ import java.util.Set;
  */
 final class SccClassifier {
 
-    private SccClassifier() {}
+    private SccClassifier() {
+    }
 
     /**
      * Classifies a strongly connected component as anchored or dead.
@@ -24,7 +25,7 @@ final class SccClassifier {
      * @return classified RecipeCycle
      */
     static GooValueRegistry.RecipeCycle classifyScc(Set<Identifier> scc,
-            Set<Identifier> anchoredNodes, Set<Identifier> baseValueKeys) {
+                                                    Set<Identifier> anchoredNodes, Set<Identifier> baseValueKeys) {
         List<Identifier> sorted = new ArrayList<>(scc);
         Collections.sort(sorted);
         Identifier anchor = findDirectAnchor(sorted, baseValueKeys);
@@ -35,15 +36,17 @@ final class SccClassifier {
     /**
      * Returns the first item in sorted order that has a base value, or null.
      *
-     * @param sorted items sorted by identifier
+     * @param sorted        items sorted by identifier
      * @param baseValueKeys item IDs with hand-keyed base values
      * @return the first base-valued item, or null if none
      */
     @Nullable
     static Identifier findDirectAnchor(List<Identifier> sorted,
-            Set<Identifier> baseValueKeys) {
+                                       Set<Identifier> baseValueKeys) {
         for (Identifier id : sorted) {
-            if (baseValueKeys.contains(id)) { return id; }
+            if (baseValueKeys.contains(id)) {
+                return id;
+            }
         }
         return null;
     }
@@ -51,13 +54,15 @@ final class SccClassifier {
     /**
      * Returns true if any member of the sorted list is in the anchored set.
      *
-     * @param sorted items to check
+     * @param sorted   items to check
      * @param anchored set of anchored item IDs
      * @return true if any member is anchored
      */
     static boolean hasAnchoredMember(List<Identifier> sorted, Set<Identifier> anchored) {
         for (Identifier id : sorted) {
-            if (anchored.contains(id)) { return true; }
+            if (anchored.contains(id)) {
+                return true;
+            }
         }
         return false;
     }

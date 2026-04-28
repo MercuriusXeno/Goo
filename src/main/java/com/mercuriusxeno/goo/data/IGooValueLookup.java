@@ -13,6 +13,28 @@ import java.util.function.Function;
 public interface IGooValueLookup {
 
     /**
+     * Returns the item ID with the lowest {@link GooValue#totalBlobs()} among {@code candidates},
+     * using {@code lookup} to resolve each ID. Null and empty values are skipped.
+     *
+     * @param candidates set of item IDs to compare
+     * @param lookup     function from item ID to GooValue (may return null)
+     * @return cheapest item ID, or null if no candidate has a non-empty value
+     */
+    static @Nullable Identifier findCheapestAmong(
+            Set<Identifier> candidates, Function<Identifier, GooValue> lookup) {
+        Identifier cheapestId = null;
+        int cheapestTotal = Integer.MAX_VALUE;
+        for (Identifier itemId : candidates) {
+            GooValue val = lookup.apply(itemId);
+            if (val != null && !val.isEmpty() && val.totalBlobs() < cheapestTotal) {
+                cheapestTotal = val.totalBlobs();
+                cheapestId = itemId;
+            }
+        }
+        return cheapestId;
+    }
+
+    /**
      * Returns the effective goo value for an item ID, or null if none is registered.
      *
      * @param itemId the item's registry ID
@@ -58,26 +80,4 @@ public interface IGooValueLookup {
      * @return unmodifiable map of item ID to effective GooValue
      */
     Map<Identifier, GooValue> getEffectiveValues();
-
-    /**
-     * Returns the item ID with the lowest {@link GooValue#totalBlobs()} among {@code candidates},
-     * using {@code lookup} to resolve each ID. Null and empty values are skipped.
-     *
-     * @param candidates set of item IDs to compare
-     * @param lookup     function from item ID to GooValue (may return null)
-     * @return cheapest item ID, or null if no candidate has a non-empty value
-     */
-    static @Nullable Identifier findCheapestAmong(
-            Set<Identifier> candidates, Function<Identifier, GooValue> lookup) {
-        Identifier cheapestId = null;
-        int cheapestTotal = Integer.MAX_VALUE;
-        for (Identifier itemId : candidates) {
-            GooValue val = lookup.apply(itemId);
-            if (val != null && !val.isEmpty() && val.totalBlobs() < cheapestTotal) {
-                cheapestTotal = val.totalBlobs();
-                cheapestId = itemId;
-            }
-        }
-        return cheapestId;
-    }
 }

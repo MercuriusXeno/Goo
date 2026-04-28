@@ -13,12 +13,12 @@ import java.util.UUID;
 
 /**
  * Stateless helper for gasket partner lookups, link cleanup, and
- * denormalized partner-ref writes. Extracted from ChoralTunerItem
- * to stay under the TooManyMethods threshold.
+ * denormalized partner-ref writes.
  */
 final class GasketPartnerManager {
 
-    private GasketPartnerManager() {}
+    private GasketPartnerManager() {
+    }
 
     /**
      * Looks up the existing partner for a gasket in the GasketRegistry.
@@ -28,10 +28,14 @@ final class GasketPartnerManager {
      * @return the partner gasket UUID, or null if none
      */
     static @Nullable UUID lookupPartner(Level level, UUID gasketId) {
-        if (!(level instanceof ServerLevel serverLevel)) { return null; }
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return null;
+        }
         GasketRegistry registry = GasketRegistry.get(serverLevel);
         UUID target = registry.getTarget(gasketId);
-        if (target != null) { return target; }
+        if (target != null) {
+            return target;
+        }
         return registry.getSource(gasketId);
     }
 
@@ -44,7 +48,7 @@ final class GasketPartnerManager {
      * @param link     the link action containing output and input gasket UUIDs
      */
     static void clearDisplacedEndpoints(Level level, GasketRegistry registry,
-            TunerAction.CompleteLink link) {
+                                        TunerAction.CompleteLink link) {
         clearDisplacedPartner(level, registry, registry.getTarget(link.outputGasket()));
         clearDisplacedPartner(level, registry, registry.getSource(link.inputGasket()));
     }
@@ -55,16 +59,22 @@ final class GasketPartnerManager {
      * then matches by UUID to clear only the specific role. The setPartner(null)
      * call triggers rebuildCache on the pusher, killing any stale capability cache.
      *
-     * @param level      the current level
-     * @param registry   the gasket registry
+     * @param level       the current level
+     * @param registry    the gasket registry
      * @param displacedId the UUID of the displaced gasket, or null for no-op
      */
     static void clearDisplacedPartner(Level level, GasketRegistry registry,
-            @Nullable UUID displacedId) {
-        if (displacedId == null) { return; }
+                                      @Nullable UUID displacedId) {
+        if (displacedId == null) {
+            return;
+        }
         GasketLocation loc = registry.getLocation(displacedId);
-        if (loc == null || loc.isEntityTarget()) { return; }
-        if (!level.isLoaded(loc.pos())) { return; }
+        if (loc == null || loc.isEntityTarget()) {
+            return;
+        }
+        if (!level.isLoaded(loc.pos())) {
+            return;
+        }
 
         clearPartnerByGasketId(level, loc.pos(), loc.slot(), displacedId);
     }
@@ -79,8 +89,12 @@ final class GasketPartnerManager {
      */
     static void clearSeveredEndpoint(Level level, TunerState state, UUID gasketId) {
         BlockPos pos = state.confirmTarget();
-        if (pos == null) { return; }
-        if (!(level.getBlockEntity(pos) instanceof IGasketHolder holder)) { return; }
+        if (pos == null) {
+            return;
+        }
+        if (!(level.getBlockEntity(pos) instanceof IGasketHolder holder)) {
+            return;
+        }
 
         clearPartnerWithRemote(level, holder, state.confirmSlot(), gasketId);
     }
@@ -95,7 +109,7 @@ final class GasketPartnerManager {
      * @param gasketId the UUID of the gasket being severed
      */
     static void clearPartnerWithRemote(Level level, IGasketHolder holder,
-            int slot, UUID gasketId) {
+                                       int slot, UUID gasketId) {
         for (GasketRole role : GasketRole.values()) {
             if (gasketId.equals(holder.getGasketId(role, slot))) {
                 clearRemotePartner(level, holder.getPartner(role, slot));
@@ -113,8 +127,12 @@ final class GasketPartnerManager {
      * @param partner the partner to clear, or null for no-op
      */
     static void clearRemotePartner(Level level, @Nullable GasketPartner partner) {
-        if (partner == null) { return; }
-        if (!level.isLoaded(partner.pos())) { return; }
+        if (partner == null) {
+            return;
+        }
+        if (!level.isLoaded(partner.pos())) {
+            return;
+        }
 
         BlockEntity be = level.getBlockEntity(partner.pos());
         if (be instanceof IGasketHolder holder) {
@@ -128,14 +146,16 @@ final class GasketPartnerManager {
      * Finds the role matching the given gasket UUID at a position/slot and
      * clears its partner reference.
      *
-     * @param level      the current level
-     * @param pos        the block position
-     * @param slot       the slot index
-     * @param gasketId   the gasket UUID to match
+     * @param level    the current level
+     * @param pos      the block position
+     * @param slot     the slot index
+     * @param gasketId the gasket UUID to match
      */
     static void clearPartnerByGasketId(Level level, BlockPos pos, int slot, UUID gasketId) {
         BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof IGasketHolder holder)) { return; }
+        if (!(be instanceof IGasketHolder holder)) {
+            return;
+        }
 
         for (GasketRole role : GasketRole.values()) {
             if (gasketId.equals(holder.getGasketId(role, slot))) {

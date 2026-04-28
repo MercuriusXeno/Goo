@@ -4,8 +4,8 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.GloveSelection;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock;
 import com.mercuriusxeno.goo.client.TargetResult;
 import com.mercuriusxeno.goo.client.hud.InWorldHud;
 import com.mercuriusxeno.goo.client.hud.PanelRectangle;
@@ -49,16 +49,18 @@ import org.jspecify.annotations.Nullable;
  * - Vanilla spectral/glowing outline on the targeted mob (goo-colored)
  * - A goo-colored translucent face highlight on the targeted block face
  * - Nothing when aiming at air or beyond range
- *
+ * <p>
  * The entity outline uses NeoForge's render state modifier system to inject
  * the outline color into the entity render pipeline, producing the same
  * visual effect as spectral arrows or the Glowing potion.
- *
+ * <p>
  * Also exposes {@link #resolveTarget} for the throw system to reuse.
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class GooTargetHighlighter {
-    /** Maximum range for blob throwing in blocks. */
+    /**
+     * Maximum range for blob throwing in blocks.
+     */
     public static final double MAX_RANGE = 64.0;
 
     /**
@@ -68,11 +70,54 @@ public final class GooTargetHighlighter {
      */
     private static final double GRANNY_ARC_THRESHOLD = 0.85;
 
-    /** Half block offset for face center calculations. */
+    /**
+     * Half block offset for face center calculations.
+     */
     private static final double FACE_CENTER_OFFSET = 0.5;
 
     // --- Aim hit state ---
+    /**
+     * Gap between the top of the blob visual and the billboard bottom.
+     */
+    private static final float BILLBOARD_GAP = 0.15f;
+    /**
+     * BER core base half-size in blocks (must match ChainMarkerBlockEntityRenderer).
+     */
+    private static final float BER_CORE_BASE = 2f / 16f;
 
+    // --- Frame-scoped arc deferral ---
+    /**
+     * BER shell margin in blocks.
+     */
+    private static final float BER_SHELL_MARGIN = 1f / 16f;
+    /**
+     * BER core growth per stack in blocks.
+     */
+    private static final float BER_CORE_GROWTH = 1f / 32f;
+    /**
+     * Max pulse/target boost scale factor.
+     */
+    private static final float BER_MAX_SCALE = 1.15f;
+    /**
+     * Padding inside the nine-slice background.
+     */
+    private static final float BILLBOARD_PADDING = 4f;
+    /**
+     * Multiplier for padding on both sides (left+right or top+bottom).
+     */
+    private static final int PADDING_BOTH_SIDES = 2;
+    /**
+     * Divisor to halve a dimension for centering.
+     */
+    private static final float HALF_DIVISOR = 2f;
+    /**
+     * Separator between stack count and max stacks in the billboard.
+     */
+    private static final String STACK_SEPARATOR = " / ";
+    /**
+     * Entity tag on ability definitions.
+     */
+    private static final String TAG_ENTITY = "entity";
     /**
      * The aim hit currently resolved by the glove, or null. Updated each
      * tick. Used as the sticky-retention seed for the next frame and as
@@ -80,73 +125,55 @@ public final class GooTargetHighlighter {
      * ChainMarker BER highlighting accessor.
      */
     private static AimAssistResolver.@Nullable AimHit lastAimHit;
-
-    /** Opaque ARGB outline color for the targeted entity, or 0 if none. */
+    /**
+     * Opaque ARGB outline color for the targeted entity, or 0 if none.
+     */
     private static int targetOutlineColor;
-
-    // --- Frame-scoped arc deferral ---
-
-    /** Target cached by the opaque-stage handler for the translucent
+    /**
+     * Target cached by the opaque-stage handler for the translucent
      * arc-render stage to consume. Null when no valid target was
-     * resolved this frame or the arc has already been consumed. */
+     * resolved this frame or the arc has already been consumed.
+     */
     private static @Nullable TargetResult cachedArcTarget;
-    /** Goo type for the cached arc target. */
+    /**
+     * Goo type for the cached arc target.
+     */
     private static @Nullable GooType cachedArcType;
-    /** Partial tick captured at the opaque-stage handler. */
+    /**
+     * Partial tick captured at the opaque-stage handler.
+     */
     private static float cachedArcPartialTick;
 
-    /** Gap between the top of the blob visual and the billboard bottom. */
-    private static final float BILLBOARD_GAP = 0.15f;
-    /** BER core base half-size in blocks (must match ChainMarkerBlockEntityRenderer). */
-    private static final float BER_CORE_BASE = 2f / 16f;
-    /** BER shell margin in blocks. */
-    private static final float BER_SHELL_MARGIN = 1f / 16f;
-    /** BER core growth per stack in blocks. */
-    private static final float BER_CORE_GROWTH = 1f / 32f;
-    /** Max pulse/target boost scale factor. */
-    private static final float BER_MAX_SCALE = 1.15f;
-    /** Padding inside the nine-slice background. */
-    private static final float BILLBOARD_PADDING = 4f;
-    /** Multiplier for padding on both sides (left+right or top+bottom). */
-    private static final int PADDING_BOTH_SIDES = 2;
-    /** Divisor to halve a dimension for centering. */
-    private static final float HALF_DIVISOR = 2f;
-    /** Separator between stack count and max stacks in the billboard. */
-    private static final String STACK_SEPARATOR = " / ";
-
-    /** Entity tag on ability definitions. */
-    private static final String TAG_ENTITY = "entity";
-
-    private GooTargetHighlighter() {}
-
-    /** Targeting mode derived from the selected ability's tags. */
-    public enum TargetingHint {
-        /** No ability selected - suppress all targeting and throws. */
-        NONE,
-        /** Entity-tagged ability - aim-assist entities only, no block fallback. */
-        ENTITY,
-        /** Block-tagged ability - block targeting only, no entity aim-assist. */
-        BLOCK
+    private GooTargetHighlighter() {
     }
 
-    /** Resolves the targeting hint from the player's glove ability selection.
+    /**
+     * Resolves the targeting hint from the player's glove ability selection.
      *
      * @param player the local player
      * @return the targeting hint
      */
     public static TargetingHint resolveTargetingHint(Player player) {
         GloveSelection sel = readGloveSelection(player);
-        if (sel == null || !sel.hasAbility()) { return TargetingHint.NONE; }
+        if (sel == null || !sel.hasAbility()) {
+            return TargetingHint.NONE;
+        }
         GooType type = sel.getGooType();
-        if (type == null) { return TargetingHint.NONE; }
+        if (type == null) {
+            return TargetingHint.NONE;
+        }
         return hintFromAbility(type, sel);
     }
 
     private static @Nullable GloveSelection readGloveSelection(Player player) {
         ItemStack main = player.getMainHandItem();
-        if (main.getItem() instanceof GooGloveItem) { return GooGloveItem.getSelection(main); }
+        if (main.getItem() instanceof GooGloveItem) {
+            return GooGloveItem.getSelection(main);
+        }
         ItemStack off = player.getOffhandItem();
-        if (off.getItem() instanceof GooGloveItem) { return GooGloveItem.getSelection(off); }
+        if (off.getItem() instanceof GooGloveItem) {
+            return GooGloveItem.getSelection(off);
+        }
         return null;
     }
 
@@ -195,7 +222,9 @@ public final class GooTargetHighlighter {
         updateTarget(mc.player, selectedType, hint);
     }
 
-    /** Resets aim hit and outline color when no valid aim exists. */
+    /**
+     * Resets aim hit and outline color when no valid aim exists.
+     */
     private static void clearTarget() {
         lastAimHit = null;
         targetOutlineColor = 0;
@@ -220,10 +249,12 @@ public final class GooTargetHighlighter {
      * Registered via RegisterRenderStateModifiersEvent in GooClientSetup.
      *
      * @param entity the target entity
-     * @param state the block state
+     * @param state  the block state
      */
     public static void modifyEntityRenderState(Entity entity, EntityRenderState state) {
-        if (targetOutlineColor == 0) { return; }
+        if (targetOutlineColor == 0) {
+            return;
+        }
         if (lastAimHit instanceof AimAssistResolver.AimHit.EntityHit eh
                 && eh.entity() == entity) {
             state.outlineColor = targetOutlineColor;
@@ -244,8 +275,6 @@ public final class GooTargetHighlighter {
                 && cmh.pos().equals(pos);
     }
 
-    // --- Target resolution (public API for throw system) ---
-
     /**
      * Resolves what the player is aiming at within throw range.
      * Targeting is filtered by the hint derived from the selected ability:
@@ -260,6 +289,8 @@ public final class GooTargetHighlighter {
         return resolveTarget(player, partialTick, resolveTargetingHint(player));
     }
 
+    // --- Target resolution (public API for throw system) ---
+
     /**
      * Resolves targeting with an explicit hint.
      *
@@ -269,13 +300,17 @@ public final class GooTargetHighlighter {
      * @return entity target, block face target, or NONE
      */
     public static TargetResult resolveTarget(Player player, float partialTick, TargetingHint hint) {
-        if (hint == TargetingHint.NONE) { return TargetResult.NONE; }
+        if (hint == TargetingHint.NONE) {
+            return TargetResult.NONE;
+        }
         if (player.isShiftKeyDown()) {
             ThrowFreezeState.clear();
             hint = TargetingHint.BLOCK;
         } else {
             TargetResult frozen = ThrowFreezeState.getFrozenTarget();
-            if (frozen != null) { return frozen; }
+            if (frozen != null) {
+                return frozen;
+            }
         }
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 reach = eyePos.add(player.getViewVector(partialTick).scale(MAX_RANGE));
@@ -283,7 +318,7 @@ public final class GooTargetHighlighter {
     }
 
     private static TargetResult resolveWithHint(Player player, Vec3 eyePos,
-            Vec3 reach, TargetingHint hint) {
+                                                Vec3 reach, TargetingHint hint) {
         if (hint == TargetingHint.ENTITY) {
             TargetResult entityResult = resolveEntityTarget(player, eyePos, reach);
             return entityResult != null ? entityResult : TargetResult.NONE;
@@ -339,7 +374,8 @@ public final class GooTargetHighlighter {
         return classifyBlockHit(player.level(), hit);
     }
 
-    /** Raycasts down from the max-range endpoint to find the ground.
+    /**
+     * Raycasts down from the max-range endpoint to find the ground.
      * If the endpoint is above max build height (looking upward), starts
      * the downward cast from build height at the same XZ.
      *
@@ -391,14 +427,15 @@ public final class GooTargetHighlighter {
 
     /**
      * True when the hit qualifies for a granny-arc: side face, upper edge, air above.
+     *
      * @param level the current level
-     * @param hit the block hit result
-     * @param pos the hit block position
-     * @param face the hit face direction
+     * @param hit   the block hit result
+     * @param pos   the hit block position
+     * @param face  the hit face direction
      * @return true if the hit qualifies for a granny arc
      */
     private static boolean isGrannyArcCandidate(Level level, BlockHitResult hit,
-            BlockPos pos, Direction face) {
+                                                BlockPos pos, Direction face) {
         return face.getAxis() != Direction.Axis.Y
                 && isUpperEdge(level, hit)
                 && level.getBlockState(pos.above()).isAir();
@@ -425,22 +462,24 @@ public final class GooTargetHighlighter {
      * stairs, etc. use their real geometry, not a full cube.
      *
      * @param level the current level
-     * @param hit the block hit result
+     * @param hit   the block hit result
      * @return true if upperEdge
      */
     private static boolean isUpperEdge(Level level, BlockHitResult hit) {
         var pos = hit.getBlockPos();
         VoxelShape shape = level.getBlockState(pos).getShape(level, pos);
-        if (shape.isEmpty()) { return false; }
+        if (shape.isEmpty()) {
+            return false;
+        }
         AABB bounds = shape.bounds();
         double range = bounds.maxY - bounds.minY;
-        if (range <= 0) { return false; }
+        if (range <= 0) {
+            return false;
+        }
         double hitY = hit.getLocation().y - pos.getY();
         double relative = (hitY - bounds.minY) / range;
         return relative >= GRANNY_ARC_THRESHOLD;
     }
-
-    // --- Event handlers ---
 
     /**
      * Renders goo-colored target visuals: dashed arc to entity targets,
@@ -453,10 +492,16 @@ public final class GooTargetHighlighter {
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         clearCachedArc();
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null) { return; }
-        if (!mc.options.getCameraType().isFirstPerson()) { return; }
+        if (mc.player == null || mc.level == null) {
+            return;
+        }
+        if (!mc.options.getCameraType().isFirstPerson()) {
+            return;
+        }
         GooType selectedType = findSelectedGooType(mc.player);
-        if (selectedType == null) { return; }
+        if (selectedType == null) {
+            return;
+        }
         float partialTick = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         TargetResult target = resolveTarget(mc.player, partialTick);
         cacheArc(target, selectedType, partialTick);
@@ -466,7 +511,10 @@ public final class GooTargetHighlighter {
         renderTargetHighlight(target, mc, ps, buf, camera, selectedType);
     }
 
-    /** Dispatches highlight rendering based on target type.
+    // --- Event handlers ---
+
+    /**
+     * Dispatches highlight rendering based on target type.
      *
      * @param target       the resolved aim target
      * @param mc           the Minecraft client instance
@@ -476,7 +524,7 @@ public final class GooTargetHighlighter {
      * @param selectedType the selected goo type
      */
     private static void renderTargetHighlight(TargetResult target, Minecraft mc,
-            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
+                                              PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
         if (target instanceof TargetResult.BlockTarget bt) {
             renderBlockTargetHighlight(bt, mc, ps, buf, camera, selectedType);
         } else if (target instanceof TargetResult.ChainMarkerTarget cmt) {
@@ -486,7 +534,8 @@ public final class GooTargetHighlighter {
         }
     }
 
-    /** Renders highlight for a block target, detecting adjacent chain markers.
+    /**
+     * Renders highlight for a block target, detecting adjacent chain markers.
      *
      * @param bt           the block target
      * @param mc           the Minecraft client instance
@@ -496,7 +545,7 @@ public final class GooTargetHighlighter {
      * @param selectedType the selected goo type
      */
     private static void renderBlockTargetHighlight(TargetResult.BlockTarget bt, Minecraft mc,
-            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
+                                                   PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
         BlockPos markerPos = findAdjacentMarker(mc.level, bt.pos(), bt.face());
         if (markerPos != null) {
             if (canAcceptMoreBlobs(mc.level, markerPos)) {
@@ -510,7 +559,8 @@ public final class GooTargetHighlighter {
         }
     }
 
-    /** Renders highlight for a direct chain marker target.
+    /**
+     * Renders highlight for a direct chain marker target.
      *
      * @param cmt          the chain marker target
      * @param mc           the Minecraft client instance
@@ -520,7 +570,7 @@ public final class GooTargetHighlighter {
      * @param selectedType the selected goo type
      */
     private static void renderChainMarkerHighlight(TargetResult.ChainMarkerTarget cmt, Minecraft mc,
-            PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
+                                                   PoseStack ps, MultiBufferSource.BufferSource buf, Camera camera, GooType selectedType) {
         if (canAcceptMoreBlobs(mc.level, cmt.pos())) {
             VoxelHighlightRenderer.renderBlockShape(ps, buf, camera, cmt.pos(), selectedType);
         }
@@ -529,18 +579,22 @@ public final class GooTargetHighlighter {
                 blobType != null ? blobType : selectedType);
     }
 
-    /** Reads the goo type from a chain marker BE, or null if unavailable.
+    /**
+     * Reads the goo type from a chain marker BE, or null if unavailable.
      *
      * @param level the current level
      * @param pos   the block position
      * @return the marker's goo type, or null
      */
     private static @Nullable GooType resolveMarkerGooType(Level level, BlockPos pos) {
-        if (level == null) { return null; }
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return null; }
+        if (level == null) {
+            return null;
+        }
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return null;
+        }
         return be.getGooType();
     }
-
 
     /**
      * Returns true if the block at the given position is a water source.
@@ -565,10 +619,14 @@ public final class GooTargetHighlighter {
      * @return the chain marker position, or null
      */
     private static @Nullable BlockPos findAdjacentMarker(Level level, BlockPos pos,
-            Direction face) {
-        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity) { return pos; }
+                                                         Direction face) {
+        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity) {
+            return pos;
+        }
         BlockPos adj = pos.relative(face);
-        if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity) { return adj; }
+        if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity) {
+            return adj;
+        }
         return null;
     }
 
@@ -581,7 +639,9 @@ public final class GooTargetHighlighter {
      * @return true if more blobs can be stacked
      */
     private static boolean canAcceptMoreBlobs(Level level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return false; }
+        if (!(level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return false;
+        }
         return be.getBehavior() == null && be.getStackCount() < be.getMaxStacks();
     }
 
@@ -597,9 +657,13 @@ public final class GooTargetHighlighter {
      * @param gooType the goo type for coloring/icon
      */
     private static void renderChainMarkerBillboard(PoseStack ps, MultiBufferSource.BufferSource buf,
-            Camera camera, Minecraft mc, BlockPos pos, GooType gooType) {
-        if (mc.level == null) { return; }
-        if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) { return; }
+                                                   Camera camera, Minecraft mc, BlockPos pos, GooType gooType) {
+        if (mc.level == null) {
+            return;
+        }
+        if (!(mc.level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
+            return;
+        }
         String text = be.getStackCount() + STACK_SEPARATOR + be.getMaxStacks();
         float textWidth = mc.font.width(text);
         float rowWidth = InWorldHud.ICON_SIZE + InWorldHud.ICON_TEXT_GAP + textWidth;
@@ -611,7 +675,8 @@ public final class GooTargetHighlighter {
         ps.popPose();
     }
 
-    /** Translates and rotates the pose stack to position the billboard above the orb.
+    /**
+     * Translates and rotates the pose stack to position the billboard above the orb.
      *
      * @param ps     the pose stack
      * @param camera the render camera
@@ -619,7 +684,7 @@ public final class GooTargetHighlighter {
      * @param be     the chain marker block entity
      */
     private static void positionBillboard(PoseStack ps, Camera camera,
-            BlockPos pos, ChainMarkerBlockEntity be) {
+                                          BlockPos pos, ChainMarkerBlockEntity be) {
         float orbRadius = (BER_CORE_BASE + (be.getStackCount() - 1) * BER_CORE_GROWTH
                 + BER_SHELL_MARGIN) * BER_MAX_SCALE;
         Direction face = be.getPlacedFace();
@@ -644,7 +709,8 @@ public final class GooTargetHighlighter {
         ps.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
     }
 
-    /** Renders the billboard background panel and goo row text.
+    /**
+     * Renders the billboard background panel and goo row text.
      *
      * @param ps      the pose stack
      * @param buf     the buffer source
@@ -655,7 +721,7 @@ public final class GooTargetHighlighter {
      * @param panelH  the panel height
      */
     private static void renderBillboardContent(PoseStack ps, MultiBufferSource.BufferSource buf,
-            Font font, GooType gooType, String text, float panelW, float panelH) {
+                                               Font font, GooType gooType, String text, float panelW, float panelH) {
         float halfW = panelW / HALF_DIVISOR;
         float halfH = panelH / HALF_DIVISOR;
         InWorldHud.renderBackgroundSeeThrough(ps, buf,
@@ -664,7 +730,8 @@ public final class GooTargetHighlighter {
                 -halfW + BILLBOARD_PADDING, -halfH + BILLBOARD_PADDING);
     }
 
-    /** Renders the deferred throw-arc line after translucent blocks so
+    /**
+     * Renders the deferred throw-arc line after translucent blocks so
      * the depth buffer contains both opaque and water depth for
      * correct sorting.
      *
@@ -676,9 +743,13 @@ public final class GooTargetHighlighter {
         GooType type = cachedArcType;
         float partialTick = cachedArcPartialTick;
         clearCachedArc();
-        if (target == null || type == null) { return; }
+        if (target == null || type == null) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) { return; }
+        if (mc.player == null) {
+            return;
+        }
         Camera camera = mc.gameRenderer.getMainCamera();
         PoseStack ps = event.getPoseStack();
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
@@ -697,16 +768,6 @@ public final class GooTargetHighlighter {
         cachedArcPartialTick = 0f;
     }
 
-    /** Dispatches arc rendering only (face already drawn at opaque stage).
-     *
-     * @param poseStack    the pose stack
-     * @param bufferSource the buffer source
-     * @param camera       the active camera
-     * @param player       the local player
-     * @param target       the cached target
-     * @param selectedType the cached goo type
-     * @param partialTick  the cached partial tick
-     */
     /**
      * Renders the arc to the target's endpoint. Granny arc is only active
      * for block targets that were classified as upper-edge hits.
@@ -724,7 +785,9 @@ public final class GooTargetHighlighter {
             Camera camera, Player player, TargetResult target,
             GooType selectedType, float partialTick) {
         Vec3 end = target.resolveEndpoint();
-        if (end == null) { return; }
+        if (end == null) {
+            return;
+        }
         boolean grannyArc = target instanceof TargetResult.BlockTarget bt && bt.grannyArc();
         boolean straightLine = selectedType == GooType.GLOW;
         ArcRenderer.renderTargetArc(poseStack, bufferSource, camera,
@@ -732,7 +795,16 @@ public final class GooTargetHighlighter {
                 grannyArc, straightLine);
     }
 
-    // --- Hand position ---
+    /** Dispatches arc rendering only (face already drawn at opaque stage).
+     *
+     * @param poseStack    the pose stack
+     * @param bufferSource the buffer source
+     * @param camera       the active camera
+     * @param player       the local player
+     * @param target       the cached target
+     * @param selectedType the cached goo type
+     * @param partialTick  the cached partial tick
+     */
 
     /**
      * Returns the world-space arc origin from the blob center captured
@@ -749,11 +821,13 @@ public final class GooTargetHighlighter {
      */
     public static Vec3 getGloveHandPosition(Player player, Camera camera) {
         Vec3 captured = GloveSpecialRenderer.getLastBlobCenterCamRel();
-        if (captured == null) { return camera.position(); }
+        if (captured == null) {
+            return camera.position();
+        }
         return camera.position().add(captured);
     }
 
-    // --- Glove detection ---
+    // --- Hand position ---
 
     /**
      * Checks both hands for a goo glove with a selected type. Main hand priority.
@@ -764,11 +838,17 @@ public final class GooTargetHighlighter {
      */
     private static @Nullable GooType findSelectedGooType(Player player) {
         GooType type = tryGloveInHand(player.getMainHandItem());
-        if (type != null) { return GloveUseTracker.isSelectedTypeAvailable() ? type : null; }
+        if (type != null) {
+            return GloveUseTracker.isSelectedTypeAvailable() ? type : null;
+        }
         type = tryGloveInHand(player.getOffhandItem());
-        if (type != null) { return GloveUseTracker.isSelectedTypeAvailable() ? type : null; }
+        if (type != null) {
+            return GloveUseTracker.isSelectedTypeAvailable() ? type : null;
+        }
         return null;
     }
+
+    // --- Glove detection ---
 
     /**
      * Returns the selected type if the stack is a glove with a selection.
@@ -781,5 +861,23 @@ public final class GooTargetHighlighter {
             return GooGloveItem.getSelectedType(stack);
         }
         return null;
+    }
+
+    /**
+     * Targeting mode derived from the selected ability's tags.
+     */
+    public enum TargetingHint {
+        /**
+         * No ability selected - suppress all targeting and throws.
+         */
+        NONE,
+        /**
+         * Entity-tagged ability - aim-assist entities only, no block fallback.
+         */
+        ENTITY,
+        /**
+         * Block-tagged ability - block targeting only, no entity aim-assist.
+         */
+        BLOCK
     }
 }

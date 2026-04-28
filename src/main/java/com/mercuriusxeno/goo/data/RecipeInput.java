@@ -2,11 +2,7 @@ package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Minecraft-free representation of a recipe for the derivation engine.
@@ -16,26 +12,26 @@ import java.util.Set;
  * (e.g. {@code #minecraft:planks}). The scaffold generator uses this to group
  * roots that share a tag into a single scaffold entry.</p>
  *
- * @param output                  the output item ID
- * @param resultCount             the number of items produced
- * @param ingredientAlternatives  per-slot sets of acceptable input item IDs
- * @param containerItems          items returned after crafting (e.g. buckets)
- * @param slotTagIds              per-slot tag IDs, or empty if not tag-based
+ * @param output                 the output item ID
+ * @param resultCount            the number of items produced
+ * @param ingredientAlternatives per-slot sets of acceptable input item IDs
+ * @param containerItems         items returned after crafting (e.g. buckets)
+ * @param slotTagIds             per-slot tag IDs, or empty if not tag-based
  */
 public record RecipeInput(
-    Identifier output,
-    int resultCount,
-    List<Set<Identifier>> ingredientAlternatives,
-    Map<Identifier, Identifier> containerItems,
-    List<Optional<Identifier>> slotTagIds
+        Identifier output,
+        int resultCount,
+        List<Set<Identifier>> ingredientAlternatives,
+        Map<Identifier, Identifier> containerItems,
+        List<Optional<Identifier>> slotTagIds
 ) {
 
     /**
      * Backward-compatible constructor for recipes with no container items or tag info.
      *
-     * @param output                  the output item ID
-     * @param resultCount             number of items produced
-     * @param ingredientAlternatives  ingredient slots, each a set of alternative item IDs
+     * @param output                 the output item ID
+     * @param resultCount            number of items produced
+     * @param ingredientAlternatives ingredient slots, each a set of alternative item IDs
      */
     public RecipeInput(Identifier output, int resultCount,
                        List<Set<Identifier>> ingredientAlternatives) {
@@ -46,10 +42,10 @@ public record RecipeInput(
     /**
      * Backward-compatible constructor for recipes with container items but no tag info.
      *
-     * @param output                  the output item ID
-     * @param resultCount             number of items produced
-     * @param ingredientAlternatives  ingredient slots, each a set of alternative item IDs
-     * @param containerItems          map of ingredient item ID to returned container item ID
+     * @param output                 the output item ID
+     * @param resultCount            number of items produced
+     * @param ingredientAlternatives ingredient slots, each a set of alternative item IDs
+     * @param containerItems         map of ingredient item ID to returned container item ID
      */
     public RecipeInput(Identifier output, int resultCount,
                        List<Set<Identifier>> ingredientAlternatives,
@@ -87,23 +83,30 @@ public record RecipeInput(
         Identifier sole = null;
         for (Set<Identifier> alts : ingredientAlternatives) {
             sole = matchSingleAlternative(alts, sole);
-            if (sole == null) { return null; }
+            if (sole == null) {
+                return null;
+            }
         }
         return sole;
     }
 
-    /** Returns the single item if this slot has exactly one alternative matching current,
-     *  or null if the slot is heterogeneous or mismatched.
+    /**
+     * Returns the single item if this slot has exactly one alternative matching current,
+     * or null if the slot is heterogeneous or mismatched.
      *
      * @param alts    the alternative item IDs for this ingredient slot
      * @param current the running sole item (null on first iteration)
      * @return the confirmed sole item, or null if broken
      */
     private @Nullable Identifier matchSingleAlternative(Set<Identifier> alts,
-                                                         @Nullable Identifier current) {
-        if (alts.size() != 1) { return null; }
+                                                        @Nullable Identifier current) {
+        if (alts.size() != 1) {
+            return null;
+        }
         Identifier item = alts.iterator().next();
-        if (current != null && !current.equals(item)) { return null; }
+        if (current != null && !current.equals(item)) {
+            return null;
+        }
         return item;
     }
 }

@@ -23,5 +23,6 @@ public record ContainerValueTooltipComponent(
      * @param type   the goo type
      * @param amount the volume in microblobs
      */
-    public record Entry(GooType type, int amount) {}
+    public record Entry(GooType type, int amount) {
+    }
 }

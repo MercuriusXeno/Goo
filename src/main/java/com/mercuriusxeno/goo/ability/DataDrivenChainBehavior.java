@@ -1,7 +1,6 @@
 package com.mercuriusxeno.goo.ability;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.effect.ChainBehavior;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.ValueInput;
@@ -50,7 +49,9 @@ public final class DataDrivenChainBehavior implements ChainBehavior {
     @Override
     public boolean isActive() {
         for (ChainBehavior block : blocks) {
-            if (block.isActive()) { return true; }
+            if (block.isActive()) {
+                return true;
+            }
         }
         return false;
     }
@@ -58,7 +59,9 @@ public final class DataDrivenChainBehavior implements ChainBehavior {
     @Override
     public boolean allowsTopOff() {
         for (ChainBehavior block : blocks) {
-            if (block.allowsTopOff()) { return true; }
+            if (block.allowsTopOff()) {
+                return true;
+            }
         }
         return false;
     }

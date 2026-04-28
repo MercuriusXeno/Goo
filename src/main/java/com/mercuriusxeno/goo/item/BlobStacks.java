@@ -16,16 +16,23 @@ import java.util.Map;
  */
 public final class BlobStacks {
 
-    /** Volume of one blob in microblobs. */
+    /**
+     * Volume of one blob in microblobs.
+     */
     public static final int MB_PER_BLOB = 1000;
 
-    /** Maximum blobs in one stack (vanilla stack limit). */
+    /**
+     * Maximum blobs in one stack (vanilla stack limit).
+     */
     public static final int MAX_STACK = 64;
 
-    /** Maximum volume representable as a blob stack (64 blobs = 64,000 mB). */
+    /**
+     * Maximum volume representable as a blob stack (64 blobs = 64,000 mB).
+     */
     public static final int MAX_BLOB_STACK_VOLUME = MB_PER_BLOB * MAX_STACK;
 
-    private BlobStacks() {}
+    private BlobStacks() {
+    }
 
     /**
      * Returns the volume of the given item stack in microblobs.
@@ -71,7 +78,9 @@ public final class BlobStacks {
      * @return a single ItemStack (blob stack or omniblob)
      */
     public static ItemStack createForOutput(GooType type, int volumeMb) {
-        if (volumeMb <= 0) { return ItemStack.EMPTY; }
+        if (volumeMb <= 0) {
+            return ItemStack.EMPTY;
+        }
         if (isCleanBlobStack(volumeMb)) {
             return createBlobStack(type, (volumeMb / MB_PER_BLOB));
         }
@@ -87,8 +96,8 @@ public final class BlobStacks {
      */
     public static boolean isCleanBlobStack(int volumeMb) {
         return volumeMb > 0
-            && volumeMb % MB_PER_BLOB == 0
-            && volumeMb <= MAX_BLOB_STACK_VOLUME;
+                && volumeMb % MB_PER_BLOB == 0
+                && volumeMb <= MAX_BLOB_STACK_VOLUME;
     }
 
     /**
@@ -139,7 +148,8 @@ public final class BlobStacks {
         }
     }
 
-    /** Shrinks a blob stack by the number of whole blobs consumed.
+    /**
+     * Shrinks a blob stack by the number of whole blobs consumed.
      *
      * @param stack    the blob stack
      * @param accepted the accepted volume in microblobs
@@ -149,7 +159,8 @@ public final class BlobStacks {
         stack.shrink(blobsUsed);
     }
 
-    /** Deducts volume from an omniblob, consuming the stack if empty.
+    /**
+     * Deducts volume from an omniblob, consuming the stack if empty.
      *
      * @param stack    the omniblob stack
      * @param accepted the accepted volume in microblobs
@@ -204,7 +215,9 @@ public final class BlobStacks {
      * @param volumeMb volume in microblobs
      */
     public static void mergeIntoInventory(Player player, GooType type, int volumeMb) {
-        if (volumeMb <= 0) { return; }
+        if (volumeMb <= 0) {
+            return;
+        }
         int remaining = mergeIntoExistingOmniblobs(player, type, volumeMb);
         remaining = mergeIntoExistingBlobStacks(player, type, remaining);
         if (remaining > 0) {
@@ -240,7 +253,9 @@ public final class BlobStacks {
      * @return remaining volume not merged
      */
     private static int mergeIntoExistingBlobStacks(Player player, GooType type, int volumeMb) {
-        if (volumeMb <= 0) { return 0; }
+        if (volumeMb <= 0) {
+            return 0;
+        }
         int remaining = volumeMb;
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining >= MB_PER_BLOB; i++) {
             remaining = tryMergeIntoSlot(player.getInventory().getItem(i), type, remaining);
@@ -250,15 +265,20 @@ public final class BlobStacks {
 
     /**
      * Tops up a single blob stack slot if it matches the type, returning leftover volume.
-     * @param slot the inventory slot to try merging into
-     * @param type the goo type to match against
+     *
+     * @param slot      the inventory slot to try merging into
+     * @param type      the goo type to match against
      * @param remaining the volume still needing placement in microblobs
      * @return the leftover volume after merging into this slot
      */
     private static int tryMergeIntoSlot(ItemStack slot, GooType type, int remaining) {
-        if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) { return remaining; }
+        if (!(slot.getItem() instanceof GooBlobItem blob) || blob.getGooType() != type) {
+            return remaining;
+        }
         int room = MAX_STACK - slot.getCount();
-        if (room <= 0) { return remaining; }
+        if (room <= 0) {
+            return remaining;
+        }
         int add = Math.min(room, remaining / MB_PER_BLOB);
         slot.grow(add);
         return remaining - add * MB_PER_BLOB;
@@ -273,7 +293,9 @@ public final class BlobStacks {
      * @param pos      the position to drop items at
      */
     public static void dropAll(GooContents contents, Level level, BlockPos pos) {
-        if (contents.isEmpty()) { return; }
+        if (contents.isEmpty()) {
+            return;
+        }
         for (Map.Entry<GooType, Integer> entry : contents.getAll().entrySet()) {
             Block.popResource(level, pos, createForOutput(entry.getKey(), entry.getValue()));
         }
@@ -288,7 +310,9 @@ public final class BlobStacks {
      */
     public static int computeExtractCount(int volume, boolean shiftHeld) {
         int whole = wholeBlobs(volume);
-        if (whole <= 0) { return 0; }
+        if (whole <= 0) {
+            return 0;
+        }
         if (shiftHeld) {
             return Math.min(whole, MAX_STACK);
         }

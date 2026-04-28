@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;

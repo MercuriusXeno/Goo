@@ -14,11 +14,16 @@ final class ExpressionTokenizer {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Log: unexpected character in expression. */
+    /**
+     * Log: unexpected character in expression.
+     */
     private static final String LOG_UNEXPECTED_CHAR = "Unexpected character '{}' in GooValue expression: {}";
 
-    /** Utility class, not instantiable. */
-    private ExpressionTokenizer() {}
+    /**
+     * Utility class, not instantiable.
+     */
+    private ExpressionTokenizer() {
+    }
 
     /**
      * Tokenizes an expression, recognizing namespaced IDs (with optional .type suffix).
@@ -138,15 +143,17 @@ final class ExpressionTokenizer {
      * Scans a $constant token starting at position i (the dollar sign).
      * Allows dots for type extraction (e.g. $log.leaf).
      *
-     * @param expr the full expression string
-     * @param i current position (at the '$')
+     * @param expr   the full expression string
+     * @param i      current position (at the '$')
      * @param tokens list to append the scanned token to
      * @return the position after the constant token
      */
     private static int scanConstant(String expr, int i, List<String> tokens) {
         int pos = i;
         pos++;
-        while (pos < expr.length() && (isIdentChar(expr.charAt(pos)) || expr.charAt(pos) == '.')) { pos++; }
+        while (pos < expr.length() && (isIdentChar(expr.charAt(pos)) || expr.charAt(pos) == '.')) {
+            pos++;
+        }
         tokens.add(expr.substring(i, pos));
         return pos;
     }
@@ -154,15 +161,17 @@ final class ExpressionTokenizer {
     /**
      * Scans a numeric literal starting at position i.
      *
-     * @param expr the full expression string
-     * @param i current position (at the first digit)
+     * @param expr   the full expression string
+     * @param i      current position (at the first digit)
      * @param tokens list to append the scanned token to
      * @return the position after the number
      */
     private static int scanNumber(String expr, int i, List<String> tokens) {
         int pos = i;
         pos++;
-        while (pos < expr.length() && Character.isDigit(expr.charAt(pos))) { pos++; }
+        while (pos < expr.length() && Character.isDigit(expr.charAt(pos))) {
+            pos++;
+        }
         tokens.add(expr.substring(i, pos));
         return pos;
     }
@@ -170,15 +179,17 @@ final class ExpressionTokenizer {
     /**
      * Scans a namespaced ID token (letters/digits/underscore, colon, path chars, optional .type).
      *
-     * @param expr the full expression string
-     * @param i current position (at the first letter)
+     * @param expr   the full expression string
+     * @param i      current position (at the first letter)
      * @param tokens list to append the scanned token to
      * @return the position after the namespaced ID
      */
     private static int scanNamespacedId(String expr, int i, List<String> tokens) {
         int pos = i;
         pos++;
-        while (pos < expr.length() && isNamespacedIdChar(expr.charAt(pos))) { pos++; }
+        while (pos < expr.length() && isNamespacedIdChar(expr.charAt(pos))) {
+            pos++;
+        }
         tokens.add(expr.substring(i, pos));
         return pos;
     }

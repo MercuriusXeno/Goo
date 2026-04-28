@@ -15,11 +15,17 @@ public class GooValue {
 
     public static final GooValue EMPTY = new GooValue(Collections.emptyMap());
 
-    /** Display label for empty values. */
+    /**
+     * Display label for empty values.
+     */
     private static final String LABEL_NONE = "none";
-    /** Separator between types in toString. */
+    /**
+     * Separator between types in toString.
+     */
     private static final String TYPE_SEPARATOR = ", ";
-    /** Key-value separator in toString. */
+    /**
+     * Key-value separator in toString.
+     */
     private static final String KV_SEPARATOR = ": ";
 
     private final Map<GooType, Integer> values;
@@ -115,7 +121,7 @@ public class GooValue {
     /**
      * Returns a new GooValue that is the sum of this and another, scaled by a multiplier.
      *
-     * @param other the value to add
+     * @param other      the value to add
      * @param multiplier scaling factor applied to other before adding
      * @return a new GooValue with the combined amounts
      */
@@ -205,19 +211,27 @@ public class GooValue {
      * @return a GooContents with scaled amounts widened to long
      */
     public GooContents toGooContents(int count) {
-        if (isEmpty() || count <= 0) { return GooContents.EMPTY; }
+        if (isEmpty() || count <= 0) {
+            return GooContents.EMPTY;
+        }
         Map<GooType, Integer> longMap = new EnumMap<>(GooType.class);
-        values.forEach((type, amount) -> longMap.put(type,     amount * count));
+        values.forEach((type, amount) -> longMap.put(type, amount * count));
         return new GooContents(longMap);
     }
 
-    /** Returns a human-readable summary like "metal: 480, vital: 120", or "none" if empty. */
+    /**
+     * Returns a human-readable summary like "metal: 480, vital: 120", or "none" if empty.
+     */
     @Override
     public String toString() {
-        if (isEmpty()) { return LABEL_NONE; }
+        if (isEmpty()) {
+            return LABEL_NONE;
+        }
         StringBuilder sb = new StringBuilder();
         values.forEach((type, amount) -> {
-            if (sb.length() > 0) { sb.append(TYPE_SEPARATOR); }
+            if (sb.length() > 0) {
+                sb.append(TYPE_SEPARATOR);
+            }
             sb.append(type.getId()).append(KV_SEPARATOR).append(amount);
         });
         return sb.toString();

@@ -19,45 +19,62 @@ import java.util.Map;
  * goo type/amount rows with face-aware billboard rotation.
  */
 final class CanisterPanelPainter {
-    /** Label color (gold). */
+    /**
+     * Label color (gold).
+     */
     private static final int LABEL_COLOR = 0xFFFFD700;
 
-    /** Upgrade level color (aqua). */
+    /**
+     * Upgrade level color (aqua).
+     */
     private static final int UPGRADE_COLOR = 0xFF55FFFF;
 
-    /** Z-nudge for panels on upward/downward faces to prevent z-fighting. */
+    /**
+     * Z-nudge for panels on upward/downward faces to prevent z-fighting.
+     */
     private static final float Z_NUDGE_POS = 0.01f;
 
-    /** Z-nudge for panels on side faces. */
+    /**
+     * Z-nudge for panels on side faces.
+     */
     private static final float Z_NUDGE_NEG = -0.01f;
 
-    /** Divisor for centering calculations. */
+    /**
+     * Divisor for centering calculations.
+     */
     private static final int HALF = 2;
 
-    /** Upgrade level display prefix. */
+    /**
+     * Upgrade level display prefix.
+     */
     private static final String UPGRADE_PREFIX = "Lv ";
 
-    /** Half-width divisor for panel centering. */
+    /**
+     * Half-width divisor for panel centering.
+     */
     private static final float HALF_F = 2f;
 
-    /** Empty string for absent upgrade text. */
+    /**
+     * Empty string for absent upgrade text.
+     */
     private static final String EMPTY_UPGRADE = "";
 
-    private CanisterPanelPainter() {}
+    private CanisterPanelPainter() {
+    }
 
     /**
      * Renders the HUD panel at the tracked position, using face-aware rotation.
      *
      * @param poseStack the pose stack for rendering
-     * @param camera the render camera
-     * @param data the extracted render data
-     * @param pos the block position
-     * @param slot the slot index
-     * @param anchor camera-relative positioning data for the panel
+     * @param camera    the render camera
+     * @param data      the extracted render data
+     * @param pos       the block position
+     * @param slot      the slot index
+     * @param anchor    camera-relative positioning data for the panel
      */
     static void renderPanel(PoseStack poseStack, Camera camera,
-            CanisterHudRenderer.SlotData data, BlockPos pos, int slot,
-            PanelAnchor anchor) {
+                            CanisterHudRenderer.SlotData data, BlockPos pos, int slot,
+                            PanelAnchor anchor) {
         poseStack.pushPose();
         applyPanelTransform(poseStack, camera, pos, anchor);
         renderContent(poseStack, data, anchor.face());
@@ -70,12 +87,12 @@ final class CanisterPanelPainter {
      * nudges to prevent z-fighting, and scales to pixel units.
      *
      * @param poseStack the pose stack for rendering
-     * @param camera the render camera
-     * @param pos the block position
-     * @param anchor camera-relative positioning data for the panel
+     * @param camera    the render camera
+     * @param pos       the block position
+     * @param anchor    camera-relative positioning data for the panel
      */
     private static void applyPanelTransform(PoseStack poseStack,
-            Camera camera, BlockPos pos, PanelAnchor anchor) {
+                                            Camera camera, BlockPos pos, PanelAnchor anchor) {
         translateToAnchor(poseStack, camera, pos, anchor);
         applyRotation(poseStack, camera, anchor.face(), anchor.blockAbove(), anchor.pitch());
         float zNudge = isVerticalFace(anchor.face()) ? Z_NUDGE_POS : Z_NUDGE_NEG;
@@ -87,17 +104,17 @@ final class CanisterPanelPainter {
      * Translates the pose stack to the camera-relative anchor position.
      *
      * @param poseStack the pose stack for rendering
-     * @param camera the render camera
-     * @param pos the block position
-     * @param anchor camera-relative positioning data for the panel
+     * @param camera    the render camera
+     * @param pos       the block position
+     * @param anchor    camera-relative positioning data for the panel
      */
     private static void translateToAnchor(PoseStack poseStack, Camera camera,
-            BlockPos pos, PanelAnchor anchor) {
+                                          BlockPos pos, PanelAnchor anchor) {
         Vec3 cam = camera.position();
         poseStack.translate(
-            pos.getX() + anchor.cx() - cam.x,
-            pos.getY() + anchor.lift() - cam.y,
-            pos.getZ() + anchor.cz() - cam.z);
+                pos.getX() + anchor.cx() - cam.x,
+                pos.getY() + anchor.lift() - cam.y,
+                pos.getZ() + anchor.cz() - cam.z);
     }
 
     /**
@@ -115,14 +132,14 @@ final class CanisterPanelPainter {
      * Side faces use face rotation; UP with block above uses flat rotation;
      * UP without block above uses billboard rotation.
      *
-     * @param poseStack the pose stack for rendering
-     * @param camera the render camera
-     * @param face the face direction
+     * @param poseStack  the pose stack for rendering
+     * @param camera     the render camera
+     * @param face       the face direction
      * @param blockAbove whether a block is above
-     * @param pitch the current pitch
+     * @param pitch      the current pitch
      */
     private static void applyRotation(PoseStack poseStack, Camera camera,
-            Direction face, boolean blockAbove, float pitch) {
+                                      Direction face, boolean blockAbove, float pitch) {
         if (isVerticalFace(face)) {
             if (blockAbove) {
                 InWorldHud.applyFlatRotation(poseStack, camera);
@@ -138,11 +155,11 @@ final class CanisterPanelPainter {
      * Renders the panel content: label, upgrade level, and goo type/amount rows.
      *
      * @param poseStack the pose stack for rendering
-     * @param data the extracted render data
-     * @param face the tracked face direction
+     * @param data      the extracted render data
+     * @param face      the tracked face direction
      */
     private static void renderContent(PoseStack poseStack,
-            CanisterHudRenderer.SlotData data, Direction face) {
+                                      CanisterHudRenderer.SlotData data, Direction face) {
         Font font = Minecraft.getInstance().font;
         PanelMetrics metrics = measurePanel(font, data);
         if (face == Direction.DOWN) {
@@ -177,7 +194,8 @@ final class CanisterPanelPainter {
 
     /**
      * True when goo decomposition is empty but the canister has raw fluid (single untyped row).
-     * @param goo the decomposed goo contents
+     *
+     * @param goo     the decomposed goo contents
      * @param content the raw canister fluid content
      * @return true if goo is empty but fluid is present
      */
@@ -187,20 +205,21 @@ final class CanisterPanelPainter {
 
     /**
      * Delegates to the correct width measurement based on single-fluid vs multi-type layout.
-     * @param font the font renderer for width measurement
-     * @param goo the decomposed goo contents
-     * @param content the raw canister fluid content
+     *
+     * @param font           the font renderer for width measurement
+     * @param goo            the decomposed goo contents
+     * @param content        the raw canister fluid content
      * @param singleFluidRow true if rendering a single untyped row
-     * @param label the canister label text, or null
-     * @param upgradeText the formatted upgrade level string
-     * @param hasLabel whether a label row is present
-     * @param hasUpgrade whether an upgrade row is present
+     * @param label          the canister label text, or null
+     * @param upgradeText    the formatted upgrade level string
+     * @param hasLabel       whether a label row is present
+     * @param hasUpgrade     whether an upgrade row is present
      * @return the widest content row width in pixels
      */
     private static float measurePanelContentWidth(Font font, GooContents goo,
-            CanisterFluidContent content, boolean singleFluidRow,
-            @Nullable String label, String upgradeText,
-            boolean hasLabel, boolean hasUpgrade) {
+                                                  CanisterFluidContent content, boolean singleFluidRow,
+                                                  @Nullable String label, String upgradeText,
+                                                  boolean hasLabel, boolean hasUpgrade) {
         if (singleFluidRow) {
             return maxWidth(font, InWorldHud.computeFluidRowWidth(font, content.amount()),
                     label, upgradeText, hasLabel, hasUpgrade);
@@ -209,11 +228,15 @@ final class CanisterPanelPainter {
     }
 
     private static float maxWidth(Font font, float rowWidth,
-            @Nullable String label, String upgradeText,
-            boolean hasLabel, boolean hasUpgrade) {
+                                  @Nullable String label, String upgradeText,
+                                  boolean hasLabel, boolean hasUpgrade) {
         float max = rowWidth;
-        if (hasLabel) { max = Math.max(max, font.width(label)); }
-        if (hasUpgrade) { max = Math.max(max, font.width(upgradeText)); }
+        if (hasLabel) {
+            max = Math.max(max, font.width(label));
+        }
+        if (hasUpgrade) {
+            max = Math.max(max, font.width(upgradeText));
+        }
         return max;
     }
 
@@ -221,16 +244,16 @@ final class CanisterPanelPainter {
      * Computes final panel width/height and assembles metrics.
      *
      * @param contentWidth the widest content row width
-     * @param rowCount the total number of rows
-     * @param label the label text
-     * @param upgradeText the upgrade text
-     * @param hasLabel whether a label is present
-     * @param hasUpgrade whether an upgrade is present
+     * @param rowCount     the total number of rows
+     * @param label        the label text
+     * @param upgradeText  the upgrade text
+     * @param hasLabel     whether a label is present
+     * @param hasUpgrade   whether an upgrade is present
      * @return the assembled panel metrics
      */
     private static PanelMetrics buildMetrics(float contentWidth, int rowCount,
-            @Nullable String label, String upgradeText,
-            boolean hasLabel, boolean hasUpgrade) {
+                                             @Nullable String label, String upgradeText,
+                                             boolean hasLabel, boolean hasUpgrade) {
         float width = contentWidth + InWorldHud.BORDER * HALF;
         float height = InWorldHud.BORDER * HALF + rowCount * InWorldHud.ROW_HEIGHT;
         return new PanelMetrics(width, height, label, upgradeText, hasLabel, hasUpgrade);
@@ -239,17 +262,17 @@ final class CanisterPanelPainter {
     /**
      * Computes the widest content row across goo rows, label, and upgrade text.
      *
-     * @param font the font renderer
-     * @param contents the goo contents for row width measurement
-     * @param label the label text, or null
+     * @param font        the font renderer
+     * @param contents    the goo contents for row width measurement
+     * @param label       the label text, or null
      * @param upgradeText the upgrade text
-     * @param hasLabel whether a label is present
-     * @param hasUpgrade whether an upgrade line is present
+     * @param hasLabel    whether a label is present
+     * @param hasUpgrade  whether an upgrade line is present
      * @return the maximum content width in pixels
      */
     private static float measureContentWidth(Font font, GooContents contents,
-            @Nullable String label, String upgradeText,
-            boolean hasLabel, boolean hasUpgrade) {
+                                             @Nullable String label, String upgradeText,
+                                             boolean hasLabel, boolean hasUpgrade) {
         float maxRowWidth = InWorldHud.computeMaxRowWidth(font, contents);
         float labelWidth = hasLabel ? font.width(label) : 0;
         float upgradeWidth = hasUpgrade ? font.width(upgradeText) : 0;
@@ -259,8 +282,8 @@ final class CanisterPanelPainter {
     /**
      * Counts the total number of panel rows (headers + goo types).
      *
-     * @param gooRows the number of goo type rows
-     * @param hasLabel whether a label header is present
+     * @param gooRows    the number of goo type rows
+     * @param hasLabel   whether a label header is present
      * @param hasUpgrade whether an upgrade header is present
      * @return the total row count
      */
@@ -273,14 +296,14 @@ final class CanisterPanelPainter {
      * Draws the background, header rows, and goo rows onto the panel.
      *
      * @param poseStack the pose stack for rendering
-     * @param font the font renderer
-     * @param buffers the buffer source
-     * @param data the slot data containing goo contents
-     * @param metrics the pre-computed panel metrics
+     * @param font      the font renderer
+     * @param buffers   the buffer source
+     * @param data      the slot data containing goo contents
+     * @param metrics   the pre-computed panel metrics
      */
     private static void drawPanel(PoseStack poseStack, Font font,
-            MultiBufferSource.BufferSource buffers, CanisterHudRenderer.SlotData data,
-            PanelMetrics metrics) {
+                                  MultiBufferSource.BufferSource buffers, CanisterHudRenderer.SlotData data,
+                                  PanelMetrics metrics) {
         float halfW = metrics.width / HALF_F;
         InWorldHud.renderBackground(poseStack, buffers,
                 new PanelRectangle(-halfW, -metrics.height, metrics.width, metrics.height));
@@ -302,16 +325,16 @@ final class CanisterPanelPainter {
     /**
      * Draws the optional label and upgrade header rows, returning the next row index.
      *
-     * @param font the font renderer
-     * @param buffers the buffer source
+     * @param font      the font renderer
+     * @param buffers   the buffer source
      * @param poseStack the pose stack
-     * @param metrics the panel metrics with header text
-     * @param x the left X
-     * @param baseY the panel content top Y
+     * @param metrics   the panel metrics with header text
+     * @param x         the left X
+     * @param baseY     the panel content top Y
      * @return the row index after all headers
      */
     private static int drawHeaders(Font font, MultiBufferSource.BufferSource buffers,
-            PoseStack poseStack, PanelMetrics metrics, float x, float baseY) {
+                                   PoseStack poseStack, PanelMetrics metrics, float x, float baseY) {
         int row = 0;
         if (metrics.hasLabel) {
             row += renderHeaderRow(font, buffers, poseStack, metrics.label, x, baseY, row, LABEL_COLOR);
@@ -326,39 +349,46 @@ final class CanisterPanelPainter {
     /**
      * Renders a single header text row (label or upgrade), vertically centered.
      *
-     * @param font the font renderer
-     * @param buffers the buffer source
+     * @param font      the font renderer
+     * @param buffers   the buffer source
      * @param poseStack the pose stack
-     * @param text the header text
-     * @param x the left X
-     * @param baseY the panel content top Y
-     * @param row the current row index
-     * @param color the text color
+     * @param text      the header text
+     * @param x         the left X
+     * @param baseY     the panel content top Y
+     * @param row       the current row index
+     * @param color     the text color
      * @return 1, for row-counter advancement
      */
     private static int renderHeaderRow(Font font, MultiBufferSource buffers,
-            PoseStack poseStack, String text, float x, float baseY, int row, int color) {
+                                       PoseStack poseStack, String text, float x, float baseY, int row, int color) {
         float textY = baseY + row * InWorldHud.ROW_HEIGHT
-            + (InWorldHud.ROW_HEIGHT - font.lineHeight) / HALF_F;
+                + (InWorldHud.ROW_HEIGHT - font.lineHeight) / HALF_F;
         InWorldHud.drawText(font, buffers, poseStack, text, x, textY, color);
         return 1;
     }
 
     /**
      * Converts single-fluid canister content to GooContents for HUD rendering.
+     *
      * @param content the single-fluid canister content to convert
      * @return GooContents wrapping the content, or EMPTY if none
      */
     private static GooContents toGooContents(CanisterFluidContent content) {
-        if (content.isEmpty()) { return GooContents.EMPTY; }
+        if (content.isEmpty()) {
+            return GooContents.EMPTY;
+        }
         GooType type = content.getGooType();
-        if (type == null) { return GooContents.EMPTY; }
+        if (type == null) {
+            return GooContents.EMPTY;
+        }
         return new GooContents(Map.of(type, content.amount()));
     }
 
-    /** Pre-computed panel dimensions and resolved header strings. */
+    /**
+     * Pre-computed panel dimensions and resolved header strings.
+     */
     private record PanelMetrics(float width, float height,
-            @Nullable String label, String upgradeText,
-            boolean hasLabel, boolean hasUpgrade) {
+                                @Nullable String label, String upgradeText,
+                                boolean hasLabel, boolean hasUpgrade) {
     }
 }

@@ -16,7 +16,8 @@ import java.util.UUID;
  */
 public final class GasketInstallation {
 
-    private GasketInstallation() {}
+    private GasketInstallation() {
+    }
 
     /**
      * Pops a gasket as an item drop at the given position, unlinks it from
@@ -27,7 +28,9 @@ public final class GasketInstallation {
      * @param gasketId the gasket UUID
      */
     public static void popGasket(Level level, BlockPos pos, UUID gasketId) {
-        if (gasketId == null) { return; }
+        if (gasketId == null) {
+            return;
+        }
         Block.popResource(level, pos, new ItemStack(GooItems.CHORAL_GASKET.get()));
         if (level instanceof ServerLevel serverLevel) {
             GasketRegistry registry = GasketRegistry.get(serverLevel);

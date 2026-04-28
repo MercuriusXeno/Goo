@@ -4,12 +4,9 @@ import com.mercuriusxeno.goo.GooType;
 import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-
 import static com.mercuriusxeno.goo.data.TestRecipeBuilder.goo;
 import static com.mercuriusxeno.goo.data.TestRecipeBuilder.id;
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,7 +21,9 @@ class GooConversionTest {
     @Nested
     class FormulaParsing {
 
-        /** Basic formula: "metal / 4 -> aeon / 2". */
+        /**
+         * Basic formula: "metal / 4 -> aeon / 2".
+         */
         @Test
         void parseBasicFormula() {
             GooConversion.Formula f = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -34,7 +33,9 @@ class GooConversionTest {
             assertEquals(2, f.targetDivisor());
         }
 
-        /** Formula with divisor of 1: "vital / 1 -> nether / 2". */
+        /**
+         * Formula with divisor of 1: "vital / 1 -> nether / 2".
+         */
         @Test
         void parseDivisorOfOne() {
             GooConversion.Formula f = GooConversion.parseFormula("vital / 1 -> nether / 2");
@@ -44,7 +45,9 @@ class GooConversionTest {
             assertEquals(2, f.targetDivisor());
         }
 
-        /** Invalid formula throws. */
+        /**
+         * Invalid formula throws.
+         */
         @Test
         void invalidFormulaThrows() {
             assertThrows(IllegalArgumentException.class,
@@ -57,7 +60,9 @@ class GooConversionTest {
     @Nested
     class AdditiveParsing {
 
-        /** Additive modifier: "+$waxed" adds a flat GooValue. */
+        /**
+         * Additive modifier: "+$waxed" adds a flat GooValue.
+         */
         @Test
         void parseAdditiveFromTreeConstant() {
             Map<String, GooValue> treeConstants = Map.of(
@@ -71,7 +76,9 @@ class GooConversionTest {
             assertEquals(48, parsed.additives().get("waxed").get(GooType.VITAL));
         }
 
-        /** Additive applied via @ref adds the value to the item. */
+        /**
+         * Additive applied via @ref adds the value to the item.
+         */
         @Test
         void additiveAppliedToItem() {
             GooValue copper = goo(GooType.METAL, 160);
@@ -82,7 +89,9 @@ class GooConversionTest {
             assertEquals(48, result.get(GooType.VITAL));
         }
 
-        /** Additive with multiplier: "2 @waxed" adds 2x the value. */
+        /**
+         * Additive with multiplier: "2 @waxed" adds 2x the value.
+         */
         @Test
         void additiveWithMultiplier() {
             GooValue copper = goo(GooType.METAL, 160);
@@ -99,7 +108,9 @@ class GooConversionTest {
     @Nested
     class ApplicationMath {
 
-        /** 1x oxidation on metal=160: removes 40, adds 20 aeon. */
+        /**
+         * 1x oxidation on metal=160: removes 40, adds 20 aeon.
+         */
         @Test
         void singleApplication() {
             GooConversion.Formula oxidation = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -110,7 +121,9 @@ class GooConversionTest {
             assertEquals(20, result.get(GooType.AEON));    // 40 / 2
         }
 
-        /** 2x oxidation on metal=160: removes 80, adds 40 aeon (simultaneous). */
+        /**
+         * 2x oxidation on metal=160: removes 80, adds 40 aeon (simultaneous).
+         */
         @Test
         void doubleApplicationSimultaneous() {
             GooConversion.Formula oxidation = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -121,7 +134,9 @@ class GooConversionTest {
             assertEquals(40, result.get(GooType.AEON));    // 2 * (40/2)
         }
 
-        /** 3x oxidation on metal=160: removes 120, adds 60 aeon. */
+        /**
+         * 3x oxidation on metal=160: removes 120, adds 60 aeon.
+         */
         @Test
         void tripleApplicationSimultaneous() {
             GooConversion.Formula oxidation = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -132,7 +147,9 @@ class GooConversionTest {
             assertEquals(60, result.get(GooType.AEON));    // 3 * (40/2)
         }
 
-        /** Conversion preserves other goo types untouched. */
+        /**
+         * Conversion preserves other goo types untouched.
+         */
         @Test
         void otherTypesPreserved() {
             GooConversion.Formula oxidation = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -144,7 +161,9 @@ class GooConversionTest {
             assertEquals(50, result.get(GooType.ROCK)); // untouched
         }
 
-        /** Conversion on an item missing the source type is a no-op. */
+        /**
+         * Conversion on an item missing the source type is a no-op.
+         */
         @Test
         void missingSourceTypeNoOp() {
             GooConversion.Formula oxidation = GooConversion.parseFormula("metal / 4 -> aeon / 2");
@@ -156,7 +175,9 @@ class GooConversionTest {
             assertEquals(0, result.get(GooType.AEON));
         }
 
-        /** Lossy source division throws. */
+        /**
+         * Lossy source division throws.
+         */
         @Test
         void lossySourceDivisionThrows() {
             GooConversion.Formula f = GooConversion.parseFormula("metal / 3 -> aeon / 1");
@@ -166,7 +187,9 @@ class GooConversionTest {
                     () -> GooConversion.apply(copper, f, 1));
         }
 
-        /** Lossy target division throws. */
+        /**
+         * Lossy target division throws.
+         */
         @Test
         void lossyTargetDivisionThrows() {
             GooConversion.Formula f = GooConversion.parseFormula("metal / 4 -> aeon / 3");
@@ -182,7 +205,9 @@ class GooConversionTest {
     @Nested
     class BlockParsing {
 
-        /** Full _conversions block: formulas, stacks, and assignments. */
+        /**
+         * Full _conversions block: formulas, stacks, and assignments.
+         */
         @Test
         void parseFullBlock() {
             Map<String, String> entries = new LinkedHashMap<>();
@@ -198,7 +223,9 @@ class GooConversionTest {
             assertEquals("oxidation", parsed.stacks().get("weathered").formulaName());
         }
 
-        /** "denied" on an assignment skips it. */
+        /**
+         * "denied" on an assignment skips it.
+         */
         @Test
         void deniedAssignmentSkipped() {
             Map<String, String> entries = new LinkedHashMap<>();
@@ -212,7 +239,9 @@ class GooConversionTest {
             assertEquals("#copper_stuff", parsed.assignments().get(0).target());
         }
 
-        /** Assignment with * N / M scalar is parsed correctly. */
+        /**
+         * Assignment with * N / M scalar is parsed correctly.
+         */
         @Test
         void parseScaleAssignment() {
             Map<String, String> entries = new LinkedHashMap<>();
@@ -228,7 +257,9 @@ class GooConversionTest {
             assertTrue(assignment.chain().isEmpty());
         }
 
-        /** Scale + chain: "#wood": "#logs * 3 / 4 @decay". */
+        /**
+         * Scale + chain: "#wood": "#logs * 3 / 4 @decay".
+         */
         @Test
         void parseScaleWithChain() {
             Map<String, String> entries = new LinkedHashMap<>();
@@ -243,7 +274,9 @@ class GooConversionTest {
             assertEquals("decay", assignment.chain().get(0).formulaName());
         }
 
-        /** "denied" on a formula removes it. */
+        /**
+         * "denied" on a formula removes it.
+         */
         @Test
         void deniedFormulaRemoved() {
             Map<String, String> entries = new LinkedHashMap<>();
@@ -260,7 +293,9 @@ class GooConversionTest {
     @Nested
     class EndToEnd {
 
-        /** Apply conversion chain to effective values. */
+        /**
+         * Apply conversion chain to effective values.
+         */
         @Test
         void chainApplies() {
             Map<Identifier, GooValue> effective = new HashMap<>();
@@ -285,7 +320,9 @@ class GooConversionTest {
             assertEquals(50, copper.get(GooType.ROCK));
         }
 
-        /** Parallel copy + conversion chain. */
+        /**
+         * Parallel copy + conversion chain.
+         */
         @Test
         void parallelCopyThenConvert() {
             Map<Identifier, GooValue> effective = new HashMap<>();
@@ -319,7 +356,9 @@ class GooConversionTest {
             assertEquals(10, exposedCut.get(GooType.AEON));   // 20 / 2
         }
 
-        /** Parallel copy with scale: #wood = #logs * 3 / 4 (4 logs -> 3 wood). */
+        /**
+         * Parallel copy with scale: #wood = #logs * 3 / 4 (4 logs -> 3 wood).
+         */
         @Test
         void parallelCopyWithScale() {
             Map<Identifier, GooValue> effective = new HashMap<>();
@@ -339,7 +378,9 @@ class GooConversionTest {
             assertEquals(60, effective.get(id("birch_wood")).get(GooType.LEAF)); // 80 * 3 / 4
         }
 
-        /** Scale with lossy division throws. */
+        /**
+         * Scale with lossy division throws.
+         */
         @Test
         void parallelCopyScaleLossyThrows() {
             Map<Identifier, GooValue> effective = new HashMap<>();
@@ -356,7 +397,9 @@ class GooConversionTest {
             assertTrue(effective.get(id("b")).isEmpty() || effective.get(id("b")).get(GooType.METAL) == 10);
         }
 
-        /** Size mismatch between source and target logs error, skips assignment. */
+        /**
+         * Size mismatch between source and target logs error, skips assignment.
+         */
         @Test
         void parallelSizeMismatchSkips() {
             Map<Identifier, GooValue> effective = new HashMap<>();

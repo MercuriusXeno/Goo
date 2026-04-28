@@ -12,10 +12,13 @@ import java.util.List;
  */
 public final class TunerFeedbackHandler {
 
-    /** Separator between action bar message segments. */
+    /**
+     * Separator between action bar message segments.
+     */
     private static final String LINE_SEPARATOR = " | ";
 
-    private TunerFeedbackHandler() {}
+    private TunerFeedbackHandler() {
+    }
 
     /**
      * Handles the payload by dispatching based on feedback type.
@@ -27,7 +30,8 @@ public final class TunerFeedbackHandler {
         context.enqueueWork(() -> dispatch(payload, context));
     }
 
-    /** Routes the feedback payload to the appropriate handler by type.
+    /**
+     * Routes the feedback payload to the appropriate handler by type.
      *
      * @param payload the feedback payload data
      * @param context the network context
@@ -51,7 +55,7 @@ public final class TunerFeedbackHandler {
             TunerFeedbackPayload payload, IPayloadContext context) {
         if (payload.awaitingPos() != null && payload.awaitingRole() != null) {
             TunerAwaitState.set(payload.awaitingPos(),
-                payload.awaitingSlot(), payload.awaitingRole());
+                    payload.awaitingSlot(), payload.awaitingRole());
         }
         showActionBar(payload.lines(), context);
     }
@@ -98,9 +102,11 @@ public final class TunerFeedbackHandler {
      * @param context the network context
      */
     private static void showActionBar(List<String> lines, IPayloadContext context) {
-        if (lines.isEmpty()) { return; }
+        if (lines.isEmpty()) {
+            return;
+        }
         String message = String.join(LINE_SEPARATOR, lines);
         context.player().sendOverlayMessage(
-            Component.literal(message));
+                Component.literal(message));
     }
 }

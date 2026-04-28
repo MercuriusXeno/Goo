@@ -4,7 +4,7 @@ import net.minecraft.util.StringRepresentable;
 import org.jspecify.annotations.NonNull;
 
 /**
- * The 16 types of goo that make up everything in the world.
+ * The types of goo that make up everything in the world.
  */
 public enum GooType implements StringRepresentable {
     AEON("aeon", 0xDAA520),
@@ -24,15 +24,39 @@ public enum GooType implements StringRepresentable {
     UNSTABLE("unstable", 0x39FF14),
     VITAL("vital", 0xE74C3C);
 
-    /** Translation key prefix for goo type display names. */
+    /**
+     * Codec that serializes a GooType as its string id.
+     */
+    public static final com.mojang.serialization.Codec<GooType> CODEC =
+            com.mojang.serialization.Codec.STRING.xmap(
+                    id -> {
+                        GooType t = fromId(id);
+                        if (t == null) {
+                            throw new IllegalArgumentException("Unknown goo type: " + id);
+                        }
+                        return t;
+                    },
+                    GooType::getId);
+    /**
+     * Translation key prefix for goo type display names.
+     */
     private static final String TRANSLATION_PREFIX = "goo.type.";
-
     private final String id;
     private final int color;
 
     GooType(String id, int color) {
         this.id = id;
         this.color = color;
+    }
+
+    @org.jspecify.annotations.Nullable
+    public static GooType fromId(String id) {
+        for (GooType type : values()) {
+            if (type.id.equals(id)) {
+                return type;
+            }
+        }
+        return null;
     }
 
     /**
@@ -63,6 +87,12 @@ public enum GooType implements StringRepresentable {
         return color;
     }
 
+    /**
+     * Looks up a GooType by its string id. Returns null if no match.
+     *
+     * @return the matching GooType, or null if not found
+     */
+
     @Override
     public @NonNull String getSerializedName() {
         return id;
@@ -75,31 +105,5 @@ public enum GooType implements StringRepresentable {
      */
     public String getTranslationKey() {
         return TRANSLATION_PREFIX + id;
-    }
-
-    /**
-     * Looks up a GooType by its string id. Returns null if no match.
-     *
-     * @param id the string identifier to look up
-     * @return the matching GooType, or null if not found
-     */
-    /** Codec that serializes a GooType as its string id. */
-    public static final com.mojang.serialization.Codec<GooType> CODEC =
-            com.mojang.serialization.Codec.STRING.xmap(
-                    id -> {
-                        GooType t = fromId(id);
-                        if (t == null) { throw new IllegalArgumentException("Unknown goo type: " + id); }
-                        return t;
-                    },
-                    GooType::getId);
-
-    @org.jspecify.annotations.Nullable
-    public static GooType fromId(String id) {
-        for (GooType type : values()) {
-            if (type.id.equals(id)) {
-                return type;
-            }
-        }
-        return null;
     }
 }

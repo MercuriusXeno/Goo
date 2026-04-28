@@ -20,14 +20,21 @@ import java.util.function.Function;
  */
 final class GooValueMerger {
 
-    /** Prefix for tag/pseudo-tag references. */
+    /**
+     * Prefix for tag/pseudo-tag references.
+     */
     private static final String PREFIX_TAG = "#";
-    /** Suffix key for the constants block. */
+    /**
+     * Suffix key for the constants block.
+     */
     private static final String CONSTANTS_SUFFIX = "_constants";
-    /** Suffix key for the groups block. */
+    /**
+     * Suffix key for the groups block.
+     */
     private static final String GROUPS_SUFFIX = "_groups";
 
-    private GooValueMerger() {}
+    private GooValueMerger() {
+    }
 
     /**
      * Merges multiple JSON layers (one per datapack, in bottom-to-top order) into a single
@@ -49,7 +56,7 @@ final class GooValueMerger {
      * Applies one layer's entries onto the merged result.
      *
      * @param merged the accumulator JSON object
-     * @param layer the incoming layer to merge
+     * @param layer  the incoming layer to merge
      */
     private static void mergeOneLayer(JsonObject merged, JsonObject layer) {
         for (Map.Entry<String, JsonElement> entry : layer.entrySet()) {
@@ -65,7 +72,7 @@ final class GooValueMerger {
     /**
      * Merges inner keys of a nested object (constants or groups) at key level.
      *
-     * @param merged the accumulator JSON object
+     * @param merged   the accumulator JSON object
      * @param outerKey the top-level key (e.g. _constants)
      * @param incoming the inner object to merge
      */
@@ -104,10 +111,10 @@ final class GooValueMerger {
     /**
      * Expands a MC tag key into per-member entries. Preserves unresolved keys for pseudo-tag handling.
      *
-     * @param tagKey the #tag key from the JSON
-     * @param value the value to assign to each tag member
+     * @param tagKey      the #tag key from the JSON
+     * @param value       the value to assign to each tag member
      * @param tagResolver resolves a tag ID to its member item IDs
-     * @param result the accumulator JSON object
+     * @param result      the accumulator JSON object
      */
     private static void expandOneTag(String tagKey, JsonElement value,
                                      Function<Identifier, Set<Identifier>> tagResolver,

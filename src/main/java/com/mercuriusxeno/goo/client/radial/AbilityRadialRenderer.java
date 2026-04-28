@@ -29,36 +29,65 @@ final class AbilityRadialRenderer {
     private static final double ANGLE_OFFSET = -Math.PI / 2;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int HOVER_TEXT_COLOR = 0xFFFFFF00;
-    /** Divisor for computing wedge midpoint angle. */
+    /**
+     * Divisor for computing wedge midpoint angle.
+     */
     private static final double ANGLE_HALF = 2.0;
-    /** Label radius as fraction between inner and outer. */
+    /**
+     * Label radius as fraction between inner and outer.
+     */
     private static final double LABEL_FRAC = 0.65;
-    /** Icon size in pixels. */
+    /**
+     * Icon size in pixels.
+     */
     private static final int ICON_SIZE = 11;
-    /** Half-icon offset for centering. */
+    /**
+     * Half-icon offset for centering.
+     */
     private static final int ICON_OFFSET = 5;
-    /** Convention path prefix for ability icons. */
+    /**
+     * Convention path prefix for ability icons.
+     */
     private static final String ABILITY_ICON_PREFIX = "textures/goo/ability/";
-    /** Convention path suffix for ability icons. */
+    /**
+     * Convention path suffix for ability icons.
+     */
     private static final String ABILITY_ICON_SUFFIX = ".png";
-    /** Vertical gap between icon and label text. */
+    /**
+     * Vertical gap between icon and label text.
+     */
     private static final int LABEL_GAP = 1;
-    /** Tag marking entity-targeted abilities. */
+    /**
+     * Tag marking entity-targeted abilities.
+     */
     private static final String TAG_ENTITY = "entity";
-    /** Suffix appended to entity ability labels. */
+    /**
+     * Suffix appended to entity ability labels.
+     */
     private static final String MOB_SUFFIX = " (Mob)";
-    /** Divisor for centering and sizing. */
+    /**
+     * Divisor for centering and sizing.
+     */
     private static final int HALF = 2;
-    /** Semi-transparent white for cancel zone when hovered. */
+    /**
+     * Semi-transparent white for cancel zone when hovered.
+     */
     private static final int CANCEL_HOVER_COLOR = 0x88FFFFFF;
-    /** Semi-transparent white for cancel zone when idle. */
+    /**
+     * Semi-transparent white for cancel zone when idle.
+     */
     private static final int CANCEL_IDLE_COLOR = 0x44FFFFFF;
-    /** Fully opaque white. */
+    /**
+     * Fully opaque white.
+     */
     private static final int COLOR_WHITE = 0xFFFFFFFF;
-    /** Back arrow symbol for the cancel zone (returns to type radial). */
+    /**
+     * Back arrow symbol for the cancel zone (returns to type radial).
+     */
     private static final String BACK_SYMBOL = "\u2190";
 
-    private AbilityRadialRenderer() {}
+    private AbilityRadialRenderer() {
+    }
 
     /**
      * Determines which wedge the mouse hovers for a variable wedge count.
@@ -71,19 +100,26 @@ final class AbilityRadialRenderer {
      * @return the hovered wedge index, or -1
      */
     static int computeHoveredIndex(int mouseX, int mouseY, int centerX, int centerY,
-            int wedgeCount) {
-        if (wedgeCount <= 0) { return NO_SELECTION; }
+                                   int wedgeCount) {
+        if (wedgeCount <= 0) {
+            return NO_SELECTION;
+        }
         double dx = mouseX - centerX;
         double dy = mouseY - centerY;
         double dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < INNER_RADIUS || dist > OUTER_RADIUS) { return NO_SELECTION; }
+        if (dist < INNER_RADIUS || dist > OUTER_RADIUS) {
+            return NO_SELECTION;
+        }
         double angle = Math.atan2(dy, dx) - ANGLE_OFFSET;
-        if (angle < 0) { angle += TWO_PI; }
+        if (angle < 0) {
+            angle += TWO_PI;
+        }
         double wedgeArc = TWO_PI / wedgeCount;
         return (int) (angle / wedgeArc) % wedgeCount;
     }
 
-    /** Color computation for synced client abilities.
+    /**
+     * Color computation for synced client abilities.
      *
      * @param colors       the output color array
      * @param abilities    the synced ability list
@@ -91,7 +127,7 @@ final class AbilityRadialRenderer {
      * @param hoveredIndex the currently hovered wedge
      */
     static void computeWedgeColorsFromSync(int[] colors, List<ClientAbility> abilities,
-            GooType type, int hoveredIndex) {
+                                           GooType type, int hoveredIndex) {
         int baseColor = GooColors.wheel(type);
         for (int i = 0; i < abilities.size(); i++) {
             int alpha = (i == hoveredIndex) ? HOVER_ALPHA : NORMAL_ALPHA;
@@ -99,7 +135,8 @@ final class AbilityRadialRenderer {
         }
     }
 
-    /** Renders icon slots and labels for synced client abilities.
+    /**
+     * Renders icon slots and labels for synced client abilities.
      *
      * @param graphics     the GUI graphics extractor
      * @param centerX      the screen center x
@@ -110,14 +147,17 @@ final class AbilityRadialRenderer {
      * @param font         the font renderer
      */
     static void renderSlotsFromSync(GuiGraphicsExtractor graphics, int centerX, int centerY,
-            int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
-        if (abilities.isEmpty()) { return; }
+                                    int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
+        if (abilities.isEmpty()) {
+            return;
+        }
         renderWedges(graphics, centerX, centerY, colors, abilities.size());
         renderCancelZone(graphics, centerX, centerY, hoveredIndex, font);
         renderIconsAndLabels(graphics, centerX, centerY, colors, hoveredIndex, abilities, font);
     }
 
-    /** Renders tinted wedge mask textures for the ability ring.
+    /**
+     * Renders tinted wedge mask textures for the ability ring.
      *
      * @param graphics   the GUI graphics extractor
      * @param centerX    the screen center x
@@ -126,7 +166,7 @@ final class AbilityRadialRenderer {
      * @param wedgeCount the number of wedges
      */
     private static void renderWedges(GuiGraphicsExtractor graphics, int centerX, int centerY,
-            int[] colors, int wedgeCount) {
+                                     int[] colors, int wedgeCount) {
         int x = centerX - OUTER_RADIUS;
         int y = centerY - OUTER_RADIUS;
         int size = OUTER_RADIUS * HALF;
@@ -137,7 +177,8 @@ final class AbilityRadialRenderer {
         }
     }
 
-    /** Renders the cancel/back zone circle in the center.
+    /**
+     * Renders the cancel/back zone circle in the center.
      *
      * @param graphics     the GUI graphics extractor
      * @param centerX      the screen center x
@@ -146,7 +187,7 @@ final class AbilityRadialRenderer {
      * @param font         the font renderer
      */
     private static void renderCancelZone(GuiGraphicsExtractor graphics, int centerX, int centerY,
-            int hoveredIndex, Font font) {
+                                         int hoveredIndex, Font font) {
         boolean cancelHovered = hoveredIndex == NO_SELECTION;
         int color = cancelHovered ? CANCEL_HOVER_COLOR : CANCEL_IDLE_COLOR;
         int size = OUTER_RADIUS * HALF;
@@ -160,7 +201,8 @@ final class AbilityRadialRenderer {
         }
     }
 
-    /** Renders icons and labels on top of the wedge backgrounds.
+    /**
+     * Renders icons and labels on top of the wedge backgrounds.
      *
      * @param graphics     the GUI graphics extractor
      * @param centerX      the screen center x
@@ -171,7 +213,7 @@ final class AbilityRadialRenderer {
      * @param font         the font renderer
      */
     private static void renderIconsAndLabels(GuiGraphicsExtractor graphics, int centerX, int centerY,
-            int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
+                                             int[] colors, int hoveredIndex, List<ClientAbility> abilities, Font font) {
         double wedgeArc = TWO_PI / abilities.size();
         double slotRadius = INNER_RADIUS + (OUTER_RADIUS - INNER_RADIUS) * LABEL_FRAC;
         for (int i = 0; i < abilities.size(); i++) {
@@ -185,7 +227,8 @@ final class AbilityRadialRenderer {
         }
     }
 
-    /** Builds the display label for an ability, appending "(Mob)" for entity abilities.
+    /**
+     * Builds the display label for an ability, appending "(Mob)" for entity abilities.
      *
      * @param ability the client ability descriptor
      * @return the label component
@@ -198,7 +241,8 @@ final class AbilityRadialRenderer {
         return base;
     }
 
-    /** Renders a single ability icon at the slot center, tinted with the wedge color.
+    /**
+     * Renders a single ability icon at the slot center, tinted with the wedge color.
      *
      * @param graphics the GUI graphics extractor
      * @param ability  the client ability descriptor
@@ -207,14 +251,15 @@ final class AbilityRadialRenderer {
      * @param color    the ARGB tint color
      */
     private static void renderSlotIcon(GuiGraphicsExtractor graphics, ClientAbility ability,
-            int cx, int cy, int color) {
+                                       int cx, int cy, int color) {
         Identifier tex = resolveAbilityIcon(ability);
         graphics.blit(RenderPipelines.GUI_TEXTURED, tex,
                 cx - ICON_OFFSET, cy - ICON_OFFSET,
                 0.0f, 0.0f, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, color);
     }
 
-    /** Resolves the icon texture for an ability. Uses the explicit override
+    /**
+     * Resolves the icon texture for an ability. Uses the explicit override
      * if provided, otherwise falls back to convention path.
      *
      * @param ability the client ability descriptor

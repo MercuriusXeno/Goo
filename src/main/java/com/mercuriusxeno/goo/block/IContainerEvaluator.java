@@ -13,21 +13,6 @@ import java.util.List;
 public interface IContainerEvaluator {
 
     /**
-     * Result of recursively evaluating a container item's contents.
-     * Goo: summed goo values of all items (including nested containers).
-     * Ejects: items with no goo value that should be spawned as entities.
-     *
-     * @param goo    the aggregated goo contents
-     * @param ejects the list of items to eject
-     */
-    record ContainerEvaluation(GooContents goo, List<ItemStack> ejects) {
-
-        /** Empty evaluation with no goo and no ejects. */
-        public static final ContainerEvaluation EMPTY =
-            new ContainerEvaluation(GooContents.EMPTY, List.of());
-    }
-
-    /**
      * Returns true if the given stack is a container that should be
      * recursively evaluated rather than flat-looked-up.
      *
@@ -46,4 +31,21 @@ public interface IContainerEvaluator {
      * @return evaluation result with summed goo and eject list
      */
     ContainerEvaluation evaluate(Identifier containerId, ItemStack container, IGooValueLookup lookup);
+
+    /**
+     * Result of recursively evaluating a container item's contents.
+     * Goo: summed goo values of all items (including nested containers).
+     * Ejects: items with no goo value that should be spawned as entities.
+     *
+     * @param goo    the aggregated goo contents
+     * @param ejects the list of items to eject
+     */
+    record ContainerEvaluation(GooContents goo, List<ItemStack> ejects) {
+
+        /**
+         * Empty evaluation with no goo and no ejects.
+         */
+        public static final ContainerEvaluation EMPTY =
+                new ContainerEvaluation(GooContents.EMPTY, List.of());
+    }
 }

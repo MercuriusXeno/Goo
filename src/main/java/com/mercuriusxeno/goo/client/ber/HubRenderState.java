@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import org.jspecify.annotations.Nullable;
 

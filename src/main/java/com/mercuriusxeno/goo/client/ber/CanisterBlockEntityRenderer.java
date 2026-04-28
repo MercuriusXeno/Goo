@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.CanisterSlotLayout;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import com.mercuriusxeno.goo.client.model.CanisterBodyModels;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;

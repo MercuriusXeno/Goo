@@ -16,24 +16,35 @@ final class ItemOperandResolver {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Dot separator for type extraction. */
+    /**
+     * Dot separator for type extraction.
+     */
     private static final String DOT = ".";
-    /** Colon separator for namespaced IDs. */
+    /**
+     * Colon separator for namespaced IDs.
+     */
     private static final String COLON = ":";
-    /** Sentinel indicating no valid dot position was found. */
+    /**
+     * Sentinel indicating no valid dot position was found.
+     */
     private static final int NO_DOT = -1;
-    /** Log warning for unknown item in dot-notation. */
+    /**
+     * Log warning for unknown item in dot-notation.
+     */
     private static final String WARN_UNKNOWN_ITEM = "Unknown item in dot-notation: {}";
-    /** Log warning for item reference without .type. */
+    /**
+     * Log warning for item reference without .type.
+     */
     private static final String WARN_ITEM_NO_TYPE = "Item reference without .type in int expression: {}";
 
-    private ItemOperandResolver() {}
+    private ItemOperandResolver() {
+    }
 
     /**
      * Resolves an item reference operand: dot-notation (e.g. minecraft:coal.blaze) extracts
      * a single type, bare namespaced IDs without .type produce a warning.
      *
-     * @param token the item reference token
+     * @param token      the item reference token
      * @param baseValues item values for lookups
      * @return the resolved integer value
      */
@@ -67,7 +78,7 @@ final class ItemOperandResolver {
      * (e.g. minecraft:coal.blaze). Returns {@link Integer#MIN_VALUE} if the suffix
      * is not a valid goo type or the item is unknown.
      *
-     * @param token the full dot-notation token
+     * @param token      the full dot-notation token
      * @param baseValues item values for lookups
      * @return the extracted type value, or Integer.MIN_VALUE if not resolvable
      */

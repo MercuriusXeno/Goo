@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.gametest;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.BlockPos;

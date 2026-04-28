@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.network;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GasketRegistry;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
@@ -21,14 +21,21 @@ import java.util.UUID;
  */
 public final class CanisterUnlinkHandler {
 
-    /** Maximum interaction range in blocks. */
+    /**
+     * Maximum interaction range in blocks.
+     */
     private static final double MAX_RANGE = 8.0;
-    /** Maximum distance (in blocks) from which a player can unlink. */
+    /**
+     * Maximum distance (in blocks) from which a player can unlink.
+     */
     private static final double MAX_RANGE_SQUARED = MAX_RANGE * MAX_RANGE;
-    /** Block center offset (half-block). */
+    /**
+     * Block center offset (half-block).
+     */
     private static final double BLOCK_CENTER = 0.5;
 
-    private CanisterUnlinkHandler() {}
+    private CanisterUnlinkHandler() {
+    }
 
     /**
      * Handles the unlink payload on the server thread.
@@ -38,7 +45,9 @@ public final class CanisterUnlinkHandler {
      */
     public static void handle(CanisterUnlinkPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) { return; }
+            if (!(context.player() instanceof ServerPlayer player)) {
+                return;
+            }
             applyUnlink(player, payload.pos(), payload.slot(), payload.role());
         });
     }
@@ -52,17 +61,24 @@ public final class CanisterUnlinkHandler {
      * @param role   the gasket role filter, or null for both
      */
     private static void applyUnlink(ServerPlayer player, BlockPos pos, int slot,
-            @Nullable GasketRole role) {
-        if (!isInRange(player, pos)) { return; }
-        if (!(player.level() instanceof ServerLevel serverLevel)) { return; }
+                                    @Nullable GasketRole role) {
+        if (!isInRange(player, pos)) {
+            return;
+        }
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
         BlockEntity be = player.level().getBlockEntity(pos);
-        if (isUnauthorized(player, be)) { return; }
+        if (isUnauthorized(player, be)) {
+            return;
+        }
         if (be instanceof IGasketHolder holder) {
             unlinkHolder(serverLevel, holder, slot, role);
         }
     }
 
-    /** Returns true if the player lacks ownership rights for this canister block entity.
+    /**
+     * Returns true if the player lacks ownership rights for this canister block entity.
      *
      * @param player the interacting player
      * @param be     the block entity
@@ -82,10 +98,12 @@ public final class CanisterUnlinkHandler {
      * @param role   the gasket role filter, or null for both
      */
     private static void unlinkHolder(ServerLevel level, IGasketHolder holder,
-            int slot, @Nullable GasketRole role) {
+                                     int slot, @Nullable GasketRole role) {
         GasketRegistry registry = GasketRegistry.get(level);
         for (GasketRole r : GasketRole.values()) {
-            if (slot < 0 && role != null && role != r) { continue; }
+            if (slot < 0 && role != null && role != r) {
+                continue;
+            }
             clearRemotePartner(level, holder.getPartner(r, slot));
             unlinkGasket(registry, holder.getGasketId(r, slot));
             holder.setPartner(r, slot, null);
@@ -99,8 +117,12 @@ public final class CanisterUnlinkHandler {
      * @param partner the remote partner to clear, or null if none
      */
     private static void clearRemotePartner(Level level, @Nullable GasketPartner partner) {
-        if (partner == null) { return; }
-        if (!level.isLoaded(partner.pos())) { return; }
+        if (partner == null) {
+            return;
+        }
+        if (!level.isLoaded(partner.pos())) {
+            return;
+        }
 
         BlockEntity be = level.getBlockEntity(partner.pos());
         if (be instanceof IGasketHolder holder) {
@@ -131,7 +153,7 @@ public final class CanisterUnlinkHandler {
      */
     private static boolean isInRange(ServerPlayer player, BlockPos pos) {
         return player.distanceToSqr(pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER)
-            <= MAX_RANGE_SQUARED;
+                <= MAX_RANGE_SQUARED;
     }
 
     /**
@@ -144,6 +166,6 @@ public final class CanisterUnlinkHandler {
     private static boolean isOwnerOrUnowned(
             ServerPlayer player, CanisterBlockEntity canister) {
         return canister.getOwner() == null
-            || canister.getOwner().equals(player.getUUID());
+                || canister.getOwner().equals(player.getUUID());
     }
 }

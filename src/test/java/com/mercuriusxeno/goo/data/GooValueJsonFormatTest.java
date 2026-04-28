@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for GooValueJsonFormat: $constant expression resolution and GooValue serialization.
@@ -20,7 +20,9 @@ class GooValueJsonFormatTest {
     @Nested
     class ParseGooValue {
 
-        /** Plain integer value is parsed directly. */
+        /**
+         * Plain integer value is parsed directly.
+         */
         @Test
         void plainIntegerParsed() {
             JsonObject json = new JsonObject();
@@ -30,7 +32,9 @@ class GooValueJsonFormatTest {
             assertEquals(42, result.get(GooType.METAL));
         }
 
-        /** $constant reference resolves via symbol table. */
+        /**
+         * $constant reference resolves via symbol table.
+         */
         @Test
         void constantReferenceParsed() {
             JsonObject json = new JsonObject();
@@ -40,7 +44,9 @@ class GooValueJsonFormatTest {
             assertEquals(10, result.get(GooType.ROCK));
         }
 
-        /** $constant * N expression resolves to product. */
+        /**
+         * $constant * N expression resolves to product.
+         */
         @Test
         void constantMultiply() {
             JsonObject json = new JsonObject();
@@ -50,7 +56,9 @@ class GooValueJsonFormatTest {
             assertEquals(15, result.get(GooType.LEAF));
         }
 
-        /** $constant + N expression resolves to sum. */
+        /**
+         * $constant + N expression resolves to sum.
+         */
         @Test
         void constantAdd() {
             JsonObject json = new JsonObject();
@@ -60,7 +68,9 @@ class GooValueJsonFormatTest {
             assertEquals(10, result.get(GooType.METAL));
         }
 
-        /** $constant - N expression resolves to difference. */
+        /**
+         * $constant - N expression resolves to difference.
+         */
         @Test
         void constantSubtract() {
             JsonObject json = new JsonObject();
@@ -70,7 +80,9 @@ class GooValueJsonFormatTest {
             assertEquals(8, result.get(GooType.ROCK));
         }
 
-        /** $constant / N expression resolves to quotient. */
+        /**
+         * $constant / N expression resolves to quotient.
+         */
         @Test
         void constantDivide() {
             JsonObject json = new JsonObject();
@@ -80,7 +92,9 @@ class GooValueJsonFormatTest {
             assertEquals(5, result.get(GooType.METAL));
         }
 
-        /** Multiply before add: $base * 3 + 2 = (base*3)+2. */
+        /**
+         * Multiply before add: $base * 3 + 2 = (base*3)+2.
+         */
         @Test
         void multiplyBeforeAdd() {
             JsonObject json = new JsonObject();
@@ -90,7 +104,9 @@ class GooValueJsonFormatTest {
             assertEquals(32, result.get(GooType.ROCK));
         }
 
-        /** Precedence: $a + 1 * 2 - 3 = a+(1*2)-3, not ((a+1)*2)-3. */
+        /**
+         * Precedence: $a + 1 * 2 - 3 = a+(1*2)-3, not ((a+1)*2)-3.
+         */
         @Test
         void precedenceMixedOps() {
             JsonObject json = new JsonObject();
@@ -100,7 +116,9 @@ class GooValueJsonFormatTest {
             assertEquals(4, result.get(GooType.METAL));
         }
 
-        /** Precedence: $a + $b * $c = a+(b*c). */
+        /**
+         * Precedence: $a + $b * $c = a+(b*c).
+         */
         @Test
         void precedenceAddThenMultiply() {
             JsonObject json = new JsonObject();
@@ -111,7 +129,9 @@ class GooValueJsonFormatTest {
             assertEquals(25, result.get(GooType.LEAF));
         }
 
-        /** Division before subtraction: 100 - 20 / 4 = 100-5 = 95. */
+        /**
+         * Division before subtraction: 100 - 20 / 4 = 100-5 = 95.
+         */
         @Test
         void divisionBeforeSubtraction() {
             JsonObject json = new JsonObject();
@@ -121,7 +141,9 @@ class GooValueJsonFormatTest {
             assertEquals(95, result.get(GooType.ROCK));
         }
 
-        /** Bare integer string without $ still parses. */
+        /**
+         * Bare integer string without $ still parses.
+         */
         @Test
         void bareIntegerString() {
             JsonObject json = new JsonObject();
@@ -131,7 +153,9 @@ class GooValueJsonFormatTest {
             assertEquals(240, result.get(GooType.ROCK));
         }
 
-        /** Parentheses override left-to-right: $a + ( 1 * 2 ) = a+2, not (a+1)*2. */
+        /**
+         * Parentheses override left-to-right: $a + ( 1 * 2 ) = a+2, not (a+1)*2.
+         */
         @Test
         void parenthesesOverrideLeftToRight() {
             JsonObject json = new JsonObject();
@@ -141,7 +165,9 @@ class GooValueJsonFormatTest {
             assertEquals(7, result.get(GooType.ROCK));
         }
 
-        /** Nested parentheses: ( ( $a + 1 ) * 2 ). */
+        /**
+         * Nested parentheses: ( ( $a + 1 ) * 2 ).
+         */
         @Test
         void nestedParentheses() {
             JsonObject json = new JsonObject();
@@ -151,7 +177,9 @@ class GooValueJsonFormatTest {
             assertEquals(8, result.get(GooType.METAL));
         }
 
-        /** Parenthesized sub-expression as first operand: ( $a + $b ) * 3. */
+        /**
+         * Parenthesized sub-expression as first operand: ( $a + $b ) * 3.
+         */
         @Test
         void parenthesizedFirstOperand() {
             JsonObject json = new JsonObject();
@@ -162,7 +190,9 @@ class GooValueJsonFormatTest {
             assertEquals(18, result.get(GooType.LEAF));
         }
 
-        /** Multiple parenthesized groups: ( $a + 1 ) * ( $b - 1 ). */
+        /**
+         * Multiple parenthesized groups: ( $a + 1 ) * ( $b - 1 ).
+         */
         @Test
         void multipleParenthesizedGroups() {
             JsonObject json = new JsonObject();
@@ -173,7 +203,9 @@ class GooValueJsonFormatTest {
             assertEquals(16, result.get(GooType.ROCK));
         }
 
-        /** No spaces around parens: ($a+1)*2. */
+        /**
+         * No spaces around parens: ($a+1)*2.
+         */
         @Test
         void noSpacesAroundParens() {
             JsonObject json = new JsonObject();
@@ -183,7 +215,9 @@ class GooValueJsonFormatTest {
             assertEquals(12, result.get(GooType.ROCK));
         }
 
-        /** No spaces anywhere: $a*3+2. */
+        /**
+         * No spaces anywhere: $a*3+2.
+         */
         @Test
         void noSpacesAnywhere() {
             JsonObject json = new JsonObject();
@@ -193,7 +227,9 @@ class GooValueJsonFormatTest {
             assertEquals(32, result.get(GooType.METAL));
         }
 
-        /** Mixed spacing: ($a +$b)*$c. */
+        /**
+         * Mixed spacing: ($a +$b)*$c.
+         */
         @Test
         void mixedSpacing() {
             JsonObject json = new JsonObject();
@@ -204,7 +240,9 @@ class GooValueJsonFormatTest {
             assertEquals(18, result.get(GooType.LEAF));
         }
 
-        /** Tight nested parens: (($a+1)*2). */
+        /**
+         * Tight nested parens: (($a+1)*2).
+         */
         @Test
         void tightNestedParens() {
             JsonObject json = new JsonObject();
@@ -214,7 +252,9 @@ class GooValueJsonFormatTest {
             assertEquals(8, result.get(GooType.ROCK));
         }
 
-        /** Bare word dot notation in per-type expression extracts the type. */
+        /**
+         * Bare word dot notation in per-type expression extracts the type.
+         */
         @Test
         void bareWordDotNotation() {
             Map<Identifier, GooValue> baseValues = new LinkedHashMap<>();
@@ -227,7 +267,9 @@ class GooValueJsonFormatTest {
             assertEquals(672, result.get(GooType.METAL));
         }
 
-        /** Implicit multiplication: "3 $base" == "$base * 3". */
+        /**
+         * Implicit multiplication: "3 $base" == "$base * 3".
+         */
         @Test
         void implicitMultiplication() {
             JsonObject json = new JsonObject();
@@ -237,7 +279,9 @@ class GooValueJsonFormatTest {
             assertEquals(30, result.get(GooType.METAL));
         }
 
-        /** Implicit multiplication with addition: "$a + 2 $b". */
+        /**
+         * Implicit multiplication with addition: "$a + 2 $b".
+         */
         @Test
         void implicitMultiplicationWithAddition() {
             JsonObject json = new JsonObject();
@@ -248,7 +292,9 @@ class GooValueJsonFormatTest {
             assertEquals(25, result.get(GooType.ROCK));
         }
 
-        /** Unary minus with dot notation: "-cut_copper.metal / 4". */
+        /**
+         * Unary minus with dot notation: "-cut_copper.metal / 4".
+         */
         @Test
         void unaryMinusDotNotation() {
             Map<Identifier, GooValue> baseValues = new LinkedHashMap<>();
@@ -263,7 +309,9 @@ class GooValueJsonFormatTest {
             assertEquals(25, result.get(GooType.AEON));    // 200 / 8
         }
 
-        /** Unary minus on scalar constant: "-$base". */
+        /**
+         * Unary minus on scalar constant: "-$base".
+         */
         @Test
         void unaryMinusOnConstant() {
             JsonObject json = new JsonObject();
@@ -273,7 +321,9 @@ class GooValueJsonFormatTest {
             assertEquals(-64, result.get(GooType.METAL));
         }
 
-        /** Unknown constant resolves to zero (no exception). */
+        /**
+         * Unknown constant resolves to zero (no exception).
+         */
         @Test
         void unknownConstantReturnsZero() {
             JsonObject json = new JsonObject();
@@ -283,7 +333,9 @@ class GooValueJsonFormatTest {
             assertEquals(0, result.get(GooType.METAL));
         }
 
-        /** Multiple goo types in one object all parsed. */
+        /**
+         * Multiple goo types in one object all parsed.
+         */
         @Test
         void multipleTypesAllParsed() {
             JsonObject json = new JsonObject();
@@ -301,7 +353,9 @@ class GooValueJsonFormatTest {
     @Nested
     class ResolveConstantValue {
 
-        /** Constants can reference earlier constants. */
+        /**
+         * Constants can reference earlier constants.
+         */
         @Test
         void constantReferencesEarlierConstant() {
             JsonObject json = new JsonObject();
@@ -314,7 +368,9 @@ class GooValueJsonFormatTest {
             assertEquals(60, result);
         }
 
-        /** Plain integer constants still work. */
+        /**
+         * Plain integer constants still work.
+         */
         @Test
         void plainIntConstant() {
             JsonObject json = new JsonObject();
@@ -331,7 +387,9 @@ class GooValueJsonFormatTest {
     @Nested
     class ToJson {
 
-        /** Round-trip: parseGooValue -> toJson preserves values. */
+        /**
+         * Round-trip: parseGooValue -> toJson preserves values.
+         */
         @Test
         void roundTrip() {
             JsonObject original = new JsonObject();

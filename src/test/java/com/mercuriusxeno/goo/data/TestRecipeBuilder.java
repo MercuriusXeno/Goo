@@ -2,22 +2,18 @@ package com.mercuriusxeno.goo.data;
 
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.resources.Identifier;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Test helper for building RecipeInput and GooValue instances concisely.
  */
 public final class TestRecipeBuilder {
 
-    /** Prevent instantiation. */
-    private TestRecipeBuilder() {}
+    /**
+     * Prevent instantiation.
+     */
+    private TestRecipeBuilder() {
+    }
 
     /**
      * Creates a RecipeInput with the given output, result count, and ingredient slots.
@@ -44,14 +40,16 @@ public final class TestRecipeBuilder {
      */
     @SafeVarargs
     public static RecipeInput recipe(String output, int count,
-            Map<String, String> containers, String[]... ingredients) {
+                                     Map<String, String> containers, String[]... ingredients) {
         Identifier outputId = Identifier.parse(output);
         List<Set<Identifier>> slots = buildSlots(ingredients);
         Map<Identifier, Identifier> containerMap = buildContainerMap(containers);
         return new RecipeInput(outputId, count, slots, containerMap);
     }
 
-    /** Converts string arrays into identifier slot sets. */
+    /**
+     * Converts string arrays into identifier slot sets.
+     */
     private static List<Set<Identifier>> buildSlots(String[][] ingredients) {
         List<Set<Identifier>> slots = new ArrayList<>();
         for (String[] alts : ingredients) {
@@ -64,7 +62,9 @@ public final class TestRecipeBuilder {
         return slots;
     }
 
-    /** Converts a string-to-string map into an Identifier-to-Identifier map. */
+    /**
+     * Converts a string-to-string map into an Identifier-to-Identifier map.
+     */
     private static Map<Identifier, Identifier> buildContainerMap(Map<String, String> containers) {
         if (containers.isEmpty()) return Map.of();
         Map<Identifier, Identifier> map = new HashMap<>();
@@ -85,14 +85,16 @@ public final class TestRecipeBuilder {
      */
     @SafeVarargs
     public static RecipeInput tagRecipe(String output, int count,
-            List<String> slotTags, String[]... ingredients) {
+                                        List<String> slotTags, String[]... ingredients) {
         Identifier outputId = Identifier.parse(output);
         List<Set<Identifier>> slots = buildSlots(ingredients);
         List<Optional<Identifier>> tagIds = buildTagIds(slotTags);
         return new RecipeInput(outputId, count, slots, Map.of(), tagIds);
     }
 
-    /** Converts nullable tag strings into Optional Identifier list. */
+    /**
+     * Converts nullable tag strings into Optional Identifier list.
+     */
     private static List<Optional<Identifier>> buildTagIds(List<String> slotTags) {
         List<Optional<Identifier>> tagIds = new ArrayList<>();
         for (String tag : slotTags) {
@@ -131,17 +133,23 @@ public final class TestRecipeBuilder {
         return new GooValue(map);
     }
 
-    /** Shorthand for creating an Identifier from a string. */
+    /**
+     * Shorthand for creating an Identifier from a string.
+     */
     public static Identifier id(String value) {
         return Identifier.parse(value);
     }
 
-    /** Shorthand for a single-item ingredient slot. */
+    /**
+     * Shorthand for a single-item ingredient slot.
+     */
     public static String[] slot(String item) {
         return new String[]{item};
     }
 
-    /** Shorthand for a multi-alternative ingredient slot. */
+    /**
+     * Shorthand for a multi-alternative ingredient slot.
+     */
     public static String[] slot(String... items) {
         return items;
     }

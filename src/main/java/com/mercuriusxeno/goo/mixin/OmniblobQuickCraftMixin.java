@@ -25,18 +25,30 @@ import java.util.Set;
 @Mixin(AbstractContainerMenu.class)
 public abstract class OmniblobQuickCraftMixin {
 
-    /** Mixin target method name for click injection. */
+    /**
+     * Mixin target method name for click injection.
+     */
     private static final String TARGET_METHOD = "doClick";
-    /** Mixin injection point at the method head. */
+    /**
+     * Mixin injection point at the method head.
+     */
     private static final String INJECT_AT = "HEAD";
 
-    /** Quickcraft phase: drag started, recording type. */
+    /**
+     * Quickcraft phase: drag started, recording type.
+     */
     private static final int PHASE_START = 0;
-    /** Quickcraft phase: collecting slots as the cursor drags. */
+    /**
+     * Quickcraft phase: collecting slots as the cursor drags.
+     */
     private static final int PHASE_COLLECT = 1;
-    /** Quickcraft phase: distribute volume across collected slots. */
+    /**
+     * Quickcraft phase: distribute volume across collected slots.
+     */
     private static final int PHASE_DISTRIBUTE = 2;
-    /** Sentinel return value indicating the slot holds an incompatible goo type. */
+    /**
+     * Sentinel return value indicating the slot holds an incompatible goo type.
+     */
     private static final int INCOMPATIBLE_SLOT = -1;
 
     @Shadow
@@ -48,6 +60,40 @@ public abstract class OmniblobQuickCraftMixin {
     @Shadow
     @Final
     private Set<Slot> quickcraftSlots;
+
+    /**
+     * Returns true if the previous and new status represent the same phase.
+     *
+     * @param prev the previous quickcraft status
+     * @param next the new quickcraft status
+     * @return true if the phase is unchanged
+     */
+    private static boolean isPhaseRepeat(int prev, int next) {
+        return prev == next;
+    }
+
+    /**
+     * Returns true if transitioning from the collect phase to the distribute phase.
+     *
+     * @param prev the previous quickcraft status
+     * @param next the new quickcraft status
+     * @return true if advancing from collect to distribute
+     */
+    private static boolean isCollectToDistribute(int prev, int next) {
+        return prev == PHASE_COLLECT && next == PHASE_DISTRIBUTE;
+    }
+
+    /**
+     * Returns true if there is enough remaining volume to distribute another slot.
+     *
+     * @param perSlot     the volume per slot in microblobs
+     * @param distributed the total volume already distributed
+     * @param totalVolume the total volume available
+     * @return true if another slot can receive its share
+     */
+    private static boolean canDistributeMore(int perSlot, int distributed, int totalVolume) {
+        return perSlot > 0 && distributed + perSlot <= totalVolume;
+    }
 
     @Shadow
     public abstract ItemStack getCarried();
@@ -76,9 +122,13 @@ public abstract class OmniblobQuickCraftMixin {
      */
     @Inject(method = TARGET_METHOD, at = @At(INJECT_AT), cancellable = true)
     private void goo$omniblobQuickCraft(int slotId, int button, ContainerInput clickType,
-            Player player, CallbackInfo ci) {
-        if (clickType != ContainerInput.QUICK_CRAFT) { return; }
-        if (!OmniblobQuickCraft.isOmniblobQuickCraft(getCarried())) { return; }
+                                        Player player, CallbackInfo ci) {
+        if (clickType != ContainerInput.QUICK_CRAFT) {
+            return;
+        }
+        if (!OmniblobQuickCraft.isOmniblobQuickCraft(getCarried())) {
+            return;
+        }
 
         int header = AbstractContainerMenu.getQuickcraftHeader(button);
         handleOmniblobPhase(slotId, button, header, player);
@@ -119,31 +169,11 @@ public abstract class OmniblobQuickCraftMixin {
      * @return true if the transition is valid
      */
     private boolean isValidTransition(int previousStatus, int newStatus) {
-        if (getCarried().isEmpty()) { return false; }
+        if (getCarried().isEmpty()) {
+            return false;
+        }
         return isPhaseRepeat(previousStatus, newStatus)
-            || isCollectToDistribute(previousStatus, newStatus);
-    }
-
-    /**
-     * Returns true if the previous and new status represent the same phase.
-     *
-     * @param prev the previous quickcraft status
-     * @param next the new quickcraft status
-     * @return true if the phase is unchanged
-     */
-    private static boolean isPhaseRepeat(int prev, int next) {
-        return prev == next;
-    }
-
-    /**
-     * Returns true if transitioning from the collect phase to the distribute phase.
-     *
-     * @param prev the previous quickcraft status
-     * @param next the new quickcraft status
-     * @return true if advancing from collect to distribute
-     */
-    private static boolean isCollectToDistribute(int prev, int next) {
-        return prev == PHASE_COLLECT && next == PHASE_DISTRIBUTE;
+                || isCollectToDistribute(previousStatus, newStatus);
     }
 
     /**
@@ -190,7 +220,9 @@ public abstract class OmniblobQuickCraftMixin {
      */
     private boolean canOmniblobQuickReplace(Slot slot, ItemStack carried) {
         ItemStack existing = slot.getItem();
-        if (existing.isEmpty()) { return true; }
+        if (existing.isEmpty()) {
+            return true;
+        }
         GooType carriedType = BlobStacks.gooTypeOf(carried);
         GooType existingType = BlobStacks.gooTypeOf(existing);
         return carriedType != null && carriedType == existingType;
@@ -246,24 +278,18 @@ public abstract class OmniblobQuickCraftMixin {
     private int distributeToSlots(GooType gooType, int perSlot, int totalVolume) {
         int distributed = 0;
         for (Slot slot : quickcraftSlots) {
-            if (!canDistributeMore(perSlot, distributed, totalVolume)) { break; }
-            if (!isSlotEligible(slot)) { continue; }
+            if (!canDistributeMore(perSlot, distributed, totalVolume)) {
+                break;
+            }
+            if (!isSlotEligible(slot)) {
+                continue;
+            }
             int placed = placeIntoSlot(slot, gooType, perSlot);
-            if (placed > 0) { distributed += placed; }
+            if (placed > 0) {
+                distributed += placed;
+            }
         }
         return distributed;
-    }
-
-    /**
-     * Returns true if there is enough remaining volume to distribute another slot.
-     *
-     * @param perSlot     the volume per slot in microblobs
-     * @param distributed the total volume already distributed
-     * @param totalVolume the total volume available
-     * @return true if another slot can receive its share
-     */
-    private static boolean canDistributeMore(int perSlot, int distributed, int totalVolume) {
-        return perSlot > 0 && distributed + perSlot <= totalVolume;
     }
 
     /**
@@ -278,7 +304,8 @@ public abstract class OmniblobQuickCraftMixin {
 
     /**
      * Merges goo into a single slot, returning volume placed or INCOMPATIBLE_SLOT if incompatible.
-     * @param slot the target inventory slot
+     *
+     * @param slot    the target inventory slot
      * @param gooType the goo type being distributed
      * @param perSlot the volume in microblobs to place in this slot
      * @return the volume actually placed, or INCOMPATIBLE_SLOT if the slot has an incompatible item
@@ -288,7 +315,9 @@ public abstract class OmniblobQuickCraftMixin {
         int mergedVolume = perSlot;
         if (!existing.isEmpty()) {
             GooType existingType = BlobStacks.gooTypeOf(existing);
-            if (existingType != gooType) { return INCOMPATIBLE_SLOT; }
+            if (existingType != gooType) {
+                return INCOMPATIBLE_SLOT;
+            }
             mergedVolume += BlobStacks.volumeOf(existing);
         }
         slot.setByPlayer(BlobStacks.createForOutput(gooType, mergedVolume));

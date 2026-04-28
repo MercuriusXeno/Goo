@@ -11,24 +11,26 @@ import java.util.Set;
 /**
  * Parses group definitions (_groups) and restriction lists (_restricted) from
  * base_values.json. Groups act as pseudo-tags: named sets of item IDs that can
- * be referenced by #name in values and restrictions. Extracted from GooValueLoader
- * to keep method count within PMD TooManyMethods limits.
+ * be referenced by #name in values and restrictions.
  */
 final class GooGroupParser {
 
     private static final String GROUPS_SUFFIX = "_groups";
     private static final String KEY_RESTRICTED = "_restricted";
 
-    private GooGroupParser() {}
+    private GooGroupParser() {
+    }
 
     /**
      * Parses _groups into pseudo-tags: each key maps to an array of item IDs.
      *
-     * @param json the root JSON object containing the _groups key
+     * @param json  the root JSON object containing the _groups key
      * @param state mutable parsing state
      */
     static void parseGroups(JsonObject json, GooValueLoader.ParseState state) {
-        if (!json.has(GROUPS_SUFFIX)) { return; }
+        if (!json.has(GROUPS_SUFFIX)) {
+            return;
+        }
         JsonObject groups = json.getAsJsonObject(GROUPS_SUFFIX);
         for (Map.Entry<String, JsonElement> group : groups.entrySet()) {
             state.pseudoTags.put(group.getKey(), parseGroupMembers(group.getValue().getAsJsonArray()));
@@ -52,16 +54,20 @@ final class GooGroupParser {
     /**
      * Parses the _restricted array, resolving #group references against pseudo-tags.
      *
-     * @param json the root JSON object containing the optional _restricted key
+     * @param json  the root JSON object containing the optional _restricted key
      * @param state mutable parsing state
      */
     static void parseRestricted(JsonObject json, GooValueLoader.ParseState state) {
-        if (!json.has(KEY_RESTRICTED)) { return; }
+        if (!json.has(KEY_RESTRICTED)) {
+            return;
+        }
         for (JsonElement elem : json.getAsJsonArray(KEY_RESTRICTED)) {
             String entry = elem.getAsString();
             if (entry.startsWith(GooValueLoader.PREFIX_TAG)) {
                 Set<Identifier> members = resolvePseudoTag(entry.substring(1), state.pseudoTags);
-                if (members != null) { state.restrictedItems.addAll(members); }
+                if (members != null) {
+                    state.restrictedItems.addAll(members);
+                }
             } else {
                 state.restrictedItems.add(Identifier.parse(entry));
             }
@@ -71,7 +77,7 @@ final class GooGroupParser {
     /**
      * Resolves a pseudo-tag name to its members, trying exact then parsed path.
      *
-     * @param name the pseudo-tag name to resolve
+     * @param name       the pseudo-tag name to resolve
      * @param pseudoTags the pseudo-tag map
      * @return the set of member item IDs, or null if not found
      */

@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.CrucibleBlock;
-import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
+import com.mercuriusxeno.goo.block.crucible.CrucibleBlock;
+import com.mercuriusxeno.goo.block.crucible.CrucibleBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

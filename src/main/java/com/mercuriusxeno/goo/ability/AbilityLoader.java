@@ -17,10 +17,14 @@ import java.util.Map;
 public final class AbilityLoader
         extends SimpleJsonResourceReloadListener<AbilityDefinition> {
 
-    /** Datapack directory: data/<ns>/goo_abilities/ */
+    /**
+     * Datapack directory: data/<ns>/goo_abilities/
+     */
     private static final String DIRECTORY = "goo_abilities";
 
-    /** Registration id for the reload listener. */
+    /**
+     * Registration id for the reload listener.
+     */
     public static final Identifier LISTENER_ID =
             Identifier.fromNamespaceAndPath(Goo.MODID, DIRECTORY);
 
@@ -32,16 +36,6 @@ public final class AbilityLoader
     public AbilityLoader() {
         super(AbilityDefinition.CODEC,
                 FileToIdConverter.json(DIRECTORY));
-    }
-
-    @Override
-    protected void apply(Map<Identifier, AbilityDefinition> prepared,
-            ResourceManager manager, ProfilerFiller profiler) {
-        Map<Identifier, AbilityDefinition> withIds = assignIds(prepared);
-        AbilityRegistry.reload(withIds);
-        if (Goo.LOGGER.isInfoEnabled()) {
-            Goo.LOGGER.info(LOG_LOADED, withIds.size());
-        }
     }
 
     /**
@@ -57,5 +51,15 @@ public final class AbilityLoader
             result.put(entry.getKey(), entry.getValue().withId(entry.getKey()));
         }
         return result;
+    }
+
+    @Override
+    protected void apply(Map<Identifier, AbilityDefinition> prepared,
+                         ResourceManager manager, ProfilerFiller profiler) {
+        Map<Identifier, AbilityDefinition> withIds = assignIds(prepared);
+        AbilityRegistry.reload(withIds);
+        if (Goo.LOGGER.isInfoEnabled()) {
+            Goo.LOGGER.info(LOG_LOADED, withIds.size());
+        }
     }
 }

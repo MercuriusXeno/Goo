@@ -1,11 +1,11 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.ability.world.NetherBehavior;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
 import com.mercuriusxeno.goo.client.ber.NetherBlackHoleRenderer;
 import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
-import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;

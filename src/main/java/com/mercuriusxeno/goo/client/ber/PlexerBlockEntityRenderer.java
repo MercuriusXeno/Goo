@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.block.PlexerBlock;
-import com.mercuriusxeno.goo.block.PlexerBlockEntity;
+import com.mercuriusxeno.goo.block.plexer.PlexerBlock;
+import com.mercuriusxeno.goo.block.plexer.PlexerBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;

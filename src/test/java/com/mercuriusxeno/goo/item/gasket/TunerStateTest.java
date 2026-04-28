@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.item.gasket;
-import com.mercuriusxeno.goo.item.ConfirmAction;
 
+import com.mercuriusxeno.goo.item.ConfirmAction;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 import java.util.UUID;
@@ -39,7 +39,7 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(1, 2, 3);
         TunerState state = TunerState.EMPTY.withRoleSelection(
-            gasketId, pos, GasketRole.RECEIVER, -1, "cap");
+                gasketId, pos, GasketRole.RECEIVER, -1, "cap");
         assertTrue(state.hasSelection());
         assertEquals(gasketId, state.selectedGasketId());
         assertEquals(pos, state.selectedPos());
@@ -54,7 +54,7 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(4, 5, 6);
         TunerState state = TunerState.EMPTY.withOwner(owner)
-            .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 2, null);
+                .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 2, null);
         assertTrue(state.hasOwner());
         assertEquals(owner, state.ownerUuid());
         assertTrue(state.hasSelection());
@@ -65,8 +65,8 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(1, 2, 3);
         TunerState state = TunerState.EMPTY
-            .withPendingConfirm(ConfirmAction.SEVER_LINK, pos, 0)
-            .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 0, null);
+                .withPendingConfirm(ConfirmAction.SEVER_LINK, pos, 0)
+                .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 0, null);
         assertEquals(ConfirmAction.NONE, state.pendingConfirm());
         assertNull(state.confirmTarget());
     }
@@ -77,9 +77,9 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(7, 8, 9);
         TunerState state = TunerState.EMPTY
-            .withOwner(owner)
-            .withRoleSelection(gasketId, pos, GasketRole.RECEIVER, -1, "cap")
-            .clearSelection();
+                .withOwner(owner)
+                .withRoleSelection(gasketId, pos, GasketRole.RECEIVER, -1, "cap")
+                .clearSelection();
         assertTrue(state.hasOwner());
         assertEquals(owner, state.ownerUuid());
         assertFalse(state.hasSelection());
@@ -92,7 +92,7 @@ class TunerStateTest {
     void withPendingConfirm_storesConfirmState() {
         BlockPos pos = new BlockPos(10, 20, 30);
         TunerState state = TunerState.EMPTY
-            .withPendingConfirm(ConfirmAction.REPLACE_LINK, pos, 3);
+                .withPendingConfirm(ConfirmAction.REPLACE_LINK, pos, 3);
         assertEquals(ConfirmAction.REPLACE_LINK, state.pendingConfirm());
         assertEquals(pos, state.confirmTarget());
         assertEquals(3, state.confirmSlot());
@@ -103,9 +103,9 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(1, 2, 3);
         TunerState state = TunerState.EMPTY
-            .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 0, null)
-            .withPendingConfirm(ConfirmAction.SEVER_LINK, pos, 0)
-            .clearConfirm();
+                .withRoleSelection(gasketId, pos, GasketRole.TRANSMITTER, 0, null)
+                .withPendingConfirm(ConfirmAction.SEVER_LINK, pos, 0)
+                .clearConfirm();
         assertEquals(ConfirmAction.NONE, state.pendingConfirm());
         assertNull(state.confirmTarget());
         assertTrue(state.hasSelection());
@@ -114,11 +114,11 @@ class TunerStateTest {
     @Test
     void hasSelection_requiresBothGasketIdAndPos() {
         TunerState withGasketOnly = new TunerState(null, UUID.randomUUID(),
-            null, null, -1, null, ConfirmAction.NONE, null, -1);
+                null, null, -1, null, ConfirmAction.NONE, null, -1);
         assertFalse(withGasketOnly.hasSelection());
 
         TunerState withPosOnly = new TunerState(null, null,
-            new BlockPos(0, 0, 0), null, -1, null, ConfirmAction.NONE, null, -1);
+                new BlockPos(0, 0, 0), null, -1, null, ConfirmAction.NONE, null, -1);
         assertFalse(withPosOnly.hasSelection());
     }
 
@@ -127,9 +127,9 @@ class TunerStateTest {
         UUID gasketId = UUID.randomUUID();
         BlockPos pos = new BlockPos(1, 2, 3);
         TunerState state = TunerState.EMPTY
-            .withRoleSelection(gasketId, pos, GasketRole.RECEIVER, 5, null)
-            .withPendingConfirm(ConfirmAction.REPLACE_LINK, pos, 5)
-            .clearSelection();
+                .withRoleSelection(gasketId, pos, GasketRole.RECEIVER, 5, null)
+                .withPendingConfirm(ConfirmAction.REPLACE_LINK, pos, 5)
+                .clearSelection();
         assertEquals(-1, state.selectedSlot());
         assertEquals(ConfirmAction.NONE, state.pendingConfirm());
     }

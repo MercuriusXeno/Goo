@@ -7,12 +7,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.material.Fluid;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Datapack reload listener that loads reactor reactions from
@@ -23,17 +18,23 @@ import java.util.Set;
 public final class GooReactionLoader
         extends SimpleJsonResourceReloadListener<GooReaction> {
 
-    /** Datapack directory: data/<ns>/goo_reactions/ */
+    /**
+     * Datapack directory: data/<ns>/goo_reactions/
+     */
     private static final String DIRECTORY = "goo_reactions";
 
-    /** Registration id for the reload listener. */
+    /**
+     * Registration id for the reload listener.
+     */
     public static final Identifier LISTENER_ID =
             Identifier.fromNamespaceAndPath(Goo.MODID, DIRECTORY);
 
     private static final String LOG_LOADED = "Loaded {} goo reactions";
     private static final String LOG_CONFLICT_IDENTICAL =
             "Reaction conflict: {} and {} have identical input type sets";
-    /** Sorted reactions, most inputs first. Immutable after load. */
+    /**
+     * Sorted reactions, most inputs first. Immutable after load.
+     */
     private static List<GooReaction> reactions = List.of();
 
     /**
@@ -42,19 +43,6 @@ public final class GooReactionLoader
     public GooReactionLoader() {
         super(GooReaction.CODEC,
                 FileToIdConverter.json(DIRECTORY));
-    }
-
-    @Override
-    protected void apply(Map<Identifier, GooReaction> prepared,
-            ResourceManager manager, ProfilerFiller profiler) {
-        List<GooReaction> loaded = assignIds(prepared);
-        validateConflicts(loaded);
-        loaded.sort(Comparator.comparingInt(
-                (GooReaction r) -> r.inputs().size()).reversed());
-        reactions = Collections.unmodifiableList(loaded);
-        if (Goo.LOGGER.isInfoEnabled()) {
-            Goo.LOGGER.info(LOG_LOADED, reactions.size());
-        }
     }
 
     /**
@@ -118,5 +106,18 @@ public final class GooReactionLoader
      */
     private static boolean isSubset(Set<Fluid> a, Set<Fluid> b) {
         return a.size() < b.size() && b.containsAll(a);
+    }
+
+    @Override
+    protected void apply(Map<Identifier, GooReaction> prepared,
+                         ResourceManager manager, ProfilerFiller profiler) {
+        List<GooReaction> loaded = assignIds(prepared);
+        validateConflicts(loaded);
+        loaded.sort(Comparator.comparingInt(
+                (GooReaction r) -> r.inputs().size()).reversed());
+        reactions = Collections.unmodifiableList(loaded);
+        if (Goo.LOGGER.isInfoEnabled()) {
+            Goo.LOGGER.info(LOG_LOADED, reactions.size());
+        }
     }
 }

@@ -5,14 +5,11 @@ import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-/** Tests for GasketState sealed hierarchy: Single, Dual, Null variants. */
+/**
+ * Tests for GasketState sealed hierarchy: Single, Dual, Null variants.
+ */
 class GasketStateTest {
 
     private static final GasketPartner PARTNER =
@@ -38,7 +35,8 @@ class GasketStateTest {
         @Test
         void ensureIdReturnsNull() {
             var state = GasketState.none();
-            assertNull(state.ensureId(GasketRole.TRANSMITTER, () -> {}));
+            assertNull(state.ensureId(GasketRole.TRANSMITTER, () -> {
+            }));
         }
     }
 
@@ -57,9 +55,11 @@ class GasketStateTest {
             var state = GasketState.single(GasketRole.TRANSMITTER, "crucible");
             assertNull(state.getId(GasketRole.TRANSMITTER));
 
-            var id = state.ensureId(GasketRole.TRANSMITTER, () -> {});
+            var id = state.ensureId(GasketRole.TRANSMITTER, () -> {
+            });
             assertNotNull(id);
-            assertEquals(id, state.ensureId(GasketRole.TRANSMITTER, () -> {}));
+            assertEquals(id, state.ensureId(GasketRole.TRANSMITTER, () -> {
+            }));
         }
 
         @Test
@@ -67,17 +67,21 @@ class GasketStateTest {
             var state = GasketState.single(GasketRole.TRANSMITTER, "crucible");
             assertNull(state.getPartner(GasketRole.TRANSMITTER));
 
-            state.setPartner(GasketRole.TRANSMITTER, PARTNER, () -> {});
+            state.setPartner(GasketRole.TRANSMITTER, PARTNER, () -> {
+            });
             assertEquals(PARTNER, state.getPartner(GasketRole.TRANSMITTER));
         }
 
         @Test
         void clearResetsIdAndPartner() {
             var state = GasketState.single(GasketRole.TRANSMITTER, "crucible");
-            state.ensureId(GasketRole.TRANSMITTER, () -> {});
-            state.setPartner(GasketRole.TRANSMITTER, PARTNER, () -> {});
+            state.ensureId(GasketRole.TRANSMITTER, () -> {
+            });
+            state.setPartner(GasketRole.TRANSMITTER, PARTNER, () -> {
+            });
 
-            state.clear(GasketRole.TRANSMITTER, () -> {});
+            state.clear(GasketRole.TRANSMITTER, () -> {
+            });
             assertNull(state.getId(GasketRole.TRANSMITTER));
             assertNull(state.getPartner(GasketRole.TRANSMITTER));
         }
@@ -85,7 +89,8 @@ class GasketStateTest {
         @Test
         void wrongRoleIsNoOp() {
             var state = GasketState.single(GasketRole.TRANSMITTER, "crucible");
-            assertNull(state.ensureId(GasketRole.RECEIVER, () -> {}));
+            assertNull(state.ensureId(GasketRole.RECEIVER, () -> {
+            }));
             assertNull(state.getPartner(GasketRole.RECEIVER));
         }
 
@@ -110,8 +115,10 @@ class GasketStateTest {
         @Test
         void rolesAreIndependent() {
             var state = GasketState.dual("cap", "base");
-            var recvId = state.ensureId(GasketRole.RECEIVER, () -> {});
-            var transId = state.ensureId(GasketRole.TRANSMITTER, () -> {});
+            var recvId = state.ensureId(GasketRole.RECEIVER, () -> {
+            });
+            var transId = state.ensureId(GasketRole.TRANSMITTER, () -> {
+            });
 
             assertNotNull(recvId);
             assertNotNull(transId);
@@ -128,11 +135,15 @@ class GasketStateTest {
         @Test
         void clearOneRoleDoesNotAffectOther() {
             var state = GasketState.dual("cap", "base");
-            state.ensureId(GasketRole.RECEIVER, () -> {});
-            state.ensureId(GasketRole.TRANSMITTER, () -> {});
-            state.setPartner(GasketRole.RECEIVER, PARTNER, () -> {});
+            state.ensureId(GasketRole.RECEIVER, () -> {
+            });
+            state.ensureId(GasketRole.TRANSMITTER, () -> {
+            });
+            state.setPartner(GasketRole.RECEIVER, PARTNER, () -> {
+            });
 
-            state.clear(GasketRole.TRANSMITTER, () -> {});
+            state.clear(GasketRole.TRANSMITTER, () -> {
+            });
 
             assertNotNull(state.getId(GasketRole.RECEIVER));
             assertEquals(PARTNER, state.getPartner(GasketRole.RECEIVER));

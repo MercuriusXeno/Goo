@@ -1,9 +1,10 @@
 package com.mercuriusxeno.goo.effect;
 
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.Action;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.CandidateState;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.Decision;
-import com.mercuriusxeno.goo.effect.ChainPlacementRules.WaterHandling;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.Action;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.CandidateState;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.Decision;
+import com.mercuriusxeno.goo.ability.ChainPlacementRules.WaterHandling;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,32 +17,44 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class ChainPlacementRulesTest {
 
-    /** Convenience: builds a CandidateState for an air block. */
+    /**
+     * Convenience: builds a CandidateState for an air block.
+     */
     private static CandidateState air() {
         return new CandidateState(false, true, false, false, false, true);
     }
 
-    /** Convenience: builds a CandidateState for a solid unstackable block. */
+    /**
+     * Convenience: builds a CandidateState for a solid unstackable block.
+     */
     private static CandidateState solid() {
         return new CandidateState(false, false, false, false, false, false);
     }
 
-    /** Convenience: builds a CandidateState for a non-fluid replaceable block (fire, tall grass). */
+    /**
+     * Convenience: builds a CandidateState for a non-fluid replaceable block (fire, tall grass).
+     */
     private static CandidateState replaceableNonFluid() {
         return new CandidateState(false, false, true, false, false, true);
     }
 
-    /** Convenience: builds a CandidateState for water. */
+    /**
+     * Convenience: builds a CandidateState for water.
+     */
     private static CandidateState water(boolean aboveIsPlaceable) {
         return new CandidateState(false, false, true, true, false, aboveIsPlaceable);
     }
 
-    /** Convenience: builds a CandidateState for lava. */
+    /**
+     * Convenience: builds a CandidateState for lava.
+     */
     private static CandidateState lava() {
         return new CandidateState(false, false, true, false, true, false);
     }
 
-    /** Convenience: builds a CandidateState that already has a same-type marker. */
+    /**
+     * Convenience: builds a CandidateState that already has a same-type marker.
+     */
     private static CandidateState sameMarker() {
         return new CandidateState(true, false, false, false, false, false);
     }

@@ -29,85 +29,62 @@ import java.util.Locale;
  */
 public class GooOmniblobItem extends Item implements IGooItemInteraction {
 
-    /** Separator between type name and tier in display name. */
+    /**
+     * Separator between type name and tier in display name.
+     */
     private static final String NAME_SEPARATOR = " ";
-    /** Divisor for splitting omniblob volume in half. */
+    /**
+     * Divisor for splitting omniblob volume in half.
+     */
     private static final int HALF_DIVISOR = 2;
-    /** Same-type neighbors within this radius gravitate toward each other. */
+    /**
+     * Same-type neighbors within this radius gravitate toward each other.
+     */
     private static final double GRAVITATE_RADIUS = 3.0;
-    /** Near-collision radius: once the anchor is this close to a neighbor, it absorbs. */
+    /**
+     * Near-collision radius: once the anchor is this close to a neighbor, it absorbs.
+     */
     private static final double MERGE_RADIUS = 0.3;
-    /** {@link #MERGE_RADIUS} squared, for distanceToSqr comparisons. */
+    /**
+     * {@link #MERGE_RADIUS} squared, for distanceToSqr comparisons.
+     */
     private static final double MERGE_RADIUS_SQ = MERGE_RADIUS * MERGE_RADIUS;
-    /** Peak per-tick velocity in the pull direction. Also the max target when far from the stop point. */
+    /**
+     * Peak per-tick velocity in the pull direction. Also the max target when far from the stop point.
+     */
     private static final double PULL_SPEED_CAP = 0.15;
-    /** Target-velocity slope vs distance-to-stop-point. Target = min(distCent * APPROACH_SLOPE, CAP). */
+    /**
+     * Target-velocity slope vs distance-to-stop-point. Target = min(distCent * APPROACH_SLOPE, CAP).
+     */
     private static final double APPROACH_SLOPE = 0.4;
-    /** Per-tick velocity increment when current speed is below target. */
+    /**
+     * Per-tick velocity increment when current speed is below target.
+     */
     private static final double ACCELERATION = 0.05;
-    /** Per-tick velocity decrement when current speed exceeds target (braking on approach). */
+    /**
+     * Per-tick velocity decrement when current speed exceeds target (braking on approach).
+     */
     private static final double DECELERATION = 0.05;
-    /** Distance-squared floor below which the gravitation direction is ill-defined (avoid divide-by-zero). */
+    /**
+     * Distance-squared floor below which the gravitation direction is ill-defined (avoid divide-by-zero).
+     */
     private static final double MIN_GRAV_DIST_SQ = 1e-6;
-    /** Below this |speedDelta| we skip the setDeltaMovement/needsSync churn. */
+    /**
+     * Below this |speedDelta| we skip the setDeltaMovement/needsSync churn.
+     */
     private static final double NEGLIGIBLE_SPEED_DELTA = 1e-6;
 
     private final GooType gooType;
 
     /**
-     * Cached state for one tick's gravitation pass. Computed once from the
-     * neighbor snapshot, then consumed by the velocity-ramp step.
-     *
-     * @param dirX      normalized pull direction X
-     * @param dirY      normalized pull direction Y
-     * @param dirZ      normalized pull direction Z
-     * @param asymmetry |sum of unit vectors to neighbors| / count, in [0, 1].
-     *                  1 means all neighbors are on one side (edge of cluster);
-     *                  0 means they cancel (center of cluster, no net force).
-     *                  Preserves cluster contraction: edge items pull harder
-     *                  than center items even though the absolute cap is shared.
-     * @param distCent  distance from self to the centroid of all cluster
-     *                  members (including self). The "stop point" - target
-     *                  velocity shrinks as this approaches zero.
-     */
-    private record PullState(double dirX, double dirY, double dirZ, double asymmetry, double distCent) {}
-
-    /**
-     * Raw accumulator for the neighbor-scan loop: sum of unit vectors toward
-     * each neighbor (for direction + asymmetry factor) and sum of relative
-     * positions (for centroid distance), plus the count of contributing
-     * neighbors. Extracted so {@link #computePullState} stays under the
-     * method-length threshold.
-     *
-     * @param sumUX sum of unit-vector X components
-     * @param sumUY sum of unit-vector Y components
-     * @param sumUZ sum of unit-vector Z components
-     * @param centX sum of relative X positions
-     * @param centY sum of relative Y positions
-     * @param centZ sum of relative Z positions
-     * @param count number of neighbors that contributed (outside the MIN_GRAV_DIST_SQ floor)
-     */
-    private record NeighborSums(double sumUX, double sumUY, double sumUZ,
-            double centX, double centY, double centZ, int count) {}
-
-    /**
      * Creates a new omniblob item for the given goo type.
      *
-     * @param gooType the goo type this omniblob carries
+     * @param gooType    the goo type this omniblob carries
      * @param properties item properties (should include stacksTo(1))
      */
     public GooOmniblobItem(GooType gooType, Properties properties) {
         super(properties);
         this.gooType = gooType;
-    }
-
-    /**
-     * Returns the goo type this omniblob carries.
-     *
-     * @return the goo type
-     */
-    public GooType getGooType() {
-        return gooType;
     }
 
     /**
@@ -145,97 +122,6 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     }
 
     /**
-     * Returns the display name as "[Type] [Tier]" based on stored volume.
-     *
-     * @param stack the item stack
-     * @return the display name component
-     */
-    @Override
-    public @NonNull Component getName(@NonNull ItemStack stack) {
-        int volume = getVolume(stack);
-        String tierName = BlobTiers.computeTierName(volume);
-        String typeName = gooType.getId().substring(0, 1).toUpperCase(Locale.ROOT)
-            + gooType.getId().substring(1);
-        return Component.literal(typeName + NAME_SEPARATOR + tierName);
-    }
-
-    // -- Ground auto-merge --
-
-    /**
-     * Per-tick hook patched into the head of {@link ItemEntity#tick()} by NeoForge.
-     * Runs gravitation/absorb dispatch as a side-effect on the server every tick,
-     * then returns false so vanilla tick (gravity, despawn, pickup, pickupDelay)
-     * continues normally.
-     *
-     * @param stack the item stack on the entity
-     * @param self  the item entity being ticked
-     * @return always false - we never replace vanilla tick
-     */
-    @Override
-    public boolean onEntityItemUpdate(@NonNull ItemStack stack, @NonNull ItemEntity self) {
-        if (self.level().isClientSide()) { return false; }
-        if (self.isRemoved())            { return false; }
-        driveMerge(self, stack);
-        return false;
-    }
-
-    /**
-     * Applies symmetric gravitation every tick, then runs absorb if self is
-     * the cluster anchor (lowest-ID same-type member in range) AND a neighbor
-     * has drifted within {@link #MERGE_RADIUS}. Gravitation is mutual so
-     * items converge on their midpoint rather than one chasing the other,
-     * doubling the closing rate vs. the asymmetric version - fast enough that
-     * the near-collision gate reliably fires while still leaving a visible
-     * drift window before the merge happens.
-     *
-     * @param self      the item entity being ticked
-     * @param selfStack the absorber's item stack (mutated if an absorb fires)
-     */
-    private void driveMerge(ItemEntity self, ItemStack selfStack) {
-        List<ItemEntity> nearby = findNearbyOmniblobs(self);
-        if (nearby.isEmpty()) { return; }
-        gravitateTowardCentroid(self, nearby);
-        if (OmniblobAbsorb.findAttractorId(self.getId(), toCandidates(nearby)) != OmniblobAbsorb.NO_ATTRACTOR) { return; }
-        tryAbsorbAsAnchor(self, selfStack, nearby);
-    }
-
-    /**
-     * Runs the near-collision absorb as the cluster anchor. Invoked only
-     * when self has no lower-ID same-type neighbor in range. Filters
-     * {@code nearby} down to the subset within {@link #MERGE_RADIUS} before
-     * delegating to the pure absorb computation.
-     *
-     * @param self      the anchor item entity
-     * @param selfStack the absorber's item stack (mutated if an absorb fires)
-     * @param nearby    full gravitation-range neighbor snapshot
-     */
-    private void tryAbsorbAsAnchor(ItemEntity self, ItemStack selfStack, List<ItemEntity> nearby) {
-        List<ItemEntity> touching = filterByMergeRange(self, nearby);
-        if (touching.isEmpty()) { return; }
-        OmniblobAbsorb.Result result = OmniblobAbsorb.compute(
-            self.getId(), getVolume(selfStack), self.getAge(), toCandidates(touching));
-        if (result.discardIds().isEmpty()) { return; }
-        applyAbsorb(self, selfStack, touching, result);
-    }
-
-    /**
-     * Collects alive, same-type omniblob item entities within the gravitation
-     * radius of {@code self}, excluding {@code self} itself.
-     *
-     * @param self the querying item entity
-     * @return list of candidate neighbors (may be empty)
-     */
-    private List<ItemEntity> findNearbyOmniblobs(ItemEntity self) {
-        AABB box = self.getBoundingBox()
-            .inflate(GRAVITATE_RADIUS, GRAVITATE_RADIUS, GRAVITATE_RADIUS);
-        return self.level().getEntitiesOfClass(
-            ItemEntity.class, box,
-            other -> other != self
-                  && other.isAlive()
-                  && isMatchingOmniblob(other.getItem()));
-    }
-
-    /**
      * Accelerates {@code self} toward a distance-capped target velocity in
      * the cluster-aware pull direction. Two-phase:
      * <ol>
@@ -254,7 +140,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private static void gravitateTowardCentroid(ItemEntity self, List<ItemEntity> nearby) {
         PullState state = computePullState(self, nearby);
-        if (state == null) { return; }
+        if (state == null) {
+            return;
+        }
         applyPullVelocity(self, state);
     }
 
@@ -266,22 +154,24 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param self   the querying item entity
      * @param nearby same-type neighbor snapshot
      * @return the pull state, or null if there is no valid pull direction
-     *         (all neighbors are effectively at the same spot, or their unit
-     *         vectors sum to near-zero)
+     * (all neighbors are effectively at the same spot, or their unit
+     * vectors sum to near-zero)
      */
     private static @Nullable PullState computePullState(ItemEntity self, List<ItemEntity> nearby) {
         NeighborSums sums = accumulateNeighborSums(self, nearby);
         double sumUMagSq = sums.sumUX() * sums.sumUX() + sums.sumUY() * sums.sumUY() + sums.sumUZ() * sums.sumUZ();
-        if (sumUMagSq < MIN_GRAV_DIST_SQ) { return null; }
+        if (sumUMagSq < MIN_GRAV_DIST_SQ) {
+            return null;
+        }
         double sumUMag = Math.sqrt(sumUMagSq);
         double invSumU = 1.0 / sumUMag;
         int totalWithSelf = sums.count() + 1;
         double distCent = Math.sqrt(
-            sums.centX() * sums.centX() + sums.centY() * sums.centY() + sums.centZ() * sums.centZ())
-            / totalWithSelf;
+                sums.centX() * sums.centX() + sums.centY() * sums.centY() + sums.centZ() * sums.centZ())
+                / totalWithSelf;
         return new PullState(
-            sums.sumUX() * invSumU, sums.sumUY() * invSumU, sums.sumUZ() * invSumU,
-            sumUMag / sums.count(), distCent);
+                sums.sumUX() * invSumU, sums.sumUY() * invSumU, sums.sumUZ() * invSumU,
+                sumUMag / sums.count(), distCent);
     }
 
     /**
@@ -306,7 +196,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
             double dy = n.getY() - self.getY();
             double dz = n.getZ() - self.getZ();
             double distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq < MIN_GRAV_DIST_SQ) { continue; }
+            if (distSq < MIN_GRAV_DIST_SQ) {
+                continue;
+            }
             double invDist = 1.0 / Math.sqrt(distSq);
             sumUX += dx * invDist;
             sumUY += dy * invDist;
@@ -337,14 +229,18 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         double currentSpeed = delta.x * state.dirX() + delta.y * state.dirY() + delta.z * state.dirZ();
         double newSpeed = rampSpeed(currentSpeed, targetSpeed);
         double speedDelta = newSpeed - currentSpeed;
-        if (Math.abs(speedDelta) < NEGLIGIBLE_SPEED_DELTA) { return; }
+        if (Math.abs(speedDelta) < NEGLIGIBLE_SPEED_DELTA) {
+            return;
+        }
         self.setDeltaMovement(delta.add(
-            state.dirX() * speedDelta, state.dirY() * speedDelta, state.dirZ() * speedDelta));
+                state.dirX() * speedDelta, state.dirY() * speedDelta, state.dirZ() * speedDelta));
         // Per-tick pull is below ItemEntity's 0.01 delta-change sync threshold,
         // so vanilla falls back to the default tracker cadence and the client
         // sees ~1s position snaps. Force an immediate sync every gravitation tick.
         self.needsSync = true;
     }
+
+    // -- Ground auto-merge --
 
     /**
      * Ramps {@code current} toward {@code target}: accelerates by
@@ -356,7 +252,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return the clamped new velocity
      */
     private static double rampSpeed(double current, double target) {
-        if (current < target) { return Math.min(current + ACCELERATION, target); }
+        if (current < target) {
+            return Math.min(current + ACCELERATION, target);
+        }
         return Math.max(current - DECELERATION, target);
     }
 
@@ -372,7 +270,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     private static List<ItemEntity> filterByMergeRange(ItemEntity self, List<ItemEntity> nearby) {
         List<ItemEntity> out = new ArrayList<>();
         for (ItemEntity n : nearby) {
-            if (self.distanceToSqr(n) <= MERGE_RADIUS_SQ) { out.add(n); }
+            if (self.distanceToSqr(n) <= MERGE_RADIUS_SQ) {
+                out.add(n);
+            }
         }
         return out;
     }
@@ -403,16 +303,126 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @param result    the combined volume, new age, and ids to discard
      */
     private static void applyAbsorb(ItemEntity self, ItemStack selfStack,
-            List<ItemEntity> nearby, OmniblobAbsorb.Result result) {
+                                    List<ItemEntity> nearby, OmniblobAbsorb.Result result) {
         for (ItemEntity n : nearby) {
-            if (result.discardIds().contains(n.getId())) { n.discard(); }
+            if (result.discardIds().contains(n.getId())) {
+                n.discard();
+            }
         }
         setVolume(selfStack, result.volume());
         self.setItem(selfStack);
         self.age = result.age();
     }
 
-    // -- Cursor interactions --
+    /**
+     * Returns the goo type this omniblob carries.
+     *
+     * @return the goo type
+     */
+    public GooType getGooType() {
+        return gooType;
+    }
+
+    /**
+     * Returns the display name as "[Type] [Tier]" based on stored volume.
+     *
+     * @param stack the item stack
+     * @return the display name component
+     */
+    @Override
+    public @NonNull Component getName(@NonNull ItemStack stack) {
+        int volume = getVolume(stack);
+        String tierName = BlobTiers.computeTierName(volume);
+        String typeName = gooType.getId().substring(0, 1).toUpperCase(Locale.ROOT)
+                + gooType.getId().substring(1);
+        return Component.literal(typeName + NAME_SEPARATOR + tierName);
+    }
+
+    /**
+     * Per-tick hook patched into the head of {@link ItemEntity#tick()} by NeoForge.
+     * Runs gravitation/absorb dispatch as a side-effect on the server every tick,
+     * then returns false so vanilla tick (gravity, despawn, pickup, pickupDelay)
+     * continues normally.
+     *
+     * @param stack the item stack on the entity
+     * @param self  the item entity being ticked
+     * @return always false - we never replace vanilla tick
+     */
+    @Override
+    public boolean onEntityItemUpdate(@NonNull ItemStack stack, @NonNull ItemEntity self) {
+        if (self.level().isClientSide()) {
+            return false;
+        }
+        if (self.isRemoved()) {
+            return false;
+        }
+        driveMerge(self, stack);
+        return false;
+    }
+
+    /**
+     * Applies symmetric gravitation every tick, then runs absorb if self is
+     * the cluster anchor (lowest-ID same-type member in range) AND a neighbor
+     * has drifted within {@link #MERGE_RADIUS}. Gravitation is mutual so
+     * items converge on their midpoint rather than one chasing the other,
+     * doubling the closing rate vs. the asymmetric version - fast enough that
+     * the near-collision gate reliably fires while still leaving a visible
+     * drift window before the merge happens.
+     *
+     * @param self      the item entity being ticked
+     * @param selfStack the absorber's item stack (mutated if an absorb fires)
+     */
+    private void driveMerge(ItemEntity self, ItemStack selfStack) {
+        List<ItemEntity> nearby = findNearbyOmniblobs(self);
+        if (nearby.isEmpty()) {
+            return;
+        }
+        gravitateTowardCentroid(self, nearby);
+        if (OmniblobAbsorb.findAttractorId(self.getId(), toCandidates(nearby)) != OmniblobAbsorb.NO_ATTRACTOR) {
+            return;
+        }
+        tryAbsorbAsAnchor(self, selfStack, nearby);
+    }
+
+    /**
+     * Runs the near-collision absorb as the cluster anchor. Invoked only
+     * when self has no lower-ID same-type neighbor in range. Filters
+     * {@code nearby} down to the subset within {@link #MERGE_RADIUS} before
+     * delegating to the pure absorb computation.
+     *
+     * @param self      the anchor item entity
+     * @param selfStack the absorber's item stack (mutated if an absorb fires)
+     * @param nearby    full gravitation-range neighbor snapshot
+     */
+    private void tryAbsorbAsAnchor(ItemEntity self, ItemStack selfStack, List<ItemEntity> nearby) {
+        List<ItemEntity> touching = filterByMergeRange(self, nearby);
+        if (touching.isEmpty()) {
+            return;
+        }
+        OmniblobAbsorb.Result result = OmniblobAbsorb.compute(
+                self.getId(), getVolume(selfStack), self.getAge(), toCandidates(touching));
+        if (result.discardIds().isEmpty()) {
+            return;
+        }
+        applyAbsorb(self, selfStack, touching, result);
+    }
+
+    /**
+     * Collects alive, same-type omniblob item entities within the gravitation
+     * radius of {@code self}, excluding {@code self} itself.
+     *
+     * @param self the querying item entity
+     * @return list of candidate neighbors (may be empty)
+     */
+    private List<ItemEntity> findNearbyOmniblobs(ItemEntity self) {
+        AABB box = self.getBoundingBox()
+                .inflate(GRAVITATE_RADIUS, GRAVITATE_RADIUS, GRAVITATE_RADIUS);
+        return self.level().getEntitiesOfClass(
+                ItemEntity.class, box,
+                other -> other != self
+                        && other.isAlive()
+                        && isMatchingOmniblob(other.getItem()));
+    }
 
     /**
      * Omniblob in cursor, clicking onto a slot target.
@@ -428,7 +438,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     @Override
     public boolean overrideStackedOnOther(@NonNull ItemStack omniblob, @NonNull Slot slot,
-            @NonNull ClickAction action, @NonNull Player player) {
+                                          @NonNull ClickAction action, @NonNull Player player) {
         ItemStack target = slot.getItem();
         if (isMatchingBlob(target)) {
             return handleAbsorbFromSlot(omniblob, target, slot, action, player);
@@ -449,7 +459,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return true if the interaction was handled
      */
     private boolean handleAbsorbFromSlot(ItemStack omniblob, ItemStack target, Slot slot,
-            ClickAction action, Player player) {
+                                         ClickAction action, Player player) {
         if (action == ClickAction.PRIMARY) {
             int total = getVolume(omniblob) + target.getCount() * BlobStacks.MB_PER_BLOB;
             slot.set(BlobStacks.createForOutput(gooType, total));
@@ -458,6 +468,8 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
         }
         return feedOneBlobToStack(omniblob, target, player);
     }
+
+    // -- Cursor interactions --
 
     /**
      * Places one blob from the omniblob into an empty slot, updating cursor remainder.
@@ -469,7 +481,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private boolean placeSingleBlobInSlot(ItemStack omniblob, Slot slot, Player player) {
         int volume = getVolume(omniblob);
-        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
+        if (volume < BlobStacks.MB_PER_BLOB) {
+            return false;
+        }
 
         int remaining = volume - BlobStacks.MB_PER_BLOB;
         slot.set(BlobStacks.createBlobStack(gooType, 1));
@@ -504,7 +518,9 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private boolean feedOneBlobToStack(ItemStack omniblob, ItemStack target, Player player) {
         int volume = getVolume(omniblob);
-        if (volume < BlobStacks.MB_PER_BLOB) { return false; }
+        if (volume < BlobStacks.MB_PER_BLOB) {
+            return false;
+        }
 
         target.grow(1);
         int remaining = volume - BlobStacks.MB_PER_BLOB;
@@ -519,22 +535,24 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * Left/right-click + same-type omniblob: combine into slot omniblob.
      * Right-click + empty cursor: split volume in half.
      *
-     * @param omniblob    the omniblob in the slot
-     * @param cursor      the item stack on the cursor
-     * @param slot        the inventory slot
-     * @param action      the click action
-     * @param player      the interacting player
+     * @param omniblob     the omniblob in the slot
+     * @param cursor       the item stack on the cursor
+     * @param slot         the inventory slot
+     * @param action       the click action
+     * @param player       the interacting player
      * @param cursorAccess access to set the cursor contents
      * @return true if the interaction was handled
      */
     @Override
     public boolean overrideOtherStackedOnMe(@NonNull ItemStack omniblob, @NonNull ItemStack cursor,
-            @NonNull Slot slot, @NonNull ClickAction action, @NonNull Player player,
-            @NonNull SlotAccess cursorAccess) {
+                                            @NonNull Slot slot, @NonNull ClickAction action, @NonNull Player player,
+                                            @NonNull SlotAccess cursorAccess) {
         if (cursor.isEmpty() && action == ClickAction.SECONDARY) {
             return handleEmptyCursorExtract(omniblob, slot, cursorAccess);
         }
-        if (isMatchingOmniblob(cursor)) { return handleOmniblobCombine(omniblob, cursor, cursorAccess); }
+        if (isMatchingOmniblob(cursor)) {
+            return handleOmniblobCombine(omniblob, cursor, cursorAccess);
+        }
         return isMatchingBlob(cursor) && handleBlobAbsorb(omniblob, cursor, action, cursorAccess, player);
     }
 
@@ -563,14 +581,16 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * in the slot. Each half follows the output rule (blob stack if clean, omniblob otherwise).
      * Sub-blob remainder case (volume < 1000) gives the whole omniblob to the cursor.
      *
-     * @param omniblob    the omniblob in the slot
-     * @param slot        the inventory slot
+     * @param omniblob     the omniblob in the slot
+     * @param slot         the inventory slot
      * @param cursorAccess access to set the cursor contents
      * @return true if the extraction was performed
      */
     private boolean handleEmptyCursorExtract(ItemStack omniblob, Slot slot, SlotAccess cursorAccess) {
         int volume = getVolume(omniblob);
-        if (volume <= 0) { return false; }
+        if (volume <= 0) {
+            return false;
+        }
         if (BlobStacks.wholeBlobs(volume) <= 0) {
             cursorAccess.set(omniblob.copy());
             omniblob.shrink(1);
@@ -624,7 +644,7 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return true always (combination performed)
      */
     private boolean handleOmniblobCombine(ItemStack slotOmniblob, ItemStack cursorOmniblob,
-            SlotAccess cursorAccess) {
+                                          SlotAccess cursorAccess) {
         int cursorVol = getVolume(cursorOmniblob);
         int slotVol = getVolume(slotOmniblob);
         setVolume(slotOmniblob, slotVol + cursorVol);
@@ -635,15 +655,15 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     /**
      * Absorbs blob stack into the omniblob.
      *
-     * @param omniblob    the omniblob in the slot
-     * @param cursor      the blob stack on the cursor
-     * @param action      the click action
+     * @param omniblob     the omniblob in the slot
+     * @param cursor       the blob stack on the cursor
+     * @param action       the click action
      * @param cursorAccess access to set the cursor contents
-     * @param player      the interacting player
+     * @param player       the interacting player
      * @return true always (absorption performed)
      */
     private boolean handleBlobAbsorb(ItemStack omniblob, ItemStack cursor,
-            ClickAction action, SlotAccess cursorAccess, Player player) {
+                                     ClickAction action, SlotAccess cursorAccess, Player player) {
         int count = action == ClickAction.PRIMARY ? cursor.getCount() : player.isShiftKeyDown() ? cursor.getCount() : 1;
         setVolume(omniblob, getVolume(omniblob) + count * BlobStacks.MB_PER_BLOB);
         cursor.shrink(count);
@@ -661,5 +681,43 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
     @Override
     public GooInteractionType canisterInteraction() {
         return GooInteractionType.BLOB_INSERT;
+    }
+
+    /**
+     * Cached state for one tick's gravitation pass. Computed once from the
+     * neighbor snapshot, then consumed by the velocity-ramp step.
+     *
+     * @param dirX      normalized pull direction X
+     * @param dirY      normalized pull direction Y
+     * @param dirZ      normalized pull direction Z
+     * @param asymmetry |sum of unit vectors to neighbors| / count, in [0, 1].
+     *                  1 means all neighbors are on one side (edge of cluster);
+     *                  0 means they cancel (center of cluster, no net force).
+     *                  Preserves cluster contraction: edge items pull harder
+     *                  than center items even though the absolute cap is shared.
+     * @param distCent  distance from self to the centroid of all cluster
+     *                  members (including self). The "stop point" - target
+     *                  velocity shrinks as this approaches zero.
+     */
+    private record PullState(double dirX, double dirY, double dirZ, double asymmetry, double distCent) {
+    }
+
+    /**
+     * Raw accumulator for the neighbor-scan loop: sum of unit vectors toward
+     * each neighbor (for direction + asymmetry factor) and sum of relative
+     * positions (for centroid distance), plus the count of contributing
+     * neighbors. Extracted so {@link #computePullState} stays under the
+     * method-length threshold.
+     *
+     * @param sumUX sum of unit-vector X components
+     * @param sumUY sum of unit-vector Y components
+     * @param sumUZ sum of unit-vector Z components
+     * @param centX sum of relative X positions
+     * @param centY sum of relative Y positions
+     * @param centZ sum of relative Z positions
+     * @param count number of neighbors that contributed (outside the MIN_GRAV_DIST_SQ floor)
+     */
+    private record NeighborSums(double sumUX, double sumUY, double sumUZ,
+                                double centX, double centY, double centZ, int count) {
     }
 }

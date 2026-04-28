@@ -6,11 +6,7 @@ import com.google.gson.JsonParser;
 import com.mercuriusxeno.goo.Goo;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +21,9 @@ import java.util.Set;
  */
 final class GooValueLoader {
 
+    static final String PREFIX_TAG = "#";
     private static final String BASE_VALUES_PATH = "/data/goo/goo_values/base_values.json";
     private static final String PREFIX_INTERNAL = "_";
-    static final String PREFIX_TAG = "#";
     private static final String VALUE_DENIED = "denied";
     private static final String MOD_NAMESPACE = "goo";
     private static final String BASE_VALUES_RESOURCE = "goo_values/base_values.json";
@@ -41,41 +37,8 @@ final class GooValueLoader {
     private static final String LOG_READ_PACK_FAIL = "Failed to read base_values.json from pack {}: {}";
     private static final String LOG_NEGATIVE_BASE = "Negative goo in base value for {}: {} -- skipped";
 
-    private GooValueLoader() {}
-
-    /**
-     * Mutable state bucket passed through parsing methods so the loader remains static.
-     * Created by the registry before a load, populated during parsing, then read back.
-     */
-    static final class ParseState {
-        final Map<Identifier, GooValue> baseValues;
-        final Map<Identifier, GooValue> effectiveValues;
-        final Set<Identifier> deniedItems;
-        final Set<Identifier> restrictedItems;
-        final Map<String, Integer> constants;
-        final Map<String, GooValue> treeConstants;
-        final Map<String, Set<Identifier>> pseudoTags;
-        GooConversion.ParsedConversions preConversions;
-        GooConversion.ParsedConversions postConversions;
-        JsonObject lastMergedBaseValues;
-
-        ParseState(Map<Identifier, GooValue> baseValues,
-                   Map<Identifier, GooValue> effectiveValues,
-                   Set<Identifier> deniedItems,
-                   Set<Identifier> restrictedItems,
-                   Map<String, Integer> constants,
-                   Map<String, GooValue> treeConstants,
-                   Map<String, Set<Identifier>> pseudoTags) {
-            this.baseValues = baseValues;
-            this.effectiveValues = effectiveValues;
-            this.deniedItems = deniedItems;
-            this.restrictedItems = restrictedItems;
-            this.constants = constants;
-            this.treeConstants = treeConstants;
-            this.pseudoTags = pseudoTags;
-        }
+    private GooValueLoader() {
     }
-
 
     /**
      * Reads and parses the embedded base_values.json classpath resource.
@@ -92,13 +55,15 @@ final class GooValueLoader {
         } catch (IOException e) {
             Goo.LOGGER.error(LOG_LOAD_FAIL, e);
         }
-        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_BASE, state.baseValues.size()); }
+        if (Goo.LOGGER.isInfoEnabled()) {
+            Goo.LOGGER.info(LOG_LOADED_BASE, state.baseValues.size());
+        }
     }
 
     /**
      * Parses constants, groups, item entries, and conversions from an input stream.
      *
-     * @param is the input stream containing base_values.json data
+     * @param is    the input stream containing base_values.json data
      * @param state mutable parsing state to populate
      * @throws IOException if reading the stream fails
      */
@@ -111,7 +76,6 @@ final class GooValueLoader {
             GooConversionLoader.applyConversions(state.preConversions, state.baseValues, state.pseudoTags);
         }
     }
-
 
     /**
      * Parses each resource in the stack into a JsonObject, skipping failures.
@@ -129,8 +93,9 @@ final class GooValueLoader {
 
     /**
      * Parses a single resource into a JsonObject, appending to the list on success.
+     *
      * @param resource the datapack resource to parse
-     * @param layers the accumulating list of parsed JSON layers
+     * @param layers   the accumulating list of parsed JSON layers
      */
     private static void parseOneResourceLayer(Resource resource, List<JsonObject> layers) {
         try (BufferedReader reader = resource.openAsReader()) {
@@ -147,7 +112,7 @@ final class GooValueLoader {
      * Merges, expands, and applies parsed JSON layers to parsing state.
      *
      * @param layers parsed JSON objects in pack order
-     * @param state mutable parsing state to populate
+     * @param state  mutable parsing state to populate
      */
     static void applyMergedLayers(List<JsonObject> layers, ParseState state) {
         JsonObject merged = GooValueMerger.mergeBaseValueJsonLayers(layers);
@@ -158,14 +123,15 @@ final class GooValueLoader {
         GooConversionLoader.parseConversions(merged, state);
         GooConversionLoader.applyConversions(state.preConversions, state.baseValues, state.pseudoTags);
         state.effectiveValues.putAll(state.baseValues);
-        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_LOADED_PACKS, state.baseValues.size(), layers.size()); }
+        if (Goo.LOGGER.isInfoEnabled()) {
+            Goo.LOGGER.info(LOG_LOADED_PACKS, state.baseValues.size(), layers.size());
+        }
     }
-
 
     /**
      * Parses _groups first (pseudo-tags), then item entries. Resolves #name against pseudo-tags.
      *
-     * @param json the root JSON object to extract item values from
+     * @param json  the root JSON object to extract item values from
      * @param state mutable parsing state
      */
     private static void parseItemValues(JsonObject json, ParseState state) {
@@ -178,12 +144,15 @@ final class GooValueLoader {
 
     /**
      * Dispatches a single JSON entry to internal skip, pseudo-tag expansion, or item assignment.
-     * @param key the JSON entry key (internal prefix, pseudo-tag, or item ID)
+     *
+     * @param key   the JSON entry key (internal prefix, pseudo-tag, or item ID)
      * @param value the JSON value to parse
      * @param state mutable parsing state
      */
     private static void classifyItemEntry(String key, JsonElement value, ParseState state) {
-        if (key.startsWith(PREFIX_INTERNAL)) { return; }
+        if (key.startsWith(PREFIX_INTERNAL)) {
+            return;
+        }
         if (key.startsWith(PREFIX_TAG)) {
             GooParallelCopy.expandPseudoTag(key.substring(1), value, state);
             return;
@@ -191,13 +160,12 @@ final class GooValueLoader {
         assignItemValue(Identifier.parse(key), value, state);
     }
 
-
     /**
      * Assigns a value or denial to a single item.
      *
      * @param itemId the item to assign a value to
-     * @param value the JSON value (object for explicit, string for expression, "denied")
-     * @param state mutable parsing state
+     * @param value  the JSON value (object for explicit, string for expression, "denied")
+     * @param state  mutable parsing state
      */
     static void assignItemValue(Identifier itemId, JsonElement value, ParseState state) {
         if (isDeniedEntry(value)) {
@@ -239,8 +207,6 @@ final class GooValueLoader {
         return element.isJsonPrimitive() && VALUE_DENIED.equals(element.getAsString());
     }
 
-
-
     /**
      * Clears all mutable registry state before a fresh load.
      *
@@ -275,5 +241,38 @@ final class GooValueLoader {
      */
     static String baseValuesResource() {
         return BASE_VALUES_RESOURCE;
+    }
+
+    /**
+     * Mutable state bucket passed through parsing methods so the loader remains static.
+     * Created by the registry before a load, populated during parsing, then read back.
+     */
+    static final class ParseState {
+        final Map<Identifier, GooValue> baseValues;
+        final Map<Identifier, GooValue> effectiveValues;
+        final Set<Identifier> deniedItems;
+        final Set<Identifier> restrictedItems;
+        final Map<String, Integer> constants;
+        final Map<String, GooValue> treeConstants;
+        final Map<String, Set<Identifier>> pseudoTags;
+        GooConversion.ParsedConversions preConversions;
+        GooConversion.ParsedConversions postConversions;
+        JsonObject lastMergedBaseValues;
+
+        ParseState(Map<Identifier, GooValue> baseValues,
+                   Map<Identifier, GooValue> effectiveValues,
+                   Set<Identifier> deniedItems,
+                   Set<Identifier> restrictedItems,
+                   Map<String, Integer> constants,
+                   Map<String, GooValue> treeConstants,
+                   Map<String, Set<Identifier>> pseudoTags) {
+            this.baseValues = baseValues;
+            this.effectiveValues = effectiveValues;
+            this.deniedItems = deniedItems;
+            this.restrictedItems = restrictedItems;
+            this.constants = constants;
+            this.treeConstants = treeConstants;
+            this.pseudoTags = pseudoTags;
+        }
     }
 }

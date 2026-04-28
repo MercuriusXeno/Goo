@@ -14,12 +14,17 @@ import java.util.Map;
  */
 public final class GooValueSync {
 
-    /** Log message for single-player sync. */
+    /**
+     * Log message for single-player sync.
+     */
     private static final String LOG_SENT = "Sent {} goo values to {}";
-    /** Log message for broadcast sync. */
+    /**
+     * Log message for broadcast sync.
+     */
     private static final String LOG_BROADCAST = "Broadcast {} goo values to all players";
 
-    private GooValueSync() {}
+    private GooValueSync() {
+    }
 
     /**
      * Sends the full effective value map to a single player.
@@ -29,7 +34,9 @@ public final class GooValueSync {
     public static void sendToPlayer(ServerPlayer player) {
         GooValueSyncPayload payload = buildPayload();
         PacketDistributor.sendToPlayer(player, payload);
-        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_SENT, payload.values().size(), player.getName().getString()); }
+        if (Goo.LOGGER.isDebugEnabled()) {
+            Goo.LOGGER.debug(LOG_SENT, payload.values().size(), player.getName().getString());
+        }
     }
 
     /**
@@ -40,7 +47,9 @@ public final class GooValueSync {
     public static void sendToAll(MinecraftServer server) {
         GooValueSyncPayload payload = buildPayload();
         PacketDistributor.sendToAllPlayers(payload);
-        if (Goo.LOGGER.isInfoEnabled()) { Goo.LOGGER.info(LOG_BROADCAST, payload.values().size()); }
+        if (Goo.LOGGER.isInfoEnabled()) {
+            Goo.LOGGER.info(LOG_BROADCAST, payload.values().size());
+        }
     }
 
     /**

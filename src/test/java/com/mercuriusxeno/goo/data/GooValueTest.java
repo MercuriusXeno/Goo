@@ -14,7 +14,9 @@ class GooValueTest {
 
     // ── Construction ────────────────────────────────────────────────────
 
-    /** Zero amounts are filtered out, but negatives are preserved. */
+    /**
+     * Zero amounts are filtered out, but negatives are preserved.
+     */
     @Test
     void constructorFiltersZeroButKeepsNegative() {
         Map<GooType, Integer> map = new EnumMap<>(GooType.class);
@@ -28,7 +30,9 @@ class GooValueTest {
         assertEquals(10, val.get(GooType.LEAF));
     }
 
-    /** Empty map produces an empty GooValue. */
+    /**
+     * Empty map produces an empty GooValue.
+     */
     @Test
     void emptyMapProducesEmptyValue() {
         GooValue val = new GooValue(Map.of());
@@ -36,7 +40,9 @@ class GooValueTest {
         assertEquals(0, val.totalBlobs());
     }
 
-    /** EMPTY singleton is truly empty. */
+    /**
+     * EMPTY singleton is truly empty.
+     */
     @Test
     void emptySingletonIsEmpty() {
         assertTrue(GooValue.EMPTY.isEmpty());
@@ -46,14 +52,18 @@ class GooValueTest {
 
     // ── totalBlobs ──────────────────────────────────────────────────────
 
-    /** Total blobs sums all types. */
+    /**
+     * Total blobs sums all types.
+     */
     @Test
     void totalBlobsSumsAllTypes() {
         GooValue val = goo(GooType.METAL, 5, GooType.CRYSTAL, 3);
         assertEquals(8, val.totalBlobs());
     }
 
-    /** Single type total blobs equals that type's amount. */
+    /**
+     * Single type total blobs equals that type's amount.
+     */
     @Test
     void singleTypeTotalBlobs() {
         GooValue val = goo(GooType.VITAL, 42);
@@ -62,14 +72,18 @@ class GooValueTest {
 
     // ── largestType ──────────────────────────────────────────────────
 
-    /** Largest type is the one with the highest amount. */
+    /**
+     * Largest type is the one with the highest amount.
+     */
     @Test
     void largestTypeIsHighestAmount() {
         GooValue val = goo(GooType.BLAZE, 10, GooType.LEAF, 5);
         assertEquals(GooType.BLAZE, val.largestType());
     }
 
-    /** Single-type value returns that type as largest. */
+    /**
+     * Single-type value returns that type as largest.
+     */
     @Test
     void singleTypeLargest() {
         GooValue val = goo(GooType.ENDER, 1);
@@ -78,7 +92,9 @@ class GooValueTest {
 
     // ── add ─────────────────────────────────────────────────────────────
 
-    /** Adding two values sums their types. */
+    /**
+     * Adding two values sums their types.
+     */
     @Test
     void addSumsTypes() {
         GooValue a = goo(GooType.METAL, 5);
@@ -87,7 +103,9 @@ class GooValueTest {
         assertEquals(8, result.get(GooType.METAL));
     }
 
-    /** Adding with multiplier scales the added value. */
+    /**
+     * Adding with multiplier scales the added value.
+     */
     @Test
     void addWithMultiplier() {
         GooValue a = goo(GooType.ROCK, 2);
@@ -96,7 +114,9 @@ class GooValueTest {
         assertEquals(14, result.get(GooType.ROCK)); // 2 + 3*4
     }
 
-    /** Adding introduces new types. */
+    /**
+     * Adding introduces new types.
+     */
     @Test
     void addIntroducesNewType() {
         GooValue a = goo(GooType.METAL, 5);
@@ -106,7 +126,9 @@ class GooValueTest {
         assertEquals(3, result.get(GooType.CRYSTAL));
     }
 
-    /** Adding to EMPTY gives the added value. */
+    /**
+     * Adding to EMPTY gives the added value.
+     */
     @Test
     void addToEmpty() {
         GooValue b = goo(GooType.GLOW, 7);
@@ -114,7 +136,9 @@ class GooValueTest {
         assertEquals(7, result.get(GooType.GLOW));
     }
 
-    /** Adding a value with negatives subtracts those types (exposed copper use case). */
+    /**
+     * Adding a value with negatives subtracts those types (exposed copper use case).
+     */
     @Test
     void addWithNegativeSubtractsType() {
         GooValue copper = goo(GooType.METAL, 100, GooType.ROCK, 20);
@@ -129,7 +153,9 @@ class GooValueTest {
         assertEquals(20, result.get(GooType.ROCK));    // unchanged
     }
 
-    /** Adding negatives that exceed the positive amount produces a negative result. */
+    /**
+     * Adding negatives that exceed the positive amount produces a negative result.
+     */
     @Test
     void addWithNegativeCanGoNegative() {
         GooValue small = goo(GooType.METAL, 10);
@@ -141,7 +167,9 @@ class GooValueTest {
         assertEquals(-40, result.get(GooType.METAL));
     }
 
-    /** floorZero clamps all negative types to zero. */
+    /**
+     * floorZero clamps all negative types to zero.
+     */
     @Test
     void floorZeroClampsNegatives() {
         Map<GooType, Integer> map = new EnumMap<>(GooType.class);
@@ -159,7 +187,9 @@ class GooValueTest {
 
     // ── subtract ────────────────────────────────────────────────────────
 
-    /** Subtracting per-type produces the difference. */
+    /**
+     * Subtracting per-type produces the difference.
+     */
     @Test
     void subtractPerType() {
         GooValue a = goo(GooType.METAL, 10, GooType.CRYSTAL, 8);
@@ -169,7 +199,9 @@ class GooValueTest {
         assertEquals(6, result.get(GooType.CRYSTAL));
     }
 
-    /** Subtracting more than available goes negative. */
+    /**
+     * Subtracting more than available goes negative.
+     */
     @Test
     void subtractCanGoNegative() {
         GooValue a = goo(GooType.METAL, 5);
@@ -178,7 +210,9 @@ class GooValueTest {
         assertEquals(-5, result.get(GooType.METAL));
     }
 
-    /** Subtracting from EMPTY produces negative values. */
+    /**
+     * Subtracting from EMPTY produces negative values.
+     */
     @Test
     void subtractFromEmptyGoesNegative() {
         GooValue b = goo(GooType.LEAF, 5);
@@ -186,7 +220,9 @@ class GooValueTest {
         assertEquals(-5, result.get(GooType.LEAF));
     }
 
-    /** Subtracting a type not present in the source introduces a negative. */
+    /**
+     * Subtracting a type not present in the source introduces a negative.
+     */
     @Test
     void subtractMissingTypeGoesNegative() {
         GooValue a = goo(GooType.METAL, 10);
@@ -198,7 +234,9 @@ class GooValueTest {
 
     // ── multiply ────────────────────────────────────────────────────────
 
-    /** Multiplying scales all types. */
+    /**
+     * Multiplying scales all types.
+     */
     @Test
     void multiplyScalesAllTypes() {
         GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 6);
@@ -207,21 +245,27 @@ class GooValueTest {
         assertEquals(18, result.get(GooType.CRYSTAL));
     }
 
-    /** Multiplying by 1 returns the same instance. */
+    /**
+     * Multiplying by 1 returns the same instance.
+     */
     @Test
     void multiplyByOneReturnsSame() {
         GooValue val = goo(GooType.BLAZE, 15);
         assertSame(val, val.multiply(1));
     }
 
-    /** Multiplying by 0 returns EMPTY. */
+    /**
+     * Multiplying by 0 returns EMPTY.
+     */
     @Test
     void multiplyByZeroReturnsEmpty() {
         GooValue val = goo(GooType.VITAL, 100);
         assertTrue(val.multiply(0).isEmpty());
     }
 
-    /** Multiplying by negative returns EMPTY. */
+    /**
+     * Multiplying by negative returns EMPTY.
+     */
     @Test
     void multiplyByNegativeReturnsEmpty() {
         GooValue val = goo(GooType.LEAF, 42);
@@ -230,7 +274,9 @@ class GooValueTest {
 
     // ── divideExact ──────────────────────────────────────────────────────
 
-    /** Exact division with clean divisor succeeds. */
+    /**
+     * Exact division with clean divisor succeeds.
+     */
     @Test
     void divideExactClean() {
         GooValue val = goo(GooType.METAL, 18, GooType.CRYSTAL, 9);
@@ -239,14 +285,18 @@ class GooValueTest {
         assertEquals(1, result.get(GooType.CRYSTAL));
     }
 
-    /** Exact division with remainder throws ArithmeticException. */
+    /**
+     * Exact division with remainder throws ArithmeticException.
+     */
     @Test
     void divideExactLossyThrows() {
         GooValue val = goo(GooType.METAL, 10);
         assertThrows(ArithmeticException.class, () -> val.divideExact(3));
     }
 
-    /** Exact division by 1 returns same instance. */
+    /**
+     * Exact division by 1 returns same instance.
+     */
     @Test
     void divideExactByOneReturnsSame() {
         GooValue val = goo(GooType.BLAZE, 15);
@@ -255,7 +305,9 @@ class GooValueTest {
 
     // ── divide ──────────────────────────────────────────────────────────
 
-    /** Dividing evenly produces exact result. */
+    /**
+     * Dividing evenly produces exact result.
+     */
     @Test
     void divideEvenly() {
         GooValue val = goo(GooType.METAL, 10);
@@ -263,7 +315,9 @@ class GooValueTest {
         assertEquals(5, result.get(GooType.METAL));
     }
 
-    /** Dividing with remainder floors the result. */
+    /**
+     * Dividing with remainder floors the result.
+     */
     @Test
     void divideWithRemainder() {
         GooValue val = goo(GooType.METAL, 7);
@@ -271,7 +325,9 @@ class GooValueTest {
         assertEquals(2, result.get(GooType.METAL)); // 7/3 = 2
     }
 
-    /** Dividing by 1 returns the same value. */
+    /**
+     * Dividing by 1 returns the same value.
+     */
     @Test
     void divideByOneReturnsSame() {
         GooValue val = goo(GooType.BLAZE, 15);
@@ -279,7 +335,9 @@ class GooValueTest {
         assertSame(val, result);
     }
 
-    /** Dividing can zero out a type (excluded from result). */
+    /**
+     * Dividing can zero out a type (excluded from result).
+     */
     @Test
     void divideCanZeroOutType() {
         GooValue val = goo(GooType.METAL, 1);
@@ -287,7 +345,9 @@ class GooValueTest {
         assertTrue(result.isEmpty()); // 1/2 = 0 → empty
     }
 
-    /** Multi-type divide divides each type independently. */
+    /**
+     * Multi-type divide divides each type independently.
+     */
     @Test
     void multiTypeDivide() {
         GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 6);
@@ -298,7 +358,9 @@ class GooValueTest {
 
     // ── scale ──────────────────────────────────────────────────────────
 
-    /** Scaling by 0.5 halves all types (rounded). */
+    /**
+     * Scaling by 0.5 halves all types (rounded).
+     */
     @Test
     void scaleByHalf() {
         GooValue val = goo(GooType.BLAZE, 100, GooType.METAL, 50);
@@ -307,7 +369,9 @@ class GooValueTest {
         assertEquals(25, result.get(GooType.METAL));
     }
 
-    /** Scaling rounds to nearest integer. */
+    /**
+     * Scaling rounds to nearest integer.
+     */
     @Test
     void scaleRoundsToNearest() {
         GooValue val = goo(GooType.BLAZE, 7);
@@ -315,7 +379,9 @@ class GooValueTest {
         assertEquals(4, result.get(GooType.BLAZE)); // round(3.5) = 4
     }
 
-    /** Scaling by zero returns EMPTY. */
+    /**
+     * Scaling by zero returns EMPTY.
+     */
     @Test
     void scaleByZeroReturnsEmpty() {
         GooValue val = goo(GooType.VITAL, 100);
@@ -323,7 +389,9 @@ class GooValueTest {
         assertTrue(result.isEmpty());
     }
 
-    /** Scaling by 1.0 returns same instance. */
+    /**
+     * Scaling by 1.0 returns same instance.
+     */
     @Test
     void scaleByOneReturnsSame() {
         GooValue val = goo(GooType.LEAF, 42);
@@ -331,7 +399,9 @@ class GooValueTest {
         assertSame(val, result);
     }
 
-    /** Scaling can zero out small types (excluded from result). */
+    /**
+     * Scaling can zero out small types (excluded from result).
+     */
     @Test
     void scaleCanZeroOutSmallType() {
         GooValue val = goo(GooType.METAL, 1);
@@ -341,14 +411,18 @@ class GooValueTest {
 
     // ── hasNegative ──────────────────────────────────────────────────────
 
-    /** A value with all positive types has no negatives. */
+    /**
+     * A value with all positive types has no negatives.
+     */
     @Test
     void allPositiveHasNoNegative() {
         GooValue val = goo(GooType.METAL, 10, GooType.CRYSTAL, 5);
         assertFalse(val.hasNegative());
     }
 
-    /** A value with a negative type reports hasNegative. */
+    /**
+     * A value with a negative type reports hasNegative.
+     */
     @Test
     void negativeTypeDetected() {
         Map<GooType, Integer> map = new EnumMap<>(GooType.class);
@@ -358,7 +432,9 @@ class GooValueTest {
         assertTrue(val.hasNegative());
     }
 
-    /** EMPTY has no negatives. */
+    /**
+     * EMPTY has no negatives.
+     */
     @Test
     void emptyHasNoNegative() {
         assertFalse(GooValue.EMPTY.hasNegative());
@@ -366,7 +442,9 @@ class GooValueTest {
 
     // ── isEmpty ─────────────────────────────────────────────────────────
 
-    /** A value with at least one positive type is not empty. */
+    /**
+     * A value with at least one positive type is not empty.
+     */
     @Test
     void nonEmptyValue() {
         GooValue val = goo(GooType.HEX, 1);
@@ -375,13 +453,17 @@ class GooValueTest {
 
     // ── toString ────────────────────────────────────────────────────────
 
-    /** Empty value toString returns "none". */
+    /**
+     * Empty value toString returns "none".
+     */
     @Test
     void toStringEmpty() {
         assertEquals("none", GooValue.EMPTY.toString());
     }
 
-    /** Non-empty toString contains the type id and amount. */
+    /**
+     * Non-empty toString contains the type id and amount.
+     */
     @Test
     void toStringContainsTypeAndAmount() {
         GooValue val = goo(GooType.VITAL, 5);

@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;

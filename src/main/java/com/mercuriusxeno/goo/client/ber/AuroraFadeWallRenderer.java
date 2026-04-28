@@ -7,11 +7,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.Direction;
 import net.minecraft.util.LightCoordsUtil;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 
 /**
@@ -23,94 +19,154 @@ import java.util.function.BiFunction;
  */
 public final class AuroraFadeWallRenderer {
 
-    /** Maximum height of the fade wall in blocks (half block). */
+    /**
+     * Maximum height of the fade wall in blocks (half block).
+     */
     private static final float FADE_WALL_HEIGHT = 8f / 16f;
 
-    /** Sine oscillation speed: 2*pi / 60 ticks = 3 second full cycle. */
+    /**
+     * Sine oscillation speed: 2*pi / 60 ticks = 3 second full cycle.
+     */
     private static final float FADE_PULSE_SPEED = (float) (2 * Math.PI / 60);
 
-    /** Minimum alpha multiplier at the sine valley. */
+    /**
+     * Minimum alpha multiplier at the sine valley.
+     */
     private static final float FADE_PULSE_MIN = 0.7f;
 
-    /** Base alpha for fade wall quads at the block edge (full opaque). */
+    /**
+     * Base alpha for fade wall quads at the block edge (full opaque).
+     */
     private static final int FADE_WALL_ALPHA = 0xFF;
 
-    /** Number of vertical strips per block edge for aurora effect. */
+    /**
+     * Number of vertical strips per block edge for aurora effect.
+     */
     private static final int AURORA_STRIPS = 32;
 
-    /** Primary edge noise frequency (peaks per block). */
+    /**
+     * Primary edge noise frequency (peaks per block).
+     */
     private static final float FRILL_FREQ = 5.0f;
 
-    /** Primary edge noise amplitude (fraction of max height). */
+    /**
+     * Primary edge noise amplitude (fraction of max height).
+     */
     private static final float FRILL_AMP = 0.15f;
 
-    /** Minimum height fraction at noise valleys. */
+    /**
+     * Minimum height fraction at noise valleys.
+     */
     private static final float BASE_FRILL = 0.85f;
 
-    /** Primary edge noise drift speed. */
+    /**
+     * Primary edge noise drift speed.
+     */
     private static final float FRILL_SPEED = 0.12f;
 
-    /** Fine jitter frequency layered on top of primary noise. */
+    /**
+     * Fine jitter frequency layered on top of primary noise.
+     */
     private static final float ROUGH_FREQ = 9.0f;
 
-    /** Fine jitter amplitude. */
+    /**
+     * Fine jitter amplitude.
+     */
     private static final float ROUGH_AMP = 0.04f;
 
-    /** Fine jitter drift speed. */
+    /**
+     * Fine jitter drift speed.
+     */
     private static final float ROUGH_SPEED = 0.2f;
 
-    /** Curtain band frequency (bright columns per block). */
+    /**
+     * Curtain band frequency (bright columns per block).
+     */
     private static final float BAND_FREQ = 12.0f;
 
-    /** Curtain band drift speed. */
+    /**
+     * Curtain band drift speed.
+     */
     private static final float BAND_SPEED = 0.06f;
 
-    /** Minimum curtain band intensity (valleys stay visible). */
+    /**
+     * Minimum curtain band intensity (valleys stay visible).
+     */
     private static final float BAND_MIN = 0.5f;
 
-    /** Curtain band peak sharpness exponent. */
+    /**
+     * Curtain band peak sharpness exponent.
+     */
     private static final float BAND_SHARPNESS = 3.0f;
 
-    /** Broad curtain frequency (one wide bright region per ~3 blocks). */
+    /**
+     * Broad curtain frequency (one wide bright region per ~3 blocks).
+     */
     private static final float BROAD_BAND_FREQ = 1.2f;
 
-    /** Broad curtain drift speed (very slow). */
+    /**
+     * Broad curtain drift speed (very slow).
+     */
     private static final float BROAD_BAND_SPEED = 0.03f;
 
-    /** Broad curtain minimum intensity (deep valleys). */
+    /**
+     * Broad curtain minimum intensity (deep valleys).
+     */
     private static final float BROAD_BAND_MIN = 0.15f;
 
-    /** Broad curtain peak sharpness (wider, softer peaks). */
+    /**
+     * Broad curtain peak sharpness (wider, softer peaks).
+     */
     private static final float BROAD_BAND_SHARPNESS = 1.5f;
 
-    /** Half-block offset used for face center and lerp midpoint. */
+    /**
+     * Half-block offset used for face center and lerp midpoint.
+     */
     private static final float HALF = 0.5f;
 
-    /** Lerp range: maps [0,1] fraction to [-1,1] for run-axis interpolation. */
+    /**
+     * Lerp range: maps [0,1] fraction to [-1,1] for run-axis interpolation.
+     */
     private static final float LERP_RANGE = 2.0f;
 
-    /** Hash prime A for edge seed computation. */
+    /**
+     * Hash prime A for edge seed computation.
+     */
     private static final int HASH_PRIME_A = 31;
 
-    /** Hash prime B for edge seed computation. */
+    /**
+     * Hash prime B for edge seed computation.
+     */
     private static final int HASH_PRIME_B = 17;
 
-    /** Hash prime C for edge seed computation. */
+    /**
+     * Hash prime C for edge seed computation.
+     */
     private static final int HASH_PRIME_C = 7;
 
-    /** Bit shift for alpha channel in ARGB. */
+    /**
+     * Bit shift for alpha channel in ARGB.
+     */
     private static final int ALPHA_SHIFT = 24;
 
-    /** Mask for stripping alpha from an ARGB color. */
+    /**
+     * Mask for stripping alpha from an ARGB color.
+     */
     private static final int RGB_MASK = 0x00FFFFFF;
 
-    /** Array index for X component in offset triples. */
+    /**
+     * Array index for X component in offset triples.
+     */
     private static final int X = 0;
 
-    /** Array index for Y component in offset triples. */
+    /**
+     * Array index for Y component in offset triples.
+     */
     private static final int Y = 1;
 
-    /** Array index for Z component in offset triples. */
+    /**
+     * Array index for Z component in offset triples.
+     */
     private static final int Z = 2;
 
     private AuroraFadeWallRenderer() {
@@ -130,9 +186,9 @@ public final class AuroraFadeWallRenderer {
      * @param gameTime      the current game time for sine animation
      */
     static void submit(PoseStack poseStack,
-            SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, int baseColor, Direction placedFace,
-            float gameTime) {
+                       SubmitNodeCollector nodeCollector, List<int[]> offsets,
+                       Set<Long> filled, int baseColor, Direction placedFace,
+                       float gameTime) {
         float pulse = FADE_PULSE_MIN + (1f - FADE_PULSE_MIN)
                 * (HALF + HALF * (float) Math.sin(gameTime * FADE_PULSE_SPEED));
         int pulsedAlpha = (int) (FADE_WALL_ALPHA * pulse);
@@ -160,9 +216,9 @@ public final class AuroraFadeWallRenderer {
      * @param gameTime         the current game time for animation
      */
     private static void submitPrimaryPass(PoseStack poseStack,
-            SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, Set<Long> blobMost, Direction placedFace,
-            int pulsedBase, int transparentColor, float gameTime) {
+                                          SubmitNodeCollector nodeCollector, List<int[]> offsets,
+                                          Set<Long> filled, Set<Long> blobMost, Direction placedFace,
+                                          int pulsedBase, int transparentColor, float gameTime) {
         nodeCollector.submitCustomGeometry(poseStack,
                 GooRenderTypes.QUADS_ADDITIVE_NO_DEPTH,
                 (pose, c) -> {
@@ -185,17 +241,17 @@ public final class AuroraFadeWallRenderer {
      *
      * @param poseStack     the pose stack
      * @param nodeCollector the render node collector
-     * @param offsets        all 3D block offsets in the region
-     * @param filled         packed position set for neighbor checks
-     * @param blobMost       packed positions of the blob-most layer
-     * @param placedFace     the face the blob was placed on
-     * @param baseColor      the ARGB fill color
-     * @param gameTime       the current game time for animation
+     * @param offsets       all 3D block offsets in the region
+     * @param filled        packed position set for neighbor checks
+     * @param blobMost      packed positions of the blob-most layer
+     * @param placedFace    the face the blob was placed on
+     * @param baseColor     the ARGB fill color
+     * @param gameTime      the current game time for animation
      */
     private static void submitBroadBandPass(PoseStack poseStack,
-            SubmitNodeCollector nodeCollector, List<int[]> offsets,
-            Set<Long> filled, Set<Long> blobMost, Direction placedFace,
-            int baseColor, float gameTime) {
+                                            SubmitNodeCollector nodeCollector, List<int[]> offsets,
+                                            Set<Long> filled, Set<Long> blobMost, Direction placedFace,
+                                            int baseColor, float gameTime) {
         int rgb = baseColor & RGB_MASK;
         int transparentColor = rgb;
         nodeCollector.submitCustomGeometry(poseStack,
@@ -232,10 +288,10 @@ public final class AuroraFadeWallRenderer {
      * @param bandFn           computes band intensity from (worldPos, gameTime)
      */
     private static void emitEdgesForBlock(PoseStack.Pose pose,
-            VertexConsumer consumer, int[] pos, Direction faceDir,
-            Set<Long> filled, int baseColor, int transparentColor,
-            float gameTime, HeightFunction heightFn,
-            BiFunction<Float, Float, Float> bandFn) {
+                                          VertexConsumer consumer, int[] pos, Direction faceDir,
+                                          Set<Long> filled, int baseColor, int transparentColor,
+                                          float gameTime, HeightFunction heightFn,
+                                          BiFunction<Float, Float, Float> bandFn) {
         FaceEdge[] edges = ChainMarkerBlockEntityRenderer.getFaceEdges(faceDir);
         float cx = pos[X] + HALF + faceDir.getStepX() * HALF;
         float cy = pos[Y] + HALF + faceDir.getStepY() * HALF;
@@ -271,11 +327,11 @@ public final class AuroraFadeWallRenderer {
      * @param bandFn           computes band intensity from (worldPos, gameTime)
      */
     private static void emitAuroraStrips(PoseStack.Pose pose,
-            VertexConsumer consumer,
-            float cx, float cy, float cz, Direction faceDir, FaceEdge edge,
-            int baseColor, int transparentColor, float gameTime,
-            HeightFunction heightFn,
-            BiFunction<Float, Float, Float> bandFn) {
+                                         VertexConsumer consumer,
+                                         float cx, float cy, float cz, Direction faceDir, FaceEdge edge,
+                                         int baseColor, int transparentColor, float gameTime,
+                                         HeightFunction heightFn,
+                                         BiFunction<Float, Float, Float> bandFn) {
         float nx = edge.neighborDir().getStepX() * HALF;
         float ny = edge.neighborDir().getStepY() * HALF;
         float nz = edge.neighborDir().getStepZ() * HALF;
@@ -292,7 +348,8 @@ public final class AuroraFadeWallRenderer {
                 gameTime, heightFn, bandFn, edgeSeed);
     }
 
-    /** Emits the per-strip quads along the edge with height and band modulation.
+    /**
+     * Emits the per-strip quads along the edge with height and band modulation.
      *
      * @param pose             the current pose matrix
      * @param consumer         the vertex consumer
@@ -311,11 +368,11 @@ public final class AuroraFadeWallRenderer {
      * @param edgeSeed         per-edge seed for variation
      */
     private static void emitStripLoop(PoseStack.Pose pose, VertexConsumer consumer,
-            float edgeX, float edgeY, float edgeZ,
-            float rx, float ry, float rz, Direction faceDir,
-            int baseColor, int transparentColor, float gameTime,
-            HeightFunction heightFn, BiFunction<Float, Float, Float> bandFn,
-            float edgeSeed) {
+                                      float edgeX, float edgeY, float edgeZ,
+                                      float rx, float ry, float rz, Direction faceDir,
+                                      int baseColor, int transparentColor, float gameTime,
+                                      HeightFunction heightFn, BiFunction<Float, Float, Float> bandFn,
+                                      float edgeSeed) {
         float stepFrac = 1.0f / AURORA_STRIPS;
         float prevWorldPos = computeWorldPos(edgeX, edgeY, edgeZ, rx, ry, rz, 0f);
         float prevHeight = heightFn.compute(prevWorldPos, gameTime, edgeSeed);
@@ -359,12 +416,12 @@ public final class AuroraFadeWallRenderer {
      * @param transparentColor ARGB color at the top (alpha = 0)
      */
     private static void emitAuroraQuadPerVertex(PoseStack.Pose pose,
-            VertexConsumer consumer,
-            float ex, float ey, float ez,
-            float rx, float ry, float rz,
-            Direction faceDir, float t0, float t1,
-            float height0, float height1,
-            int baseColor, int transparentColor) {
+                                                VertexConsumer consumer,
+                                                float ex, float ey, float ez,
+                                                float rx, float ry, float rz,
+                                                Direction faceDir, float t0, float t1,
+                                                float height0, float height1,
+                                                int baseColor, int transparentColor) {
         float lerp0 = t0 * LERP_RANGE - 1.0f;
         float lerp1 = t1 * LERP_RANGE - 1.0f;
         float bx0 = ex + rx * lerp0;
@@ -403,7 +460,7 @@ public final class AuroraFadeWallRenderer {
      * @return world-space scalar position along the run axis
      */
     private static float computeWorldPos(float ex, float ey, float ez,
-            float rx, float ry, float rz, float t) {
+                                         float rx, float ry, float rz, float t) {
         float lerp = t * LERP_RANGE - 1.0f;
         float wx = ex + rx * lerp;
         float wy = ey + ry * lerp;
@@ -428,8 +485,8 @@ public final class AuroraFadeWallRenderer {
      * @return a deterministic phase seed for this edge
      */
     private static float computeEdgeSeed(float cx, float cy, float cz,
-            float nx, float ny, float nz,
-            float rx, float ry, float rz) {
+                                         float nx, float ny, float nz,
+                                         float rx, float ry, float rz) {
         float ex = cx + nx;
         float ey = cy + ny;
         float ez = cz + nz;
@@ -451,7 +508,7 @@ public final class AuroraFadeWallRenderer {
      * @return the computed strip height in blocks
      */
     private static float computeStripHeight(float worldPos, float gameTime,
-            float edgeSeed) {
+                                            float edgeSeed) {
         float timeBreath = HALF + HALF * (float) Math.sin(gameTime * FRILL_SPEED);
         float primary = BASE_FRILL + FRILL_AMP * timeBreath
                 * (float) Math.sin(worldPos * FRILL_FREQ);
@@ -472,7 +529,7 @@ public final class AuroraFadeWallRenderer {
      * @return the computed strip height in blocks
      */
     private static float computeBroadStripHeight(float worldPos,
-            float gameTime, float edgeSeed) {
+                                                 float gameTime, float edgeSeed) {
         float timeBreath = HALF + HALF * (float) Math.sin(gameTime * BROAD_BAND_SPEED);
         float primary = BASE_FRILL + FRILL_AMP * timeBreath
                 * (float) Math.sin(worldPos * BROAD_BAND_FREQ);
@@ -492,7 +549,7 @@ public final class AuroraFadeWallRenderer {
      * @return intensity factor in [BAND_MIN, 1.0]
      */
     private static float computeBandIntensity(float worldPos,
-            float gameTime) {
+                                              float gameTime) {
         float timeModulate = HALF + HALF * (float) Math.sin(gameTime * BAND_SPEED);
         float spatial = (float) Math.sin(worldPos * BAND_FREQ);
         float raw = HALF + HALF * spatial * timeModulate;
@@ -509,7 +566,7 @@ public final class AuroraFadeWallRenderer {
      * @return intensity factor in [BROAD_BAND_MIN, 1.0]
      */
     private static float computeBroadBand(float worldPos,
-            float gameTime) {
+                                          float gameTime) {
         float timeModulate = HALF + HALF * (float) Math.sin(gameTime * BROAD_BAND_SPEED);
         float spatial = (float) Math.sin(worldPos * BROAD_BAND_FREQ);
         float raw = HALF + HALF * spatial * timeModulate;
@@ -541,7 +598,7 @@ public final class AuroraFadeWallRenderer {
      * @return packed positions of the blob-most block per column
      */
     private static Set<Long> computeBlobMostLayer(List<int[]> offsets,
-            Direction placedFace) {
+                                                  Direction placedFace) {
         Map<Long, int[]> bestPerColumn = new HashMap<>();
         int ax = placedFace.getStepX();
         int ay = placedFace.getStepY();
@@ -552,7 +609,7 @@ public final class AuroraFadeWallRenderer {
             int[] current = bestPerColumn.get(columnKey);
             if (current == null
                     || depth > (current[X] * ax
-                            + current[Y] * ay + current[Z] * az)) {
+                    + current[Y] * ay + current[Z] * az)) {
                 bestPerColumn.put(columnKey, o);
             }
         }

@@ -3,12 +3,7 @@ package com.mercuriusxeno.goo.data;
 import com.mercuriusxeno.goo.Goo;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Pure derivation engine: takes base values, denied items, and recipes, and produces
@@ -19,9 +14,13 @@ import java.util.Set;
  */
 final class GooValueDerivation {
 
-    /** Log message for negative base values. */
+    /**
+     * Log message for negative base values.
+     */
     private static final String ERR_NEGATIVE_BASE = "Negative goo in base value for {}: {} -- skipped";
-    /** Log message for negative derived values. */
+    /**
+     * Log message for negative derived values.
+     */
     private static final String ERR_NEGATIVE_DERIVED = "Negative goo in derived value for {}: {} -- skipped";
 
     private final Map<Identifier, GooValue> baseValues;
@@ -32,7 +31,7 @@ final class GooValueDerivation {
     /**
      * Creates a new derivation context with the given base values and deny list.
      *
-     * @param baseValues hand-keyed base values (read-only reference)
+     * @param baseValues  hand-keyed base values (read-only reference)
      * @param deniedItems items excluded from derivation output
      */
     private GooValueDerivation(Map<Identifier, GooValue> baseValues, Set<Identifier> deniedItems) {
@@ -50,8 +49,8 @@ final class GooValueDerivation {
      * @return complete derivation result
      */
     static DerivationResult derive(List<RecipeInput> recipes,
-            Map<Identifier, GooValue> baseValues, Set<Identifier> deniedItems,
-            boolean baseOverride) {
+                                   Map<Identifier, GooValue> baseValues, Set<Identifier> deniedItems,
+                                   boolean baseOverride) {
         return new GooValueDerivation(baseValues, deniedItems).run(recipes, baseOverride);
     }
 
@@ -90,14 +89,16 @@ final class GooValueDerivation {
     /**
      * Adds a base value to the map if non-negative, logging an error otherwise.
      *
-     * @param dest accumulator map for valid base values
+     * @param dest   accumulator map for valid base values
      * @param itemId the item identifier
-     * @param value the base goo value to validate
+     * @param value  the base goo value to validate
      */
     private static void addIfNonNegativeBase(Map<Identifier, GooValue> dest,
-            Identifier itemId, GooValue value) {
+                                             Identifier itemId, GooValue value) {
         if (value.hasNegative()) {
-            if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(ERR_NEGATIVE_BASE, itemId, value); }
+            if (Goo.LOGGER.isErrorEnabled()) {
+                Goo.LOGGER.error(ERR_NEGATIVE_BASE, itemId, value);
+            }
             return;
         }
         dest.put(itemId, value);
@@ -106,12 +107,12 @@ final class GooValueDerivation {
     /**
      * Merges derived values into the effective map, skipping negatives and applying override rule.
      *
-     * @param effective accumulator map built from validated base values
+     * @param effective     accumulator map built from validated base values
      * @param derivedValues recipe-derived values to merge
-     * @param baseOverride when true, base always wins; when false, cheaper wins
+     * @param baseOverride  when true, base always wins; when false, cheaper wins
      */
     private static void mergeDerivedValues(Map<Identifier, GooValue> effective,
-            Map<Identifier, GooValue> derivedValues, boolean baseOverride) {
+                                           Map<Identifier, GooValue> derivedValues, boolean baseOverride) {
         for (var entry : derivedValues.entrySet()) {
             mergeSingleDerived(effective, entry.getKey(), entry.getValue(), baseOverride);
         }
@@ -120,13 +121,13 @@ final class GooValueDerivation {
     /**
      * Merges one derived value into the effective map if it passes validation and override rules.
      *
-     * @param effective accumulator map built from validated base values
-     * @param itemId the item identifier
-     * @param derived the recipe-derived goo value
+     * @param effective    accumulator map built from validated base values
+     * @param itemId       the item identifier
+     * @param derived      the recipe-derived goo value
      * @param baseOverride when true, base always wins; when false, cheaper wins
      */
     private static void mergeSingleDerived(Map<Identifier, GooValue> effective,
-            Identifier itemId, GooValue derived, boolean baseOverride) {
+                                           Identifier itemId, GooValue derived, boolean baseOverride) {
         if (derived.hasNegative()) {
             Goo.LOGGER.error(ERR_NEGATIVE_DERIVED, itemId, derived);
             return;
@@ -162,7 +163,7 @@ final class GooValueDerivation {
      */
     @Nullable
     static GooValue lookupForDerivation(Identifier itemId,
-            Map<Identifier, GooValue> baseValues, Map<Identifier, GooValue> derivedValues) {
+                                        Map<Identifier, GooValue> baseValues, Map<Identifier, GooValue> derivedValues) {
         GooValue base = baseValues.get(itemId);
         GooValue derived = derivedValues.get(itemId);
         if (base != null && derived != null) {
@@ -175,7 +176,7 @@ final class GooValueDerivation {
     /**
      * Executes the full derivation pipeline: multi-pass derive, conflict/cycle/loss detection.
      *
-     * @param recipes all recipe inputs to consider
+     * @param recipes      all recipe inputs to consider
      * @param baseOverride when true, base values always win over derived values
      * @return complete derivation result
      */
@@ -189,19 +190,19 @@ final class GooValueDerivation {
     /**
      * Builds the final derivation result from derived values and diagnostic scans.
      *
-     * @param byOutput recipes grouped by output item ID
+     * @param byOutput     recipes grouped by output item ID
      * @param baseOverride when true, base values always win over derived values
      * @return complete derivation result with diagnostics
      */
     private DerivationResult assembleResult(Map<Identifier, List<RecipeInput>> byOutput,
-            boolean baseOverride) {
+                                            boolean baseOverride) {
         return new DerivationResult(
-            Map.copyOf(derivedValues),
-            Map.copyOf(derivationSources),
-            buildEffectiveValues(baseValues, derivedValues, baseOverride),
-            GooDerivationDiagnostics.detectConflicts(baseValues, derivedValues),
-            GooDerivationDiagnostics.detectCycles(byOutput, baseValues),
-            GooDerivationDiagnostics.detectDivisibilityLoss(byOutput, baseValues, derivedValues)
+                Map.copyOf(derivedValues),
+                Map.copyOf(derivationSources),
+                buildEffectiveValues(baseValues, derivedValues, baseOverride),
+                GooDerivationDiagnostics.detectConflicts(baseValues, derivedValues),
+                GooDerivationDiagnostics.detectCycles(byOutput, baseValues),
+                GooDerivationDiagnostics.detectDivisibilityLoss(byOutput, baseValues, derivedValues)
         );
     }
 
@@ -238,16 +239,20 @@ final class GooValueDerivation {
     /**
      * Attempts to derive or improve the value for a single item from its recipes.
      *
-     * @param itemId the item to derive a value for
+     * @param itemId  the item to derive a value for
      * @param recipes candidate recipes producing this item
      * @return true if the derived value was new or improved
      */
     private boolean tryDeriveItem(Identifier itemId, List<RecipeInput> recipes) {
         GooRecipeEvaluator.RecipeResult best =
                 GooRecipeEvaluator.findCheapestRecipeValue(recipes, baseValues, derivedValues);
-        if (best == null) { return false; }
+        if (best == null) {
+            return false;
+        }
         GooValue existing = derivedValues.get(itemId);
-        if (existing != null && !GooRecipeEvaluator.isCheaper(best.value(), existing)) { return false; }
+        if (existing != null && !GooRecipeEvaluator.isCheaper(best.value(), existing)) {
+            return false;
+        }
         derivedValues.put(itemId, best.value());
         derivationSources.put(itemId, best.source());
         return true;

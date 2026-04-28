@@ -8,26 +8,28 @@ import java.util.Map;
 /**
  * Parses the _constants block from base_values.json into scalar and tree constants.
  * Scalar constants resolve to a single integer; tree constants resolve to a full
- * GooValue (multi-type map). Extracted from GooValueLoader to keep method count
- * within PMD TooManyMethods limits.
+ * GooValue (multi-type map).
  */
 final class GooConstantParser {
 
     private static final String CONSTANTS_SUFFIX = "_constants";
     private static final String LOG_LOADED_CONSTANTS = "Loaded {} constants ({} scalar, {} tree)";
 
-    private GooConstantParser() {}
+    private GooConstantParser() {
+    }
 
     /**
      * Parses the _constants object from the JSON root, if present.
      *
-     * @param json the root JSON object containing the _constants key
+     * @param json  the root JSON object containing the _constants key
      * @param state mutable parsing state
      */
     static void parseConstants(JsonObject json, GooValueLoader.ParseState state) {
         state.constants.clear();
         state.treeConstants.clear();
-        if (!json.has(CONSTANTS_SUFFIX)) { return; }
+        if (!json.has(CONSTANTS_SUFFIX)) {
+            return;
+        }
         JsonObject obj = json.getAsJsonObject(CONSTANTS_SUFFIX);
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             parseOneConstant(entry.getKey(), entry.getValue(), state);
@@ -37,6 +39,7 @@ final class GooConstantParser {
 
     /**
      * Logs the number of parsed scalar and tree constants at INFO level.
+     *
      * @param state the mutable parsing state containing scalar and tree constant maps
      */
     private static void logConstantCounts(GooValueLoader.ParseState state) {
@@ -50,7 +53,7 @@ final class GooConstantParser {
     /**
      * Parses a single constant entry, dispatching to tree or scalar handling.
      *
-     * @param name the constant name
+     * @param name  the constant name
      * @param value the JSON value (object for tree, string for scalar/expression)
      * @param state mutable parsing state
      */
@@ -68,7 +71,7 @@ final class GooConstantParser {
      * Parses a scalar constant. Tries tree evaluation first for expressions
      * referencing tree constants (e.g. "9 $metal_nugget"), falling back to scalar.
      *
-     * @param name the constant name
+     * @param name  the constant name
      * @param value the JSON value to resolve
      * @param state mutable parsing state
      */
@@ -88,7 +91,7 @@ final class GooConstantParser {
     /**
      * True if the expression string contains a $ref that's a known tree constant.
      *
-     * @param expr the expression to scan for tree constant references
+     * @param expr          the expression to scan for tree constant references
      * @param treeConstants the known tree constants
      * @return true if any $ref resolves to a tree constant
      */
@@ -107,7 +110,7 @@ final class GooConstantParser {
     /**
      * Scans forward from {@code start} while characters are word-like (letter, digit, or '_').
      *
-     * @param expr the string to scan
+     * @param expr  the string to scan
      * @param start the starting index
      * @return the index of the first non-word character (or string length)
      */

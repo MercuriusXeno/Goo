@@ -4,9 +4,10 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.ability.AbilityDefinition;
 import com.mercuriusxeno.goo.ability.AbilityRegistry;
-import com.mercuriusxeno.goo.effect.EntityEffectRegistry;
-import com.mercuriusxeno.goo.effect.GooMobEffects;
-import com.mercuriusxeno.goo.effect.WorldEffects;
+import com.mercuriusxeno.goo.ability.MobAbilityRegistry;
+import com.mercuriusxeno.goo.ability.mob.MobAbilities;
+import com.mercuriusxeno.goo.ability.world.EffectBlockPlacement;
+import com.mercuriusxeno.goo.ability.world.WorldEffects;
 import com.mercuriusxeno.goo.registry.GooSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,36 +30,63 @@ import java.util.List;
  */
 final class BlobEffectScheduler {
 
-    /** Sound volume for throw event. */
+    /**
+     * Sound volume for throw event.
+     */
     private static final float THROW_SOUND_VOLUME = 0.5f;
-    /** Base pitch for throw sound. */
+    /**
+     * Base pitch for throw sound.
+     */
     private static final float THROW_PITCH_BASE = 0.4f;
-    /** Pitch randomness range for throw sound. */
+    /**
+     * Pitch randomness range for throw sound.
+     */
     private static final float THROW_PITCH_RANGE = 0.4f;
-    /** Minimum pitch offset for throw sound. */
+    /**
+     * Minimum pitch offset for throw sound.
+     */
     private static final float THROW_PITCH_OFFSET = 0.8f;
-    /** Sound volume for impact event. */
+    /**
+     * Sound volume for impact event.
+     */
     private static final float IMPACT_SOUND_VOLUME = 1.0f;
-    /** Base pitch for impact sound. */
+    /**
+     * Base pitch for impact sound.
+     */
     private static final float IMPACT_PITCH_BASE = 0.9f;
-    /** Pitch randomness range for impact sound. */
+    /**
+     * Pitch randomness range for impact sound.
+     */
     private static final float IMPACT_PITCH_RANGE = 0.2f;
-    /** Block center offset (half-block). */
+    /**
+     * Block center offset (half-block).
+     */
     private static final double BLOCK_CENTER = 0.5;
 
-    /** Log: entity no longer exists at blob arrival. */
+    /**
+     * Log: entity no longer exists at blob arrival.
+     */
     private static final String LOG_ENTITY_GONE = "Blob arrived but entity {} no longer exists";
-    /** Behavior type name for entity effects. */
+    /**
+     * Behavior type name for entity effects.
+     */
     private static final String ENTITY_EFFECT_TYPE = "entity_effect";
-    /** Param key for handler name in entity_effect behaviors. */
+    /**
+     * Param key for handler name in entity_effect behaviors.
+     */
     private static final String HANDLER_PARAM = "handler";
-    /** Empty handler fallback. */
+    /**
+     * Empty handler fallback.
+     */
     private static final String NO_HANDLER = "";
 
-    /** Pending effects waiting for their blob to arrive. */
+    /**
+     * Pending effects waiting for their blob to arrive.
+     */
     private static final List<PendingEffect> PENDING_EFFECTS = new ArrayList<>();
 
-    private BlobEffectScheduler() {}
+    private BlobEffectScheduler() {
+    }
 
     /**
      * Plays the throw sound and queues a pending effect for blob arrival.
@@ -69,7 +97,7 @@ final class BlobEffectScheduler {
      * @param travelTicks the number of ticks until arrival
      */
     static void scheduleEffect(ServerPlayer player, BlobThrowPayload payload,
-            GooType gooType, int travelTicks) {
+                               GooType gooType, int travelTicks) {
         playThrowSound(player, gooType);
         enqueueArrival(player, payload, gooType, travelTicks);
     }
@@ -100,7 +128,7 @@ final class BlobEffectScheduler {
      * @param travelTicks the number of ticks until arrival
      */
     static void enqueueArrival(ServerPlayer player, BlobThrowPayload payload,
-            GooType gooType, int travelTicks) {
+                               GooType gooType, int travelTicks) {
         ServerLevel level = player.level();
         int arrivalTick = level.getServer().getTickCount() + travelTicks;
         Direction face = BlobThrowHandler.directionFromOrdinal(payload.targetFace());
@@ -169,35 +197,40 @@ final class BlobEffectScheduler {
         if (!pe.abilityId.isEmpty()) {
             applyEntityAbilityEffect(pe, living);
         } else {
-            GooMobEffects.apply(pe.level, living, pe.gooType, pe.thrower);
+            MobAbilities.apply(pe.level, living, pe.gooType, pe.thrower);
         }
     }
 
-    /** Dispatches via the data-driven entity_effect handler.
+    /**
+     * Dispatches via the data-driven entity_effect handler.
      *
      * @param pe     the pending effect
      * @param living the target entity
      */
     private static void applyEntityAbilityEffect(PendingEffect pe, LivingEntity living) {
         AbilityDefinition def = resolveAbility(pe.abilityId);
-        if (def == null) { return; }
+        if (def == null) {
+            return;
+        }
         dispatchEntityHandlers(pe, def, living);
     }
 
     private static AbilityDefinition resolveAbility(String abilityId) {
         Identifier id = Identifier.tryParse(abilityId);
-        if (id == null) { return null; }
+        if (id == null) {
+            return null;
+        }
         return AbilityRegistry.getAbility(id);
     }
 
     private static void dispatchEntityHandlers(PendingEffect pe,
-            AbilityDefinition def, LivingEntity living) {
+                                               AbilityDefinition def, LivingEntity living) {
         for (AbilityDefinition.BehaviorEntry entry : def.behaviors()) {
             if (ENTITY_EFFECT_TYPE.equals(entry.type())) {
                 String handler = entry.params().getOrDefault(HANDLER_PARAM, NO_HANDLER);
-                var fn = EntityEffectRegistry.get(handler);
+                var fn = MobAbilityRegistry.get(handler);
                 if (fn != null) {
-                    fn.accept(new EntityEffectRegistry.Context(pe.level, living, pe.thrower));
+                    fn.accept(new MobAbilityRegistry.Context(pe.level, living, pe.thrower));
                 }
             }
         }
@@ -218,16 +251,21 @@ final class BlobEffectScheduler {
         }
     }
 
-    /** Places or stacks a chain marker using a data-driven ability definition.
+    /**
+     * Places or stacks a chain marker using a data-driven ability definition.
      *
      * @param pe the pending effect with ability id set
      */
     static void applyAbilityBlockEffect(PendingEffect pe) {
         net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(pe.abilityId);
-        if (id == null) { return; }
+        if (id == null) {
+            return;
+        }
         com.mercuriusxeno.goo.ability.AbilityDefinition def = com.mercuriusxeno.goo.ability.AbilityRegistry.getAbility(id);
-        if (def == null) { return; }
-        com.mercuriusxeno.goo.effect.EffectBlockPlacement.placeOrStackAbility(
+        if (def == null) {
+            return;
+        }
+        EffectBlockPlacement.placeOrStackAbility(
                 pe.level, pe.targetPos, pe.gooType, pe.targetFace, def);
     }
 
@@ -245,9 +283,12 @@ final class BlobEffectScheduler {
                 SoundEvents.SLIME_SQUISH, SoundSource.PLAYERS, IMPACT_SOUND_VOLUME, pitch);
     }
 
-    /** A goo effect waiting for its blob to finish travelling. */
+    /**
+     * A goo effect waiting for its blob to finish travelling.
+     */
     record PendingEffect(int arrivalTick, ServerLevel level,
                          ServerPlayer thrower, GooType gooType,
                          int targetEntityId, BlockPos targetPos,
-                         Direction targetFace, String abilityId) {}
+                         Direction targetFace, String abilityId) {
+    }
 }

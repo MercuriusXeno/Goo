@@ -22,18 +22,17 @@ import java.util.List;
  */
 public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPayload {
 
-    /** Payload type ID for registration. */
+    /**
+     * Payload type ID for registration.
+     */
     public static final Type<AbilitySyncPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "ability_sync"));
 
-    /** Stream codec for encoding/decoding. */
+    /**
+     * Stream codec for encoding/decoding.
+     */
     public static final StreamCodec<FriendlyByteBuf, AbilitySyncPayload> STREAM_CODEC =
             StreamCodec.of(AbilitySyncPayload::encode, AbilitySyncPayload::decode);
-
-    @Override
-    public @NonNull Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
 
     /**
      * Builds the sync payload from the current server ability registry.
@@ -65,7 +64,9 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
 
     private static void encodeTags(FriendlyByteBuf buf, List<String> tags) {
         buf.writeVarInt(tags.size());
-        for (String tag : tags) { buf.writeUtf(tag); }
+        for (String tag : tags) {
+            buf.writeUtf(tag);
+        }
     }
 
     private static AbilitySyncPayload decode(FriendlyByteBuf buf) {
@@ -81,8 +82,15 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
     private static List<String> decodeTags(FriendlyByteBuf buf) {
         int tagCount = buf.readVarInt();
         List<String> tags = new ArrayList<>(tagCount);
-        for (int j = 0; j < tagCount; j++) { tags.add(buf.readUtf()); }
+        for (int j = 0; j < tagCount; j++) {
+            tags.add(buf.readUtf());
+        }
         return List.copyOf(tags);
+    }
+
+    @Override
+    public @NonNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     /**
@@ -96,5 +104,6 @@ public record AbilitySyncPayload(List<Entry> entries) implements CustomPacketPay
      * @param tags        categorical tags for targeting and display
      */
     public record Entry(String abilityId, String gooTypeId, String displayName,
-            String icon, int order, List<String> tags) {}
+                        String icon, int order, List<String> tags) {
+    }
 }

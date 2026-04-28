@@ -22,43 +22,65 @@ import java.util.Map;
  * Opens when the player holds right-click past the radial threshold.
  * Left-click a wedge to drill into that type's ability radial.
  * Left-click center to deselect. Right-click to dismiss.
- *
+ * <p>
  * Wedges are rendered via pre-generated anti-aliased mask textures
  * (see {@link RadialTextures}) with per-wedge color tinting.
  */
 public final class GooRadialScreen extends Screen {
 
-    /** Number of wedges (one per GooType). */
+    /**
+     * Number of wedges (one per GooType).
+     */
     static final int WEDGE_COUNT = GooType.values().length;
 
-    /** Arc span per wedge in radians. */
+    /**
+     * Arc span per wedge in radians.
+     */
     static final double WEDGE_ARC = 2.0 * Math.PI / WEDGE_COUNT;
 
-    /** Inner radius of the wedge ring in GUI-scaled pixels. */
+    /**
+     * Inner radius of the wedge ring in GUI-scaled pixels.
+     */
     static final int INNER_RADIUS = 30;
 
-    /** Outer radius of the wedge ring in GUI-scaled pixels. */
+    /**
+     * Outer radius of the wedge ring in GUI-scaled pixels.
+     */
     static final int OUTER_RADIUS = 100;
 
-    /** Divisor for centering calculations. */
+    /**
+     * Divisor for centering calculations.
+     */
     static final int HALF = 2;
 
-    /** Sentinel value for no wedge hovered (cancel zone or out of range). */
+    /**
+     * Sentinel value for no wedge hovered (cancel zone or out of range).
+     */
     static final int NO_SELECTION = -1;
 
-    /** Full circle in radians. */
+    /**
+     * Full circle in radians.
+     */
     static final double TWO_PI = 2.0 * Math.PI;
 
-    /** Empty string for deselection packets. */
+    /**
+     * Empty string for deselection packets.
+     */
     private static final String DESELECT_ID = "";
 
-    /** Available mB per goo type, snapshot taken on open. */
+    /**
+     * Available mB per goo type, snapshot taken on open.
+     */
     private final Map<GooType, Integer> available;
 
-    /** Pre-computed ARGB color per wedge, updated each frame. */
+    /**
+     * Pre-computed ARGB color per wedge, updated each frame.
+     */
     private final int[] wedgeColors = new int[WEDGE_COUNT];
 
-    /** Currently hovered wedge index, or -1 for cancel zone / out of range. */
+    /**
+     * Currently hovered wedge index, or -1 for cancel zone / out of range.
+     */
     private int hoveredIndex = -1;
 
     /**
@@ -78,7 +100,9 @@ public final class GooRadialScreen extends Screen {
     public static void open() {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
-        if (player == null) { return; }
+        if (player == null) {
+            return;
+        }
 
         Map<GooType, Integer> snapshot = GooSourceScanner.aggregateAvailable(player);
         mc.setScreen(new GooRadialScreen(snapshot));
@@ -96,6 +120,59 @@ public final class GooRadialScreen extends Screen {
     }
 
     /**
+     * Clears the glove selection (cancel/deselect zone).
+     */
+    private static void tryDeselectType() {
+        ItemStack glove = findGloveStack();
+        if (glove == null) {
+            return;
+        }
+        GooGloveItem.setSelectedType(glove, null);
+        sendSelectionToServer(DESELECT_ID);
+    }
+
+    /**
+     * Finds the glove ItemStack the player is holding. Checks main hand first,
+     * then offhand.
+     *
+     * @return the glove stack, or null if not held
+     */
+    private static @Nullable ItemStack findGloveStack() {
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null) {
+            return null;
+        }
+
+        ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (main.getItem() instanceof GooGloveItem) {
+            return main;
+        }
+
+        ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
+        if (off.getItem() instanceof GooGloveItem) {
+            return off;
+        }
+
+        return null;
+    }
+
+    // --- Input handling ---
+
+    /**
+     * Sends the goo type selection to the server for persistence.
+     *
+     * @param gooTypeId the selected goo type ID, or empty string for deselect
+     */
+    private static void sendSelectionToServer(String gooTypeId) {
+        var connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            connection.send(new ServerboundCustomPayloadPacket(
+                    new GloveSelectPayload(gooTypeId)));
+        }
+    }
+
+    /**
      * Returns false so the game continues running while the radial is open.
      *
      * @return always false
@@ -108,9 +185,9 @@ public final class GooRadialScreen extends Screen {
     /**
      * Renders the wedge ring, cancel zone, and labels behind the foreground layer.
      *
-     * @param graphics the GUI graphics extractor for rendering
-     * @param mouseX the current mouse x position
-     * @param mouseY the current mouse y position
+     * @param graphics    the GUI graphics extractor for rendering
+     * @param mouseX      the current mouse x position
+     * @param mouseY      the current mouse y position
      * @param partialTick the partial tick for interpolation
      */
     @Override
@@ -127,8 +204,6 @@ public final class GooRadialScreen extends Screen {
         GooRadialRenderer.renderCancelZone(graphics, centerX, centerY, hoveredIndex, font);
         GooRadialRenderer.renderLabels(graphics, centerX, centerY, hoveredIndex, available, font);
     }
-
-    // --- Input handling ---
 
     /**
      * Left-click on a wedge transitions to ability radial for that type.
@@ -153,7 +228,9 @@ public final class GooRadialScreen extends Screen {
         return super.mouseClicked(event, doubleClick);
     }
 
-    /** Processes a left-click: drill into type or deselect from center. */
+    /**
+     * Processes a left-click: drill into type or deselect from center.
+     */
     private void handleLeftClick() {
         if (hoveredIndex >= 0 && hoveredIndex < WEDGE_COUNT) {
             tryTransitionToAbilities(GooType.values()[hoveredIndex]);
@@ -163,55 +240,17 @@ public final class GooRadialScreen extends Screen {
         }
     }
 
-    /** Transitions to the ability radial for the given type if available.
+    /**
+     * Transitions to the ability radial for the given type if available.
      *
      * @param type the goo type to drill into
      */
     private void tryTransitionToAbilities(GooType type) {
-        if (available.getOrDefault(type, 0) <= 0) { return; }
+        if (available.getOrDefault(type, 0) <= 0) {
+            return;
+        }
         if (AbilitySyncHandler.hasAbilities(type)) {
             AbilityRadialScreen.open(type, available);
-        }
-    }
-
-    /** Clears the glove selection (cancel/deselect zone). */
-    private static void tryDeselectType() {
-        ItemStack glove = findGloveStack();
-        if (glove == null) { return; }
-        GooGloveItem.setSelectedType(glove, null);
-        sendSelectionToServer(DESELECT_ID);
-    }
-
-    /**
-     * Finds the glove ItemStack the player is holding. Checks main hand first,
-     * then offhand.
-     *
-     * @return the glove stack, or null if not held
-     */
-    private static @Nullable ItemStack findGloveStack() {
-        Minecraft mc = Minecraft.getInstance();
-        Player player = mc.player;
-        if (player == null) { return null; }
-
-        ItemStack main = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (main.getItem() instanceof GooGloveItem) { return main; }
-
-        ItemStack off = player.getItemInHand(InteractionHand.OFF_HAND);
-        if (off.getItem() instanceof GooGloveItem) { return off; }
-
-        return null;
-    }
-
-    /**
-     * Sends the goo type selection to the server for persistence.
-     *
-     * @param gooTypeId the selected goo type ID, or empty string for deselect
-     */
-    private static void sendSelectionToServer(String gooTypeId) {
-        var connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(
-                    new GloveSelectPayload(gooTypeId)));
         }
     }
 }

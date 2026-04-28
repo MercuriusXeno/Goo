@@ -24,6 +24,37 @@ public abstract sealed class GasketState
         permits SingleGasketState, DualGasketState, NullGasketState {
 
     /**
+     * Creates a state that supports no machine-level gaskets.
+     *
+     * @return a no-op gasket state singleton
+     */
+    public static GasketState none() {
+        return NullGasketState.INSTANCE;
+    }
+
+    /**
+     * Creates a state that supports a single role.
+     *
+     * @param role  the supported role
+     * @param label the face label for this role
+     * @return a new single-role state
+     */
+    public static GasketState single(GasketRole role, String label) {
+        return new SingleGasketState(role, label);
+    }
+
+    /**
+     * Creates a state that supports both RECEIVER and TRANSMITTER.
+     *
+     * @param receiverLabel    face label for the receiver role (e.g. "cap")
+     * @param transmitterLabel face label for the transmitter role (e.g. "base")
+     * @return a new dual-role state
+     */
+    public static GasketState dual(String receiverLabel, String transmitterLabel) {
+        return new DualGasketState(receiverLabel, transmitterLabel);
+    }
+
+    /**
      * Returns the gasket UUID for the given role, or null if unsupported or unassigned.
      *
      * @param role the gasket role
@@ -106,35 +137,4 @@ public abstract sealed class GasketState
      * @param input the value input
      */
     public abstract void load(ValueInput input);
-
-
-    /**
-     * Creates a state that supports no machine-level gaskets.
-     * @return a no-op gasket state singleton
-     */
-    public static GasketState none() {
-        return NullGasketState.INSTANCE;
-    }
-
-    /**
-     * Creates a state that supports a single role.
-     *
-     * @param role  the supported role
-     * @param label the face label for this role
-     * @return a new single-role state
-     */
-    public static GasketState single(GasketRole role, String label) {
-        return new SingleGasketState(role, label);
-    }
-
-    /**
-     * Creates a state that supports both RECEIVER and TRANSMITTER.
-     *
-     * @param receiverLabel  face label for the receiver role (e.g. "cap")
-     * @param transmitterLabel face label for the transmitter role (e.g. "base")
-     * @return a new dual-role state
-     */
-    public static GasketState dual(String receiverLabel, String transmitterLabel) {
-        return new DualGasketState(receiverLabel, transmitterLabel);
-    }
 }

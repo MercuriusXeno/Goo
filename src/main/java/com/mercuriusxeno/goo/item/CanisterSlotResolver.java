@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.item;
 
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
-import com.mercuriusxeno.goo.block.CanisterSlotLayout;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -15,9 +15,14 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
  */
 public final class CanisterSlotResolver {
 
-    /** Pixels per block: converts block-space [0..1] to pixel-space [0..16]. */
+    /**
+     * Pixels per block: converts block-space [0..1] to pixel-space [0..16].
+     */
     static final double PIXELS_PER_BLOCK = 16.0;
-    /** Sentinel value: no empty slot found. */
+
+    /**
+     * Sentinel value: no empty slot found.
+     */
 
     private CanisterSlotResolver() {
         // static utility
@@ -58,7 +63,9 @@ public final class CanisterSlotResolver {
         Level level = be.getLevel();
 
         int resolved = resolveDirectOrAdjacent(be, level, pos, slot, px, pz);
-        if (resolved != NO_SLOT) { return resolved; }
+        if (resolved != NO_SLOT) {
+            return resolved;
+        }
 
         return findFirstAllowedEmpty(be, level, pos);
     }
@@ -75,11 +82,17 @@ public final class CanisterSlotResolver {
      * @return the resolved slot index, or NO_SLOT if neither is available
      */
     private static int resolveDirectOrAdjacent(CanisterBlockEntity be, Level level,
-            BlockPos pos, int slot, float px, float pz) {
-        if (slot < 0) { return NO_SLOT; }
-        if (isEmptyAndAllowed(be, level, pos, slot)) { return slot; }
+                                               BlockPos pos, int slot, float px, float pz) {
+        if (slot < 0) {
+            return NO_SLOT;
+        }
+        if (isEmptyAndAllowed(be, level, pos, slot)) {
+            return slot;
+        }
         int adjacent = CanisterSlotLayout.adjacentByCursorLean(slot, px, pz);
-        if (isEmptyAndAllowed(be, level, pos, adjacent)) { return adjacent; }
+        if (isEmptyAndAllowed(be, level, pos, adjacent)) {
+            return adjacent;
+        }
         return NO_SLOT;
     }
 
@@ -93,7 +106,7 @@ public final class CanisterSlotResolver {
      * @return true if the slot is empty and allowed
      */
     private static boolean isEmptyAndAllowed(CanisterBlockEntity be, Level level,
-            BlockPos pos, int slot) {
+                                             BlockPos pos, int slot) {
         return be.getCanister(slot).isEmpty()
                 && CanisterPlacementValidator.isSlotAllowed(level, pos, slot);
     }

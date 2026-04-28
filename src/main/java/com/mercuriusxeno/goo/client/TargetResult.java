@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
-import com.mercuriusxeno.goo.block.GlowCrystalBlock;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,11 +15,67 @@ import net.minecraft.world.phys.Vec3;
  */
 public sealed interface TargetResult {
 
-    /** Half-block offset for face center calculations. */
+    /**
+     * Half-block offset for face center calculations.
+     */
     double FACE_CENTER_OFFSET = 0.5;
 
-    /** Singleton for the empty/no-target case. */
+    /**
+     * Singleton for the empty/no-target case.
+     */
     TargetResult NONE = new None();
+
+    /**
+     * Factory for an entity target.
+     *
+     * @param e the target entity
+     * @return the result
+     */
+    static TargetResult entity(Entity e) {
+        return new EntityTarget(e);
+    }
+
+    /**
+     * Factory for a block face target.
+     *
+     * @param pos  the block position
+     * @param face the block face direction
+     * @return the result
+     */
+    static TargetResult block(BlockPos pos, Direction face) {
+        return new BlockTarget(pos, face, false);
+    }
+
+    /**
+     * Factory for a granny-arc redirected block target.
+     *
+     * @param pos the block position
+     * @return the result
+     */
+    static TargetResult grannyArc(BlockPos pos) {
+        return new BlockTarget(pos, Direction.UP, true);
+    }
+
+    /**
+     * Factory for a chain marker target.
+     *
+     * @param pos the chain marker block position
+     * @return the result
+     */
+    static TargetResult chainMarker(BlockPos pos) {
+        return new ChainMarkerTarget(pos);
+    }
+
+    /**
+     * Factory for a glow crystal target.
+     *
+     * @param pos  the crystal block position
+     * @param face the hit face direction
+     * @return the result
+     */
+    static TargetResult glowCrystal(BlockPos pos, Direction face) {
+        return new GlowCrystalTarget(pos, face);
+    }
 
     /**
      * Returns the world-space Vec3 destination for this target. Used by
@@ -66,8 +122,10 @@ public sealed interface TargetResult {
      * @param pos the targeted chain marker block position
      */
     record ChainMarkerTarget(BlockPos pos) implements TargetResult {
-        /** Returns the orb center, accounting for the placed face so
-         * the arc lands on the visible blob, not above it. */
+        /**
+         * Returns the orb center, accounting for the placed face so
+         * the arc lands on the visible blob, not above it.
+         */
         @Override
         public Vec3 resolveEndpoint() {
             Minecraft mc = Minecraft.getInstance();
@@ -92,7 +150,9 @@ public sealed interface TargetResult {
      * @param face the hit face (for payload encoding)
      */
     record GlowCrystalTarget(BlockPos pos, Direction face) implements TargetResult {
-        /** Points at the crystal's visual center, hugging the attachment face. */
+        /**
+         * Points at the crystal's visual center, hugging the attachment face.
+         */
         @Override
         public Vec3 resolveEndpoint() {
             Minecraft mc = Minecraft.getInstance();
@@ -119,7 +179,9 @@ public sealed interface TargetResult {
          */
         public int currentStacks() {
             Minecraft mc = Minecraft.getInstance();
-            if (mc.level == null) { return 0; }
+            if (mc.level == null) {
+                return 0;
+            }
             BlockState state = mc.level.getBlockState(pos);
             if (state.getBlock() instanceof GlowCrystalBlock) {
                 return state.getValue(GlowCrystalBlock.SIZE).ordinal() + 1;
@@ -128,53 +190,13 @@ public sealed interface TargetResult {
         }
     }
 
-    /** Nothing targetable within throw range. */
+    /**
+     * Nothing targetable within throw range.
+     */
     record None() implements TargetResult {
         @Override
         public Vec3 resolveEndpoint() {
             return null;
         }
     }
-
-    /**
-     * Factory for an entity target.
-     *
-     * @param e the target entity
-     * @return the result
-     */
-    static TargetResult entity(Entity e) { return new EntityTarget(e); }
-
-    /**
-     * Factory for a block face target.
-     *
-     * @param pos the block position
-     * @param face the block face direction
-     * @return the result
-     */
-    static TargetResult block(BlockPos pos, Direction face) { return new BlockTarget(pos, face, false); }
-
-    /**
-     * Factory for a granny-arc redirected block target.
-     *
-     * @param pos the block position
-     * @return the result
-     */
-    static TargetResult grannyArc(BlockPos pos) { return new BlockTarget(pos, Direction.UP, true); }
-
-    /**
-     * Factory for a chain marker target.
-     *
-     * @param pos the chain marker block position
-     * @return the result
-     */
-    static TargetResult chainMarker(BlockPos pos) { return new ChainMarkerTarget(pos); }
-
-    /**
-     * Factory for a glow crystal target.
-     *
-     * @param pos  the crystal block position
-     * @param face the hit face direction
-     * @return the result
-     */
-    static TargetResult glowCrystal(BlockPos pos, Direction face) { return new GlowCrystalTarget(pos, face); }
 }

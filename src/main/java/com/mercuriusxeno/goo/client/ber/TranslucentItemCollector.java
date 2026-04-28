@@ -39,10 +39,14 @@ import java.util.Map;
  */
 class TranslucentItemCollector implements SubmitNodeCollector {
 
-    /** Fully opaque white - used to construct the alpha-tinted base color. */
+    /**
+     * Fully opaque white - used to construct the alpha-tinted base color.
+     */
     private static final int OPAQUE_WHITE = 0xFF;
 
-    /** Untinted sentinel - ARGB white means no tint modification. */
+    /**
+     * Untinted sentinel - ARGB white means no tint modification.
+     */
     private static final int NO_TINT = -1;
 
     private final SubmitNodeCollector delegate;
@@ -57,42 +61,6 @@ class TranslucentItemCollector implements SubmitNodeCollector {
     TranslucentItemCollector(SubmitNodeCollector delegate, int alpha) {
         this.delegate = delegate;
         this.alphaColor = ARGB.color(alpha, OPAQUE_WHITE, OPAQUE_WHITE, OPAQUE_WHITE);
-    }
-
-    /**
-     * Intercepts item quads and re-emits them as translucent custom geometry.
-     * Groups quads by atlas texture so block-atlas and item-atlas sprites
-     * each bind the correct texture. Applies tint colors combined with alpha.
-     *
-     * @param poseStack      the pose stack
-     * @param displayContext the item display context
-     * @param lightCoords    packed light coordinates
-     * @param overlayCoords  packed overlay coordinates
-     * @param outlineColor   outline color (unused for ghost rendering)
-     * @param tintLayers     per-tint-index colors from the item color handler
-     * @param quads          the baked quads to render
-     * @param foilType       the foil/glint type (unused for ghost rendering)
-     */
-    @Override
-    public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext,
-            int lightCoords, int overlayCoords, int outlineColor,
-            int[] tintLayers, List<BakedQuad> quads,
-            ItemStackRenderState.FoilType foilType) {
-        Map<Identifier, List<BakedQuad>> byAtlas = groupByAtlas(quads);
-        for (var entry : byAtlas.entrySet()) {
-            RenderType renderType = RenderTypes.entityTranslucent(entry.getKey());
-            List<BakedQuad> group = entry.getValue();
-            delegate.submitCustomGeometry(poseStack, renderType, (pose, buffer) -> {
-                QuadInstance qi = new QuadInstance();
-                qi.setLightCoords(lightCoords);
-                qi.setOverlayCoords(overlayCoords);
-                for (BakedQuad quad : group) {
-                    int tint = resolveTint(quad.materialInfo().tintIndex(), tintLayers);
-                    qi.setColor(ARGB.multiply(alphaColor, tint));
-                    buffer.putBakedQuad(pose, quad, qi);
-                }
-            });
-        }
     }
 
     /**
@@ -124,12 +92,109 @@ class TranslucentItemCollector implements SubmitNodeCollector {
         return NO_TINT;
     }
 
-    /** Re-emits custom geometry with alpha-tinted vertex colors. */
+    /**
+     * Intercepts item quads and re-emits them as translucent custom geometry.
+     * Groups quads by atlas texture so block-atlas and item-atlas sprites
+     * each bind the correct texture. Applies tint colors combined with alpha.
+     *
+     * @param poseStack      the pose stack
+     * @param displayContext the item display context
+     * @param lightCoords    packed light coordinates
+     * @param overlayCoords  packed overlay coordinates
+     * @param outlineColor   outline color (unused for ghost rendering)
+     * @param tintLayers     per-tint-index colors from the item color handler
+     * @param quads          the baked quads to render
+     * @param foilType       the foil/glint type (unused for ghost rendering)
+     */
+    @Override
+    public void submitItem(PoseStack poseStack, ItemDisplayContext displayContext,
+                           int lightCoords, int overlayCoords, int outlineColor,
+                           int[] tintLayers, List<BakedQuad> quads,
+                           ItemStackRenderState.FoilType foilType) {
+        Map<Identifier, List<BakedQuad>> byAtlas = groupByAtlas(quads);
+        for (var entry : byAtlas.entrySet()) {
+            RenderType renderType = RenderTypes.entityTranslucent(entry.getKey());
+            List<BakedQuad> group = entry.getValue();
+            delegate.submitCustomGeometry(poseStack, renderType, (pose, buffer) -> {
+                QuadInstance qi = new QuadInstance();
+                qi.setLightCoords(lightCoords);
+                qi.setOverlayCoords(overlayCoords);
+                for (BakedQuad quad : group) {
+                    int tint = resolveTint(quad.materialInfo().tintIndex(), tintLayers);
+                    qi.setColor(ARGB.multiply(alphaColor, tint));
+                    buffer.putBakedQuad(pose, quad, qi);
+                }
+            });
+        }
+    }
+
+    /**
+     * Re-emits custom geometry with alpha-tinted vertex colors.
+     */
     @Override
     public void submitCustomGeometry(PoseStack poseStack, RenderType renderType,
-            CustomGeometryRenderer renderer) {
+                                     CustomGeometryRenderer renderer) {
         delegate.submitCustomGeometry(poseStack, renderType, (pose, buffer) ->
                 renderer.render(pose, new AlphaTintConsumer(buffer, alphaColor)));
+    }
+
+    /**
+     * Returns this collector since item rendering does not use ordering.
+     */
+    @Override
+    public OrderedSubmitNodeCollector order(int order) {
+        return this;
+    }
+
+    @Override
+    public void submitShadow(PoseStack p, float r, List<EntityRenderState.ShadowPiece> s) {
+    }
+
+    @Override
+    public void submitNameTag(PoseStack p, @Nullable Vec3 a, int o, Component n,
+                              boolean s, int l, double d, CameraRenderState c) {
+    }
+
+    @Override
+    public void submitText(PoseStack p, float x, float y, FormattedCharSequence s,
+                           boolean d, Font.DisplayMode m, int l, int c, int bg, int o) {
+    }
+
+    @Override
+    public void submitFlame(PoseStack p, EntityRenderState s, Quaternionf r) {
+    }
+
+    @Override
+    public void submitLeash(PoseStack p, EntityRenderState.LeashState s) {
+    }
+
+    @Override
+    public <S> void submitModel(Model<? super S> m, S s, PoseStack p, RenderType r,
+                                int l, int o, int t, @Nullable TextureAtlasSprite sp, int oc,
+                                ModelFeatureRenderer.@Nullable CrumblingOverlay c) {
+    }
+
+    @Override
+    public void submitModelPart(ModelPart m, PoseStack p, RenderType r, int l, int o,
+                                @Nullable TextureAtlasSprite sp, boolean sh, boolean f, int t,
+                                ModelFeatureRenderer.@Nullable CrumblingOverlay c, int oc) {
+    }
+
+    @Override
+    public void submitMovingBlock(PoseStack p, MovingBlockRenderState s) {
+    }
+
+    @Override
+    public void submitBlockModel(PoseStack p, RenderType r,
+                                 List<BlockStateModelPart> parts, int[] t, int l, int o, int oc) {
+    }
+
+    @Override
+    public void submitBreakingBlockModel(PoseStack p, BlockStateModel m, long s, int pr) {
+    }
+
+    @Override
+    public void submitParticleGroup(ParticleGroupRenderer r) {
     }
 
     /**
@@ -192,50 +257,4 @@ class TranslucentItemCollector implements SubmitNodeCollector {
             return this;
         }
     }
-
-    /** Returns this collector since item rendering does not use ordering. */
-    @Override
-    public OrderedSubmitNodeCollector order(int order) {
-        return this;
-    }
-
-    @Override
-    public void submitShadow(PoseStack p, float r, List<EntityRenderState.ShadowPiece> s) {}
-
-    @Override
-    public void submitNameTag(PoseStack p, @Nullable Vec3 a, int o, Component n,
-            boolean s, int l, double d, CameraRenderState c) {}
-
-    @Override
-    public void submitText(PoseStack p, float x, float y, FormattedCharSequence s,
-            boolean d, Font.DisplayMode m, int l, int c, int bg, int o) {}
-
-    @Override
-    public void submitFlame(PoseStack p, EntityRenderState s, Quaternionf r) {}
-
-    @Override
-    public void submitLeash(PoseStack p, EntityRenderState.LeashState s) {}
-
-    @Override
-    public <S> void submitModel(Model<? super S> m, S s, PoseStack p, RenderType r,
-            int l, int o, int t, @Nullable TextureAtlasSprite sp, int oc,
-            ModelFeatureRenderer.@Nullable CrumblingOverlay c) {}
-
-    @Override
-    public void submitModelPart(ModelPart m, PoseStack p, RenderType r, int l, int o,
-            @Nullable TextureAtlasSprite sp, boolean sh, boolean f, int t,
-            ModelFeatureRenderer.@Nullable CrumblingOverlay c, int oc) {}
-
-    @Override
-    public void submitMovingBlock(PoseStack p, MovingBlockRenderState s) {}
-
-    @Override
-    public void submitBlockModel(PoseStack p, RenderType r,
-            List<BlockStateModelPart> parts, int[] t, int l, int o, int oc) {}
-
-    @Override
-    public void submitBreakingBlockModel(PoseStack p, BlockStateModel m, long s, int pr) {}
-
-    @Override
-    public void submitParticleGroup(ParticleGroupRenderer r) {}
 }

@@ -36,27 +36,29 @@ public record GasketLocation(
         int slot,
         @Nullable UUID entityId) {
 
-    /** Codec for persistent serialization. Slot and entityId are optional for backward compat. */
+    /**
+     * Codec for persistent serialization. Slot and entityId are optional for backward compat.
+     */
     public static final Codec<GasketLocation> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension")
-                .forGetter(GasketLocation::dimension),
-            BlockPos.CODEC.fieldOf("pos").forGetter(GasketLocation::pos),
-            Codec.BOOL.fieldOf("is_top").forGetter(GasketLocation::isTop),
-            Codec.INT.optionalFieldOf("slot", 0).forGetter(GasketLocation::slot),
-            UUIDUtil.STRING_CODEC.optionalFieldOf("entity_id")
-                .forGetter(loc -> Optional.ofNullable(loc.entityId()))
-        ).apply(instance, (dim, pos, isTop, slot, entityOpt) ->
-            new GasketLocation(dim, pos, isTop, slot, entityOpt.orElse(null)))
+            instance.group(
+                    ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension")
+                            .forGetter(GasketLocation::dimension),
+                    BlockPos.CODEC.fieldOf("pos").forGetter(GasketLocation::pos),
+                    Codec.BOOL.fieldOf("is_top").forGetter(GasketLocation::isTop),
+                    Codec.INT.optionalFieldOf("slot", 0).forGetter(GasketLocation::slot),
+                    UUIDUtil.STRING_CODEC.optionalFieldOf("entity_id")
+                            .forGetter(loc -> Optional.ofNullable(loc.entityId()))
+            ).apply(instance, (dim, pos, isTop, slot, entityOpt) ->
+                    new GasketLocation(dim, pos, isTop, slot, entityOpt.orElse(null)))
     );
 
     /**
      * Convenience constructor for block targets (no entity).
      *
      * @param dimension the world dimension
-     * @param pos the block position
-     * @param isTop true if this is the top (input) gasket
-     * @param slot sub-canister index within a 3x3 grid (0 for single blocks)
+     * @param pos       the block position
+     * @param isTop     true if this is the top (input) gasket
+     * @param slot      sub-canister index within a 3x3 grid (0 for single blocks)
      */
     public GasketLocation(ResourceKey<Level> dimension, BlockPos pos, boolean isTop, int slot) {
         this(dimension, pos, isTop, slot, null);

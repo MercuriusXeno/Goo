@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.ICanisterHolder;
-import com.mercuriusxeno.goo.block.ReactorBlockEntity;
-import com.mercuriusxeno.goo.block.TapBlockEntity;
+import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
+import com.mercuriusxeno.goo.block.reactor.ReactorBlockEntity;
+import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
@@ -30,15 +30,21 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class CanisterHudRenderer {
-    /** Exponential smoothing time constant. */
+    /**
+     * Exponential smoothing time constant.
+     */
     private static final float SMOOTH_TAU = 0.1f;
 
-    /** Pitch threshold for retract completion. */
+    /**
+     * Pitch threshold for retract completion.
+     */
     private static final float RETRACT_THRESHOLD = 0.01f;
 
-    /** Canister body height in blocks (12/16). */
+    /**
+     * Canister body height in blocks (12/16).
+     */
     private static final double BODY_HEIGHT = 12.0 / 16.0;
-
+    private static final long[] LAST_FRAME_NANOS = {0};
     // --- Animation state ---
     private static @Nullable BlockPos trackedPos;
     private static int trackedSlot = NO_SLOT;
@@ -49,9 +55,9 @@ public final class CanisterHudRenderer {
     private static boolean trackedBlockAbove;
     private static float currentPitch;
     private static boolean retracting;
-    private static final long[] LAST_FRAME_NANOS = {0};
 
-    private CanisterHudRenderer() {}
+    private CanisterHudRenderer() {
+    }
 
     /**
      * Renders the canister HUD after entities.
@@ -64,7 +70,9 @@ public final class CanisterHudRenderer {
         float dt = InWorldHud.computeDeltaTime(LAST_FRAME_NANOS);
         updateState(target, dt);
 
-        if (trackedPos == null) { return; }
+        if (trackedPos == null) {
+            return;
+        }
 
         renderIfValid(event.getPoseStack());
     }
@@ -91,7 +99,7 @@ public final class CanisterHudRenderer {
      * State machine: manages emerge and retract transitions.
      *
      * @param target the current aim target
-     * @param dt the delta time in seconds
+     * @param dt     the delta time in seconds
      */
     private static void updateState(@Nullable Target target, float dt) {
         applyTargetTransition(target);
@@ -117,7 +125,9 @@ public final class CanisterHudRenderer {
      * Starts the retract animation if a target is still tracked.
      */
     private static void beginRetractIfTracking() {
-        if (trackedPos != null && !retracting) { retracting = true; }
+        if (trackedPos != null && !retracting) {
+            retracting = true;
+        }
     }
 
     /**
@@ -150,7 +160,9 @@ public final class CanisterHudRenderer {
      */
     private static void refreshTarget(Target target) {
         applyTargetOffsets(target);
-        if (retracting) { retracting = false; }
+        if (retracting) {
+            retracting = false;
+        }
     }
 
     /**
@@ -172,7 +184,9 @@ public final class CanisterHudRenderer {
      * @param dt the delta time in seconds
      */
     private static void advancePitch(float dt) {
-        if (trackedPos == null) { return; }
+        if (trackedPos == null) {
+            return;
+        }
 
         float targetPitch = retracting ? 0f : 1f;
         currentPitch = InWorldHud.smoothToward(currentPitch, targetPitch, dt, SMOOTH_TAU);
@@ -182,7 +196,9 @@ public final class CanisterHudRenderer {
         }
     }
 
-    /** Resets all state. */
+    /**
+     * Resets all state.
+     */
     private static void clearState() {
         trackedPos = null;
         trackedSlot = NO_SLOT;
@@ -193,20 +209,23 @@ public final class CanisterHudRenderer {
     /**
      * Looks up the goo contents, label, and compression at the given position and slot.
      *
-     * @param pos the block position
+     * @param pos  the block position
      * @param slot the slot index
      * @return the slotData, or null if not found
      */
     private static @Nullable SlotData lookupSlotData(BlockPos pos, int slot) {
         Level level = Minecraft.getInstance().level;
-        if (level == null) { return null; }
+        if (level == null) {
+            return null;
+        }
         BlockEntity be = level.getBlockEntity(pos);
         return dispatchSlotData(be, slot);
     }
 
     /**
      * Routes to the appropriate slot-data extractor based on block entity type.
-     * @param be the block entity at the target position
+     *
+     * @param be   the block entity at the target position
      * @param slot the canister slot index
      * @return slot data for the matched entity, or null
      */
@@ -217,13 +236,16 @@ public final class CanisterHudRenderer {
         if (be instanceof ReactorBlockEntity reactor) {
             return matchReactorSlot(reactor, slot);
         }
-        if (be instanceof ICanisterHolder holder) { return lookupContainerSlotData(holder, slot); }
+        if (be instanceof ICanisterHolder holder) {
+            return lookupContainerSlotData(holder, slot);
+        }
         return null;
     }
 
     /**
      * Returns tap slot data only when the slot index matches the tap's dedicated slot.
-     * @param tap the tap block entity
+     *
+     * @param tap  the tap block entity
      * @param slot the requested slot index
      * @return slot data if the slot matches, or null
      */
@@ -233,8 +255,9 @@ public final class CanisterHudRenderer {
 
     /**
      * Returns reactor slot data only when the slot index matches the reactor's output slot.
+     *
      * @param reactor the reactor block entity
-     * @param slot the requested slot index
+     * @param slot    the requested slot index
      * @return slot data if the slot matches, or null
      */
     private static @Nullable SlotData matchReactorSlot(ReactorBlockEntity reactor, int slot) {
@@ -249,7 +272,9 @@ public final class CanisterHudRenderer {
      */
     private static @Nullable SlotData lookupTapSlotData(TapBlockEntity tap) {
         ItemStack canister = tap.getCanister();
-        if (canister.isEmpty()) { return null; }
+        if (canister.isEmpty()) {
+            return null;
+        }
         int compression = GooEnchantments.getCompressionLevel(canister);
         return new SlotData(tap.getFluidContent(), null, compression);
     }
@@ -262,7 +287,9 @@ public final class CanisterHudRenderer {
      */
     private static @Nullable SlotData lookupReactorSlotData(ReactorBlockEntity reactor) {
         ItemStack canister = reactor.getOutputCanister();
-        if (canister.isEmpty()) { return null; }
+        if (canister.isEmpty()) {
+            return null;
+        }
         CanisterFluidContent content = CanisterItem.getFluidContent(canister);
         int compression = GooEnchantments.getCompressionLevel(canister);
         return new SlotData(content, null, compression);
@@ -272,24 +299,30 @@ public final class CanisterHudRenderer {
      * Extracts slot data from a slotted goo container at a specific slot index.
      *
      * @param holder the slotted goo container
-     * @param slot the slot index
+     * @param slot   the slot index
      * @return the slot data, or null if the slot index is invalid
      */
     private static @Nullable SlotData lookupContainerSlotData(
             ICanisterHolder holder, int slot) {
-        if (slot < 0) { return null; }
+        if (slot < 0) {
+            return null;
+        }
         CanisterMetadata meta = holder.getSlotMetadata(slot);
         ItemStack canister = holder.getCanister(slot);
         int compression = GooEnchantments.getCompressionLevel(canister);
         return new SlotData(holder.getSlotFluidContent(slot), meta.label(), compression);
     }
 
-    /** Targeted canister slot with XZ center offset, Y lift, hit face, and block-above state. */
+    /**
+     * Targeted canister slot with XZ center offset, Y lift, hit face, and block-above state.
+     */
     record Target(BlockPos pos, int slot, double cx, double cz,
-            double lift, Direction hitFace, boolean hasBlockAbove) {
+                  double lift, Direction hitFace, boolean hasBlockAbove) {
     }
 
-    /** Fluid content, label, and compression level for a targeted slot. */
+    /**
+     * Fluid content, label, and compression level for a targeted slot.
+     */
     record SlotData(CanisterFluidContent content, @Nullable String label, int compression) {
     }
 }

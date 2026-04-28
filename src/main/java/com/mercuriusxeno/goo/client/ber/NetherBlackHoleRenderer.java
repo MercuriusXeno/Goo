@@ -1,9 +1,9 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.ability.world.NetherBehavior;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
-import com.mercuriusxeno.goo.effect.NetherBehavior;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -42,95 +42,154 @@ import java.util.List;
  */
 public final class NetherBlackHoleRenderer {
 
-    /** Offset to get block center from integer position. */
+    /**
+     * Offset to get block center from integer position.
+     */
     private static final float BLOCK_CENTER = 0.5f;
-    /** Minimum visible radius for the black-hole sphere so it never collapses to a single pixel. */
+    /**
+     * Minimum visible radius for the black-hole sphere so it never collapses to a single pixel.
+     */
     private static final float BLACKHOLE_MIN_RADIUS = 0.25f;
-    /** Extra world-space margin added to the effective implosion radius so
-     * the sphere fully occludes the blast zone. */
+    /**
+     * Extra world-space margin added to the effective implosion radius so
+     * the sphere fully occludes the blast zone.
+     */
     private static final float OCCLUSION_MARGIN = 0.75f;
-    /** Solid alpha (0xFF) for the blackhole sphere vertices. */
+    /**
+     * Solid alpha (0xFF) for the blackhole sphere vertices.
+     */
     private static final int BLACKHOLE_ALPHA = 0xFF;
-    /** Maximum byte value for a 0..1 to byte mapping. */
+    /**
+     * Maximum byte value for a 0..1 to byte mapping.
+     */
     private static final int PROGRESS_BYTE_MAX = 255;
-    /** Bit shift for the alpha channel in an ARGB color. */
+    /**
+     * Bit shift for the alpha channel in an ARGB color.
+     */
     private static final int ALPHA_SHIFT = 24;
-    /** Bit shift for the red channel in an ARGB color. */
+    /**
+     * Bit shift for the red channel in an ARGB color.
+     */
     private static final int RED_CHANNEL_SHIFT = 16;
-    /** Bit shift for the green channel in an ARGB color. */
+    /**
+     * Bit shift for the green channel in an ARGB color.
+     */
     private static final int GREEN_CHANNEL_SHIFT = 8;
-    /** Bit shift for the blue channel in an ARGB color. */
+    /**
+     * Bit shift for the blue channel in an ARGB color.
+     */
     private static final int BLUE_CHANNEL_SHIFT = 0;
-    /** Maximum encodable radius for the {@code Color.b} channel (in world blocks).
+    /**
+     * Maximum encodable radius for the {@code Color.b} channel (in world blocks).
      * Must match the {@code MAX_ENCODED_RADIUS} constants in
      * {@code nether_corona.vsh} and {@code nether_disk.vsh}. 16 sits
-     * safely above the max actual visible radius (~11 for stack-4 nether). */
+     * safely above the max actual visible radius (~11 for stack-4 nether).
+     */
     private static final float MAX_ENCODED_RADIUS = 16f;
 
-    /** Number of latitude bands on the sphere mesh (excluding poles). */
+    /**
+     * Number of latitude bands on the sphere mesh (excluding poles).
+     */
     private static final int SPHERE_LAT_SEGMENTS = 32;
-    /** Number of longitude segments around the sphere mesh. */
+    /**
+     * Number of longitude segments around the sphere mesh.
+     */
     private static final int SPHERE_LON_SEGMENTS = 64;
-    /** Vertices per quad (matches {@code VertexFormat.Mode.QUADS}). */
+    /**
+     * Vertices per quad (matches {@code VertexFormat.Mode.QUADS}).
+     */
     private static final int VERTICES_PER_QUAD = 4;
-    /** Radius multiplier for the corona pass. Must match
+    /**
+     * Radius multiplier for the corona pass. Must match
      * {@code CORONA_SCALE} in {@code nether_corona.vsh}. Good values
-     * are 1.08 for a thin corona, 1.15 for a thicker one. */
+     * are 1.08 for a thin corona, 1.15 for a thicker one.
+     */
     private static final float CORONA_SCALE = 1.08f;
-    /** Disk's inner edge, as a multiple of the current sphere radius.
+    /**
+     * Disk's inner edge, as a multiple of the current sphere radius.
      * Sits just past the sphere surface so the inner rim hugs the
-     * silhouette without z-fighting the sphere's equator. */
+     * silhouette without z-fighting the sphere's equator.
+     */
     private static final float DISK_INNER_SPHERE_MULT = 1.06f;
-    /** Disk's outer edge at full {@code diskExpansionScale}, as a
+    /**
+     * Disk's outer edge at full {@code diskExpansionScale}, as a
      * multiple of the full (pre-scaled) blast radius. The disk sweeps
      * from the inner edge out to this multiple over the effect
-     * lifetime on a curve independent of the sphere's visible scale. */
+     * lifetime on a curve independent of the sphere's visible scale.
+     */
     private static final float DISK_OUTER_FULL_MULT = 2.8f;
-    /** Minimum outer edge overshoot past the inner edge, as a multiple
+    /**
+     * Minimum outer edge overshoot past the inner edge, as a multiple
      * of the current sphere radius. Prevents the ring from collapsing
      * to zero width when the expansion curve is near zero at the very
-     * start of the effect. */
+     * start of the effect.
+     */
     private static final float DISK_MIN_RING_WIDTH = 0.25f;
-    /** Number of angular segments around the annulus. Matches
+    /**
+     * Number of angular segments around the annulus. Matches
      * {@link #SPHERE_LON_SEGMENTS} so the disc has the same angular
-     * tessellation as the sphere's equator. */
+     * tessellation as the sphere's equator.
+     */
     private static final int DISK_ANGULAR_SEGMENTS = 64;
-    /** Floats per entry in {@link #DISK_ANGULAR_SAMPLES}. Each angular
+    /**
+     * Floats per entry in {@link #DISK_ANGULAR_SAMPLES}. Each angular
      * sample packs {@code (cos, sin, angularT)} as three consecutive
-     * floats. */
+     * floats.
+     */
     private static final int DISK_SAMPLE_STRIDE = 3;
-    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
-     * the cos component. */
+    /**
+     * Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the cos component.
+     */
     private static final int DISK_SAMPLE_COS_OFFSET = 0;
-    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
-     * the sin component. */
+    /**
+     * Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the sin component.
+     */
     private static final int DISK_SAMPLE_SIN_OFFSET = 1;
-    /** Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
-     * the angularT component. */
+    /**
+     * Offset within one {@link #DISK_SAMPLE_STRIDE}-float sample for
+     * the angularT component.
+     */
     private static final int DISK_SAMPLE_ANG_OFFSET = 2;
-    /** Radial T value packed into Color.r for inner-edge vertices. */
+    /**
+     * Radial T value packed into Color.r for inner-edge vertices.
+     */
     private static final float RADIAL_T_INNER = 0f;
-    /** Radial T value packed into Color.r for outer-edge vertices. */
+    /**
+     * Radial T value packed into Color.r for outer-edge vertices.
+     */
     private static final float RADIAL_T_OUTER = 1f;
-    /** Cycle length in ticks for the swirl animation time. */
+    /**
+     * Cycle length in ticks for the swirl animation time.
+     */
     private static final int ANIMATION_CYCLE_TICKS = 64;
-    /** Latitude offset subtracted from {@code lat / latSegments} to center phi on zero. */
+    /**
+     * Latitude offset subtracted from {@code lat / latSegments} to center phi on zero.
+     */
     private static final double LATITUDE_HALF_OFFSET = 0.5;
-    /** Full circle in radians. */
+    /**
+     * Full circle in radians.
+     */
     private static final double TWO_PI = 2.0 * Math.PI;
 
-    /** Pre-generated unit sphere mesh. Every 4 consecutive entries form
-     * one quad. Each vertex's XYZ doubles as the unit outward normal. */
+    /**
+     * Pre-generated unit sphere mesh. Every 4 consecutive entries form
+     * one quad. Each vertex's XYZ doubles as the unit outward normal.
+     */
     private static final List<Vector3f> SPHERE_MESH = buildSphereMesh();
 
-    /** Pre-computed angular samples around the disc. Entry {@code i}
+    /**
+     * Pre-computed angular samples around the disc. Entry {@code i}
      * holds {@code (cosTheta_i, sinTheta_i, angularT_i)} where
      * {@code angularT_i = i / DISK_ANGULAR_SEGMENTS} in [0, 1]. Emitting
      * the disc quads just reads pairs of consecutive entries and does
-     * the inner/outer radius multiply per frame. */
+     * the inner/outer radius multiply per frame.
+     */
     private static final float[] DISK_ANGULAR_SAMPLES = buildDiskAngularSamples();
 
-    private NetherBlackHoleRenderer() {}
+    private NetherBlackHoleRenderer() {
+    }
 
     /**
      * Populates the render state's nether fields by querying the active
@@ -153,7 +212,8 @@ public final class NetherBlackHoleRenderer {
         state.netherActive = false;
     }
 
-    /** Reports this hole to the screen-space lens post-effect so it
+    /**
+     * Reports this hole to the screen-space lens post-effect so it
      * can warp the main framebuffer around the sphere's screen
      * position. Uses the current visible sphere radius (not the full
      * implode radius) so the lens contracts with the sphere during
@@ -167,7 +227,9 @@ public final class NetherBlackHoleRenderer {
      * @param state the populated render state for this frame
      */
     private static void markLensActive(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
-        if (state.visibleScale <= 0f) { return; }
+        if (state.visibleScale <= 0f) {
+            return;
+        }
         BlockPos pos = be.getBlockPos();
         Vec3 center = new Vec3(
                 pos.getX() + BLOCK_CENTER,
@@ -189,7 +251,7 @@ public final class NetherBlackHoleRenderer {
      * @param nodeCollector the render node collector
      */
     public static void submit(ChainMarkerRenderState state, PoseStack poseStack,
-            SubmitNodeCollector nodeCollector) {
+                              SubmitNodeCollector nodeCollector) {
         float fullRadius = state.implodeRadius + OCCLUSION_MARGIN;
         float visibleRadius = Math.max(BLACKHOLE_MIN_RADIUS, fullRadius * state.visibleScale);
         int color = packBlackholeColor(state.visibleScale, state.animationTime, visibleRadius);
@@ -210,13 +272,13 @@ public final class NetherBlackHoleRenderer {
 
         // Main sphere: solid-black occluder with depth write on.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_BLACKHOLE_TYPE,
-            (pose, c) -> emitSphereMesh(pose, c, visibleRadius, color));
+                (pose, c) -> emitSphereMesh(pose, c, visibleRadius, color));
         // Corona halo: same mesh at CORONA_SCALE, additive blend. The
         // fragment shader does a proper ray-sphere test against the main
         // sphere (decoded from Color.b) to discard pixels inside the
         // main silhouette, so the visible output is an annular ring.
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_CORONA_TYPE,
-            (pose, c) -> emitSphereMesh(pose, c, coronaRadius, color));
+                (pose, c) -> emitSphereMesh(pose, c, coronaRadius, color));
         // Accretion disk: flat annular ring in the world XZ plane.
         // Brightness is strictly radial in the fragment shader (no
         // minor-angle term), so the ring reads the same from any
@@ -227,7 +289,7 @@ public final class NetherBlackHoleRenderer {
         final float outerR = diskOuterRadius;
         final float animPhase = state.animationTime;
         nodeCollector.submitCustomGeometry(poseStack, GooRenderTypes.NETHER_DISK_TYPE,
-            (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
+                (pose, c) -> emitDiskMesh(pose, c, innerR, outerR, animPhase));
     }
 
 
@@ -241,14 +303,14 @@ public final class NetherBlackHoleRenderer {
      * @param color  packed ARGB vertex color
      */
     private static void emitSphereMesh(PoseStack.Pose pose, VertexConsumer c,
-            float radius, int color) {
+                                       float radius, int color) {
         for (Vector3f v : SPHERE_MESH) {
             c.addVertex(pose,
-                    BLOCK_CENTER + v.x() * radius,
-                    BLOCK_CENTER + v.y() * radius,
-                    BLOCK_CENTER + v.z() * radius)
-                .setColor(color)
-                .setNormal(pose, v.x(), v.y(), v.z());
+                            BLOCK_CENTER + v.x() * radius,
+                            BLOCK_CENTER + v.y() * radius,
+                            BLOCK_CENTER + v.z() * radius)
+                    .setColor(color)
+                    .setNormal(pose, v.x(), v.y(), v.z());
         }
     }
 
@@ -268,7 +330,7 @@ public final class NetherBlackHoleRenderer {
      * @param animPhase global animation phase in [0, 1]
      */
     private static void emitDiskMesh(PoseStack.Pose pose, VertexConsumer c,
-            float innerR, float outerR, float animPhase) {
+                                     float innerR, float outerR, float animPhase) {
         int animByte = Math.round(clamp01(animPhase) * PROGRESS_BYTE_MAX);
         // DISK_ANGULAR_SAMPLES is laid out as DISK_SAMPLE_STRIDE-float
         // triples {cos, sin, angularT}; see the field docstring. The
@@ -294,31 +356,32 @@ public final class NetherBlackHoleRenderer {
         }
     }
 
-    /** Writes a single disc vertex. Position is at block center offset
+    /**
+     * Writes a single disc vertex. Position is at block center offset
      * by {@code (cos * r, 0, sin * r)}, color packs radial/angular T
      * and the shared animation phase, normal is the disc's +Y face.
      *
-     * @param pose      current pose entry
-     * @param c         vertex consumer
-     * @param cosT      cos of the angular coordinate
-     * @param sinT      sin of the angular coordinate
-     * @param radius    world-space radius for this vertex (inner or outer)
-     * @param angularT  angular coordinate in [0, 1]
-     * @param radialT   radial coordinate (0 inner, 1 outer)
-     * @param animByte  pre-computed animation phase byte
+     * @param pose     current pose entry
+     * @param c        vertex consumer
+     * @param cosT     cos of the angular coordinate
+     * @param sinT     sin of the angular coordinate
+     * @param radius   world-space radius for this vertex (inner or outer)
+     * @param angularT angular coordinate in [0, 1]
+     * @param radialT  radial coordinate (0 inner, 1 outer)
+     * @param animByte pre-computed animation phase byte
      */
     private static void emitDiskVertex(PoseStack.Pose pose, VertexConsumer c,
-            float cosT, float sinT, float radius,
-            float angularT, float radialT, int animByte) {
+                                       float cosT, float sinT, float radius,
+                                       float angularT, float radialT, int animByte) {
         int radialByte = Math.round(clamp01(radialT) * PROGRESS_BYTE_MAX);
         int angularByte = Math.round(clamp01(angularT) * PROGRESS_BYTE_MAX);
         int color = packDiskColor(radialByte, angularByte, animByte);
         c.addVertex(pose,
-                BLOCK_CENTER + cosT * radius,
-                BLOCK_CENTER,
-                BLOCK_CENTER + sinT * radius)
-            .setColor(color)
-            .setNormal(pose, 0f, 1f, 0f);
+                        BLOCK_CENTER + cosT * radius,
+                        BLOCK_CENTER,
+                        BLOCK_CENTER + sinT * radius)
+                .setColor(color)
+                .setNormal(pose, 0f, 1f, 0f);
     }
 
 
@@ -328,9 +391,9 @@ public final class NetherBlackHoleRenderer {
      * B = main radius normalized by {@link #MAX_ENCODED_RADIUS},
      * A = fixed opaque.
      *
-     * @param scale          implosion visible scale in [0, 1]
-     * @param animationTime  swirl animation phase in [0, 1]
-     * @param visibleRadius  main sphere's current visible radius in world blocks
+     * @param scale         implosion visible scale in [0, 1]
+     * @param animationTime swirl animation phase in [0, 1]
+     * @param visibleRadius main sphere's current visible radius in world blocks
      * @return the packed ARGB color
      */
     private static int packBlackholeColor(float scale, float animationTime, float visibleRadius) {
@@ -338,9 +401,9 @@ public final class NetherBlackHoleRenderer {
         int animByte = Math.round(clamp01(animationTime) * PROGRESS_BYTE_MAX);
         int radiusByte = Math.round(clamp01(visibleRadius / MAX_ENCODED_RADIUS) * PROGRESS_BYTE_MAX);
         return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
-            | (scaleByte << RED_CHANNEL_SHIFT)
-            | (animByte << GREEN_CHANNEL_SHIFT)
-            | (radiusByte << BLUE_CHANNEL_SHIFT);
+                | (scaleByte << RED_CHANNEL_SHIFT)
+                | (animByte << GREEN_CHANNEL_SHIFT)
+                | (radiusByte << BLUE_CHANNEL_SHIFT);
     }
 
     /**
@@ -355,9 +418,9 @@ public final class NetherBlackHoleRenderer {
      */
     private static int packDiskColor(int radialByte, int angularByte, int animByte) {
         return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
-            | (radialByte << RED_CHANNEL_SHIFT)
-            | (angularByte << GREEN_CHANNEL_SHIFT)
-            | (animByte << BLUE_CHANNEL_SHIFT);
+                | (radialByte << RED_CHANNEL_SHIFT)
+                | (angularByte << GREEN_CHANNEL_SHIFT)
+                | (animByte << BLUE_CHANNEL_SHIFT);
     }
 
 
@@ -386,7 +449,8 @@ public final class NetherBlackHoleRenderer {
         return out;
     }
 
-    /** Builds one unit-sphere vertex at spherical coordinates (phi, theta).
+    /**
+     * Builds one unit-sphere vertex at spherical coordinates (phi, theta).
      *
      * @param phi   latitude in radians, {@code [-PI/2, PI/2]}
      * @param theta longitude in radians, {@code [0, 2*PI]}
@@ -395,9 +459,9 @@ public final class NetherBlackHoleRenderer {
     private static Vector3f sphereVertex(double phi, double theta) {
         double cosPhi = Math.cos(phi);
         return new Vector3f(
-            (float) (cosPhi * Math.cos(theta)),
-            (float) Math.sin(phi),
-            (float) (cosPhi * Math.sin(theta)));
+                (float) (cosPhi * Math.cos(theta)),
+                (float) Math.sin(phi),
+                (float) (cosPhi * Math.sin(theta)));
     }
 
     /**
@@ -427,7 +491,8 @@ public final class NetherBlackHoleRenderer {
     }
 
 
-    /** Derives a deterministic [0, 1) animation phase from the BE's level
+    /**
+     * Derives a deterministic [0, 1) animation phase from the BE's level
      * game time, cycling every {@link #ANIMATION_CYCLE_TICKS} ticks.
      *
      * @param be the chain marker block entity
@@ -435,12 +500,15 @@ public final class NetherBlackHoleRenderer {
      */
     private static float computeAnimationTime(ChainMarkerBlockEntity be) {
         Level level = be.getLevel();
-        if (level == null) { return 0f; }
+        if (level == null) {
+            return 0f;
+        }
         long tick = level.getGameTime() % ANIMATION_CYCLE_TICKS;
         return (float) tick / ANIMATION_CYCLE_TICKS;
     }
 
-    /** Clamps {@code v} to {@code [0, 1]}.
+    /**
+     * Clamps {@code v} to {@code [0, 1]}.
      *
      * @param v the value to clamp
      * @return the clamped value

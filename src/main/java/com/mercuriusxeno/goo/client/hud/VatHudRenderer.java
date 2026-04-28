@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.block.VatBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
 import com.mercuriusxeno.goo.client.VatStackAggregator;
 import com.mercuriusxeno.goo.client.VatStackAggregator.VatStackData;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -27,28 +27,46 @@ import org.jspecify.annotations.Nullable;
  */
 @EventBusSubscriber(modid = Goo.MODID, value = Dist.CLIENT)
 public final class VatHudRenderer {
-    /** Exponential smoothing time constant. */
+    /**
+     * Exponential smoothing time constant.
+     */
     private static final float SMOOTH_TAU = 0.1f;
-    /** Pitch threshold for retract completion. */
+    /**
+     * Pitch threshold for retract completion.
+     */
     private static final float RETRACT_THRESHOLD = 0.01f;
-    /** Y position for the HUD above the vat block top (full-block height). */
+    /**
+     * Y position for the HUD above the vat block top (full-block height).
+     */
     private static final double BLOCK_TOP = 1.0;
-    /** Y position for the HUD below the vat block bottom. */
+    /**
+     * Y position for the HUD below the vat block bottom.
+     */
     private static final double BLOCK_BOTTOM = 0.0;
-    /** Mid-block Y for side-face anchoring. */
+    /**
+     * Mid-block Y for side-face anchoring.
+     */
     private static final double MID_BLOCK = 0.5;
-    /** Offset to push the panel to the face surface (half a block). */
+    /**
+     * Offset to push the panel to the face surface (half a block).
+     */
     private static final double FACE_OFFSET = 0.5;
 
-    /** Block center offset for centering calculations. */
+    /**
+     * Block center offset for centering calculations.
+     */
     private static final double BLOCK_CENTER = 0.5;
 
-    /** Z-nudge for panels on upward/downward faces to prevent z-fighting. */
+    /**
+     * Z-nudge for panels on upward/downward faces to prevent z-fighting.
+     */
     private static final float Z_NUDGE_POS = 0.01f;
 
-    /** Z-nudge for panels on side faces. */
+    /**
+     * Z-nudge for panels on side faces.
+     */
     private static final float Z_NUDGE_NEG = -0.01f;
-
+    private static final long[] LAST_FRAME_NANOS = {0};
     // --- Animation state ---
     private static @Nullable BlockPos trackedPos;
     private static Direction trackedFace = Direction.UP;
@@ -57,9 +75,9 @@ public final class VatHudRenderer {
     private static double trackedLift = BLOCK_TOP;
     private static float currentPitch;
     private static boolean retracting;
-    private static final long[] LAST_FRAME_NANOS = {0};
 
-    private VatHudRenderer() {}
+    private VatHudRenderer() {
+    }
 
 
     /**
@@ -70,7 +88,9 @@ public final class VatHudRenderer {
     @SubscribeEvent
     public static void onAfterOpaqueFeatures(RenderLevelStageEvent.AfterOpaqueFeatures event) {
         updateState(getTarget(), InWorldHud.computeDeltaTime(LAST_FRAME_NANOS));
-        if (trackedPos == null) { return; }
+        if (trackedPos == null) {
+            return;
+        }
         renderIfNonEmpty(event.getPoseStack(), trackedPos);
     }
 
@@ -78,7 +98,7 @@ public final class VatHudRenderer {
      * Looks up vat data and renders the HUD if the vat has displayable content.
      *
      * @param poseStack the pose stack
-     * @param pos the tracked vat position
+     * @param pos       the tracked vat position
      */
     private static void renderIfNonEmpty(PoseStack poseStack, BlockPos pos) {
         VatStackData data = lookupVatData(pos);
@@ -105,7 +125,7 @@ public final class VatHudRenderer {
      * State machine: manages emerge and retract transitions.
      *
      * @param target the current aim target
-     * @param dt the delta time in seconds
+     * @param dt     the delta time in seconds
      */
     private static void updateState(@Nullable VatTarget target, float dt) {
         applyTargetTransition(target);
@@ -157,7 +177,9 @@ public final class VatHudRenderer {
      */
     private static void refreshTarget(VatTarget target) {
         applyTargetOffsets(target);
-        if (retracting) { retracting = false; }
+        if (retracting) {
+            retracting = false;
+        }
     }
 
     /**
@@ -178,7 +200,9 @@ public final class VatHudRenderer {
      * @param dt the delta time in seconds
      */
     private static void advancePitch(float dt) {
-        if (trackedPos == null) { return; }
+        if (trackedPos == null) {
+            return;
+        }
 
         float targetPitch = retracting ? 0f : 1f;
         currentPitch = InWorldHud.smoothToward(currentPitch, targetPitch, dt, SMOOTH_TAU);
@@ -188,7 +212,9 @@ public final class VatHudRenderer {
         }
     }
 
-    /** Resets all state. */
+    /**
+     * Resets all state.
+     */
     private static void clearState() {
         trackedPos = null;
         trackedFace = Direction.UP;
@@ -206,26 +232,36 @@ public final class VatHudRenderer {
      */
     private static @Nullable VatTarget getTarget() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.hitResult == null) { return null; }
-        if (mc.hitResult.getType() != HitResult.Type.BLOCK) { return null; }
+        if (mc.level == null || mc.hitResult == null) {
+            return null;
+        }
+        if (mc.hitResult.getType() != HitResult.Type.BLOCK) {
+            return null;
+        }
         BlockHitResult hit = (BlockHitResult) mc.hitResult;
         BlockPos pos = hit.getBlockPos();
         BlockEntity be = mc.level.getBlockEntity(pos);
-        if (!(be instanceof VatBlockEntity)) { return null; }
+        if (!(be instanceof VatBlockEntity)) {
+            return null;
+        }
         return resolveVatFace(mc, pos, hit.getDirection());
     }
 
     /**
      * Resolves a vat target from the hit face direction.
      *
-     * @param mc the Minecraft client instance
-     * @param pos the vat block position
+     * @param mc   the Minecraft client instance
+     * @param pos  the vat block position
      * @param face the face the player is looking at
      * @return the resolved target
      */
     private static VatTarget resolveVatFace(Minecraft mc, BlockPos pos, Direction face) {
-        if (face == Direction.UP) { return new VatTarget(pos, Direction.UP, BLOCK_CENTER, BLOCK_CENTER, BLOCK_TOP); }
-        if (face == Direction.DOWN) { return new VatTarget(pos, Direction.DOWN, BLOCK_CENTER, BLOCK_CENTER, BLOCK_BOTTOM); }
+        if (face == Direction.UP) {
+            return new VatTarget(pos, Direction.UP, BLOCK_CENTER, BLOCK_CENTER, BLOCK_TOP);
+        }
+        if (face == Direction.DOWN) {
+            return new VatTarget(pos, Direction.DOWN, BLOCK_CENTER, BLOCK_CENTER, BLOCK_BOTTOM);
+        }
         Vec3 look = mc.player != null ? mc.player.getLookAngle() : Vec3.ZERO;
         Direction bestFace = InWorldHud.bestPerpendicularFace(look);
         double cx = BLOCK_CENTER + bestFace.getStepX() * FACE_OFFSET;
@@ -242,7 +278,9 @@ public final class VatHudRenderer {
     @Nullable
     private static VatStackData lookupVatData(BlockPos pos) {
         Level level = Minecraft.getInstance().level;
-        if (level == null) { return null; }
+        if (level == null) {
+            return null;
+        }
         return VatStackAggregator.aggregate(level, pos);
     }
 
@@ -250,15 +288,15 @@ public final class VatHudRenderer {
      * Renders the HUD panel on the tracked face of the vat block.
      *
      * @param poseStack the pose stack for rendering
-     * @param camera the render camera
-     * @param data the extracted render data
-     * @param pos the block position
+     * @param camera    the render camera
+     * @param data      the extracted render data
+     * @param pos       the block position
      */
     private static void renderPanel(PoseStack poseStack, Camera camera, VatStackData data, BlockPos pos) {
         Vec3 cam = camera.position();
         poseStack.pushPose();
         poseStack.translate(pos.getX() + trackedCx - cam.x,
-            pos.getY() + trackedLift - cam.y, pos.getZ() + trackedCz - cam.z);
+                pos.getY() + trackedLift - cam.y, pos.getZ() + trackedCz - cam.z);
         applyRotation(poseStack, camera);
         VatHudPanelPainter.renderContent(poseStack, data, trackedFace);
         poseStack.popPose();
@@ -269,7 +307,7 @@ public final class VatHudRenderer {
      * Side faces lie flat against the block surface; UP/DOWN billboard toward the camera.
      *
      * @param poseStack the pose stack for rendering
-     * @param camera the render camera
+     * @param camera    the render camera
      */
     private static void applyRotation(PoseStack poseStack, Camera camera) {
         boolean vertical = trackedFace == Direction.UP || trackedFace == Direction.DOWN;
@@ -282,7 +320,9 @@ public final class VatHudRenderer {
         poseStack.scale(InWorldHud.PIXEL_SCALE, -InWorldHud.PIXEL_SCALE, InWorldHud.PIXEL_SCALE);
     }
 
-    /** Target: vat position, face, XZ center offset, and Y lift. */
+    /**
+     * Target: vat position, face, XZ center offset, and Y lift.
+     */
     private record VatTarget(BlockPos pos, Direction face, double cx, double cz, double lift) {
     }
 }

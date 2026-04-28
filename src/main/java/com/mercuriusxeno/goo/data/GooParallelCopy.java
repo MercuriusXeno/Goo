@@ -16,12 +16,18 @@ import java.util.regex.Matcher;
  */
 final class GooParallelCopy {
 
-    /** Regex group index for the multiplier in parallel copy pattern. */
+    /**
+     * Regex group index for the multiplier in parallel copy pattern.
+     */
     private static final int PARALLEL_COPY_MULTIPLIER_GROUP = 2;
-    /** Regex group index for the divisor in parallel copy pattern. */
+    /**
+     * Regex group index for the divisor in parallel copy pattern.
+     */
     private static final int PARALLEL_COPY_DIVISOR_GROUP = 3;
 
-    /** Pattern for parallel copy with optional scale: "#source * N / M" or just "#source". */
+    /**
+     * Pattern for parallel copy with optional scale: "#source * N / M" or just "#source".
+     */
     private static final java.util.regex.Pattern PARALLEL_COPY_PATTERN = java.util.regex.Pattern.compile(
             "#(\\w+)(?:\\s*\\*\\s*(\\d+)\\s*/\\s*(\\d+))?\\s*");
 
@@ -32,12 +38,13 @@ final class GooParallelCopy {
     private static final String LOG_PARALLEL_NEGATIVE = "Parallel copy produced negative for {}: {}";
     private static final String LOG_PARALLEL_SCALE_FAIL = "Parallel copy scale failed for {} (from {}): {}";
 
-    private GooParallelCopy() {}
+    private GooParallelCopy() {
+    }
 
     /**
      * Expands a #name key against pseudo-tags, assigning the value to each member.
      *
-     * @param name the pseudo-tag name (without # prefix)
+     * @param name  the pseudo-tag name (without # prefix)
      * @param value the JSON value to assign to each member
      * @param state mutable parsing state
      */
@@ -47,7 +54,9 @@ final class GooParallelCopy {
             Goo.LOGGER.warn(LOG_PSEUDO_TAG_EMPTY, name);
             return;
         }
-        if (tryParallelCopy(name, value, targetMembers, state)) { return; }
+        if (tryParallelCopy(name, value, targetMembers, state)) {
+            return;
+        }
         for (Identifier member : targetMembers) {
             GooValueLoader.assignItemValue(member, value, state);
         }
@@ -56,17 +65,21 @@ final class GooParallelCopy {
     /**
      * Checks if the value is a parallel copy expression ("#source * N / M") and applies it.
      *
-     * @param name the target pseudo-tag name
-     * @param value the JSON value to check
+     * @param name          the target pseudo-tag name
+     * @param value         the JSON value to check
      * @param targetMembers resolved target item IDs
-     * @param state mutable parsing state
+     * @param state         mutable parsing state
      * @return true if a parallel copy was applied
      */
     private static boolean tryParallelCopy(String name, JsonElement value,
-                                            Set<Identifier> targetMembers, GooValueLoader.ParseState state) {
-        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) { return false; }
+                                           Set<Identifier> targetMembers, GooValueLoader.ParseState state) {
+        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
+            return false;
+        }
         Matcher m = PARALLEL_COPY_PATTERN.matcher(value.getAsString().trim());
-        if (!m.matches()) { return false; }
+        if (!m.matches()) {
+            return false;
+        }
         String sourceName = m.group(1);
         int multiplier = parseGroupOrDefault(m, PARALLEL_COPY_MULTIPLIER_GROUP);
         int divisor = parseGroupOrDefault(m, PARALLEL_COPY_DIVISOR_GROUP);
@@ -88,20 +101,24 @@ final class GooParallelCopy {
     /**
      * Parallel copy from source tag to target tag, with optional scale.
      *
-     * @param targetName the target pseudo-tag name
-     * @param sourceName the source pseudo-tag name to copy from
+     * @param targetName    the target pseudo-tag name
+     * @param sourceName    the source pseudo-tag name to copy from
      * @param targetMembers resolved target item IDs
-     * @param multiplier numerator for post-copy scaling
-     * @param divisor denominator for post-copy scaling
-     * @param state mutable parsing state
+     * @param multiplier    numerator for post-copy scaling
+     * @param divisor       denominator for post-copy scaling
+     * @param state         mutable parsing state
      */
     private static void parallelCopyBaseValues(String targetName, String sourceName,
-                                         Set<Identifier> targetMembers,
-                                         int multiplier, int divisor, GooValueLoader.ParseState state) {
+                                               Set<Identifier> targetMembers,
+                                               int multiplier, int divisor, GooValueLoader.ParseState state) {
         List<Identifier> sources = resolveSourceMembers(sourceName, state);
-        if (sources.isEmpty()) { return; }
+        if (sources.isEmpty()) {
+            return;
+        }
         List<Identifier> targets = new ArrayList<>(targetMembers);
-        if (!validateParallelSize(targetName, targets, sourceName, sources)) { return; }
+        if (!validateParallelSize(targetName, targets, sourceName, sources)) {
+            return;
+        }
         for (int i = 0; i < targets.size(); i++) {
             copyScaledValue(sources.get(i), targets.get(i), multiplier, divisor, state.baseValues);
         }
@@ -109,6 +126,7 @@ final class GooParallelCopy {
 
     /**
      * Resolves a source pseudo-tag, returning empty list with an error log if empty.
+     *
      * @param sourceName the pseudo-tag name to resolve
      * @param state      the current parse state with pseudo-tag definitions
      * @return the resolved member list, or empty if the tag is empty
@@ -126,14 +144,16 @@ final class GooParallelCopy {
      * Validates that parallel copy source and target have equal size.
      *
      * @param targetName target tag name for logging
-     * @param targets resolved target IDs
+     * @param targets    resolved target IDs
      * @param sourceName source tag name for logging
-     * @param sources resolved source IDs
+     * @param sources    resolved source IDs
      * @return true if sizes match
      */
     private static boolean validateParallelSize(String targetName, List<Identifier> targets,
-                                                 String sourceName, List<Identifier> sources) {
-        if (targets.size() == sources.size()) { return true; }
+                                                String sourceName, List<Identifier> sources) {
+        if (targets.size() == sources.size()) {
+            return true;
+        }
         if (Goo.LOGGER.isErrorEnabled()) {
             Goo.LOGGER.error(LOG_PARALLEL_MISMATCH,
                     targetName, targets.size(), sourceName, sources.size());
@@ -144,18 +164,20 @@ final class GooParallelCopy {
     /**
      * Copies a single source item's value to a target, applying multiplier/divisor scaling.
      *
-     * @param source the source item ID
-     * @param target the target item ID
+     * @param source     the source item ID
+     * @param target     the target item ID
      * @param multiplier numerator for scaling
-     * @param divisor denominator for scaling
+     * @param divisor    denominator for scaling
      * @param baseValues the base values map
      */
     private static void copyScaledValue(Identifier source, Identifier target,
-                                  int multiplier, int divisor,
-                                  Map<Identifier, GooValue> baseValues) {
+                                        int multiplier, int divisor,
+                                        Map<Identifier, GooValue> baseValues) {
         GooValue sourceVal = baseValues.get(source);
         if (sourceVal == null || sourceVal.isEmpty()) {
-            if (Goo.LOGGER.isWarnEnabled()) { Goo.LOGGER.warn(LOG_PARALLEL_NO_VALUE, source, target); }
+            if (Goo.LOGGER.isWarnEnabled()) {
+                Goo.LOGGER.warn(LOG_PARALLEL_NO_VALUE, source, target);
+            }
             return;
         }
         applyScaling(sourceVal, target, source, multiplier, divisor, baseValues);
@@ -164,25 +186,29 @@ final class GooParallelCopy {
     /**
      * Scales a source value and stores the result, logging errors for negatives or overflow.
      *
-     * @param sourceVal the source goo value to scale
-     * @param target the target item ID
-     * @param source the source item ID (for error logging)
+     * @param sourceVal  the source goo value to scale
+     * @param target     the target item ID
+     * @param source     the source item ID (for error logging)
      * @param multiplier numerator for scaling
-     * @param divisor denominator for scaling
+     * @param divisor    denominator for scaling
      * @param baseValues the base values map
      */
     private static void applyScaling(GooValue sourceVal, Identifier target, Identifier source,
-                               int multiplier, int divisor,
-                               Map<Identifier, GooValue> baseValues) {
+                                     int multiplier, int divisor,
+                                     Map<Identifier, GooValue> baseValues) {
         try {
             GooValue scaled = sourceVal.multiply(multiplier).divideExact(divisor);
             if (scaled.hasNegative()) {
-                if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(LOG_PARALLEL_NEGATIVE, target, scaled); }
+                if (Goo.LOGGER.isErrorEnabled()) {
+                    Goo.LOGGER.error(LOG_PARALLEL_NEGATIVE, target, scaled);
+                }
                 return;
             }
             baseValues.put(target, scaled);
         } catch (ArithmeticException e) {
-            if (Goo.LOGGER.isErrorEnabled()) { Goo.LOGGER.error(LOG_PARALLEL_SCALE_FAIL, target, source, e.getMessage()); }
+            if (Goo.LOGGER.isErrorEnabled()) {
+                Goo.LOGGER.error(LOG_PARALLEL_SCALE_FAIL, target, source, e.getMessage());
+            }
         }
     }
 }

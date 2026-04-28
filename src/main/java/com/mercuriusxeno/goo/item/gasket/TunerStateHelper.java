@@ -13,19 +13,25 @@ import java.util.List;
 
 /**
  * Stateless helper for reading/writing TunerState on a choral tuner stack
- * and sending player feedback. Extracted from ChoralTunerItem to stay
- * under the TooManyMethods threshold.
+ * and sending player feedback.
  */
 final class TunerStateHelper {
 
-    /** Feedback message for cancel action. */
+    /**
+     * Feedback message for cancel action.
+     */
     private static final String MSG_CANCELLED = "Cancelled";
-    /** Custom model data key for receiver role. */
+    /**
+     * Custom model data key for receiver role.
+     */
     private static final String MODEL_RECEIVER = "receiver";
-    /** Custom model data key for transmitter role. */
+    /**
+     * Custom model data key for transmitter role.
+     */
     private static final String MODEL_TRANSMITTER = "transmitter";
 
-    private TunerStateHelper() {}
+    private TunerStateHelper() {
+    }
 
     /**
      * Returns the tuner state from the stack, defaulting to EMPTY.
@@ -73,8 +79,8 @@ final class TunerStateHelper {
     static CustomModelData buildRoleModelData(GasketRole role) {
         String modelKey = role == GasketRole.RECEIVER ? MODEL_RECEIVER : MODEL_TRANSMITTER;
         return new CustomModelData(
-            List.of(), List.of(),
-            List.of(modelKey), List.of());
+                List.of(), List.of(),
+                List.of(modelKey), List.of());
     }
 
     /**

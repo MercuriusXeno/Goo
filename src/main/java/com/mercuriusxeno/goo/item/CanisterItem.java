@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.item;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.CanisterBlock;
-import com.mercuriusxeno.goo.block.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterBlock;
+import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import com.mercuriusxeno.goo.registry.GooEnchantments;
 import com.mercuriusxeno.goo.registry.GooFluids;

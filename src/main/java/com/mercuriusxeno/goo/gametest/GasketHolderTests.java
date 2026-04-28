@@ -1,11 +1,11 @@
 package com.mercuriusxeno.goo.gametest;
 
-import com.mercuriusxeno.goo.block.CrucibleBlock;
-import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.VatBlock;
-import com.mercuriusxeno.goo.block.VatBlockEntity;
+import com.mercuriusxeno.goo.block.crucible.CrucibleBlock;
+import com.mercuriusxeno.goo.block.crucible.CrucibleBlockEntity;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlock;
+import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
@@ -29,7 +29,8 @@ public final class GasketHolderTests {
     private static final String TUNING_NULL = "Default allowsTuning(null) should be true";
     private static final String TUNING_RANDOM = "Default allowsTuning(random) should be true";
 
-    private GasketHolderTests() {}
+    private GasketHolderTests() {
+    }
 
     // --- Crucible ---
 
@@ -52,7 +53,7 @@ public final class GasketHolderTests {
      */
     public static void crucibleNoGasketUnsupported(GameTestHelper helper) {
         helper.setBlock(BE_POS, GooBlocks.CRUCIBLE.get().defaultBlockState()
-            .setValue(CrucibleBlock.HAS_GASKET, false));
+                .setValue(CrucibleBlock.HAS_GASKET, false));
         CrucibleBlockEntity be = helper.getBlockEntity(BE_POS, CrucibleBlockEntity.class);
         helper.assertFalse(be.supportsRole(GasketRole.TRANSMITTER), NO_GASKET_TX);
         helper.assertFalse(be.supportsRole(GasketRole.RECEIVER), NO_GASKET_RX);
@@ -66,7 +67,7 @@ public final class GasketHolderTests {
      */
     public static void crucibleWithGasketSupported(GameTestHelper helper) {
         helper.setBlock(BE_POS, GooBlocks.CRUCIBLE.get().defaultBlockState()
-            .setValue(CrucibleBlock.HAS_GASKET, true));
+                .setValue(CrucibleBlock.HAS_GASKET, true));
         CrucibleBlockEntity be = helper.getBlockEntity(BE_POS, CrucibleBlockEntity.class);
         helper.assertTrue(be.supportsRole(GasketRole.TRANSMITTER), WITH_GASKET_TX);
         helper.succeed();
@@ -81,8 +82,8 @@ public final class GasketHolderTests {
      */
     public static void vatSupportsRoleMatchesBlockstate(GameTestHelper helper) {
         helper.setBlock(BE_POS, GooBlocks.VAT.get().defaultBlockState()
-            .setValue(VatBlock.GASKET_CAP, true)
-            .setValue(VatBlock.GASKET_BASE, false));
+                .setValue(VatBlock.GASKET_CAP, true)
+                .setValue(VatBlock.GASKET_BASE, false));
         VatBlockEntity be = helper.getBlockEntity(BE_POS, VatBlockEntity.class);
         helper.assertTrue(be.supportsRole(GasketRole.RECEIVER), VAT_CAP_RX);
         helper.assertFalse(be.supportsRole(GasketRole.TRANSMITTER), VAT_NO_BASE_TX);

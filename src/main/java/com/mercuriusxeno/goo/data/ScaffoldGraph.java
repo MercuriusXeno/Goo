@@ -1,13 +1,7 @@
 package com.mercuriusxeno.goo.data;
 
 import net.minecraft.resources.Identifier;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Graph-building, value propagation, and downstream traversal for the
@@ -17,10 +11,13 @@ import java.util.Set;
  */
 final class ScaffoldGraph {
 
-    /** Maximum depth for example derivation chains. */
+    /**
+     * Maximum depth for example derivation chains.
+     */
     static final int MAX_CHAIN_DEPTH = 5;
 
-    private ScaffoldGraph() {}
+    private ScaffoldGraph() {
+    }
 
 
     /**
@@ -67,12 +64,12 @@ final class ScaffoldGraph {
     /**
      * Collects all unique inputs for a single output and adds them to the forward deps map.
      *
-     * @param deps forward dependency map to populate (mutated)
-     * @param output the output item ID
+     * @param deps    forward dependency map to populate (mutated)
+     * @param output  the output item ID
      * @param recipes all recipes producing this output
      */
     private static void addForwardDepsForOutput(Map<Identifier, Set<Identifier>> deps,
-                                                 Identifier output, List<RecipeInput> recipes) {
+                                                Identifier output, List<RecipeInput> recipes) {
         Set<Identifier> inputs = collectRecipeInputItems(recipes);
         inputs.remove(output);
         if (!inputs.isEmpty()) {
@@ -120,9 +117,9 @@ final class ScaffoldGraph {
      * No reverse propagation -- matches the actual derivation system which
      * does not reverse-derive (reverted due to stonecutter value collapse).
      *
-     * @param valued mutable set of valued item IDs (grows during propagation)
+     * @param valued  mutable set of valued item IDs (grows during propagation)
      * @param recipes all recipes to propagate through
-     * @param denied denied items excluded from propagation
+     * @param denied  denied items excluded from propagation
      */
     static void propagateValues(Set<Identifier> valued,
                                 List<RecipeInput> recipes,
@@ -136,13 +133,13 @@ final class ScaffoldGraph {
     /**
      * Runs one pass of value propagation, returning true if any new item was valued.
      *
-     * @param valued mutable valued set (may grow)
+     * @param valued  mutable valued set (may grow)
      * @param recipes all recipes to check
-     * @param denied excluded items
+     * @param denied  excluded items
      * @return true if at least one new item was valued this pass
      */
     private static boolean propagateOnePass(Set<Identifier> valued, List<RecipeInput> recipes,
-                                             Set<Identifier> denied) {
+                                            Set<Identifier> denied) {
         boolean changed = false;
         for (RecipeInput recipe : recipes) {
             if (tryPropagateRecipe(valued, recipe, denied)) {
@@ -163,7 +160,9 @@ final class ScaffoldGraph {
      */
     private static boolean tryPropagateRecipe(Set<Identifier> valued, RecipeInput recipe, Set<Identifier> denied) {
         Identifier output = recipe.output();
-        if (denied.contains(output)) { return false; }
+        if (denied.contains(output)) {
+            return false;
+        }
 
         boolean allInputsValued = recipe.ingredientAlternatives().stream()
                 .allMatch(alts -> alts.stream().anyMatch(valued::contains));
@@ -174,16 +173,16 @@ final class ScaffoldGraph {
     /**
      * Computes all downstream items reachable from a root via the reverse graph.
      *
-     * @param root the starting item
+     * @param root        the starting item
      * @param reverseDeps reverse dependency graph (input to outputs)
-     * @param valued items already valued (stops traversal)
-     * @param denied items excluded from results
+     * @param valued      items already valued (stops traversal)
+     * @param denied      items excluded from results
      * @return set of all unvalued downstream item IDs
      */
     static Set<Identifier> computeDownstream(Identifier root,
-                                              Map<Identifier, Set<Identifier>> reverseDeps,
-                                              Set<Identifier> valued,
-                                              Set<Identifier> denied) {
+                                             Map<Identifier, Set<Identifier>> reverseDeps,
+                                             Set<Identifier> valued,
+                                             Set<Identifier> denied) {
         Set<Identifier> downstream = new HashSet<>();
         List<Identifier> queue = new ArrayList<>();
         queue.add(root);
@@ -198,17 +197,17 @@ final class ScaffoldGraph {
      * Expands a single node's neighbors during downstream BFS, adding unvisited
      * unvalued non-denied neighbors to both the result set and the queue.
      *
-     * @param current the node to expand
+     * @param current     the node to expand
      * @param reverseDeps reverse dependency graph
-     * @param valued items already valued (excluded)
-     * @param denied items excluded
-     * @param downstream result set (mutated, also used as visited check)
-     * @param queue BFS queue (mutated)
+     * @param valued      items already valued (excluded)
+     * @param denied      items excluded
+     * @param downstream  result set (mutated, also used as visited check)
+     * @param queue       BFS queue (mutated)
      */
     private static void expandDownstreamNeighbors(Identifier current,
-                                                   Map<Identifier, Set<Identifier>> reverseDeps,
-                                                   Set<Identifier> valued, Set<Identifier> denied,
-                                                   Set<Identifier> downstream, List<Identifier> queue) {
+                                                  Map<Identifier, Set<Identifier>> reverseDeps,
+                                                  Set<Identifier> valued, Set<Identifier> denied,
+                                                  Set<Identifier> downstream, List<Identifier> queue) {
         for (Identifier next : reverseDeps.getOrDefault(current, Set.of())) {
             if (!valued.contains(next) && !denied.contains(next) && downstream.add(next)) {
                 queue.add(next);
@@ -219,18 +218,18 @@ final class ScaffoldGraph {
     /**
      * Traces an example derivation chain from a root, following the highest-impact path.
      *
-     * @param root the starting item
+     * @param root        the starting item
      * @param reverseDeps reverse dependency graph (input to outputs)
-     * @param valued items already valued (excluded from chain)
-     * @param denied items excluded from chain
-     * @param maxDepth maximum chain length
+     * @param valued      items already valued (excluded from chain)
+     * @param denied      items excluded from chain
+     * @param maxDepth    maximum chain length
      * @return ordered list of items in the example chain
      */
     static List<Identifier> traceExampleChain(Identifier root,
-                                               Map<Identifier, Set<Identifier>> reverseDeps,
-                                               Set<Identifier> valued,
-                                               Set<Identifier> denied,
-                                               int maxDepth) {
+                                              Map<Identifier, Set<Identifier>> reverseDeps,
+                                              Set<Identifier> valued,
+                                              Set<Identifier> denied,
+                                              int maxDepth) {
         List<Identifier> chain = new ArrayList<>();
         traceChainSteps(chain, root, reverseDeps, valued, denied, maxDepth);
         return chain;
@@ -239,20 +238,22 @@ final class ScaffoldGraph {
     /**
      * Follows highest-impact neighbors up to maxDepth steps, appending each to the chain.
      *
-     * @param chain accumulator for chain items (mutated)
-     * @param start the starting item
+     * @param chain       accumulator for chain items (mutated)
+     * @param start       the starting item
      * @param reverseDeps reverse dependency graph
-     * @param valued items already valued (excluded)
-     * @param denied items excluded
-     * @param maxDepth maximum steps to follow
+     * @param valued      items already valued (excluded)
+     * @param denied      items excluded
+     * @param maxDepth    maximum steps to follow
      */
     private static void traceChainSteps(List<Identifier> chain, Identifier start,
-                                         Map<Identifier, Set<Identifier>> reverseDeps,
-                                         Set<Identifier> valued, Set<Identifier> denied, int maxDepth) {
+                                        Map<Identifier, Set<Identifier>> reverseDeps,
+                                        Set<Identifier> valued, Set<Identifier> denied, int maxDepth) {
         Identifier current = start;
         for (int i = 0; i < maxDepth; i++) {
             Identifier best = findBestCandidate(current, reverseDeps, valued, denied);
-            if (best == null) { break; }
+            if (best == null) {
+                break;
+            }
             chain.add(best);
             current = best;
         }
@@ -262,17 +263,19 @@ final class ScaffoldGraph {
      * Finds the best next candidate in a chain trace: the neighbor with the
      * most downstream reach that is neither valued nor denied.
      *
-     * @param current the current node in the chain
+     * @param current     the current node in the chain
      * @param reverseDeps reverse dependency graph
-     * @param valued items already valued (excluded)
-     * @param denied items excluded
+     * @param valued      items already valued (excluded)
+     * @param denied      items excluded
      * @return the best candidate, or null if none qualify
      */
     private static Identifier findBestCandidate(Identifier current,
-                                                 Map<Identifier, Set<Identifier>> reverseDeps,
-                                                 Set<Identifier> valued, Set<Identifier> denied) {
+                                                Map<Identifier, Set<Identifier>> reverseDeps,
+                                                Set<Identifier> valued, Set<Identifier> denied) {
         Set<Identifier> next = reverseDeps.getOrDefault(current, Set.of());
-        if (next.isEmpty()) { return null; }
+        if (next.isEmpty()) {
+            return null;
+        }
         return scoreBestNeighbor(next, reverseDeps, valued, denied);
     }
 
@@ -280,15 +283,15 @@ final class ScaffoldGraph {
      * Scores neighbors by their downstream fan-out and returns the one
      * with the highest reach, skipping valued and denied items.
      *
-     * @param candidates neighbor candidates to score
+     * @param candidates  neighbor candidates to score
      * @param reverseDeps reverse dependency graph for fan-out scoring
-     * @param valued items already valued (skipped)
-     * @param denied items excluded (skipped)
+     * @param valued      items already valued (skipped)
+     * @param denied      items excluded (skipped)
      * @return the highest-scoring candidate, or null if all are excluded
      */
     private static Identifier scoreBestNeighbor(Set<Identifier> candidates,
-                                                 Map<Identifier, Set<Identifier>> reverseDeps,
-                                                 Set<Identifier> valued, Set<Identifier> denied) {
+                                                Map<Identifier, Set<Identifier>> reverseDeps,
+                                                Set<Identifier> valued, Set<Identifier> denied) {
         return candidates.stream()
                 .filter(c -> !valued.contains(c) && !denied.contains(c))
                 .max(Comparator.comparingInt(c -> reverseDeps.getOrDefault(c, Set.of()).size()))

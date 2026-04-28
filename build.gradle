@@ -327,11 +327,13 @@ tasks.configureEach {
 // entry to umlSlices below.
 def umlSlices = [
         [name    : 'Ability',
-         file    : 'ability-effect.puml',
+         file    : 'ability.puml',
          packages: ['com.mercuriusxeno.goo.ability',
-                    'com.mercuriusxeno.goo.effect']],
-        [name    : 'Block',
-         file    : 'block.puml',
+                    'com.mercuriusxeno.goo.ability.world',
+                    'com.mercuriusxeno.goo.ability.mob',
+                    'com.mercuriusxeno.goo.block.ability']],
+        [name    : 'Machine',
+         file    : 'machine.puml',
          packages: ['com.mercuriusxeno.goo.block',
                     'com.mercuriusxeno.goo.block.fluid',
                     'com.mercuriusxeno.goo.block.gasket']],

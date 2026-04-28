@@ -2,8 +2,9 @@ package com.mercuriusxeno.goo.item.gasket;
 
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Unit tests for GasketPartner record: field access, coordinate formatting,

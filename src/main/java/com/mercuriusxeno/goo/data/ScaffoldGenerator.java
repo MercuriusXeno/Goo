@@ -17,54 +17,19 @@ import java.util.Set;
  */
 public final class ScaffoldGenerator {
 
-    /** Utility class, not instantiable. */
-    private ScaffoldGenerator() {}
-
     /**
-     * A root node that needs manual valuation to unblock downstream items.
-     *
-     * @param itemId         the item that needs a value
-     * @param downstream     items that would be unblocked if this were valued
-     * @param clusterSize    number of items in this root's value cluster
-     * @param reason         why this item is a root (no recipe, clique entry, etc.)
-     * @param exampleChain   a sample derivation path from this root
+     * Utility class, not instantiable.
      */
-    public record Root(
-            Identifier itemId,
-            Set<Identifier> downstream,
-            int clusterSize,
-            String reason,
-            List<Identifier> exampleChain
-    ) {}
-
-    /**
-     * Intermediate data from recipe graph construction.
-     *
-     * @param byOutput    recipes grouped by output
-     * @param recipeItems all items mentioned in the graph
-     * @param reverseDeps reverse dependency graph
-     */
-    record GraphData(
-            Map<Identifier, List<RecipeInput>> byOutput,
-            Set<Identifier> recipeItems,
-            Map<Identifier, Set<Identifier>> reverseDeps
-    ) {}
-
-    /**
-     * Result of scaffold generation: the file lines and the root count.
-     *
-     * @param lines     the generated scaffold file lines
-     * @param rootCount the number of roots in the scaffold
-     */
-    public record ScaffoldResult(List<String> lines, int rootCount) {}
+    private ScaffoldGenerator() {
+    }
 
     /**
      * Backward-compatible overload without registry items (used by tests).
      * Only finds recipe-graph roots; does not include flat registry items.
      *
-     * @param recipes all known recipes
+     * @param recipes    all known recipes
      * @param baseValues currently valued items
-     * @param denied denied items (excluded from analysis)
+     * @param denied     denied items (excluded from analysis)
      * @return roots sorted by downstream impact (highest first)
      */
     public static List<Root> findRoots(List<RecipeInput> recipes,
@@ -143,5 +108,46 @@ public final class ScaffoldGenerator {
      */
     public static ScaffoldResult generateScaffold(List<Root> roots, List<RecipeInput> recipes, boolean bare) {
         return ScaffoldFormatter.generateScaffold(roots, recipes, bare);
+    }
+
+    /**
+     * A root node that needs manual valuation to unblock downstream items.
+     *
+     * @param itemId       the item that needs a value
+     * @param downstream   items that would be unblocked if this were valued
+     * @param clusterSize  number of items in this root's value cluster
+     * @param reason       why this item is a root (no recipe, clique entry, etc.)
+     * @param exampleChain a sample derivation path from this root
+     */
+    public record Root(
+            Identifier itemId,
+            Set<Identifier> downstream,
+            int clusterSize,
+            String reason,
+            List<Identifier> exampleChain
+    ) {
+    }
+
+    /**
+     * Intermediate data from recipe graph construction.
+     *
+     * @param byOutput    recipes grouped by output
+     * @param recipeItems all items mentioned in the graph
+     * @param reverseDeps reverse dependency graph
+     */
+    record GraphData(
+            Map<Identifier, List<RecipeInput>> byOutput,
+            Set<Identifier> recipeItems,
+            Map<Identifier, Set<Identifier>> reverseDeps
+    ) {
+    }
+
+    /**
+     * Result of scaffold generation: the file lines and the root count.
+     *
+     * @param lines     the generated scaffold file lines
+     * @param rootCount the number of roots in the scaffold
+     */
+    public record ScaffoldResult(List<String> lines, int rootCount) {
     }
 }

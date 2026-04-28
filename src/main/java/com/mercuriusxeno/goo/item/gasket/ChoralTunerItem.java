@@ -38,24 +38,42 @@ import static com.mercuriusxeno.goo.GooConstants.NO_SLOT;
  */
 public class ChoralTunerItem extends Item implements IGooItemInteraction {
 
-    /** Maximum length for machine labels. */
+    /**
+     * Maximum length for machine labels.
+     */
     public static final int MAX_LABEL_LENGTH = 32;
 
-    /** Feedback message for cancel action. */
+    /**
+     * Feedback message for cancel action.
+     */
     private static final String MSG_CANCELLED = "Cancelled";
-    /** Feedback message for awaiting link state. */
+    /**
+     * Feedback message for awaiting link state.
+     */
     private static final String MSG_AWAITING = "Awaiting link...";
-    /** Feedback message for non-owner canister interaction. */
+    /**
+     * Feedback message for non-owner canister interaction.
+     */
     private static final String MSG_NOT_YOUR_CANISTER = "Not your canister";
-    /** Feedback message for unsupported role on a face. */
+    /**
+     * Feedback message for unsupported role on a face.
+     */
     private static final String MSG_CANT_BE_PREFIX = " can't be a ";
-    /** Fallback face label when none is provided. */
+    /**
+     * Fallback face label when none is provided.
+     */
     private static final String LABEL_MACHINE = "Machine";
-    /** Feedback message for missing gasket. */
+    /**
+     * Feedback message for missing gasket.
+     */
     private static final String MSG_NO_GASKET = "No gasket on this face";
-    /** Feedback message for missing intake gasket. */
+    /**
+     * Feedback message for missing intake gasket.
+     */
     private static final String MSG_NO_INTAKE_GASKET = "No gasket on intake";
-    /** Feedback label for intake face. */
+    /**
+     * Feedback label for intake face.
+     */
     private static final String LABEL_INTAKE = "intake";
 
     /**
@@ -65,7 +83,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
      */
     public ChoralTunerItem(Properties properties) {
         super(properties.stacksTo(1)
-            .component(GooDataComponents.TUNER_STATE.get(), TunerState.EMPTY));
+                .component(GooDataComponents.TUNER_STATE.get(), TunerState.EMPTY));
     }
 
     /**
@@ -79,8 +97,10 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
      */
     @Override
     public @NonNull InteractionResult use(@NonNull Level level, @NonNull Player player,
-            @NonNull InteractionHand hand) {
-        if (level.isClientSide()) { return InteractionResult.PASS; }
+                                          @NonNull InteractionHand hand) {
+        if (level.isClientSide()) {
+            return InteractionResult.PASS;
+        }
 
         ItemStack stack = player.getItemInHand(hand);
         TunerState state = TunerStateHelper.getState(stack);
@@ -101,8 +121,10 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
      * @return the interaction result
      */
     private InteractionResult handleShiftUseInAir(TunerState state, Player player,
-            ItemStack stack) {
-        if (!state.hasSelection()) { return InteractionResult.PASS; }
+                                                  ItemStack stack) {
+        if (!state.hasSelection()) {
+            return InteractionResult.PASS;
+        }
         TunerStateHelper.setState(stack, state.clearSelection());
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.cancel(MSG_CANCELLED));
         return InteractionResult.SUCCESS;
@@ -132,10 +154,14 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
     @Override
     public @NonNull InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide()) { return InteractionResult.SUCCESS; }
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        }
 
         Player player = context.getPlayer();
-        if (player == null) { return InteractionResult.PASS; }
+        if (player == null) {
+            return InteractionResult.PASS;
+        }
 
         return dispatchUseOn(context, player, level);
     }
@@ -151,11 +177,11 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
     private InteractionResult dispatchUseOn(UseOnContext context, Player player, Level level) {
         ItemStack stack = context.getItemInHand();
         TunerState state = TunerStateHelper.ensureOwner(
-            TunerStateHelper.getState(stack), player, stack);
+                TunerStateHelper.getState(stack), player, stack);
 
         BlockPos pos = context.getClickedPos();
         BlockHitResult hit = new BlockHitResult(
-            context.getClickLocation(), context.getClickedFace(), pos, context.isInside());
+                context.getClickLocation(), context.getClickedFace(), pos, context.isInside());
 
         return handleUseOn(state, player, stack, level, pos, hit);
     }
@@ -200,7 +226,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
             return handleSlotMiss(state, player, stack, level, holder, pos, hit);
         }
         return handleGasketMachineClick(state, player, stack, level,
-            holder, pos, slot, hit);
+                holder, pos, slot, hit);
     }
 
     /**
@@ -246,7 +272,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
 
         if (!holder.allowsTuning(state.ownerUuid())) {
             TunerStateHelper.sendFeedback(player,
-                TunerFeedbackPayload.brief(MSG_NOT_YOUR_CANISTER));
+                    TunerFeedbackPayload.brief(MSG_NOT_YOUR_CANISTER));
             return InteractionResult.SUCCESS;
         }
 
@@ -324,12 +350,12 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         UUID gasketId = holder.getGasketId(role, slot);
         if (gasketId == null) {
             TunerStateHelper.sendFeedback(player,
-                TunerFeedbackPayload.brief(MSG_NO_GASKET));
+                    TunerFeedbackPayload.brief(MSG_NO_GASKET));
             return InteractionResult.SUCCESS;
         }
 
         return resolveAndExecuteAction(state, player, stack, level,
-            role, gasketId, pos, slot, holder.getFaceLabel(role));
+                role, gasketId, pos, slot, holder.getFaceLabel(role));
     }
 
     /**
@@ -345,8 +371,8 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         String msg = holder.getFaceLabel(role);
         String label = msg != null ? msg : LABEL_MACHINE;
         TunerStateHelper.sendFeedback(player, TunerFeedbackPayload.brief(
-            label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1)
-            + MSG_CANT_BE_PREFIX + role.name().toLowerCase(Locale.ROOT)));
+                label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1)
+                        + MSG_CANT_BE_PREFIX + role.name().toLowerCase(Locale.ROOT)));
         return InteractionResult.SUCCESS;
     }
 
@@ -370,16 +396,16 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
             @Nullable String faceLabel) {
         GasketClick clicked = new GasketClick(role, gasketId, pos, slot, faceLabel);
         ConfirmContext confirm = new ConfirmContext(
-            state.pendingConfirm(), state.confirmTarget(), state.confirmSlot());
+                state.pendingConfirm(), state.confirmTarget(), state.confirmSlot());
         UUID existingPartnerId = GasketPartnerManager.lookupPartner(level, gasketId);
 
         TunerAction action = TunerLinkLogic.resolve(
-            clicked, existingPartnerId,
-            state.selectedRole(), state.selectedGasketId(),
-            confirm);
+                clicked, existingPartnerId,
+                state.selectedRole(), state.selectedGasketId(),
+                confirm);
 
         return TunerActionExecutor.executeAction(
-            action, state, player, stack, level, clicked);
+                action, state, player, stack, level, clicked);
     }
 
     /**
@@ -427,12 +453,12 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         UUID gasketId = holder.getGasketId(GasketRole.RECEIVER);
         if (gasketId == null) {
             TunerStateHelper.sendFeedback(player,
-                TunerFeedbackPayload.brief(MSG_NO_INTAKE_GASKET));
+                    TunerFeedbackPayload.brief(MSG_NO_INTAKE_GASKET));
             return InteractionResult.SUCCESS;
         }
 
         return resolveAndExecuteAction(state, player, stack, level,
-            GasketRole.RECEIVER, gasketId, pos, NO_SLOT, LABEL_INTAKE);
+                GasketRole.RECEIVER, gasketId, pos, NO_SLOT, LABEL_INTAKE);
     }
 
     /**
@@ -448,7 +474,7 @@ public class ChoralTunerItem extends Item implements IGooItemInteraction {
         if (player.isShiftKeyDown() && state.hasSelection()) {
             TunerStateHelper.setState(stack, state.clearSelection());
             TunerStateHelper.sendFeedback(player,
-                TunerFeedbackPayload.cancel(MSG_CANCELLED));
+                    TunerFeedbackPayload.cancel(MSG_CANCELLED));
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;

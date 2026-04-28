@@ -18,79 +18,126 @@ import java.util.Map;
  * eliminating the aliased scanline artifacts of the old rasterizer.
  */
 public final class RadialTextures {
-    /** Texture resolution - matches OUTER_RADIUS * 2 so blit UV maps 1:1. */
+    /**
+     * Texture resolution - matches OUTER_RADIUS * 2 so blit UV maps 1:1.
+     */
     static final int TEX_SIZE = 200;
 
-    /** Number of wedges (one per goo type). */
+    /**
+     * Number of wedges (one per goo type).
+     */
     private static final int WEDGE_COUNT = GooType.values().length;
 
-    /** Sub-samples per axis for anti-aliasing (4x4 = 16 samples per pixel). */
+    /**
+     * Sub-samples per axis for anti-aliasing (4x4 = 16 samples per pixel).
+     */
     private static final int AA_SAMPLES = 4;
 
-    /** Inner/outer radius in normalized [0..1] space (center = 0.5). */
+    /**
+     * Inner/outer radius in normalized [0..1] space (center = 0.5).
+     */
     private static final double NORM_INNER = 30.0 / 100.0; // INNER_RADIUS / OUTER_RADIUS
     private static final double NORM_OUTER = 1.0;
 
-    /** Full circle in radians. */
+    /**
+     * Full circle in radians.
+     */
     private static final double TWO_PI = 2.0 * Math.PI;
 
-    /** Divisor for computing center of texture. */
+    /**
+     * Divisor for computing center of texture.
+     */
     private static final double HALF_DIVISOR = 2.0;
 
-    /** Sub-sample center offset. */
+    /**
+     * Sub-sample center offset.
+     */
     private static final double SAMPLE_CENTER = 0.5;
 
-    /** Maximum alpha value for fully opaque white. */
+    /**
+     * Maximum alpha value for fully opaque white.
+     */
     private static final int MAX_ALPHA = 255;
 
-    /** Cancel radius gap from inner ring (in pixels). */
+    /**
+     * Cancel radius gap from inner ring (in pixels).
+     */
     private static final double CANCEL_GAP = 2.0;
 
-    /** Inner radius in pixels for cancel mask computation. */
+    /**
+     * Inner radius in pixels for cancel mask computation.
+     */
     private static final double CANCEL_INNER_PX = 30.0;
 
-    /** Outer radius in pixels for cancel mask computation. */
+    /**
+     * Outer radius in pixels for cancel mask computation.
+     */
     private static final double CANCEL_OUTER_PX = 100.0;
 
-    /** Texture label prefix for wedge textures. */
+    /**
+     * Texture label prefix for wedge textures.
+     */
     private static final String WEDGE_LABEL_PREFIX = "goo_radial_wedge_";
 
-    /** Resource path prefix for wedge textures. */
+    /**
+     * Resource path prefix for wedge textures.
+     */
     private static final String WEDGE_PATH_PREFIX = "dynamic/radial_wedge_";
 
-    /** Texture label for the cancel mask. */
+    /**
+     * Texture label for the cancel mask.
+     */
     private static final String CANCEL_LABEL = "goo_radial_cancel";
 
-    /** Resource path for the cancel mask. */
+    /**
+     * Resource path for the cancel mask.
+     */
     private static final String CANCEL_PATH = "dynamic/radial_cancel";
 
-    /** Registered texture identifiers, one per wedge. */
+    /**
+     * Registered texture identifiers, one per wedge.
+     */
     private static final Identifier[] WEDGE_IDS = new Identifier[WEDGE_COUNT];
-
-    /** Registered cancel circle texture identifier. */
-    private static Identifier cancelId;
-
-    /** Cache of dynamically generated wedge masks for variable-count radials.
-     * Key: (wedgeCount << 16) | wedgeIndex. */
+    /**
+     * Cache of dynamically generated wedge masks for variable-count radials.
+     * Key: (wedgeCount << 16) | wedgeIndex.
+     */
     private static final Map<Integer, Identifier> DYNAMIC_WEDGES = new HashMap<>();
-
-    /** Dynamic texture label prefix for variable-count wedges. */
+    /**
+     * Dynamic texture label prefix for variable-count wedges.
+     */
     private static final String DYN_WEDGE_LABEL = "goo_dyn_wedge_";
-    /** Dynamic texture path prefix for variable-count wedges. */
+    /**
+     * Dynamic texture path prefix for variable-count wedges.
+     */
     private static final String DYN_WEDGE_PATH = "dynamic/dyn_wedge_";
-    /** Separator between count and index in dynamic wedge names. */
+    /**
+     * Separator between count and index in dynamic wedge names.
+     */
     private static final String DYN_SEP = "_";
-    /** Bit shift for packing wedge count into cache key. */
+    /**
+     * Bit shift for packing wedge count into cache key.
+     */
     private static final int COUNT_SHIFT = 16;
-
-    /** Whether textures have been generated and registered. */
+    /**
+     * Registered cancel circle texture identifier.
+     */
+    private static Identifier cancelId;
+    /**
+     * Whether textures have been generated and registered.
+     */
     private static boolean initialized;
 
-    private RadialTextures() {}
+    private RadialTextures() {
+    }
 
-    /** Lazily generates and registers all mask textures on first use. */
+    /**
+     * Lazily generates and registers all mask textures on first use.
+     */
     public static void ensureInitialized() {
-        if (initialized) { return; }
+        if (initialized) {
+            return;
+        }
         initialized = true;
         var texManager = Minecraft.getInstance().getTextureManager();
         registerWedgeTextures(texManager);
@@ -191,10 +238,10 @@ public final class RadialTextures {
     /**
      * Fills pixel samples for one wedge arc into the image.
      *
-     * @param image the target image
-     * @param half half the texture size for normalization
+     * @param image      the target image
+     * @param half       half the texture size for normalization
      * @param startAngle wedge start angle in radians
-     * @param endAngle wedge end angle in radians
+     * @param endAngle   wedge end angle in radians
      */
     private static void rasterizeWedge(NativeImage image, double half, double startAngle, double endAngle) {
         for (int py = 0; py < TEX_SIZE; py++) {
@@ -208,11 +255,11 @@ public final class RadialTextures {
     /**
      * Counts how many sub-samples at (px, py) fall inside the wedge arc.
      *
-     * @param px pixel x coordinate
-     * @param py pixel y coordinate
-     * @param half half the texture size, used to normalize coordinates
+     * @param px         pixel x coordinate
+     * @param py         pixel y coordinate
+     * @param half       half the texture size, used to normalize coordinates
      * @param startAngle wedge start angle in radians
-     * @param endAngle wedge end angle in radians
+     * @param endAngle   wedge end angle in radians
      * @return number of sub-samples inside the wedge (0..AA_SAMPLES^2)
      */
     private static int countWedgeHits(int px, int py, double half, double startAngle, double endAngle) {
@@ -220,7 +267,9 @@ public final class RadialTextures {
         for (int sy = 0; sy < AA_SAMPLES; sy++) {
             for (int sx = 0; sx < AA_SAMPLES; sx++) {
                 boolean inside = isInsideWedge(toNormalized(px, sx, half), toNormalized(py, sy, half), startAngle, endAngle);
-                if (inside) { hits++; }
+                if (inside) {
+                    hits++;
+                }
             }
         }
         return hits;
@@ -229,20 +278,24 @@ public final class RadialTextures {
     /**
      * Tests whether a normalized coordinate lies inside the annular wedge.
      *
-     * @param x normalized x (-1..1, center = 0)
-     * @param y normalized y (-1..1, center = 0)
+     * @param x          normalized x (-1..1, center = 0)
+     * @param y          normalized y (-1..1, center = 0)
      * @param startAngle wedge start angle in radians
-     * @param endAngle wedge end angle in radians
+     * @param endAngle   wedge end angle in radians
      * @return true if the point is within the ring and within the angular bounds
      */
     private static boolean isInsideWedge(double x, double y,
                                          double startAngle, double endAngle) {
         double dist = Math.sqrt(x * x + y * y);
-        if (dist < NORM_INNER || dist > NORM_OUTER) { return false; }
+        if (dist < NORM_INNER || dist > NORM_OUTER) {
+            return false;
+        }
 
         // Angle from top, clockwise - matches GooRadialRenderer.computeHoveredIndex
         double angle = Math.atan2(x, -y);
-        if (angle < 0) { angle += TWO_PI; }
+        if (angle < 0) {
+            angle += TWO_PI;
+        }
         return angle >= startAngle && angle < endAngle;
     }
 
@@ -263,8 +316,8 @@ public final class RadialTextures {
     /**
      * Fills pixel samples for a filled circle into the image.
      *
-     * @param image the target image
-     * @param half half the texture size for normalization
+     * @param image     the target image
+     * @param half      half the texture size for normalization
      * @param maxRadius normalized radius threshold
      */
     private static void rasterizeCircle(NativeImage image, double half, double maxRadius) {
@@ -279,9 +332,9 @@ public final class RadialTextures {
     /**
      * Counts how many sub-samples at (px, py) fall inside the cancel circle.
      *
-     * @param px pixel x coordinate
-     * @param py pixel y coordinate
-     * @param half half the texture size, used to normalize coordinates
+     * @param px        pixel x coordinate
+     * @param py        pixel y coordinate
+     * @param half      half the texture size, used to normalize coordinates
      * @param maxRadius normalized radius threshold
      * @return number of sub-samples inside the circle (0..AA_SAMPLES^2)
      */
@@ -289,7 +342,9 @@ public final class RadialTextures {
         int hits = 0;
         for (int sy = 0; sy < AA_SAMPLES; sy++) {
             for (int sx = 0; sx < AA_SAMPLES; sx++) {
-                if (isInsideCircle(toNormalized(px, sx, half), toNormalized(py, sy, half), maxRadius)) { hits++; }
+                if (isInsideCircle(toNormalized(px, sx, half), toNormalized(py, sy, half), maxRadius)) {
+                    hits++;
+                }
             }
         }
         return hits;
@@ -298,8 +353,8 @@ public final class RadialTextures {
     /**
      * Tests whether a normalized coordinate lies inside the cancel circle.
      *
-     * @param x normalized x
-     * @param y normalized y
+     * @param x         normalized x
+     * @param y         normalized y
      * @param maxRadius normalized radius threshold
      * @return true if the point is within the circle
      */
@@ -310,9 +365,9 @@ public final class RadialTextures {
     /**
      * Converts a pixel coordinate and sub-sample index to normalized [-1..1] space.
      *
-     * @param pixel the pixel coordinate
+     * @param pixel  the pixel coordinate
      * @param sample the sub-sample index within that pixel
-     * @param half half the texture size
+     * @param half   half the texture size
      * @return the normalized coordinate centered at 0
      */
     private static double toNormalized(int pixel, int sample, double half) {
@@ -323,9 +378,9 @@ public final class RadialTextures {
      * Writes a white pixel with proportional alpha if any sub-samples hit.
      *
      * @param image the target image
-     * @param px pixel x coordinate
-     * @param py pixel y coordinate
-     * @param hits number of sub-sample hits (0 means no write)
+     * @param px    pixel x coordinate
+     * @param py    pixel y coordinate
+     * @param hits  number of sub-sample hits (0 means no write)
      */
     private static void writePixelIfHit(NativeImage image, int px, int py, int hits) {
         if (hits > 0) {

@@ -1,15 +1,7 @@
 package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
-import com.mercuriusxeno.goo.gametest.CanisterInteractionTests;
-import com.mercuriusxeno.goo.gametest.CrucibleTests;
-import com.mercuriusxeno.goo.gametest.EffectExecutorTests;
-import com.mercuriusxeno.goo.gametest.GasketHolderTests;
-import com.mercuriusxeno.goo.gametest.GasketPusherTests;
-import com.mercuriusxeno.goo.gametest.MachineInteractionTests;
-import com.mercuriusxeno.goo.gametest.MachineTests;
-import com.mercuriusxeno.goo.gametest.MobEffectTests;
-import com.mercuriusxeno.goo.gametest.PlacementTests;
+import com.mercuriusxeno.goo.gametest.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -112,7 +104,8 @@ public final class GooTestFunctions {
     private static final String MOB_AEON = "mob_aeon_time_stop";
     private static final String MOB_DISPATCHER = "mob_dispatcher_routes";
 
-    private GooTestFunctions() {}
+    private GooTestFunctions() {
+    }
 
     /**
      * Subscribes the registration listener to the mod event bus.

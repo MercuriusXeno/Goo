@@ -11,23 +11,9 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.SingleItemRecipe;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.minecraft.world.item.crafting.TransmuteRecipe;
+import net.minecraft.world.item.crafting.*;
 import org.jspecify.annotations.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Converts Minecraft RecipeHolder instances into MC-free {@link RecipeInput} records,
@@ -36,30 +22,31 @@ import java.util.Set;
  */
 final class GooValueRecipeAdapter {
 
-    /** Suppress-warnings key for unchecked casts. */
+    /**
+     * Suppress-warnings key for unchecked casts.
+     */
     private static final String SUPPRESS_UNCHECKED = "unchecked";
-    /** Log: unsupported recipe type. */
+    /**
+     * Log: unsupported recipe type.
+     */
     private static final String LOG_UNSUPPORTED_RECIPE = "Unsupported recipe type: {}";
-    /** Log: failed to get recipe result. */
+    /**
+     * Log: failed to get recipe result.
+     */
     private static final String LOG_RECIPE_RESULT_FAIL = "Failed to get result from {}: {}";
 
-    /** Ingredient slots paired with per-slot tag identity from the recipe's HolderSet. */
-    record AdaptedIngredients(
-            List<Set<Identifier>> slots,
-            List<Optional<Identifier>> tagIds
-    ) {}
-
-    private GooValueRecipeAdapter() {}
+    private GooValueRecipeAdapter() {
+    }
 
     /**
      * Converts MC RecipeHolders into MC-free RecipeInputs.
      *
-     * @param holders the MC recipe holders to adapt
+     * @param holders    the MC recipe holders to adapt
      * @param registries the registry access for result assembly
      * @return list of adapted RecipeInput records
      */
     static List<RecipeInput> adaptRecipes(Collection<RecipeHolder<?>> holders,
-            HolderLookup.Provider registries) {
+                                          HolderLookup.Provider registries) {
         List<RecipeInput> result = new ArrayList<>();
         for (RecipeHolder<?> holder : holders) {
             RecipeInput adapted = adaptOneRecipe(holder.value(), registries);
@@ -73,14 +60,16 @@ final class GooValueRecipeAdapter {
     /**
      * Converts a single MC recipe to a RecipeInput, or null if unsupported.
      *
-     * @param recipe the MC recipe to adapt
+     * @param recipe     the MC recipe to adapt
      * @param registries the registry access for result assembly
      * @return the adapted RecipeInput, or null if unsupported
      */
     @Nullable
     private static RecipeInput adaptOneRecipe(Recipe<?> recipe, HolderLookup.Provider registries) {
         ItemStack resultStack = getRecipeResult(recipe, registries);
-        if (resultStack == null || resultStack.isEmpty()) { return null; }
+        if (resultStack == null || resultStack.isEmpty()) {
+            return null;
+        }
 
         Identifier outputId = BuiltInRegistries.ITEM.getKey(resultStack.getItem());
         AdaptedIngredients adapted = adaptIngredients(recipe);
@@ -98,7 +87,9 @@ final class GooValueRecipeAdapter {
     private static Map<Identifier, Identifier> adaptContainerItems(Recipe<?> recipe) {
         Map<Identifier, Identifier> containers = new HashMap<>();
         for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
-            if (ingredient.isEmpty()) { continue; }
+            if (ingredient.isEmpty()) {
+                continue;
+            }
             collectContainersFromIngredient(ingredient, containers);
         }
         return containers;
@@ -110,9 +101,10 @@ final class GooValueRecipeAdapter {
      * @param ingredient the ingredient to inspect
      * @param containers accumulator for ingredient-to-remainder mappings
      */
-    @SuppressWarnings("deprecation") // getCraftingRemainder(ItemStack) referenced by @deprecated does not exist in 26.1 decomp
+    @SuppressWarnings("deprecation")
+    // getCraftingRemainder(ItemStack) referenced by @deprecated does not exist in 26.1 decomp
     private static void collectContainersFromIngredient(Ingredient ingredient,
-            Map<Identifier, Identifier> containers) {
+                                                        Map<Identifier, Identifier> containers) {
         for (Holder<Item> holder : resolveIngredientItems(ingredient)) {
             ItemStackTemplate remainder = holder.value().getCraftingRemainder();
             if (remainder != null) {
@@ -140,13 +132,16 @@ final class GooValueRecipeAdapter {
 
     /**
      * Adapts a single ingredient into a slot entry if non-empty.
+     *
      * @param ingredient the MC ingredient to adapt
-     * @param slots the accumulating list of item ID sets per slot
-     * @param tagIds the accumulating list of tag identifiers per slot
+     * @param slots      the accumulating list of item ID sets per slot
+     * @param tagIds     the accumulating list of tag identifiers per slot
      */
     private static void collectIngredientSlot(Ingredient ingredient,
-            List<Set<Identifier>> slots, List<Optional<Identifier>> tagIds) {
-        if (ingredient.isEmpty()) { return; }
+                                              List<Set<Identifier>> slots, List<Optional<Identifier>> tagIds) {
+        if (ingredient.isEmpty()) {
+            return;
+        }
         Set<Identifier> alternatives = adaptOneIngredient(ingredient);
         if (!alternatives.isEmpty()) {
             slots.add(alternatives);
@@ -161,7 +156,9 @@ final class GooValueRecipeAdapter {
      * @return the tag ID if present, otherwise empty
      */
     private static Optional<Identifier> extractTagId(Ingredient ingredient) {
-        if (ingredient.isCustom()) { return Optional.empty(); }
+        if (ingredient.isCustom()) {
+            return Optional.empty();
+        }
         HolderSet<Item> holderSet = ingredient.getValues();
         return holderSet.unwrapKey()
                 .map(TagKey::location);
@@ -198,11 +195,12 @@ final class GooValueRecipeAdapter {
      * Gets the result ItemStack from a recipe using the public assemble() API.
      * Vanilla implementations ignore the input and return a copy of the stored result.
      *
-     * @param recipe the MC recipe to get the result from
+     * @param recipe     the MC recipe to get the result from
      * @param registries the registry access for assembly context
      * @return the result ItemStack, or null if unsupported
      */
-    @SuppressWarnings({SUPPRESS_UNCHECKED, "PMD.AvoidCatchingGenericException"}) // mod recipes throw unpredictable RuntimeExceptions
+    @SuppressWarnings({SUPPRESS_UNCHECKED, "PMD.AvoidCatchingGenericException"})
+    // mod recipes throw unpredictable RuntimeExceptions
     static ItemStack getRecipeResult(Recipe<?> recipe, HolderLookup.Provider registries) {
         try {
             return assembleResult(recipe);
@@ -229,7 +227,18 @@ final class GooValueRecipeAdapter {
         } else if (recipe instanceof SingleItemRecipe single) {
             return single.assemble(new SingleRecipeInput(ItemStack.EMPTY));
         }
-        if (Goo.LOGGER.isDebugEnabled()) { Goo.LOGGER.debug(LOG_UNSUPPORTED_RECIPE, recipe.getClass().getName()); }
+        if (Goo.LOGGER.isDebugEnabled()) {
+            Goo.LOGGER.debug(LOG_UNSUPPORTED_RECIPE, recipe.getClass().getName());
+        }
         return null;
+    }
+
+    /**
+     * Ingredient slots paired with per-slot tag identity from the recipe's HolderSet.
+     */
+    record AdaptedIngredients(
+            List<Set<Identifier>> slots,
+            List<Optional<Identifier>> tagIds
+    ) {
     }
 }

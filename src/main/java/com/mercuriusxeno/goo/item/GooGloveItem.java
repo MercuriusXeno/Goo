@@ -3,7 +3,7 @@ package com.mercuriusxeno.goo.item;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.ability.GloveSelection;
-import com.mercuriusxeno.goo.block.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.registry.GooDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;

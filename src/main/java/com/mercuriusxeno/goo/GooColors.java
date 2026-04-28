@@ -19,30 +19,51 @@ import java.util.Map;
  */
 public final class GooColors {
 
-    /** Config file name. */
+    /**
+     * Config file name.
+     */
     private static final String FILE_NAME = "goo_colors.json";
-    /** Bundled default resource path. */
+    /**
+     * Bundled default resource path.
+     */
     private static final String BUNDLED_PATH = "/assets/goo/" + FILE_NAME;
-    /** Hex color radix. */
+    /**
+     * Hex color radix.
+     */
     private static final int HEX_RADIX = 16;
-    /** JSON key for the wheel (radial menu) color channel. */
+    /**
+     * JSON key for the wheel (radial menu) color channel.
+     */
     private static final String KEY_WHEEL = "wheel";
-    /** JSON key for the bright/hover color channel. */
+    /**
+     * JSON key for the bright/hover color channel.
+     */
     private static final String KEY_BRIGHT = "bright";
-    /** JSON key for the highlight color channel. */
+    /**
+     * JSON key for the highlight color channel.
+     */
     private static final String KEY_HIGHLIGHT = "highlight";
-    /** JSON key for the edge/contour color channel. */
+    /**
+     * JSON key for the edge/contour color channel.
+     */
     private static final String KEY_EDGE = "edge";
-    /** Log message when copying the default config fails. */
+    /**
+     * Log message when copying the default config fails.
+     */
     private static final String LOG_COPY_FAILED = "Failed to copy default goo_colors.json";
-    /** Log message when reading the config fails. */
+    /**
+     * Log message when reading the config fails.
+     */
     private static final String LOG_READ_FAILED = "Failed to read goo_colors.json, using defaults";
-    /** Log message when a hex color string is invalid. */
+    /**
+     * Log message when a hex color string is invalid.
+     */
     private static final String LOG_INVALID_COLOR = "Invalid color '{}' for goo type {}";
 
     private static final Map<GooType, ColorSet> COLORS = new EnumMap<>(GooType.class);
 
-    private GooColors() {}
+    private GooColors() {
+    }
 
     /**
      * Loads colors from the config directory, copying the bundled default
@@ -112,14 +133,19 @@ public final class GooColors {
         return highlight(type);
     }
 
-    /** Copies the bundled default to the config dir if the file is missing.
+    /**
+     * Copies the bundled default to the config dir if the file is missing.
      *
      * @param configFile the target config file path
      */
     private static void copyDefaultIfMissing(Path configFile) {
-        if (Files.exists(configFile)) { return; }
+        if (Files.exists(configFile)) {
+            return;
+        }
         try (InputStream in = GooColors.class.getResourceAsStream(BUNDLED_PATH)) {
-            if (in == null) { return; }
+            if (in == null) {
+                return;
+            }
             Files.createDirectories(configFile.getParent());
             Files.copy(in, configFile);
         } catch (IOException e) {
@@ -127,13 +153,15 @@ public final class GooColors {
         }
     }
 
-    /** Reads the JSON file into a nested map.
+    /**
+     * Reads the JSON file into a nested map.
      *
      * @param configFile the config file path
      * @return the parsed map, or empty on failure
      */
     private static Map<String, Map<String, String>> readJson(Path configFile) {
-        Type mapType = new TypeToken<Map<String, Map<String, String>>>() {}.getType();
+        Type mapType = new TypeToken<Map<String, Map<String, String>>>() {
+        }.getType();
         try (var reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
             Map<String, Map<String, String>> result = new Gson().fromJson(reader, mapType);
             return result != null ? result : Map.of();
@@ -143,7 +171,8 @@ public final class GooColors {
         }
     }
 
-    /** Parses hex strings and populates the color map.
+    /**
+     * Parses hex strings and populates the color map.
      *
      * @param raw the raw nested map from JSON
      */
@@ -164,7 +193,8 @@ public final class GooColors {
         }
     }
 
-    /** Parses a hex color string, falling back on failure.
+    /**
+     * Parses a hex color string, falling back on failure.
      *
      * @param hex      the hex string, or null
      * @param fallback the fallback color
@@ -172,7 +202,9 @@ public final class GooColors {
      * @return the parsed color, or fallback
      */
     private static int parseHex(String hex, int fallback, GooType type) {
-        if (hex == null) { return fallback; }
+        if (hex == null) {
+            return fallback;
+        }
         try {
             return Integer.parseInt(hex, HEX_RADIX);
         } catch (NumberFormatException e) {
@@ -183,6 +215,9 @@ public final class GooColors {
         }
     }
 
-    /** Four-channel color set for one goo type. */
-    private record ColorSet(int wheel, int bright, int highlight, int edge) {}
+    /**
+     * Four-channel color set for one goo type.
+     */
+    private record ColorSet(int wheel, int bright, int highlight, int edge) {
+    }
 }

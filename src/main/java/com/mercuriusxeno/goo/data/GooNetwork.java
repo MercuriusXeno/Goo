@@ -1,13 +1,6 @@
 package com.mercuriusxeno.goo.data;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Directed graph utilities for the goo transport network.
@@ -18,8 +11,11 @@ import java.util.UUID;
  */
 public final class GooNetwork {
 
-    /** Utility class, not instantiable. */
-    private GooNetwork() {}
+    /**
+     * Utility class, not instantiable.
+     */
+    private GooNetwork() {
+    }
 
     /**
      * Builds a directed adjacency list from gasket pairings.
@@ -34,7 +30,7 @@ public final class GooNetwork {
         Map<UUID, List<UUID>> graph = new HashMap<>();
         for (var entry : pairings.entrySet()) {
             graph.computeIfAbsent(entry.getKey(), k -> new ArrayList<>())
-                .add(entry.getValue());
+                    .add(entry.getValue());
             graph.putIfAbsent(entry.getValue(), new ArrayList<>());
         }
         return graph;
@@ -54,25 +50,24 @@ public final class GooNetwork {
         Set<UUID> inCycle = new HashSet<>();
 
         for (UUID node : graph.keySet()) {
-            if (!white.contains(node)) { continue; }
+            if (!white.contains(node)) {
+                continue;
+            }
             dfsMarkCycles(node, graph, white, gray, black, inCycle);
         }
         return inCycle;
     }
-
-    /** DFS stack frame: tracks current node and which child index to explore next. */
-    private record DfsFrame(UUID node, int childIndex) {}
 
     /**
      * Iterative DFS that marks nodes in cycles.
      * Gray nodes form the current path; if we revisit a gray node, everything
      * on the path from that node onward is in a cycle.
      *
-     * @param start the node to begin DFS from
-     * @param graph adjacency list of the directed graph
-     * @param white unvisited nodes
-     * @param gray nodes on the current DFS path
-     * @param black fully processed nodes
+     * @param start   the node to begin DFS from
+     * @param graph   adjacency list of the directed graph
+     * @param white   unvisited nodes
+     * @param gray    nodes on the current DFS path
+     * @param black   fully processed nodes
      * @param inCycle accumulator for nodes found in cycles
      */
     private static void dfsMarkCycles(
@@ -97,12 +92,13 @@ public final class GooNetwork {
 
     /**
      * Advances to the next child of the current DFS frame, detecting cycles or pushing new nodes.
-     * @param stack the DFS frame stack representing the current traversal path
-     * @param current the DFS frame being explored
+     *
+     * @param stack     the DFS frame stack representing the current traversal path
+     * @param current   the DFS frame being explored
      * @param neighbors the adjacency list for the current node
-     * @param white unvisited nodes
-     * @param gray nodes on the current DFS path
-     * @param inCycle accumulator for nodes found in cycles
+     * @param white     unvisited nodes
+     * @param gray      nodes on the current DFS path
+     * @param inCycle   accumulator for nodes found in cycles
      */
     private static void advanceChild(
             List<DfsFrame> stack, DfsFrame current, List<UUID> neighbors,
@@ -120,10 +116,11 @@ public final class GooNetwork {
 
     /**
      * Pops a fully explored node from the DFS stack and marks it black.
-     * @param stack the DFS frame stack to pop from
+     *
+     * @param stack   the DFS frame stack to pop from
      * @param current the completed DFS frame being retired
-     * @param gray nodes on the current DFS path (node removed)
-     * @param black fully processed nodes (node added)
+     * @param gray    nodes on the current DFS path (node removed)
+     * @param black   fully processed nodes (node added)
      */
     private static void finishNode(
             List<DfsFrame> stack, DfsFrame current,
@@ -136,16 +133,18 @@ public final class GooNetwork {
     /**
      * Marks all nodes on the stack from the cycle entry point onward.
      *
-     * @param stack the current DFS stack of frames
+     * @param stack      the current DFS stack of frames
      * @param cycleEntry the node where the cycle was detected
-     * @param inCycle accumulator for nodes found in cycles
+     * @param inCycle    accumulator for nodes found in cycles
      */
     private static void markCycleFromStack(
             List<DfsFrame> stack, UUID cycleEntry, Set<UUID> inCycle) {
         for (int i = stack.size() - 1; i >= 0; i--) {
             UUID node = stack.get(i).node();
             inCycle.add(node);
-            if (node.equals(cycleEntry)) { break; }
+            if (node.equals(cycleEntry)) {
+                break;
+            }
         }
     }
 
@@ -155,7 +154,7 @@ public final class GooNetwork {
      * avoid infinite loops in cyclic graphs.
      *
      * @param sourceGasket the starting output gasket UUID
-     * @param pairings output -> input pairing map
+     * @param pairings     output -> input pairing map
      * @return ordered list of reachable gasket UUIDs (excluding source)
      */
     public static List<UUID> getFlowPath(UUID sourceGasket, Map<UUID, UUID> pairings) {
@@ -169,5 +168,11 @@ public final class GooNetwork {
             current = pairings.get(current);
         }
         return path;
+    }
+
+    /**
+     * DFS stack frame: tracks current node and which child index to explore next.
+     */
+    private record DfsFrame(UUID node, int childIndex) {
     }
 }

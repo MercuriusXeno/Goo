@@ -4,12 +4,7 @@ import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Client-side handler for the ability sync payload. Stores the ability
@@ -22,7 +17,8 @@ public final class AbilitySyncHandler {
 
     private static Map<GooType, List<ClientAbility>> byType = new EnumMap<>(GooType.class);
 
-    private AbilitySyncHandler() {}
+    private AbilitySyncHandler() {
+    }
 
     /**
      * Handles the sync payload on the client thread.
@@ -38,7 +34,9 @@ public final class AbilitySyncHandler {
         Map<GooType, List<ClientAbility>> map = new EnumMap<>(GooType.class);
         for (AbilitySyncPayload.Entry e : payload.entries()) {
             GooType type = GooType.fromId(e.gooTypeId());
-            if (type == null) { continue; }
+            if (type == null) {
+                continue;
+            }
             map.computeIfAbsent(type, t -> new ArrayList<>())
                     .add(new ClientAbility(
                             Identifier.tryParse(e.abilityId()),
@@ -84,13 +82,16 @@ public final class AbilitySyncHandler {
      * @param tags        categorical tags for targeting and display
      */
     public record ClientAbility(Identifier id, String displayName, String icon,
-            int order, List<String> tags) {
+                                int order, List<String> tags) {
 
-        /** Returns true if this ability has the given tag.
+        /**
+         * Returns true if this ability has the given tag.
          *
          * @param tag the tag to check
          * @return true if present
          */
-        public boolean hasTag(String tag) { return tags.contains(tag); }
+        public boolean hasTag(String tag) {
+            return tags.contains(tag);
+        }
     }
 }

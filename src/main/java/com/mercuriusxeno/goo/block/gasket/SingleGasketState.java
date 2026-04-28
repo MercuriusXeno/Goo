@@ -14,9 +14,13 @@ import java.util.UUID;
  */
 final class SingleGasketState extends GasketState {
 
-    /** NBT key for the gasket UUID. */
+    /**
+     * NBT key for the gasket UUID.
+     */
     private static final String TAG_GASKET_ID = "GasketId";
-    /** NBT key for the gasket partner. */
+    /**
+     * NBT key for the gasket partner.
+     */
     private static final String TAG_PARTNER = "GasketPartner";
 
     private final GasketRole role;
@@ -42,7 +46,9 @@ final class SingleGasketState extends GasketState {
 
     @Override
     public @Nullable UUID ensureId(GasketRole role, Runnable syncCallback) {
-        if (role != this.role) { return null; }
+        if (role != this.role) {
+            return null;
+        }
         if (gasketId == null) {
             gasketId = UUID.randomUUID();
             syncCallback.run();
@@ -58,19 +64,25 @@ final class SingleGasketState extends GasketState {
     @Override
     public void setPartner(GasketRole role, @Nullable GasketPartner partner,
                            Runnable syncCallback) {
-        if (role != this.role) { return; }
+        if (role != this.role) {
+            return;
+        }
         this.partner = partner;
         syncCallback.run();
     }
 
     @Override
     public void setId(GasketRole role, @Nullable UUID id) {
-        if (role == this.role) { gasketId = id; }
+        if (role == this.role) {
+            gasketId = id;
+        }
     }
 
     @Override
     public void clear(GasketRole role, Runnable syncCallback) {
-        if (role != this.role) { return; }
+        if (role != this.role) {
+            return;
+        }
         gasketId = null;
         partner = null;
         syncCallback.run();

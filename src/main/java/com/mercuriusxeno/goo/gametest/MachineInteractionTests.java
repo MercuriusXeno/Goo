@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.gametest;
 
-import com.mercuriusxeno.goo.block.CrucibleBlockEntity;
-import com.mercuriusxeno.goo.block.HubBlockEntity;
-import com.mercuriusxeno.goo.block.PlexerBlockEntity;
-import com.mercuriusxeno.goo.block.TapBlockEntity;
-import com.mercuriusxeno.goo.block.VatBlock;
+import com.mercuriusxeno.goo.block.crucible.CrucibleBlockEntity;
+import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
+import com.mercuriusxeno.goo.block.plexer.PlexerBlockEntity;
+import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
+import com.mercuriusxeno.goo.block.vat.VatBlock;
 import com.mercuriusxeno.goo.registry.GooBlocks;
 import com.mercuriusxeno.goo.registry.GooItems;
 import net.minecraft.core.BlockPos;
@@ -36,7 +36,8 @@ public final class MachineInteractionTests {
     private static final double BLOCK_CENTER = 0.5;
     private static final double UPPER_HIT_Y = 0.9;
 
-    private MachineInteractionTests() {}
+    private MachineInteractionTests() {
+    }
 
     /**
      * Creates a BlockHitResult targeting the center of the block at BE_POS.
@@ -60,7 +61,7 @@ public final class MachineInteractionTests {
         helper.setBlock(BE_POS, GooBlocks.TAP.get());
         TapBlockEntity tap = helper.getBlockEntity(BE_POS, TapBlockEntity.class);
         helper.assertTrue(tap.insertCanister(new ItemStack(GooItems.CANISTER.get())),
-            TAP_SHOULD_INSERT);
+                TAP_SHOULD_INSERT);
         helper.assertFalse(tap.getCanister().isEmpty(), TAP_SLOT_FILLED);
         helper.succeed();
     }
@@ -74,12 +75,12 @@ public final class MachineInteractionTests {
         helper.setBlock(BE_POS, GooBlocks.VAT.get());
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         player.setItemInHand(InteractionHand.MAIN_HAND,
-            new ItemStack(GooItems.CHORAL_GASKET.get()));
+                new ItemStack(GooItems.CHORAL_GASKET.get()));
 
         BlockPos abs = helper.absolutePos(BE_POS);
         BlockHitResult topHit = new BlockHitResult(
-            new Vec3(abs.getX() + BLOCK_CENTER, abs.getY() + UPPER_HIT_Y, abs.getZ() + BLOCK_CENTER),
-            Direction.UP, abs, false);
+                new Vec3(abs.getX() + BLOCK_CENTER, abs.getY() + UPPER_HIT_Y, abs.getZ() + BLOCK_CENTER),
+                Direction.UP, abs, false);
         helper.useBlock(BE_POS, player, topHit);
 
         BlockState state = helper.getBlockState(BE_POS);
@@ -97,7 +98,7 @@ public final class MachineInteractionTests {
         HubBlockEntity hub = helper.getBlockEntity(BE_POS, HubBlockEntity.class);
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         player.setItemInHand(InteractionHand.MAIN_HAND,
-            new ItemStack(GooItems.CANISTER.get()));
+                new ItemStack(GooItems.CANISTER.get()));
 
         helper.useBlock(BE_POS, player, hit(helper, Direction.UP));
 

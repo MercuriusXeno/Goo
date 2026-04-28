@@ -7,11 +7,7 @@ import com.mercuriusxeno.goo.data.GooConversion.ParsedConversions;
 import com.mercuriusxeno.goo.data.GooConversion.Stack;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,11 +55,14 @@ final class ConversionFormulaParser {
     private static final Pattern STACK_PATTERN = Pattern.compile(
             "\\s*(?:(\\d+)\\s+)?@(\\w+)\\s*");
 
-    /** Pattern for scalar: "* N" or "* N / M" after a parallel source. */
+    /**
+     * Pattern for scalar: "* N" or "* N / M" after a parallel source.
+     */
     private static final Pattern SCALE_PATTERN = Pattern.compile(
             "\\*\\s*(\\d+)(?:\\s*/\\s*(\\d+))?");
 
-    private ConversionFormulaParser() { }
+    private ConversionFormulaParser() {
+    }
 
     /**
      * Parses a formula string like "metal / 4 -> aeon / 2".
@@ -96,7 +95,8 @@ final class ConversionFormulaParser {
 
     /**
      * Parses the target side of a formula from a successful regex match.
-     * @param m the regex matcher with captured target-side groups
+     *
+     * @param m      the regex matcher with captured target-side groups
      * @param source the source goo type parsed from the formula
      * @param srcDiv the source divisor parsed from the formula
      * @return a Formula with fully resolved source and target parameters
@@ -151,22 +151,23 @@ final class ConversionFormulaParser {
 
     /**
      * Classifies and processes a single entry from the conversions block.
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param value the entry value expression to parse
-     * @param formulas the named formula map
-     * @param additives the named additive map
-     * @param stacks the resolved conversion stack map
-     * @param assignments the item-to-assignment map being built
-     * @param constants the named integer constants
+     *
+     * @param key           the entry key (item id, tag, or definition name)
+     * @param value         the entry value expression to parse
+     * @param formulas      the named formula map
+     * @param additives     the named additive map
+     * @param stacks        the resolved conversion stack map
+     * @param assignments   the item-to-assignment map being built
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      */
     private static void classifyEntry(String key, String value,
-                                       Map<String, Formula> formulas,
-                                       Map<String, GooValue> additives,
-                                       Map<String, Stack> stacks,
-                                       List<Assignment> assignments,
-                                       Map<String, Integer> constants,
-                                       Map<String, GooValue> treeConstants) {
+                                      Map<String, Formula> formulas,
+                                      Map<String, GooValue> additives,
+                                      Map<String, Stack> stacks,
+                                      List<Assignment> assignments,
+                                      Map<String, Integer> constants,
+                                      Map<String, GooValue> treeConstants) {
         if (key.startsWith(TAG_PREFIX) || key.contains(COLON)) {
             classifyItemEntry(key, value, stacks, assignments);
         } else {
@@ -176,20 +177,21 @@ final class ConversionFormulaParser {
 
     /**
      * Classifies a non-item entry as denial, additive, formula, or stack alias.
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param value the entry value expression to parse
-     * @param formulas the named formula map
-     * @param additives the named additive map
-     * @param stacks the resolved conversion stack map
-     * @param constants the named integer constants
+     *
+     * @param key           the entry key (item id, tag, or definition name)
+     * @param value         the entry value expression to parse
+     * @param formulas      the named formula map
+     * @param additives     the named additive map
+     * @param stacks        the resolved conversion stack map
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      */
     private static void classifyDefinition(String key, String value,
-                                            Map<String, Formula> formulas,
-                                            Map<String, GooValue> additives,
-                                            Map<String, Stack> stacks,
-                                            Map<String, Integer> constants,
-                                            Map<String, GooValue> treeConstants) {
+                                           Map<String, Formula> formulas,
+                                           Map<String, GooValue> additives,
+                                           Map<String, Stack> stacks,
+                                           Map<String, Integer> constants,
+                                           Map<String, GooValue> treeConstants) {
         if (DENIED.equals(value)) {
             denyEntry(key, stacks, formulas, additives);
         } else if (value.startsWith(ADDITIVE_PREFIX)) {
@@ -201,14 +203,15 @@ final class ConversionFormulaParser {
 
     /**
      * Classifies a value as either a formula definition or a stack alias.
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param value the entry value expression to parse
+     *
+     * @param key      the entry key (item id, tag, or definition name)
+     * @param value    the entry value expression to parse
      * @param formulas the named formula map
-     * @param stacks the resolved conversion stack map
+     * @param stacks   the resolved conversion stack map
      */
     private static void classifyFormulaOrStack(String key, String value,
-                                                Map<String, Formula> formulas,
-                                                Map<String, Stack> stacks) {
+                                               Map<String, Formula> formulas,
+                                               Map<String, Stack> stacks) {
         if (value.contains(ARROW)) {
             formulas.put(key, parseFormula(value));
         } else {
@@ -218,14 +221,15 @@ final class ConversionFormulaParser {
 
     /**
      * Handles an item or tag key: either denied or parsed as an assignment.
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param value the entry value expression to parse
-     * @param stacks the resolved conversion stack map
+     *
+     * @param key         the entry key (item id, tag, or definition name)
+     * @param value       the entry value expression to parse
+     * @param stacks      the resolved conversion stack map
      * @param assignments the item-to-assignment map being built
      */
     private static void classifyItemEntry(String key, String value,
-                                           Map<String, Stack> stacks,
-                                           List<Assignment> assignments) {
+                                          Map<String, Stack> stacks,
+                                          List<Assignment> assignments) {
         if (!DENIED.equals(value)) {
             assignments.add(parseAssignment(key, value, stacks));
         }
@@ -233,14 +237,15 @@ final class ConversionFormulaParser {
 
     /**
      * Removes a denied entry from all definition maps.
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param stacks the resolved conversion stack map
-     * @param formulas the named formula map
+     *
+     * @param key       the entry key (item id, tag, or definition name)
+     * @param stacks    the resolved conversion stack map
+     * @param formulas  the named formula map
      * @param additives the named additive map
      */
     private static void denyEntry(String key, Map<String, Stack> stacks,
-                                   Map<String, Formula> formulas,
-                                   Map<String, GooValue> additives) {
+                                  Map<String, Formula> formulas,
+                                  Map<String, GooValue> additives) {
         stacks.remove(key);
         formulas.remove(key);
         additives.remove(key);
@@ -248,16 +253,17 @@ final class ConversionFormulaParser {
 
     /**
      * Parses and stores an additive modifier entry like "+$waxed".
-     * @param key   the entry key (item id, tag, or definition name)
-     * @param value the entry value expression to parse
-     * @param additives the named additive map
-     * @param constants the named integer constants
+     *
+     * @param key           the entry key (item id, tag, or definition name)
+     * @param value         the entry value expression to parse
+     * @param additives     the named additive map
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      */
     private static void parseAdditiveEntry(String key, String value,
-                                            Map<String, GooValue> additives,
-                                            Map<String, Integer> constants,
-                                            Map<String, GooValue> treeConstants) {
+                                           Map<String, GooValue> additives,
+                                           Map<String, Integer> constants,
+                                           Map<String, GooValue> treeConstants) {
         GooValue additive = resolveAdditive(value.substring(1).trim(), constants, treeConstants);
         if (additive != null && !additive.isEmpty()) {
             additives.put(key, additive);
@@ -268,13 +274,14 @@ final class ConversionFormulaParser {
 
     /**
      * Resolves an additive expression like "$waxed" against tree constants.
-     * @param expr  the expression string to resolve
-     * @param constants the named integer constants
+     *
+     * @param expr          the expression string to resolve
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      * @return the resolved result, or null on failure
      */
     private static GooValue resolveAdditive(String expr, Map<String, Integer> constants,
-                                             Map<String, GooValue> treeConstants) {
+                                            Map<String, GooValue> treeConstants) {
         if (!expr.startsWith(DOLLAR)) {
             LOGGER.warn(LOG_ADDITIVE_UNSUPPORTED, expr);
             return null;
@@ -284,16 +291,19 @@ final class ConversionFormulaParser {
 
     /**
      * Looks up a named additive in tree constants, falling back to scalar warning.
-     * @param name  the additive name to look up
-     * @param constants the named integer constants
+     *
+     * @param name          the additive name to look up
+     * @param constants     the named integer constants
      * @param treeConstants the named goo value constants from the expression tree
      * @return the resolved result, or null on failure
      */
     private static GooValue resolveNamedAdditive(String name,
-                                                  Map<String, Integer> constants,
-                                                  Map<String, GooValue> treeConstants) {
+                                                 Map<String, Integer> constants,
+                                                 Map<String, GooValue> treeConstants) {
         GooValue tree = treeConstants.get(name);
-        if (tree != null) { return tree; }
+        if (tree != null) {
+            return tree;
+        }
         if (LOGGER.isWarnEnabled()) {
             LOGGER.warn(constants.containsKey(name) ? LOG_ADDITIVE_SCALAR : LOG_ADDITIVE_UNKNOWN, name);
         }
@@ -304,13 +314,14 @@ final class ConversionFormulaParser {
     /**
      * Parses an assignment value: optional #source for parallel copy,
      * optional * N / M scalar, then space-delimited @conversion chain.
-     * @param target    the assignment target (item or tag)
-     * @param value the entry value expression to parse
+     *
+     * @param target the assignment target (item or tag)
+     * @param value  the entry value expression to parse
      * @param stacks the resolved conversion stack map
      * @return the resolved result, or null on failure
      */
     private static Assignment parseAssignment(String target, String value,
-                                               Map<String, Stack> stacks) {
+                                              Map<String, Stack> stacks) {
         String remaining = value.trim();
         Matcher m = SCALE_PATTERN.matcher(remaining);
         if (!m.find()) {
@@ -321,14 +332,15 @@ final class ConversionFormulaParser {
 
     /**
      * Builds an assignment after extracting scale factors from a matched expression.
+     *
      * @param target    the assignment target (item or tag)
      * @param remaining the unparsed portion of the assignment expression
-     * @param m     the regex matcher with captured groups
-     * @param stacks the resolved conversion stack map
+     * @param m         the regex matcher with captured groups
+     * @param stacks    the resolved conversion stack map
      * @return the resolved result, or null on failure
      */
     private static Assignment buildScaledAssignment(String target, String remaining,
-                                                     Matcher m, Map<String, Stack> stacks) {
+                                                    Matcher m, Map<String, Stack> stacks) {
         int mul = Integer.parseInt(m.group(GROUP_SCALE_NUM));
         int div = m.group(GROUP_SCALE_DEN) != null ? Integer.parseInt(m.group(GROUP_SCALE_DEN)) : 1;
         String stripped = remaining.substring(0, m.start()).trim()
@@ -338,16 +350,17 @@ final class ConversionFormulaParser {
 
     /**
      * Builds an Assignment from parsed tokens.
-     * @param target    the assignment target (item or tag)
-     * @param remaining the unparsed portion of the assignment expression
+     *
+     * @param target          the assignment target (item or tag)
+     * @param remaining       the unparsed portion of the assignment expression
      * @param scaleMultiplier the numerator of the scale fraction
      * @param scaleDivisor    the denominator of the scale fraction
-     * @param stacks the resolved conversion stack map
+     * @param stacks          the resolved conversion stack map
      * @return the resolved result, or null on failure
      */
     private static Assignment buildAssignment(String target, String remaining,
-                                               int scaleMultiplier, int scaleDivisor,
-                                               Map<String, Stack> stacks) {
+                                              int scaleMultiplier, int scaleDivisor,
+                                              Map<String, Stack> stacks) {
         String[] tokens = remaining.trim().split(WHITESPACE_SPLIT);
         String parallelSource = findParallelSource(tokens);
         List<Stack> chain = collectChain(tokens, stacks);
@@ -356,6 +369,7 @@ final class ConversionFormulaParser {
 
     /**
      * Finds the first tag-prefixed token to use as a parallel copy source.
+     *
      * @param tokens the space-delimited assignment tokens
      * @return the resolved result, or null on failure
      */
@@ -370,6 +384,7 @@ final class ConversionFormulaParser {
 
     /**
      * Collects resolved conversion stacks from @-prefixed tokens.
+     *
      * @param tokens the space-delimited assignment tokens
      * @param stacks the resolved conversion stack map
      * @return the resolved result, or null on failure
@@ -387,12 +402,13 @@ final class ConversionFormulaParser {
 
     /**
      * Classifies a single non-tag token as a stack reference or warns on unknown.
-     * @param part  the individual token to classify
-     * @param chain the accumulating list of resolved stacks
+     *
+     * @param part   the individual token to classify
+     * @param chain  the accumulating list of resolved stacks
      * @param stacks the resolved conversion stack map
      */
     private static void classifyToken(String part, List<Stack> chain,
-                                       Map<String, Stack> stacks) {
+                                      Map<String, Stack> stacks) {
         if (part.contains(AT_SIGN)) {
             chain.add(resolveStackRef(part, stacks));
         } else {
@@ -402,7 +418,8 @@ final class ConversionFormulaParser {
 
     /**
      * Resolves a @ref expression against known stacks.
-     * @param expr  the expression string to resolve
+     *
+     * @param expr   the expression string to resolve
      * @param stacks the resolved conversion stack map
      * @return the resolved result, or null on failure
      */
@@ -417,15 +434,18 @@ final class ConversionFormulaParser {
 
     /**
      * Resolves stack chain: "2 @exposed" where exposed is "1 @oxidation" -> "2 @oxidation".
-     * @param raw    the unresolved stack with potential alias references
-     * @param stacks the resolved conversion stack map
+     *
+     * @param raw      the unresolved stack with potential alias references
+     * @param stacks   the resolved conversion stack map
      * @param formulas the named formula map
      * @return the resolved result, or null on failure
      */
     private static Stack resolveChain(Stack raw, Map<String, Stack> stacks,
-                                       Map<String, Formula> formulas) {
+                                      Map<String, Formula> formulas) {
         Stack known = stacks.get(raw.formulaName());
-        if (known != null) { return new Stack(known.formulaName(), raw.multiplier() * known.multiplier()); }
+        if (known != null) {
+            return new Stack(known.formulaName(), raw.multiplier() * known.multiplier());
+        }
         if (!formulas.containsKey(raw.formulaName()) && LOGGER.isWarnEnabled()) {
             LOGGER.warn(LOG_UNKNOWN_REF, raw.formulaName());
         }

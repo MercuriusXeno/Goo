@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.item;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for ContainerCapacity constants and formulas.
@@ -61,7 +61,7 @@ class ContainerCapacityTest {
     @Test
     void canisterCapacity_clampsBeyondMax() {
         assertEquals(ContainerCapacity.canisterCapacity(5),
-                     ContainerCapacity.canisterCapacity(10));
+                ContainerCapacity.canisterCapacity(10));
     }
 
     // -- vat capacity at each compression level --
@@ -84,7 +84,7 @@ class ContainerCapacityTest {
     @Test
     void vatCapacity_clampsBeyondMax() {
         assertEquals(ContainerCapacity.vatCapacity(5),
-                     ContainerCapacity.vatCapacity(10));
+                ContainerCapacity.vatCapacity(10));
     }
 
     // -- negative clamping --
@@ -92,12 +92,12 @@ class ContainerCapacityTest {
     @Test
     void canisterCapacity_negativeClamps() {
         assertEquals(ContainerCapacity.canisterCapacity(0),
-                     ContainerCapacity.canisterCapacity(-1));
+                ContainerCapacity.canisterCapacity(-1));
     }
 
     @Test
     void vatCapacity_negativeClamps() {
         assertEquals(ContainerCapacity.vatCapacity(0),
-                     ContainerCapacity.vatCapacity(-1));
+                ContainerCapacity.vatCapacity(-1));
     }
 }

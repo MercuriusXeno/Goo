@@ -20,18 +20,22 @@ class DirectedGraphUtilsTest {
     @Nested
     class TarjanScc {
 
-        /** DAG with no cycles produces no SCCs. */
+        /**
+         * DAG with no cycles produces no SCCs.
+         */
         @Test
         void dagProducesNoSccs() {
             Map<Identifier, Set<Identifier>> deps = Map.of(
-                id("a"), Set.of(id("b")),
-                id("b"), Set.of(id("c"))
+                    id("a"), Set.of(id("b")),
+                    id("b"), Set.of(id("c"))
             );
             List<Set<Identifier>> sccs = DirectedGraphUtils.findStronglyConnectedComponents(deps);
             assertTrue(sccs.isEmpty());
         }
 
-        /** Simple cycle A->B->A produces one SCC of size 2. */
+        /**
+         * Simple cycle A->B->A produces one SCC of size 2.
+         */
         @Test
         void simpleCycleProducesOneScc() {
             Map<Identifier, Set<Identifier>> deps = new HashMap<>();
@@ -43,7 +47,9 @@ class DirectedGraphUtilsTest {
             assertEquals(Set.of(id("a"), id("b")), sccs.get(0));
         }
 
-        /** Multiple independent cycles produce multiple SCCs. */
+        /**
+         * Multiple independent cycles produce multiple SCCs.
+         */
         @Test
         void multipleIndependentCycles() {
             Map<Identifier, Set<Identifier>> deps = new HashMap<>();
@@ -56,17 +62,21 @@ class DirectedGraphUtilsTest {
             assertEquals(2, sccs.size());
         }
 
-        /** Self-loop (size 1 SCC) is filtered out. */
+        /**
+         * Self-loop (size 1 SCC) is filtered out.
+         */
         @Test
         void selfLoopFiltered() {
             Map<Identifier, Set<Identifier>> deps = Map.of(
-                id("a"), Set.of(id("a"))
+                    id("a"), Set.of(id("a"))
             );
             List<Set<Identifier>> sccs = DirectedGraphUtils.findStronglyConnectedComponents(deps);
             assertTrue(sccs.isEmpty());
         }
 
-        /** Three-node cycle A->B->C->A. */
+        /**
+         * Three-node cycle A->B->C->A.
+         */
         @Test
         void threeNodeCycle() {
             Map<Identifier, Set<Identifier>> deps = new HashMap<>();
@@ -79,7 +89,9 @@ class DirectedGraphUtilsTest {
             assertEquals(Set.of(id("a"), id("b"), id("c")), sccs.get(0));
         }
 
-        /** Empty graph produces no SCCs. */
+        /**
+         * Empty graph produces no SCCs.
+         */
         @Test
         void emptyGraphNoSccs() {
             List<Set<Identifier>> sccs = DirectedGraphUtils.findStronglyConnectedComponents(Map.of());
@@ -92,11 +104,13 @@ class DirectedGraphUtilsTest {
     @Nested
     class AnchorReachability {
 
-        /** Seed node and node that depends on it are both anchored. */
+        /**
+         * Seed node and node that depends on it are both anchored.
+         */
         @Test
         void directSeedIsAnchored() {
             Map<Identifier, Set<Identifier>> deps = Map.of(
-                id("b"), Set.of(id("a"))
+                    id("b"), Set.of(id("a"))
             );
 
             Set<Identifier> anchored = DirectedGraphUtils.findAnchoredNodes(deps, Set.of(id("a")));
@@ -104,7 +118,9 @@ class DirectedGraphUtilsTest {
             assertTrue(anchored.contains(id("b")));
         }
 
-        /** Node reachable from seed via chain is anchored. */
+        /**
+         * Node reachable from seed via chain is anchored.
+         */
         @Test
         void transitiveReachabilityAnchors() {
             Map<Identifier, Set<Identifier>> deps = new HashMap<>();
@@ -117,11 +133,13 @@ class DirectedGraphUtilsTest {
             assertTrue(anchored.contains(id("leaf")));
         }
 
-        /** Isolated node with no path from seeds is not anchored. */
+        /**
+         * Isolated node with no path from seeds is not anchored.
+         */
         @Test
         void isolatedNodeNotAnchored() {
             Map<Identifier, Set<Identifier>> deps = Map.of(
-                id("island"), Set.of(id("other_island"))
+                    id("island"), Set.of(id("other_island"))
             );
 
             Set<Identifier> anchored = DirectedGraphUtils.findAnchoredNodes(deps, Set.of(id("base")));

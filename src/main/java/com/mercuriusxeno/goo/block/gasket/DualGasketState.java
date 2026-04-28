@@ -14,13 +14,21 @@ import java.util.UUID;
  */
 final class DualGasketState extends GasketState {
 
-    /** NBT key for cap (RECEIVER) gasket UUID. */
+    /**
+     * NBT key for cap (RECEIVER) gasket UUID.
+     */
     private static final String TAG_CAP_ID = "CapGasketId";
-    /** NBT key for base (TRANSMITTER) gasket UUID. */
+    /**
+     * NBT key for base (TRANSMITTER) gasket UUID.
+     */
     private static final String TAG_BASE_ID = "BaseGasketId";
-    /** NBT key for cap partner. */
+    /**
+     * NBT key for cap partner.
+     */
     private static final String TAG_CAP_PARTNER = "CapPartner";
-    /** NBT key for base partner. */
+    /**
+     * NBT key for base partner.
+     */
     private static final String TAG_BASE_PARTNER = "BasePartner";
 
     private final String receiverLabel;
@@ -57,6 +65,7 @@ final class DualGasketState extends GasketState {
 
     /**
      * Lazily initializes and returns the cap (RECEIVER) gasket UUID.
+     *
      * @param syncCallback called after generating a new UUID to persist the change
      * @return the cap gasket UUID (created if absent)
      */
@@ -70,6 +79,7 @@ final class DualGasketState extends GasketState {
 
     /**
      * Lazily initializes and returns the base (TRANSMITTER) gasket UUID.
+     *
      * @param syncCallback called after generating a new UUID to persist the change
      * @return the base gasket UUID (created if absent)
      */
@@ -119,7 +129,9 @@ final class DualGasketState extends GasketState {
     }
 
     @Override
-    public boolean supportsRole(GasketRole role) { return true; }
+    public boolean supportsRole(GasketRole role) {
+        return true;
+    }
 
     @Override
     public @Nullable String getFaceLabel(GasketRole role) {
@@ -128,10 +140,18 @@ final class DualGasketState extends GasketState {
 
     @Override
     public void save(ValueOutput output) {
-        if (capId != null) { output.store(TAG_CAP_ID, UUIDUtil.STRING_CODEC, capId); }
-        if (baseId != null) { output.store(TAG_BASE_ID, UUIDUtil.STRING_CODEC, baseId); }
-        if (capPartner != null) { output.store(TAG_CAP_PARTNER, GasketPartner.CODEC, capPartner); }
-        if (basePartner != null) { output.store(TAG_BASE_PARTNER, GasketPartner.CODEC, basePartner); }
+        if (capId != null) {
+            output.store(TAG_CAP_ID, UUIDUtil.STRING_CODEC, capId);
+        }
+        if (baseId != null) {
+            output.store(TAG_BASE_ID, UUIDUtil.STRING_CODEC, baseId);
+        }
+        if (capPartner != null) {
+            output.store(TAG_CAP_PARTNER, GasketPartner.CODEC, capPartner);
+        }
+        if (basePartner != null) {
+            output.store(TAG_BASE_PARTNER, GasketPartner.CODEC, basePartner);
+        }
     }
 
     @Override

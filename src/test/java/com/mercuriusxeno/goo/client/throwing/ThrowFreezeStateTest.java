@@ -6,7 +6,6 @@ import net.minecraft.core.Direction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -70,7 +69,9 @@ class ThrowFreezeStateTest {
         @Test
         void reArmResetsTimer() {
             ThrowFreezeState.arm(BLOCK_A);
-            for (int i = 0; i < 5; i++) { ThrowFreezeState.tick(); }
+            for (int i = 0; i < 5; i++) {
+                ThrowFreezeState.tick();
+            }
             ThrowFreezeState.arm(BLOCK_A);
             // Should still have the full window left.
             for (int i = 0; i < ThrowFreezeState.FREEZE_TICKS - 1; i++) {

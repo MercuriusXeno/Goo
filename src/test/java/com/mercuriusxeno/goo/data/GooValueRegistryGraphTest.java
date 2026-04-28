@@ -19,13 +19,17 @@ class GooValueRegistryGraphTest {
 
     private GooValueRegistry registry;
 
-    /** Creates a fresh registry before each test. */
+    /**
+     * Creates a fresh registry before each test.
+     */
     @BeforeEach
     void setUp() {
         registry = new GooValueRegistry();
     }
 
-    /** Sets base values on the registry, copying to effective. */
+    /**
+     * Sets base values on the registry, copying to effective.
+     */
     private void setBaseValues(Map<Identifier, GooValue> values) {
         registry.baseValues.clear();
         registry.baseValues.putAll(values);
@@ -38,7 +42,9 @@ class GooValueRegistryGraphTest {
     @Nested
     class SccClassification {
 
-        /** SCC with a directly base-valued member is classified with that anchor. */
+        /**
+         * SCC with a directly base-valued member is classified with that anchor.
+         */
         @Test
         void directAnchorIsSet() {
             Set<Identifier> scc = Set.of(id("a"), id("b"));
@@ -50,7 +56,9 @@ class GooValueRegistryGraphTest {
             assertTrue(cycle.hasAnchor());
         }
 
-        /** SCC reachable from anchored nodes but no direct base value. */
+        /**
+         * SCC reachable from anchored nodes but no direct base value.
+         */
         @Test
         void reachableButNoDirectAnchor() {
             Set<Identifier> scc = Set.of(id("x"), id("y"));
@@ -62,7 +70,9 @@ class GooValueRegistryGraphTest {
             assertTrue(cycle.hasAnchor());
         }
 
-        /** SCC with no anchored members is dead (hasAnchor=false). */
+        /**
+         * SCC with no anchored members is dead (hasAnchor=false).
+         */
         @Test
         void deadSccHasNoAnchor() {
             Set<Identifier> scc = Set.of(id("x"), id("y"));
@@ -80,28 +90,32 @@ class GooValueRegistryGraphTest {
     @Nested
     class CycleDetectionIntegration {
 
-        /** Cycle detected through recipe derivation. */
+        /**
+         * Cycle detected through recipe derivation.
+         */
         @Test
         void cycleThroughRecipes() {
             setBaseValues(Map.of());
             List<RecipeInput> recipes = List.of(
-                recipe("a", 1, slot("b")),
-                recipe("b", 1, slot("a"))
+                    recipe("a", 1, slot("b")),
+                    recipe("b", 1, slot("a"))
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
             assertFalse(registry.diagnostics().cycles().isEmpty());
         }
 
-        /** No cycles in a clean recipe chain. */
+        /**
+         * No cycles in a clean recipe chain.
+         */
         @Test
         void noCyclesInCleanChain() {
             setBaseValues(Map.of(
-                id("raw"), goo(GooType.METAL, 5)
+                    id("raw"), goo(GooType.METAL, 5)
             ));
             List<RecipeInput> recipes = List.of(
-                recipe("a", 1, slot("raw")),
-                recipe("b", 1, slot("a"))
+                    recipe("a", 1, slot("raw")),
+                    recipe("b", 1, slot("a"))
             );
 
             registry.deriveFromRecipeInputs(recipes, false);
