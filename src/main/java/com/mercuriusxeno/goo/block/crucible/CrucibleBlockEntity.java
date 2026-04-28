@@ -3,16 +3,13 @@ package com.mercuriusxeno.goo.block.crucible;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.*;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
-import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
 import com.mercuriusxeno.goo.item.DepletedBlazeRodItem;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.PartiallyMeltedItem;
-import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -21,7 +18,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -31,7 +27,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Core crucible logic: melts items into goo via a per-tick drain pipeline.
@@ -64,18 +59,16 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
     ItemStack meltingItem = ItemStack.EMPTY;
     ItemStack fuelRod = ItemStack.EMPTY;
 
+    /** Composed gasket integration: TRANSMITTER-only with a BE-level pusher. */
+    private final GasketAttachment gasket =
+        GasketAttachment.single(this, GasketRole.TRANSMITTER, TAG_CRUCIBLE);
+
     /** Multi-type goo reservoir backed by the Transfer API. */
     final GooFluidHandler reservoir = new GooFluidHandler(
-        Integer.MAX_VALUE, this::syncToClients);
-
-    /** Composed gasket state for the TRANSMITTER role. */
-    private final GasketState gasketState = GasketState.single(GasketRole.TRANSMITTER, TAG_CRUCIBLE);
+        Integer.MAX_VALUE, gasket.syncCallback());
 
     /** Game time of the last sizzle sound play (debounce, not serialized). */
     private long lastSizzleTick;
-
-    /** Decoupled registry access, captured in setLevel. */
-    @Nullable IGasketRegistryAccess gasketRegistryAccess;
 
     /** Client-side debounce + crossfade for the dominant goo type display. Public for BER access. */
     public final DominantTypeFader dominantTypeFader = new DominantTypeFader();
@@ -90,13 +83,8 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
     /** Number of remaining ticks to spray ignition sparks. */
     int ignitionSprayTicks;
 
-    /** Pushes reservoir goo to gasket partners on a timed interval. */
-    @SuppressWarnings("PMD.LambdaCanBeMethodReference") // field is null at construction; lambda defers read
-    final IGasketPusher gasketPusher = new GasketPusher(
-        reservoir, () -> gasketState.getId(GasketRole.TRANSMITTER),
-        () -> gasketState.getPartner(GasketRole.TRANSMITTER),
-        this::getLevel, this::getBlockPos,
-        this::syncToClients, () -> gasketRegistryAccess.get());
+    /** Pushes reservoir goo to gasket partners on a timed interval. Final, assigned in constructor. */
+    final IGasketPusher gasketPusher;
 
     /**
      * Creates a crucible block entity at the given position.
@@ -106,6 +94,25 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
      */
     public CrucibleBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.CRUCIBLE.get(), pos, state);
+        this.gasketPusher = new GasketPusher(
+            reservoir,
+            () -> gasket.state().getId(GasketRole.TRANSMITTER),
+            () -> gasket.state().getPartner(GasketRole.TRANSMITTER),
+            this::getLevel, this::getBlockPos,
+            gasket.syncCallback(),
+            () -> gasket.registryAccess() != null ? gasket.registryAccess().get() : null);
+        gasket.rebuildPushers(gasketPusher::rebuildCache);
+        gasket.afterLoad(this::forceTransmitterChunkOnLoad);
+    }
+
+    private void forceTransmitterChunkOnLoad() {
+        if (level instanceof ServerLevel serverLevel) {
+            GasketPusher.forceTransmitterChunk(
+                gasket.state().getId(GasketRole.TRANSMITTER),
+                gasket.registryAccess(),
+                serverLevel,
+                worldPosition);
+        }
     }
 
     // --- Fuel ---
@@ -247,11 +254,9 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
 
     // --- IGasketHolder ---
 
-    /** {@inheritDoc} */
     @Override
-    public GasketState gasketState() { return gasketState; }
+    public GasketAttachment gasket() { return gasket; }
 
-    /** {@inheritDoc} */
     @Override
     public GasketRole resolveRole(BlockHitResult hit) { return GasketRegionResolver.resolveCrucibleRole(); }
 
@@ -259,31 +264,6 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
     @Override
     public boolean supportsRole(GasketRole role) { return getBlockState().getValue(CrucibleBlock.HAS_GASKET); }
 
-    /** {@inheritDoc} */
-    @Override
-    public Runnable gasketSyncCallback() { return this::syncToClients; }
-
-    /** {@inheritDoc} Rebuilds pusher cache after partner change. */
-    @Override
-    public void setPartner(GasketRole role, @Nullable GasketPartner partner) {
-        gasketState.setPartner(role, partner, () -> {
-            gasketPusher.rebuildCache();
-            syncToClients();
-        });
-    }
-
-    /** {@inheritDoc} Rebuilds pusher cache after clearing. */
-    @Override
-    public void clearGasket(GasketRole role) {
-        gasketState.clear(role, () -> {
-            gasketPusher.rebuildCache();
-            syncToClients();
-        });
-    }
-
-    // --- Framework lifecycle ---
-
-    /** {@inheritDoc} */
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
@@ -292,52 +272,39 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
         if (!reservoirContents.isEmpty()) {
             output.store(TAG_RESERVOIR, GooContents.CODEC, reservoirContents);
         }
-        gasketState.save(output);
+        gasket.saveAdditional(output);
     }
 
-    /** {@inheritDoc} */
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         CrucibleSerialization.loadMeltingState(this, input);
         reservoir.loadFrom(input.read(TAG_RESERVOIR, GooContents.CODEC).orElse(GooContents.EMPTY));
-        gasketState.load(input);
+        gasket.loadAdditional(input);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            gasketRegistryAccess = () -> GasketRegistry.get(serverLevel);
-        }
-        gasketPusher.rebuildCache();
+        gasket.onSetLevel(level);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!(level instanceof ServerLevel serverLevel)) { return; }
-        gasketPusher.rebuildCache();
-        GasketPusher.forceTransmitterChunk(
-            gasketState.getId(GasketRole.TRANSMITTER),
-            () -> GasketRegistry.get(serverLevel), serverLevel, worldPosition);
+        gasket.onLoad();
     }
 
-    /** Marks dirty and sends sync packet to tracking clients. */
-    void syncToClients() { BlockEntitySync.markDirtyAndSync(this); }
+    /** Marks dirty and syncs to tracking clients. Delegates to the gasket attachment. */
+    void syncToClients() { gasket.syncToClients(); }
 
-    /** {@inheritDoc} */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithFullMetadata(registries);
+        return gasket.getUpdateTag(registries);
     }
 
-    /** {@inheritDoc} */
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
 }

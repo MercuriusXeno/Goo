@@ -5,13 +5,12 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
+import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.data.GasketLocation;
 import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
 import com.mercuriusxeno.goo.item.*;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
@@ -25,7 +24,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -72,10 +70,14 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
     private static final String ERR_TUNER_PASS = "TUNER_PASS handled in validate";
     private static final String ERR_UNHANDLED = "Unhandled interaction: ";
 
-    private final GasketState gasketState = GasketState.none();
+    /**
+     * Composed gasket integration: roleless (per-slot canister metadata holds gasket UUIDs).
+     * Provides the registry access and sync surface; slot pushers are managed locally.
+     */
+    private final GasketAttachment gasket = GasketAttachment.none(this);
+
     private final SlottedCanisterData state;
 
-    @Nullable IGasketRegistryAccess gasketRegistryAccess;
     private @Nullable UUID ownerUuid;
 
     /**
@@ -89,7 +91,17 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         this.state = new SlottedCanisterData(MAX_SLOTS,
                 CanisterBlock::slotShape,
                 CanisterBlockEntity::buildCompositeShape,
-                () -> BlockEntitySync.markDirtyAndSync(this));
+                gasket.syncCallback());
+        gasket.rebuildPushers(() -> {
+            if (level instanceof ServerLevel) {
+                rebuildAllSlotPushers();
+            }
+        });
+        gasket.afterLoad(() -> {
+            if (level instanceof ServerLevel serverLevel) {
+                forceAllTransmitterChunks(serverLevel);
+            }
+        });
     }
 
     /**
@@ -291,7 +303,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 () -> CanisterItem.getMetadata(slot.canister()).bottomGasketId(),
                 () -> CanisterItem.getMetadata(slot.canister()).bottomPartner(),
                 this::getLevel, this::getBlockPos,
-                slot::syncHandlerToStack, gasketRegistryAccess);
+                slot::syncHandlerToStack, gasket.registryAccess());
         pusher.rebuildCache();
         return pusher;
     }
@@ -313,7 +325,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
      * @param slotIndex the slot index
      */
     private void registerSlotGaskets(int slotIndex) {
-        if (gasketRegistryAccess == null || !(level instanceof ServerLevel serverLevel)) {
+        if (gasket.registryAccess() == null || !(level instanceof ServerLevel serverLevel)) {
             return;
         }
         CanisterSlot slot = state.slots[slotIndex];
@@ -321,7 +333,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
             return;
         }
         CanisterMetadata meta = CanisterItem.getMetadata(slot.canister());
-        GasketRegistry registry = gasketRegistryAccess.get();
+        GasketRegistry registry = gasket.registryAccess().get();
         ResourceKey<Level> dimension = serverLevel.dimension();
         registerFace(registry, meta.topGasketId(),
                 new GasketLocation(dimension, worldPosition, true, slotIndex));
@@ -330,7 +342,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
     }
 
     private void deregisterSlotGaskets(int slotIndex) {
-        if (gasketRegistryAccess == null) {
+        if (gasket.registryAccess() == null) {
             return;
         }
         CanisterSlot slot = state.slots[slotIndex];
@@ -338,7 +350,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
             return;
         }
         CanisterMetadata meta = CanisterItem.getMetadata(slot.canister());
-        GasketRegistry registry = gasketRegistryAccess.get();
+        GasketRegistry registry = gasket.registryAccess().get();
         deregisterFace(registry, meta.topGasketId());
         deregisterFace(registry, meta.bottomGasketId());
     }
@@ -357,7 +369,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 continue;
             }
             CanisterMetadata meta = CanisterItem.getMetadata(slot.canister());
-            GasketPusher.forceTransmitterChunk(meta.topGasketId(), gasketRegistryAccess,
+            GasketPusher.forceTransmitterChunk(meta.topGasketId(), gasket.registryAccess(),
                     serverLevel, worldPosition);
         }
     }
@@ -365,8 +377,8 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
     // --- IGasketHolder ---
 
     @Override
-    public GasketState gasketState() {
-        return gasketState;
+    public GasketAttachment gasket() {
+        return gasket;
     }
 
     /**
@@ -584,6 +596,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         if (!root.isEmpty()) {
             output.store(TAG_SLOTS, CompoundTag.CODEC, root);
         }
+        gasket.saveAdditional(output);
     }
 
     @Override
@@ -597,38 +610,33 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 slot.load(slotTag);
             }
         });
+        gasket.loadAdditional(input);
         rebuildAllSlotHandlers();
     }
 
     @Override
     public void setLevel(@NonNull Level newLevel) {
         super.setLevel(newLevel);
-        if (newLevel instanceof ServerLevel serverLevel) {
-            gasketRegistryAccess = () -> GasketRegistry.get(serverLevel);
+        gasket.onSetLevel(newLevel);
+        if (newLevel instanceof ServerLevel) {
             registerAllGaskets();
-            rebuildAllSlotPushers();
         }
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-        rebuildAllSlotPushers();
-        forceAllTransmitterChunks(serverLevel);
+        gasket.onLoad();
     }
 
     @Override
     public @NonNull CompoundTag getUpdateTag(HolderLookup.@NonNull Provider registries) {
-        return saveWithFullMetadata(registries);
+        return gasket.getUpdateTag(registries);
     }
 
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
 
     @Override

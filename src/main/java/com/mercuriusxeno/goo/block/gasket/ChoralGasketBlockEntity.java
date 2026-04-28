@@ -1,8 +1,5 @@
 package com.mercuriusxeno.goo.block.gasket;
 
-import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
-import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -10,16 +7,13 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Block entity for the world-placed choral gasket. When waterlogged,
@@ -30,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 public class ChoralGasketBlockEntity extends BlockEntity implements IGasketHolder {
 
     /**
-     * NBT face label for the gasket state.
+     * NBT face label for the gasket attachment.
      */
     private static final String TAG_GASKET = "gasket";
 
@@ -40,25 +34,15 @@ public class ChoralGasketBlockEntity extends BlockEntity implements IGasketHolde
     private final InfiniteWaterSource waterSource = new InfiniteWaterSource();
 
     /**
-     * Gasket state: transmitter only.
+     * Composed gasket integration: TRANSMITTER-only.
      */
-    private final GasketState gasketState =
-            GasketState.single(GasketRole.TRANSMITTER, TAG_GASKET);
+    private final GasketAttachment gasket = GasketAttachment.single(this, GasketRole.TRANSMITTER, TAG_GASKET);
 
     /**
-     * Registry access, captured in setLevel.
+     * Pushes water to gasket partners. Constructed in the BE constructor so it can
+     * see the attachment's stable callbacks; assigned final via constructor.
      */
-    @Nullable IGasketRegistryAccess gasketRegistryAccess;
-
-    /**
-     * Pushes water to gasket partners.
-     */
-    @SuppressWarnings("PMD.LambdaCanBeMethodReference")
-    final IGasketPusher gasketPusher = new GasketPusher(
-            waterSource, () -> gasketState.getId(GasketRole.TRANSMITTER),
-            () -> gasketState.getPartner(GasketRole.TRANSMITTER),
-            this::getLevel, this::getBlockPos,
-            this::syncToClients, () -> gasketRegistryAccess.get());
+    private final IGasketPusher gasketPusher;
 
     /**
      * Creates a choral gasket block entity.
@@ -68,6 +52,15 @@ public class ChoralGasketBlockEntity extends BlockEntity implements IGasketHolde
      */
     public ChoralGasketBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.CHORAL_GASKET.get(), pos, state);
+        this.gasketPusher = new GasketPusher(
+                waterSource,
+                () -> gasket.state().getId(GasketRole.TRANSMITTER),
+                () -> gasket.state().getPartner(GasketRole.TRANSMITTER),
+                this::getLevel, this::getBlockPos,
+                gasket.syncCallback(),
+                () -> gasket.registryAccess() != null ? gasket.registryAccess().get() : null);
+        gasket.rebuildPushers(gasketPusher::rebuildCache);
+        gasket.afterLoad(this::forceTransmitterChunkOnLoad);
     }
 
     /**
@@ -95,84 +88,55 @@ public class ChoralGasketBlockEntity extends BlockEntity implements IGasketHolde
     }
 
     @Override
-    public GasketState gasketState() {
-        return gasketState;
-    }
-
-    @Override
-    public Runnable gasketSyncCallback() {
-        return this::syncToClients;
-    }
-
-    @Override
-    public void setPartner(GasketRole role, @Nullable GasketPartner partner) {
-        gasketState.setPartner(role, partner, () -> {
-            gasketPusher.rebuildCache();
-            syncToClients();
-        });
-    }
-
-    @Override
-    public void clearGasket(GasketRole role) {
-        gasketState.clear(role, () -> {
-            gasketPusher.rebuildCache();
-            syncToClients();
-        });
+    public GasketAttachment gasket() {
+        return gasket;
     }
 
     @Override
     public void setLevel(@NonNull Level level) {
         super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            gasketRegistryAccess = () -> GasketRegistry.get(serverLevel);
-        }
-        gasketPusher.rebuildCache();
+        gasket.onSetLevel(level);
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-        gasketPusher.rebuildCache();
-        GasketPusher.forceTransmitterChunk(
-                gasketState.getId(GasketRole.TRANSMITTER),
-                () -> GasketRegistry.get(serverLevel), serverLevel, worldPosition);
+        gasket.onLoad();
     }
 
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
-        gasketState.save(output);
+        gasket.saveAdditional(output);
     }
 
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
-        gasketState.load(input);
+        gasket.loadAdditional(input);
     }
 
     @Override
-    public @NonNull CompoundTag getUpdateTag(
-            HolderLookup.@NonNull Provider registries) {
-        return saveWithFullMetadata(registries);
+    public @NonNull CompoundTag getUpdateTag(HolderLookup.@NonNull Provider registries) {
+        return gasket.getUpdateTag(registries);
     }
 
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
 
     /**
-     * Marks dirty and syncs to clients.
+     * BE-side post-load action: force-load the transmitter's destination chunk so the
+     * pusher can resolve partners on first tick.
      */
-    private void syncToClients() {
-        setChanged();
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(),
-                    getBlockState(), Block.UPDATE_CLIENTS);
+    private void forceTransmitterChunkOnLoad() {
+        if (level instanceof ServerLevel serverLevel) {
+            GasketPusher.forceTransmitterChunk(
+                    gasket.state().getId(GasketRole.TRANSMITTER),
+                    gasket.registryAccess(),
+                    serverLevel,
+                    worldPosition);
         }
     }
 }

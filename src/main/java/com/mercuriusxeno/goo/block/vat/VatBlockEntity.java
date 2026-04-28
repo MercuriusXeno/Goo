@@ -1,17 +1,13 @@
 package com.mercuriusxeno.goo.block.vat;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
+import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.block.gasket.IGasketPusher;
-import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
-import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRegionResolver;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -22,7 +18,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -46,24 +41,34 @@ import org.jspecify.annotations.Nullable;
 public class VatBlockEntity extends BlockEntity implements IGasketHolder {
 
     /**
-     * Composed gasket state for dual roles: cap (RECEIVER) and base (TRANSMITTER).
+     * Composed gasket integration: dual-role (RECEIVER cap, TRANSMITTER base) with a BE-level pusher.
      */
-    private final GasketState gasketState = GasketState.dual("cap", "base");    // Package-private fields accessed by VatSerialization, VatStackRedistributor.
+    private final GasketAttachment gasket = GasketAttachment.dual(this, "cap", "base");
+
+    // Package-private fields accessed by VatSerialization, VatStackRedistributor.
     final GooFluidHandler fluidHandler = new GooFluidHandler(
             ContainerCapacity.vatCapacity(0), this::onFluidChanged,
             () -> level != null ? level.getGameTime() : 0);
     int compressionLevel;
     @Nullable String label;
-    @Nullable IGasketRegistryAccess gasketRegistryAccess;
+
     /**
      * Re-entrance guard for {@link VatStackRedistributor}.
      */
     boolean redistributing;
+
     // --- Stream state (synced to client for BER rendering) ---
     // Package-private: accessed by VatSerialization for snapshot and save/load.
     @Nullable GooType vatStreamType;
     int vatStreamRate;
     long vatStreamTick;
+
+    /**
+     * Pushes reservoir goo to the base gasket partner on a timed interval.
+     * Final, assigned in constructor.
+     */
+    final IGasketPusher gasketPusher;
+
     /**
      * Creates a new vat block entity at the given position.
      *
@@ -72,6 +77,25 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
      */
     public VatBlockEntity(BlockPos pos, BlockState state) {
         super(GooBlockEntities.VAT.get(), pos, state);
+        this.gasketPusher = new GasketPusher(
+                fluidHandler,
+                () -> gasket.state().getId(GasketRole.TRANSMITTER),
+                () -> gasket.state().getPartner(GasketRole.TRANSMITTER),
+                this::getLevel, this::getBlockPos,
+                gasket.syncCallback(),
+                () -> gasket.registryAccess() != null ? gasket.registryAccess().get() : null);
+        gasket.rebuildPushers(gasketPusher::rebuildCache);
+        gasket.afterLoad(this::forceTransmitterChunkOnLoad);
+    }
+
+    private void forceTransmitterChunkOnLoad() {
+        if (level instanceof ServerLevel serverLevel) {
+            GasketPusher.forceTransmitterChunk(
+                    gasket.state().getId(GasketRole.TRANSMITTER),
+                    gasket.registryAccess(),
+                    serverLevel,
+                    worldPosition);
+        }
     }
 
     /**
@@ -84,15 +108,7 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
      */
     public static void serverTick(Level level, BlockPos pos, BlockState state, VatBlockEntity be) {
         be.gasketPusher.tick();
-    }    /**
-     * Pushes reservoir goo to the base gasket partner on a timed interval.
-     */
-    @SuppressWarnings("PMD.LambdaCanBeMethodReference") // field is null at construction; lambda defers read
-    final IGasketPusher gasketPusher = new GasketPusher(
-            fluidHandler, () -> gasketState.getId(GasketRole.TRANSMITTER),
-            () -> gasketState.getPartner(GasketRole.TRANSMITTER),
-            this::getLevel, this::getBlockPos, this::markDirtyAndSync,
-            () -> gasketRegistryAccess.get());
+    }
 
     /**
      * Returns the current capacity.
@@ -222,17 +238,11 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
         return (currentTick - vatStreamTick <= 1) ? vatStreamRate : 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public GasketState gasketState() {
-        return gasketState;
+    public GasketAttachment gasket() {
+        return gasket;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GasketRole resolveRole(BlockHitResult hit) {
         double localY = hit.getLocation().y - getBlockPos().getY();
@@ -252,46 +262,9 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
                 : state.getValue(VatBlock.GASKET_BASE);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public @Nullable String getMachineLabel(int slot) {
         return label;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Runnable gasketSyncCallback() {
-        return this::markDirtyAndSync;
-    }
-
-    /**
-     * {@inheritDoc} Rebuilds pusher cache for TRANSMITTER role.
-     */
-    @Override
-    public void setPartner(GasketRole role, @Nullable GasketPartner partner) {
-        gasketState.setPartner(role, partner, () -> {
-            if (role == GasketRole.TRANSMITTER) {
-                gasketPusher.rebuildCache();
-            }
-            markDirtyAndSync();
-        });
-    }
-
-    /**
-     * {@inheritDoc} Rebuilds pusher cache for TRANSMITTER role.
-     */
-    @Override
-    public void clearGasket(GasketRole role) {
-        gasketState.clear(role, () -> {
-            if (role == GasketRole.TRANSMITTER) {
-                gasketPusher.rebuildCache();
-            }
-            markDirtyAndSync();
-        });
     }
 
     /**
@@ -303,11 +276,9 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
         VatSerialization.tryRedistribute(this);
     }
 
-    /**
-     * Marks dirty and sends sync packet to tracking clients.
-     */
+    /** Marks dirty and syncs to clients. Delegates to the gasket attachment. */
     void markDirtyAndSync() {
-        BlockEntitySync.markDirtyAndSync(this);
+        gasket.syncToClients();
     }
 
     // --- Internal ---
@@ -326,50 +297,32 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
         fluidHandler.setCapacity(getCapacity());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
         VatSerialization.saveFields(this, output);
+        gasket.saveAdditional(output);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
         VatSerialization.loadFields(this, input);
+        gasket.loadAdditional(input);
     }
 
     // --- Framework lifecycle ---
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            gasketRegistryAccess = () -> GasketRegistry.get(serverLevel);
-        }
-        gasketPusher.rebuildCache();
+        gasket.onSetLevel(level);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level instanceof ServerLevel serverLevel) {
-            gasketPusher.rebuildCache();
-            GasketPusher.forceTransmitterChunk(
-                    gasketState.getId(GasketRole.TRANSMITTER),
-                    () -> GasketRegistry.get(serverLevel), serverLevel, worldPosition);
-        }
+        gasket.onLoad();
     }
 
     /**
@@ -399,24 +352,13 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public @NonNull CompoundTag getUpdateTag(HolderLookup.@NonNull Provider registries) {
-        return saveWithFullMetadata(registries);
+        return gasket.getUpdateTag(registries);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
-
-
-
-
 }

@@ -47,23 +47,26 @@ public interface IGasketHolder {
     }
 
     /**
-     * Returns the composed gasket state that owns UUID and partner fields.
-     * Each machine provides the appropriate variant (single, dual, or null).
+     * Returns the gasket attachment composed by this BE at construction.
+     * The attachment owns gasket state, registry access, the rebuild+sync closure,
+     * and the synced-BE packet machinery shared by every gasket-capable BE.
      *
-     * @return the gasket state
+     * @return the gasket attachment
      */
-    GasketState gasketState();
+    GasketAttachment gasket();
 
     /**
-     * Returns the sync callback invoked after gasket state changes.
-     * Override to supply a real callback (typically markDirtyAndSync).
-     * The default no-ops.
-     *
-     * @return the sync callback
+     * @return the underlying gasket state, sourced from the attachment
+     */
+    default GasketState gasketState() {
+        return gasket().state();
+    }
+
+    /**
+     * @return the sync callback, sourced from the attachment
      */
     default Runnable gasketSyncCallback() {
-        return () -> {
-        };
+        return gasket().syncCallback();
     }
 
     /**
@@ -100,25 +103,26 @@ public interface IGasketHolder {
     }
 
     /**
-     * Sets the linked partner for the given role (null to clear).
-     * No-op if the machine doesn't support the given role.
+     * Sets the linked partner for the given role (null to clear). Routes through
+     * the attachment so the rebuild + sync closure runs.
      *
      * @param role    the gasket role
      * @param partner the gasket partner, or null to clear
      */
     default void setPartner(GasketRole role, @Nullable GasketPartner partner) {
-        gasketState().setPartner(role, partner, gasketSyncCallback());
+        gasket().setPartner(role, partner);
     }
 
     // --- Slot-aware overloads ---
 
     /**
-     * Clears the gasket UUID and partner for the given role.
+     * Clears the gasket UUID and partner for the given role. Routes through the
+     * attachment so the rebuild + sync closure runs.
      *
      * @param role the gasket role
      */
     default void clearGasket(GasketRole role) {
-        gasketState().clear(role, gasketSyncCallback());
+        gasket().clearGasket(role);
     }
 
     /**

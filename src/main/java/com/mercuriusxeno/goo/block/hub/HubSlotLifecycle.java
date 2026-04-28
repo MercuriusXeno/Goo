@@ -147,7 +147,7 @@ final class HubSlotLifecycle {
                 () -> CanisterItem.getMetadata(s.canister()).bottomPartner(),
                 be::getLevel, be::getBlockPos,
                 s::syncHandlerToStack,
-                be.gasketRegistryAccess);
+                be.gasket().registryAccess());
         pusher.rebuildCache();
         return pusher;
     }

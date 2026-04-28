@@ -4,7 +4,7 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.block.canister.ICanisterHolder;
 import com.mercuriusxeno.goo.block.canister.SlottedCanisterData;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
+import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
@@ -14,7 +14,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,7 +21,6 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.shapes.Shapes;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Tap block entity: drips goo from a canister placed in its body slot.
@@ -59,9 +57,9 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
     private final SlottedCanisterData state;
 
     /**
-     * Composed gasket state for the RECEIVER role.
+     * Composed gasket integration: RECEIVER-only, no pushers.
      */
-    private final GasketState gasketState = GasketState.single(GasketRole.RECEIVER, FACE_LABEL);
+    private final GasketAttachment gasket = GasketAttachment.single(this, GasketRole.RECEIVER, FACE_LABEL);
 
     /**
      * Creates a new tap block entity.
@@ -186,20 +184,9 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
         return canAccept(SLOT);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public GasketState gasketState() {
-        return gasketState;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Runnable gasketSyncCallback() {
-        return this::setChanged;
+    public GasketAttachment gasket() {
+        return gasket;
     }
 
     // --- Tick and drip logic ---
@@ -212,20 +199,12 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
         return role == GasketRole.RECEIVER && getBlockState().getValue(TapBlock.HAS_GASKET);
     }
 
-    /**
-     * Marks dirty and sends sync packet to tracking clients.
-     */
     private void markDirtyAndSync() {
         BlockEntitySync.markDirtyAndSync(this);
     }
 
     // --- Serialization ---
 
-    /**
-     * Persists canister and gasket state.
-     *
-     * @param output the value output to write to
-     */
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
@@ -233,14 +212,9 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
         if (!can.isEmpty()) {
             output.store(TAG_CANISTER, ItemStack.CODEC, can);
         }
-        gasketState.save(output);
+        gasket.saveAdditional(output);
     }
 
-    /**
-     * Restores canister and gasket state from persistent storage.
-     *
-     * @param input the value input to read from
-     */
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
@@ -249,28 +223,16 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
         if (!loaded.isEmpty()) {
             state.slots[SLOT].buildHandler(() -> level != null ? level.getGameTime() : 0L);
         }
-        gasketState.load(input);
+        gasket.loadAdditional(input);
     }
 
-    /**
-     * Returns full NBT for initial chunk sync to clients.
-     *
-     * @param registries the registry provider
-     * @return the update tag
-     */
     @Override
     public @NonNull CompoundTag getUpdateTag(HolderLookup.@NonNull Provider registries) {
-        return saveWithFullMetadata(registries);
+        return gasket.getUpdateTag(registries);
     }
 
-    /**
-     * Returns the sync packet sent when block entity data changes.
-     *
-     * @return the update packet
-     */
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
 }

@@ -2,10 +2,8 @@ package com.mercuriusxeno.goo.block.hub;
 
 import com.mercuriusxeno.goo.block.BlockEntitySync;
 import com.mercuriusxeno.goo.block.canister.*;
-import com.mercuriusxeno.goo.block.gasket.GasketState;
+import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
-import com.mercuriusxeno.goo.data.GasketRegistry;
-import com.mercuriusxeno.goo.data.IGasketRegistryAccess;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -17,7 +15,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -56,17 +53,14 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
      */
     private static final int BLOCK_UPDATE_FLAGS = 3;
     /**
-     * Composed gasket state for the intake (RECEIVER) role.
+     * Composed gasket integration: RECEIVER intake, slot-level pushers managed by HubSlotLifecycle.
      */
-    private final GasketState gasketState = GasketState.single(GasketRole.RECEIVER, FACE_LABEL);
+    private final GasketAttachment gasket = GasketAttachment.single(this, GasketRole.RECEIVER, FACE_LABEL);
+
     /**
      * Behavioral component owning slot arrays, handlers, and stream state.
      */
     private final SlottedCanisterData state;
-    /**
-     * Provides access to the gasket registry without a ServerLevel at call sites.
-     */
-    @Nullable IGasketRegistryAccess gasketRegistryAccess;
 
     /**
      * Creates a hub block entity at the given position.
@@ -80,7 +74,17 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
                 MAX_CANISTERS,
                 HubBlock::slotShape,
                 HubSlotLifecycle::computeShape,
-                () -> BlockEntitySync.markDirtyAndSync(this));
+                gasket.syncCallback());
+        gasket.rebuildPushers(() -> {
+            if (level instanceof ServerLevel) {
+                HubSlotLifecycle.rebuildAllSlotPushers(this);
+            }
+        });
+        gasket.afterLoad(() -> {
+            if (level instanceof ServerLevel serverLevel) {
+                HubSerialization.forceAllTransmitterChunks(this, serverLevel, worldPosition);
+            }
+        });
     }
 
     /**
@@ -139,45 +143,29 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
 
     // --- IGasketHolder ---
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public GasketState gasketState() {
-        return gasketState;
+    public GasketAttachment gasket() {
+        return gasket;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int resolveSlot(BlockHitResult hit) {
         int slot = HubBlock.hitSlot(hit, getBlockPos());
         return slot < 0 ? SLOT_MISS : slot;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean hasIntake() {
         return true;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Runnable gasketSyncCallback() {
-        return () -> BlockEntitySync.markDirtyAndSync(this);
-    }
-
-    /**
-     * {@inheritDoc} Clears gasket and resets blockstate HAS_GASKET flag.
+     * {@inheritDoc} Clears intake-only state. Does not rebuild slot pushers since the
+     * intake gasket is independent of slot topology. Also flips the HAS_GASKET blockstate.
      */
     @Override
     public void clearGasket(GasketRole role) {
-        gasketState.clear(role, this::onGasketCleared);
+        gasket.state().clear(role, this::onGasketCleared);
     }
 
     /**
@@ -194,9 +182,6 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
         BlockEntitySync.markDirtyAndSync(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setPartner(GasketRole role, int slot, @Nullable GasketPartner partner) {
         IGasketHolder.super.setPartner(role, slot, partner);
@@ -207,34 +192,18 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
 
     // --- Framework lifecycle ---
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setLevel(@NonNull Level level) {
         super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            gasketRegistryAccess = () -> GasketRegistry.get(serverLevel);
-            HubSlotLifecycle.rebuildAllSlotPushers(this);
-        }
+        gasket.onSetLevel(level);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-        HubSlotLifecycle.rebuildAllSlotPushers(this);
-        HubSerialization.forceAllTransmitterChunks(this, serverLevel, worldPosition);
+        gasket.onLoad();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
@@ -249,12 +218,9 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
         if (!root.isEmpty()) {
             output.store(TAG_SLOTS, CompoundTag.CODEC, root);
         }
-        gasketState.save(output);
+        gasket.saveAdditional(output);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void loadAdditional(@NonNull ValueInput input) {
         super.loadAdditional(input);
@@ -265,25 +231,18 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
                 slot.load(slotTag);
             }
         });
-        gasketState.load(input);
+        gasket.loadAdditional(input);
         HubSlotLifecycle.rebuildAllSlotHandlers(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public @NonNull CompoundTag getUpdateTag(HolderLookup.@NonNull Provider registries) {
-        return saveWithFullMetadata(registries);
+        return gasket.getUpdateTag(registries);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+        return gasket.getUpdatePacket();
     }
 
     /**

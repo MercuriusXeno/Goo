@@ -115,7 +115,6 @@ final class VatSerialization {
     static void saveFields(VatBlockEntity be, ValueOutput output) {
         output.putInt(TAG_COMPRESSION, be.compressionLevel);
         saveContentsAndLabel(be, output);
-        be.gasketState().save(output);
         saveStreamFields(be, output);
     }
 
@@ -159,7 +158,6 @@ final class VatSerialization {
     static void loadFields(VatBlockEntity be, ValueInput input) {
         loadCompression(be, input);
         loadContentsAndLabel(be, input);
-        be.gasketState().load(input);
         loadStreamFields(be, input);
     }
 
