@@ -1,4 +1,4 @@
-package com.mercuriusxeno.goo.client.lens;
+package com.mercuriusxeno.goo.client.ability;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.client.ber.style.NetherHoleStyles;

@@ -1,0 +1,83 @@
+// Static-code analysis: Checkstyle, PMD, CPD, plus the unified digest task
+// that aggregates their XML reports into build/reports/digest.txt. SpotBugs
+// configuration stays in the root build.gradle because its DSL needs plugin
+// classes that resolve only in the parent script's classloader. SpotBugs
+// finalizes scaDigest via the wiring at the bottom of this file.
+
+checkstyle {
+    toolVersion = '10.21.4'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    // Violations flow to the digest; build proceeds regardless
+    ignoreFailures = true
+}
+
+tasks.named('checkstyleTest') { enabled = false }
+
+pmd {
+    // Upgraded from 7.9.0 for ASM 9.9 (JDK 25 / class file version 69)
+    toolVersion = '7.21.0'
+    // Custom ruleset curated for Goo, scoped narrower than Checkstyle and SpotBugs
+    ruleSets = []
+    ruleSetFiles = files('config/pmd/pmd-ruleset.xml')
+    ignoreFailures = true
+    consoleOutput = false
+}
+
+tasks.named('pmdTest') { enabled = false }
+
+// CPD: copy-paste detection across main sources
+configurations { cpd }
+dependencies {
+    cpd 'net.sourceforge.pmd:pmd-java:7.21.0'
+    cpd 'net.sourceforge.pmd:pmd-cli:7.21.0'
+}
+
+tasks.register('cpd', JavaExec) {
+    description = 'Finds duplicated code fragments via PMD CPD'
+    group = 'verification'
+    mainClass = 'net.sourceforge.pmd.cli.PmdCli'
+    classpath = configurations.cpd
+    var cpdReport = layout.buildDirectory.file('reports/cpd/main.xml')
+    args = [
+        'cpd',
+        '--minimum-tokens', '100',
+        '--language', 'java',
+        '--dir', sourceSets.main.java.srcDirs.first().absolutePath,
+        '--format', 'xml'
+    ]
+    ignoreExitValue = true
+    // Redirect stdout to report file (config-cache safe)
+    standardOutput = System.out
+    doFirst {
+        cpdReport.get().asFile.parentFile.mkdirs()
+        standardOutput = new FileOutputStream(cpdReport.get().asFile)
+    }
+}
+
+// Wire CPD into the check lifecycle
+tasks.named('check') { dependsOn 'cpd' }
+
+// Unified flat-text report aggregating all analysis XML
+tasks.register('scaDigest', Exec) {
+    description = 'Produces build/reports/digest.txt; fails the build on checkstyle errors or test failures'
+    group = 'verification'
+    commandLine 'python3', "${projectDir}/tools/sca-digest.py"
+}
+tasks.checkstyleMain.finalizedBy(tasks.scaDigest)
+tasks.pmdMain.finalizedBy(tasks.scaDigest)
+tasks.spotbugsMain.finalizedBy(tasks.scaDigest)
+tasks.named('cpd') { finalizedBy tasks.scaDigest }
+tasks.named('check') { finalizedBy tasks.scaDigest }
+
+// Runs sca-fix.py JavadocMethod to auto-stub missing @param/@return/@throws,
+// then ImportOrder to fix any import reordering the stubs introduced.
+// Backfill meaningful descriptions into the stubs manually after this runs.
+tasks.register('fixJavadoc', Exec) {
+    group = 'verification'
+    description = 'Auto-stub missing Javadoc tags via sca-fix.py, then fix import order'
+    dependsOn 'checkstyleMain'
+    commandLine 'python', 'tools/sca-fix.py', 'JavadocMethod'
+    doLast {
+        exec { commandLine 'python', 'tools/sca-fix.py', 'ImportOrder' }
+    }
+}

@@ -1,9 +1,10 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client.ability;
 
 import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
-import com.mercuriusxeno.goo.client.lens.NetherLensEffect;
+import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer;
+import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -40,7 +41,7 @@ import java.util.List;
  *       ring reads identically from any viewing angle.</li>
  * </ol>
  */
-public final class NetherBlackHoleRenderer {
+public final class NetherSphereVisual {
 
     /**
      * Offset to get block center from integer position.
@@ -188,7 +189,7 @@ public final class NetherBlackHoleRenderer {
      */
     private static final float[] DISK_ANGULAR_SAMPLES = buildDiskAngularSamples();
 
-    private NetherBlackHoleRenderer() {
+    private NetherSphereVisual() {
     }
 
     /**

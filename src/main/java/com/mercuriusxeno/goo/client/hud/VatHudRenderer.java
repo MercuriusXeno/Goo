@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.client.hud;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
-import com.mercuriusxeno.goo.client.VatStackAggregator;
-import com.mercuriusxeno.goo.client.VatStackAggregator.VatStackData;
+import com.mercuriusxeno.goo.client.machine.VatStackAggregator;
+import com.mercuriusxeno.goo.client.machine.VatStackAggregator.VatStackData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

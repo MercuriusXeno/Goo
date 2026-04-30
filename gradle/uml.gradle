@@ -1,0 +1,85 @@
+// PlantUML class diagrams via plantuml-generator-util (de.elnarion.util:3.0.1).
+// Operates on compiled bytecode through ClassGraph. Output is raw .puml
+// text. Slices are data; one task per slice keeps each renewable. Aggregate
+// `umlDiagrams` regenerates everything. Add a slice by adding an entry to
+// umlSlices below.
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'de.elnarion.util:plantuml-generator-util:3.0.1' }
+}
+def umlSlices = [
+        [name    : 'Ability',
+         file    : 'ability.puml',
+         packages: ['com.mercuriusxeno.goo.ability',
+                    'com.mercuriusxeno.goo.ability.world',
+                    'com.mercuriusxeno.goo.ability.mob',
+                    'com.mercuriusxeno.goo.block.ability']],
+        [name    : 'Machine',
+         file    : 'machine.puml',
+         packages: ['com.mercuriusxeno.goo.block',
+                    'com.mercuriusxeno.goo.block.fluid',
+                    'com.mercuriusxeno.goo.block.gasket']],
+        [name    : 'ClientCore',
+         file    : 'client-core.puml',
+         packages: ['com.mercuriusxeno.goo.client',
+                    'com.mercuriusxeno.goo.client.machine']],
+        [name    : 'ClientAbility',
+         file    : 'client-ability.puml',
+         packages: ['com.mercuriusxeno.goo.client.ability']],
+        [name    : 'ClientBer',
+         file    : 'client-ber.puml',
+         packages: ['com.mercuriusxeno.goo.client.ber',
+                    'com.mercuriusxeno.goo.client.ber.style',
+                    'com.mercuriusxeno.goo.client.model']],
+        [name    : 'ClientHudOverlay',
+         file    : 'client-hud-overlay.puml',
+         packages: ['com.mercuriusxeno.goo.client.hud',
+                    'com.mercuriusxeno.goo.client.overlay']],
+        [name    : 'ClientInteraction',
+         file    : 'client-interaction.puml',
+         packages: ['com.mercuriusxeno.goo.client.radial',
+                    'com.mercuriusxeno.goo.client.throwing',
+                    'com.mercuriusxeno.goo.client.tooltip']],
+        [name    : 'ClientParticle',
+         file    : 'client-particle.puml',
+         packages: ['com.mercuriusxeno.goo.client.particle']],
+]
+
+def umlOutputDir = file("${layout.buildDirectory.get()}/reports/diagrams/class")
+// Resolve at configuration time; sourceSets is not accessible inside doLast.
+def umlClasspathFiles = (sourceSets.main.output.classesDirs.files +
+                         sourceSets.main.compileClasspath.files) as Set
+
+umlSlices.each { slice ->
+    tasks.register("umlDiagrams${slice.name}") {
+        description = "Generates PlantUML class diagram for ${slice.packages.join(', ')}"
+        group = 'documentation'
+        dependsOn tasks.named('compileJava')
+
+        doLast {
+            umlOutputDir.mkdirs()
+            // Classloader spanning goo's compiled classes plus compile-time
+            // dependencies (NeoForge, Minecraft) so ClassGraph resolves types.
+            def urls = umlClasspathFiles.collect { it.toURI().toURL() } as URL[]
+            def cl = new URLClassLoader(urls, this.class.classLoader)
+            // ClassGraph scans subpackages recursively, so a slice listing
+            // `client` would pull in `client.ber`, etc. The whitelist regex
+            // restricts each slice to direct children of the packages it lists.
+            def alt = slice.packages.collect { it.replace('.', '\\.') }.join('|')
+            def whitelist = '^(' + alt + ')\\.[^.]+$'
+            def cfg = new de.elnarion.util.plantuml.generator.classdiagram.config.PlantUMLClassDiagramConfigBuilder(slice.packages, whitelist)
+                    .withClassLoader(cl)
+                    .build()
+            def gen = new de.elnarion.util.plantuml.generator.classdiagram.PlantUMLClassDiagramGenerator(cfg)
+            def out = new File(umlOutputDir, slice.file)
+            out.text = gen.generateDiagramText()
+            println "Wrote ${out} (${out.length()} bytes)"
+        }
+    }
+}
+
+tasks.register('umlDiagrams') {
+    description = 'Regenerates all UML class diagram slices'
+    group = 'documentation'
+    dependsOn umlSlices.collect { "umlDiagrams${it.name}" }
+}

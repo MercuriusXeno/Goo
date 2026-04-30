@@ -1,4 +1,4 @@
-package com.mercuriusxeno.goo.client;
+package com.mercuriusxeno.goo.client.machine;
 
 import com.mercuriusxeno.goo.block.vat.VatBlock;
 import com.mercuriusxeno.goo.block.vat.VatBlockEntity;

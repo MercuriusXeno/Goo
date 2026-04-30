@@ -22,7 +22,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.geometry.QuadCollection;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
@@ -79,8 +78,6 @@ public class CanisterBlockEntityRenderer
             float partialTick, Vec3 cameraPos,
             ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(be, state, breakProgress);
-        // Canisters render fullbright so goo is always visible regardless of ambient light
-        state.lightCoords = LightCoordsUtil.FULL_BRIGHT;
         long gameTick = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
         state.animationTime = gameTick + partialTick;
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
