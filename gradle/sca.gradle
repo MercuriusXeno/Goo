@@ -69,15 +69,3 @@ tasks.spotbugsMain.finalizedBy(tasks.scaDigest)
 tasks.named('cpd') { finalizedBy tasks.scaDigest }
 tasks.named('check') { finalizedBy tasks.scaDigest }
 
-// Runs sca-fix.py JavadocMethod to auto-stub missing @param/@return/@throws,
-// then ImportOrder to fix any import reordering the stubs introduced.
-// Backfill meaningful descriptions into the stubs manually after this runs.
-tasks.register('fixJavadoc', Exec) {
-    group = 'verification'
-    description = 'Auto-stub missing Javadoc tags via sca-fix.py, then fix import order'
-    dependsOn 'checkstyleMain'
-    commandLine 'python', 'tools/sca-fix.py', 'JavadocMethod'
-    doLast {
-        exec { commandLine 'python', 'tools/sca-fix.py', 'ImportOrder' }
-    }
-}
