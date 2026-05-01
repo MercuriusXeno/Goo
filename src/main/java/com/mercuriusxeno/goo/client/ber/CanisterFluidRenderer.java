@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client.ber;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
 import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -41,47 +42,23 @@ public final class CanisterFluidRenderer {
     /** Vanilla lava still sprite ID in the block atlas. */
     private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
 
-    /** Canister half-width: 2px. */
-    private static final float HW = 2f / 16f;
-
-    /** Top of lower gasket / bottom of body (y=1px). */
-    private static final float BODY_BOT = 1f / 16f;
-
-    /** Top of body / bottom of upper gasket (y=11px). */
-    private static final float BODY_TOP = 11f / 16f;
-
-    /** Bottom of lower gasket (y=0). */
-    private static final float GASKET_BOT = 0f;
-
-    /** Top of upper gasket (y=12px). */
-    private static final float GASKET_TOP = 12f / 16f;
-
-    /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
-    private static final float FLUID_INSET = 0.5f / 16f;
-
     /** Shared fluid geometry constants for canister slots. */
     private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
-        new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
+        new SlotFluidGeometry.SlotGeometry(CanisterGeometry.HW, CanisterGeometry.BODY_BOT,
+                CanisterGeometry.BODY_TOP, CanisterGeometry.FLUID_INSET);
 
     /** Pixels per block for coordinate conversion. */
     private static final float BLOCK_PIXELS = 16f;
 
-    /** Gasket side U start: column 4/16. */
-    private static final float GS_U0 = 0.25f;
-
-    /** Gasket side U end: column 8/16. */
-    private static final float GS_U1 = 0.5f;
-
-    /** Gasket side V end: row 1/16. */
-    private static final float GS_V1 = 0.0625f;
-
     /** Y ranges describing where gasket boxes land in a canister slot. */
     private static final GasketCapRenderer.GasketYRanges GASKET_Y =
-        new GasketCapRenderer.GasketYRanges(BODY_BOT, BODY_TOP, GASKET_BOT, GASKET_TOP);
+        new GasketCapRenderer.GasketYRanges(CanisterGeometry.BODY_BOT, CanisterGeometry.BODY_TOP,
+                CanisterGeometry.GASKET_BOT, CanisterGeometry.GASKET_TOP);
 
     /** Gasket side UV region (uniform across container types). */
     private static final GasketCapRenderer.GasketUv GASKET_UV =
-        new GasketCapRenderer.GasketUv(GS_U0, GS_U1, GS_V1);
+        new GasketCapRenderer.GasketUv(CanisterGeometry.GS_U0, CanisterGeometry.GS_U1,
+                CanisterGeometry.GS_V1);
 
     private CanisterFluidRenderer() {
     }
@@ -204,7 +181,7 @@ public final class CanisterFluidRenderer {
         return GasketCapRenderer.slotBoundsXZ(
             CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS,
             CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS,
-            HW);
+            CanisterGeometry.HW);
     }
 
     // -- Fluid rendering --
