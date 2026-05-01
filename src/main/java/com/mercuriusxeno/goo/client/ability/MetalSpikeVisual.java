@@ -28,17 +28,6 @@ public final class MetalSpikeVisual {
     private static final Identifier BLOCK_ATLAS =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
-    /** Index of the perp-Y component in the cone basis array. */
-    private static final int BASIS_PERP_Y = 1;
-    /** Index of the perp-Z component in the cone basis array. */
-    private static final int BASIS_PERP_Z = 2;
-    /** Index of the cross-X component in the cone basis array. */
-    private static final int BASIS_CROSS_X = 3;
-    /** Index of the cross-Y component in the cone basis array. */
-    private static final int BASIS_CROSS_Y = 4;
-    /** Index of the cross-Z component in the cone basis array. */
-    private static final int BASIS_CROSS_Z = 5;
-
     /** Bit shift for alpha channel in ARGB. */
     private static final int ALPHA_SHIFT = 24;
     /** Mask for stripping alpha from an ARGB color. */
@@ -58,8 +47,6 @@ public final class MetalSpikeVisual {
     private static final float SPIKE_EPSILON = 1e-4f;
     /** Overshoot past the entity center so the spike pierces through. */
     private static final float SPIKE_OVERSHOOT = 1.0f;
-    /** Threshold for choosing perpendicular basis vector. */
-    private static final float DIRECTION_THRESHOLD = 0.9f;
     /** Array offset for the X target coordinate in spike anim snapshots. */
     private static final int SNAP_TX = 2;
     /** Array offset for the Y target coordinate in spike anim snapshots. */
@@ -181,63 +168,9 @@ public final class MetalSpikeVisual {
         float tipY = by + dirY * length;
         float tipZ = bz + dirZ * length;
 
-        float[] basis = computeConeBasis(dirX, dirY, dirZ);
+        float[] basis = ConeGeometry.computeBasis(dirX, dirY, dirZ);
         emitConeFaces(ctx, bx, by, bz, tipX, tipY, tipZ, dirX, dirY, dirZ,
                 basis, color, uv);
-    }
-
-    /**
-     * Computes orthonormal perp + cross basis vectors for a cone direction.
-     *
-     * @param dirX cone direction X
-     * @param dirY cone direction Y
-     * @param dirZ cone direction Z
-     * @return array {perpX, perpY, perpZ, crossX, crossY, crossZ}
-     */
-    private static float[] computeConeBasis(float dirX, float dirY, float dirZ) {
-        float[] perp = seedPerp(dirX, dirY, dirZ);
-        orthonormalize(perp, dirX, dirY, dirZ);
-        float crossX = dirY * perp[BASIS_PERP_Z] - dirZ * perp[BASIS_PERP_Y];
-        float crossY = dirZ * perp[0] - dirX * perp[BASIS_PERP_Z];
-        float crossZ = dirX * perp[BASIS_PERP_Y] - dirY * perp[0];
-        return new float[]{perp[0], perp[BASIS_PERP_Y], perp[BASIS_PERP_Z],
-                crossX, crossY, crossZ};
-    }
-
-    /**
-     * Picks a seed perpendicular avoiding near-parallel alignment.
-     *
-     * @param dirX cone direction X
-     * @param dirY cone direction Y
-     * @param dirZ cone direction Z
-     * @return seed perpendicular vector
-     */
-    private static float[] seedPerp(float dirX, float dirY, float dirZ) {
-        if (Math.abs(dirY) < DIRECTION_THRESHOLD) {
-            return new float[]{-dirZ, 0, dirX};
-        }
-        return new float[]{1, 0, 0};
-    }
-
-    /**
-     * Gram-Schmidt orthonormalizes perp against dir in-place.
-     *
-     * @param perp the perpendicular vector to orthonormalize
-     * @param dirX reference direction X
-     * @param dirY reference direction Y
-     * @param dirZ reference direction Z
-     */
-    private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
-        float dot = perp[0] * dirX + perp[BASIS_PERP_Y] * dirY + perp[BASIS_PERP_Z] * dirZ;
-        perp[0] -= dot * dirX;
-        perp[BASIS_PERP_Y] -= dot * dirY;
-        perp[BASIS_PERP_Z] -= dot * dirZ;
-        float len = (float) Math.sqrt(
-                perp[0] * perp[0] + perp[BASIS_PERP_Y] * perp[BASIS_PERP_Y]
-                        + perp[BASIS_PERP_Z] * perp[BASIS_PERP_Z]);
-        perp[0] /= len;
-        perp[BASIS_PERP_Y] /= len;
-        perp[BASIS_PERP_Z] /= len;
     }
 
     /**
@@ -300,18 +233,18 @@ public final class MetalSpikeVisual {
         float sin1 = (float) Math.sin(a1) * SPIKE_BASE_RADIUS;
         float midCos = (float) Math.cos(a0 + a1) * HALF;
         float midSin = (float) Math.sin(a0 + a1) * HALF;
-        float nx = basis[0] * midCos + basis[BASIS_CROSS_X] * midSin;
-        float ny = basis[BASIS_PERP_Y] * midCos + basis[BASIS_CROSS_Y] * midSin;
-        float nz = basis[BASIS_PERP_Z] * midCos + basis[BASIS_CROSS_Z] * midSin;
+        float nx = basis[ConeGeometry.PERP_X] * midCos + basis[ConeGeometry.CROSS_X] * midSin;
+        float ny = basis[ConeGeometry.PERP_Y] * midCos + basis[ConeGeometry.CROSS_Y] * midSin;
+        float nz = basis[ConeGeometry.PERP_Z] * midCos + basis[ConeGeometry.CROSS_Z] * midSin;
         ctx.vertexColored(color,
-                bx + basis[0] * cos0 + basis[BASIS_CROSS_X] * sin0,
-                by + basis[BASIS_PERP_Y] * cos0 + basis[BASIS_CROSS_Y] * sin0,
-                bz + basis[BASIS_PERP_Z] * cos0 + basis[BASIS_CROSS_Z] * sin0,
+                bx + basis[ConeGeometry.PERP_X] * cos0 + basis[ConeGeometry.CROSS_X] * sin0,
+                by + basis[ConeGeometry.PERP_Y] * cos0 + basis[ConeGeometry.CROSS_Y] * sin0,
+                bz + basis[ConeGeometry.PERP_Z] * cos0 + basis[ConeGeometry.CROSS_Z] * sin0,
                 uv.u0(), uv.v0(), nx, ny, nz);
         ctx.vertexColored(color,
-                bx + basis[0] * cos1 + basis[BASIS_CROSS_X] * sin1,
-                by + basis[BASIS_PERP_Y] * cos1 + basis[BASIS_CROSS_Y] * sin1,
-                bz + basis[BASIS_PERP_Z] * cos1 + basis[BASIS_CROSS_Z] * sin1,
+                bx + basis[ConeGeometry.PERP_X] * cos1 + basis[ConeGeometry.CROSS_X] * sin1,
+                by + basis[ConeGeometry.PERP_Y] * cos1 + basis[ConeGeometry.CROSS_Y] * sin1,
+                bz + basis[ConeGeometry.PERP_Z] * cos1 + basis[ConeGeometry.CROSS_Z] * sin1,
                 uv.u1(), uv.v0(), nx, ny, nz);
         ctx.vertexColored(color, tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
         ctx.vertexColored(color, tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);

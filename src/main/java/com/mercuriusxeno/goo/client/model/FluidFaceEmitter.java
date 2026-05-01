@@ -1,7 +1,9 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ber.CuboidBounds;
+import com.mercuriusxeno.goo.client.ber.RenderContext;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 

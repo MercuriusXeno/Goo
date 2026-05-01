@@ -4,7 +4,6 @@ import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
 import com.mercuriusxeno.goo.client.ber.CanisterFluidRenderer;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
 import com.mercuriusxeno.goo.client.ber.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;

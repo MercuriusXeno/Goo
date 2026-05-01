@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.throwing;
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.ability.ConeGeometry;
 import com.mercuriusxeno.goo.client.ber.CuboidBounds;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -154,30 +155,6 @@ public final class BlobFlightRenderer {
      * Epsilon for near-zero length detection in beam/direction math.
      */
     private static final double LENGTH_EPSILON = 1e-6;
-    /**
-     * Array offset for X component of the perpendicular basis vector.
-     */
-    private static final int PERP_X = 0;
-    /**
-     * Array offset for Y component of the perpendicular basis vector.
-     */
-    private static final int PERP_Y = 1;
-    /**
-     * Array offset for Z component of the perpendicular basis vector.
-     */
-    private static final int PERP_Z = 2;
-    /**
-     * Array offset for X component of the cross basis vector.
-     */
-    private static final int CROSS_X = 3;
-    /**
-     * Array offset for Y component of the cross basis vector.
-     */
-    private static final int CROSS_Y = 4;
-    /**
-     * Array offset for Z component of the cross basis vector.
-     */
-    private static final int CROSS_Z = 5;
     /**
      * UV midpoint factor for cone face texture coordinates.
      */
@@ -711,7 +688,7 @@ public final class BlobFlightRenderer {
         float dx = (float) dir.x;
         float dy = (float) dir.y;
         float dz = (float) dir.z;
-        float[] basis = buildDartBasis(dx, dy, dz);
+        float[] basis = ConeGeometry.computeBasis(dx, dy, dz);
 
         emitDartCone(pose, c, dx, dy, dz,
                 DART_FRONT_LENGTH * morphFrac,
@@ -782,15 +759,15 @@ public final class BlobFlightRenderer {
         float[] n = segmentNormal(basis, (a0 + a1) * UV_MIDPOINT);
 
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                basis[PERP_X] * cos0 + basis[CROSS_X] * sin0,
-                basis[PERP_Y] * cos0 + basis[CROSS_Y] * sin0,
-                basis[PERP_Z] * cos0 + basis[CROSS_Z] * sin0,
-                uv.u0(), uv.v0(), n[PERP_X], n[PERP_Y], n[PERP_Z]);
+                basis[ConeGeometry.PERP_X] * cos0 + basis[ConeGeometry.CROSS_X] * sin0,
+                basis[ConeGeometry.PERP_Y] * cos0 + basis[ConeGeometry.CROSS_Y] * sin0,
+                basis[ConeGeometry.PERP_Z] * cos0 + basis[ConeGeometry.CROSS_Z] * sin0,
+                uv.u0(), uv.v0(), n[ConeGeometry.PERP_X], n[ConeGeometry.PERP_Y], n[ConeGeometry.PERP_Z]);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
-                basis[PERP_X] * cos1 + basis[CROSS_X] * sin1,
-                basis[PERP_Y] * cos1 + basis[CROSS_Y] * sin1,
-                basis[PERP_Z] * cos1 + basis[CROSS_Z] * sin1,
-                uv.u1(), uv.v0(), n[PERP_X], n[PERP_Y], n[PERP_Z]);
+                basis[ConeGeometry.PERP_X] * cos1 + basis[ConeGeometry.CROSS_X] * sin1,
+                basis[ConeGeometry.PERP_Y] * cos1 + basis[ConeGeometry.CROSS_Y] * sin1,
+                basis[ConeGeometry.PERP_Z] * cos1 + basis[ConeGeometry.CROSS_Z] * sin1,
+                uv.u1(), uv.v0(), n[ConeGeometry.PERP_X], n[ConeGeometry.PERP_Y], n[ConeGeometry.PERP_Z]);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
                 tipX, tipY, tipZ, uMid, uv.v1(), dirX, dirY, dirZ);
         GooRenderUtil.vertexColored(pose, c, FULL_BRIGHT, GooRenderUtil.OPAQUE_WHITE,
@@ -808,64 +785,10 @@ public final class BlobFlightRenderer {
         float cosM = (float) Math.cos(midA);
         float sinM = (float) Math.sin(midA);
         return new float[]{
-                basis[PERP_X] * cosM + basis[CROSS_X] * sinM,
-                basis[PERP_Y] * cosM + basis[CROSS_Y] * sinM,
-                basis[PERP_Z] * cosM + basis[CROSS_Z] * sinM,
+                basis[ConeGeometry.PERP_X] * cosM + basis[ConeGeometry.CROSS_X] * sinM,
+                basis[ConeGeometry.PERP_Y] * cosM + basis[ConeGeometry.CROSS_Y] * sinM,
+                basis[ConeGeometry.PERP_Z] * cosM + basis[ConeGeometry.CROSS_Z] * sinM,
         };
-    }
-
-    /**
-     * Builds orthonormal perpendicular + cross basis vectors for a
-     * direction, used by the dart cone emitter.
-     *
-     * @param dirX direction X
-     * @param dirY direction Y
-     * @param dirZ direction Z
-     * @return array of {perpX, perpY, perpZ, crossX, crossY, crossZ}
-     */
-    private static float[] buildDartBasis(float dirX, float dirY, float dirZ) {
-        float[] perp = initialPerp(dirX, dirY, dirZ);
-        orthonormalize(perp, dirX, dirY, dirZ);
-        float crossX = dirY * perp[PERP_Z] - dirZ * perp[PERP_Y];
-        float crossY = dirZ * perp[PERP_X] - dirX * perp[PERP_Z];
-        float crossZ = dirX * perp[PERP_Y] - dirY * perp[PERP_X];
-        return new float[]{perp[PERP_X], perp[PERP_Y], perp[PERP_Z], crossX, crossY, crossZ};
-    }
-
-    /**
-     * Picks a seed perpendicular vector that avoids near-parallel alignment with dir.
-     *
-     * @param dirX the direction X component
-     * @param dirY the direction Y component
-     * @param dirZ the direction Z component
-     * @return a 3-element seed perpendicular vector
-     */
-    private static float[] initialPerp(float dirX, float dirY, float dirZ) {
-        if (Math.abs(dirY) < UP_THRESHOLD) {
-            return new float[]{-dirZ, 0, dirX};
-        }
-        return new float[]{1, 0, 0};
-    }
-
-    /**
-     * Gram-Schmidt orthonormalizes perp against dir in-place.
-     *
-     * @param perp the perpendicular vector to orthonormalize
-     * @param dirX the reference direction X component
-     * @param dirY the reference direction Y component
-     * @param dirZ the reference direction Z component
-     */
-    private static void orthonormalize(float[] perp, float dirX, float dirY, float dirZ) {
-        float dot = perp[PERP_X] * dirX + perp[PERP_Y] * dirY + perp[PERP_Z] * dirZ;
-        perp[PERP_X] -= dot * dirX;
-        perp[PERP_Y] -= dot * dirY;
-        perp[PERP_Z] -= dot * dirZ;
-        float len = (float) Math.sqrt(
-                perp[PERP_X] * perp[PERP_X] + perp[PERP_Y] * perp[PERP_Y]
-                        + perp[PERP_Z] * perp[PERP_Z]);
-        perp[PERP_X] /= len;
-        perp[PERP_Y] /= len;
-        perp[PERP_Z] /= len;
     }
 
     /**
