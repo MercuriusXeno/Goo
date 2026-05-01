@@ -153,10 +153,10 @@ public class HubBlockEntityRenderer
     private static void extractSlot(HubBlockEntity be, HubRenderState state,
             int slot, long gameTick) {
         ItemStack stack = be.getCanister(slot);
-        state.canisterPresent[slot] = !stack.isEmpty();
+        state.slots[slot].present = !stack.isEmpty();
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
-        state.topGasketPresent[slot] = meta.topGasketId() != null;
-        state.bottomGasketPresent[slot] = meta.bottomGasketId() != null;
+        state.slots[slot].topGasketPresent = meta.topGasketId() != null;
+        state.slots[slot].bottomGasketPresent = meta.bottomGasketId() != null;
         extractSlotFluid(be, state, slot);
         extractSlotStream(be, state, slot, gameTick);
     }
@@ -171,8 +171,8 @@ public class HubBlockEntityRenderer
     private static void extractSlotFluid(HubBlockEntity be, HubRenderState state, int slot) {
         CanisterFluidContent content = be.getSlotFluidContent(slot);
         if (content.isEmpty()) {
-            state.slotType[slot] = null;
-            state.slotFill[slot] = 0f;
+            state.slots[slot].type = null;
+            state.slots[slot].fill = 0f;
             return;
         }
         populateFilledSlot(be, state, slot, content);
@@ -188,8 +188,8 @@ public class HubBlockEntityRenderer
     private static void populateFilledSlot(HubBlockEntity be, HubRenderState state,
             int slot, CanisterFluidContent content) {
         int capacity = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
-        state.slotType[slot] = content.getGooType();
-        state.slotFill[slot] = Math.min(1f, (float) content.amount() / capacity);
+        state.slots[slot].type = content.getGooType();
+        state.slots[slot].fill = Math.min(1f, (float) content.amount() / capacity);
     }
 
     /**
@@ -202,8 +202,8 @@ public class HubBlockEntityRenderer
      */
     private static void extractSlotStream(HubBlockEntity be,
             HubRenderState state, int slot, long gameTick) {
-        state.streamType[slot] = be.containerState().getSlotStreamType(slot, gameTick);
-        state.streamRate[slot] = be.containerState().getSlotStreamRate(slot, gameTick);
+        state.slots[slot].streamType = be.containerState().getSlotStreamType(slot, gameTick);
+        state.slots[slot].streamRate = be.containerState().getSlotStreamRate(slot, gameTick);
     }
 
     /**
@@ -231,8 +231,8 @@ public class HubBlockEntityRenderer
      * @return true if anyCanister is present
      */
     private static boolean hasAnyCanister(HubRenderState state) {
-        for (boolean b : state.canisterPresent) {
-            if (b) { return true; }
+        for (SlotState slot : state.slots) {
+            if (slot.present) { return true; }
         }
         return false;
     }
@@ -252,7 +252,7 @@ public class HubBlockEntityRenderer
         if (hasAnyCopperCap(state)) {
             submitCopperCaps(poseStack, nodeCollector, light, state);
         }
-        if (GasketCapRenderer.hasAnyCap(state.topGasketPresent, state.bottomGasketPresent)) {
+        if (GasketCapRenderer.hasAnyCap(state.slots)) {
             submitChoralCaps(poseStack, nodeCollector, light, state);
         }
     }
@@ -292,9 +292,9 @@ public class HubBlockEntityRenderer
      */
     private static void renderCopperEndcaps(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                !state.topGasketPresent[i], !state.bottomGasketPresent[i]);
+                !state.slots[i].topGasketPresent, !state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -305,9 +305,9 @@ public class HubBlockEntityRenderer
      */
     private static void renderChoralEndcaps(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                state.topGasketPresent[i], state.bottomGasketPresent[i]);
+                state.slots[i].topGasketPresent, state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -319,8 +319,8 @@ public class HubBlockEntityRenderer
      */
     private static boolean hasAnyCopperCap(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.canisterPresent[i]
-                    && (!state.topGasketPresent[i] || !state.bottomGasketPresent[i])) {
+            if (state.slots[i].present
+                    && (!state.slots[i].topGasketPresent || !state.slots[i].bottomGasketPresent)) {
                 return true;
             }
         }

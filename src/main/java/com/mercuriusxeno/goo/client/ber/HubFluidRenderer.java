@@ -77,7 +77,7 @@ final class HubFluidRenderer {
             (pose, c) -> {
                 RenderContext ctx = new RenderContext(pose, c, light);
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.canisterPresent[i]) { renderBodySides(ctx, i); }
+                    if (state.slots[i].present) { renderBodySides(ctx, i); }
                 }
             });
     }
@@ -122,8 +122,8 @@ final class HubFluidRenderer {
      */
     private static void renderAllFluids(RenderContext ctx, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) {
-                renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
+            if (state.slots[i].type != null && state.slots[i].fill > 0f) {
+                renderFluidSurface(ctx, i, state.slots[i].type, state.slots[i].fill);
             }
         }
     }
@@ -136,7 +136,7 @@ final class HubFluidRenderer {
      */
     private static boolean hasAnyFluid(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) { return true; }
+            if (state.slots[i].type != null && state.slots[i].fill > 0f) { return true; }
         }
         return false;
     }
@@ -186,7 +186,7 @@ final class HubFluidRenderer {
      */
     private static void renderAllStreams(RenderContext ctx, float anim, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.streamType[i] == null) { continue; }
+            if (state.slots[i].streamType == null) { continue; }
             renderSlotStream(ctx, anim, state, i);
         }
     }
@@ -201,10 +201,10 @@ final class HubFluidRenderer {
     private static void renderSlotStream(RenderContext ctx, float anim, HubRenderState state, int slot) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
-        float yBottom = BODY_BOT + state.slotFill[slot] * (BODY_TOP - BODY_BOT);
+        float yBottom = BODY_BOT + state.slots[slot].fill * (BODY_TOP - BODY_BOT);
         GooStreamRenderer.renderStream(ctx,
             cx, cz, BODY_TOP, yBottom,
-            state.streamType[slot], state.streamRate[slot], anim);
+            state.slots[slot].streamType, state.slots[slot].streamRate, anim);
     }
 
     /**
@@ -215,7 +215,7 @@ final class HubFluidRenderer {
      */
     private static boolean hasAnyStream(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.streamType[i] != null) { return true; }
+            if (state.slots[i].streamType != null) { return true; }
         }
         return false;
     }

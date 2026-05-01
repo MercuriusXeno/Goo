@@ -32,17 +32,14 @@ public final class GasketCapRenderer {
     public record GasketUv(float u0, float u1, float v1) {}
 
     /**
-     * Returns true if any slot has a gasket on either end. Parallel boolean
-     * arrays are addressed by slot index, so both must have the same length
-     * (checked via {@code top.length}).
+     * Returns true if any slot has a gasket on either end.
      *
-     * @param top    per-slot top gasket presence flags
-     * @param bottom per-slot bottom gasket presence flags
-     * @return true if any index has a gasket on either side
+     * @param slots the slot snapshot array
+     * @return true if any slot has a gasket on either side
      */
-    public static boolean hasAnyCap(boolean[] top, boolean[] bottom) {
-        for (int i = 0; i < top.length; i++) {
-            if (top[i] || bottom[i]) { return true; }
+    public static boolean hasAnyCap(SlotState[] slots) {
+        for (SlotState slot : slots) {
+            if (slot.topGasketPresent || slot.bottomGasketPresent) { return true; }
         }
         return false;
     }

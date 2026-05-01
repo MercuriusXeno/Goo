@@ -80,7 +80,7 @@ public final class CanisterFluidRenderer {
         if (hasAnyCopperCap(state)) {
             submitCopperCaps(poseStack, nodeCollector, light, state);
         }
-        if (GasketCapRenderer.hasAnyCap(state.topGasketPresent, state.bottomGasketPresent)) {
+        if (GasketCapRenderer.hasAnyCap(state.slots)) {
             submitChoralCaps(poseStack, nodeCollector, light, state);
         }
     }
@@ -120,9 +120,9 @@ public final class CanisterFluidRenderer {
      */
     private static void renderCopperEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                !state.topGasketPresent[i], !state.bottomGasketPresent[i]);
+                !state.slots[i].topGasketPresent, !state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -133,9 +133,9 @@ public final class CanisterFluidRenderer {
      */
     private static void renderChoralEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                state.topGasketPresent[i], state.bottomGasketPresent[i]);
+                state.slots[i].topGasketPresent, state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -147,8 +147,8 @@ public final class CanisterFluidRenderer {
      */
     private static boolean hasAnyCopperCap(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.canisterPresent[i]
-                    && (!state.topGasketPresent[i] || !state.bottomGasketPresent[i])) {
+            if (state.slots[i].present
+                    && (!state.slots[i].topGasketPresent || !state.slots[i].bottomGasketPresent)) {
                 return true;
             }
         }
@@ -210,11 +210,11 @@ public final class CanisterFluidRenderer {
      */
     private static void renderAllFluids(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotFill[i] <= 0f) { continue; }
-            if (state.slotType[i] != null) {
-                renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
-            } else if (state.slotFluid[i] != Fluids.EMPTY) {
-                renderVanillaFluidSurface(ctx, i, state.slotFluid[i], state.slotFill[i]);
+            if (state.slots[i].fill <= 0f) { continue; }
+            if (state.slots[i].type != null) {
+                renderFluidSurface(ctx, i, state.slots[i].type, state.slots[i].fill);
+            } else if (state.slots[i].fluid != Fluids.EMPTY) {
+                renderVanillaFluidSurface(ctx, i, state.slots[i].fluid, state.slots[i].fill);
             }
         }
     }
@@ -227,9 +227,9 @@ public final class CanisterFluidRenderer {
      */
     private static boolean hasAnyFluid(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotFill[i] > 0f
-                    && (state.slotType[i] != null
-                        || state.slotFluid[i] != Fluids.EMPTY)) {
+            if (state.slots[i].fill > 0f
+                    && (state.slots[i].type != null
+                        || state.slots[i].fluid != Fluids.EMPTY)) {
                 return true;
             }
         }

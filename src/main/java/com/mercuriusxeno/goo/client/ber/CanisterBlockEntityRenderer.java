@@ -96,11 +96,11 @@ public class CanisterBlockEntityRenderer
     private static void extractSlot(CanisterBlockEntity be, CanisterRenderState state,
             int slot, long gameTick) {
         ItemStack stack = be.getCanister(slot);
-        state.canisterPresent[slot] = !stack.isEmpty();
+        state.slots[slot].present = !stack.isEmpty();
         extractSlotFluid(be, state, slot);
         CanisterMetadata meta = CanisterItem.getMetadata(stack);
-        state.topGasketPresent[slot] = meta.topGasketId() != null;
-        state.bottomGasketPresent[slot] = meta.bottomGasketId() != null;
+        state.slots[slot].topGasketPresent = meta.topGasketId() != null;
+        state.slots[slot].bottomGasketPresent = meta.bottomGasketId() != null;
         extractSlotStream(be, state, slot, gameTick);
     }
 
@@ -114,11 +114,11 @@ public class CanisterBlockEntityRenderer
      */
     private static void extractSlotStream(CanisterBlockEntity be,
             CanisterRenderState state, int slot, long gameTick) {
-        state.streamType[slot] = be.containerState().getSlotStreamType(slot, gameTick);
-        state.streamFluid[slot] = state.streamType[slot] == null
+        state.slots[slot].streamType = be.containerState().getSlotStreamType(slot, gameTick);
+        state.slots[slot].streamFluid = state.slots[slot].streamType == null
                 ? be.containerState().getSlotStreamFluid(slot, gameTick)
                 : Fluids.EMPTY;
-        state.streamRate[slot] = be.containerState().getSlotStreamRate(slot, gameTick);
+        state.slots[slot].streamRate = be.containerState().getSlotStreamRate(slot, gameTick);
     }
 
     /**
@@ -132,9 +132,9 @@ public class CanisterBlockEntityRenderer
             CanisterRenderState state, int slot) {
         CanisterFluidContent content = be.getSlotFluidContent(slot);
         if (content.isEmpty()) {
-            state.slotType[slot] = null;
-            state.slotFluid[slot] = Fluids.EMPTY;
-            state.slotFill[slot] = 0f;
+            state.slots[slot].type = null;
+            state.slots[slot].fluid = Fluids.EMPTY;
+            state.slots[slot].fill = 0f;
         } else {
             populateFilledSlot(be, state, slot, content);
         }
@@ -152,10 +152,10 @@ public class CanisterBlockEntityRenderer
     private static void populateFilledSlot(CanisterBlockEntity be,
             CanisterRenderState state, int slot, CanisterFluidContent content) {
         int cap = ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(be.getCanister(slot)));
-        state.slotType[slot] = content.getGooType();
-        state.slotFluid[slot] = content.getGooType() == null
+        state.slots[slot].type = content.getGooType();
+        state.slots[slot].fluid = content.getGooType() == null
                 ? content.fluid() : Fluids.EMPTY;
-        state.slotFill[slot] = logFill(content.amount(), cap);
+        state.slots[slot].fill = logFill(content.amount(), cap);
     }
 
     /**
@@ -196,8 +196,8 @@ public class CanisterBlockEntityRenderer
      * @return true if anyCanister is present
      */
     private static boolean hasAnyCanister(CanisterRenderState state) {
-        for (boolean b : state.canisterPresent) {
-            if (b) { return true; }
+        for (SlotState slot : state.slots) {
+            if (slot.present) { return true; }
         }
         return false;
     }
@@ -213,7 +213,7 @@ public class CanisterBlockEntityRenderer
             SubmitNodeCollector nodeCollector, CanisterRenderState state) {
         int light = state.lightCoords;
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             submitSlotBody(poseStack, nodeCollector, light, i);
         }
     }
@@ -297,10 +297,10 @@ public class CanisterBlockEntityRenderer
      */
     private static void renderAllStreams(RenderContext ctx, float anim, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.streamType[i] != null) {
+            if (state.slots[i].streamType != null) {
                 renderSlotStream(ctx, anim, state, i);
-            } else if (state.streamFluid[i] != null
-                    && state.streamFluid[i] != Fluids.EMPTY) {
+            } else if (state.slots[i].streamFluid != null
+                    && state.slots[i].streamFluid != Fluids.EMPTY) {
                 renderVanillaSlotStream(ctx, anim, state, i);
             }
         }
@@ -316,10 +316,10 @@ public class CanisterBlockEntityRenderer
     private static void renderSlotStream(RenderContext ctx, float anim, CanisterRenderState state, int slot) {
         float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
         float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        float yBottom = STREAM_Y_BOT + state.slotFill[slot] * (STREAM_Y_TOP - STREAM_Y_BOT);
+        float yBottom = STREAM_Y_BOT + state.slots[slot].fill * (STREAM_Y_TOP - STREAM_Y_BOT);
         GooStreamRenderer.renderStream(ctx,
             cx, cz, STREAM_Y_TOP, yBottom,
-            state.streamType[slot], state.streamRate[slot], anim);
+            state.slots[slot].streamType, state.slots[slot].streamRate, anim);
     }
 
     /**
@@ -340,17 +340,17 @@ public class CanisterBlockEntityRenderer
             RenderContext ctx, float anim, CanisterRenderState state, int slot) {
         float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
         float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        float yBottom = STREAM_Y_BOT + state.slotFill[slot] * (STREAM_Y_TOP - STREAM_Y_BOT);
+        float yBottom = STREAM_Y_BOT + state.slots[slot].fill * (STREAM_Y_TOP - STREAM_Y_BOT);
         GooStreamRenderer.renderStream(ctx,
                 cx, cz, STREAM_Y_TOP, yBottom,
-                state.streamFluid[slot], state.streamRate[slot], anim);
+                state.slots[slot].streamFluid, state.slots[slot].streamRate, anim);
     }
 
     private static boolean hasAnyStream(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.streamType[i] != null) { return true; }
-            if (state.streamFluid[i] != null
-                    && state.streamFluid[i] != Fluids.EMPTY) { return true; }
+            if (state.slots[i].streamType != null) { return true; }
+            if (state.slots[i].streamFluid != null
+                    && state.slots[i].streamFluid != Fluids.EMPTY) { return true; }
         }
         return false;
     }
