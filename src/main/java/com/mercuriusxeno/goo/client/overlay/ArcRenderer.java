@@ -2,7 +2,7 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.ThrowArc;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
-import com.mercuriusxeno.goo.client.ber.LineContext;
+import com.mercuriusxeno.goo.client.LineContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

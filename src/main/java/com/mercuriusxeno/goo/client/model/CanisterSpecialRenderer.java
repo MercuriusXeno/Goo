@@ -2,9 +2,9 @@ package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.client.ber.CanisterFluidRenderer;
-import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;

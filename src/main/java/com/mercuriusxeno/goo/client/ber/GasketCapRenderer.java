@@ -1,5 +1,8 @@
 package com.mercuriusxeno.goo.client.ber;
 
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.RenderContext;
+
 /**
  * Shared gasket endcap math for containers that stack gasket boxes on the
  * top and bottom of vertical fluid columns (canister slots, hub rings).

@@ -1,8 +1,8 @@
 package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
-import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.RenderContext;
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mercuriusxeno.goo.item.VatBlockItem;

@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.vat.VatBlock;
 import com.mercuriusxeno.goo.block.vat.VatBlockEntity;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.item.GooContents;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
