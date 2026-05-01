@@ -1,6 +1,5 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
 import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
 import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
@@ -20,10 +19,6 @@ import net.minecraft.world.level.material.Fluids;
  * Extracted to keep the parent BER under the PMD method-count threshold.
  */
 public final class CanisterFluidRenderer {
-
-    /** Block atlas texture path for fluid sprite lookups. */
-    private static final Identifier BLOCK_ATLAS_TEXTURE =
-        Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
     /** Copper endcap texture (default canister caps). */
     private static final Identifier COPPER_GASKET =
@@ -187,90 +182,16 @@ public final class CanisterFluidRenderer {
     // -- Fluid rendering --
 
     /**
-     * Batches all fluid surface quads into a single translucent draw call.
+     * Submits all fluid surfaces via the shared {@link SlottedFluidContainer} runner.
      *
      * @param poseStack the pose stack for rendering
      * @param nodeCollector the render node collector
-     * @param state the block state
+     * @param state the render state snapshot
      */
     static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CanisterRenderState state) {
-        if (!hasAnyFluid(state)) { return; }
-        int light = state.lightCoords;
-        nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(new RenderContext(pose, c, light), state));
-    }
-
-    /**
-     * Renders fluid surfaces for all filled slots in a single batch.
-     *
-     * @param ctx   the render context
-     * @param state the render state snapshot
-     */
-    private static void renderAllFluids(RenderContext ctx, CanisterRenderState state) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slots[i].fill <= 0f) { continue; }
-            if (state.slots[i].type != null) {
-                renderFluidSurface(ctx, i, state.slots[i].type, state.slots[i].fill);
-            } else if (state.slots[i].fluid != Fluids.EMPTY) {
-                renderVanillaFluidSurface(ctx, i, state.slots[i].fluid, state.slots[i].fill);
-            }
-        }
-    }
-
-    /**
-     * Returns true if any slot has fluid to render.
-     *
-     * @param state the block state
-     * @return true if anyFluid is present
-     */
-    private static boolean hasAnyFluid(CanisterRenderState state) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slots[i].fill > 0f
-                    && (state.slots[i].type != null
-                        || state.slots[i].fluid != Fluids.EMPTY)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Renders fluid geometry for a single slot: top face + 4 side faces
-     * from the canister body bottom up to the fill level. UVs are scaled
-     * to the cuboid's fraction of a 16px block to avoid texture squishing.
-     *
-     * @param ctx  the render context
-     * @param slot the slot index
-     * @param type the goo type
-     * @param fill the fill fraction in [0, 1]
-     */
-    private static void renderFluidSurface(RenderContext ctx, int slot, GooType type, float fill) {
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
-        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
-        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
-    }
-
-    /**
-     * Renders a vanilla (non-goo) fluid surface using the fluid's still texture.
-     *
-     * @param ctx   the render context
-     * @param slot  the slot index
-     * @param fluid the vanilla fluid
-     * @param fill  the fill fraction in [0, 1]
-     */
-    private static void renderVanillaFluidSurface(RenderContext ctx, int slot, Fluid fluid, float fill) {
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
-        TextureAtlasSprite sprite = lookupVanillaFluidSprite(fluid);
-        int tint = isWater(fluid) ? WATER_TINT : GooRenderUtil.OPAQUE_WHITE;
-        SlotFluidGeometry.renderFluidTop(ctx, b, sprite, tint);
-        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM, tint);
+        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, state.lightCoords,
+                state.slots, FLUID_GEOM, CanisterSlotLayout.SLOT_CENTERS_BLOCK, true);
     }
 
     /**
