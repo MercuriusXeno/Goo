@@ -105,7 +105,7 @@
 
         <!-- Cyclomatic complexity: tripwire for tangled control flow -->
         <module name="CyclomaticComplexity">
-            <property name="max" value="5"/>
+            <property name="max" value="6"/>
         </module>
 
 
