@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import java.util.Map;
 
 /**
@@ -37,26 +38,6 @@ final class GooRadialRenderer {
      * Darkening factor for unavailable wedges (multiplied per channel).
      */
     private static final float DISABLED_DIM = 0.4f;
-
-    /**
-     * Bit shift for red channel in ARGB packing.
-     */
-    private static final int RED_SHIFT = 16;
-
-    /**
-     * Bit shift for green channel in ARGB packing.
-     */
-    private static final int GREEN_SHIFT = 8;
-
-    /**
-     * Mask for extracting a single color channel (0-255).
-     */
-    private static final int CHANNEL_MASK = 0xFF;
-
-    /**
-     * Bit shift for alpha channel in ARGB packing.
-     */
-    private static final int ALPHA_SHIFT = 24;
 
     // --- Cancel zone constants ---
 
@@ -204,16 +185,16 @@ final class GooRadialRenderer {
      * @return the packed ARGB color with alpha and brightness adjustments
      */
     static int computeWedgeColor(int baseColor, boolean hovered, boolean disabled) {
-        int r = (baseColor >> RED_SHIFT) & CHANNEL_MASK;
-        int g = (baseColor >> GREEN_SHIFT) & CHANNEL_MASK;
-        int b = baseColor & CHANNEL_MASK;
+        int r = ARGB.red(baseColor);
+        int g = ARGB.green(baseColor);
+        int b = ARGB.blue(baseColor);
         if (disabled) {
             return packDisabledColor(r, g, b);
         }
         if (hovered) {
             return packHoveredColor(r, g, b);
         }
-        return (NORMAL_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
+        return ARGB.color(NORMAL_ALPHA, r, g, b);
     }
 
     /**
@@ -228,7 +209,7 @@ final class GooRadialRenderer {
         int dr = (int) (r * DISABLED_DIM);
         int dg = (int) (g * DISABLED_DIM);
         int db = (int) (b * DISABLED_DIM);
-        return (DISABLED_ALPHA << ALPHA_SHIFT) | (dr << RED_SHIFT) | (dg << GREEN_SHIFT) | db;
+        return ARGB.color(DISABLED_ALPHA, dr, dg, db);
     }
 
     /**
@@ -240,7 +221,7 @@ final class GooRadialRenderer {
      * @return the packed ARGB hovered color
      */
     private static int packHoveredColor(int r, int g, int b) {
-        return (HOVER_ALPHA << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | b;
+        return ARGB.color(HOVER_ALPHA, r, g, b);
     }
 
     /**

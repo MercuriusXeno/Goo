@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import java.util.List;
 
@@ -28,10 +29,6 @@ public final class MetalSpikeVisual {
     private static final Identifier BLOCK_ATLAS =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
-    /** Bit shift for alpha channel in ARGB. */
-    private static final int ALPHA_SHIFT = 24;
-    /** Mask for stripping alpha from an ARGB color. */
-    private static final int RGB_MASK = 0x00FFFFFF;
     /** Half-block offset for face and edge positioning. */
     private static final float HALF = 0.5f;
 
@@ -85,7 +82,7 @@ public final class MetalSpikeVisual {
      */
     public static void submit(ChainMarkerRenderState state,
                               PoseStack poseStack, SubmitNodeCollector nodeCollector) {
-        int color = (SPIKE_ALPHA << ALPHA_SHIFT) | (GooColors.highlight(state.gooType) & RGB_MASK);
+        int color = ARGB.color(SPIKE_ALPHA, GooColors.highlight(state.gooType));
         GooRenderUtil.UvRect uv = lookupSpriteUv(state.gooType);
         Direction face = state.placedFace;
         float cx = HALF - face.getStepX() * HALF;

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.ARGB;
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,11 +41,6 @@ public final class GhostMineVisual {
     private static final float DEPTH_ALPHA_DECAY = 0.80f;
     /** Line width for the perimeter wireframe. */
     private static final float GHOST_LINE_WIDTH = 2.0f;
-
-    /** Bit shift for alpha channel in ARGB. */
-    private static final int ALPHA_SHIFT = 24;
-    /** Mask for stripping alpha from an ARGB color. */
-    private static final int RGB_MASK = 0x00FFFFFF;
 
     /** Bit mask for 21-bit coordinate packing. */
     private static final long PACK_MASK = 0x1FFFFF;
@@ -84,9 +80,9 @@ public final class GhostMineVisual {
         List<int[]> offsets = computeFilteredOffsets(state);
         Set<Long> filled = packOffsets(offsets);
 
-        int edgeRgb = GooColors.edge(state.gooType) & RGB_MASK;
-        int fillColor = (GHOST_FILL_ALPHA << ALPHA_SHIFT) | edgeRgb;
-        int wireColor = (GHOST_WIRE_ALPHA << ALPHA_SHIFT) | edgeRgb;
+        int edgeRgb = GooColors.edge(state.gooType);
+        int fillColor = ARGB.color(GHOST_FILL_ALPHA, edgeRgb);
+        int wireColor = ARGB.color(GHOST_WIRE_ALPHA, edgeRgb);
 
         Direction blastDir = MODE_TUNNEL.equals(state.areaMode) ? state.placedFace.getOpposite() : null;
         int minedLayers = state.minedLayers;
@@ -194,8 +190,8 @@ public final class GhostMineVisual {
             return color;
         }
         float factor = (float) Math.sqrt(Math.pow(DEPTH_ALPHA_DECAY, effectiveDepth));
-        int alpha = (int) ((color >>> ALPHA_SHIFT) * factor);
-        return (alpha << ALPHA_SHIFT) | (color & RGB_MASK);
+        int alpha = (int) (ARGB.alpha(color) * factor);
+        return ARGB.color(alpha, color);
     }
 
     /**

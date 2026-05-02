@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 
 /**
@@ -60,10 +61,6 @@ public final class FuseOrbVisual {
     /** Minimum scale during implosion (fraction of normal). */
     private static final float IMPLOSION_MIN = 0.3f;
 
-    /** Bit shift for alpha channel in ARGB. */
-    private static final int ALPHA_SHIFT = 24;
-    /** Mask for stripping alpha from an ARGB color. */
-    private static final int RGB_MASK = 0x00FFFFFF;
     /** Center offset in block units. */
     private static final float BLOCK_CENTER = 0.5f;
     /** Divisor for converting crystal extent to half-size in block units. */
@@ -195,8 +192,8 @@ public final class FuseOrbVisual {
     private static int computeShellColor(ChainMarkerRenderState state) {
         int baseShellAlpha = state.targeted ? SHELL_ALPHA_TARGETED : SHELL_ALPHA;
         int rgb = state.gooType == GooType.GLOW
-                ? RGB_MASK : state.gooType.getColor();
-        return (baseShellAlpha << ALPHA_SHIFT) | (rgb & RGB_MASK);
+                ? GooRenderUtil.OPAQUE_WHITE : state.gooType.getColor();
+        return ARGB.color(baseShellAlpha, rgb);
     }
 
     /**

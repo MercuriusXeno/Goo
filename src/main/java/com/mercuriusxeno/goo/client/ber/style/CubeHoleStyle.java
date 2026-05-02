@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -91,10 +92,6 @@ public final class CubeHoleStyle implements NetherHoleStyle {
     private static final int OPAQUE_ALPHA = 0xFF;
     /** Maximum byte value for a 0..1 to byte mapping. */
     private static final int PROGRESS_BYTE_MAX = 255;
-    private static final int ALPHA_SHIFT = 24;
-    private static final int RED_CHANNEL_SHIFT = 16;
-    private static final int GREEN_CHANNEL_SHIFT = 8;
-    private static final int BLUE_CHANNEL_SHIFT = 0;
 
     /** Animation cycle length in ticks. Matches sphere style. */
     private static final int ANIMATION_CYCLE_TICKS = 64;
@@ -291,9 +288,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * @return the packed ARGB color
      */
     private static int packCubeUvColor(int uByte, int vByte) {
-        return (OPAQUE_ALPHA << ALPHA_SHIFT)
-            | (uByte << RED_CHANNEL_SHIFT)
-            | (vByte << GREEN_CHANNEL_SHIFT);
+        return ARGB.color(OPAQUE_ALPHA, uByte, vByte, 0);
     }
 
     /** Packs the occluder vertex color. The occluder shader ignores
@@ -303,10 +298,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * @return the packed ARGB color
      */
     private static int packCubeOccluderColor() {
-        return (OPAQUE_ALPHA << ALPHA_SHIFT)
-            | (PROGRESS_BYTE_MAX << RED_CHANNEL_SHIFT)
-            | (PROGRESS_BYTE_MAX << GREEN_CHANNEL_SHIFT)
-            | (PROGRESS_BYTE_MAX << BLUE_CHANNEL_SHIFT);
+        return ARGB.color(OPAQUE_ALPHA, PROGRESS_BYTE_MAX, PROGRESS_BYTE_MAX, PROGRESS_BYTE_MAX);
     }
 
 
@@ -456,10 +448,7 @@ public final class CubeHoleStyle implements NetherHoleStyle {
      * @return the packed ARGB color
      */
     private static int packDiskColor(int radialByte, int angularByte, int animByte) {
-        return (OPAQUE_ALPHA << ALPHA_SHIFT)
-            | (radialByte << RED_CHANNEL_SHIFT)
-            | (angularByte << GREEN_CHANNEL_SHIFT)
-            | (animByte << BLUE_CHANNEL_SHIFT);
+        return ARGB.color(OPAQUE_ALPHA, radialByte, angularByte, animByte);
     }
 
     /** Builds the disc's pre-computed angular sample table as stride-3

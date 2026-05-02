@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -80,15 +81,6 @@ public final class BlobFlightRenderer {
      */
     private static final float NORMAL_NEG = -1f;
 
-    /**
-     * Bit shift for alpha channel in ARGB.
-     */
-    private static final int ALPHA_SHIFT = 24;
-
-    /**
-     * RGB mask for stripping alpha from a color.
-     */
-    private static final int RGB_MASK = 0xFFFFFF;
 
     /**
      * Tail alpha value (semi-transparent).
@@ -286,7 +278,7 @@ public final class BlobFlightRenderer {
      */
     private static void renderShell(PoseStack poseStack, MultiBufferSource buffers,
                                     GooType type) {
-        int color = (SHELL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
+        int color = ARGB.color(SHELL_ALPHA, type.getColor());
         GooRenderUtil.UvRect uv = spriteToUv(type);
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
         com.mercuriusxeno.goo.client.RenderContext ctx = new com.mercuriusxeno.goo.client.RenderContext(poseStack.last(), c, FULL_BRIGHT);
@@ -319,7 +311,7 @@ public final class BlobFlightRenderer {
     private static void renderTail(PoseStack poseStack, MultiBufferSource buffers,
                                    GooType type, Vec3 velocity, float gameTime) {
         GooRenderUtil.UvRect uv = spriteToUv(type);
-        int tailColor = (TAIL_ALPHA << ALPHA_SHIFT) | (type.getColor() & RGB_MASK);
+        int tailColor = ARGB.color(TAIL_ALPHA, type.getColor());
         VertexConsumer c = buffers.getBuffer(RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE));
         TailAxes axes = buildTailAxes(velocity);
 

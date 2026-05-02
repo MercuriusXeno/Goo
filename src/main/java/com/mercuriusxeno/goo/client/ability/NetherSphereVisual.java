@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -64,22 +65,6 @@ public final class NetherSphereVisual {
      * Maximum byte value for a 0..1 to byte mapping.
      */
     private static final int PROGRESS_BYTE_MAX = 255;
-    /**
-     * Bit shift for the alpha channel in an ARGB color.
-     */
-    private static final int ALPHA_SHIFT = 24;
-    /**
-     * Bit shift for the red channel in an ARGB color.
-     */
-    private static final int RED_CHANNEL_SHIFT = 16;
-    /**
-     * Bit shift for the green channel in an ARGB color.
-     */
-    private static final int GREEN_CHANNEL_SHIFT = 8;
-    /**
-     * Bit shift for the blue channel in an ARGB color.
-     */
-    private static final int BLUE_CHANNEL_SHIFT = 0;
     /**
      * Maximum encodable radius for the {@code Color.b} channel (in world blocks).
      * Must match the {@code MAX_ENCODED_RADIUS} constants in
@@ -401,10 +386,7 @@ public final class NetherSphereVisual {
         int scaleByte = Math.round(clamp01(scale) * PROGRESS_BYTE_MAX);
         int animByte = Math.round(clamp01(animationTime) * PROGRESS_BYTE_MAX);
         int radiusByte = Math.round(clamp01(visibleRadius / MAX_ENCODED_RADIUS) * PROGRESS_BYTE_MAX);
-        return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
-                | (scaleByte << RED_CHANNEL_SHIFT)
-                | (animByte << GREEN_CHANNEL_SHIFT)
-                | (radiusByte << BLUE_CHANNEL_SHIFT);
+        return ARGB.color(BLACKHOLE_ALPHA, scaleByte, animByte, radiusByte);
     }
 
     /**
@@ -418,10 +400,7 @@ public final class NetherSphereVisual {
      * @return the packed ARGB color
      */
     private static int packDiskColor(int radialByte, int angularByte, int animByte) {
-        return (BLACKHOLE_ALPHA << ALPHA_SHIFT)
-                | (radialByte << RED_CHANNEL_SHIFT)
-                | (angularByte << GREEN_CHANNEL_SHIFT)
-                | (animByte << BLUE_CHANNEL_SHIFT);
+        return ARGB.color(BLACKHOLE_ALPHA, radialByte, angularByte, animByte);
     }
 
 

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.Direction;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -145,16 +146,6 @@ public final class GlowFadeVisual {
     private static final int HASH_PRIME_C = 7;
 
     /**
-     * Bit shift for alpha channel in ARGB.
-     */
-    private static final int ALPHA_SHIFT = 24;
-
-    /**
-     * Mask for stripping alpha from an ARGB color.
-     */
-    private static final int RGB_MASK = 0x00FFFFFF;
-
-    /**
      * Array index for X component in offset triples.
      */
     private static final int X = 0;
@@ -192,8 +183,8 @@ public final class GlowFadeVisual {
         float pulse = FADE_PULSE_MIN + (1f - FADE_PULSE_MIN)
                 * (HALF + HALF * (float) Math.sin(gameTime * FADE_PULSE_SPEED));
         int pulsedAlpha = (int) (FADE_WALL_ALPHA * pulse);
-        int pulsedBase = (pulsedAlpha << ALPHA_SHIFT) | (baseColor & RGB_MASK);
-        int transparentColor = baseColor & RGB_MASK;
+        int pulsedBase = ARGB.color(pulsedAlpha, baseColor);
+        int transparentColor = ARGB.color(0, baseColor);
         Set<Long> blobMost = computeBlobMostLayer(offsets, placedFace);
         submitPrimaryPass(poseStack, nodeCollector, offsets, filled,
                 blobMost, placedFace, pulsedBase, transparentColor, gameTime);
@@ -252,8 +243,7 @@ public final class GlowFadeVisual {
                                             SubmitNodeCollector nodeCollector, List<int[]> offsets,
                                             Set<Long> filled, Set<Long> blobMost, Direction placedFace,
                                             int baseColor, float gameTime) {
-        int rgb = baseColor & RGB_MASK;
-        int transparentColor = rgb;
+        int transparentColor = ARGB.color(0, baseColor);
         nodeCollector.submitCustomGeometry(poseStack,
                 GooRenderTypes.QUADS_ADDITIVE_NO_DEPTH,
                 (pose, c) -> {
@@ -262,7 +252,7 @@ public final class GlowFadeVisual {
                             continue;
                         }
                         emitEdgesForBlock(pose, c, o, placedFace, filled,
-                                (FADE_WALL_ALPHA << ALPHA_SHIFT) | rgb,
+                                ARGB.color(FADE_WALL_ALPHA, baseColor),
                                 transparentColor, gameTime,
                                 GlowFadeVisual::computeBroadStripHeight,
                                 GlowFadeVisual::computeBroadBand);
@@ -583,8 +573,8 @@ public final class GlowFadeVisual {
      * @return the color with scaled alpha
      */
     private static int scaleColorAlpha(int argb, float factor) {
-        int a = (int) ((argb >>> ALPHA_SHIFT) * factor);
-        return (a << ALPHA_SHIFT) | (argb & RGB_MASK);
+        int a = (int) (ARGB.alpha(argb) * factor);
+        return ARGB.color(a, argb);
     }
 
     /**
