@@ -36,6 +36,24 @@ public final class CanisterSlotLayout {
             {8, 13}, // slot 7 (S)
             {13, 13}, // slot 8 (SE)
     };
+    /** Pixels per block; converts pixel-space coords to block-space. */
+    private static final float BLOCK_PIXELS = 16f;
+    /**
+     * Slot centers in block-local coordinates ({@code SLOT_CENTERS / 16}).
+     * Precomputed for renderers that consume block-coord positions.
+     */
+    public static final float[][] SLOT_CENTERS_BLOCK = buildBlockCenters();
+
+    private static float[][] buildBlockCenters() {
+        float[][] block = new float[SLOT_COUNT][];
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            block[i] = new float[]{
+                    SLOT_CENTERS[i][0] / BLOCK_PIXELS,
+                    SLOT_CENTERS[i][1] / BLOCK_PIXELS
+            };
+        }
+        return block;
+    }
     /** Sentinel value: no matching slot found. */
     /**
      * Number of columns (and rows) in the grid.

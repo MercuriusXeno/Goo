@@ -1,11 +1,12 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client.ability;
 
 import com.mercuriusxeno.goo.client.GooRenderTypes;
-import com.mercuriusxeno.goo.client.ber.ChainMarkerBlockEntityRenderer.FaceEdge;
+import com.mercuriusxeno.goo.client.ability.GhostMineVisual.FaceEdge;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.Direction;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -14,10 +15,10 @@ import java.util.function.BiFunction;
  * Renders aurora-style fade walls rising from the perimeter edges of
  * a chain marker's ghost outline. Two additive passes create layered
  * visual complexity: a primary narrow-band curtain and a broad slow
- * sweep. Extracted from {@link ChainMarkerBlockEntityRenderer} to
- * keep that class under its method budget.
+ * sweep. Layered on top of {@link GhostMineVisual}'s outline pass
+ * for GLOW-typed chain markers.
  */
-public final class AuroraFadeWallRenderer {
+public final class GlowFadeVisual {
 
     /**
      * Maximum height of the fade wall in blocks (half block).
@@ -145,16 +146,6 @@ public final class AuroraFadeWallRenderer {
     private static final int HASH_PRIME_C = 7;
 
     /**
-     * Bit shift for alpha channel in ARGB.
-     */
-    private static final int ALPHA_SHIFT = 24;
-
-    /**
-     * Mask for stripping alpha from an ARGB color.
-     */
-    private static final int RGB_MASK = 0x00FFFFFF;
-
-    /**
      * Array index for X component in offset triples.
      */
     private static final int X = 0;
@@ -169,7 +160,7 @@ public final class AuroraFadeWallRenderer {
      */
     private static final int Z = 2;
 
-    private AuroraFadeWallRenderer() {
+    private GlowFadeVisual() {
     }
 
     /**
@@ -192,8 +183,8 @@ public final class AuroraFadeWallRenderer {
         float pulse = FADE_PULSE_MIN + (1f - FADE_PULSE_MIN)
                 * (HALF + HALF * (float) Math.sin(gameTime * FADE_PULSE_SPEED));
         int pulsedAlpha = (int) (FADE_WALL_ALPHA * pulse);
-        int pulsedBase = (pulsedAlpha << ALPHA_SHIFT) | (baseColor & RGB_MASK);
-        int transparentColor = baseColor & RGB_MASK;
+        int pulsedBase = ARGB.color(pulsedAlpha, baseColor);
+        int transparentColor = ARGB.color(0, baseColor);
         Set<Long> blobMost = computeBlobMostLayer(offsets, placedFace);
         submitPrimaryPass(poseStack, nodeCollector, offsets, filled,
                 blobMost, placedFace, pulsedBase, transparentColor, gameTime);
@@ -223,13 +214,13 @@ public final class AuroraFadeWallRenderer {
                 GooRenderTypes.QUADS_ADDITIVE_NO_DEPTH,
                 (pose, c) -> {
                     for (int[] o : offsets) {
-                        if (!blobMost.contains(ChainMarkerBlockEntityRenderer.packPos(o[X], o[Y], o[Z]))) {
+                        if (!blobMost.contains(GhostMineVisual.packPos(o[X], o[Y], o[Z]))) {
                             continue;
                         }
                         emitEdgesForBlock(pose, c, o, placedFace, filled,
                                 pulsedBase, transparentColor, gameTime,
-                                AuroraFadeWallRenderer::computeStripHeight,
-                                AuroraFadeWallRenderer::computeBandIntensity);
+                                GlowFadeVisual::computeStripHeight,
+                                GlowFadeVisual::computeBandIntensity);
                     }
                 });
     }
@@ -252,20 +243,19 @@ public final class AuroraFadeWallRenderer {
                                             SubmitNodeCollector nodeCollector, List<int[]> offsets,
                                             Set<Long> filled, Set<Long> blobMost, Direction placedFace,
                                             int baseColor, float gameTime) {
-        int rgb = baseColor & RGB_MASK;
-        int transparentColor = rgb;
+        int transparentColor = ARGB.color(0, baseColor);
         nodeCollector.submitCustomGeometry(poseStack,
                 GooRenderTypes.QUADS_ADDITIVE_NO_DEPTH,
                 (pose, c) -> {
                     for (int[] o : offsets) {
-                        if (!blobMost.contains(ChainMarkerBlockEntityRenderer.packPos(o[X], o[Y], o[Z]))) {
+                        if (!blobMost.contains(GhostMineVisual.packPos(o[X], o[Y], o[Z]))) {
                             continue;
                         }
                         emitEdgesForBlock(pose, c, o, placedFace, filled,
-                                (FADE_WALL_ALPHA << ALPHA_SHIFT) | rgb,
+                                ARGB.color(FADE_WALL_ALPHA, baseColor),
                                 transparentColor, gameTime,
-                                AuroraFadeWallRenderer::computeBroadStripHeight,
-                                AuroraFadeWallRenderer::computeBroadBand);
+                                GlowFadeVisual::computeBroadStripHeight,
+                                GlowFadeVisual::computeBroadBand);
                     }
                 });
     }
@@ -292,12 +282,12 @@ public final class AuroraFadeWallRenderer {
                                           Set<Long> filled, int baseColor, int transparentColor,
                                           float gameTime, HeightFunction heightFn,
                                           BiFunction<Float, Float, Float> bandFn) {
-        FaceEdge[] edges = ChainMarkerBlockEntityRenderer.getFaceEdges(faceDir);
+        FaceEdge[] edges = GhostMineVisual.getFaceEdges(faceDir);
         float cx = pos[X] + HALF + faceDir.getStepX() * HALF;
         float cy = pos[Y] + HALF + faceDir.getStepY() * HALF;
         float cz = pos[Z] + HALF + faceDir.getStepZ() * HALF;
         for (FaceEdge edge : edges) {
-            if (ChainMarkerBlockEntityRenderer.isCoplanarNeighbor(pos, faceDir, edge.neighborDir(), filled)) {
+            if (GhostMineVisual.isCoplanarNeighbor(pos, faceDir, edge.neighborDir(), filled)) {
                 continue;
             }
             emitAuroraStrips(pose, consumer, cx, cy, cz,
@@ -583,8 +573,8 @@ public final class AuroraFadeWallRenderer {
      * @return the color with scaled alpha
      */
     private static int scaleColorAlpha(int argb, float factor) {
-        int a = (int) ((argb >>> ALPHA_SHIFT) * factor);
-        return (a << ALPHA_SHIFT) | (argb & RGB_MASK);
+        int a = (int) (ARGB.alpha(argb) * factor);
+        return ARGB.color(a, argb);
     }
 
     /**
@@ -615,7 +605,7 @@ public final class AuroraFadeWallRenderer {
         }
         Set<Long> result = HashSet.newHashSet(bestPerColumn.size());
         for (int[] o : bestPerColumn.values()) {
-            result.add(ChainMarkerBlockEntityRenderer.packPos(
+            result.add(GhostMineVisual.packPos(
                     o[X], o[Y], o[Z]));
         }
         return result;
@@ -632,9 +622,9 @@ public final class AuroraFadeWallRenderer {
      */
     private static long packPerpendicular(int[] pos, Direction face) {
         return switch (face.getAxis()) {
-            case X -> ChainMarkerBlockEntityRenderer.packPos(0, pos[Y], pos[Z]);
-            case Y -> ChainMarkerBlockEntityRenderer.packPos(pos[X], 0, pos[Z]);
-            case Z -> ChainMarkerBlockEntityRenderer.packPos(pos[X], pos[Y], 0);
+            case X -> GhostMineVisual.packPos(0, pos[Y], pos[Z]);
+            case Y -> GhostMineVisual.packPos(pos[X], 0, pos[Z]);
+            case Z -> GhostMineVisual.packPos(pos[X], pos[Y], 0);
         };
     }
 

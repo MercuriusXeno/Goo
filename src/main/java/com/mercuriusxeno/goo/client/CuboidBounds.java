@@ -1,4 +1,4 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client;
 
 /**
  * Axis-aligned box bounds for BER rendering. Lighter than AABB (floats, no clamping).

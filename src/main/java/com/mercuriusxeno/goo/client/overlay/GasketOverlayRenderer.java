@@ -2,8 +2,8 @@ package com.mercuriusxeno.goo.client.overlay;
 
 import com.mercuriusxeno.goo.Goo;
 import com.mercuriusxeno.goo.block.gasket.IGasketHolder;
-import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.LineContext;
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.LineContext;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mojang.blaze3d.vertex.PoseStack;

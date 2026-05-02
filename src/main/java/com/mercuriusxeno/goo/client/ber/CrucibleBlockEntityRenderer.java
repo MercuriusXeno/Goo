@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -47,10 +48,6 @@ public class CrucibleBlockEntityRenderer
     private static final int MAX_ALPHA = 255;
     /** Byte mask for clamping to [0, 255]. */
     private static final int BYTE_MASK = 0xFF;
-    /** RGB channel mask: keeps RGB, clears alpha byte. */
-    private static final int RGB_MASK = 0x00FFFFFF;
-    /** Bit shift for the alpha channel in ARGB format. */
-    private static final int ALPHA_SHIFT = 24;
 
     /**
      * Creates a crucible BER. Context is unused.
@@ -198,7 +195,7 @@ public class CrucibleBlockEntityRenderer
      */
     private static int packArgb(float alpha) {
         int a = (int) (alpha * MAX_ALPHA) & BYTE_MASK;
-        return RGB_MASK | (a << ALPHA_SHIFT);
+        return ARGB.color(a, GooRenderUtil.OPAQUE_WHITE);
     }
 
     /**

@@ -1,9 +1,11 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.canister.CanisterBlockEntity;
+import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
 import com.mercuriusxeno.goo.block.canister.CanisterSlotLayout;
+import com.mercuriusxeno.goo.client.CuboidBounds;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -19,10 +21,6 @@ import net.minecraft.world.level.material.Fluids;
  * Extracted to keep the parent BER under the PMD method-count threshold.
  */
 public final class CanisterFluidRenderer {
-
-    /** Block atlas texture path for fluid sprite lookups. */
-    private static final Identifier BLOCK_ATLAS_TEXTURE =
-        Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
     /** Copper endcap texture (default canister caps). */
     private static final Identifier COPPER_GASKET =
@@ -41,47 +39,23 @@ public final class CanisterFluidRenderer {
     /** Vanilla lava still sprite ID in the block atlas. */
     private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
 
-    /** Canister half-width: 2px. */
-    private static final float HW = 2f / 16f;
-
-    /** Top of lower gasket / bottom of body (y=1px). */
-    private static final float BODY_BOT = 1f / 16f;
-
-    /** Top of body / bottom of upper gasket (y=11px). */
-    private static final float BODY_TOP = 11f / 16f;
-
-    /** Bottom of lower gasket (y=0). */
-    private static final float GASKET_BOT = 0f;
-
-    /** Top of upper gasket (y=12px). */
-    private static final float GASKET_TOP = 12f / 16f;
-
-    /** Inset from body walls to avoid z-fighting with fluid surfaces (0.5px). */
-    private static final float FLUID_INSET = 0.5f / 16f;
-
     /** Shared fluid geometry constants for canister slots. */
     private static final SlotFluidGeometry.SlotGeometry FLUID_GEOM =
-        new SlotFluidGeometry.SlotGeometry(HW, BODY_BOT, BODY_TOP, FLUID_INSET);
+        new SlotFluidGeometry.SlotGeometry(CanisterGeometry.HW, CanisterGeometry.BODY_BOT,
+                CanisterGeometry.BODY_TOP, CanisterGeometry.FLUID_INSET);
 
     /** Pixels per block for coordinate conversion. */
     private static final float BLOCK_PIXELS = 16f;
 
-    /** Gasket side U start: column 4/16. */
-    private static final float GS_U0 = 0.25f;
-
-    /** Gasket side U end: column 8/16. */
-    private static final float GS_U1 = 0.5f;
-
-    /** Gasket side V end: row 1/16. */
-    private static final float GS_V1 = 0.0625f;
-
     /** Y ranges describing where gasket boxes land in a canister slot. */
     private static final GasketCapRenderer.GasketYRanges GASKET_Y =
-        new GasketCapRenderer.GasketYRanges(BODY_BOT, BODY_TOP, GASKET_BOT, GASKET_TOP);
+        new GasketCapRenderer.GasketYRanges(CanisterGeometry.BODY_BOT, CanisterGeometry.BODY_TOP,
+                CanisterGeometry.GASKET_BOT, CanisterGeometry.GASKET_TOP);
 
     /** Gasket side UV region (uniform across container types). */
     private static final GasketCapRenderer.GasketUv GASKET_UV =
-        new GasketCapRenderer.GasketUv(GS_U0, GS_U1, GS_V1);
+        new GasketCapRenderer.GasketUv(CanisterGeometry.GS_U0, CanisterGeometry.GS_U1,
+                CanisterGeometry.GS_V1);
 
     private CanisterFluidRenderer() {
     }
@@ -103,7 +77,7 @@ public final class CanisterFluidRenderer {
         if (hasAnyCopperCap(state)) {
             submitCopperCaps(poseStack, nodeCollector, light, state);
         }
-        if (GasketCapRenderer.hasAnyCap(state.topGasketPresent, state.bottomGasketPresent)) {
+        if (GasketCapRenderer.hasAnyCap(state.slots)) {
             submitChoralCaps(poseStack, nodeCollector, light, state);
         }
     }
@@ -143,9 +117,9 @@ public final class CanisterFluidRenderer {
      */
     private static void renderCopperEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                !state.topGasketPresent[i], !state.bottomGasketPresent[i]);
+                !state.slots[i].topGasketPresent, !state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -156,9 +130,9 @@ public final class CanisterFluidRenderer {
      */
     private static void renderChoralEndcaps(RenderContext ctx, CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (!state.canisterPresent[i]) { continue; }
+            if (!state.slots[i].present) { continue; }
             renderEndcaps(ctx, i,
-                state.topGasketPresent[i], state.bottomGasketPresent[i]);
+                state.slots[i].topGasketPresent, state.slots[i].bottomGasketPresent);
         }
     }
 
@@ -170,8 +144,8 @@ public final class CanisterFluidRenderer {
      */
     private static boolean hasAnyCopperCap(CanisterRenderState state) {
         for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.canisterPresent[i]
-                    && (!state.topGasketPresent[i] || !state.bottomGasketPresent[i])) {
+            if (state.slots[i].present
+                    && (!state.slots[i].topGasketPresent || !state.slots[i].bottomGasketPresent)) {
                 return true;
             }
         }
@@ -204,96 +178,22 @@ public final class CanisterFluidRenderer {
         return GasketCapRenderer.slotBoundsXZ(
             CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS,
             CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS,
-            HW);
+            CanisterGeometry.HW);
     }
 
     // -- Fluid rendering --
 
     /**
-     * Batches all fluid surface quads into a single translucent draw call.
+     * Submits all fluid surfaces via the shared {@link SlottedFluidContainer} runner.
      *
      * @param poseStack the pose stack for rendering
      * @param nodeCollector the render node collector
-     * @param state the block state
+     * @param state the render state snapshot
      */
     static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CanisterRenderState state) {
-        if (!hasAnyFluid(state)) { return; }
-        int light = state.lightCoords;
-        nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(new RenderContext(pose, c, light), state));
-    }
-
-    /**
-     * Renders fluid surfaces for all filled slots in a single batch.
-     *
-     * @param ctx   the render context
-     * @param state the render state snapshot
-     */
-    private static void renderAllFluids(RenderContext ctx, CanisterRenderState state) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotFill[i] <= 0f) { continue; }
-            if (state.slotType[i] != null) {
-                renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
-            } else if (state.slotFluid[i] != Fluids.EMPTY) {
-                renderVanillaFluidSurface(ctx, i, state.slotFluid[i], state.slotFill[i]);
-            }
-        }
-    }
-
-    /**
-     * Returns true if any slot has fluid to render.
-     *
-     * @param state the block state
-     * @return true if anyFluid is present
-     */
-    private static boolean hasAnyFluid(CanisterRenderState state) {
-        for (int i = 0; i < CanisterBlockEntity.MAX_SLOTS; i++) {
-            if (state.slotFill[i] > 0f
-                    && (state.slotType[i] != null
-                        || state.slotFluid[i] != Fluids.EMPTY)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Renders fluid geometry for a single slot: top face + 4 side faces
-     * from the canister body bottom up to the fill level. UVs are scaled
-     * to the cuboid's fraction of a 16px block to avoid texture squishing.
-     *
-     * @param ctx  the render context
-     * @param slot the slot index
-     * @param type the goo type
-     * @param fill the fill fraction in [0, 1]
-     */
-    private static void renderFluidSurface(RenderContext ctx, int slot, GooType type, float fill) {
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
-        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
-        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
-    }
-
-    /**
-     * Renders a vanilla (non-goo) fluid surface using the fluid's still texture.
-     *
-     * @param ctx   the render context
-     * @param slot  the slot index
-     * @param fluid the vanilla fluid
-     * @param fill  the fill fraction in [0, 1]
-     */
-    private static void renderVanillaFluidSurface(RenderContext ctx, int slot, Fluid fluid, float fill) {
-        float cx = CanisterSlotLayout.SLOT_CENTERS[slot][0] / BLOCK_PIXELS;
-        float cz = CanisterSlotLayout.SLOT_CENTERS[slot][1] / BLOCK_PIXELS;
-        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
-        TextureAtlasSprite sprite = lookupVanillaFluidSprite(fluid);
-        int tint = isWater(fluid) ? WATER_TINT : GooRenderUtil.OPAQUE_WHITE;
-        SlotFluidGeometry.renderFluidTop(ctx, b, sprite, tint);
-        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM, tint);
+        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, state.lightCoords,
+                state.slots, FLUID_GEOM, CanisterSlotLayout.SLOT_CENTERS_BLOCK, true);
     }
 
     /**

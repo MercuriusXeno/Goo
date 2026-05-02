@@ -1,7 +1,7 @@
 package com.mercuriusxeno.goo.client.overlay;
 
-import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.LineContext;
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.LineContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;

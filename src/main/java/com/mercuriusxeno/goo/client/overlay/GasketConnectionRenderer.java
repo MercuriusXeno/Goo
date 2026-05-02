@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.client.overlay;
 
-import com.mercuriusxeno.goo.client.ber.LineContext;
+import com.mercuriusxeno.goo.client.LineContext;
 import com.mercuriusxeno.goo.item.gasket.GasketPartner;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mojang.blaze3d.vertex.PoseStack;

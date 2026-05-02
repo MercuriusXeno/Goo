@@ -609,6 +609,9 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
                 CompoundTag slotTag = root.contains(key) ? root.getCompoundOrEmpty(key) : new CompoundTag();
                 slot.load(slotTag);
             }
+            // slot.load() skips structure-changed callbacks; rebuild now so
+            // raycasting + outline rendering see the loaded slot occupancy.
+            state.rebuildCompositeShape();
         });
         gasket.loadAdditional(input);
         rebuildAllSlotHandlers();

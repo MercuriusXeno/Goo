@@ -3,7 +3,9 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.tap.TapBlock;
 import com.mercuriusxeno.goo.block.tap.TapBlockEntity;
+import com.mercuriusxeno.goo.client.CuboidBounds;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
@@ -136,7 +138,7 @@ public class TapBlockEntityRenderer
      * @param state    the render state to populate
      */
     private static void extractCanisterContents(ItemStack canister, TapRenderState state) {
-        state.matrices = GooEnchantments.getCompressionLevel(canister);
+        state.slot.matrices = GooEnchantments.getCompressionLevel(canister);
         CanisterFluidContent content = CanisterItem.getFluidContent(canister);
         if (content.isEmpty()) {
             clearContents(state);
@@ -152,9 +154,9 @@ public class TapBlockEntityRenderer
      * @param state   the render state to populate
      */
     private static void extractNonEmptyContents(CanisterFluidContent content, TapRenderState state) {
-        int capacity = ContainerCapacity.canisterCapacity(state.matrices);
-        state.gooType = content.getGooType();
-        state.fill = Math.min(1f, (float) content.amount() / capacity);
+        int capacity = ContainerCapacity.canisterCapacity(state.slot.matrices);
+        state.slot.type = content.getGooType();
+        state.slot.fill = Math.min(1f, (float) content.amount() / capacity);
     }
 
     /**
@@ -163,8 +165,8 @@ public class TapBlockEntityRenderer
      * @param state the render state to clear
      */
     private static void clearContents(TapRenderState state) {
-        state.gooType = null;
-        state.fill = 0f;
+        state.slot.type = null;
+        state.slot.fill = 0f;
     }
 
     /**
@@ -180,7 +182,7 @@ public class TapBlockEntityRenderer
                                        TapRenderState state, float cx, float cz) {
         submitBody(poseStack, nodeCollector, state, cx, cz);
         submitGaskets(poseStack, nodeCollector, state, cx, cz);
-        if (state.gooType != null && state.fill > 0f) {
+        if (state.slot.type != null && state.slot.fill > 0f) {
             submitFluid(poseStack, nodeCollector, state, cx, cz);
         }
     }
@@ -261,8 +263,8 @@ public class TapBlockEntityRenderer
                                     SubmitNodeCollector nodeCollector, TapRenderState state,
                                     float cx, float cz) {
         int light = state.lightCoords;
-        GooType type = state.gooType;
-        float fill = state.fill;
+        GooType type = state.slot.type;
+        float fill = state.slot.fill;
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> renderFluidGeometry(new RenderContext(pose, c, light), type, fill, cx, cz));
@@ -304,8 +306,8 @@ public class TapBlockEntityRenderer
                                    Vec3 cameraPos, ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         state.facing = be.getBlockState().getValue(TapBlock.FACING);
-        state.hasCanister = !be.getCanister().isEmpty();
-        if (state.hasCanister) {
+        state.slot.present = !be.getCanister().isEmpty();
+        if (state.slot.present) {
             extractCanisterContents(be.getCanister(), state);
         } else {
             clearContents(state);
@@ -323,7 +325,7 @@ public class TapBlockEntityRenderer
     @Override
     public void submit(TapRenderState state, PoseStack poseStack,
                        SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
-        if (!state.hasCanister) {
+        if (!state.slot.present) {
             return;
         }
         AABB sb = TapBlock.canisterSlotShape(state.facing).bounds();

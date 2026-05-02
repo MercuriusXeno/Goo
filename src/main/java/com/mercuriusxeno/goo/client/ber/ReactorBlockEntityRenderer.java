@@ -3,7 +3,9 @@ package com.mercuriusxeno.goo.client.ber;
 import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.reactor.ReactorBlock;
 import com.mercuriusxeno.goo.block.reactor.ReactorBlockEntity;
+import com.mercuriusxeno.goo.client.CuboidBounds;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.ContainerCapacity;
@@ -183,12 +185,12 @@ public class ReactorBlockEntityRenderer
      * @param state the render state
      */
     private static void extractCanister(ReactorBlockEntity be, ReactorRenderState state) {
-        state.hasCanister = !be.getOutputCanister().isEmpty();
-        if (state.hasCanister) {
+        state.slot.present = !be.getOutputCanister().isEmpty();
+        if (state.slot.present) {
             extractContents(be.getOutputCanister(), state);
         } else {
-            state.gooType = null;
-            state.fill = 0f;
+            state.slot.type = null;
+            state.slot.fill = 0f;
         }
     }
 
@@ -240,15 +242,15 @@ public class ReactorBlockEntityRenderer
      * @param state    the render state to populate
      */
     private static void extractContents(ItemStack canister, ReactorRenderState state) {
-        state.matrices = GooEnchantments.getCompressionLevel(canister);
+        state.slot.matrices = GooEnchantments.getCompressionLevel(canister);
         CanisterFluidContent content = CanisterItem.getFluidContent(canister);
         if (content.isEmpty()) {
-            state.gooType = null;
-            state.fill = 0f;
+            state.slot.type = null;
+            state.slot.fill = 0f;
         } else {
-            int cap = ContainerCapacity.canisterCapacity(state.matrices);
-            state.gooType = content.getGooType();
-            state.fill = Math.min(1f, (float) content.amount() / cap);
+            int cap = ContainerCapacity.canisterCapacity(state.slot.matrices);
+            state.slot.type = content.getGooType();
+            state.slot.fill = Math.min(1f, (float) content.amount() / cap);
         }
     }
 
@@ -277,12 +279,12 @@ public class ReactorBlockEntityRenderer
     public void submit(ReactorRenderState state, PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CameraRenderState cameraState) {
         submitWheels(state, poseStack, nodeCollector);
-        if (!state.hasCanister) { return; }
+        if (!state.slot.present) { return; }
         poseStack.pushPose();
         rotateToFacing(poseStack, state.facing);
         submitBody(poseStack, nodeCollector, state);
         submitGaskets(poseStack, nodeCollector, state);
-        if (state.gooType != null && state.fill > 0f) {
+        if (state.slot.type != null && state.slot.fill > 0f) {
             submitFluid(poseStack, nodeCollector, state);
         }
         poseStack.popPose();
@@ -465,8 +467,8 @@ public class ReactorBlockEntityRenderer
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, ReactorRenderState state) {
         int light = state.lightCoords;
-        GooType type = state.gooType;
-        float fill = state.fill;
+        GooType type = state.slot.type;
+        float fill = state.slot.fill;
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> {

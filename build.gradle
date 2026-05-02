@@ -1,11 +1,3 @@
-// Buildscript classpath for plantuml-generator-util so the umlDiagrams task
-// can call its API directly from Groovy (the tool ships only as a Maven plugin
-// or library; no Gradle plugin exists).
-buildscript {
-    repositories { mavenCentral() }
-    dependencies { classpath 'de.elnarion.util:plantuml-generator-util:3.0.1' }
-}
-
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -25,6 +17,8 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+def buildDir = layout.buildDirectory
+
 // Apply access transformers at compile time so AT-widened members are visible to javac
 minecraft.accessTransformers.file rootProject.file('src/main/resources/META-INF/accesstransformer.cfg')
 
@@ -32,27 +26,22 @@ runs {
     configureEach {
         systemProperty 'forge.logging.markers', 'REGISTRIES'
         systemProperty 'forge.logging.console.level', 'debug'
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         modSource project.sourceSets.main
     }
     client {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         systemProperty 'devauth.enabled', 'true'
         // 4GB heap + ZGC for low-latency recording sessions
         jvmArguments.addAll '-Xmx4G', '-Xms4G', '-XX:+UseZGC', '-XX:+AlwaysPreTouch'
     }
-    server {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        // GUI enabled so the server window can be closed cleanly
-    }
     gameTestServer {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         // JUnit XML report for sca-digest.py consumption
-        arguments.addAll '--report', file("${layout.buildDirectory.get()}/test-results/gameTest/TEST-gametest.xml").absolutePath
-        // JaCoCo agent for coverage merge with unit tests.
-        // The jacocoAgent configuration resolves to a wrapper jar containing jacocoagent.jar.
+        arguments.addAll '--report', file("${buildDir.get()}/test-results/gameTest/TEST-gametest.xml").absolutePath
+        // JaCoCo agent so gametest coverage merges with unit-test coverage.
+        // The jacocoAgent configuration resolves to a wrapper jar; extract jacocoagent.jar from it.
         var wrapperJar = configurations.jacocoAgent.singleFile
         var agentJar = zipTree(wrapperJar).matching { include 'jacocoagent.jar' }.singleFile
-        jvmArguments.add("-javaagent:${agentJar}=destfile=${layout.buildDirectory.get()}/jacoco/gameTest.exec,includes=com.mercuriusxeno.goo.*")
+        jvmArguments.add("-javaagent:${agentJar}=destfile=${buildDir.get()}/jacoco/gameTest.exec,includes=com.mercuriusxeno.goo.*")
     }
     clientData {
         arguments.addAll '--mod', project.mod_id, '--all',
@@ -61,14 +50,11 @@ runs {
     }
 }
 
-// Attach JaCoCo agent to gameTestServer so coverage merges with unit tests.
-// The jacocoAgent configuration is provided by the jacoco plugin; we resolve it
-// lazily to avoid eager dependency resolution during project configuration.
+// JUnitLikeTestReporter writes the XML without creating parent dirs first.
+// afterEvaluate defers the lookup until NeoGradle has registered runGameTestServer.
 afterEvaluate {
     tasks.named('runGameTestServer').configure {
-        // JUnitLikeTestReporter doesn't create parent dirs before writing XML.
-        // Capture path at config time to stay config-cache safe.
-        var reportDir = file("${layout.buildDirectory.get()}/test-results/gameTest")
+        var reportDir = file("${buildDir.get()}/test-results/gameTest")
         doFirst { reportDir.mkdirs() }
     }
 }
@@ -92,12 +78,19 @@ dependencies {
     testImplementation 'org.instancio:instancio-junit:5.4.0'
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
     localRuntime 'me.djtheredstoner:DevAuth-neoforge:1.2.2'
+    spotbugsPlugins 'com.mebigfatguy.sb-contrib:sb-contrib:7.6.8'
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
 }
 
+// -Pverbose to log passed/skipped events alongside failures.
 tasks.named('test', Test) {
     useJUnitPlatform()
     testLogging {
-        events 'failed'
+        if (project.hasProperty('verbose')) {
+            events 'passed', 'failed', 'skipped'
+        } else {
+            events 'failed'
+        }
         showStandardStreams = false
         exceptionFormat = 'full'
         showCauses = true
@@ -113,104 +106,33 @@ tasks.named('test', Test) {
     }
 }
 
-tasks.register('gooTest', Test) {
-    description = 'Runs Goo unit tests (JUnit 5, no Minecraft server required)'
-    group = 'verification'
-    useJUnitPlatform()
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    outputs.upToDateWhen { false }
-    testLogging {
-        if (project.hasProperty('verbose')) {
-            events 'passed', 'failed', 'skipped'
-        } else {
-            events 'failed'
-        }
-        showStandardStreams = false
-        exceptionFormat = 'short'
-    }
-}
-
 tasks.register('jacocoGooTestReport', JacocoReport) {
     description = 'Generates JaCoCo coverage report merging unit tests and gametests'
     group = 'verification'
-    dependsOn tasks.named('gooTest')
-    executionData fileTree(dir: layout.buildDirectory, includes: ['jacoco/*.exec'])
+    dependsOn tasks.named('test')
+    executionData fileTree(dir: buildDir, includes: ['jacoco/*.exec'])
     sourceSets sourceSets.main
     reports {
         html.required = true
         xml.required = false
         csv.required = true
     }
-    // No exclusions. Every 0% class is a MOCK_BLOCK extraction waiting to happen.
+    // Every 0% class is a MOCK_BLOCK extraction waiting to happen.
 }
 
 tasks.register('coverage') {
     description = 'Runs unit tests + gametests, then generates merged JaCoCo report'
     group = 'verification'
-    dependsOn 'gooTest', 'runGameTestServer'
+    dependsOn 'test', 'runGameTestServer'
     finalizedBy 'jacocoGooTestReport'
 }
 
-checkstyle {
-    toolVersion = '10.21.4'
-    configFile = file('config/checkstyle/checkstyle.xml')
-    // All violations pass through to the digest; build does not fail on checkstyle alone
-    ignoreFailures = true
-}
+apply from: 'gradle/sca.gradle'
 
-// Only lint main sources, skip generated and test
-tasks.named('checkstyleTest') { enabled = false }
-
-pmd {
-    // Upgraded from 7.9.0 for ASM 9.9 (JDK 25 / class file version 69)
-    toolVersion = '7.21.0'
-    // Custom ruleset curated for Goo; avoids overlap with Checkstyle and SpotBugs
-    ruleSets = []
-    ruleSetFiles = files('config/pmd/pmd-ruleset.xml')
-    // Warnings, not build failures - smells are heuristics
-    ignoreFailures = true
-    consoleOutput = false
-}
-
-// Only lint main sources
-tasks.named('pmdTest') { enabled = false }
-
-// CPD: copy-paste detection across main sources
-configurations { cpd }
-dependencies {
-    cpd 'net.sourceforge.pmd:pmd-java:7.21.0'
-    cpd 'net.sourceforge.pmd:pmd-cli:7.21.0'
-}
-
-tasks.register('cpd', JavaExec) {
-    description = 'Finds duplicated code fragments via PMD CPD'
-    group = 'verification'
-    mainClass = 'net.sourceforge.pmd.cli.PmdCli'
-    classpath = configurations.cpd
-    var cpdReport = layout.buildDirectory.file('reports/cpd/main.xml')
-    args = [
-        'cpd',
-        '--minimum-tokens', '100',
-        '--language', 'java',
-        '--dir', sourceSets.main.java.srcDirs.first().absolutePath,
-        '--format', 'xml'
-    ]
-    // Warnings, not build failures
-    ignoreExitValue = true
-    // Redirect stdout to report file (config-cache safe)
-    standardOutput = System.out
-    doFirst {
-        cpdReport.get().asFile.parentFile.mkdirs()
-        standardOutput = new FileOutputStream(cpdReport.get().asFile)
-    }
-}
-
-// Wire CPD into the check lifecycle
-tasks.named('check') { dependsOn 'cpd' }
-
+// SpotBugs lives in the root script because its DSL references plugin classes
+// (Effort, Confidence, SpotBugsTask) that resolve only in the parent script's
+// classloader. scaDigest wiring is in sca.gradle.
 spotbugs {
-    // Warnings, not build failures
     ignoreFailures = true
     effort = com.github.spotbugs.snom.Effort.valueOf('MAX')
     reportLevel = com.github.spotbugs.snom.Confidence.valueOf('MEDIUM')
@@ -219,12 +141,6 @@ spotbugs {
     toolVersion = '4.9.8'
 }
 
-dependencies {
-    spotbugsPlugins 'com.mebigfatguy.sb-contrib:sb-contrib:7.6.8'
-    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
-}
-
-// Only analyze main sources
 tasks.named('spotbugsTest') { enabled = false }
 
 tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
@@ -234,30 +150,19 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
     reports {
         html {
             required = true
-            outputLocation = file("${layout.buildDirectory.get()}/reports/spotbugs/main.html")
+            outputLocation = file("${buildDir.get()}/reports/spotbugs/main.html")
         }
         xml {
             required = true
-            outputLocation = file("${layout.buildDirectory.get()}/reports/spotbugs/main.xml")
+            outputLocation = file("${buildDir.get()}/reports/spotbugs/main.xml")
         }
     }
 }
 
-// ── SCA digest: unified flat text report from all analysis XML ───────────
-tasks.register('scaDigest', Exec) {
-    description = 'Produces build/reports/digest.txt; fails the build on checkstyle errors or test failures'
-    group = 'verification'
-    commandLine 'python3', "${projectDir}/tools/sca-digest.py"
-}
-tasks.checkstyleMain.finalizedBy(tasks.scaDigest)
-tasks.pmdMain.finalizedBy(tasks.scaDigest)
-tasks.spotbugsMain.finalizedBy(tasks.scaDigest)
-tasks.named('cpd') { finalizedBy tasks.scaDigest }
 // Gametests boot a full Minecraft server; opt-in via -PgameTests
 if (project.hasProperty('gameTests')) {
     tasks.named('check') { dependsOn 'runGameTestServer' }
 }
-tasks.named('check') { finalizedBy tasks.scaDigest }
 
 tasks.register('generateTextures', JavaExec) {
     description = 'Regenerates CA fluid textures and blob base sprites'
@@ -287,88 +192,22 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
-// UTF-8 applies everywhere; deprecation-as-error is scoped to the mod's own
-// sources so NeoGradle's transformed-vanilla recompile step is not poisoned
-// by vanilla's own deprecated internals.
+// UTF-8 applies everywhere; deprecation-as-error is scoped to mod sources so
+// NeoGradle's transformed-vanilla recompile step stays clean of vanilla's
+// own deprecated internals.
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-['compileJava', 'compileTestJava'].each { taskName ->
-    tasks.named(taskName).configure {
+    if (name in ['compileJava', 'compileTestJava']) {
         options.compilerArgs += ['-Xlint:deprecation', '-Werror']
     }
 }
 
-// Runs sca-fix.py JavadocMethod to auto-stub missing @param/@return/@throws,
-// then ImportOrder to fix any import reordering the stubs introduced.
-// Backfill meaningful descriptions into the stubs manually after this runs.
-tasks.register('fixJavadoc', Exec) {
-    group = 'verification'
-    description = 'Auto-stub missing Javadoc tags via sca-fix.py, then fix import order'
-    dependsOn 'checkstyleMain'
-    commandLine 'python', 'tools/sca-fix.py', 'JavadocMethod'
-    doLast {
-        exec { commandLine 'python', 'tools/sca-fix.py', 'ImportOrder' }
-    }
-}
-
 // NeoGradle run init scripts use Task.project and Gradle.addListener at execution
-// time, which are unsupported with the configuration cache in Gradle 9.
+// time, which the configuration cache rejects in Gradle 9.
 tasks.configureEach {
     if (name.contains('net.neoforged.fml.startup')) {
         notCompatibleWithConfigurationCache('NeoGradle run tasks use Task.project at execution time')
     }
 }
 
-// PlantUML class diagrams via plantuml-generator-util (de.elnarion.util:3.0.1).
-// Operates on compiled bytecode through ClassGraph (not BCEL). Output is raw
-// .puml text. Slices are data; one task per slice keeps each renewable.
-// Aggregate `umlDiagrams` regenerates everything. Add a slice by adding an
-// entry to umlSlices below.
-def umlSlices = [
-        [name    : 'Ability',
-         file    : 'ability.puml',
-         packages: ['com.mercuriusxeno.goo.ability',
-                    'com.mercuriusxeno.goo.ability.world',
-                    'com.mercuriusxeno.goo.ability.mob',
-                    'com.mercuriusxeno.goo.block.ability']],
-        [name    : 'Machine',
-         file    : 'machine.puml',
-         packages: ['com.mercuriusxeno.goo.block',
-                    'com.mercuriusxeno.goo.block.fluid',
-                    'com.mercuriusxeno.goo.block.gasket']],
-]
-
-def umlOutputDir = file("${layout.buildDirectory.get()}/reports/diagrams/class")
-// Resolve at configuration time; sourceSets is not accessible inside doLast.
-def umlClasspathFiles = (sourceSets.main.output.classesDirs.files +
-                         sourceSets.main.compileClasspath.files) as Set
-
-umlSlices.each { slice ->
-    tasks.register("umlDiagrams${slice.name}") {
-        description = "Generates PlantUML class diagram for ${slice.packages.join(', ')}"
-        group = 'documentation'
-        dependsOn tasks.named('compileJava')
-
-        doLast {
-            umlOutputDir.mkdirs()
-            // Classloader spanning goo's compiled classes plus compile-time
-            // dependencies (NeoForge, Minecraft) so ClassGraph resolves types.
-            def urls = umlClasspathFiles.collect { it.toURI().toURL() } as URL[]
-            def cl = new URLClassLoader(urls, this.class.classLoader)
-            def cfg = new de.elnarion.util.plantuml.generator.classdiagram.config.PlantUMLClassDiagramConfigBuilder(slice.packages)
-                    .withClassLoader(cl)
-                    .build()
-            def gen = new de.elnarion.util.plantuml.generator.classdiagram.PlantUMLClassDiagramGenerator(cfg)
-            def out = new File(umlOutputDir, slice.file)
-            out.text = gen.generateDiagramText()
-            println "Wrote ${out} (${out.length()} bytes)"
-        }
-    }
-}
-
-tasks.register('umlDiagrams') {
-    description = 'Regenerates all UML class diagram slices'
-    group = 'documentation'
-    dependsOn umlSlices.collect { "umlDiagrams${it.name}" }
-}
+apply from: 'gradle/uml.gradle'

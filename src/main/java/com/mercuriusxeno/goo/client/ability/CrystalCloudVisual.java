@@ -1,7 +1,8 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client.ability;
 
 import com.mercuriusxeno.goo.ability.world.CrystalBehavior;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
+import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -22,7 +23,7 @@ import java.util.Random;
  * in air within the cloud volume. Each sliver is a thin elongated quad
  * at a random position and orientation. Some tumble slowly, most are still.
  */
-public final class CrystalFissureRenderer {
+public final class CrystalCloudVisual {
 
     private static final float BLOCK_CENTER = 0.5f;
     private static final float CLOUD_RADIUS = (float) CrystalBehavior.CLOUD_RADIUS;
@@ -192,7 +193,30 @@ public final class CrystalFissureRenderer {
 
     private static final float[] SLIVER_DATA = buildSliverData();
 
-    private CrystalFissureRenderer() {
+    private CrystalCloudVisual() {
+    }
+
+    /**
+     * Populates {@code state} with crystal-cloud fields from the BE.
+     *
+     * @param be    the chain marker block entity
+     * @param state the render state to populate
+     */
+    public static void extract(com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity be,
+                               ChainMarkerRenderState state) {
+        if (be.getBehavior() instanceof CrystalBehavior crystal
+                && (crystal.getDensity() > 0f || crystal.isAnimating())) {
+            state.crystalActive = true;
+            state.crystalDensity = crystal.getDensity();
+            state.crystalRadiusFraction = crystal.getRadiusFraction();
+            long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0;
+            state.crystalAnimationTime = (float) gameTime;
+        } else {
+            state.crystalActive = false;
+            state.crystalDensity = 0f;
+            state.crystalRadiusFraction = 0f;
+            state.crystalAnimationTime = 0f;
+        }
     }
 
     /**

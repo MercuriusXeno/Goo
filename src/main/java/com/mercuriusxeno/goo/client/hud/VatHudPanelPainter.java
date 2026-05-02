@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.client.hud;
 
-import com.mercuriusxeno.goo.client.VatStackAggregator.VatStackData;
+import com.mercuriusxeno.goo.client.machine.VatStackAggregator.VatStackData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

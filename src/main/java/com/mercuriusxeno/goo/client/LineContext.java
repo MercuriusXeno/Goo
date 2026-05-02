@@ -1,4 +1,4 @@
-package com.mercuriusxeno.goo.client.ber;
+package com.mercuriusxeno.goo.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

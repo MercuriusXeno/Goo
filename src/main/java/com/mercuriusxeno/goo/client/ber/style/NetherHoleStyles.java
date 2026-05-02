@@ -1,6 +1,6 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
-import com.mercuriusxeno.goo.client.ber.NetherBlackHoleRenderer;
+import com.mercuriusxeno.goo.client.ability.NetherSphereVisual;
 
 /**
  * Registry of available {@link NetherHoleStyle} implementations and the
@@ -18,7 +18,7 @@ public final class NetherHoleStyles {
     /** Canonical sphere implementation - the shipped black-hole visual
      * with a UV sphere occluder, ray-sphere fresnel corona, and a flat
      * accretion disc. Delegates entirely to the existing
-     * {@link NetherBlackHoleRenderer}. */
+     * {@link NetherSphereVisual}. */
     public static final NetherHoleStyle SPHERE = new SphereHoleStyle();
 
     /** Cube experiment - a cube occluder with a cube-edge glow shader
@@ -40,7 +40,7 @@ public final class NetherHoleStyles {
      * the lens never runs. Flip to {@code false} to kill the lens
      * for debugging without touching the markers. The extract and
      * apply methods in
-     * {@link com.mercuriusxeno.goo.client.lens.NetherLensEffect} are
+     * {@link com.mercuriusxeno.goo.client.ability.NetherLensEffect} are
      * intentionally left in place so toggling this flag is a clean
      * on/off. */
     public static final boolean LENS_ENABLED = false;

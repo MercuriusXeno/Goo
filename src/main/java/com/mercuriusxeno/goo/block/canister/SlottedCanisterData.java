@@ -201,6 +201,18 @@ public class SlottedCanisterData {
         syncCallback.run();
     }
 
+    /**
+     * Recomputes {@link #compositeShape} from current slot state without
+     * firing the sync callback. Call after a batch slot mutation that
+     * bypasses {@link CanisterSlot#setCanister(net.minecraft.world.item.ItemStack)}
+     * (e.g., NBT load), since {@link CanisterSlot#load} writes the slot's
+     * canister and shape fields directly without triggering the structure-
+     * changed callback.
+     */
+    public void rebuildCompositeShape() {
+        compositeShape = shapeBuilder.apply(slots);
+    }
+
     // --- Cross-slot fluid routing (used by Hub intake) ---
 
     /**

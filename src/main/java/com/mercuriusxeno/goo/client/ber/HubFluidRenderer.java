@@ -1,12 +1,12 @@
 package com.mercuriusxeno.goo.client.ber;
 
-import com.mercuriusxeno.goo.GooType;
 import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
+import com.mercuriusxeno.goo.client.CuboidBounds;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -77,7 +77,7 @@ final class HubFluidRenderer {
             (pose, c) -> {
                 RenderContext ctx = new RenderContext(pose, c, light);
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.canisterPresent[i]) { renderBodySides(ctx, i); }
+                    if (state.slots[i].present) { renderBodySides(ctx, i); }
                 }
             });
     }
@@ -99,63 +99,16 @@ final class HubFluidRenderer {
     // -- Fluid rendering --
 
     /**
-     * Batches all fluid surface quads into a single translucent draw call.
+     * Submits all fluid surfaces via the shared {@link SlottedFluidContainer} runner.
      *
      * @param poseStack the pose stack for rendering
      * @param nodeCollector the render node collector
-     * @param state the block state
+     * @param state the render state snapshot
      */
     static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
-        if (!hasAnyFluid(state)) { return; }
-        int light = state.lightCoords;
-        nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-            (pose, c) -> renderAllFluids(new RenderContext(pose, c, light), state));
-    }
-
-    /**
-     * Renders fluid surfaces for all filled hub slots in a single batch.
-     *
-     * @param ctx   the render context
-     * @param state the render state snapshot
-     */
-    private static void renderAllFluids(RenderContext ctx, HubRenderState state) {
-        for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) {
-                renderFluidSurface(ctx, i, state.slotType[i], state.slotFill[i]);
-            }
-        }
-    }
-
-    /**
-     * Returns true if any slot has fluid to render.
-     *
-     * @param state the block state
-     * @return true if anyFluid is present
-     */
-    private static boolean hasAnyFluid(HubRenderState state) {
-        for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.slotType[i] != null && state.slotFill[i] > 0f) { return true; }
-        }
-        return false;
-    }
-
-    /**
-     * Renders fluid geometry for a single hub slot: top face + 4 side faces.
-     *
-     * @param ctx  the render context
-     * @param slot the slot index
-     * @param type the goo type
-     * @param fill the fill fraction in [0, 1]
-     */
-    private static void renderFluidSurface(RenderContext ctx, int slot, GooType type, float fill) {
-        float cx = CENTERS[slot][0];
-        float cz = CENTERS[slot][1];
-        CuboidBounds b = SlotFluidGeometry.computeBounds(FLUID_GEOM, cx, cz, fill);
-        TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
-        SlotFluidGeometry.renderFluidTop(ctx, b, sprite);
-        SlotFluidGeometry.renderFluidSides(ctx, b, sprite, fill, FLUID_GEOM);
+        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, state.lightCoords,
+                state.slots, FLUID_GEOM, CENTERS, false);
     }
 
     // -- Stream rendering --
@@ -186,7 +139,7 @@ final class HubFluidRenderer {
      */
     private static void renderAllStreams(RenderContext ctx, float anim, HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.streamType[i] == null) { continue; }
+            if (state.slots[i].streamType == null) { continue; }
             renderSlotStream(ctx, anim, state, i);
         }
     }
@@ -201,10 +154,10 @@ final class HubFluidRenderer {
     private static void renderSlotStream(RenderContext ctx, float anim, HubRenderState state, int slot) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
-        float yBottom = BODY_BOT + state.slotFill[slot] * (BODY_TOP - BODY_BOT);
+        float yBottom = BODY_BOT + state.slots[slot].fill * (BODY_TOP - BODY_BOT);
         GooStreamRenderer.renderStream(ctx,
             cx, cz, BODY_TOP, yBottom,
-            state.streamType[slot], state.streamRate[slot], anim);
+            state.slots[slot].streamType, state.slots[slot].streamRate, anim);
     }
 
     /**
@@ -215,7 +168,7 @@ final class HubFluidRenderer {
      */
     private static boolean hasAnyStream(HubRenderState state) {
         for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-            if (state.streamType[i] != null) { return true; }
+            if (state.slots[i].streamType != null) { return true; }
         }
         return false;
     }

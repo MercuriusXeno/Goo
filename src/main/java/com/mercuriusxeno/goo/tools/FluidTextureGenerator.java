@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.tools;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import net.minecraft.util.ARGB;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -45,19 +46,6 @@ public final class FluidTextureGenerator {
      * Minimum heat range before fallback to 1.0 to avoid division by near-zero.
      */
     private static final float MIN_HEAT_RANGE = 0.001f;
-    /**
-     * Bit shift for alpha channel in ARGB int.
-     */
-    private static final int ALPHA_SHIFT = 24;
-    /**
-     * Bit shift for red channel in ARGB int.
-     */
-    private static final int RED_SHIFT = 16;
-    /**
-     * Bit shift for green channel in ARGB int.
-     */
-    private static final int GREEN_SHIFT = 8;
-
     // ── Palette hex parsing constants ──
     /**
      * Start index for red hex digits.
@@ -689,7 +677,7 @@ public final class FluidTextureGenerator {
             int g = (int) (a[IDX_G] + (b[IDX_G] - a[IDX_G]) * t);
             int blue = (int) (a[IDX_B] + (b[IDX_B] - a[IDX_B]) * t);
             int alpha = (int) (a[IDX_A] + (b[IDX_A] - a[IDX_A]) * t);
-            return (alpha << ALPHA_SHIFT) | (r << RED_SHIFT) | (g << GREEN_SHIFT) | blue;
+            return ARGB.color(alpha, r, g, blue);
         }
 
         /**
@@ -699,7 +687,7 @@ public final class FluidTextureGenerator {
          * @return the packed ARGB int
          */
         private static int packColor(int... c) {
-            return (c[IDX_A] << ALPHA_SHIFT) | (c[IDX_R] << RED_SHIFT) | (c[IDX_G] << GREEN_SHIFT) | c[IDX_B];
+            return ARGB.color(c[IDX_A], c[IDX_R], c[IDX_G], c[IDX_B]);
         }
 
         /**

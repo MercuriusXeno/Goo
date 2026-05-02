@@ -1,10 +1,10 @@
 package com.mercuriusxeno.goo.client.model;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.canister.CanisterGeometry;
+import com.mercuriusxeno.goo.client.CuboidBounds;
+import com.mercuriusxeno.goo.client.RenderContext;
 import com.mercuriusxeno.goo.client.ber.CanisterFluidRenderer;
-import com.mercuriusxeno.goo.client.ber.CuboidBounds;
-import com.mercuriusxeno.goo.client.ber.FluidFaceEmitter;
-import com.mercuriusxeno.goo.client.ber.RenderContext;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.CanisterMetadata;
@@ -58,69 +58,16 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      */
     private static final int OPAQUE_WHITE = 0xFFFFFFFF;
 
-    // -- Canister geometry (block coords, centered at 0.5 in XZ) --
+    // -- Item-form geometry (single canister centered in block) --
 
-    /**
-     * Canister half-width: 2px.
-     */
-    private static final float HW = 2f / 16f;
-
-    /**
-     * Bottom of lower gasket (y=0).
-     */
-    private static final float GASKET_BOT = 0f;
-
-    /**
-     * Top of lower gasket / bottom of body (y=1px).
-     */
-    private static final float BODY_BOT = 1f / 16f;
-
-    /**
-     * Top of body / bottom of upper gasket (y=11px).
-     */
-    private static final float BODY_TOP = 11f / 16f;
-
-    /**
-     * Top of upper gasket (y=12px).
-     */
-    private static final float GASKET_TOP = 12f / 16f;
-
-    /**
-     * Inset from body walls to avoid z-fighting with fluid surfaces (0.5px).
-     */
-    private static final float FLUID_INSET = 0.5f / 16f;
-
-    /**
-     * Center of the canister in block coordinates.
-     */
+    /** Center of the canister in block coordinates. */
     private static final float CENTER = 8f / 16f;
 
-    /**
-     * Min X/Z boundary of the canister body.
-     */
-    private static final float BODY_MIN_XZ = CENTER - HW;
+    /** Min X/Z boundary of the canister body. */
+    private static final float BODY_MIN_XZ = CENTER - CanisterGeometry.HW;
 
-    /**
-     * Max X/Z boundary of the canister body.
-     */
-    private static final float BODY_MAX_XZ = CENTER + HW;
-
-    // -- Gasket UV: choral_gasket.png, 16x16 --
-
-    /**
-     * Gasket side U start: column 4/16.
-     */
-    private static final float GS_U0 = 0.25f;
-
-    /**
-     * Gasket side U end: column 8/16.
-     */
-    private static final float GS_U1 = 0.5f;
-
-    /**
-     * Gasket side V end: row 1/16.
-     */
-    private static final float GS_V1 = 0.0625f;
+    /** Max X/Z boundary of the canister body. */
+    private static final float BODY_MAX_XZ = CENTER + CanisterGeometry.HW;
 
     /**
      * Creates a canister special renderer.
@@ -281,11 +228,13 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
     private static void emitEndcapQuads(RenderContext ctx, boolean top, boolean bottom) {
         if (top) {
             ctx.gasketBox(new CuboidBounds(BODY_MIN_XZ, BODY_MAX_XZ, BODY_MIN_XZ, BODY_MAX_XZ,
-                    BODY_TOP, GASKET_TOP), GS_U0, GS_U1, GS_V1);
+                    CanisterGeometry.BODY_TOP, CanisterGeometry.GASKET_TOP),
+                    CanisterGeometry.GS_U0, CanisterGeometry.GS_U1, CanisterGeometry.GS_V1);
         }
         if (bottom) {
             ctx.gasketBox(new CuboidBounds(BODY_MIN_XZ, BODY_MAX_XZ, BODY_MIN_XZ, BODY_MAX_XZ,
-                    GASKET_BOT, BODY_BOT), GS_U0, GS_U1, GS_V1);
+                    CanisterGeometry.GASKET_BOT, CanisterGeometry.BODY_BOT),
+                    CanisterGeometry.GS_U0, CanisterGeometry.GS_U1, CanisterGeometry.GS_V1);
         }
     }
 
@@ -303,9 +252,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
                                     SubmitNodeCollector nodeCollector, int packedLight,
                                     GooType type, float fill) {
         CuboidBounds b = new CuboidBounds(
-                CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
-                CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
-                BODY_BOT, BODY_BOT + fill * (BODY_TOP - BODY_BOT));
+                CENTER - CanisterGeometry.HW + CanisterGeometry.FLUID_INSET,
+                CENTER + CanisterGeometry.HW - CanisterGeometry.FLUID_INSET,
+                CENTER - CanisterGeometry.HW + CanisterGeometry.FLUID_INSET,
+                CENTER + CanisterGeometry.HW - CanisterGeometry.FLUID_INSET,
+                CanisterGeometry.BODY_BOT,
+                CanisterGeometry.BODY_BOT + fill * (CanisterGeometry.BODY_TOP - CanisterGeometry.BODY_BOT));
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> FluidFaceEmitter.emitFluidFaces(
@@ -326,9 +278,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
                                            SubmitNodeCollector nodeCollector, int packedLight,
                                            Fluid fluid, float fill) {
         CuboidBounds b = new CuboidBounds(
-                CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
-                CENTER - HW + FLUID_INSET, CENTER + HW - FLUID_INSET,
-                BODY_BOT, BODY_BOT + fill * (BODY_TOP - BODY_BOT));
+                CENTER - CanisterGeometry.HW + CanisterGeometry.FLUID_INSET,
+                CENTER + CanisterGeometry.HW - CanisterGeometry.FLUID_INSET,
+                CENTER - CanisterGeometry.HW + CanisterGeometry.FLUID_INSET,
+                CENTER + CanisterGeometry.HW - CanisterGeometry.FLUID_INSET,
+                CanisterGeometry.BODY_BOT,
+                CanisterGeometry.BODY_BOT + fill * (CanisterGeometry.BODY_TOP - CanisterGeometry.BODY_BOT));
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> {
@@ -395,12 +350,12 @@ public class CanisterSpecialRenderer implements SpecialModelRenderer<CanisterSpe
      */
     @Override
     public void getExtents(Consumer<Vector3fc> output) {
-        float x0 = CENTER - HW;
-        float x1 = CENTER + HW;
-        float z0 = CENTER - HW;
-        float z1 = CENTER + HW;
-        output.accept(new Vector3f(x0, GASKET_BOT, z0));
-        output.accept(new Vector3f(x1, GASKET_TOP, z1));
+        float x0 = CENTER - CanisterGeometry.HW;
+        float x1 = CENTER + CanisterGeometry.HW;
+        float z0 = CENTER - CanisterGeometry.HW;
+        float z1 = CENTER + CanisterGeometry.HW;
+        output.accept(new Vector3f(x0, CanisterGeometry.GASKET_BOT, z0));
+        output.accept(new Vector3f(x1, CanisterGeometry.GASKET_TOP, z1));
     }
 
     /**
