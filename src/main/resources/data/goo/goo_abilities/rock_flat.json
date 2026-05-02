@@ -16,9 +16,10 @@
       "type": "progressive_area",
       "params": {
         "areaMode": "flat_circle",
-        "blockAction": "silk_break",
-        "previewDelayTicks": "8",
-        "particleStyle": "rock"
+        "blockEffect": "silk_break",
+        "layerVisuals": "rock_dust",
+        "layerAudio": "stone_break",
+        "previewDelayTicks": "8"
       }
     }
   ],

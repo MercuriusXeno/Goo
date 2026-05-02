@@ -1,42 +1,49 @@
 package com.mercuriusxeno.goo.ability;
 
 import com.mercuriusxeno.goo.ability.AbilityDefinition.BehaviorEntry;
-import com.mercuriusxeno.goo.ability.world.BlazeBehavior;
-import com.mercuriusxeno.goo.ability.world.FrostBehavior;
-import com.mercuriusxeno.goo.ability.world.RockBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Progressive area-coverage behavior. Affects blocks in an expanding
- * footprint one layer at a time. The per-block action is determined
- * by the {@code blockAction} parameter: silk-break, fortune-smelt-break,
- * freeze, or other actions added later.
+ * footprint one layer at a time, fanning out three permutable axes
+ * per layer:
+ * <ul>
+ *   <li>{@link BlockEffect} - the per-cell mutation (silk-break,
+ *       fortune-smelt, freeze, ...).</li>
+ *   <li>{@link LayerVisuals} - preview particles before each layer and
+ *       on-struck particles after.</li>
+ *   <li>{@link LayerAudio} - the per-layer sound cue scaled by stack
+ *       count and step depth.</li>
+ * </ul>
  *
  * <p>The pipeline previews each layer, waits a configurable delay, then
- * applies the action. Area mode selects tunnel, flat circle, or sphere.</p>
+ * applies the BlockEffect cell-by-cell and counts how many cells were
+ * actually mutated. The destroyed count drives both visuals and audio
+ * scaling. Area mode selects tunnel, flat circle, or sphere.</p>
  */
 public final class ProgressiveAreaBlock implements ChainBehavior {
 
     private static final String AREA_TUNNEL = "tunnel";
     private static final String AREA_SPHERE = "sphere";
-    private static final String ACTION_SILK_BREAK = "silk_break";
-    private static final String ACTION_FORTUNE_SMELT = "fortune_smelt_break";
-    private static final String ACTION_FREEZE = "freeze";
-    private static final String STYLE_BLAZE = "blaze";
-    private static final String STYLE_FROST = "frost";
 
     private static final int DEFAULT_PREVIEW_DELAY = 8;
     private static final String DEFAULT_FACE = "up";
     private static final String PARAM_AREA_MODE = "areaMode";
-    private static final String PARAM_BLOCK_ACTION = "blockAction";
+    private static final String PARAM_BLOCK_EFFECT = "blockEffect";
+    private static final String PARAM_LAYER_VISUALS = "layerVisuals";
+    private static final String PARAM_LAYER_AUDIO = "layerAudio";
     private static final String PARAM_PREVIEW_DELAY = "previewDelayTicks";
-    private static final String PARAM_PARTICLE_STYLE = "particleStyle";
-    private static final String DEFAULT_PARTICLE_STYLE = "rock";
+
+    private static final String DEFAULT_BLOCK_EFFECT = BlockEffectType.SILK_BREAK;
+    private static final String DEFAULT_LAYER_VISUALS = LayerVisualsType.ROCK_DUST;
+    private static final String DEFAULT_LAYER_AUDIO = LayerAudioType.STONE_BREAK;
 
     private static final String TAG_PIPELINE_TICK = "AreaPipelineTick";
     private static final String TAG_LAYER_DEPTH = "AreaLayerDepth";
@@ -48,46 +55,58 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     private static final int NEG_STEP = -1;
 
     private final String areaMode;
-    private final String blockAction;
+    private final BlockEffect blockEffect;
+    private final LayerVisuals layerVisuals;
+    private final LayerAudio layerAudio;
     private final int previewDelayTicks;
-    private final String particleStyle;
 
     private int pipelineTick;
     private int layerDepth;
     private int stackCount;
     private Direction placedFace = Direction.UP;
     /** Cached flat rings for ring-by-ring delivery. Null when not flat_circle. */
-    private transient java.util.List<java.util.List<int[]>> cachedFlatRings;
+    private transient List<List<int[]>> cachedFlatRings;
 
     /**
-     * Creates a progressive area behavior with the given configuration.
+     * Creates a progressive area behavior with the resolved per-axis
+     * delegates already in hand.
      *
-     * @param areaMode         "tunnel", "flat_circle", or "sphere"
-     * @param blockAction      "silk_break", "fortune_smelt_break", "freeze", etc.
-     * @param previewDelayTicks ticks between preview and action
-     * @param particleStyle    "blaze", "rock", "frost" for preview dispatch
+     * @param areaMode          {@code "tunnel"}, {@code "flat_circle"}, or {@code "sphere"}
+     * @param blockEffect       the per-cell mutation
+     * @param layerVisuals      the per-layer particle profile
+     * @param layerAudio        the per-layer sound profile
+     * @param previewDelayTicks ticks between preview and effect application
      */
-    public ProgressiveAreaBlock(String areaMode, String blockAction,
-            int previewDelayTicks, String particleStyle) {
+    public ProgressiveAreaBlock(String areaMode, BlockEffect blockEffect,
+                                LayerVisuals layerVisuals, LayerAudio layerAudio,
+                                int previewDelayTicks) {
         this.areaMode = areaMode;
-        this.blockAction = blockAction;
+        this.blockEffect = blockEffect;
+        this.layerVisuals = layerVisuals;
+        this.layerAudio = layerAudio;
         this.previewDelayTicks = previewDelayTicks;
-        this.particleStyle = particleStyle;
     }
 
     /**
-     * Factory method for BehaviorType registration.
+     * Factory method for {@link BehaviorType} registration. Resolves the
+     * three delegate names into singleton instances at construction;
+     * downstream pipeline code calls into the resolved delegates without
+     * further string lookups.
      *
      * @param entry the behavior entry with params
      * @param def   the parent ability definition
      * @return a new ProgressiveAreaBlock
      */
     public static ChainBehavior fromEntry(BehaviorEntry entry, AbilityDefinition def) {
-        return new ProgressiveAreaBlock(
-                entry.params().getOrDefault(PARAM_AREA_MODE, AREA_TUNNEL),
-                entry.params().getOrDefault(PARAM_BLOCK_ACTION, ACTION_SILK_BREAK),
-                (int) entry.getFloat(PARAM_PREVIEW_DELAY, DEFAULT_PREVIEW_DELAY),
-                entry.params().getOrDefault(PARAM_PARTICLE_STYLE, DEFAULT_PARTICLE_STYLE));
+        String areaMode = entry.params().getOrDefault(PARAM_AREA_MODE, AREA_TUNNEL);
+        BlockEffect effect = BlockEffectType.byName(
+                entry.params().getOrDefault(PARAM_BLOCK_EFFECT, DEFAULT_BLOCK_EFFECT));
+        LayerVisuals visuals = LayerVisualsType.byName(
+                entry.params().getOrDefault(PARAM_LAYER_VISUALS, DEFAULT_LAYER_VISUALS));
+        LayerAudio audio = LayerAudioType.byName(
+                entry.params().getOrDefault(PARAM_LAYER_AUDIO, DEFAULT_LAYER_AUDIO));
+        int previewDelay = (int) entry.getFloat(PARAM_PREVIEW_DELAY, DEFAULT_PREVIEW_DELAY);
+        return new ProgressiveAreaBlock(areaMode, effect, visuals, audio, previewDelay);
     }
 
     @Override
@@ -113,7 +132,7 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
     @Override
     public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         if (pipelineTick < layerDepth) {
-            previewLayer(level, pos);
+            layerVisuals.preview(level, pos, placedFace, pipelineTick, stackCount);
         }
         int actionIndex = pipelineTick - previewDelayTicks;
         if (actionIndex >= 0 && actionIndex < layerDepth) {
@@ -132,32 +151,24 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
         return Math.max(0, pipelineTick - previewDelayTicks);
     }
 
-    /** Dispatches preview to the appropriate particle style.
-     *
-     * @param level the server level
-     * @param pos   the marker block position
-     */
-    private void previewLayer(ServerLevel level, BlockPos pos) {
-        switch (particleStyle) {
-            case STYLE_BLAZE -> BlazeBehavior.previewLayer(level, pos, placedFace,
-                    pipelineTick, stackCount);
-            case STYLE_FROST -> {} // Frost has no preview particles yet
-            default -> RockBehavior.previewLayer(level, pos, placedFace, pipelineTick);
-        }
-    }
-
-    /** Computes the positions for this layer and applies the block action to each.
-     * All three area modes use the same per-block dispatch.
+    /** Computes the positions for this layer, applies the block effect to
+     * each, and dispatches visuals and audio scaled by the destroyed count.
      *
      * @param level      the server level
      * @param pos        the marker block position
      * @param layerIndex the current layer/ring/shell index
      */
     private void applyLayer(ServerLevel level, BlockPos pos, int layerIndex) {
-        java.util.List<int[]> offsets = computeLayerOffsets(pos, layerIndex);
+        List<int[]> offsets = computeLayerOffsets(pos, layerIndex);
+        int destroyed = 0;
         for (int[] o : offsets) {
-            applyBlockAction(level, pos.offset(o[0], o[1], o[Z_INDEX]));
+            BlockPos cell = pos.offset(o[0], o[1], o[Z_INDEX]);
+            if (blockEffect.apply(level, cell)) {
+                destroyed++;
+            }
         }
+        layerVisuals.onLayerStruck(level, pos, placedFace, layerIndex, destroyed);
+        layerAudio.onLayerStruck(level, pos, placedFace, layerIndex, destroyed, stackCount);
     }
 
     /** Computes 3D offsets for one delivery step based on area mode.
@@ -166,7 +177,7 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param layerIndex the current step index
      * @return list of {dx, dy, dz} offsets relative to the marker
      */
-    private java.util.List<int[]> computeLayerOffsets(BlockPos pos, int layerIndex) {
+    private List<int[]> computeLayerOffsets(BlockPos pos, int layerIndex) {
         if (AREA_SPHERE.equals(areaMode)) {
             return ChainFootprint.sphereShellOffsets(layerIndex, placedFace);
         }
@@ -181,11 +192,11 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param ring the 2D ring offsets
      * @return list of 3D offsets relative to the marker
      */
-    private java.util.List<int[]> expandFlatRing(java.util.List<int[]> ring) {
+    private List<int[]> expandFlatRing(List<int[]> ring) {
         Direction blastDir = placedFace.getOpposite();
         Direction.Axis axis = blastDir.getAxis();
         int step = blastDir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : NEG_STEP;
-        java.util.List<int[]> result = new java.util.ArrayList<>(ring.size());
+        List<int[]> result = new ArrayList<>(ring.size());
         for (int[] fp : ring) {
             result.add(mapToWorld(axis, fp[0], fp[1], step));
         }
@@ -197,13 +208,13 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
      * @param layerIndex the layer depth index
      * @return list of 3D offsets relative to the marker
      */
-    private java.util.List<int[]> computeTunnelLayerOffsets(int layerIndex) {
+    private List<int[]> computeTunnelLayerOffsets(int layerIndex) {
         Direction blastDir = placedFace.getOpposite();
         Direction.Axis axis = blastDir.getAxis();
         int step = blastDir.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : NEG_STEP;
         int depthOffset = (layerIndex + 1) * step;
-        java.util.List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
-        java.util.List<int[]> result = new java.util.ArrayList<>(footprint.size());
+        List<int[]> footprint = ChainFootprint.layerFootprint(stackCount);
+        List<int[]> result = new ArrayList<>(footprint.size());
         for (int[] fp : footprint) {
             result.add(mapToWorld(axis, fp[0], fp[1], depthOffset));
         }
@@ -216,19 +227,6 @@ public final class ProgressiveAreaBlock implements ChainBehavior {
             case Y -> new int[]{a, d, b};
             case Z -> new int[]{a, b, d};
         };
-    }
-
-    /** Applies the configured block action to a single position.
-     *
-     * @param level the server level
-     * @param pos   the target block position
-     */
-    private void applyBlockAction(ServerLevel level, BlockPos pos) {
-        switch (blockAction) {
-            case ACTION_FORTUNE_SMELT -> BlazeBehavior.fortuneSmeltSingle(level, pos);
-            case ACTION_FREEZE -> FrostBehavior.convertBlock(level, pos);
-            default -> RockBehavior.silkBreakSingle(level, pos);
-        }
     }
 
     @Override
