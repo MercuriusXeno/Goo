@@ -94,21 +94,42 @@ public final class HudAnimator<T> {
      */
     private void applyTransition(@Nullable T target) {
         if (target == null) {
-            if (tracked != null && !retracting) {
-                retracting = true;
-            }
+            beginRetractIfTracking();
             return;
         }
         if (tracked != null && sameTarget.test(tracked, target)) {
-            tracked = target;
-            if (retracting) {
-                retracting = false;
-            }
+            refreshTarget(target);
         } else {
-            tracked = target;
-            currentPitch = 0f;
-            retracting = false;
+            startEmerge(target);
         }
+    }
+
+    /** Marks the tracked target for retract on the next pitch advance. */
+    private void beginRetractIfTracking() {
+        if (tracked != null && !retracting) {
+            retracting = true;
+        }
+    }
+
+    /**
+     * Updates target reference (positional offsets may have shifted) and cancels any retract.
+     *
+     * @param target the refreshed target (same machine + slot as tracked)
+     */
+    private void refreshTarget(T target) {
+        tracked = target;
+        retracting = false;
+    }
+
+    /**
+     * Starts a fresh emerge animation for a newly-acquired target.
+     *
+     * @param target the newly-acquired target
+     */
+    private void startEmerge(T target) {
+        tracked = target;
+        currentPitch = 0f;
+        retracting = false;
     }
 
     /**
