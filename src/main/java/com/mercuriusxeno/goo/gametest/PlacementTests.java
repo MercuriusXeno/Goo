@@ -81,6 +81,27 @@ public final class PlacementTests {
     }
 
     /**
+     * A sideways-placed marker must survive a neighbor change during
+     * its fuse phase. The pre-fix bug computed the support direction
+     * as {@code placedFace} instead of {@code placedFace.getOpposite()},
+     * so any neighbor update on a side-attached marker triggered a
+     * false-positive "no support" detection that scheduled a fall and
+     * removed the marker before its effect fired.
+     *
+     * @param helper the gametest helper
+     */
+    public static void sidewaysMarkerSurvivesNeighborChange(GameTestHelper helper) {
+        helper.setBlock(WALL_POS, Blocks.STONE);
+        WorldEffects.apply(helper.getLevel(), helper.absolutePos(WALL_POS),
+            GooType.ROCK, Direction.SOUTH);
+        helper.assertBlockPresent(GooBlocks.CHAIN_MARKER.get(), AIR_POS);
+        BlockPos neighbor = AIR_POS.south();
+        helper.setBlock(neighbor, Blocks.STONE);
+        helper.assertBlockPresent(GooBlocks.CHAIN_MARKER.get(), AIR_POS);
+        helper.succeed();
+    }
+
+    /**
      * Crystal, metal, nether, unstable, glow all place markers via the
      * same path. A single combined test verifies they all succeed.
      *
