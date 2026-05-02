@@ -223,7 +223,7 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (be.getBehavior() != null) {
             return false;
         }
-        BlockPos supportPos = pos.relative(be.getPlacedFace());
+        BlockPos supportPos = pos.relative(be.getPlacedFace().getOpposite());
         return level.getBlockState(supportPos).isAir();
     }
 

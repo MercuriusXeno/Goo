@@ -56,6 +56,7 @@ public final class GooTestFunctions {
     private static final String PL_ROCK = "pl_rock_places";
     private static final String PL_FROST = "pl_frost_places";
     private static final String PL_DOUBLE_STACK = "pl_double_hit_stacks";
+    private static final String PL_SIDEWAYS_NEIGHBOR = "pl_sideways_neighbor";
     private static final String PL_OTHER_TYPES = "pl_other_types_place";
 
     // --- Canister interactions ---
@@ -181,6 +182,7 @@ public final class GooTestFunctions {
         reg(r, PL_ROCK, PlacementTests::rockPlacesMarker);
         reg(r, PL_FROST, PlacementTests::frostPlacesMarker);
         reg(r, PL_DOUBLE_STACK, PlacementTests::doubleHitStacks);
+        reg(r, PL_SIDEWAYS_NEIGHBOR, PlacementTests::sidewaysMarkerSurvivesNeighborChange);
         reg(r, PL_OTHER_TYPES, PlacementTests::otherTypesPlaceMarker);
     }
 
