@@ -8,14 +8,14 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
 import org.joml.Quaternionf;
 
 /**
  * Sonic-boom-style particle oriented flat against the blast plane
- * instead of billboarding toward the camera. The blast direction is
- * encoded in the xAux parameter as a Direction ordinal.
+ * instead of billboarding toward the camera. The blast direction
+ * arrives via {@link OrientedBoomParticleOptions} as a typed
+ * {@link Direction} field.
  */
 public class OrientedBoomParticle extends HugeExplosionParticle {
 
@@ -77,8 +77,8 @@ public class OrientedBoomParticle extends HugeExplosionParticle {
         return new Quaternionf(ROTATIONS[dir.ordinal()]);
     }
 
-    /** Provider that reads blast direction from the xAux parameter. */
-        public static class Provider implements ParticleProvider<SimpleParticleType> {
+    /** Provider that reads blast direction from the typed options. */
+    public static class Provider implements ParticleProvider<OrientedBoomParticleOptions> {
         private final SpriteSet sprites;
 
         /** Creates a provider with the given sprite set.
@@ -91,14 +91,11 @@ public class OrientedBoomParticle extends HugeExplosionParticle {
 
         @Override
         public Particle createParticle(
-                SimpleParticleType options, ClientLevel level,
+                OrientedBoomParticleOptions options, ClientLevel level,
                 double x, double y, double z,
-                double xAux, double yAux, double zAux,
+                double xSpeed, double ySpeed, double zSpeed,
                 RandomSource random) {
-            int ordinal = (int) xAux;
-            Direction[] dirs = Direction.values();
-            Direction dir = (ordinal >= 0 && ordinal < dirs.length) ? dirs[ordinal] : Direction.UP;
-            return new OrientedBoomParticle(level, x, y, z, 0, sprites, dir);
+            return new OrientedBoomParticle(level, x, y, z, 0, sprites, options.direction());
         }
     }
 }

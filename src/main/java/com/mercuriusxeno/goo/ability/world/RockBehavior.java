@@ -5,8 +5,8 @@ import com.mercuriusxeno.goo.ability.AbilityMath;
 import com.mercuriusxeno.goo.ability.ChainBehavior;
 import com.mercuriusxeno.goo.ability.ChainFootprint;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
+import com.mercuriusxeno.goo.client.particle.OrientedBoomParticleOptions;
 import com.mercuriusxeno.goo.data.GooValue;
-import com.mercuriusxeno.goo.registry.GooParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -373,20 +373,20 @@ public final class RockBehavior implements WorldEffect, ChainBehavior {
 
     /**
      * Spawns an oriented sonic-boom particle at the layer center, flat
-     * against the blast plane. The direction ordinal is encoded in
-     * xDist so the client particle provider can orient the quad.
+     * against the blast plane. The direction travels through the typed
+     * {@link OrientedBoomParticleOptions} payload.
      *
-     * @param level       TODO PARAM DESCRIPTION
-     * @param layerCenter TODO PARAM DESCRIPTION
-     * @param blastDir    TODO PARAM DESCRIPTION
+     * @param level       the server level to spawn into
+     * @param layerCenter the center of the destruction layer
+     * @param blastDir    the direction the boom faces
      */
     private static void spawnLayerSonicBoom(ServerLevel level, BlockPos layerCenter,
                                             Direction blastDir) {
         double cx = layerCenter.getX() + BLOCK_CENTER_OFFSET;
         double cy = layerCenter.getY() + BLOCK_CENTER_OFFSET;
         double cz = layerCenter.getZ() + BLOCK_CENTER_OFFSET;
-        level.sendParticles(GooParticles.ORIENTED_BOOM.get(),
-                cx, cy, cz, 0, blastDir.ordinal(), 0.0, 0.0, 1.0);
+        level.sendParticles(new OrientedBoomParticleOptions(blastDir),
+                cx, cy, cz, 1, 0.0, 0.0, 0.0, 0.0);
     }
 
     /**

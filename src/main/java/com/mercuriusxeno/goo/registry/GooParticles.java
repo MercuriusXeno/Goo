@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.registry;
 
 import com.mercuriusxeno.goo.Goo;
+import com.mercuriusxeno.goo.client.particle.OrientedBoomParticleOptions;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleType;
@@ -36,8 +37,18 @@ public class GooParticles {
         PARTICLE_TYPES.register("goo_drip_land", GooParticles::colorParticleType);
 
     /** Sonic-boom-style particle oriented along the blast axis. */
-    public static final DeferredHolder<ParticleType<?>, SimpleParticleType> ORIENTED_BOOM =
-        PARTICLE_TYPES.register("oriented_boom", () -> new SimpleParticleType(false));
+    public static final DeferredHolder<ParticleType<?>, ParticleType<OrientedBoomParticleOptions>> ORIENTED_BOOM =
+        PARTICLE_TYPES.register("oriented_boom", () -> new ParticleType<>(false) {
+            @Override
+            public MapCodec<OrientedBoomParticleOptions> codec() {
+                return OrientedBoomParticleOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, OrientedBoomParticleOptions> streamCodec() {
+                return OrientedBoomParticleOptions.STREAM_CODEC;
+            }
+        });
 
     /** Radial gradient fog puff for blob flight trails. */
     public static final DeferredHolder<ParticleType<?>, ParticleType<ColorParticleOption>> GOO_FOG =
