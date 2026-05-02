@@ -50,27 +50,46 @@ public final class ChainProfiles {
         registerGlow();
     }
 
+    private static final int DEFAULT_PREVIEW_DELAY = 8;
+    private static final String AREA_TUNNEL = "tunnel";
+
     /**
-     * Registers the blaze chain profile.
+     * Registers the blaze chain profile. Legacy non-ability path
+     * (no abilityId selected) builds a tunnel ProgressiveAreaBlock
+     * with fortune-smelt + blaze visuals + generic-explode audio,
+     * matching the {@code blaze_tunnel} ability defaults.
      */
     private static void registerBlaze() {
         ChainProfile.register(GooType.BLAZE, new ChainProfile(
                 BLAZE_FUSE_TICKS,
                 BLAZE_MAX_STACKS,
                 ChainFootprint::tunnelDepth,
-                BlazeBehavior::new
+                () -> new ProgressiveAreaBlock(
+                        AREA_TUNNEL,
+                        BlockEffectType.byName(BlockEffectType.FORTUNE_SMELT_BREAK),
+                        LayerVisualsType.byName(LayerVisualsType.BLAZE_FLAME),
+                        LayerAudioType.byName(LayerAudioType.GENERIC_EXPLODE),
+                        DEFAULT_PREVIEW_DELAY)
         ));
     }
 
     /**
-     * Registers the rock chain profile.
+     * Registers the rock chain profile. Legacy non-ability path
+     * (no abilityId selected) builds a tunnel ProgressiveAreaBlock
+     * with silk-break + rock visuals + stone-break audio, matching
+     * the {@code rock_tunnel} ability defaults.
      */
     private static void registerRock() {
         ChainProfile.register(GooType.ROCK, new ChainProfile(
                 ROCK_FUSE_TICKS,
                 ROCK_MAX_STACKS,
                 ChainFootprint::tunnelDepth,
-                RockBehavior::new
+                () -> new ProgressiveAreaBlock(
+                        AREA_TUNNEL,
+                        BlockEffectType.byName(BlockEffectType.SILK_BREAK),
+                        LayerVisualsType.byName(LayerVisualsType.ROCK_DUST),
+                        LayerAudioType.byName(LayerAudioType.STONE_BREAK),
+                        DEFAULT_PREVIEW_DELAY)
         ));
     }
 

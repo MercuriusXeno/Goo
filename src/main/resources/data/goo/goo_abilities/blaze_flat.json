@@ -16,9 +16,10 @@
       "type": "progressive_area",
       "params": {
         "areaMode": "flat_circle",
-        "blockAction": "fortune_smelt_break",
-        "previewDelayTicks": "8",
-        "particleStyle": "blaze"
+        "blockEffect": "fortune_smelt_break",
+        "layerVisuals": "blaze_flame",
+        "layerAudio": "generic_explode",
+        "previewDelayTicks": "8"
       }
     }
   ],

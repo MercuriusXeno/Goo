@@ -216,17 +216,22 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
     }
 
     /**
-     * Converts a single block per the frost rules.
+     * Converts a single block per the frost rules: water becomes
+     * magicked ice, lava becomes obsidian, fire and plants become
+     * air, and other blocks are left unchanged.
      *
      * @param level the server level
      * @param pos   the block position to convert
+     * @return true if the block was converted; false if no conversion applied
      */
-    public static void convertBlock(ServerLevel level, BlockPos pos) {
+    public static boolean convertBlock(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         Block replacement = frostReplacement(state);
-        if (replacement != null) {
-            level.setBlock(pos, replacement.defaultBlockState(), Block.UPDATE_ALL);
+        if (replacement == null) {
+            return false;
         }
+        level.setBlock(pos, replacement.defaultBlockState(), Block.UPDATE_ALL);
+        return true;
     }
 
     /**

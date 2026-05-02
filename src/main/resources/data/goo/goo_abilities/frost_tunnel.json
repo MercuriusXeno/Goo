@@ -18,9 +18,10 @@
       "type": "progressive_area",
       "params": {
         "areaMode": "tunnel",
-        "blockAction": "freeze",
-        "previewDelayTicks": "8",
-        "particleStyle": "frost"
+        "blockEffect": "freeze",
+        "layerVisuals": "none",
+        "layerAudio": "none",
+        "previewDelayTicks": "8"
       }
     }
   ],
