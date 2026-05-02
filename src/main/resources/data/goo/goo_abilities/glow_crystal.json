@@ -15,7 +15,10 @@
   },
   "behaviors": [
     {
-      "type": "glow_crystal"
+      "type": "block_place",
+      "params": {
+        "placer": "glow_crystal"
+      }
     }
   ],
   "tags": ["place_block", "instant"]

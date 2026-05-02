@@ -1,34 +1,39 @@
 package com.mercuriusxeno.goo.ability.world;
 
-import com.mercuriusxeno.goo.ability.ChainBehavior;
-import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock;
-import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock.CrystalShape;
 import com.mercuriusxeno.goo.block.ability.GlowCrystalBlock.CrystalSize;
-import com.mercuriusxeno.goo.registry.GooBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Glow goo: places a permanent glow crystal light source. Stitched merge
- * of the prior GlowEffect (instant world hit, with grow-existing-crystal
- * logic) and GlowBehavior (chain marker fuse). Implements both
- * WorldEffect (instant blob impact) and ChainBehavior (fused detonation).
+ * Glow world effect: on initial blob impact, either grows an existing
+ * glow crystal one size step or places (or stacks) a chain marker via
+ * {@link EffectBlockPlacement}. Post-fuse behavior is owned by the
+ * data-driven {@link com.mercuriusxeno.goo.ability.BlockPlaceBehavior}
+ * pipeline (with the {@code glow_crystal} placer); see the
+ * {@code glow_crystal} ability JSON for the wiring.
  */
-public final class GlowBehavior implements WorldEffect, ChainBehavior {
+public final class GlowBehavior implements WorldEffect {
 
-    /**
-     * Block update flags for setBlock calls.
-     */
+    /** Block update flags: notify neighbors + send to clients. */
     private static final int BLOCK_UPDATE_FLAGS = 3;
 
-    // --- WorldEffect (instant blob hit) ---
+    @Override
+    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
+        if (!(level instanceof ServerLevel)) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof GlowCrystalBlock) {
+            growCrystal(level, pos, state);
+            return;
+        }
+        EffectBlockPlacement.glowCrystal(level, pos, targetFace);
+    }
 
     /**
      * Increases the crystal size by one step if not already at max.
@@ -44,53 +49,5 @@ public final class GlowBehavior implements WorldEffect, ChainBehavior {
         }
         CrystalSize next = CrystalSize.values()[current.ordinal() + 1];
         level.setBlock(pos, state.setValue(GlowCrystalBlock.SIZE, next), BLOCK_UPDATE_FLAGS);
-    }
-
-    @Override
-    public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
-        if (!(level instanceof ServerLevel)) {
-            return;
-        }
-        BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof GlowCrystalBlock) {
-            growCrystal(level, pos, state);
-            return;
-        }
-        EffectBlockPlacement.glowCrystal(level, pos, targetFace);
-    }
-
-    // --- ChainBehavior (fused chain marker detonation) ---
-
-    @Override
-    public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        CrystalSize size = CrystalSize.fromStacks(be.getStackCount());
-        CrystalShape shape = be.isFlatBlob() ? CrystalShape.FLAT : CrystalShape.BUMP;
-        Direction facing = be.getPlacedFace();
-
-        BlockState crystal = GooBlocks.GLOW_CRYSTAL.get().defaultBlockState()
-                .setValue(GlowCrystalBlock.FACING, facing)
-                .setValue(GlowCrystalBlock.SHAPE, shape)
-                .setValue(GlowCrystalBlock.SIZE, size);
-        level.setBlock(pos, crystal, BLOCK_UPDATE_FLAGS);
-    }
-
-    @Override
-    public void serverTick(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
-        // Instant: never ticks.
-    }
-
-    @Override
-    public boolean isActive() {
-        return false;
-    }
-
-    @Override
-    public void saveAdditional(ValueOutput output) {
-        // No state.
-    }
-
-    @Override
-    public void loadAdditional(ValueInput input) {
-        // No state.
     }
 }
