@@ -39,23 +39,6 @@ public final class CanisterSlotLayout {
     /** Pixels per block; converts pixel-space coords to block-space. */
     private static final float BLOCK_PIXELS = 16f;
     /**
-     * Slot centers in block-local coordinates ({@code SLOT_CENTERS / 16}).
-     * Precomputed for renderers that consume block-coord positions.
-     */
-    public static final float[][] SLOT_CENTERS_BLOCK = buildBlockCenters();
-
-    private static float[][] buildBlockCenters() {
-        float[][] block = new float[SLOT_COUNT][];
-        for (int i = 0; i < SLOT_COUNT; i++) {
-            block[i] = new float[]{
-                    SLOT_CENTERS[i][0] / BLOCK_PIXELS,
-                    SLOT_CENTERS[i][1] / BLOCK_PIXELS
-            };
-        }
-        return block;
-    }
-    /** Sentinel value: no matching slot found. */
-    /**
      * Number of columns (and rows) in the grid.
      */
     private static final int GRID_SIZE = 3;
@@ -71,8 +54,24 @@ public final class CanisterSlotLayout {
      * Grid column boundary: pixels at or above this are column 2.
      */
     private static final float COL_BOUNDARY_HIGH = 2.0f * 16.0f / 3.0f;
+    /**
+     * Slot centers in block-local coordinates ({@code SLOT_CENTERS / 16}).
+     * Precomputed for renderers that consume block-coord positions.
+     */
+    public static final float[][] SLOT_CENTERS_BLOCK = buildBlockCenters();
 
     private CanisterSlotLayout() {
+    }
+
+    private static float[][] buildBlockCenters() {
+        float[][] block = new float[SLOT_COUNT][];
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            block[i] = new float[]{
+                    SLOT_CENTERS[i][0] / BLOCK_PIXELS,
+                    SLOT_CENTERS[i][1] / BLOCK_PIXELS
+            };
+        }
+        return block;
     }
 
     /**

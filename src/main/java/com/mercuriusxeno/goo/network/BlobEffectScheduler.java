@@ -194,10 +194,10 @@ final class BlobEffectScheduler {
             return;
         }
         playImpactSound(pe.level, living.getX(), living.getY(), living.getZ());
-        if (!pe.abilityId.isEmpty()) {
-            applyEntityAbilityEffect(pe, living);
-        } else {
+        if (pe.abilityId.isEmpty()) {
             MobAbilities.apply(pe.level, living, pe.gooType, pe.thrower);
+        } else {
+            applyEntityAbilityEffect(pe, living);
         }
     }
 
@@ -247,10 +247,10 @@ final class BlobEffectScheduler {
         if (WorldEffects.tryAbsorbAtTarget(pe.level, pe.targetPos, pe.gooType, pe.targetFace)) {
             return;
         }
-        if (!pe.abilityId.isEmpty()) {
-            applyAbilityBlockEffect(pe);
-        } else {
+        if (pe.abilityId.isEmpty()) {
             WorldEffects.apply(pe.level, pe.targetPos, pe.gooType, pe.targetFace);
+        } else {
+            applyAbilityBlockEffect(pe);
         }
     }
 
@@ -260,11 +260,11 @@ final class BlobEffectScheduler {
      * @param pe the pending effect with ability id set
      */
     static void applyAbilityBlockEffect(PendingEffect pe) {
-        net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(pe.abilityId);
+        Identifier id = Identifier.tryParse(pe.abilityId);
         if (id == null) {
             return;
         }
-        com.mercuriusxeno.goo.ability.AbilityDefinition def = com.mercuriusxeno.goo.ability.AbilityRegistry.getAbility(id);
+        AbilityDefinition def = AbilityRegistry.getAbility(id);
         if (def == null) {
             return;
         }

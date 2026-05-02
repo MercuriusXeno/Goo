@@ -255,7 +255,7 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
     protected void collectImplicitComponents(DataComponentMap.@NonNull Builder builder) {
         super.collectImplicitComponents(builder);
         List<ItemStack> nonEmpty = new java.util.ArrayList<>();
-        for (com.mercuriusxeno.goo.block.canister.CanisterSlot slot : state.slots) {
+        for (CanisterSlot slot : state.slots) {
             if (!slot.isEmpty()) {
                 nonEmpty.add(slot.canister());
             }

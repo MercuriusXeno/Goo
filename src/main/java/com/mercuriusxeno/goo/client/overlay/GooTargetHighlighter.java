@@ -303,18 +303,20 @@ public final class GooTargetHighlighter {
         if (hint == TargetingHint.NONE) {
             return TargetResult.NONE;
         }
+        TargetingHint resolvedHint;
         if (player.isShiftKeyDown()) {
             ThrowFreezeState.clear();
-            hint = TargetingHint.BLOCK;
+            resolvedHint = TargetingHint.BLOCK;
         } else {
             TargetResult frozen = ThrowFreezeState.getFrozenTarget();
             if (frozen != null) {
                 return frozen;
             }
+            resolvedHint = hint;
         }
         Vec3 eyePos = player.getEyePosition(partialTick);
         Vec3 reach = eyePos.add(player.getViewVector(partialTick).scale(MAX_RANGE));
-        return resolveWithHint(player, eyePos, reach, hint);
+        return resolveWithHint(player, eyePos, reach, resolvedHint);
     }
 
     private static TargetResult resolveWithHint(Player player, Vec3 eyePos,

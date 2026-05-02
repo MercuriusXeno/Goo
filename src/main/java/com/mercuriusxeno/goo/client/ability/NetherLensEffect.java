@@ -271,7 +271,6 @@ public final class NetherLensEffect {
      */
     public static void applyPerFrame(Minecraft mc) {
         markFrameStamp++;
-        int frame = markFrameStamp;
         GameRenderer gameRenderer = mc.gameRenderer;
         // Dev kill switch: when the lens is globally disabled via the
         // NetherHoleStyles flag, clear any currently-active post
@@ -283,7 +282,7 @@ public final class NetherLensEffect {
             activeHoleCenter = null;
             return;
         }
-        boolean fresh = (frame - lastMarkFrame) <= 1 && activeHoleCenter != null;
+        boolean fresh = (markFrameStamp - lastMarkFrame) <= 1 && activeHoleCenter != null;
         if (!fresh) {
             deactivateIfActive(gameRenderer);
             activeHoleCenter = null;

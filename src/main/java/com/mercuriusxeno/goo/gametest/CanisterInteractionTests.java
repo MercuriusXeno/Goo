@@ -25,9 +25,6 @@ public final class CanisterInteractionTests {
     private static final String INSERT_SHOULD_FILL = "Shift+canister should insert into the grid";
     private static final String PICKUP_SHOULD_EMPTY = "Right-click should pick up the canister";
     private static final String HAND_SHOULD_EMPTY = "Player hand should be empty after insert";
-    private static final String HAND_SHOULD_HAVE = "Player should receive the picked-up canister";
-    private static final String BLOCK_SHOULD_REMAIN = "Block should remain with canisters in it";
-    private static final String BLOCK_REMOVED = "Block should be removed when last canister is picked up";
 
     private CanisterInteractionTests() {}
 

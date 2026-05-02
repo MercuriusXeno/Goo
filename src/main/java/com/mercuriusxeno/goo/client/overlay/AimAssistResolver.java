@@ -468,10 +468,7 @@ final class AimAssistResolver {
         if (a instanceof AimHit.EntityHit ae) {
             return matchesEntity(ae, b);
         }
-        if (a instanceof AimHit.ChainMarkerHit am) {
-            return matchesMarker(am, b);
-        }
-        return false;
+        return a instanceof AimHit.ChainMarkerHit am && matchesMarker(am, b);
     }
 
     /**

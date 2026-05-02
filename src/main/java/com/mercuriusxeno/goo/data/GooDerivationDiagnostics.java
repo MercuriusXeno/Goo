@@ -75,7 +75,7 @@ final class GooDerivationDiagnostics {
      */
     static Map<Identifier, Set<Identifier>> buildDependencyGraph(
             Map<Identifier, List<RecipeInput>> byOutput) {
-        Map<Identifier, Set<Identifier>> deps = new java.util.HashMap<>();
+        Map<Identifier, Set<Identifier>> deps = new HashMap<>();
         for (var entry : byOutput.entrySet()) {
             addNonEmptyDeps(deps, entry.getKey(), entry.getValue());
         }

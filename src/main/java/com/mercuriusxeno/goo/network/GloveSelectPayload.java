@@ -16,16 +16,16 @@ import org.jspecify.annotations.NonNull;
  */
 public record GloveSelectPayload(String gooTypeId, String abilityId) implements CustomPacketPayload {
 
-    /** Backward-compat constructor for type-only selection. */
-    public GloveSelectPayload(String gooTypeId) {
-        this(gooTypeId, "");
-    }
-
     public static final Type<GloveSelectPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(Goo.MODID, "glove_select"));
 
     public static final StreamCodec<FriendlyByteBuf, GloveSelectPayload> STREAM_CODEC =
             StreamCodec.of(GloveSelectPayload::encode, GloveSelectPayload::decode);
+
+    /** Backward-compat constructor for type-only selection. */
+    public GloveSelectPayload(String gooTypeId) {
+        this(gooTypeId, "");
+    }
 
     @Override
     public @NonNull Type<? extends CustomPacketPayload> type() {
