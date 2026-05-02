@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.client.ability;
 
+import com.mercuriusxeno.goo.ability.ChainBehaviors;
 import com.mercuriusxeno.goo.ability.world.CrystalBehavior;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
 import com.mercuriusxeno.goo.client.ber.ChainMarkerRenderState;
@@ -204,8 +205,8 @@ public final class CrystalCloudVisual {
      */
     public static void extract(com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity be,
                                ChainMarkerRenderState state) {
-        if (be.getBehavior() instanceof CrystalBehavior crystal
-                && (crystal.getDensity() > 0f || crystal.isAnimating())) {
+        CrystalBehavior crystal = ChainBehaviors.findFirst(be.getBehavior(), CrystalBehavior.class);
+        if (crystal != null && (crystal.getDensity() > 0f || crystal.isAnimating())) {
             state.crystalActive = true;
             state.crystalDensity = crystal.getDensity();
             state.crystalRadiusFraction = crystal.getRadiusFraction();

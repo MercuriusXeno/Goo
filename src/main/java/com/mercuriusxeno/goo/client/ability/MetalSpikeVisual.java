@@ -2,6 +2,7 @@ package com.mercuriusxeno.goo.client.ability;
 
 import com.mercuriusxeno.goo.GooColors;
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.ChainBehaviors;
 import com.mercuriusxeno.goo.ability.world.MetalBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderUtil;
@@ -60,7 +61,8 @@ public final class MetalSpikeVisual {
      * @param state the render state to populate
      */
     public static void extract(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
-        if (be.getBehavior() instanceof MetalBehavior metal) {
+        MetalBehavior metal = ChainBehaviors.findFirst(be.getBehavior(), MetalBehavior.class);
+        if (metal != null) {
             state.metalActive = true;
             state.metalCharges = be.getStackCount();
             state.spikeAnims = metal.hasActiveSpikes()

@@ -3,6 +3,7 @@ package com.mercuriusxeno.goo.ability.world;
 import com.mercuriusxeno.goo.GooType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import java.util.EnumMap;
@@ -36,6 +37,24 @@ public final class WorldEffects {
         if (effect != null) {
             effect.apply(level, pos, targetFace);
         }
+    }
+
+    /**
+     * Pre-impact dispatcher: gives the typed effect a chance to absorb
+     * the blob (e.g. growing an existing glow crystal) before any chain
+     * marker placement runs. Called from both the legacy and ability
+     * landing paths.
+     *
+     * @param level      the server level
+     * @param pos        the target block position
+     * @param type       the goo type whose effect to query
+     * @param targetFace the face that was hit, or null
+     * @return true if the blob was absorbed and downstream placement should be skipped
+     */
+    public static boolean tryAbsorbAtTarget(ServerLevel level, BlockPos pos, GooType type,
+                                            @Nullable Direction targetFace) {
+        WorldEffect effect = EFFECTS.get(type);
+        return effect != null && effect.tryAbsorbAtTarget(level, pos, targetFace);
     }
 
     /**

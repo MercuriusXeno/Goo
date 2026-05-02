@@ -244,6 +244,9 @@ final class BlobEffectScheduler {
     static void applyBlockEffect(PendingEffect pe) {
         BlockPos pos = pe.targetPos;
         playImpactSound(pe.level, pos.getX() + BLOCK_CENTER, pos.getY() + BLOCK_CENTER, pos.getZ() + BLOCK_CENTER);
+        if (WorldEffects.tryAbsorbAtTarget(pe.level, pe.targetPos, pe.gooType, pe.targetFace)) {
+            return;
+        }
         if (!pe.abilityId.isEmpty()) {
             applyAbilityBlockEffect(pe);
         } else {

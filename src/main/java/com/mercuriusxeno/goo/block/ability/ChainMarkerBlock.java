@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block.ability;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.ability.ChainBehaviors;
 import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import com.mercuriusxeno.goo.item.BlobStacks;
 import com.mercuriusxeno.goo.item.GooContents;
@@ -295,7 +296,8 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
         if (!(server.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be)) {
             return;
         }
-        if (!(be.getBehavior() instanceof NetherBehavior nether)) {
+        NetherBehavior nether = ChainBehaviors.findFirst(be.getBehavior(), NetherBehavior.class);
+        if (nether == null) {
             return;
         }
         GooContents accumulator = nether.getAccumulator();

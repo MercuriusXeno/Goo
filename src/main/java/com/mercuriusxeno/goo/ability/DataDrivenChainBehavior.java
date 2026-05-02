@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,5 +95,23 @@ public final class DataDrivenChainBehavior implements ChainBehavior {
      */
     public AbilityDefinition getDefinition() {
         return definition;
+    }
+
+    /**
+     * Returns the first composed block of the given type, or null.
+     * Lets client visuals reach the concrete inner behavior (e.g.
+     * {@code CrystalBehavior}) when the ability path wraps it.
+     *
+     * @param <T>  the requested behavior block type
+     * @param type the class to match against
+     * @return the matching block, or null if none
+     */
+    public <T extends ChainBehavior> @Nullable T findInner(Class<T> type) {
+        for (ChainBehavior block : blocks) {
+            if (type.isInstance(block)) {
+                return type.cast(block);
+            }
+        }
+        return null;
     }
 }

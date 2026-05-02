@@ -142,14 +142,18 @@ public final class ChainProfiles {
     }
 
     /**
-     * Registers the glow chain profile.
+     * Registers the glow chain profile. Legacy non-ability path
+     * (no abilityId selected) builds a BlockPlaceBehavior with the
+     * glow-crystal placer, matching the {@code glow_crystal} ability
+     * defaults.
      */
     private static void registerGlow() {
         ChainProfile.register(GooType.GLOW, new ChainProfile(
                 GLOW_FUSE_TICKS,
                 GLOW_MAX_STACKS,
                 stacks -> 1,
-                GlowBehavior::new
+                () -> new BlockPlaceBehavior(
+                        BlockPlacerType.byName(BlockPlacerType.GLOW_CRYSTAL))
         ));
     }
 

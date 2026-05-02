@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.client.ber.style;
 
+import com.mercuriusxeno.goo.ability.ChainBehaviors;
 import com.mercuriusxeno.goo.ability.world.NetherBehavior;
 import com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity;
 import com.mercuriusxeno.goo.client.GooRenderTypes;
@@ -148,7 +149,8 @@ public final class CubeHoleStyle implements NetherHoleStyle {
 
     @Override
     public void extract(ChainMarkerBlockEntity be, ChainMarkerRenderState state) {
-        if (be.getBehavior() instanceof NetherBehavior nether) {
+        NetherBehavior nether = ChainBehaviors.findFirst(be.getBehavior(), NetherBehavior.class);
+        if (nether != null) {
             state.netherActive = true;
             state.visibleScale = nether.getVisibleScale();
             state.diskExpansionScale = nether.getDiskExpansionScale();
