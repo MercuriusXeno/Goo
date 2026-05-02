@@ -11,7 +11,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Glow world effect: on initial blob impact, either grows an existing
- * glow crystal one size step or places (or stacks) a chain marker via
+ * glow crystal one size step (via the {@link #tryAbsorbAtTarget}
+ * pre-impact hook so the rule fires on both legacy and ability-driven
+ * paths) or places (or stacks) a chain marker via
  * {@link EffectBlockPlacement}. Post-fuse behavior is owned by the
  * data-driven {@link com.mercuriusxeno.goo.ability.BlockPlaceBehavior}
  * pipeline (with the {@code glow_crystal} placer); see the
@@ -23,13 +25,19 @@ public final class GlowBehavior implements WorldEffect {
     private static final int BLOCK_UPDATE_FLAGS = 3;
 
     @Override
+    public boolean tryAbsorbAtTarget(ServerLevel level, BlockPos pos,
+                                     @Nullable Direction targetFace) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof GlowCrystalBlock)) {
+            return false;
+        }
+        growCrystal(level, pos, state);
+        return true;
+    }
+
+    @Override
     public void apply(Level level, BlockPos pos, @Nullable Direction targetFace) {
         if (!(level instanceof ServerLevel)) {
-            return;
-        }
-        BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof GlowCrystalBlock) {
-            growCrystal(level, pos, state);
             return;
         }
         EffectBlockPlacement.glowCrystal(level, pos, targetFace);
