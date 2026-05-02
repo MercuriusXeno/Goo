@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
  * stackCount). Implementations are stateless singletons looked up by
  * name from {@link BlockPlacerType}.
  */
+@FunctionalInterface
 public interface BlockPlacer {
 
     /**

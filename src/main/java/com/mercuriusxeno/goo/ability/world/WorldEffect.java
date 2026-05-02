@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
 /** Polymorphic world effect applied when a goo blob hits a block. */
+@FunctionalInterface
 public interface WorldEffect {
 
     /**

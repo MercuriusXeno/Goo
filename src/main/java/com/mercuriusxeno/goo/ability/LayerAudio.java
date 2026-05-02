@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
  * and pitch dipping per step. Implementations are stateless
  * singletons looked up by name from {@link LayerAudioType}.
  */
+@FunctionalInterface
 public interface LayerAudio {
 
     /**
