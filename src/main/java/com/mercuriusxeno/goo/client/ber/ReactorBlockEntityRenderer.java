@@ -68,10 +68,10 @@ public class ReactorBlockEntityRenderer
     private static final float GASKET_BOT = 1f / 16f;
     /** Top of lower gasket / bottom of body. */
     private static final float BODY_BOT = 2f / 16f;
-    /** Top of body / bottom of upper gasket. */
-    private static final float BODY_TOP = 14f / 16f;
-    /** Top of upper gasket. */
-    private static final float GASKET_TOP = 15f / 16f;
+    /** Top of body / bottom of upper gasket. 10px of body. */
+    private static final float BODY_TOP = 12f / 16f;
+    /** Top of upper gasket (1px gasket above body, 12px hollow ceiling). */
+    private static final float GASKET_TOP = 13f / 16f;
 
     /** Fluid inset from canister walls. */
     private static final float FLUID_INSET = 0.5f / 16f;
@@ -82,8 +82,8 @@ public class ReactorBlockEntityRenderer
 
     /** Body side U range: 4px / 16px. */
     private static final float BODY_U1 = 0.25f;
-    /** Body side V range: 12px / 16px. */
-    private static final float BODY_V1 = 0.75f;
+    /** Body side V range: 10px / 16px (matches the 10px body height). */
+    private static final float BODY_V1 = 10f / 16f;
 
     /** Gasket side U start. */
     private static final float GS_U0 = 0.25f;
@@ -98,22 +98,28 @@ public class ReactorBlockEntityRenderer
     /** Wheel radius: 5px (spans 3 to 13). */
     private static final float WHEEL_RADIUS = 5f / 16f;
 
-    /** West wheel X position (flush with block face). */
-    private static final float WHEEL_WEST_X = 0f;
+    /** Wheel inset from the block face (model units, then converted).
+     * Half the body's 0.01 inset so the wheel sits between the block
+     * boundary (where neighbor faces live) and the body's outer face,
+     * z-fighting neither. */
+    private static final float WHEEL_INSET = 0.005f / 16f;
 
-    /** East wheel X position (flush with block face). */
-    private static final float WHEEL_EAST_X = 1f;
+    /** West wheel X position. */
+    private static final float WHEEL_WEST_X = WHEEL_INSET;
+
+    /** East wheel X position. */
+    private static final float WHEEL_EAST_X = 1f - WHEEL_INSET;
 
     /** Model UV space size declared by reactor.json (texture_size: [32, 32]). */
     private static final float TEX_SIZE = 32f;
 
-    /** Wheel UV coords (the wheel sprite from the original 48x48 layout
-     * sits at u 9.5-12, v 5.5-8 of the canvas-expanded 64x64 texture
-     * in the model's 32-unit declared space). */
-    private static final float WHEEL_U0 = 9.5f / TEX_SIZE;
-    private static final float WHEEL_V0 = 5.5f / TEX_SIZE;
-    private static final float WHEEL_U1 = 12f / TEX_SIZE;
-    private static final float WHEEL_V1 = 8f / TEX_SIZE;
+    /** Wheel UV coords. 10x10 sprite at texture pixels (38-47, 22-31)
+     * of the 64-pixel file; in the model's 32-unit declared space:
+     * u 19-24, v 11-16. */
+    private static final float WHEEL_U0 = 19f / TEX_SIZE;
+    private static final float WHEEL_V0 = 11f / TEX_SIZE;
+    private static final float WHEEL_U1 = 24f / TEX_SIZE;
+    private static final float WHEEL_V1 = 16f / TEX_SIZE;
 
     /** Max wheel speed in degrees per tick at full crafting. */
     private static final float MAX_WHEEL_SPEED = 12f;
@@ -346,7 +352,11 @@ public class ReactorBlockEntityRenderer
      */
     private static void emitRotatedWheel(RenderContext ctx, float x,
             float angle, float u0, float u1) {
-        float[] yz = computeWheelCorners(angle);
+        // Negate angle so the top of the wheel rotates toward block-local
+        // -Z (the hollow's front face). Visually: east wheel CW, west
+        // wheel CCW from each side's outside view -- both wheels' tops
+        // swing toward the front of the reactor.
+        float[] yz = computeWheelCorners(-angle);
         float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
 
         for (int v = 0; v < WHEEL_CORNERS; v++) {
@@ -431,7 +441,7 @@ public class ReactorBlockEntityRenderer
             SubmitNodeCollector nodeCollector, ReactorRenderState state) {
         int light = state.lightCoords;
         nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityCutout(CANISTER_SIDE),
+                RenderTypes.entityTranslucent(CANISTER_SIDE),
                 (pose, c) -> {
                     RenderContext ctx = new RenderContext(pose, c, light);
                     CuboidBounds box = canisterBounds(BODY_BOT, BODY_TOP);
