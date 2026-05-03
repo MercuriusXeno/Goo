@@ -98,9 +98,9 @@ final class CanisterTargetResolver {
      */
     private static final double BLOCK_CENTER = 0.5;
     /**
-     * Reactor hollow center Y (midpoint of 1-15 pixel range).
+     * Reactor hollow center Y (midpoint of 1-13 pixel range).
      */
-    private static final double REACTOR_MID_Y = 8.0 / 16.0;
+    private static final double REACTOR_MID_Y = 7.0 / 16.0;
 
     private CanisterTargetResolver() {
     }

@@ -66,12 +66,13 @@ public class ReactorBlock extends BaseEntityBlock {
     private static final double HOLLOW_MIN_X = 5.0 / 16.0;
     private static final double HOLLOW_MAX_X = 11.0 / 16.0;
     private static final double HOLLOW_MIN_Y = 1.0 / 16.0;
-    private static final double HOLLOW_MAX_Y = 15.0 / 16.0;
+    private static final double HOLLOW_MAX_Y = 13.0 / 16.0;
 
     /**
-     * Output canister slot shape (south-facing): 4x14x4 centered in hollow.
+     * Output canister slot shape (south-facing): 4x12x4 centered in the
+     * 12-pixel hollow (y=1 to y=13).
      */
-    private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 15, 5);
+    private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 13, 5);
     /**
      * Output slot shapes per facing.
      */
@@ -79,13 +80,14 @@ public class ReactorBlock extends BaseEntityBlock {
             CutawayShapeHelper.buildShapes(SOUTH_OUTPUT_SLOT);
 
     /**
-     * South-facing shape pieces: full cube with hollow subtracted via composite.
+     * South-facing shape pieces: full cube with the 12-pixel hollow
+     * (y=1 to y=13) subtracted via composite.
      */
     private static final VoxelShape SOUTH_BACK = box(0, 0, 6, 16, 16, 16);
     private static final VoxelShape SOUTH_BOTTOM = box(0, 0, 0, 16, 1, 6);
-    private static final VoxelShape SOUTH_TOP = box(0, 15, 0, 16, 16, 6);
-    private static final VoxelShape SOUTH_LEFT = box(0, 1, 0, 5, 15, 6);
-    private static final VoxelShape SOUTH_RIGHT = box(11, 1, 0, 16, 15, 6);
+    private static final VoxelShape SOUTH_TOP = box(0, 13, 0, 16, 16, 6);
+    private static final VoxelShape SOUTH_LEFT = box(0, 1, 0, 5, 13, 6);
+    private static final VoxelShape SOUTH_RIGHT = box(11, 1, 0, 16, 13, 6);
     private static final VoxelShape SOUTH_SHAPE = Shapes.or(
             SOUTH_BACK, SOUTH_BOTTOM, SOUTH_TOP, SOUTH_LEFT, SOUTH_RIGHT);
 
@@ -268,6 +270,22 @@ public class ReactorBlock extends BaseEntityBlock {
         return defaultBlockState()
                 .setValue(FACING, context.getHorizontalDirection())
                 .setValue(TRIGGERED, context.getLevel().hasNeighborSignal(pos));
+    }
+
+    /**
+     * Reactors respond to redstone power on any side, so dust visually
+     * connects from any direction.
+     *
+     * @param state     the block state
+     * @param level     the level
+     * @param pos       the block position
+     * @param direction the side the dust is approaching from, or null
+     * @return true: dust connects on every side
+     */
+    @Override
+    public boolean canConnectRedstone(@NonNull BlockState state, @NonNull BlockGetter level,
+                                      @NonNull BlockPos pos, @Nullable Direction direction) {
+        return true;
     }
 
     @Override
