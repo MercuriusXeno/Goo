@@ -149,6 +149,22 @@ public class PlexerBlock extends BaseEntityBlock {
     }
 
     /**
+     * Plexers respond to redstone power on any side, so dust visually
+     * connects from any direction.
+     *
+     * @param state     the block state
+     * @param level     the level
+     * @param pos       the block position
+     * @param direction the side the dust is approaching from, or null
+     * @return true: dust connects on every side
+     */
+    @Override
+    public boolean canConnectRedstone(@NonNull BlockState state, @NonNull BlockGetter level,
+                                      @NonNull BlockPos pos, @Nullable Direction direction) {
+        return true;
+    }
+
+    /**
      * Returns the codec for serialization.
      *
      * @return the codec
