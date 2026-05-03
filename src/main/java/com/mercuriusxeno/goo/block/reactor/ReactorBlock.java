@@ -66,12 +66,13 @@ public class ReactorBlock extends BaseEntityBlock {
     private static final double HOLLOW_MIN_X = 5.0 / 16.0;
     private static final double HOLLOW_MAX_X = 11.0 / 16.0;
     private static final double HOLLOW_MIN_Y = 1.0 / 16.0;
-    private static final double HOLLOW_MAX_Y = 15.0 / 16.0;
+    private static final double HOLLOW_MAX_Y = 13.0 / 16.0;
 
     /**
-     * Output canister slot shape (south-facing): 4x14x4 centered in hollow.
+     * Output canister slot shape (south-facing): 4x12x4 centered in the
+     * 12-pixel hollow (y=1 to y=13).
      */
-    private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 15, 5);
+    private static final VoxelShape SOUTH_OUTPUT_SLOT = box(6, 1, 1, 10, 13, 5);
     /**
      * Output slot shapes per facing.
      */
