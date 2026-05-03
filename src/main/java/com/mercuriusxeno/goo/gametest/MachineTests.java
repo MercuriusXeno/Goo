@@ -51,6 +51,8 @@ public final class MachineTests {
     private static final String OUTPUT_SHOULD_BE_BLAZE = "Output should be blaze goo";
     private static final String OUTPUT_AMOUNT_POSITIVE = "Output amount should be positive";
     private static final String REDSTONE_HALTS_OUTPUT = "Output should be empty when redstone halts reactor";
+    private static final String INPUT_BLAZE_DRAINED = "Reactor should drain the blaze input canister";
+    private static final String INPUT_LEAF_DRAINED = "Reactor should drain the leaf input canister";
     private static final String SHOULD_INSERT_FULL = "Should insert full volume into empty canister";
     private static final String HANDLER_EXISTS = "Handler should exist";
     private static final String HANDLER_HOLDS_BLAZE = "Handler should hold blaze goo";
@@ -193,6 +195,12 @@ public final class MachineTests {
             helper.assertTrue(handler != null, OUTPUT_HANDLER_EXISTS);
             helper.assertTrue(handler.getFluid() == blazeFluid, OUTPUT_SHOULD_BE_BLAZE);
             helper.assertTrue(handler.getAmount() > 0, OUTPUT_AMOUNT_POSITIVE);
+            var inBlaze = inputBe.containerState().getSlotFluidHandler(0);
+            var inLeaf = inputBe.containerState().getSlotFluidHandler(CORNER_SLOT_2);
+            helper.assertTrue(inBlaze != null && inBlaze.getAmount() < INPUT_AMOUNT,
+                    INPUT_BLAZE_DRAINED);
+            helper.assertTrue(inLeaf != null && inLeaf.getAmount() < INPUT_AMOUNT,
+                    INPUT_LEAF_DRAINED);
             helper.succeed();
         });
     }

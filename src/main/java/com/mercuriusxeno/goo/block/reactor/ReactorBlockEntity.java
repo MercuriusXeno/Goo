@@ -375,6 +375,9 @@ public class ReactorBlockEntity extends BlockEntity
 
     /**
      * Drains a fluid across corner input slots via their fluid handlers.
+     * Uses the slot handler's {@code extractFluid} convenience (which
+     * opens, commits, and closes its own transaction) so this matches
+     * every other extract call site in the canister machinery.
      *
      * @param inputBe the input canister BE
      * @param fluid   the fluid to drain
@@ -383,7 +386,6 @@ public class ReactorBlockEntity extends BlockEntity
     private void consumeFluid(CanisterBlockEntity inputBe,
                               Fluid fluid, int amount) {
         int remaining = amount;
-        FluidResource resource = FluidResource.of(fluid);
         for (int slot : INPUT_SLOTS) {
             if (remaining <= 0) {
                 break;
@@ -393,11 +395,8 @@ public class ReactorBlockEntity extends BlockEntity
             if (handler == null) {
                 continue;
             }
-            try (var tx = Transaction.openRoot()) {
-                int extracted = handler.extract(0, resource, remaining, tx);
-                tx.commit();
-                remaining -= extracted;
-            }
+            int extracted = handler.extractFluid(fluid, remaining, false);
+            remaining -= extracted;
         }
     }
 
