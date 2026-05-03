@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -164,7 +165,12 @@ final class VoxelHighlightRenderer {
     }
 
     /**
-     * Emits translucent fill quads for every AABB in the voxel shape.
+     * Emits a single translucent fill at the shape's bounding AABB.
+     * Iterating each sub-box (via {@code forAllBoxes}) on a composite
+     * shape draws shared internal faces twice with translucent overlap,
+     * which reads as visible "seams" between segments. The bounding
+     * box gives a single unified fill; the wireframe pass below still
+     * traces the actual outline so cutaways stay visible.
      *
      * @param poseStack    the pose stack
      * @param bufferSource the buffer source
@@ -180,12 +186,11 @@ final class VoxelHighlightRenderer {
         int fillColor = colorWithAlpha(rgb, FACE_ALPHA);
         FlatQuadContext ctx = new FlatQuadContext(poseStack.last(),
             bufferSource.getBuffer(RenderTypes.debugQuads()));
-        shape.forAllBoxes((x0, y0, z0, x1, y1, z1) -> {
-            ctx.emitBox(fillColor, new CuboidBounds(
-                offsetMin(ox, x0), offsetMax(ox, x1),
-                offsetMin(oz, z0), offsetMax(oz, z1),
-                offsetMin(oy, y0), offsetMax(oy, y1)));
-        });
+        AABB bounds = shape.bounds();
+        ctx.emitBox(fillColor, new CuboidBounds(
+            offsetMin(ox, bounds.minX), offsetMax(ox, bounds.maxX),
+            offsetMin(oz, bounds.minZ), offsetMax(oz, bounds.maxZ),
+            offsetMin(oy, bounds.minY), offsetMax(oy, bounds.maxY)));
         bufferSource.endLastBatch();
     }
 
