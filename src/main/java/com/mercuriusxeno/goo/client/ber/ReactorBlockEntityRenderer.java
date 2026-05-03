@@ -41,9 +41,9 @@ public class ReactorBlockEntityRenderer
     private static final Identifier BLOCK_ATLAS_TEXTURE =
             Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
-    /** Reactor body texture for wheel sprite lookup. */
-    private static final Identifier REACTOR_BODY_TEXTURE =
-            Identifier.fromNamespaceAndPath("goo", "textures/block/reactor_body.png");
+    /** Reactor texture for wheel sprite lookup. */
+    private static final Identifier REACTOR_TEXTURE =
+            Identifier.fromNamespaceAndPath("goo", "textures/block/reactor.png");
 
     /** Canister body side texture. */
     private static final Identifier CANISTER_SIDE =
@@ -104,14 +104,15 @@ public class ReactorBlockEntityRenderer
     /** East wheel X position (flush with block face). */
     private static final float WHEEL_EAST_X = 1f;
 
-    /** Texture size for reactor_body.png. */
-    private static final float TEX_SIZE = 64f;
+    /** Model UV space size declared by reactor.json (texture_size: [32, 32]). */
+    private static final float TEX_SIZE = 32f;
 
-    /** Wheel UV coords: origin u51,v35, 10x10 pixels in a 64x64 texture. */
-    private static final float WHEEL_U0 = 51f / TEX_SIZE;
-    private static final float WHEEL_V0 = 35f / TEX_SIZE;
-    private static final float WHEEL_U1 = 61f / TEX_SIZE;
-    private static final float WHEEL_V1 = 45f / TEX_SIZE;
+    /** Wheel UV coords matching the {@code west_wheel}/{@code east_wheel}
+     * face UVs in {@code reactor.json}: u 12.667-16, v 7.333-10.667. */
+    private static final float WHEEL_U0 = 12.66667f / TEX_SIZE;
+    private static final float WHEEL_V0 = 7.33334f / TEX_SIZE;
+    private static final float WHEEL_U1 = 16f / TEX_SIZE;
+    private static final float WHEEL_V1 = 10.66667f / TEX_SIZE;
 
     /** Max wheel speed in degrees per tick at full crafting. */
     private static final float MAX_WHEEL_SPEED = 12f;
@@ -325,7 +326,7 @@ public class ReactorBlockEntityRenderer
         float u0 = flipU ? WHEEL_U1 : WHEEL_U0;
         float u1 = flipU ? WHEEL_U0 : WHEEL_U1;
         nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityCutout(REACTOR_BODY_TEXTURE),
+                RenderTypes.entityCutout(REACTOR_TEXTURE),
                 (pose, c) -> {
                     RenderContext ctx = new RenderContext(pose, c, light);
                     emitRotatedWheel(ctx, x, angle, u0, u1);
