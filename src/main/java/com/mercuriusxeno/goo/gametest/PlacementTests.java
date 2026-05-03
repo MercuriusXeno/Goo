@@ -17,8 +17,6 @@ public final class PlacementTests {
 
     private static final BlockPos WALL_POS = new BlockPos(1, 1, 1);
     private static final BlockPos AIR_POS = new BlockPos(1, 1, 2);
-    /** Z spacing between consecutive type tests in otherTypesPlaceMarker. */
-    private static final int TYPE_Z_SPACING = 2;
 
     private PlacementTests() {}
 
@@ -110,15 +108,12 @@ public final class PlacementTests {
             GooType.CRYSTAL, GooType.METAL, GooType.NETHER,
             GooType.UNSTABLE, GooType.GLOW
         };
-        int z = TYPE_Z_SPACING;
         for (GooType type : types) {
-            BlockPos wall = new BlockPos(1, 1, z);
-            BlockPos air = new BlockPos(1, 1, z + 1);
-            helper.setBlock(wall, Blocks.STONE);
-            WorldEffects.apply(helper.getLevel(), helper.absolutePos(wall),
+            helper.setBlock(WALL_POS, Blocks.STONE);
+            helper.setBlock(AIR_POS, Blocks.AIR);
+            WorldEffects.apply(helper.getLevel(), helper.absolutePos(WALL_POS),
                 type, Direction.SOUTH);
-            helper.assertBlockPresent(GooBlocks.CHAIN_MARKER.get(), air);
-            z += TYPE_Z_SPACING;
+            helper.assertBlockPresent(GooBlocks.CHAIN_MARKER.get(), AIR_POS);
         }
         helper.succeed();
     }
