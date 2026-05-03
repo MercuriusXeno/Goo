@@ -79,26 +79,6 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
     // --- ChainBehavior (fused chain marker detonation) ---
 
     /**
-     * Freezes all convertible blocks in a flat Euclidean circle footprint.
-     * Used when the frost chain marker is in flat mode.
-     *
-     * @param level      the server level
-     * @param origin     the chain marker position
-     * @param placedFace the face the marker was placed on
-     * @param stackCount the blob stack count
-     */
-    public static void executeFlatMode(ServerLevel level, BlockPos origin,
-                                       Direction placedFace, int stackCount) {
-        List<int[]> offsets = ChainFootprint.computeRegionOffsets(
-                stackCount, true, placedFace);
-        for (int[] o : offsets) {
-            convertBlock(level, origin.offset(o[0], o[1], o[Z_INDEX]));
-        }
-        int radius = AbilityMath.computeFreezeRadius(stackCount);
-        spawnEffects(level, origin, radius);
-    }
-
-    /**
      * Freezes all convertible blocks in a tunnel footprint (same shape
      * as rock/blaze). Used when the frost marker is underwater to
      * convert the area ahead instead of a sphere around the player.
@@ -419,11 +399,7 @@ public final class FrostBehavior implements WorldEffect, ChainBehavior {
     public void onFuseExpired(ServerLevel level, BlockPos pos, ChainMarkerBlockEntity be) {
         int stackCount = be.getStackCount();
         Direction placedFace = be.getPlacedFace();
-        boolean flatMode = false;
-        boolean underwater = level.getFluidState(pos).isSource();
-        if (flatMode) {
-            executeFlatMode(level, pos, placedFace, stackCount);
-        } else if (underwater) {
+        if (level.getFluidState(pos).isSource()) {
             executeTunnel(level, pos, placedFace, stackCount);
         } else {
             int radius = AbilityMath.computeFreezeRadius(stackCount);

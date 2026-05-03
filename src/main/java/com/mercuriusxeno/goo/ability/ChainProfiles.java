@@ -32,6 +32,8 @@ public final class ChainProfiles {
     private static final int UNSTABLE_MAX_STACKS = 8;
     private static final int GLOW_FUSE_TICKS = 30;
     private static final int GLOW_MAX_STACKS = 4;
+    private static final int DEFAULT_PREVIEW_DELAY = 8;
+    private static final String AREA_TUNNEL = "tunnel";
 
     private ChainProfiles() {
     }
@@ -49,9 +51,6 @@ public final class ChainProfiles {
         registerUnstable();
         registerGlow();
     }
-
-    private static final int DEFAULT_PREVIEW_DELAY = 8;
-    private static final String AREA_TUNNEL = "tunnel";
 
     /**
      * Registers the blaze chain profile. Legacy non-ability path

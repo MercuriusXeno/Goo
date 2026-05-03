@@ -24,7 +24,7 @@ public final class CrucibleMath {
      */
     static final int MAX_MATRICES = 5;
 
-    public CrucibleMath() {
+    private CrucibleMath() {
     }
 
     /**

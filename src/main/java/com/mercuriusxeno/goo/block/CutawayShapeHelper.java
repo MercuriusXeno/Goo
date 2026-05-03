@@ -36,7 +36,7 @@ public final class CutawayShapeHelper {
      */
     private static final int COORD_Z2 = 3;
 
-    public CutawayShapeHelper() {
+    private CutawayShapeHelper() {
     }
 
     /**

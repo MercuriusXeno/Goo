@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -268,12 +269,24 @@ public final class BlobThrowHandler {
      */
     private static @Nullable ChainMarkerBlockEntity findChainMarker(
             ServerLevel level, BlockPos pos, @Nullable Direction face) {
-        if (level.getBlockEntity(pos) instanceof ChainMarkerBlockEntity be) { return be; }
-        if (face != null) {
-            BlockPos adj = pos.relative(face);
-            if (level.getBlockEntity(adj) instanceof ChainMarkerBlockEntity be) { return be; }
+        ChainMarkerBlockEntity primary = asChainMarker(level.getBlockEntity(pos));
+        if (primary != null) {
+            return primary;
         }
-        return null;
+        if (face == null) {
+            return null;
+        }
+        return asChainMarker(level.getBlockEntity(pos.relative(face)));
+    }
+
+    /**
+     * Casts the given BE to {@link ChainMarkerBlockEntity}, or returns null.
+     *
+     * @param entity the block entity to test (may be null)
+     * @return the marker BE, or null
+     */
+    private static @Nullable ChainMarkerBlockEntity asChainMarker(@Nullable BlockEntity entity) {
+        return entity instanceof ChainMarkerBlockEntity be ? be : null;
     }
 
     /**

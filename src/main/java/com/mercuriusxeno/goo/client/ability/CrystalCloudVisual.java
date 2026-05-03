@@ -210,8 +210,8 @@ public final class CrystalCloudVisual {
             state.crystalActive = true;
             state.crystalDensity = crystal.getDensity();
             state.crystalRadiusFraction = crystal.getRadiusFraction();
-            long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0;
-            state.crystalAnimationTime = (float) gameTime;
+            long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
+            state.crystalAnimationTime = gameTime;
         } else {
             state.crystalActive = false;
             state.crystalDensity = 0f;
@@ -396,9 +396,15 @@ public final class CrystalCloudVisual {
                                          float hl, float hw,
                                          float apX, float apY, float apZ, int alpha,
                                          Level level, Vec3 camPos, Vec3 worldCenter) {
-        float tipX = cx + ax * hl, tipY = cy + ay * hl, tipZ = cz + az * hl;
-        float blX = cx - ax * hl - px * hw, blY = cy - ay * hl - py * hw, blZ = cz - az * hl - pz * hw;
-        float brX = cx - ax * hl + px * hw, brY = cy - ay * hl + py * hw, brZ = cz - az * hl + pz * hw;
+        float tipX = cx + ax * hl;
+        float tipY = cy + ay * hl;
+        float tipZ = cz + az * hl;
+        float blX = cx - ax * hl - px * hw;
+        float blY = cy - ay * hl - py * hw;
+        float blZ = cz - az * hl - pz * hw;
+        float brX = cx - ax * hl + px * hw;
+        float brY = cy - ay * hl + py * hw;
+        float brZ = cz - az * hl + pz * hw;
         emitPyramidFace(pose, c, tipX, tipY, tipZ, blX, blY, blZ, apX, apY, apZ,
                 alpha, level, camPos, worldCenter);
         emitPyramidFace(pose, c, blX, blY, blZ, brX, brY, brZ, apX, apY, apZ,
@@ -437,10 +443,18 @@ public final class CrystalCloudVisual {
                                            float hl, float hw,
                                            float apX, float apY, float apZ, int alpha,
                                            Level level, Vec3 camPos, Vec3 worldCenter) {
-        float tX = cx + ax * hl, tY = cy + ay * hl, tZ = cz + az * hl;
-        float rX = cx + px * hw, rY = cy + py * hw, rZ = cz + pz * hw;
-        float bX = cx - ax * hl, bY = cy - ay * hl, bZ = cz - az * hl;
-        float lX = cx - px * hw, lY = cy - py * hw, lZ = cz - pz * hw;
+        float tX = cx + ax * hl;
+        float tY = cy + ay * hl;
+        float tZ = cz + az * hl;
+        float rX = cx + px * hw;
+        float rY = cy + py * hw;
+        float rZ = cz + pz * hw;
+        float bX = cx - ax * hl;
+        float bY = cy - ay * hl;
+        float bZ = cz - az * hl;
+        float lX = cx - px * hw;
+        float lY = cy - py * hw;
+        float lZ = cz - pz * hw;
         emitPyramidFace(pose, c, tX, tY, tZ, rX, rY, rZ, apX, apY, apZ,
                 alpha, level, camPos, worldCenter);
         emitPyramidFace(pose, c, rX, rY, rZ, bX, bY, bZ, apX, apY, apZ,
@@ -481,11 +495,20 @@ public final class CrystalCloudVisual {
                                         float hl, float hw,
                                         float apX, float apY, float apZ, int alpha,
                                         Level level, Vec3 camPos, Vec3 worldCenter) {
-        float la = hl * ASYM_LONG_FACTOR, sa = hl * ASYM_SHORT_FACTOR;
-        float tX = cx + ax * la, tY = cy + ay * la, tZ = cz + az * la;
-        float rX = cx + px * hw, rY = cy + py * hw, rZ = cz + pz * hw;
-        float bX = cx - ax * sa, bY = cy - ay * sa, bZ = cz - az * sa;
-        float lX = cx - px * hw, lY = cy - py * hw, lZ = cz - pz * hw;
+        float la = hl * ASYM_LONG_FACTOR;
+        float sa = hl * ASYM_SHORT_FACTOR;
+        float tX = cx + ax * la;
+        float tY = cy + ay * la;
+        float tZ = cz + az * la;
+        float rX = cx + px * hw;
+        float rY = cy + py * hw;
+        float rZ = cz + pz * hw;
+        float bX = cx - ax * sa;
+        float bY = cy - ay * sa;
+        float bZ = cz - az * sa;
+        float lX = cx - px * hw;
+        float lY = cy - py * hw;
+        float lZ = cz - pz * hw;
         emitPyramidFace(pose, c, tX, tY, tZ, rX, rY, rZ, apX, apY, apZ,
                 alpha, level, camPos, worldCenter);
         emitPyramidFace(pose, c, rX, rY, rZ, bX, bY, bZ, apX, apY, apZ,
@@ -520,8 +543,12 @@ public final class CrystalCloudVisual {
                                         float v1x, float v1y, float v1z,
                                         float apX, float apY, float apZ, int alpha,
                                         Level level, Vec3 camPos, Vec3 worldCenter) {
-        float e0x = v1x - v0x, e0y = v1y - v0y, e0z = v1z - v0z;
-        float e1x = apX - v0x, e1y = apY - v0y, e1z = apZ - v0z;
+        float e0x = v1x - v0x;
+        float e0y = v1y - v0y;
+        float e0z = v1z - v0z;
+        float e1x = apX - v0x;
+        float e1y = apY - v0y;
+        float e1z = apZ - v0z;
         float nx = e0y * e1z - e0z * e1y;
         float ny = e0z * e1x - e0x * e1z;
         float nz = e0x * e1y - e0y * e1x;

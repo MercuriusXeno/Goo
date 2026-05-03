@@ -80,4 +80,20 @@
         <Bug pattern="SUA_SUSPICIOUS_UNINITIALIZED_ARRAY"/>
         <Class name="com.mercuriusxeno.goo.tools.FluidTextureGenerator"/>
     </Match>
+
+    <!-- BlockEntityTicker.tick contract takes (Level, BlockPos, BlockState, T)
+         abstractly; the cast to ServerLevel is server-side-only by convention. -->
+    <Match>
+        <Bug pattern="PDP_POORLY_DEFINED_PARAMETER"/>
+        <Class name="com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity"/>
+        <Method name="serverTick"/>
+    </Match>
+
+    <!-- abilityId is intentionally a String: it travels through NBT and the
+         data-driven JSON path uses Identifier.tryParse on demand rather than
+         carrying a Holder field. -->
+    <Match>
+        <Bug pattern="STT_TOSTRING_STORED_IN_FIELD"/>
+        <Class name="com.mercuriusxeno.goo.block.ability.ChainMarkerBlockEntity"/>
+    </Match>
 </FindBugsFilter>

@@ -125,7 +125,7 @@ public final class GooTestFunctions {
      */
     private static void onRegister(RegisterEvent event) {
         event.register(Registries.TEST_FUNCTION, registrar -> {
-            reg(registrar, SMOKE, h -> h.succeed());
+            reg(registrar, SMOKE, GameTestHelper::succeed);
             registerGasketTests(registrar);
             registerEffectExecutorTests(registrar);
             registerCrucibleTests(registrar);

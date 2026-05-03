@@ -31,8 +31,6 @@ public final class EffectExecutorTests {
     private static final int NETHER_POST_FUSE = 80;
     /** Extra ticks for simpler instant/short behaviors. */
     private static final int SHORT_POST_FUSE = 5;
-    private static final String MARKER_GONE = "Chain marker should be removed after behavior completes";
-    private static final String BLOCK_MINED = "Stone should be mined by the effect";
     private static final String VALUES_REQUIRED = "Goo values must be loaded for rock mining to work";
     private static final int WALL_X_MAX = 5;
     private static final int WALL_Y_MAX = 3;

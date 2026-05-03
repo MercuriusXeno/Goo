@@ -80,14 +80,6 @@ public class ChainMarkerBlock extends AbstractEffectBlock implements SimpleWater
      */
     private static final int LAVA_CHANCE = 3;
     /**
-     * Sound pitch when toggling to flat mode.
-     */
-    private static final float FLAT_MODE_PITCH = 1.5f;
-    /**
-     * Sound pitch when toggling to tunnel mode.
-     */
-    private static final float TUNNEL_MODE_PITCH = 0.8f;
-    /**
      * Base core half-size in pixels (matches BER CORE_BASE).
      */
     private static final float SHAPE_CORE_PX = 2f;

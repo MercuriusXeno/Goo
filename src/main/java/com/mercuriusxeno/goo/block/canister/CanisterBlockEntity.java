@@ -201,15 +201,11 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
      * @return true if inserted
      */
     public boolean insertCanister(int slotIndex, ItemStack canisterStack, boolean stripGaskets) {
-        if (level != null && !CanisterPlacementValidator.isSlotAllowed(level, worldPosition, slotIndex)) {
+        CanisterSlot slot = resolveInsertableSlot(slotIndex, canisterStack);
+        if (slot == null) {
             return false;
         }
-        CanisterSlot slot = slot(slotIndex);
-        if (slot == null || !slot.isEmpty() || !(canisterStack.getItem() instanceof CanisterItem)) {
-            return false;
-        }
-        ItemStack copy = canisterStack.copyWithCount(1);
-        slot.setCanister(copy);
+        slot.setCanister(canisterStack.copyWithCount(1));
         if (stripGaskets) {
             slot.stripGaskets();
         }
@@ -218,6 +214,29 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
         BlockEntitySync.invalidateCapabilities(this);
         registerSlotGaskets(slotIndex);
         return true;
+    }
+
+    /**
+     * Returns the slot at {@code slotIndex} if it is a valid insertion target
+     * for {@code canisterStack}, otherwise null. Combines the placement-rule,
+     * empty-slot, and item-class checks into one resolver.
+     *
+     * @param slotIndex     the slot index
+     * @param canisterStack the candidate canister stack
+     * @return the slot ready to receive the canister, or null
+     */
+    private @Nullable CanisterSlot resolveInsertableSlot(int slotIndex, ItemStack canisterStack) {
+        if (level != null && !CanisterPlacementValidator.isSlotAllowed(level, worldPosition, slotIndex)) {
+            return null;
+        }
+        if (!(canisterStack.getItem() instanceof CanisterItem)) {
+            return null;
+        }
+        CanisterSlot slot = slot(slotIndex);
+        if (slot == null || !slot.isEmpty()) {
+            return null;
+        }
+        return slot;
     }
 
     /**

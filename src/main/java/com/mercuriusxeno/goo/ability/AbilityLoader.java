@@ -46,7 +46,7 @@ public final class AbilityLoader
      */
     private static Map<Identifier, AbilityDefinition> assignIds(
             Map<Identifier, AbilityDefinition> prepared) {
-        Map<Identifier, AbilityDefinition> result = new HashMap<>(prepared.size());
+        Map<Identifier, AbilityDefinition> result = HashMap.newHashMap(prepared.size());
         for (Map.Entry<Identifier, AbilityDefinition> entry : prepared.entrySet()) {
             result.put(entry.getKey(), entry.getValue().withId(entry.getKey()));
         }

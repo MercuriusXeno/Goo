@@ -184,31 +184,39 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      * @return the raw sums for {@link #computePullState}
      */
     private static NeighborSums accumulateNeighborSums(ItemEntity self, List<ItemEntity> nearby) {
-        double sumUX = 0;
-        double sumUY = 0;
-        double sumUZ = 0;
-        double centX = 0;
-        double centY = 0;
-        double centZ = 0;
-        int count = 0;
+        NeighborSums acc = NeighborSums.zero();
         for (ItemEntity n : nearby) {
-            double dx = n.getX() - self.getX();
-            double dy = n.getY() - self.getY();
-            double dz = n.getZ() - self.getZ();
-            double distSq = dx * dx + dy * dy + dz * dz;
-            if (distSq < MIN_GRAV_DIST_SQ) {
-                continue;
-            }
-            double invDist = 1.0 / Math.sqrt(distSq);
-            sumUX += dx * invDist;
-            sumUY += dy * invDist;
-            sumUZ += dz * invDist;
-            centX += dx;
-            centY += dy;
-            centZ += dz;
-            count++;
+            acc = addNeighbor(acc, self, n);
         }
-        return new NeighborSums(sumUX, sumUY, sumUZ, centX, centY, centZ, count);
+        return acc;
+    }
+
+    /**
+     * Adds one neighbor's contribution to the running sums. Neighbors
+     * effectively at the same point as {@code self} are skipped.
+     *
+     * @param acc      the running neighbor sum accumulator
+     * @param self     the querying item entity
+     * @param neighbor a same-type neighbor in the radius
+     * @return a new accumulator with this neighbor folded in
+     */
+    private static NeighborSums addNeighbor(NeighborSums acc, ItemEntity self, ItemEntity neighbor) {
+        double dx = neighbor.getX() - self.getX();
+        double dy = neighbor.getY() - self.getY();
+        double dz = neighbor.getZ() - self.getZ();
+        double distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq < MIN_GRAV_DIST_SQ) {
+            return acc;
+        }
+        double invDist = 1.0 / Math.sqrt(distSq);
+        return new NeighborSums(
+                acc.sumUX() + dx * invDist,
+                acc.sumUY() + dy * invDist,
+                acc.sumUZ() + dz * invDist,
+                acc.centX() + dx,
+                acc.centY() + dy,
+                acc.centZ() + dz,
+                acc.count() + 1);
     }
 
     /**
@@ -719,5 +727,8 @@ public class GooOmniblobItem extends Item implements IGooItemInteraction {
      */
     private record NeighborSums(double sumUX, double sumUY, double sumUZ,
                                 double centX, double centY, double centZ, int count) {
+        static NeighborSums zero() {
+            return new NeighborSums(0, 0, 0, 0, 0, 0, 0);
+        }
     }
 }

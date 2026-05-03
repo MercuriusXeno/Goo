@@ -93,10 +93,7 @@ public final class ParameterizedExplosion implements ChainBehavior {
 
     @Override
     public boolean isActive() {
-        if (proximityTrigger) {
-            return !detonated;
-        }
-        return false;
+        return proximityTrigger && !detonated;
     }
 
     /**

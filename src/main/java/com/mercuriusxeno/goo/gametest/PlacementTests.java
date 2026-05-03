@@ -17,8 +17,6 @@ public final class PlacementTests {
 
     private static final BlockPos WALL_POS = new BlockPos(1, 1, 1);
     private static final BlockPos AIR_POS = new BlockPos(1, 1, 2);
-    private static final String MARKER_PLACED = "Chain marker should be placed";
-    private static final String MARKER_STACKED = "Chain marker should stack on second hit";
     /** Z spacing between consecutive type tests in otherTypesPlaceMarker. */
     private static final int TYPE_Z_SPACING = 2;
 

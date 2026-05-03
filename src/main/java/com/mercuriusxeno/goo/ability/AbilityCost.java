@@ -15,16 +15,8 @@ public sealed interface AbilityCost {
     String FORMULA_BLOCK_COUNT = "block_count";
     String FORMULA_POWER_LAW = "power_law";
 
-    /**
-     * Computes the cost in mB for throwing blob number {@code n} in the sequence.
-     *
-     * @param n the 0-based sequence position (0 = first throw)
-     * @return the cost in microblobs
-     */
-    int costForStack(int n);
-
     /** Codec that reads "formula" and all flat fields, constructing the right type. */
-    Codec<AbilityCost> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.<AbilityCost>create(
+    Codec<AbilityCost> CODEC = RecordCodecBuilder.<AbilityCost>create(
             inst -> inst.group(
                     Codec.STRING.fieldOf("formula").forGetter(AbilityCost::formulaName),
                     Codec.INT.optionalFieldOf("baseCost", 0).forGetter(c -> switch (c) {
@@ -43,6 +35,14 @@ public sealed interface AbilityCost {
                     Codec.INT.optionalFieldOf("costPerBlock", 0).forGetter(c ->
                             c instanceof BlockCount b ? b.costPerBlock() : 0)
             ).apply(inst, AbilityCost::fromFields));
+
+    /**
+     * Computes the cost in mB for throwing blob number {@code n} in the sequence.
+     *
+     * @param n the 0-based sequence position (0 = first throw)
+     * @return the cost in microblobs
+     */
+    int costForStack(int n);
 
     /** Constructs the correct AbilityCost variant from flat codec fields.
      *

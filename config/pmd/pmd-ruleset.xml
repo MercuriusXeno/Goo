@@ -123,7 +123,7 @@
          Extracting constants for "size <= 1" or "fill <= 0f" adds noise, not clarity. -->
     <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition">
         <properties>
-            <property name="ignoreMagicNumbers" value="-1,0,1,0f,1f,0.0,1.0,'$'"/>
+            <property name="ignoreMagicNumbers" value="-1,0,1,0f,1f,0L,1L,0.0,1.0,'$'"/>
         </properties>
     </rule>
 
@@ -134,6 +134,32 @@
         <properties>
             <property name="violationSuppressXPath"
                 value="//ClassDeclaration[ends-with(@SimpleName, 'Mixin')]"/>
+        </properties>
+    </rule>
+
+    <!-- Mixin classes are mandated 'abstract' by the Mixin annotation processor
+         even when they declare no abstract methods. -->
+    <rule ref="category/java/design.xml/AbstractClassWithoutAbstractMethod">
+        <properties>
+            <property name="violationSuppressXPath"
+                value="//ClassDeclaration[ends-with(@SimpleName, 'Mixin')]"/>
+        </properties>
+    </rule>
+
+    <!-- Mixin @Shadow fields must match the target's exact concrete type
+         (e.g. NonNullList<Slot>) so the bytecode rewrite resolves correctly. -->
+    <rule ref="category/java/bestpractices.xml/LooseCoupling">
+        <properties>
+            <property name="violationSuppressXPath"
+                value="//ClassDeclaration[ends-with(@SimpleName, 'Mixin')]"/>
+        </properties>
+    </rule>
+
+    <!-- Gametest dispatcher classes end in 'Tests' but are registered into the
+         NeoForge TEST_FUNCTION registry by reference; they have no JUnit annotations. -->
+    <rule ref="category/java/bestpractices.xml/TestClassWithoutTestCases">
+        <properties>
+            <property name="violationSuppressRegex" value=".*gametest.*"/>
         </properties>
     </rule>
 
