@@ -113,13 +113,24 @@ public class ReactorBlockEntityRenderer
     /** Model UV space size declared by reactor.json (texture_size: [32, 32]). */
     private static final float TEX_SIZE = 32f;
 
-    /** Wheel UV coords. 10x10 sprite at texture pixels (38-47, 22-31)
-     * of the 64-pixel file; in the model's 32-unit declared space:
-     * u 19-24, v 11-16. */
-    private static final float WHEEL_U0 = 19f / TEX_SIZE;
-    private static final float WHEEL_V0 = 11f / TEX_SIZE;
-    private static final float WHEEL_U1 = 24f / TEX_SIZE;
-    private static final float WHEEL_V1 = 16f / TEX_SIZE;
+    /** Sprite A: corner-based highlights at 1:30, 12, 10:30 of the cog.
+     * Texture pixels (48,12)-(58,22); in 32-unit declared space
+     * u 24-29, v 6-11. Shown for phase [0, 22.5) at display = phase
+     * and again for phase [67.5, 90) at display = phase - 90. */
+    private static final float WHEEL_A_U0 = 24f / TEX_SIZE;
+    private static final float WHEEL_A_V0 = 6f / TEX_SIZE;
+    private static final float WHEEL_A_U1 = 29f / TEX_SIZE;
+    private static final float WHEEL_A_V1 = 11f / TEX_SIZE;
+
+    /** Sprite B: edge-based highlights at 12, 10:30, 9 of the cog
+     * (45 offset from sprite A). Texture pixels (48,22)-(58,32); in
+     * 32-unit declared space u 24-29, v 11-16. Shown for phase
+     * [22.5, 67.5) at display = phase - 90, so the displayed angle
+     * runs from -67.5 to -22.5 across this band. */
+    private static final float WHEEL_B_U0 = 24f / TEX_SIZE;
+    private static final float WHEEL_B_V0 = 11f / TEX_SIZE;
+    private static final float WHEEL_B_U1 = 29f / TEX_SIZE;
+    private static final float WHEEL_B_V1 = 16f / TEX_SIZE;
 
     /** Max wheel speed in degrees per tick at full crafting. */
     private static final float MAX_WHEEL_SPEED = 12f;
@@ -127,8 +138,15 @@ public class ReactorBlockEntityRenderer
     /** Acceleration in degrees/tick/tick when crafting. */
     private static final float WHEEL_ACCEL = 0.5f;
 
-    /** Deceleration in degrees/tick/tick when not crafting. */
+    /** Natural deceleration rate when crafting stops (degrees/tick/tick). */
     private static final float WHEEL_DECEL = 0.3f;
+
+    /** Speed threshold below which the wheel hard-zeroes and snaps. */
+    private static final float WHEEL_SPEED_EPSILON = 0.05f;
+
+    /** Kinematic constant: stop distance under constant decel a is v^2 / (2a). */
+    private static final float KINEMATIC_HALF = 2f;
+
     /** Number of vertices per wheel quad. */
     private static final int WHEEL_CORNERS = 4;
     /** Stride between consecutive (y,z) pairs in the corner array. */
@@ -136,20 +154,30 @@ public class ReactorBlockEntityRenderer
     /** First two vertices use V1, last two use V0. */
     private static final int WHEEL_UV_SPLIT = 2;
 
-    /** Speed threshold below which the wheel snaps to rest at the nearest 90. */
-    private static final float IDLE_SNAP_SPEED = 0.8f;
+    /** Wheel cycle in degrees. The wheel rests at phase=0 (= 90).
+     * Inside the cycle, three sub-arcs share the same forward motion
+     * but swap sprites and display angle to keep the highlights in
+     * apparent place: [0, 22.5) sprite A; [22.5, 67.5) sprite B with
+     * display offset by -90; [67.5, 90) sprite A with display offset
+     * by -90. The snap target is the next 90 mark, so the wheel
+     * always settles at the rest position. */
+    private static final float CYCLE_PERIOD = 90f;
 
-    /** Slow idle speed for coasting to aligned position. */
-    private static final float IDLE_COAST_SPEED = 0.4f;
+    /** Phase at which sprite A swaps to sprite B (display jumps -90). */
+    private static final float SPRITE_A_TO_B = 22.5f;
 
-    /** Alignment tolerance in degrees. */
-    private static final float SNAP_TOLERANCE = 0.5f;
+    /** Phase at which sprite B swaps back to sprite A (display continuous). */
+    private static final float SPRITE_B_TO_A = 67.5f;
+
+    /** Display-angle offset applied during the sprite-B band and the
+     * trailing sprite-A band so the visible rotation runs continuous. */
+    private static final float DISPLAY_ANGLE_OFFSET = -90f;
+
+    /** Wheel rest snap increment in degrees -- one full cycle. */
+    private static final float WHEEL_INCREMENT = CYCLE_PERIOD;
 
     /** Normal sign for the west-facing wheel quad. */
     private static final float NORMAL_WEST = -1f;
-
-    /** 90-degree symmetry period. */
-    private static final float SYMMETRY_PERIOD = 90f;
 
     /**
      * Creates a reactor BER.
@@ -183,7 +211,7 @@ public class ReactorBlockEntityRenderer
         state.crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
         extractCanister(be, state);
         tickWheelAnimation(be, partialTick);
-        state.wheelAngle = be.wheelAngle + be.wheelSpeed * partialTick;
+        state.wheelAngle = (be.wheelAngle + be.wheelSpeed * partialTick) % CYCLE_PERIOD;
     }
 
     /**
@@ -216,31 +244,40 @@ public class ReactorBlockEntityRenderer
         } else {
             decelerateWheel(be);
         }
-        be.wheelAngle = (be.wheelAngle + be.wheelSpeed) % SYMMETRY_PERIOD;
+        be.wheelAngle = (be.wheelAngle + be.wheelSpeed) % CYCLE_PERIOD;
     }
 
     /**
-     * Decelerates the wheel. Below the idle threshold, coasts slowly
-     * toward the nearest 90-degree-aligned rest position, then stops.
+     * Decelerates the wheel toward the next 45-degree rest increment.
+     *
+     * <p>Each tick:
+     * <ol>
+     *   <li>If speed is below {@link #WHEEL_SPEED_EPSILON}, hard-zero
+     *       and snap to the nearest increment (avoids the asymptotic
+     *       crawl from a recompute-each-tick formula).</li>
+     *   <li>Otherwise compare natural stopping distance
+     *       {@code v^2 / (2 * WHEEL_DECEL)} against distance to the
+     *       next increment. If we'd <i>undershoot</i> (stop before the
+     *       boundary), reduce the resistance to {@code v^2 / (2 * d)}
+     *       so we land exactly. If we have enough speed to reach the
+     *       boundary at natural decel, use the natural rate and let
+     *       the next tick re-evaluate.</li>
+     * </ol>
      *
      * @param be the block entity
      */
     private static void decelerateWheel(ReactorBlockEntity be) {
-        if (be.wheelSpeed <= 0f) {
+        if (be.wheelSpeed < WHEEL_SPEED_EPSILON) {
             be.wheelSpeed = 0f;
+            be.wheelAngle = Math.round(be.wheelAngle / WHEEL_INCREMENT) * WHEEL_INCREMENT;
             return;
         }
-        if (be.wheelSpeed > IDLE_SNAP_SPEED) {
-            be.wheelSpeed = Math.max(0f, be.wheelSpeed - WHEEL_DECEL);
-            return;
-        }
-        float remainder = be.wheelAngle % SYMMETRY_PERIOD;
-        if (remainder < SNAP_TOLERANCE || remainder > SYMMETRY_PERIOD - SNAP_TOLERANCE) {
-            be.wheelAngle = 0f;
-            be.wheelSpeed = 0f;
-        } else {
-            be.wheelSpeed = IDLE_COAST_SPEED;
-        }
+        float dRemaining = WHEEL_INCREMENT - (be.wheelAngle % WHEEL_INCREMENT);
+        float naturalStopDist = (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * WHEEL_DECEL);
+        float decel = (naturalStopDist < dRemaining)
+                ? (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * dRemaining)
+                : WHEEL_DECEL;
+        be.wheelSpeed = Math.max(0f, be.wheelSpeed - decel);
     }
 
     /**
@@ -311,8 +348,14 @@ public class ReactorBlockEntityRenderer
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         poseStack.pushPose();
         rotateToFacing(poseStack, state.facing);
-        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, true);
-        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, false);
+        // The world-space quad rotation is identical for both wheels.
+        // The east viewer naturally sees CCW from that side; the west
+        // viewer would see CW, so flipU=true on the west sprite mirrors
+        // it horizontally and reverses the apparent direction. Leaving
+        // east unmirrored avoids mirroring sprite B's asymmetric
+        // highlights, which is what was breaking the swap continuity.
+        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, true, false);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, false, false);
         poseStack.popPose();
     }
 
@@ -323,35 +366,84 @@ public class ReactorBlockEntityRenderer
      * @param poseStack     the pose stack
      * @param nodeCollector the node collector
      * @param x             the X position of the wheel face
-     * @param flipU         true to flip U coords for the west-facing wheel
+     * @param flipU         true to swap u0/u1 (mirrors the sprite horizontally)
+     * @param flipV         true to swap v0/v1 (mirrors the sprite vertically)
      */
     private static void submitWheel(ReactorRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            float x, boolean flipU) {
+            float x, boolean flipU, boolean flipV) {
         int light = state.lightCoords;
-        float angle = state.wheelAngle;
-        float u0 = flipU ? WHEEL_U1 : WHEEL_U0;
-        float u1 = flipU ? WHEEL_U0 : WHEEL_U1;
+        float phase = state.wheelAngle;
+        float displayAngle = displayAngleFor(phase);
+        SpriteUv uv = flippedSpriteUvs(phase, flipU, flipV);
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityCutout(REACTOR_TEXTURE),
                 (pose, c) -> {
                     RenderContext ctx = new RenderContext(pose, c, light);
-                    emitRotatedWheel(ctx, x, angle, u0, u1);
+                    emitRotatedWheel(ctx, x, displayAngle, uv.u0(), uv.u1(), uv.v0(), uv.v1());
                 });
+    }
+
+    /** UV rectangle for one wheel sprite. */
+    private record SpriteUv(float u0, float u1, float v0, float v1) {}
+
+    /**
+     * Maps phase to the display angle used to rotate the wheel quad.
+     * Phase {@code [0, SPRITE_A_TO_B)} is shown 1:1; the rest of the
+     * cycle uses a -90 offset so sprite B's pre-rotated highlights
+     * land in the visually correct place.
+     *
+     * @param phase the wheel phase in [0, CYCLE_PERIOD)
+     * @return the display angle in degrees
+     */
+    private static float displayAngleFor(float phase) {
+        return (phase >= SPRITE_A_TO_B) ? phase + DISPLAY_ANGLE_OFFSET : phase;
+    }
+
+    /**
+     * Returns the wheel UV rectangle, picking sprite A or B by phase
+     * and applying horizontal/vertical flips for the requested side.
+     *
+     * @param phase the wheel phase
+     * @param flipU swap U endpoints (mirror horizontally)
+     * @param flipV swap V endpoints (mirror vertically)
+     * @return the flipped UV rectangle
+     */
+    private static SpriteUv flippedSpriteUvs(float phase, boolean flipU, boolean flipV) {
+        SpriteUv base = baseSpriteUvs(phase);
+        return new SpriteUv(
+                flipU ? base.u1() : base.u0(),
+                flipU ? base.u0() : base.u1(),
+                flipV ? base.v1() : base.v0(),
+                flipV ? base.v0() : base.v1());
+    }
+
+    /**
+     * Picks sprite A or sprite B UVs based on phase.
+     *
+     * @param phase the wheel phase
+     * @return UV rectangle of the active sprite
+     */
+    private static SpriteUv baseSpriteUvs(float phase) {
+        if (phase >= SPRITE_A_TO_B && phase < SPRITE_B_TO_A) {
+            return new SpriteUv(WHEEL_B_U0, WHEEL_B_U1, WHEEL_B_V0, WHEEL_B_V1);
+        }
+        return new SpriteUv(WHEEL_A_U0, WHEEL_A_U1, WHEEL_A_V0, WHEEL_A_V1);
     }
 
     /**
      * Emits a wheel quad rotated around its center on the X axis.
-     * The quad vertices are computed from the rotation angle.
      *
      * @param ctx   the render context
      * @param x     the X position
      * @param angle the rotation angle in degrees
      * @param u0    the left U coordinate
      * @param u1    the right U coordinate
+     * @param v0    the top V coordinate
+     * @param v1    the bottom V coordinate
      */
     private static void emitRotatedWheel(RenderContext ctx, float x,
-            float angle, float u0, float u1) {
+            float angle, float u0, float u1, float v0, float v1) {
         // Negate angle so the top of the wheel rotates toward block-local
         // -Z (the hollow's front face). Visually: east wheel CW, west
         // wheel CCW from each side's outside view -- both wheels' tops
@@ -360,22 +452,25 @@ public class ReactorBlockEntityRenderer
         float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
 
         for (int v = 0; v < WHEEL_CORNERS; v++) {
-            emitWheelVertex(ctx, x, u0, u1, v, yz, nx);
+            emitWheelVertex(ctx, x, u0, u1, v0, v1, v, yz, nx);
         }
     }
 
-    private static void emitWheelVertex(RenderContext ctx, float x, float u0, float u1, int v, float[] yz, float nx) {
+    private static void emitWheelVertex(RenderContext ctx, float x,
+            float u0, float u1, float v0, float v1, int v, float[] yz, float nx) {
         float u = getWheelVertexU(u0, u1, v);
-        float wv = getWheelVertexV(v);
+        float wv = getWheelVertexV(v0, v1, v);
         emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
     }
 
-    private static float getWheelVertexV(int v) {
-        return (v < WHEEL_UV_SPLIT) ? WHEEL_V1 : WHEEL_V0;
+    private static float getWheelVertexV(float v0, float v1, int v) {
+        // 90-CW-rotated layout: V0,V3 = v1 (bottom); V1,V2 = v0 (top).
+        return (v == 0 || v == WHEEL_CORNERS - 1) ? v1 : v0;
     }
 
     private static float getWheelVertexU(float u0, float u1, int v) {
-        return (v == 0 || v == WHEEL_CORNERS - 1) ? u0 : u1;
+        // 90-CW-rotated layout: V0,V1 = u0; V2,V3 = u1.
+        return (v < WHEEL_UV_SPLIT) ? u0 : u1;
     }
 
     private static float @NonNull [] computeWheelCorners(float angle) {
