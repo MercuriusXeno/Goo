@@ -348,42 +348,33 @@ public class ReactorBlockEntityRenderer
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         poseStack.pushPose();
         rotateToFacing(poseStack, state.facing);
-        // East is the complete mirror of west: horizontal sprite flip plus
-        // negated rotation angle so the world-space rotation reverses too.
-        // Mirroring both halves (texture + rotation) makes east viewers see
-        // exactly what west viewers see of west wheel.
-        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, false, false);
-        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, true, true);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X);
         poseStack.popPose();
     }
 
     /**
      * Renders a single wheel as a flat quad rotated around the X axis.
+     * Both wheels share the same rendering -- the opposite viewing sides
+     * give the two viewers naturally matching visuals without UV or
+     * angle flips.
      *
      * @param state         the render state
      * @param poseStack     the pose stack
      * @param nodeCollector the node collector
      * @param x             the X position of the wheel face
-     * @param flipU         mirror U endpoints (horizontal texture flip)
-     * @param mirrorAngle   negate the display angle so this wheel
-     *                      rotates the opposite direction in world space
      */
     private static void submitWheel(ReactorRenderState state,
-            PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            float x, boolean flipU, boolean mirrorAngle) {
+            PoseStack poseStack, SubmitNodeCollector nodeCollector, float x) {
         int light = state.lightCoords;
         float phase = state.wheelAngle;
         float displayAngle = displayAngleFor(phase);
-        if (mirrorAngle) {
-            displayAngle = -displayAngle;
-        }
-        SpriteUv uv = flippedSpriteUvs(phase, flipU);
-        float finalAngle = displayAngle;
+        SpriteUv uv = spriteUvsFor(phase);
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityCutout(REACTOR_TEXTURE),
                 (pose, c) -> {
                     RenderContext ctx = new RenderContext(pose, c, light);
-                    emitRotatedWheel(ctx, x, finalAngle,
+                    emitRotatedWheel(ctx, x, displayAngle,
                             uv.u0(), uv.u1(), uv.v0(), uv.v1());
                 });
     }
@@ -405,22 +396,16 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Picks sprite A or sprite B by phase and applies the horizontal flip.
+     * Picks sprite A or sprite B by phase.
      *
      * @param phase the wheel phase
-     * @param flipU mirror U endpoints
-     * @return the flipped UV rectangle
+     * @return the active sprite's UV rectangle
      */
-    private static SpriteUv flippedSpriteUvs(float phase, boolean flipU) {
+    private static SpriteUv spriteUvsFor(float phase) {
         boolean useSpriteB = phase >= SPRITE_A_TO_B && phase < SPRITE_B_TO_A;
-        SpriteUv base = useSpriteB
+        return useSpriteB
                 ? new SpriteUv(WHEEL_B_U0, WHEEL_B_U1, WHEEL_B_V0, WHEEL_B_V1)
                 : new SpriteUv(WHEEL_A_U0, WHEEL_A_U1, WHEEL_A_V0, WHEEL_A_V1);
-        return new SpriteUv(
-                flipU ? base.u1() : base.u0(),
-                flipU ? base.u0() : base.u1(),
-                base.v0(),
-                base.v1());
     }
 
     /**
