@@ -25,6 +25,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
@@ -172,6 +173,22 @@ public class ReactorBlockEntityRenderer
     /** Display-angle offset applied during the sprite-B band and the
      * trailing sprite-A band so the visible rotation runs continuous. */
     private static final float DISPLAY_ANGLE_OFFSET = -90f;
+
+    /** Cross-fade band width in degrees centered on each swap point. */
+    private static final float CROSSFADE_BAND = 5f;
+
+    /** Half of CROSSFADE_BAND, computed once. */
+    private static final float CROSSFADE_HALF = CROSSFADE_BAND / 2f;
+
+    /** Inward depth offset between the two cross-fade layers in block
+     * units, to avoid z-fight while staying invisibly thin. */
+    private static final float WHEEL_LAYER_OFFSET = 0.001f / 16f;
+
+    /** 8-bit alpha max used to pack vertex color. */
+    private static final int MAX_ALPHA = 255;
+
+    /** Mask for an 8-bit channel. */
+    private static final int BYTE_MASK = 0xFF;
 
     /** Wheel rest snap increment in degrees -- one full cycle. */
     private static final float WHEEL_INCREMENT = CYCLE_PERIOD;
@@ -372,45 +389,98 @@ public class ReactorBlockEntityRenderer
     private static void submitWheel(ReactorRenderState state,
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
             float x, boolean flipU, boolean flipV) {
-        int light = state.lightCoords;
         float phase = state.wheelAngle;
-        float displayAngle = displayAngleFor(phase);
-        SpriteUv uv = flippedSpriteUvs(phase, flipU, flipV);
-        nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityCutout(REACTOR_TEXTURE),
-                (pose, c) -> {
-                    RenderContext ctx = new RenderContext(pose, c, light);
-                    emitRotatedWheel(ctx, x, displayAngle, uv.u0(), uv.u1(), uv.v0(), uv.v1());
-                });
+        float alphaA = computeAlphaForA(phase);
+        // Sprite B always renders at full alpha as the back layer when
+        // it has any presence; sprite A renders on top with the cross-fade
+        // alpha. Outside the bands one of the two short-circuits to skip
+        // the second draw.
+        if (alphaA < 1f) {
+            emitWheelLayer(state, poseStack, nodeCollector,
+                    x, flipU, flipV, phase, true, 1f, true);
+        }
+        if (alphaA > 0f) {
+            emitWheelLayer(state, poseStack, nodeCollector,
+                    x, flipU, flipV, phase, false, alphaA, false);
+        }
     }
 
     /** UV rectangle for one wheel sprite. */
     private record SpriteUv(float u0, float u1, float v0, float v1) {}
 
     /**
-     * Maps phase to the display angle used to rotate the wheel quad.
-     * Phase {@code [0, SPRITE_A_TO_B)} is shown 1:1; the rest of the
-     * cycle uses a -90 offset so sprite B's pre-rotated highlights
-     * land in the visually correct place.
+     * Returns sprite A's visibility alpha for the given phase.
+     *
+     * <p>Sprite A is fully opaque outside both swap bands. Inside the
+     * A&rarr;B band (around {@link #SPRITE_A_TO_B}) it ramps 1&rarr;0;
+     * inside the B&rarr;A band (around {@link #SPRITE_B_TO_A}) it
+     * ramps 0&rarr;1. Sprite B implicitly carries {@code 1 - alphaA}
+     * via translucent over-blending.
      *
      * @param phase the wheel phase in [0, CYCLE_PERIOD)
-     * @return the display angle in degrees
+     * @return sprite A alpha in [0, 1]
      */
-    private static float displayAngleFor(float phase) {
-        return (phase >= SPRITE_A_TO_B) ? phase + DISPLAY_ANGLE_OFFSET : phase;
+    private static float computeAlphaForA(float phase) {
+        if (phase < SPRITE_A_TO_B - CROSSFADE_HALF
+                || phase >= SPRITE_B_TO_A + CROSSFADE_HALF) {
+            return 1f;
+        }
+        if (phase < SPRITE_A_TO_B + CROSSFADE_HALF) {
+            return 1f - (phase - (SPRITE_A_TO_B - CROSSFADE_HALF)) / CROSSFADE_BAND;
+        }
+        if (phase < SPRITE_B_TO_A - CROSSFADE_HALF) {
+            return 0f;
+        }
+        return (phase - (SPRITE_B_TO_A - CROSSFADE_HALF)) / CROSSFADE_BAND;
     }
 
     /**
-     * Returns the wheel UV rectangle, picking sprite A or B by phase
-     * and applying horizontal/vertical flips for the requested side.
+     * Submits one wheel layer (one sprite, one alpha, one quad).
      *
-     * @param phase the wheel phase
-     * @param flipU swap U endpoints (mirror horizontally)
-     * @param flipV swap V endpoints (mirror vertically)
+     * @param state         the render state
+     * @param poseStack     the pose stack
+     * @param nodeCollector the node collector
+     * @param x             the wheel face X position
+     * @param flipU         mirror U endpoints
+     * @param flipV         mirror V endpoints
+     * @param phase         the wheel phase
+     * @param useSpriteB    pick sprite B if true, sprite A otherwise
+     * @param alpha         vertex alpha in [0, 1]
+     * @param inset         nudge slightly toward block interior to
+     *                      avoid z-fight with the other layer
+     */
+    private static void emitWheelLayer(ReactorRenderState state,
+            PoseStack poseStack, SubmitNodeCollector nodeCollector,
+            float x, boolean flipU, boolean flipV, float phase,
+            boolean useSpriteB, float alpha, boolean inset) {
+        int light = state.lightCoords;
+        float displayAngle = useSpriteB ? phase + DISPLAY_ANGLE_OFFSET : phase;
+        SpriteUv uv = flippedSpriteUvsForSprite(useSpriteB, flipU, flipV);
+        int color = packAlpha(alpha);
+        float drawX = inset ? insetX(x) : x;
+        nodeCollector.submitCustomGeometry(poseStack,
+                RenderTypes.entityTranslucent(REACTOR_TEXTURE),
+                (pose, c) -> {
+                    RenderContext ctx = new RenderContext(pose, c, light);
+                    emitRotatedWheel(ctx, drawX, displayAngle,
+                            uv.u0(), uv.u1(), uv.v0(), uv.v1(), color);
+                });
+    }
+
+    /**
+     * Returns the wheel UV rectangle for an explicit sprite choice with
+     * horizontal/vertical flips applied.
+     *
+     * @param useSpriteB pick sprite B if true, sprite A otherwise
+     * @param flipU      mirror U endpoints
+     * @param flipV      mirror V endpoints
      * @return the flipped UV rectangle
      */
-    private static SpriteUv flippedSpriteUvs(float phase, boolean flipU, boolean flipV) {
-        SpriteUv base = baseSpriteUvs(phase);
+    private static SpriteUv flippedSpriteUvsForSprite(boolean useSpriteB,
+            boolean flipU, boolean flipV) {
+        SpriteUv base = useSpriteB
+                ? new SpriteUv(WHEEL_B_U0, WHEEL_B_U1, WHEEL_B_V0, WHEEL_B_V1)
+                : new SpriteUv(WHEEL_A_U0, WHEEL_A_U1, WHEEL_A_V0, WHEEL_A_V1);
         return new SpriteUv(
                 flipU ? base.u1() : base.u0(),
                 flipU ? base.u0() : base.u1(),
@@ -419,16 +489,25 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Picks sprite A or sprite B UVs based on phase.
+     * Packs an alpha fraction into a full-white ARGB int.
      *
-     * @param phase the wheel phase
-     * @return UV rectangle of the active sprite
+     * @param alpha alpha in [0, 1]
+     * @return the packed ARGB color
      */
-    private static SpriteUv baseSpriteUvs(float phase) {
-        if (phase >= SPRITE_A_TO_B && phase < SPRITE_B_TO_A) {
-            return new SpriteUv(WHEEL_B_U0, WHEEL_B_U1, WHEEL_B_V0, WHEEL_B_V1);
-        }
-        return new SpriteUv(WHEEL_A_U0, WHEEL_A_U1, WHEEL_A_V0, WHEEL_A_V1);
+    private static int packAlpha(float alpha) {
+        int a = (int) (alpha * MAX_ALPHA) & BYTE_MASK;
+        return ARGB.color(a, GooRenderUtil.OPAQUE_WHITE);
+    }
+
+    /**
+     * Nudges the X position slightly toward block interior so the
+     * back layer of a cross-fade sits behind the front layer.
+     *
+     * @param x the wheel face X
+     * @return inset X
+     */
+    private static float insetX(float x) {
+        return x < BLOCK_CENTER ? x + WHEEL_LAYER_OFFSET : x - WHEEL_LAYER_OFFSET;
     }
 
     /**
@@ -441,9 +520,10 @@ public class ReactorBlockEntityRenderer
      * @param u1    the right U coordinate
      * @param v0    the top V coordinate
      * @param v1    the bottom V coordinate
+     * @param color packed ARGB vertex color
      */
     private static void emitRotatedWheel(RenderContext ctx, float x,
-            float angle, float u0, float u1, float v0, float v1) {
+            float angle, float u0, float u1, float v0, float v1, int color) {
         // Negate angle so the top of the wheel rotates toward block-local
         // -Z (the hollow's front face). Visually: east wheel CW, west
         // wheel CCW from each side's outside view -- both wheels' tops
@@ -452,15 +532,15 @@ public class ReactorBlockEntityRenderer
         float nx = x < BLOCK_CENTER ? NORMAL_WEST : 1f;
 
         for (int v = 0; v < WHEEL_CORNERS; v++) {
-            emitWheelVertex(ctx, x, u0, u1, v0, v1, v, yz, nx);
+            emitWheelVertex(ctx, x, u0, u1, v0, v1, v, yz, nx, color);
         }
     }
 
     private static void emitWheelVertex(RenderContext ctx, float x,
-            float u0, float u1, float v0, float v1, int v, float[] yz, float nx) {
+            float u0, float u1, float v0, float v1, int v, float[] yz, float nx, int color) {
         float u = getWheelVertexU(u0, u1, v);
         float wv = getWheelVertexV(v0, v1, v);
-        emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx);
+        emitWheelVertex(ctx, x, yz[v * WHEEL_YZ_STRIDE], yz[v * WHEEL_YZ_STRIDE + 1], u, wv, nx, color);
     }
 
     private static float getWheelVertexV(float v0, float v1, int v) {
@@ -503,11 +583,12 @@ public class ReactorBlockEntityRenderer
      * @param u the texture U coordinate
      * @param v the texture V coordinate
      * @param nx the face normal X component
+     * @param color packed ARGB vertex color
      */
     private static void emitWheelVertex(RenderContext ctx, float x,
-            float y, float z, float u, float v, float nx) {
+            float y, float z, float u, float v, float nx, int color) {
         ctx.c().addVertex(ctx.pose(), x, y, z)
-                .setColor(GooRenderUtil.OPAQUE_WHITE)
+                .setColor(color)
                 .setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(ctx.light())
                 .setNormal(nx, 0f, 0f);
     }
