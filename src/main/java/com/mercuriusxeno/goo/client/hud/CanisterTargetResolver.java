@@ -378,6 +378,12 @@ final class CanisterTargetResolver {
     /**
      * Resolves a reactor hit into an output canister target.
      *
+     * <p>{@link ReactorBlock#FACING} is set to the player's look direction
+     * at placement, so the hollow (and the visible canister) sits on the
+     * {@link Direction#getOpposite() opposite} side. Anchor the HUD on
+     * that visible side; otherwise the panel renders inside the reactor
+     * body where the player can't see it.
+     *
      * @param mc      the Minecraft instance
      * @param hit     the block hit result
      * @param pos     the block position
@@ -393,11 +399,11 @@ final class CanisterTargetResolver {
         if (!ReactorBlock.isHollowClick(state, pos, hit)) {
             return null;
         }
-        Direction facing = state.getValue(ReactorBlock.FACING);
-        double cx = BLOCK_CENTER + facing.getStepX() * FACE_OFFSET;
-        double cz = BLOCK_CENTER + facing.getStepZ() * FACE_OFFSET;
+        Direction front = state.getValue(ReactorBlock.FACING).getOpposite();
+        double cx = BLOCK_CENTER + front.getStepX() * FACE_OFFSET;
+        double cz = BLOCK_CENTER + front.getStepZ() * FACE_OFFSET;
         return new CanisterHudRenderer.Target(pos, REACTOR_SLOT, cx, cz,
-                REACTOR_MID_Y, facing, false);
+                REACTOR_MID_Y, front, false);
     }
 
     /**
