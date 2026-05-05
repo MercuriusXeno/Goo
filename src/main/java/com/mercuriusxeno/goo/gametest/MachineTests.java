@@ -53,6 +53,14 @@ public final class MachineTests {
     private static final String REDSTONE_HALTS_OUTPUT = "Output should be empty when redstone halts reactor";
     private static final String INPUT_BLAZE_DRAINED = "Reactor should drain the blaze input canister";
     private static final String INPUT_LEAF_DRAINED = "Reactor should drain the leaf input canister";
+    private static final String INPUT_BLAZE_STACK_DRAINED =
+            "Blaze input ItemStack should reflect drain (HUD reads from stack)";
+    private static final String INPUT_LEAF_STACK_DRAINED =
+            "Leaf input ItemStack should reflect drain (HUD reads from stack)";
+    private static final String OUTPUT_STACK_FLUID_PRESENT =
+            "Output ItemStack should hold the produced fluid (BER reads from stack)";
+    private static final String OUTPUT_STACK_AMOUNT_POSITIVE =
+            "Output ItemStack amount should be positive";
     private static final String SHOULD_INSERT_FULL = "Should insert full volume into empty canister";
     private static final String HANDLER_EXISTS = "Handler should exist";
     private static final String HANDLER_HOLDS_BLAZE = "Handler should hold blaze goo";
@@ -189,20 +197,77 @@ public final class MachineTests {
 
         reactor.insertOutputCanister(new ItemStack(GooItems.CANISTER.get()));
 
-        helper.runAfterDelay(REACTION_TICKS, () -> {
-            var handler = reactor.containerState().getSlotFluidHandler(
-                    ReactorBlockEntity.OUTPUT_SLOT);
-            helper.assertTrue(handler != null, OUTPUT_HANDLER_EXISTS);
-            helper.assertTrue(handler.getFluid() == blazeFluid, OUTPUT_SHOULD_BE_BLAZE);
-            helper.assertTrue(handler.getAmount() > 0, OUTPUT_AMOUNT_POSITIVE);
-            var inBlaze = inputBe.containerState().getSlotFluidHandler(0);
-            var inLeaf = inputBe.containerState().getSlotFluidHandler(CORNER_SLOT_2);
-            helper.assertTrue(inBlaze != null && inBlaze.getAmount() < INPUT_AMOUNT,
-                    INPUT_BLAZE_DRAINED);
-            helper.assertTrue(inLeaf != null && inLeaf.getAmount() < INPUT_AMOUNT,
-                    INPUT_LEAF_DRAINED);
-            helper.succeed();
-        });
+        helper.runAfterDelay(REACTION_TICKS,
+                () -> assertReactionConsumed(helper, reactor, inputBe, blazeFluid));
+    }
+
+    /**
+     * Verifies output present, both inputs drained on the handler, and both
+     * input ItemStacks reflect the drain (the HUD/billboard reads stack
+     * NBT, not the handler).
+     *
+     * @param helper     the gametest helper
+     * @param reactor    the reactor block entity
+     * @param inputBe    the input canister block entity above
+     * @param blazeFluid the expected output fluid
+     */
+    private static void assertReactionConsumed(GameTestHelper helper,
+            ReactorBlockEntity reactor, CanisterBlockEntity inputBe, Fluid blazeFluid) {
+        assertOutputHandler(helper, reactor, blazeFluid);
+        assertInputsDrained(helper, inputBe);
+        assertOutputStackHasFluid(helper, reactor, blazeFluid);
+        helper.succeed();
+    }
+
+    /**
+     * @param helper     the gametest helper
+     * @param reactor    the reactor block entity
+     * @param blazeFluid the expected fluid
+     */
+    private static void assertOutputHandler(GameTestHelper helper,
+            ReactorBlockEntity reactor, Fluid blazeFluid) {
+        var handler = reactor.containerState().getSlotFluidHandler(
+                ReactorBlockEntity.OUTPUT_SLOT);
+        helper.assertTrue(handler != null, OUTPUT_HANDLER_EXISTS);
+        helper.assertTrue(handler.getFluid() == blazeFluid, OUTPUT_SHOULD_BE_BLAZE);
+        helper.assertTrue(handler.getAmount() > 0, OUTPUT_AMOUNT_POSITIVE);
+    }
+
+    /**
+     * @param helper  the gametest helper
+     * @param inputBe the input canister BE above the reactor
+     */
+    private static void assertInputsDrained(GameTestHelper helper,
+            CanisterBlockEntity inputBe) {
+        var inBlaze = inputBe.containerState().getSlotFluidHandler(0);
+        var inLeaf = inputBe.containerState().getSlotFluidHandler(CORNER_SLOT_2);
+        helper.assertTrue(inBlaze != null && inBlaze.getAmount() < INPUT_AMOUNT,
+                INPUT_BLAZE_DRAINED);
+        helper.assertTrue(inLeaf != null && inLeaf.getAmount() < INPUT_AMOUNT,
+                INPUT_LEAF_DRAINED);
+        CanisterFluidContent blazeStackContent = CanisterItem.getFluidContent(
+                inputBe.containerState().getCanister(0));
+        CanisterFluidContent leafStackContent = CanisterItem.getFluidContent(
+                inputBe.containerState().getCanister(CORNER_SLOT_2));
+        helper.assertTrue(blazeStackContent.amount() < INPUT_AMOUNT,
+                INPUT_BLAZE_STACK_DRAINED);
+        helper.assertTrue(leafStackContent.amount() < INPUT_AMOUNT,
+                INPUT_LEAF_STACK_DRAINED);
+    }
+
+    /**
+     * @param helper     the gametest helper
+     * @param reactor    the reactor block entity
+     * @param blazeFluid the expected fluid in the output stack
+     */
+    private static void assertOutputStackHasFluid(GameTestHelper helper,
+            ReactorBlockEntity reactor, Fluid blazeFluid) {
+        CanisterFluidContent outputStackContent = CanisterItem.getFluidContent(
+                reactor.getOutputCanister());
+        helper.assertTrue(outputStackContent.fluid() == blazeFluid,
+                OUTPUT_STACK_FLUID_PRESENT);
+        helper.assertTrue(outputStackContent.amount() > 0,
+                OUTPUT_STACK_AMOUNT_POSITIVE);
     }
 
     /**

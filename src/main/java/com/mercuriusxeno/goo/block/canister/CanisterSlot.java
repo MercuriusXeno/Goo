@@ -147,6 +147,11 @@ public final class CanisterSlot {
     private void onHandlerChanged(long currentTick) {
         syncHandlerToStack();
         snapshotStream(currentTick);
+        // Always notify the parent so client-tracked state reflects the
+        // new fluid amount. Pure extracts (e.g. reactor consuming inputs)
+        // produce no stream snapshot, and without this call clients would
+        // never see the drained amount in the HUD or BER.
+        onSync.run();
     }
 
     /**
@@ -270,7 +275,6 @@ public final class CanisterSlot {
         streamFluid = f;
         streamRate = r;
         streamTick = currentTick;
-        onSync.run();
     }
 
     /**

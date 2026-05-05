@@ -88,11 +88,13 @@ public class GooBlocks {
     public static final DeferredBlock<HubBlock> HUB = BLOCKS.registerBlock("hub",
             HubBlock::new, HUB_PROPERTY_SUPPLIER);
     private static final Supplier<BlockBehaviour.Properties> PLEXER_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
-            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK);
+            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK)
+            .noOcclusion();
     public static final DeferredBlock<PlexerBlock> PLEXER = BLOCKS.registerBlock("plexer",
             PlexerBlock::new, PLEXER_PROPERTY_SUPPLIER);
     private static final Supplier<BlockBehaviour.Properties> REACTOR_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
-            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK);
+            .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHERITE_BLOCK)
+            .noOcclusion();
     /**
      * Reactor: consumes goo from corner canisters, produces output into front hollow.
      */

@@ -101,6 +101,13 @@ final class CanisterTargetResolver {
      * Reactor hollow center Y (midpoint of 1-13 pixel range).
      */
     private static final double REACTOR_MID_Y = 7.0 / 16.0;
+    /**
+     * Extra forward push (1px) for the reactor HUD anchor so the billboard
+     * sits clearly in front of the frame face. The canister body inside the
+     * hollow is recessed 1px, so without this bias the panel can dip into
+     * the frame geometry under billboard rotation.
+     */
+    private static final double REACTOR_FORWARD_BIAS = 1.0 / 16.0;
 
     private CanisterTargetResolver() {
     }
@@ -378,6 +385,12 @@ final class CanisterTargetResolver {
     /**
      * Resolves a reactor hit into an output canister target.
      *
+     * <p>{@link ReactorBlock#FACING} is set to the player's look direction
+     * at placement, so the hollow (and the visible canister) sits on the
+     * {@link Direction#getOpposite() opposite} side. Anchor the HUD on
+     * that visible side; otherwise the panel renders inside the reactor
+     * body where the player can't see it.
+     *
      * @param mc      the Minecraft instance
      * @param hit     the block hit result
      * @param pos     the block position
@@ -393,11 +406,12 @@ final class CanisterTargetResolver {
         if (!ReactorBlock.isHollowClick(state, pos, hit)) {
             return null;
         }
-        Direction facing = state.getValue(ReactorBlock.FACING);
-        double cx = BLOCK_CENTER + facing.getStepX() * FACE_OFFSET;
-        double cz = BLOCK_CENTER + facing.getStepZ() * FACE_OFFSET;
+        Direction front = state.getValue(ReactorBlock.FACING).getOpposite();
+        double forward = FACE_OFFSET + REACTOR_FORWARD_BIAS;
+        double cx = BLOCK_CENTER + front.getStepX() * forward;
+        double cz = BLOCK_CENTER + front.getStepZ() * forward;
         return new CanisterHudRenderer.Target(pos, REACTOR_SLOT, cx, cz,
-                REACTOR_MID_Y, facing, false);
+                REACTOR_MID_Y, front, false);
     }
 
     /**

@@ -80,6 +80,20 @@ public class ReactorBlockEntity extends BlockEntity
      */
     public float wheelSpeed;
 
+    /** Wheel cycle in degrees -- one logical revolution. Public so the BER
+     * can derive sprite-swap fractions from a single source of truth. */
+    public static final float WHEEL_CYCLE_PERIOD = 90f;
+    /** Max wheel speed in degrees per tick at full crafting. */
+    private static final float MAX_WHEEL_SPEED = 24f;
+    /** Acceleration in degrees/tick/tick when crafting. */
+    private static final float WHEEL_ACCEL = 0.5f;
+    /** Natural deceleration rate when crafting stops (degrees/tick/tick). */
+    private static final float WHEEL_DECEL = 0.3f;
+    /** Speed threshold below which the wheel hard-zeroes and snaps. */
+    private static final float WHEEL_SPEED_EPSILON = 0.05f;
+    /** Kinematic constant: stop distance under constant decel a is v^2 / (2a). */
+    private static final float KINEMATIC_HALF = 2f;
+
     /**
      * Creates a reactor block entity.
      *
@@ -105,6 +119,53 @@ public class ReactorBlockEntity extends BlockEntity
             return;
         }
         be.tickReaction(level, pos, state);
+    }
+
+    /**
+     * Client tick: integrates the wheel animation once per tick (20 Hz).
+     * While crafting, accelerates toward MAX_WHEEL_SPEED; otherwise
+     * decelerates to a clean stop at a cycle boundary.
+     *
+     * <p>Lives here, not in the BER's extractRenderState, because that
+     * method runs at frame rate -- ticking it there caused the wheel to
+     * advance ~3x too fast on a 60 fps client.
+     *
+     * @param level the client level
+     * @param pos   the block position
+     * @param state the block state (crafting flag drives accel vs decel)
+     * @param be    the reactor block entity holding wheel speed/angle
+     */
+    public static void clientTick(Level level, BlockPos pos,
+                                  BlockState state, ReactorBlockEntity be) {
+        boolean crafting = state.getValue(ReactorBlock.CRAFTING);
+        if (crafting) {
+            be.wheelSpeed = Math.min(MAX_WHEEL_SPEED, be.wheelSpeed + WHEEL_ACCEL);
+        } else {
+            decelerateWheel(be);
+        }
+        be.wheelAngle = (be.wheelAngle + be.wheelSpeed) % WHEEL_CYCLE_PERIOD;
+    }
+
+    /**
+     * Decelerates the wheel toward the next cycle-boundary rest. Below
+     * the speed epsilon, hard-zeroes and snaps. Otherwise compares the
+     * natural stop distance v^2/(2a) against the remaining angle to the
+     * boundary; if we'd undershoot, scales decel up to land exactly.
+     *
+     * @param be the block entity
+     */
+    private static void decelerateWheel(ReactorBlockEntity be) {
+        if (be.wheelSpeed < WHEEL_SPEED_EPSILON) {
+            be.wheelSpeed = 0f;
+            be.wheelAngle = Math.round(be.wheelAngle / WHEEL_CYCLE_PERIOD) * WHEEL_CYCLE_PERIOD;
+            return;
+        }
+        float dRemaining = WHEEL_CYCLE_PERIOD - (be.wheelAngle % WHEEL_CYCLE_PERIOD);
+        float naturalStopDist = (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * WHEEL_DECEL);
+        float decel = (naturalStopDist < dRemaining)
+                ? (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * dRemaining)
+                : WHEEL_DECEL;
+        be.wheelSpeed = Math.max(0f, be.wheelSpeed - decel);
     }
 
     @Override

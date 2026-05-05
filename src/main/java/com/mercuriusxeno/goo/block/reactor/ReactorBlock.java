@@ -6,6 +6,7 @@ import com.mercuriusxeno.goo.block.CutawayShapeHelper;
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
 import com.mercuriusxeno.goo.block.ShapeHitCheck;
 import com.mercuriusxeno.goo.item.CanisterItem;
+import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -310,10 +311,12 @@ public class ReactorBlock extends BaseEntityBlock {
             @NonNull Level level, @NonNull BlockState state,
             @NonNull BlockEntityType<T> type) {
         if (level.isClientSide()) {
-            return null;
+            return createTickerHelper(type,
+                    GooBlockEntities.REACTOR.get(),
+                    ReactorBlockEntity::clientTick);
         }
         return createTickerHelper(type,
-                com.mercuriusxeno.goo.registry.GooBlockEntities.REACTOR.get(),
+                GooBlockEntities.REACTOR.get(),
                 ReactorBlockEntity::serverTick);
     }
 
