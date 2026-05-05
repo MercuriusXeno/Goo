@@ -133,21 +133,6 @@ public class ReactorBlockEntityRenderer
     private static final float WHEEL_B_U1 = 29f / TEX_SIZE;
     private static final float WHEEL_B_V1 = 16f / TEX_SIZE;
 
-    /** Max wheel speed in degrees per tick at full crafting. */
-    private static final float MAX_WHEEL_SPEED = 12f;
-
-    /** Acceleration in degrees/tick/tick when crafting. */
-    private static final float WHEEL_ACCEL = 0.5f;
-
-    /** Natural deceleration rate when crafting stops (degrees/tick/tick). */
-    private static final float WHEEL_DECEL = 0.3f;
-
-    /** Speed threshold below which the wheel hard-zeroes and snaps. */
-    private static final float WHEEL_SPEED_EPSILON = 0.05f;
-
-    /** Kinematic constant: stop distance under constant decel a is v^2 / (2a). */
-    private static final float KINEMATIC_HALF = 2f;
-
     /** Number of vertices per wheel quad. */
     private static final int WHEEL_CORNERS = 4;
     /** Stride between consecutive (y,z) pairs in the corner array. */
@@ -155,14 +140,15 @@ public class ReactorBlockEntityRenderer
     /** First two vertices use V1, last two use V0. */
     private static final int WHEEL_UV_SPLIT = 2;
 
-    /** Wheel cycle in degrees. The wheel rests at phase=0 (= 90).
-     * Inside the cycle, three sub-arcs share the same forward motion
-     * but swap sprites and display angle to keep the highlights in
-     * apparent place: [0, 22.5) sprite A; [22.5, 67.5) sprite B with
-     * display offset by -90; [67.5, 90) sprite A with display offset
-     * by -90. The snap target is the next 90 mark, so the wheel
-     * always settles at the rest position. */
-    private static final float CYCLE_PERIOD = 90f;
+    /** Wheel cycle in degrees -- mirror of the BE's authoritative
+     * {@link ReactorBlockEntity#WHEEL_CYCLE_PERIOD}. The wheel rests at
+     * phase=0 (= 90). Inside the cycle, three sub-arcs share the same
+     * forward motion but swap sprites and display angle to keep the
+     * highlights in apparent place: [0, 22.5) sprite A; [22.5, 67.5)
+     * sprite B with display offset by -90; [67.5, 90) sprite A with
+     * display offset by -90. The snap target is the next 90 mark, so
+     * the wheel always settles at the rest position. */
+    private static final float CYCLE_PERIOD = ReactorBlockEntity.WHEEL_CYCLE_PERIOD;
 
     /** Phase at which sprite A swaps to sprite B (display jumps -90). */
     private static final float SPRITE_A_TO_B = 22.5f;
@@ -174,8 +160,11 @@ public class ReactorBlockEntityRenderer
      * trailing sprite-A band so the visible rotation runs continuous. */
     private static final float DISPLAY_ANGLE_OFFSET = -90f;
 
-    /** Cross-fade band width in degrees, centered on each swap point. */
-    private static final float CROSSFADE_BAND = 5f;
+    /** Cross-fade band width in degrees, centered on each swap point.
+     * 45 tiles the cycle exactly: every frame is inside a band, so the
+     * incoming sprite is always either ramping in or fully covering the
+     * outgoing one. Gives the wheel a continuously-blending look. */
+    private static final float CROSSFADE_BAND = 45f;
 
     /** Half of CROSSFADE_BAND, computed once. */
     private static final float CROSSFADE_HALF = CROSSFADE_BAND / 2f;
@@ -191,9 +180,6 @@ public class ReactorBlockEntityRenderer
 
     /** Mask for an 8-bit channel. */
     private static final int BYTE_MASK = 0xFF;
-
-    /** Wheel rest snap increment in degrees -- one full cycle. */
-    private static final float WHEEL_INCREMENT = CYCLE_PERIOD;
 
     /** Normal sign for the west-facing wheel quad. */
     private static final float NORMAL_WEST = -1f;
@@ -229,7 +215,8 @@ public class ReactorBlockEntityRenderer
         state.lightCoords = sampleHollowLight(be);
         state.crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
         extractCanister(be, state);
-        tickWheelAnimation(be, partialTick);
+        // Wheel state advances in ReactorBlockEntity.clientTick (per-tick).
+        // Here we just interpolate within the current tick for smooth motion.
         state.wheelAngle = (be.wheelAngle + be.wheelSpeed * partialTick) % CYCLE_PERIOD;
     }
 
@@ -247,56 +234,6 @@ public class ReactorBlockEntityRenderer
             state.slot.type = null;
             state.slot.fill = 0f;
         }
-    }
-
-    /**
-     * Advances the wheel speed and angle on the block entity. Runs once
-     * per frame before partial-tick interpolation.
-     *
-     * @param be          the block entity holding persistent wheel state
-     * @param partialTick the partial tick (used to derive dt)
-     */
-    private static void tickWheelAnimation(ReactorBlockEntity be, float partialTick) {
-        boolean crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
-        if (crafting) {
-            be.wheelSpeed = Math.min(MAX_WHEEL_SPEED, be.wheelSpeed + WHEEL_ACCEL);
-        } else {
-            decelerateWheel(be);
-        }
-        be.wheelAngle = (be.wheelAngle + be.wheelSpeed) % CYCLE_PERIOD;
-    }
-
-    /**
-     * Decelerates the wheel toward the next 45-degree rest increment.
-     *
-     * <p>Each tick:
-     * <ol>
-     *   <li>If speed is below {@link #WHEEL_SPEED_EPSILON}, hard-zero
-     *       and snap to the nearest increment (avoids the asymptotic
-     *       crawl from a recompute-each-tick formula).</li>
-     *   <li>Otherwise compare natural stopping distance
-     *       {@code v^2 / (2 * WHEEL_DECEL)} against distance to the
-     *       next increment. If we'd <i>undershoot</i> (stop before the
-     *       boundary), reduce the resistance to {@code v^2 / (2 * d)}
-     *       so we land exactly. If we have enough speed to reach the
-     *       boundary at natural decel, use the natural rate and let
-     *       the next tick re-evaluate.</li>
-     * </ol>
-     *
-     * @param be the block entity
-     */
-    private static void decelerateWheel(ReactorBlockEntity be) {
-        if (be.wheelSpeed < WHEEL_SPEED_EPSILON) {
-            be.wheelSpeed = 0f;
-            be.wheelAngle = Math.round(be.wheelAngle / WHEEL_INCREMENT) * WHEEL_INCREMENT;
-            return;
-        }
-        float dRemaining = WHEEL_INCREMENT - (be.wheelAngle % WHEEL_INCREMENT);
-        float naturalStopDist = (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * WHEEL_DECEL);
-        float decel = (naturalStopDist < dRemaining)
-                ? (be.wheelSpeed * be.wheelSpeed) / (KINEMATIC_HALF * dRemaining)
-                : WHEEL_DECEL;
-        be.wheelSpeed = Math.max(0f, be.wheelSpeed - decel);
     }
 
     /**
