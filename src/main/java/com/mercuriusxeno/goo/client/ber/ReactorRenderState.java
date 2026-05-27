@@ -21,4 +21,12 @@ public class ReactorRenderState extends BlockEntityRenderState {
 
     /** Current wheel rotation angle in degrees. */
     public float wheelAngle;
+
+    /** Packed light coords sampled at the lateral neighbor on the
+     * model-west wheel side (= world {@code facing.getClockWise()}). */
+    public int westWheelLight;
+
+    /** Packed light coords sampled at the lateral neighbor on the
+     * model-east wheel side (= world {@code facing.getCounterClockWise()}). */
+    public int eastWheelLight;
 }

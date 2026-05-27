@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -249,11 +250,15 @@ public class VatBlockEntityRenderer
      */
     private static void submitFluid(PoseStack poseStack,
                                     SubmitNodeCollector nodeCollector, VatRenderState state) {
-        int light = state.lightCoords;
+        // FULL_BRIGHT lightmap UV per fluid vertex makes the lightmap
+        // multiplication a no-op (samples white), so the fluid is bright
+        // regardless of world light. The vat block itself is a block model
+        // (not BER body geometry), so there's no buffer-share concern --
+        // fluid lives alone on entityTranslucent(BLOCK_ATLAS).
         GooType type = state.dominantType;
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
-                (pose, c) -> VatFluidRenderer.renderFluid(new RenderContext(pose, c, light), type, state));
+                (pose, c) -> VatFluidRenderer.renderFluid(new RenderContext(pose, c, LightCoordsUtil.FULL_BRIGHT), type, state));
     }
 
     /**

@@ -78,8 +78,7 @@ public class GooBlocks {
     private static final float INDESTRUCTIBLE = -1.0F;
     private static final Supplier<BlockBehaviour.Properties> CRUCIBLE_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()
             .mapColor(MapColor.NETHER).strength(1.5F).sound(SoundType.NETHER_BRICKS)
-            .noOcclusion()
-            .lightLevel(state -> state.getValue(CrucibleBlock.LIT) ? 13 : 0);
+            .noOcclusion();
     public static final DeferredBlock<CrucibleBlock> CRUCIBLE = BLOCKS.registerBlock("crucible",
             CrucibleBlock::new, CRUCIBLE_PROPERTY_SUPPLIER);
     private static final Supplier<BlockBehaviour.Properties> HUB_PROPERTY_SUPPLIER = () -> BlockBehaviour.Properties.of()

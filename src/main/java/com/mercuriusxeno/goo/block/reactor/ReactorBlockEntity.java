@@ -211,7 +211,11 @@ public class ReactorBlockEntity extends BlockEntity
     }
 
     /**
-     * Inserts a canister into the output slot.
+     * Inserts a canister into the output slot. Two sync passes by design:
+     * {@code setCanister} fires the slot's structure-changed callback (which
+     * calls {@link BlockEntitySync#markDirtyAndSync}) before {@code buildHandler}
+     * runs, so emission reads 0 then. The explicit second pass runs once the
+     * handler is in place and propagates the correct emission.
      *
      * @param stack the canister to insert
      * @return true if inserted
@@ -222,7 +226,7 @@ public class ReactorBlockEntity extends BlockEntity
         }
         state.slots[OUTPUT_SLOT].setCanister(stack.copyWithCount(1));
         state.slots[OUTPUT_SLOT].buildHandler(() -> level != null ? level.getGameTime() : 0L);
-        markDirtyAndSync();
+        BlockEntitySync.markDirtyAndSync(this);
         return true;
     }
 
@@ -240,19 +244,8 @@ public class ReactorBlockEntity extends BlockEntity
         // accurate fluid data, but don't sync yet - we clear and sync once.
         state.slots[OUTPUT_SLOT].syncHandlerToStack();
         state.slots[OUTPUT_SLOT].clear();
-        markDirtyAndSync();
+        BlockEntitySync.markDirtyAndSync(this);
         return current;
-    }
-
-    /**
-     * Marks dirty and syncs to client.
-     */
-    private void markDirtyAndSync() {
-        setChanged();
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(),
-                    getBlockState(), Block.UPDATE_CLIENTS);
-        }
     }
 
     /**
@@ -509,6 +502,15 @@ public class ReactorBlockEntity extends BlockEntity
             level.setBlock(pos, bState.setValue(ReactorBlock.CRAFTING, false),
                     Block.UPDATE_CLIENTS);
         }
+    }
+
+    /** Re-propagates goo emission after NBT load; the chunk-load light scan
+     * ran before {@code loadAdditional}, so any loaded goo content would
+     * otherwise stay dark. */
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
     }
 
     @Override

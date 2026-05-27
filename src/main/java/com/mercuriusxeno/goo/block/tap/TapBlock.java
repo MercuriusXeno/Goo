@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block.tap;
 
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -201,6 +202,18 @@ public class TapBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new TapBlockEntity(pos, state);
+    }
+
+    /** Routes goo-driven block-light emission through the BE. */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return IGooLightSource.blockEmissionFor(level, pos);
+    }
+
+    /** BE-driven emission: see ReactorBlock.hasDynamicLightEmission. */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
     }
 
     // --- Interactions ---

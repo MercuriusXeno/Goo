@@ -1,7 +1,9 @@
 package com.mercuriusxeno.goo.block.hub;
 
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.ShapeHitCheck;
+import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mercuriusxeno.goo.registry.GooItems;
 import com.mojang.serialization.MapCodec;
@@ -310,6 +312,18 @@ public class HubBlock extends BaseEntityBlock {
         return new HubBlockEntity(pos, state);
     }
 
+    /** Routes goo-driven block-light emission through the BE. */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return IGooLightSource.blockEmissionFor(level, pos);
+    }
+
+    /** BE-driven emission: see ReactorBlock.hasDynamicLightEmission. */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
+    }
+
     /**
      * Registers the server-side tick dispatcher for per-slot gasket push.
      *
@@ -330,6 +344,8 @@ public class HubBlock extends BaseEntityBlock {
 
     /**
      * Classifies the held item and dispatches to the appropriate hub interaction handler.
+     * Holding a canister without sneaking picks up the targeted slot's canister, matching
+     * {@link com.mercuriusxeno.goo.block.canister.CanisterBlock}. Sneak+canister inserts.
      *
      * @param stack     the item stack
      * @param state     the block state
@@ -344,11 +360,35 @@ public class HubBlock extends BaseEntityBlock {
     protected @NonNull InteractionResult useItemOn(
             @NonNull ItemStack stack, @NonNull BlockState state, Level level, @NonNull BlockPos pos,
             @NonNull Player player, @NonNull InteractionHand hand, @NonNull BlockHitResult hitResult) {
+        if (stack.getItem() instanceof CanisterItem && !player.isSecondaryUseActive()) {
+            return pickupTargetedCanister(level, pos, player, hitResult);
+        }
         return GooBlockInteraction.handleItemInteraction(
                 stack, level, pos, player, hand, hitResult,
                 HubBlockEntity.class,
                 t -> t == null,
                 HubBlockHandlers::dispatchHub);
+    }
+
+    /**
+     * Picks up the canister at the hit slot. Held canister remains in the player's hand.
+     *
+     * @param level     the current level
+     * @param pos       the block position
+     * @param player    the interacting player
+     * @param hitResult the ray trace hit result
+     * @return SUCCESS if removed, PASS if no slot or empty
+     */
+    private static InteractionResult pickupTargetedCanister(
+            Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        InteractionResult earlyOut = GooBlockInteraction.validateEmptyHand(level, pos, player);
+        if (earlyOut != null) {
+            return earlyOut;
+        }
+        if (!(level.getBlockEntity(pos) instanceof HubBlockEntity hub)) {
+            return InteractionResult.PASS;
+        }
+        return HubBlockHandlers.removeCanister(hub, hitResult, pos, player, level);
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.mercuriusxeno.goo.block.canister;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.GooLightContribution;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.hub.HubBlockEntity;
 import com.mercuriusxeno.goo.item.CanisterFluidContent;
 import com.mercuriusxeno.goo.item.CanisterItem;
@@ -21,7 +23,7 @@ import org.jspecify.annotations.Nullable;
  * interface only adds bounds checks and item-stack metadata convenience.</p>
  */
 @SuppressWarnings("PMD.ImplicitFunctionalInterface") // not a lambda target; sole abstract is a composed-state accessor
-public interface ICanisterHolder {
+public interface ICanisterHolder extends IGooLightSource {
 
     /**
      * @return the behavioral component owning this holder's slot grid
@@ -138,5 +140,32 @@ public interface ICanisterHolder {
      */
     default int extractGoo(int index, GooType type, int requested) {
         return extractFluid(index, GooFluids.SOURCES.get(type).get(), requested);
+    }
+
+    /**
+     * Default impl walks every slot, computes each slot's emission via
+     * {@link GooLightContribution#forSlot}, and returns the sum clamped
+     * to the vanilla 15-light ceiling. Sufficient for canister, hub, tap,
+     * and reactor BEs.
+     *
+     * @return total goo-derived block-light emission in [0, 15]
+     */
+    @Override
+    default int gooLightEmission() {
+        SlottedCanisterData data = containerState();
+        int total = 0;
+        for (CanisterSlot slot : data.slots) {
+            CanisterFluidContent content = slot.fluidContent();
+            if (content.isEmpty()) {
+                continue;
+            }
+            int contribution = GooLightContribution.forSlot(
+                    content.getGooType(), content.amount(), slot.capacity());
+            total = GooLightContribution.addClamped(total, contribution);
+            if (total >= GooLightContribution.MAX_LIGHT) {
+                return GooLightContribution.MAX_LIGHT;
+            }
+        }
+        return total;
     }
 }

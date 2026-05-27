@@ -245,6 +245,42 @@ public final class GooRenderTypes {
     );
 
     /**
+     * Goo fluid pipeline: translucent fullbright fluid with no directional
+     * shading (so faces look uniformly bright regardless of orientation),
+     * no lightmap multiplication (world light doesn't dim it), and
+     * writeDepth=ON so the cuboid faces depth-test correctly against each
+     * other and the surrounding canister body. Texture is sampled from
+     * Sampler0; no overlay, no lightmap (skipped via shader defines).
+     */
+    public static final RenderPipeline GOO_FLUID = RenderPipeline.builder(RenderPipelines.ENTITY_EMISSIVE_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath(NAMESPACE, "pipeline/goo_fluid"))
+            .withShaderDefine("ALPHA_CUTOUT", 0.1F)
+            .withShaderDefine("NO_OVERLAY")
+            .withShaderDefine("NO_CARDINAL_LIGHTING")
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .build();
+
+    /** RenderType for goo fluid surfaces. Per-texture-key memoized below. */
+    private static final java.util.function.Function<Identifier, RenderType> GOO_FLUID_FACTORY =
+            net.minecraft.util.Util.memoize(texture -> RenderType.create(
+                    "goo_fluid",
+                    RenderSetup.builder(GOO_FLUID)
+                            .withTexture("Sampler0", texture)
+                            .sortOnUpload()
+                            .createRenderSetup()
+            ));
+
+    /**
+     * Returns the goo-fluid render type for the given texture atlas.
+     *
+     * @param texture the texture atlas identifier (typically blocks atlas)
+     * @return memoized RenderType
+     */
+    public static RenderType gooFluid(Identifier texture) {
+        return GOO_FLUID_FACTORY.apply(texture);
+    }
+
+    /**
      * Crystal shard pipeline: translucent glass splinter quads scattered
      * in a cloud volume. Depth test on, depth write off, cull off.
      */
@@ -287,5 +323,6 @@ public final class GooRenderTypes {
         event.registerPipeline(QUADS_ADDITIVE_NO_DEPTH_PIPELINE);
         event.registerPipeline(VORONOI_FISSURE);
         event.registerPipeline(CRYSTAL_SHARD);
+        event.registerPipeline(GOO_FLUID);
     }
 }

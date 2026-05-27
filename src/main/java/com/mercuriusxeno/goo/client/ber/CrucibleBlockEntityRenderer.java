@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -135,7 +136,8 @@ public class CrucibleBlockEntityRenderer
     private static void submitLiquidQuads(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CrucibleRenderState state,
             float surfaceY) {
-        int light = state.lightCoords;
+        // Liquid surface renders fullbright; the basin model uses world light.
+        int light = LightCoordsUtil.FULL_BRIGHT;
         if (state.outgoingType != null) {
             submitCrossfadeQuads(poseStack, nodeCollector, state, surfaceY, light);
         } else {
@@ -177,6 +179,10 @@ public class CrucibleBlockEntityRenderer
     private static void submitLiquidQuad(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, GooType type,
             float surfaceY, int light, float alpha) {
+        // Caller passes FULL_BRIGHT from submitLiquidQuads -- fullbright
+        // lightmap UV per vertex makes the lightmap multiplication a no-op.
+        // Open-pot crucible has no BER body around the fluid, so no
+        // buffer-share concern.
         TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);
         int color = packArgb(alpha);
         nodeCollector.submitCustomGeometry(

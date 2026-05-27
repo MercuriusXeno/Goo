@@ -649,6 +649,7 @@ public class CanisterBlockEntity extends BlockEntity implements ICanisterHolder,
     public void onLoad() {
         super.onLoad();
         gasket.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
     }
 
     @Override

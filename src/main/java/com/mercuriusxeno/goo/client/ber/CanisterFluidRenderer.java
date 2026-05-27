@@ -13,6 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
@@ -192,7 +193,8 @@ public final class CanisterFluidRenderer {
      */
     static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, CanisterRenderState state) {
-        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, state.lightCoords,
+        // FULL_BRIGHT lightmap UV + solid pass = fullbright opaque fluid.
+        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, LightCoordsUtil.FULL_BRIGHT,
                 state.slots, FLUID_GEOM, CanisterSlotLayout.SLOT_CENTERS_BLOCK, true);
     }
 

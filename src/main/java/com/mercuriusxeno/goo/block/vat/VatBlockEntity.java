@@ -1,6 +1,9 @@
 package com.mercuriusxeno.goo.block.vat;
 
 import com.mercuriusxeno.goo.GooType;
+import com.mercuriusxeno.goo.block.BlockEntitySync;
+import com.mercuriusxeno.goo.block.GooLightContribution;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.fluid.GooFluidHandler;
 import com.mercuriusxeno.goo.block.gasket.GasketAttachment;
 import com.mercuriusxeno.goo.block.gasket.GasketPusher;
@@ -38,7 +41,7 @@ import org.jspecify.annotations.Nullable;
  * {@link VatGasketOps} (gasket face resolution, stacking, drops).
  * Gasket field storage owned by {@link GasketState#dual}.</p>
  */
-public class VatBlockEntity extends BlockEntity implements IGasketHolder {
+public class VatBlockEntity extends BlockEntity implements IGasketHolder, IGooLightSource {
 
     /**
      * Composed gasket integration: dual-role (RECEIVER cap, TRANSMITTER base) with a BE-level pusher.
@@ -199,6 +202,29 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
     }
 
     /**
+     * Sums emissive contributions from each fluid entry against the vat's
+     * current capacity, clamped to the vanilla 15-light ceiling. Compression
+     * grows capacity, so the same mB amount of glow goo emits less light in
+     * a higher-tier vat -- intentional, scales with the visible fill ratio.
+     *
+     * @return goo-derived block-light emission in [0, 15]
+     */
+    @Override
+    public int gooLightEmission() {
+        int capacity = getCapacity();
+        int total = 0;
+        for (var entry : fluidHandler.toGooContents().contents().entrySet()) {
+            int contribution = GooLightContribution.forSlot(
+                    entry.getKey(), entry.getValue(), capacity);
+            total = GooLightContribution.addClamped(total, contribution);
+            if (total >= GooLightContribution.MAX_LIGHT) {
+                return GooLightContribution.MAX_LIGHT;
+            }
+        }
+        return total;
+    }
+
+    /**
      * Returns the player-assigned label, or null.
      *
      * @return the label
@@ -323,6 +349,7 @@ public class VatBlockEntity extends BlockEntity implements IGasketHolder {
     public void onLoad() {
         super.onLoad();
         gasket.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
     }
 
     /**

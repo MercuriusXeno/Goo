@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block.vat;
 
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.item.gasket.ChoralTunerItem;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
 import com.mojang.serialization.MapCodec;
@@ -133,6 +134,18 @@ public class VatBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new VatBlockEntity(pos, state);
+    }
+
+    /** Routes goo-driven block-light emission through the BE. */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return IGooLightSource.blockEmissionFor(level, pos);
+    }
+
+    /** BE-driven emission: see ReactorBlock.hasDynamicLightEmission. */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
     }
 
     /**

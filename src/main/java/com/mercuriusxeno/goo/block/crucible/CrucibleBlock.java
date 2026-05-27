@@ -1,5 +1,6 @@
 package com.mercuriusxeno.goo.block.crucible;
 
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.gasket.GasketInstallation;
 import com.mercuriusxeno.goo.item.gasket.GasketRole;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -55,6 +56,9 @@ public class CrucibleBlock extends BaseEntityBlock {
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
     /** Whether the crucible is actively melting (drives on/off model state). */
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
+    /** Light level emitted by the firebox while LIT (matches the prior
+     * Properties.lightLevel(13) value). */
+    private static final int CRUCIBLE_LIT_LIGHT = 13;
     /** Whether a gasket is attached to this crucible. */
     public static final BooleanProperty HAS_GASKET = BooleanProperty.create("has_gasket");
 
@@ -122,6 +126,31 @@ public class CrucibleBlock extends BaseEntityBlock {
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    /** Block-light emission combines the LIT firebox glow (the existing
+     * 13-light burn) with the BE's emissive-goo contribution; max wins.
+     * The LIT path stays state-driven (cheap, no BE lookup); goo emission
+     * needs the BE so it routes through {@link IGooLightSource}.
+     *
+     * @param state the block state
+     * @param level the block-getter
+     * @param pos   the block position
+     * @return combined light level in [0, 15]
+     */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        int burn = state.getValue(LIT) ? CRUCIBLE_LIT_LIGHT : 0;
+        int goo = IGooLightSource.blockEmissionFor(level, pos);
+        return Math.max(burn, goo);
+    }
+
+    /** BE-driven emission: emission depends on the reservoir contents, so
+     * NeoForge needs to query with a real BlockGetter+BlockPos rather than
+     * probing once with EmptyBlockGetter. */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
     }
 
     /** Returns the goocible pot collision/outline shape.

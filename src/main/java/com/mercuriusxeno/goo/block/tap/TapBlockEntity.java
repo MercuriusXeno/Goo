@@ -203,6 +203,15 @@ public class TapBlockEntity extends net.minecraft.world.level.block.entity.Block
         BlockEntitySync.markDirtyAndSync(this);
     }
 
+    /** Re-propagates goo emission after NBT load; the chunk-load light scan
+     * ran before {@code loadAdditional}, so any loaded goo content would
+     * otherwise stay dark. */
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
+    }
+
     // --- Serialization ---
 
     @Override

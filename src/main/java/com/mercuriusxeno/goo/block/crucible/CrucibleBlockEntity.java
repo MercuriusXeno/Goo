@@ -36,7 +36,12 @@ import net.minecraft.world.phys.BlockHitResult;
  * {@link CrucibleInsertion} (item/goo insertion),
  * {@link CrucibleSerialization} (NBT).</p>
  */
-public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
+public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder, IGooLightSource {
+
+    /** Reference saturation cap (mB) for crucible reservoir light scaling.
+     * Mirrors the BER's visual fill cap so the light response tracks the
+     * surface fill the player sees. */
+    private static final int LIGHT_REFERENCE_CAPACITY = 64_000;
 
     /** Base ignition spray duration in ticks. */
     static final int IGNITION_BASE_TICKS = 4;
@@ -198,6 +203,27 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
         syncToClients();
     }
 
+    /**
+     * Sums emissive contributions from each reservoir entry against
+     * {@link #LIGHT_REFERENCE_CAPACITY} (the visual fill cap), clamped
+     * to the vanilla 15-light ceiling.
+     *
+     * @return goo-derived block-light emission in [0, 15]
+     */
+    @Override
+    public int gooLightEmission() {
+        int total = 0;
+        for (var entry : reservoir.toGooContents().contents().entrySet()) {
+            int contribution = GooLightContribution.forSlot(
+                    entry.getKey(), entry.getValue(), LIGHT_REFERENCE_CAPACITY);
+            total = GooLightContribution.addClamped(total, contribution);
+            if (total >= GooLightContribution.MAX_LIGHT) {
+                return GooLightContribution.MAX_LIGHT;
+            }
+        }
+        return total;
+    }
+
     /** Returns the fuel rod stack (may be empty).
      *
      * @return the fuel rod
@@ -293,6 +319,7 @@ public class CrucibleBlockEntity extends BlockEntity implements IGasketHolder {
     public void onLoad() {
         super.onLoad();
         gasket.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
     }
 
     /** Marks dirty and syncs to tracking clients. Delegates to the gasket attachment. */

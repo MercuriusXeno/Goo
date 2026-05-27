@@ -70,7 +70,9 @@ public final class SlotOutlineRenderer {
     // --- Hub ---
 
     /**
-     * Adds a custom renderer for the hub: frame + targeted occupied slot + preview.
+     * Adds a custom renderer for the hub: frame + targeted slot outline,
+     * red pickup highlight on the occupied slot under the cursor, and
+     * green placement preview when holding a canister.
      *
      * @param event the event instance
      */
@@ -78,8 +80,33 @@ public final class SlotOutlineRenderer {
         BlockHitResult hit = event.getHitResult();
         BlockPos pos = event.getBlockPos();
         VoxelShape outlineShape = computeHubOutline(hit, pos, event);
+        AABB pickup = computeHubPickup(hit, pos, event);
         AABB preview = computeHubPreview(hit, pos, event);
-        event.addCustomRenderer(slotRenderer(outlineShape, preview));
+        event.addCustomRenderer(slotRendererWithPickup(outlineShape, preview, pickup));
+    }
+
+    /**
+     * Red wireframe on the hub slot the player would pick up. Shown when
+     * not sneaking and aiming at an occupied slot. Matches CanisterBlock parity.
+     *
+     * @param hit   the block hit result
+     * @param pos   the block position
+     * @param event the event instance
+     * @return the pickup highlight bounds, or null
+     */
+    private static @Nullable AABB computeHubPickup(
+            BlockHitResult hit, BlockPos pos, ExtractBlockOutlineRenderStateEvent event) {
+        if (!isPlayerStandingIdle()) {
+            return null;
+        }
+        if (!(event.getLevel().getBlockEntity(pos) instanceof HubBlockEntity be)) {
+            return null;
+        }
+        int slot = HubBlock.hitSlot(hit, pos);
+        if (slot < 0 || be.getCanister(slot).isEmpty()) {
+            return null;
+        }
+        return HubBlock.slotShape(slot).bounds();
     }
 
     /**
@@ -342,7 +369,9 @@ public final class SlotOutlineRenderer {
 
     /**
      * Red pickup highlight when the output canister is present and the
-     * player is aiming at the hollow, not sneaking.
+     * cursor is on the canister voxel itself. Matches the strict hit-check
+     * in {@link ReactorBlock#useWithoutItem}; aiming elsewhere in the hollow
+     * doesn't fire the right-click so it shouldn't show the highlight.
      *
      * @param pos   the block position
      * @param event the event instance
@@ -359,7 +388,7 @@ public final class SlotOutlineRenderer {
         if (reactor.getOutputCanister().isEmpty()) {
             return null;
         }
-        if (!ReactorBlock.isHollowClick(event.getBlockState(), pos, event.getHitResult())) {
+        if (!ReactorBlock.hitOutputSlot(event.getBlockState(), pos, event.getHitResult())) {
             return null;
         }
         net.minecraft.core.Direction facing =

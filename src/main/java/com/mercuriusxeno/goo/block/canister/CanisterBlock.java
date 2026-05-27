@@ -1,6 +1,7 @@
 package com.mercuriusxeno.goo.block.canister;
 
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.ShapeHitCheck;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.item.GooInteractionType;
@@ -210,6 +211,18 @@ public class CanisterBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new CanisterBlockEntity(pos, state);
+    }
+
+    /** Routes goo-driven block-light emission through the BE. */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return IGooLightSource.blockEmissionFor(level, pos);
+    }
+
+    /** BE-driven emission: see ReactorBlock.hasDynamicLightEmission. */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
     }
 
     /**

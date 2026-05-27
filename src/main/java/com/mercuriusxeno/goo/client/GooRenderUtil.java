@@ -44,6 +44,44 @@ public final class GooRenderUtil {
     }
 
     /**
+     * Looks up an arbitrary block-atlas sprite by its identifier. Used by
+     * BERs that want to draw a block texture as part of the same buffer
+     * as fluid (which uses the block atlas), avoiding the cross-buffer
+     * ordering problem that comes with binding the texture standalone.
+     *
+     * @param spriteId the sprite identifier (e.g. {@code goo:block/canister_side})
+     * @return the sprite from the BLOCKS atlas
+     */
+    public static TextureAtlasSprite lookupBlockSprite(Identifier spriteId) {
+        return Minecraft.getInstance().getAtlasManager()
+            .getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(spriteId);
+    }
+
+    /**
+     * Maps a normalized sub-region UV rect (in 0..1 sprite-local space)
+     * onto an atlas sprite's actual UVs. Use when geometry was authored
+     * for a standalone 0..1 texture and you want to plot it inside an
+     * atlas-stitched sprite.
+     *
+     * @param sprite the atlas sprite providing the absolute UV bounds
+     * @param u0     local U start (0..1, fraction of sprite width)
+     * @param v0     local V start (0..1, fraction of sprite height)
+     * @param u1     local U end (0..1)
+     * @param v1     local V end (0..1)
+     * @return atlas UV rect for the sub-region
+     */
+    public static UvRect spriteSubRect(TextureAtlasSprite sprite,
+            float u0, float v0, float u1, float v1) {
+        float spriteU = sprite.getU1() - sprite.getU0();
+        float spriteV = sprite.getV1() - sprite.getV0();
+        return new UvRect(
+            sprite.getU0() + u0 * spriteU,
+            sprite.getV0() + v0 * spriteV,
+            sprite.getU0() + u1 * spriteU,
+            sprite.getV0() + v1 * spriteV);
+    }
+
+    /**
      * Returns true if the player's crosshair is currently on the given
      * block position. Used by BERs to highlight when aimed at.
      *

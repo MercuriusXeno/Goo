@@ -7,22 +7,22 @@ import org.jspecify.annotations.NonNull;
  * The types of goo that make up everything in the world.
  */
 public enum GooType implements StringRepresentable {
-    AEON("aeon", 0xDAA520),
-    BLAZE("blaze", 0xFF6600),
-    CRYSTAL("crystal", 0x4FC1E9),
-    ENDER("ender", 0x2E8B8B),
-    FROST("frost", 0xADD8E6),
-    GLOW("glow", 0xFFD700),
-    HEX("hex", 0x5B4BA0),
-    LEAF("leaf", 0x7EC850),
-    METAL("metal", 0xC0C0C0),
-    NETHER("nether", 0x8B0000),
-    PULSE("pulse", 0xCC0000),
-    ROCK("rock", 0xC2A868),
-    SHROOM("shroom", 0x8E44AD),
-    TYPHOON("typhoon", 0xD5F5E3),
-    UNSTABLE("unstable", 0x39FF14),
-    VITAL("vital", 0xE74C3C);
+    AEON("aeon", 0xDAA520, 8, 0.5f),
+    BLAZE("blaze", 0xFF6600, 15, 0.5f),
+    CRYSTAL("crystal", 0x4FC1E9, 8, 0.5f),
+    ENDER("ender", 0x2E8B8B, 8, 0.5f),
+    FROST("frost", 0xADD8E6, 8, 0.5f),
+    GLOW("glow", 0xFFD700, 15, 0.5f),
+    HEX("hex", 0x5B4BA0, 8, 0.5f),
+    LEAF("leaf", 0x7EC850, 4, 0.5f),
+    METAL("metal", 0xC0C0C0, 4, 0.5f),
+    NETHER("nether", 0x8B0000, 4, 0.5f),
+    PULSE("pulse", 0xCC0000, 8, 0.6f),
+    ROCK("rock", 0xC2A868, 4, 0.5f),
+    SHROOM("shroom", 0x8E44AD, 4, 0.5f),
+    TYPHOON("typhoon", 0xD5F5E3, 4, 0.5f),
+    UNSTABLE("unstable", 0x39FF14, 15, 0.55f),
+    VITAL("vital", 0xE74C3C, 4, 0.5f);
 
     /**
      * Codec that serializes a GooType as its string id.
@@ -43,10 +43,29 @@ public enum GooType implements StringRepresentable {
     private static final String TRANSLATION_PREFIX = "goo.type.";
     private final String id;
     private final int color;
+    /** Peak block-light emission this type contributes when fully present.
+     * 0 means non-emissive. Capped at vanilla 15 ceiling. */
+    private final int peakLight;
+    /** Fill fraction (0..1) at which this type's contribution reaches
+     * {@link #peakLight}. Lower values = ramps to peak with less goo.
+     * Ignored when {@link #peakLight} is 0. */
+    private final float saturationFill;
 
-    GooType(String id, int color) {
+    GooType(String id, int color, int peakLight, float saturationFill) {
         this.id = id;
         this.color = color;
+        this.peakLight = peakLight;
+        this.saturationFill = saturationFill;
+    }
+
+    /** @return peak block-light emission for this type, capped at vanilla 15. */
+    public int peakLight() {
+        return peakLight;
+    }
+
+    /** @return fill fraction at which this type reaches {@link #peakLight()}. */
+    public float saturationFill() {
+        return saturationFill;
     }
 
     @org.jspecify.annotations.Nullable

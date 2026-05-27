@@ -202,6 +202,7 @@ public class HubBlockEntity extends BlockEntity implements ICanisterHolder, IGas
     public void onLoad() {
         super.onLoad();
         gasket.onLoad();
+        BlockEntitySync.kickLightingOnLoad(this);
     }
 
     @Override

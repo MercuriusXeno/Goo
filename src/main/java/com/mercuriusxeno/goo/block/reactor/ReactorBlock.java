@@ -4,6 +4,7 @@ import com.mercuriusxeno.goo.CutawayInteractionHelper;
 import com.mercuriusxeno.goo.PlayerUtils;
 import com.mercuriusxeno.goo.block.CutawayShapeHelper;
 import com.mercuriusxeno.goo.block.GooBlockInteraction;
+import com.mercuriusxeno.goo.block.IGooLightSource;
 import com.mercuriusxeno.goo.block.ShapeHitCheck;
 import com.mercuriusxeno.goo.item.CanisterItem;
 import com.mercuriusxeno.goo.registry.GooBlockEntities;
@@ -303,6 +304,20 @@ public class ReactorBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NonNull BlockPos pos, @NonNull BlockState state) {
         return new ReactorBlockEntity(pos, state);
+    }
+
+    /** Routes goo-driven block-light emission through the BE. */
+    @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return IGooLightSource.blockEmissionFor(level, pos);
+    }
+
+    /** BE-driven emission: tell NeoForge the value depends on position so
+     * the engine queries with a real BlockGetter instead of probing with
+     * EmptyBlockGetter (which would return 0 and skip the chunk). */
+    @Override
+    public boolean hasDynamicLightEmission(BlockState state) {
+        return true;
     }
 
     @Nullable

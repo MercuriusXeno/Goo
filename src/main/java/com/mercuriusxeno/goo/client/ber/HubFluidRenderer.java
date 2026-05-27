@@ -7,7 +7,9 @@ import com.mercuriusxeno.goo.client.RenderContext;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 
 /**
  * Fluid surface, stream, and body-side rendering helpers for {@link HubBlockEntityRenderer}.
@@ -19,9 +21,9 @@ final class HubFluidRenderer {
     private static final Identifier BLOCK_ATLAS_TEXTURE =
         Identifier.withDefaultNamespace("textures/atlas/blocks.png");
 
-    /** Canister body side texture. */
-    private static final Identifier CANISTER_SIDE =
-        Identifier.fromNamespaceAndPath("goo", "textures/block/canister_side.png");
+    /** Canister body side sprite identifier on the BLOCKS atlas. */
+    private static final Identifier CANISTER_SIDE_SPRITE =
+        Identifier.fromNamespaceAndPath("goo", "block/canister_side");
 
     /** Canister half-width: 2px. */
     private static final float HW = 2f / 16f;
@@ -72,12 +74,20 @@ final class HubFluidRenderer {
     static void submitBodies(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
         int light = state.lightCoords;
+        // Canister walls are translucent so the goo inside is visible.
+        // Bind the BLOCKS atlas (not the standalone canister_side texture)
+        // so this submission shares its RenderType key with the fluid
+        // submission. Same RenderType = same buffer = sortOnUpload handles
+        // depth ordering between body and fluid primitives. Cross-buffer
+        // ordering hell avoided.
+        TextureAtlasSprite sprite = GooRenderUtil.lookupBlockSprite(CANISTER_SIDE_SPRITE);
+        GooRenderUtil.UvRect uv = GooRenderUtil.spriteSubRect(sprite, 0f, 0f, BODY_U1, BODY_V1);
         nodeCollector.submitCustomGeometry(poseStack,
-            RenderTypes.entityCutout(CANISTER_SIDE),
+            RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
             (pose, c) -> {
                 RenderContext ctx = new RenderContext(pose, c, light);
                 for (int i = 0; i < HubBlockEntity.MAX_CANISTERS; i++) {
-                    if (state.slots[i].present) { renderBodySides(ctx, i); }
+                    if (state.slots[i].present) { renderBodySides(ctx, i, uv); }
                 }
             });
     }
@@ -87,12 +97,12 @@ final class HubFluidRenderer {
      *
      * @param ctx  the render context
      * @param slot the slot index
+     * @param uv   the atlas UV rect for the canister body sprite sub-region
      */
-    private static void renderBodySides(RenderContext ctx, int slot) {
+    private static void renderBodySides(RenderContext ctx, int slot, GooRenderUtil.UvRect uv) {
         float cx = CENTERS[slot][0];
         float cz = CENTERS[slot][1];
         CuboidBounds box = new CuboidBounds(cx - HW, cx + HW, cz - HW, cz + HW, BODY_BOT, BODY_TOP);
-        GooRenderUtil.UvRect uv = new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1);
         ctx.emitSides(box, uv);
     }
 
@@ -107,7 +117,11 @@ final class HubFluidRenderer {
      */
     static void submitFluids(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, HubRenderState state) {
-        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, state.lightCoords,
+        // FULL_BRIGHT lightmap UV per fluid vertex makes the lightmap
+        // multiplication a no-op. Body submission above shares the same
+        // RenderType (entityTranslucent on BLOCKS atlas), so sortOnUpload
+        // handles depth ordering of body+fluid primitives together.
+        SlottedFluidContainer.submitFluids(poseStack, nodeCollector, LightCoordsUtil.FULL_BRIGHT,
                 state.slots, FLUID_GEOM, CENTERS, false);
     }
 

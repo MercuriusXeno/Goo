@@ -49,6 +49,17 @@ public final class SlottedFluidContainer {
         if (!hasAnyFluid(slots, supportsVanilla)) {
             return;
         }
+        // entityTranslucent on BLOCK_ATLAS: same RenderType key as the
+        // canister body's baked-model submission. Same key = same buffer,
+        // and sortOnUpload handles depth ordering of body+fluid primitives
+        // together. No cross-buffer ordering issues.
+        //
+        // Per-vertex lightmap UV does the fullbright work: caller passes
+        // LightCoordsUtil.FULL_BRIGHT and each fluid vertex carries that
+        // UV2, making the shader's lightMapColor sample white (no dimming).
+        // Body vertices (in the same buffer) keep their own lightCoords,
+        // so body stays world-lit while fluid is fullbright. No shader
+        // define swap, no pipeline change, no buffer split.
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS),
                 (pose, c) -> {

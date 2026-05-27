@@ -26,6 +26,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NonNull;
@@ -46,9 +47,12 @@ public class ReactorBlockEntityRenderer
     private static final Identifier REACTOR_TEXTURE =
             Identifier.fromNamespaceAndPath("goo", "textures/block/reactor.png");
 
-    /** Canister body side texture. */
-    private static final Identifier CANISTER_SIDE =
-            Identifier.fromNamespaceAndPath("goo", "textures/block/canister_side.png");
+    /** Canister body side sprite identifier on the BLOCKS atlas.
+     * Used so the body submission shares its RenderType with the fluid
+     * submission, putting body and fluid in the same buffer for
+     * sortOnUpload to depth-sort together. */
+    private static final Identifier CANISTER_SIDE_SPRITE =
+            Identifier.fromNamespaceAndPath("goo", "block/canister_side");
 
     /** Copper endcap texture. */
     private static final Identifier COPPER_GASKET =
@@ -213,6 +217,7 @@ public class ReactorBlockEntityRenderer
         BlockEntityRenderState.extractBase(be, state, breakProgress);
         state.facing = be.getBlockState().getValue(ReactorBlock.FACING);
         state.lightCoords = sampleHollowLight(be);
+        sampleWheelLights(be, state);
         state.crafting = be.getBlockState().getValue(ReactorBlock.CRAFTING);
         extractCanister(be, state);
         // Wheel state advances in ReactorBlockEntity.clientTick (per-tick).
@@ -256,7 +261,11 @@ public class ReactorBlockEntityRenderer
     }
 
     /**
-     * Samples light from the block in front of the hollow opening.
+     * Samples light at the block adjacent to the reactor on the FACING
+     * side. LOCKED -- this exact sample drove the working canister/fluid
+     * render before. Changing it (e.g. to facing.getOpposite()) caused
+     * the reactor's fluid to go invisible. Do not change without first
+     * verifying the fluid still renders.
      *
      * @param be the reactor block entity
      * @return packed light coordinates
@@ -266,6 +275,30 @@ public class ReactorBlockEntityRenderer
         Direction facing = be.getBlockState().getValue(ReactorBlock.FACING);
         BlockPos frontPos = be.getBlockPos().relative(facing);
         return LevelRenderer.getLightCoords(be.getLevel(), frontPos);
+    }
+
+    /**
+     * Samples light at each wheel's lateral neighbor block. The model-west
+     * wheel always exits the reactor on world {@code facing.getClockWise()}
+     * and the model-east wheel on {@code facing.getCounterClockWise()};
+     * sampling there means each wheel reads the brightness of the air (or
+     * lit block) it actually pokes out into, instead of inheriting the
+     * dark hollow-front sample used for the canister body.
+     *
+     * @param be    the reactor block entity
+     * @param state the render state to populate
+     */
+    private static void sampleWheelLights(ReactorBlockEntity be, ReactorRenderState state) {
+        if (be.getLevel() == null) {
+            state.westWheelLight = 0;
+            state.eastWheelLight = 0;
+            return;
+        }
+        BlockPos pos = be.getBlockPos();
+        state.westWheelLight = LevelRenderer.getLightCoords(
+                be.getLevel(), pos.relative(state.facing.getClockWise()));
+        state.eastWheelLight = LevelRenderer.getLightCoords(
+                be.getLevel(), pos.relative(state.facing.getCounterClockWise()));
     }
 
     /**
@@ -304,8 +337,8 @@ public class ReactorBlockEntityRenderer
             PoseStack poseStack, SubmitNodeCollector nodeCollector) {
         poseStack.pushPose();
         rotateToFacing(poseStack, state.facing);
-        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X);
-        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_WEST_X, state.westWheelLight);
+        submitWheel(state, poseStack, nodeCollector, WHEEL_EAST_X, state.eastWheelLight);
         poseStack.popPose();
     }
 
@@ -320,19 +353,20 @@ public class ReactorBlockEntityRenderer
      * @param poseStack     the pose stack
      * @param nodeCollector the node collector
      * @param x             the X position of the wheel face
+     * @param light         packed light coords for this wheel's lateral neighbor
      */
     private static void submitWheel(ReactorRenderState state,
-            PoseStack poseStack, SubmitNodeCollector nodeCollector, float x) {
+            PoseStack poseStack, SubmitNodeCollector nodeCollector, float x, int light) {
         float phase = state.wheelAngle;
-        emitWheelLayer(state, poseStack, nodeCollector, x,
+        emitWheelLayer(poseStack, nodeCollector, x,
                 outgoingUvFor(phase), outgoingDisplayFor(phase),
-                GooRenderUtil.OPAQUE_WHITE);
+                GooRenderUtil.OPAQUE_WHITE, light);
         Incoming incoming = incomingFor(phase);
         if (incoming != null) {
             float overlayX = towardViewerX(x);
-            emitWheelLayer(state, poseStack, nodeCollector, overlayX,
+            emitWheelLayer(poseStack, nodeCollector, overlayX,
                     incoming.uv(), incoming.displayAngle(),
-                    packAlpha(incoming.alpha()));
+                    packAlpha(incoming.alpha()), light);
         }
     }
 
@@ -406,20 +440,19 @@ public class ReactorBlockEntityRenderer
 
     /**
      * Submits one wheel quad layer with the given sprite, display
-     * angle, and packed vertex color.
+     * angle, packed vertex color, and per-wheel sampled light.
      *
-     * @param state         the render state
      * @param poseStack     the pose stack
      * @param nodeCollector the node collector
      * @param x             X position of the wheel face
      * @param uv            sprite UV rectangle
      * @param displayAngle  rotation in degrees
      * @param color         packed ARGB vertex color
+     * @param light         packed light coords for this wheel's lateral neighbor
      */
-    private static void emitWheelLayer(ReactorRenderState state,
+    private static void emitWheelLayer(
             PoseStack poseStack, SubmitNodeCollector nodeCollector,
-            float x, SpriteUv uv, float displayAngle, int color) {
-        int light = state.lightCoords;
+            float x, SpriteUv uv, float displayAngle, int color, int light) {
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(REACTOR_TEXTURE),
                 (pose, c) -> {
@@ -559,12 +592,17 @@ public class ReactorBlockEntityRenderer
     private static void submitBody(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, ReactorRenderState state) {
         int light = state.lightCoords;
+        // Body shares entityTranslucent(BLOCK_ATLAS_TEXTURE) with the fluid
+        // submission, so both go into the same buffer; sortOnUpload sorts
+        // body+fluid primitives together by camera distance.
+        TextureAtlasSprite sprite = GooRenderUtil.lookupBlockSprite(CANISTER_SIDE_SPRITE);
+        GooRenderUtil.UvRect uv = GooRenderUtil.spriteSubRect(sprite, 0f, 0f, BODY_U1, BODY_V1);
         nodeCollector.submitCustomGeometry(poseStack,
-                RenderTypes.entityTranslucent(CANISTER_SIDE),
+                RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> {
                     RenderContext ctx = new RenderContext(pose, c, light);
                     CuboidBounds box = canisterBounds(BODY_BOT, BODY_TOP);
-                    ctx.emitSides(box, new GooRenderUtil.UvRect(0, 0, BODY_U1, BODY_V1));
+                    ctx.emitSides(box, uv);
                 });
     }
 
@@ -597,13 +635,17 @@ public class ReactorBlockEntityRenderer
      */
     private static void submitFluid(PoseStack poseStack,
             SubmitNodeCollector nodeCollector, ReactorRenderState state) {
-        int light = state.lightCoords;
+        // FULL_BRIGHT lightmap UV per fluid vertex makes the lightmap
+        // multiplication a no-op. Body shares entityTranslucent on the
+        // BLOCK atlas (same RenderType key), so sortOnUpload depth-sorts
+        // body+fluid primitives together. No buffer split, no shader
+        // define swap.
         GooType type = state.slot.type;
         float fill = state.slot.fill;
         nodeCollector.submitCustomGeometry(poseStack,
                 RenderTypes.entityTranslucent(BLOCK_ATLAS_TEXTURE),
                 (pose, c) -> {
-                    RenderContext ctx = new RenderContext(pose, c, light);
+                    RenderContext ctx = new RenderContext(pose, c, LightCoordsUtil.FULL_BRIGHT);
                     CuboidBounds b = SlotFluidGeometry.computeBounds(
                             FLUID_GEOM, HOLLOW_CX, HOLLOW_CZ, fill);
                     TextureAtlasSprite sprite = GooRenderUtil.lookupFluidSprite(type);

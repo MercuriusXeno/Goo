@@ -252,6 +252,14 @@ public final class CanisterSlot {
         return handler.totalVolume() < ContainerCapacity.canisterCapacity(compression);
     }
 
+    /** @return the slot's canister capacity in mB, or 0 if no canister installed */
+    public int capacity() {
+        if (canister.isEmpty()) {
+            return 0;
+        }
+        return ContainerCapacity.canisterCapacity(GooEnchantments.getCompressionLevel(canister));
+    }
+
     // --- Stream visualization snapshot ---
 
     /**
